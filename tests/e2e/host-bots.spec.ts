@@ -77,7 +77,16 @@ test("host bots play two consecutive boards from auction through the final trick
 	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
 	await page.getByRole("button", { name: "Pause bots" }).click();
 	await expect(page.getByRole("button", { name: "Resume bots" })).toBeVisible();
+	await page.reload();
+	await expect(page.getByRole("button", { name: "Resume bots" })).toBeVisible({
+		timeout: CONNECT_MS,
+	});
+	await expect(page.getByRole("button", { name: "Pause bots" })).toBeHidden();
+	const pausedRequests = requests;
+	await page.waitForTimeout(3_000);
+	expect(requests).toBe(pausedRequests);
 	await page.getByRole("button", { name: "Resume bots" }).click();
+	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
 
 	await expect
 		.poll(

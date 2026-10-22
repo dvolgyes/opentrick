@@ -116,6 +116,10 @@ const TERMINAL: ReadonlySet<TableStatus> = new Set([
 
 const BOT_SPEND_STORAGE_KEY = "libre-bridge.openrouter-spend-usd";
 
+function botsPausedStorageKey(tableId: string): string {
+	return `libre-bridge.bots-paused.${tableId}`;
+}
+
 /**
  * The room screen of the seat that this page holds. It renders the controller's view and sends through the
  * controller; the caller owns the controller and stops it.
@@ -180,7 +184,7 @@ export function showRoom(
 	let botAutoAttempted = false;
 	let botRestoreStarted = false;
 	let botRestorePending = false;
-	let botsPaused = false;
+	let botsPaused = readBotsPaused();
 	let botBalancePaused = false;
 	let rateLimitTimer: number | undefined;
 	let botSpendUsd = readBotSpend();
@@ -217,7 +221,7 @@ export function showRoom(
 		delegatedBotSeats.add(targetSeat);
 		if (botRunner) {
 			botRunner.setSeatEnabled(targetSeat, true);
-			botsPaused = false;
+			setBotsPaused(false);
 			botBalancePaused = false;
 			botRunner.resume();
 			botStatus.textContent = deps.t(
@@ -225,6 +229,7 @@ export function showRoom(
 			);
 			return "enabled";
 		}
+		setBotsPaused(false);
 		const started = await startHostBots(targetSeat);
 		if (!started) {
 			delegatedBotSeats.delete(targetSeat);
@@ -359,7 +364,7 @@ export function showRoom(
 				botRunner?.updateApiKey(normalizedApiKey);
 				if (botBalancePaused) {
 					botBalancePaused = false;
-					botsPaused = false;
+					setBotsPaused(false);
 					botRunner?.resume();
 				}
 				keyDialog.close();
@@ -486,10 +491,11 @@ export function showRoom(
 			if (enabled) {
 				botRunner?.setSeatEnabled(targetSeat, true);
 				if (botRunner) {
-					botsPaused = false;
+					setBotsPaused(false);
 					botBalancePaused = false;
 					botRunner.resume();
 				} else {
+					setBotsPaused(false);
 					void startHostBots(targetSeat);
 				}
 			} else {
@@ -534,6 +540,25 @@ export function showRoom(
 			// The counter remains available until this page closes if storage is unavailable.
 		}
 		updateBotSpendCounter();
+	}
+
+	/** A reload keeps the bots stopped when this host paused them or they stopped on an error. */
+	function readBotsPaused(): boolean {
+		try {
+			return deps.browser?.getItem(botsPausedStorageKey(tableId)) === "1";
+		} catch {
+			return false;
+		}
+	}
+
+	function setBotsPaused(paused: boolean): void {
+		botsPaused = paused;
+		try {
+			if (paused) deps.browser?.setItem(botsPausedStorageKey(tableId), "1");
+			else deps.browser?.removeItem(botsPausedStorageKey(tableId));
+		} catch {
+			// The pause remains in effect until this page closes if storage is unavailable.
+		}
 	}
 
 	function resetBotSpend(): void {
@@ -847,18 +872,19 @@ export function showRoom(
 	const pauseBots = button(deps.t("Pause bots"), () => {
 		if (!botRunner) return;
 		botRunner.pause();
-		botsPaused = true;
+		setBotsPaused(true);
 		botStatus.textContent = deps.t("Bots paused.");
 		render();
 	});
 	const resumeBots = button(deps.t("Resume bots"), () => {
 		if (!botRunner) {
+			setBotsPaused(false);
 			void startHostBots();
 			return;
 		}
 		botBalancePaused = false;
 		botRunner.resume();
-		botsPaused = false;
+		setBotsPaused(false);
 		botStatus.textContent = runningBotStatus();
 		render();
 	});
@@ -1035,14 +1061,14 @@ export function showRoom(
 					void controller.setBotSeat(delegatedSeat, false);
 				}
 				if (kind === "balance") {
-					botsPaused = true;
+					setBotsPaused(true);
 					botBalancePaused = true;
 					botStatus.textContent = deps.t(
 						"Insufficient OpenRouter balance. Bots are paused until you update the API key or balance.",
 					);
 				} else {
 					botRunner = undefined;
-					botsPaused = false;
+					setBotsPaused(true);
 					botStatus.textContent =
 						detail ??
 						deps.t(
@@ -1057,6 +1083,8 @@ export function showRoom(
 				botStatus.textContent = deps.t(message);
 			},
 		);
+		// A reload after a pause starts the runner paused, so it restores the bot seats without playing.
+		if (botsPaused) runner.pause();
 		if (
 			!(await runner.start(requiredSeat === undefined ? [] : [requiredSeat]))
 		) {
@@ -1069,8 +1097,11 @@ export function showRoom(
 		}
 		botStarting = false;
 		botRunner = runner;
-		botsPaused = false;
-		botStatus.textContent = runningBotStatus();
+		// Resume bots can run while the runner starts.
+		if (!botsPaused) runner.resume();
+		botStatus.textContent = botsPaused
+			? deps.t("Bots paused.")
+			: runningBotStatus();
 		return true;
 	}
 
@@ -1216,7 +1247,6 @@ export function showRoom(
 		if (botRunner && !view.hosting) {
 			botRunner.stop();
 			botRunner = undefined;
-			botsPaused = false;
 			botStatus.textContent = deps.t("Host changed. Bots stopped.");
 		}
 		if (
