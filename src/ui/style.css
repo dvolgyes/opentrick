@@ -1896,7 +1896,8 @@ button.call-join[data-in-call="true"] {
 
 /*
  * The table screens show only the felt, the seats, the call panel and the sidebar statistics (reference layout).
- * The players list, the invite link, the network panel and the messages are off screen.
+ * The players list, the invite link, the network panel and the messages are off screen. They stay in the DOM as a
+ * diagnostic and test probe for the e2e tests (tests/e2e/room.ts), not as a player feature.
  */
 .room-extra {
 	display: none;

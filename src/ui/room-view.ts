@@ -979,6 +979,8 @@ export function showRoom(
 		),
 		audio.element,
 		table.sidebar,
+		// A diagnostic and test probe, not a player feature: the CSS keeps it off screen (`.room-extra`), and the
+		// e2e tests use its chat and seat release controls through the DOM (tests/e2e/room.ts).
 		el(
 			"div",
 			{ className: "room-extra" },
