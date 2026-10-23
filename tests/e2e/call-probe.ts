@@ -559,9 +559,22 @@ export async function setSwitches(page: Page, mode: string): Promise<void> {
 	}
 }
 
+/** Sends the camera from the preview that the app shows before it sends the camera (src/ui/camera-setup.ts). */
+export async function confirmCamera(page: Page): Promise<void> {
+	const preview = page.getByRole("dialog", { name: "Camera preview" });
+	await preview
+		.getByRole("button", { name: "Send camera", exact: true })
+		.click();
+	await expect(preview).toBeHidden();
+}
+
 /** Sets the switches to the named mode, presses Join and waits until the page is in the call. */
 export async function joinWith(page: Page, mode: string): Promise<void> {
 	await setSwitches(page, mode);
 	await joinButton(page).click();
+	if (
+		PRESETS.find((candidate) => candidate.label === mode)?.switches.send.video
+	)
+		await confirmCamera(page);
 	await expect(leaveButton(page)).toBeVisible();
 }

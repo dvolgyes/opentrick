@@ -127,7 +127,11 @@ async function expectAt(seats: readonly SeatKey[], at: number): Promise<void> {
 		await expect(table(tab[seat])).toHaveAttribute("data-at", String(at));
 }
 
-/** Desktop parts that must keep apart: hands, tiles, the center, the call panel and the game-control slot. */
+/**
+ * Desktop parts that must keep apart: hands, tiles, the trick, the call panel and the game-control slot. During the
+ * auction the slot holds the bidding history beside the bid box (src/ui/table.ts `bidRow`), so those two are
+ * checked against each other instead.
+ */
 const DESKTOP_PARTS: Readonly<Record<string, string>> = {
 	...Object.fromEntries(
 		SEATS.map((seat) => [`hand ${seat}`, byTestId(`hand-${seat}`)]),
@@ -135,7 +139,6 @@ const DESKTOP_PARTS: Readonly<Record<string, string>> = {
 	...Object.fromEntries(
 		SEATS.map((seat) => [`tile ${seat}`, byTestId(`tile-${seat}`)]),
 	),
-	auction: byTestId("auction"),
 	trick: byTestId("trick"),
 	"call panel": byTestId("call-panel"),
 	"game slot": byTestId("game-slot"),
@@ -145,11 +148,32 @@ const DESKTOP_PARTS: Readonly<Record<string, string>> = {
  * Own hand lowest, partner highest, left opponent leftmost, right opponent rightmost; a tile beside each
  * other hand, as high as a card and 4:3 wide; no two parts of the table overlap.
  */
+/**
+ * The room canvas takes the scale of a new viewport size at the next `resize` event (src/ui/room-view.ts), which
+ * can come after `setViewportSize` returns. Waits until the scale fits the viewport.
+ */
+async function expectCanvasScaled(page: Page): Promise<void> {
+	await expect
+		.poll(() =>
+			page.evaluate(() => {
+				const main = document.querySelector("main");
+				if (!main) return false;
+				const scale = Number.parseFloat(
+					getComputedStyle(main).getPropertyValue("--room-canvas-scale"),
+				);
+				const fit = Math.min(innerWidth / 1920, innerHeight / 1080);
+				return Math.abs(scale - fit) < 1e-6;
+			}),
+		)
+		.toBe(true);
+}
+
 async function expectDesktopLayout(viewer: SeatKey): Promise<void> {
 	const page = tab[viewer];
 	const around = AROUND[viewer];
 	const others = SEATS.filter((seat) => seat !== viewer);
 	await expect(page.locator(".room")).toHaveAttribute("data-form", "desktop");
+	await expectCanvasScaled(page);
 	for (const seat of SEATS)
 		await expect(hand(page, seat).locator(".seat-label .name")).toHaveText(
 			seatLabel(seat),
@@ -162,6 +186,8 @@ async function expectDesktopLayout(viewer: SeatKey): Promise<void> {
 
 	const rects = await measure(page, {
 		...DESKTOP_PARTS,
+		auction: byTestId("auction"),
+		"bid box": byTestId("bid-box"),
 		card: `${byTestId(`hand-${viewer}`)} .face`,
 	});
 	const handOf = (seat: SeatKey): Rect => shown(rects, `hand ${seat}`);
@@ -211,6 +237,7 @@ async function expectDesktopLayout(viewer: SeatKey): Promise<void> {
 		).toBeLessThanOrEqual(0.02);
 	}
 	expectApart(rects, Object.keys(DESKTOP_PARTS));
+	expectApart(rects, ["auction", "bid box"]);
 	expect(await ranksCut(page), "ranks under the next card").toEqual([]);
 }
 
@@ -233,8 +260,9 @@ const RANK_LABELS = [
 
 /**
  * The overlapped cards whose visible strip cannot show every rank label in full, with the overflow in pixels.
- * The ink box of the tallest, deepest and widest label is placed at each card's rank baseline in its own
- * font, so the result does not depend on the deal or on the device font.
+ * The ink box of the tallest, deepest and widest label is placed at each card's rank baseline and centre line
+ * (src/ui/style.css `.face > .rank` centres the label) in its own font, so the result does not depend on the deal
+ * or on the device font.
  */
 function ranksCut(page: Page): Promise<string[]> {
 	return page.evaluate((labels) => {
@@ -256,17 +284,25 @@ function ranksCut(page: Page): Promise<string[]> {
 				const range = document.createRange();
 				range.selectNodeContents(text);
 				const box = range.getBoundingClientRect();
-				const baseline = box.top + (ink[0]?.fontBoundingBoxAscent ?? 0);
+				const place = rank.getBoundingClientRect();
+				// The room canvas is scaled to the window (src/ui/style.css `--room-canvas-scale`): the screen boxes
+				// are scaled, the canvas metrics are not.
+				const scale = place.width / rank.offsetWidth;
+				const baseline = box.top + (ink[0]?.fontBoundingBoxAscent ?? 0) * scale;
+				const centre = place.left + place.width / 2;
 				const strip = card.getBoundingClientRect();
 				const over = Math.max(
 					strip.top -
-						(baseline - Math.max(...ink.map((m) => m.actualBoundingBoxAscent))),
+						(baseline -
+							Math.max(...ink.map((m) => m.actualBoundingBoxAscent)) * scale),
 					baseline +
-						Math.max(...ink.map((m) => m.actualBoundingBoxDescent)) -
+						Math.max(...ink.map((m) => m.actualBoundingBoxDescent)) * scale -
 						strip.bottom,
-					box.left +
-						Math.max(...ink.map((m) => m.actualBoundingBoxRight)) -
-						strip.right,
+					Math.max(
+						...ink.map(
+							(m) => centre + (m.actualBoundingBoxRight - m.width / 2) * scale,
+						),
+					) - strip.right,
 				);
 				if (over > 1)
 					cut.push(
@@ -325,6 +361,7 @@ async function expectDesktopFit(
 	parts: readonly DeskPart[],
 ): Promise<void> {
 	const page = tab[viewer];
+	await expectCanvasScaled(page);
 	await page.evaluate(() => window.scrollTo(0, 0));
 	const view = await pageViewport(page);
 	const rects = await measure(page, {
@@ -341,6 +378,7 @@ const LOW_LAPTOP = { width: 1366, height: 650 };
 /** The whole room keeps its 1920×1080 layout and fits the viewport without reflow. */
 async function expectRoomCanvasFit(page: Page): Promise<void> {
 	await expect(page.locator(".room")).toHaveAttribute("data-form", "desktop");
+	await expectCanvasScaled(page);
 	const geometry = await page.locator(".room").evaluate((node) => {
 		const rect = node.getBoundingClientRect();
 		const sidebar = node.querySelector(".table-sidebar");
@@ -469,10 +507,16 @@ test("2: desktop, during play: dummy's cards and the trick keep apart from the r
 		await expect(hand(page, "S")).toHaveAttribute("data-visible", "true");
 		await expect(page.getByTestId("trick")).toBeVisible();
 		await expect(page.getByTestId("bid-box")).toBeHidden();
-		await expect(
-			page.getByRole("button", { name: "Claim all" }),
-		).toBeDisabled();
-		await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
+		// Dummy's turn: declarer North acts, and only the acting declarer may claim (tests/unit/table-model.test.ts).
+		// Only East has played a card, so only East may ask to undo (src/bridge/engine.ts `undoPosition`). The
+		// desktop shows the play controls only to a seat that can use one of them (src/ui/table.ts).
+		const claimAll = page.getByRole("button", { name: "Claim all" });
+		const undo = page.getByRole("button", { name: "Undo" });
+		if (seat === "N") await expect(claimAll).toBeEnabled();
+		else if (seat === "E") await expect(claimAll).toBeDisabled();
+		else await expect(claimAll).toBeHidden();
+		if (seat === "E") await expect(undo).toBeEnabled();
+		else await expect(undo).toBeHidden();
 		await expectDesktopLayout(seat);
 		await expectSlotWithoutScroll(page);
 		await expectDesktopFit(seat, ALL_DESK_PARTS);
@@ -523,26 +567,44 @@ test("4: the call controls have names that spell out the way and the medium, and
 		[tab.W, DESKTOP_TOGGLES],
 		[phoneTab, COMPACT_TOGGLES],
 	] as const;
+	// Outside the call the switches are enabled and show what Join starts with (src/ui/call-model.ts); each one
+	// that is off has the slash (src/ui/call-panel.ts).
 	for (const [page, toggles] of forms) {
 		for (const name of toggles) {
 			const toggle = page.getByRole("button", { name, exact: true });
 			await expect(toggle).toHaveCount(1);
-			await expect(toggle).toHaveAttribute("aria-pressed", "false");
-			await expect(toggle).toBeDisabled();
-			await expect(toggle.locator(".icon-slash")).toHaveCount(1);
+			await expect(toggle).toBeEnabled();
+			const off = (await toggle.getAttribute("aria-pressed")) === "false";
+			await expect(toggle.locator(".icon-slash")).toHaveCount(off ? 1 : 0);
 		}
 		await expect(
 			page.getByRole("button", { name: "Join call", exact: true }),
 		).toHaveCount(1);
+		const mic = page.getByRole("button", {
+			name: "Send mic audio",
+			exact: true,
+		});
+		for (const pressed of ["false", "true"]) {
+			await mic.click();
+			await expect(mic).toHaveAttribute("aria-pressed", pressed);
+			await expect(mic.locator(".icon-slash")).toHaveCount(
+				pressed === "false" ? 1 : 0,
+			);
+		}
 	}
+	// The phone shows the video switches too, off and disabled: a phone is audio only (src/call/device-class.ts).
+	for (const name of ["Send camera video", "See cameras: receive video"]) {
+		const toggle = phoneTab.getByRole("button", { name, exact: true });
+		await expect(toggle).toBeDisabled();
+		await expect(toggle).toHaveAttribute("aria-pressed", "false");
+		await expect(toggle.locator(".icon-slash")).toHaveCount(1);
+	}
+	// The phone uses the desktop room too: during the auction it offers no claim (src/ui/table.ts shows Claim only
+	// in play), and the bid box's Undo stays disabled before the first call.
 	await expect(
-		phoneTab.getByRole("button", { name: "Send camera video" }),
-	).toHaveCount(0);
+		phoneTab.getByRole("button", { name: "Claim all", exact: true }),
+	).toBeHidden();
 	await expect(
-		phoneTab.getByRole("button", { name: "See cameras: receive video" }),
-	).toHaveCount(0);
-	for (const name of ["Claim all", "Undo"])
-		await expect(
-			phoneTab.getByRole("button", { name, exact: true }),
-		).toBeDisabled();
+		phoneTab.getByRole("button", { name: "Undo", exact: true }),
+	).toBeDisabled();
 });

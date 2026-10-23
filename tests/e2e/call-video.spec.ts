@@ -2,6 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
 	type CallProbe,
 	caption,
+	confirmCamera,
 	counts,
 	directions,
 	expectAudioArrives,
@@ -10,7 +11,6 @@ import {
 	joinButton,
 	joinWith,
 	leaveButton,
-	note,
 	peerAudioGrowth,
 	peerBytes,
 	receivedSsrc,
@@ -18,6 +18,7 @@ import {
 	SOUND,
 	senderFlow,
 	setCallSendDelay,
+	setSwitches,
 	timeWhen,
 	toggle,
 } from "./call-probe";
@@ -188,6 +189,8 @@ async function switchMode(page: Page, from: Mode, to: Mode): Promise<void> {
 		const wanted = MODE_SWITCHES[to][index];
 		if (MODE_SWITCHES[from][index] === wanted) continue;
 		await toggle(page, name).click();
+		// In the call, turning the camera on goes through the preview.
+		if (name === "Send camera video" && wanted) await confirmCamera(page);
 		await expect(toggle(page, name)).toHaveAttribute(
 			"aria-pressed",
 			String(wanted),
@@ -269,7 +272,12 @@ test("1: the desktop panel shows the video switches, the phone's shows audio onl
 			await expect(toggle(tab[seat], name)).toHaveCount(1);
 		await expect(joinButton(tab[seat])).toBeVisible();
 	}
-	await expect(toggle(tab.W, "Send camera video")).toBeDisabled();
+	// Outside the call the switches choose what Join starts with (src/ui/call-model.ts); the camera starts off.
+	await expect(toggle(tab.W, "Send camera video")).toBeEnabled();
+	await expect(toggle(tab.W, "Send camera video")).toHaveAttribute(
+		"aria-pressed",
+		"false",
+	);
 	await expect(toggle(tab.W, "See cameras: receive video")).toBeEnabled();
 	// The phone shows the same panel, but its video switches stay off: a phone is audio only
 	// (src/call/device-class.ts).
@@ -321,6 +329,7 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 	await record("Audio only");
 
 	await toggle(tab.N, "Send camera video").click();
+	await confirmCamera(tab.N);
 	await expect(toggle(tab.N, "Send camera video")).toHaveAttribute(
 		"data-actual",
 		"on",
@@ -408,13 +417,22 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 	);
 });
 
-test("3: with the camera blocked, the microphone works, the call box stays clear, and nobody sees a picture of East", async () => {
-	await joinWith(tab.E, MODE_LABELS.both);
-	const camera = toggle(tab.E, "Send camera video");
-	await expect(camera).toHaveAttribute("data-actual", "denied");
-	await expect(camera).toHaveAttribute("aria-pressed", "true");
-	await expect(note(tab.E)).toContainText(
-		"The browser blocks the camera: others cannot see you.",
+test("3: with the camera blocked, the preview says so, the microphone works, the call box stays clear, and nobody sees a picture of East", async () => {
+	// Join with the camera opens the camera preview first (src/ui/camera-setup.ts); it cannot send a blocked camera.
+	await setSwitches(tab.E, MODE_LABELS.both);
+	await joinButton(tab.E).click();
+	const preview = tab.E.getByRole("dialog", { name: "Camera preview" });
+	await expect(preview).toContainText("Camera access was denied.");
+	await expect(
+		preview.getByRole("button", { name: "Send camera", exact: true }),
+	).toBeDisabled();
+	await preview.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(preview).toBeHidden();
+	await expect(joinButton(tab.E)).toBeVisible();
+	await joinWith(tab.E, MODE_LABELS.watch);
+	await expect(toggle(tab.E, "Send camera video")).toHaveAttribute(
+		"aria-pressed",
+		"false",
 	);
 	await expectNoteOffScreen(tab.E);
 	await expect(toggle(tab.E, "Send mic audio")).toHaveAttribute(
@@ -629,7 +647,12 @@ test("7: a desktop that becomes compact stops its camera at once and keeps the a
 	);
 	console.log(`compact: camera ended ${ended - start} ms after the resize`);
 	expect(ended - start).toBeLessThanOrEqual(1_000);
-	await expect(toggle(tab.W, "Send camera video")).toHaveCount(0);
+	// A compact page keeps the video switches, off and disabled (tests/browser/call-model.test.ts).
+	await expect(toggle(tab.W, "Send camera video")).toBeDisabled();
+	await expect(toggle(tab.W, "Send camera video")).toHaveAttribute(
+		"aria-pressed",
+		"false",
+	);
 	for (const seat of ["N", "E", "S"] as const)
 		expect(await hasSource(tab.W, seat)).toBe(false);
 	await expectAudioArrives(tab.W);
