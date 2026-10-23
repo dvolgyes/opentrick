@@ -25,6 +25,19 @@ The room key remains a bearer capability, so anyone with the link can select the
 The existing trusted-player model and host-election tie-break govern simultaneous host attempts.
 The host bootstrap requires persistent browser storage.
 
+### Accepted residual risk: a start link can seed the host seat early
+
+Status: accepted (2026-10-23) by the owner, David Völgyes, who owns this risk.
+
+A player URL whose `selected_player` is the host seat passes that seat as `preferredSeat` (src/ui/join.ts `claimHint` and `open`).
+On a device without a local replica of the room, `TableController.start` seeds a fresh term-1 room before the mesh opens (src/p2p/table.ts `start` and `#seedHost`).
+The page does not wait for a lobby from a host that already runs the room on another device.
+The election then compares the two authorities (src/p2p/authority.ts `compareAuthority`): a higher term wins, and in term 1 the lower tag wins.
+Inference, not tested: when the running room is still in term 1 and the seeded page wins the tag comparison, the running group can lose its entries since the split, as ADR 0004 describes for split groups.
+The owner chose no code change, because the room key is already a bearer capability and the players are trusted (see Consequences above).
+A fix would need a host proof, for example a host-only secret in the creator's link, and a security review before code.
+Review this decision if the trusted-player model changes or if a player reports a lost session after a start link.
+
 ## Alternatives Considered
 
 - Keep expired rooms permanently expired and require a new room key each week.
