@@ -1850,7 +1850,8 @@ button.call-join[data-in-call="true"] {
 	line-height: 1.2;
 }
 
-.contract-head .strain.red {
+.contract-head .strain.red,
+.tricks-counts .strain.red {
 	color: var(--red-suit);
 }
 
@@ -1860,15 +1861,27 @@ button.call-join[data-in-call="true"] {
 	font-weight: 400;
 }
 
+/* The labels in the first row; the contract and the numbers below them in the second row, on one baseline. */
 .tricks-counts {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: auto repeat(3, minmax(0, 1fr));
+	align-items: last baseline;
+	column-gap: 0.5rem;
 	text-align: center;
 }
 
+.tricks-counts .bid {
+	font-size: 1.5rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+/* A long translated word hyphenates, or breaks, rather than spill out of its column. */
 .tricks-counts .count-label {
 	display: block;
 	font-size: 0.95rem;
+	hyphens: auto;
+	overflow-wrap: break-word;
 }
 
 .tricks-counts strong {
@@ -2518,6 +2531,19 @@ main:has(> .room[data-form="compact"]) {
 
 .mobile-tricks .tricks-counts > * {
 	min-width: 0;
+}
+
+/* A phone is narrow: the longest translated label must still fit its column. */
+.mobile-tricks .tricks-counts {
+	column-gap: 0.3rem;
+}
+
+.mobile-tricks .tricks-counts .count-label {
+	font-size: 0.8rem;
+}
+
+.mobile-tricks .tricks-counts .bid {
+	font-size: 1.2rem;
 }
 
 .mobile-auction-bids .history-panel {

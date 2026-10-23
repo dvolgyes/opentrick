@@ -168,6 +168,39 @@ function renderView(view: TableView, form: Form, style?: PlayedCardStyle) {
 	return { root: section.element, handlers, section };
 }
 
+/**
+ * The labels form the first row. The contract and the numbers form the second row, one line below the labels, the
+ * contract first and each number under its label.
+ */
+function expectTwoRows(row: HTMLElement): void {
+	const boxes = (selector: string) =>
+		[...row.querySelectorAll<HTMLElement>(selector)].map((part) =>
+			part.getBoundingClientRect(),
+		);
+	const labels = boxes(".count-label");
+	const numbers = boxes(".count strong");
+	const [bid] = boxes(".bid");
+	if (!bid) throw new Error("the contract is missing");
+	expect(labels).toHaveLength(3);
+	expect(numbers).toHaveLength(3);
+	const values = [bid, ...numbers];
+	expect(Math.max(...values.map((box) => box.top))).toBeLessThan(
+		Math.min(...values.map((box) => box.bottom)),
+	);
+	expect(Math.max(...labels.map((box) => box.bottom))).toBeLessThanOrEqual(
+		Math.min(...values.map((box) => box.top)),
+	);
+	expect(bid.right).toBeLessThanOrEqual(
+		Math.min(...labels.map((box) => box.left)),
+	);
+	labels.forEach((label, index) => {
+		const number = numbers[index];
+		if (!number) throw new Error(`number ${index} is missing`);
+		expect(number.left).toBeGreaterThanOrEqual(label.left);
+		expect(number.right).toBeLessThanOrEqual(label.right);
+	});
+}
+
 function renderMobile(view: TableView) {
 	return renderView(view, "compact");
 }
@@ -490,7 +523,8 @@ describe("compact play controls", () => {
 		);
 		if (!row) throw new Error("mobile trick count is missing");
 		expect(row?.hidden).toBe(false);
-		expect(row.textContent).toBe("Our tricks2Target8Opponents'3");
+		expect(row.textContent).toBe("2♣Our tricks2Target8Opponents'3");
+		expectTwoRows(row);
 		expect(row.querySelector(".tricks-needed")).toBeNull();
 		const board = root.querySelector(".mobile-auction-board");
 		const controls = root.querySelector(".mobile-auction-controls");
@@ -522,7 +556,29 @@ describe("compact play controls", () => {
 		const defender = renderMobile(defenderView).root.querySelector(
 			'[data-testid="mobile-tricks"]',
 		);
-		expect(defender?.textContent).toBe("Our tricks4Target6Opponents'3");
+		expect(defender?.textContent).toBe("2♣Our tricks4Target6Opponents'3");
+	});
+
+	it("puts the contract and the trick counts in one row on the desktop", () => {
+		const view = playView();
+		const { section } = renderView(
+			{
+				...view,
+				header: view.header && {
+					...view.header,
+					strain: "NT",
+					symbol: "NT",
+					doubling: "XX",
+				},
+			},
+			"desktop",
+		);
+		const row = section.sidebar.querySelector<HTMLElement>(
+			'[data-testid="tricks-panel"] .tricks-counts',
+		);
+		if (!row) throw new Error("desktop trick count is missing");
+		expect(row.textContent).toBe("2NTXXOur tricks2Target8Opponents'3");
+		expectTwoRows(row);
 	});
 
 	it("lists connected mobile players without a disconnected row", () => {

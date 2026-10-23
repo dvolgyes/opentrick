@@ -129,6 +129,18 @@ function auctionCell(text: string): (string | HTMLElement)[] {
 	];
 }
 
+/** The contract's bid, such as "3♠" or "3NTXX", with the suit in red on hearts and diamonds. */
+function contractBid(header: ContractHeader): HTMLElement {
+	const red = header.strain === "H" || header.strain === "D";
+	return el(
+		"span",
+		{ className: "bid" },
+		String(header.level),
+		el("span", { className: red ? "strain red" : "strain" }, header.symbol),
+		header.doubling,
+	);
+}
+
 const WAITING_TEXT = "WAITING";
 const CONNECTING_TEXT = "CONNECTING TO HOST";
 
@@ -1825,15 +1837,8 @@ export function tableSection(
 			contractHead.replaceChildren();
 			return;
 		}
-		const red = header.strain === "H" || header.strain === "D";
 		contractHead.replaceChildren(
-			el(
-				"span",
-				{ className: "bid" },
-				String(header.level),
-				el("span", { className: red ? "strain red" : "strain" }, header.symbol),
-				header.doubling,
-			),
+			contractBid(header),
 			el("span", { className: "by" }, t("by")),
 			el(
 				"span",
@@ -1843,14 +1848,11 @@ export function tableSection(
 		);
 	}
 
-	/** Our tricks, the target and the opponents' tricks, and what the viewer's side still needs. */
-	function renderTricks(view: TableView): void {
-		const need = view.need;
-		tricksPanel.hidden = need === undefined;
-		if (!need) {
-			tricksPanel.replaceChildren();
-			return;
-		}
+	/** One row: the contract, then our tricks, the target and the opponents' tricks, each label beside its number. */
+	function tricksCounts(
+		header: ContractHeader | undefined,
+		need: NonNullable<TableView["need"]>,
+	): HTMLElement {
 		const count = (label: string, value: number): HTMLElement =>
 			el(
 				"div",
@@ -1858,14 +1860,26 @@ export function tableSection(
 				el("span", { className: "count-label" }, label),
 				el("strong", {}, String(value)),
 			);
+		return el(
+			"div",
+			{ className: "tricks-counts" },
+			...(header ? [contractBid(header)] : []),
+			count(t("Our tricks"), need.ours),
+			count(t("Target"), need.target),
+			count(t("Opponents'"), need.opponents),
+		);
+	}
+
+	/** The contract and the trick counts, and what the viewer's side still needs. */
+	function renderTricks(view: TableView): void {
+		const need = view.need;
+		tricksPanel.hidden = need === undefined;
+		if (!need) {
+			tricksPanel.replaceChildren();
+			return;
+		}
 		tricksPanel.replaceChildren(
-			el(
-				"div",
-				{ className: "tricks-counts" },
-				count(t("Our tricks"), need.ours),
-				count(t("Target"), need.target),
-				count(t("Opponents'"), need.opponents),
-			),
+			tricksCounts(view.header, need),
 			el(
 				"p",
 				{
@@ -1895,22 +1909,7 @@ export function tableSection(
 			mobileTricks.replaceChildren();
 			return;
 		}
-		const count = (label: string, value: number): HTMLElement =>
-			el(
-				"div",
-				{ className: "count" },
-				el("span", { className: "count-label" }, label),
-				el("strong", {}, String(value)),
-			);
-		mobileTricks.replaceChildren(
-			el(
-				"div",
-				{ className: "tricks-counts" },
-				count(t("Our tricks"), need.ours),
-				count(t("Target"), need.target),
-				count(t("Opponents'"), need.opponents),
-			),
-		);
+		mobileTricks.replaceChildren(tricksCounts(view.header, need));
 	}
 
 	function setForm(form: Form): void {
