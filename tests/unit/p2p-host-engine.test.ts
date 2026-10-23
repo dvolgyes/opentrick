@@ -386,6 +386,7 @@ describe("hello", () => {
 			k: "welcome",
 			status: "superseded",
 			auth: rig.auth,
+			busy: true,
 		});
 		expect(roster).toBeUndefined();
 		expect(rig.to(EAST)).toEqual([]);
@@ -395,6 +396,22 @@ describe("hello", () => {
 			id: commandId(8),
 			status: "accepted",
 			seq: 3,
+		});
+	});
+
+	it("binds the second peer of the same holder and generation after the first one leaves", async () => {
+		const rig = await new Rig().create();
+		const gen = await rig.seat(EAST, CLIENT_E, "E");
+		await rig.hello(EAST2, CLIENT_E, { seat: "E", gen });
+		rig.to(EAST2);
+		rig.host.leave(EAST);
+		await rig.hello(EAST2, CLIENT_E, { seat: "E", gen });
+		expect(rig.to(EAST2)[0]).toEqual({
+			k: "welcome",
+			status: "bound",
+			auth: rig.auth,
+			seat: "E",
+			gen,
 		});
 	});
 
@@ -488,6 +505,7 @@ describe("seats", () => {
 			k: "welcome",
 			status: "superseded",
 			auth: rig.auth,
+			busy: true,
 		});
 		await rig.command(EAST, 8, gen);
 		expect(rig.to(EAST)).toContainEqual({

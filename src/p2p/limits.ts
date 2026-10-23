@@ -8,6 +8,13 @@ export const HOST_LOST_MS = 20_000;
 export const SEAT_HOLD_MS = 180_000;
 /** A seat whose holder has been offline this long is free. Covers a short WebRTC drop: Trystero reports a leave only after its 5 s disconnect timer, and a page that returns is found again by re-announcement. */
 export const SEAT_GRACE_MS = 15_000;
+/**
+ * A page whose seat the host still binds to an earlier page of this browser (a crashed or closed tab that the host
+ * has not seen leave) says hello again this often, and for this long, before it counts as superseded. Trystero
+ * reports a leave after its 5 s disconnect timer, once WebRTC sees the link down.
+ */
+export const HELLO_RETRY_MS = 2_000;
+export const BUSY_WAIT_MS = 30_000;
 export const BUTTON_MS = 10_000;
 export const VOLUNTEER_MS = 30_000;
 export const STAGGER_MS = 1_500;

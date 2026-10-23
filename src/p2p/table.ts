@@ -919,7 +919,12 @@ export class TableController {
 				this.#full = false;
 				return;
 			case "superseded":
-				this.#end({ status: "superseded", by: "seat" });
+				this.#end({
+					status: "superseded",
+					by: this.#replication?.follower.supersededByOwnBrowser
+						? "tab"
+						: "seat",
+				});
 				return;
 			case "expired":
 				this.#expire();

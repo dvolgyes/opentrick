@@ -194,6 +194,11 @@ const CTL: Case[] = [
 	["sync", { k: "sync", req: 1, pos: POS }, ["req", "pos"]],
 	["behind", { k: "behind", req: 1, pos: EMPTY }, ["req", "pos"]],
 	["gone", { k: "gone", reason: "expired" }, ["reason"]],
+	[
+		"welcome (busy)",
+		{ k: "welcome", status: "superseded", auth: AUTH, busy: true },
+		["status", "auth"],
+	],
 ];
 
 const LOG: Case[] = [
@@ -531,6 +536,14 @@ describe("message rules", () => {
 		[
 			"a bound welcome without a seat",
 			{ k: "welcome", status: "bound", auth: AUTH },
+		],
+		[
+			"a busy welcome that is not superseded",
+			{ k: "welcome", status: "unseated", auth: AUTH, busy: true },
+		],
+		[
+			"a busy flag that is not a boolean",
+			{ k: "welcome", status: "superseded", auth: AUTH, busy: 1 },
 		],
 		[
 			"an accepted result without a sequence",

@@ -4,7 +4,9 @@ import type { Followed } from "../../src/p2p/election";
 import { Follower, type FollowerEvent } from "../../src/p2p/follower";
 import {
 	ACK_DEBOUNCE_MS,
+	BUSY_WAIT_MS,
 	GAP_WAIT_MS,
+	HELLO_RETRY_MS,
 	SYNC_TIMEOUT_MS,
 } from "../../src/p2p/limits";
 import { LINK_VERSION } from "../../src/p2p/link";
@@ -297,6 +299,7 @@ describe("joining", () => {
 		rig.follower.follow(FIRST);
 		rig.ctl(HOST, { k: "welcome", status: "superseded", auth: AUTH_1 });
 		expect(rig.follower.status).toBe("superseded");
+		expect(rig.follower.supersededByOwnBrowser).toBe(false);
 		rig.sent.take();
 		rig.follower.follow(SECOND);
 		rig.ctl(HOST2, {
@@ -308,6 +311,60 @@ describe("joining", () => {
 		});
 		expect(rig.sent.sent).toEqual([]);
 		expect(rig.follower.status).toBe("superseded");
+	});
+
+	it("a page whose seat is busy keeps its generation, says hello again and binds after the old peer is gone", async () => {
+		const rig = await Rig.stored();
+		rig.follower.adopt(1);
+		rig.follower.follow(FIRST);
+		const [hello] = rig.sent.take();
+		rig.ctl(HOST, {
+			k: "welcome",
+			status: "superseded",
+			auth: AUTH_1,
+			busy: true,
+		});
+		expect(rig.follower.status).toBe("hello");
+		expect(rig.follower.binding).toEqual({ seat: "E", gen: 1 });
+		await rig.tick(HELLO_RETRY_MS - 1);
+		expect(rig.sent.take()).toEqual([]);
+		await rig.tick(1);
+		expect(rig.sent.take()).toEqual([hello]);
+		rig.ctl(HOST, {
+			k: "welcome",
+			status: "bound",
+			auth: AUTH_1,
+			seat: "E",
+			gen: 1,
+		});
+		expect(rig.follower.status).toBe("bound");
+		await rig.tick(BUSY_WAIT_MS);
+		expect(rig.sent.of("hello")).toEqual([]);
+		expect(rig.follower.status).toBe("bound");
+	});
+
+	it("a page whose seat stays busy is superseded by its own browser after the wait", async () => {
+		const rig = await Rig.stored();
+		rig.follower.adopt(1);
+		rig.follower.follow(FIRST);
+		const busy = {
+			k: "welcome",
+			status: "superseded",
+			auth: AUTH_1,
+			busy: true,
+		} as const;
+		rig.ctl(HOST, busy);
+		for (let waited = 0; waited < BUSY_WAIT_MS; waited += HELLO_RETRY_MS) {
+			expect(rig.follower.status).toBe("hello");
+			await rig.tick(HELLO_RETRY_MS);
+			rig.ctl(HOST, busy);
+		}
+		expect(rig.follower.status).toBe("superseded");
+		expect(rig.follower.supersededByOwnBrowser).toBe(true);
+		expect(rig.follower.binding).toBeNull();
+		rig.sent.take();
+		await rig.tick(HELLO_RETRY_MS);
+		expect(rig.sent.take()).toEqual([]);
 	});
 
 	it("says hello again when the host's peer reconnects", async () => {

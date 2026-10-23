@@ -544,7 +544,14 @@ export class HostEngine {
 				if (roster) send.ctl(peer, roster);
 				return;
 			}
-			send.ctl(peer, { k: "welcome", status: "superseded", auth });
+			const busy =
+				row.holder === holder && row.gen === hello.gen && anotherActivePeer;
+			send.ctl(peer, {
+				k: "welcome",
+				status: "superseded",
+				auth,
+				...(busy ? { busy: true } : {}),
+			});
 			return;
 		}
 		if (this.#bindings.delete(peer)) this.#markRoster();
