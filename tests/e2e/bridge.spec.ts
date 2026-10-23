@@ -4,10 +4,14 @@ import { Player, reportNetwork } from "./player";
 import {
 	CONNECT_MS,
 	createRoom,
+	defendersLine,
+	expectContract,
 	expectSeat,
 	makeCall,
 	pick,
+	readStatistics,
 	type SeatKey,
+	scoringLine,
 } from "./room";
 
 /**
@@ -25,7 +29,7 @@ const players = {} as Record<SeatKey, Player>;
 const tab = {} as Record<SeatKey, Page>;
 /** True after the host refused a card that does not follow suit. */
 let revokeRefused = false;
-let totalsAfterBoard1 = "";
+let sheetAfterBoard1 = "";
 
 const table = (page: Page): Locator => page.getByTestId("table");
 const prompt = (page: Page): Locator => page.getByTestId("table-prompt");
@@ -76,7 +80,11 @@ async function expectAt(board: number, at: number): Promise<void> {
 	}
 }
 
-/** The one seat whose tab asks its player to act. After a reload, the prompts wait until the seat is back. */
+/**
+ * The one seat whose tab asks its player to act: its title starts with "TURN - " (src/ui/room-view.ts). The
+ * table prompt says "Your turn" only in the play; in the auction it names the bidder on every page. After a
+ * reload, no tab asks until the seat is back.
+ */
 async function actor(): Promise<SeatKey> {
 	let asked: SeatKey[] = [];
 	await expect
@@ -84,8 +92,7 @@ async function actor(): Promise<SeatKey> {
 			async () => {
 				asked = [];
 				for (const seat of SEATS)
-					if ((await prompt(tab[seat]).textContent())?.startsWith("Your turn"))
-						asked.push(seat);
+					if ((await tab[seat].title()).startsWith("TURN - ")) asked.push(seat);
 				return asked.length;
 			},
 			{ timeout: CONNECT_MS },
@@ -242,7 +249,7 @@ test("2: the auction 1♣ and three passes; a guest and the host reload mid-auct
 			"Pass",
 			"Pass",
 		]);
-		await expect(table(page)).toContainText("1♣ by North");
+		await expectContract(page, "1♣", "North");
 		await expect(page.getByTestId("bid-box")).toBeHidden();
 	}
 });
@@ -262,51 +269,27 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	await expect(prompt(tab.S)).toHaveText(
 		"Waiting for North to play from dummy.",
 	);
-	await tab.E.setViewportSize({ width: 390, height: 664 });
-	await tab.N.setViewportSize({ width: 390, height: 664 });
-	await tab.E.locator(".mobile-auction-controls")
-		.getByRole("button", { name: "Undo" })
-		.click();
-	await expect(tab.N.getByTestId("mobile-undo-overlay")).toBeVisible();
-	await tab.N.getByTestId("mobile-undo-overlay")
-		.getByRole("button", { name: "Approve" })
-		.click();
+	// The room always shows the desktop form (src/ui/room-view.ts), so the undo and the claim use the sidebar.
+	await tab.E.getByTestId("undo-request").click();
+	await expect(tab.N.getByTestId("undo-approve")).toBeVisible();
+	await tab.N.getByTestId("undo-approve").click();
 	await expectAt(1, 4);
-	await tab.E.setViewportSize({ width: 1280, height: 720 });
 	expect(await playFirst(4)).toBe("E");
 	await expectAt(1, 5);
-	await expect(tab.N.getByTestId("mobile-undo-overlay")).toBeHidden();
-	await expect(tab.N.locator(".room")).toHaveAttribute("data-form", "compact");
-	await expect(tab.N.locator(".mobile-auction")).toBeVisible();
-	await expect(tab.N.locator(".mobile-auction-bids .auction")).toContainText(
-		"1♣",
-	);
-	await expect(tab.N.locator(".mobile-board-center .trick")).toBeVisible();
-	await expect(tab.N.locator(".mobile-auction-controls")).toContainText(
-		"Claim …",
-	);
-	await expect(tab.N.locator(".mobile-auction-controls")).toContainText(
-		"Claim all",
-	);
-	await tab.N.locator(".mobile-auction-controls")
-		.getByRole("button", { name: "Claim …" })
-		.click();
+	await expect(tab.N.getByTestId("undo-approve")).toBeHidden();
+	const controls = tab.N.locator(".play-controls");
+	const claims = tab.N.getByTestId("claim-panel");
+	await controls.getByRole("button", { name: "Claim …" }).click();
 	await expect(tab.N.getByTestId("claim-count")).toBeVisible();
-	await tab.N.locator(".mobile-auction-controls")
-		.getByRole("button", { name: "Go back" })
-		.click();
+	await claims.getByRole("button", { name: "Go back" }).click();
 	await expect(tab.N.getByTestId("claim-count")).toBeHidden();
-	await tab.N.locator(".mobile-auction-controls")
-		.getByRole("button", { name: "Claim all" })
-		.click();
+	await controls.getByRole("button", { name: "Claim all" }).click();
 	await expect(tab.N.getByTestId("claim-confirm")).toBeVisible();
-	await expect(tab.N.locator(".mobile-auction-controls")).toContainText(
-		"Confirm that you claim all 12 remaining tricks.",
+	await expect(claims).toContainText(
+		"Confirm that you claim all 13 remaining tricks.",
 	);
-	await tab.N.locator(".mobile-auction-controls")
-		.getByRole("button", { name: "Go back" })
-		.click();
-	await tab.N.setViewportSize({ width: 1280, height: 720 });
+	await claims.getByRole("button", { name: "Go back" }).click();
+	await expect(tab.N.getByTestId("claim-confirm")).toBeHidden();
 	await expect(playable(tab.S)).toHaveCount(0);
 	await expect(playable(hand(tab.N, "N"))).toHaveCount(0);
 	const fromDummy = playable(hand(tab.N, DUMMY)).first();
@@ -331,10 +314,18 @@ test("4: play to the end of trick 4; the host and declarer reload mid-play", asy
 	test.setTimeout(240_000);
 	for (let at = 6; at < 20; at += 1) await playFirst(at);
 	await expectAt(1, 20);
-	for (const seat of SEATS)
-		await expect(tab[seat].getByTestId("trick")).toContainText(
-			"Trick 4 won by",
+	// Every tab shows the finished trick 4 and counts four tricks won: ours and the opponents' together.
+	for (const seat of SEATS) {
+		await expect(tab[seat].getByTestId("trick").locator(".played")).toHaveCount(
+			4,
 		);
+		const counts = tab[seat]
+			.getByTestId("tricks-panel")
+			.locator(".tricks-counts strong");
+		await expect(counts).toHaveCount(3);
+		const [ours, , theirs] = (await counts.allInnerTexts()).map(Number);
+		expect(Number(ours) + Number(theirs), seat).toBe(4);
+	}
 	await reloadKeepsTable(["W", "N"], 1, 20);
 });
 
@@ -343,39 +334,48 @@ test("5: the board is played out; the result and the duplicate score agree in ev
 	for (let at = 20; at < 56; at += 1) await playFirst(at);
 	await expectAt(1, 56);
 
-	const result = await tab.W.getByTestId("result").innerText();
-	const scored = /^1♣(?:=|[+-]\d) by North: (N-S|E-W) \+(\d+)\.$/.exec(result);
-	expect(scored, result).not.toBeNull();
-	const [, side, points] = scored ?? [];
+	// Each page shows the result from its own side; North declares, so North's line is the declarers' line.
+	await expect(scoringLine(tab.N)).toBeVisible();
+	const declarers = (await scoringLine(tab.N).innerText()).trim();
+	const scored = /^(?:WON: Made (?:contract|\+(\d))|LOST: Down (\d+))$/.exec(
+		declarers,
+	);
+	expect(scored, declarers).not.toBeNull();
+	const [, over, under] = scored ?? [];
+	// Board 1 is not vulnerable: 1♣ scores 70 and 20 for each overtrick; each undertrick gives the defenders 50.
+	const made = under === undefined;
+	const points = made ? 70 + 20 * Number(over ?? 0) : 50 * Number(under);
+	const winner = { won: 1, lost: 0, total: points };
+	const loser = { won: 0, lost: 1, total: 0 };
+	const statistics = made
+		? { ns: winner, ew: loser }
+		: { ns: loser, ew: winner };
 	const sheet = await tab.W.getByTestId("scores").innerText();
 	for (const seat of SEATS) {
 		const page = tab[seat];
 		await expect(table(page)).toHaveAttribute("data-phase", "complete");
-		await expect(page.getByTestId("result")).toHaveText(result);
-		const row = page.getByTestId("scores").locator("tbody tr");
-		await expect(row).toHaveCount(1);
-		await expect(row.locator("td.num").nth(side === "N-S" ? 0 : 1)).toHaveText(
-			points ?? "",
+		await expectContract(page, "1♣", "North");
+		await expect(scoringLine(page)).toHaveText(
+			seat === "N" || seat === "S" ? declarers : defendersLine(declarers),
 		);
+		expect(await readStatistics(page)).toEqual(statistics);
 		expect(await page.getByTestId("scores").innerText()).toBe(sheet);
 		// The finished board shows the whole deal, and nothing can be played.
 		for (const other of SEATS)
 			await expect(cards(hand(page, other))).toHaveCount(13);
 		await expect(playable(page)).toHaveCount(0);
-		await expect(page.getByTestId("deal")).toHaveText("Deal board 2");
-		await expect(page.getByTestId("deal")).toBeEnabled();
+		await expect(page.getByTestId("scoring-countdown")).toContainText(
+			"Next board 2 in",
+		);
 	}
-	totalsAfterBoard1 = await tab.W.getByTestId("scores")
-		.locator("tfoot")
-		.innerText();
+	sheetAfterBoard1 = sheet;
 	expect(
 		revokeRefused,
 		"no seat had to follow suit while it held another suit",
 	).toBe(true);
 });
 
-test("6: East deals board 2 and all four pass: passed out, no score", async () => {
-	await tab.E.getByTestId("deal").click();
+test("6: board 2 is dealt automatically, East deals, and all four pass: passed out, no score", async () => {
 	await expectAt(2, 0);
 	for (const seat of SEATS)
 		await expect(
@@ -395,17 +395,14 @@ test("6: East deals board 2 and all four pass: passed out, no score", async () =
 	for (const seat of SEATS) {
 		const page = tab[seat];
 		await expect(table(page)).toHaveAttribute("data-phase", "complete");
-		await expect(page.getByTestId("result")).toHaveText(
-			"Passed out. No score.",
+		await expect(scoringLine(page)).toHaveText("PASSED OUT:");
+		// A passed-out board scores nothing and counts as won or lost for no side.
+		await expect(page.getByTestId("scores")).toHaveText(sheetAfterBoard1, {
+			useInnerText: true,
+		});
+		await expect(page.getByTestId("scoring-countdown")).toContainText(
+			"Next board 3 in",
 		);
-		const rows = page.getByTestId("scores").locator("tbody tr");
-		await expect(rows).toHaveCount(2);
-		await expect(rows.nth(1)).toContainText("Passed out");
-		await expect(page.getByTestId("scores").locator("tfoot")).toHaveText(
-			totalsAfterBoard1,
-			{ useInnerText: true },
-		);
-		await expect(page.getByTestId("deal")).toHaveText("Deal board 3");
 	}
 });
 

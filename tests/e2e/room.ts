@@ -107,6 +107,72 @@ export async function makeCall(page: Page, code: string): Promise<void> {
 	await box.locator(`button.confirm[data-call="${code}"]`).click();
 }
 
+/**
+ * Waits until the sidebar header shows the contract `bid` ("1♣") and its declarer's seat name ("North"). The header
+ * keeps the bid, "by" and the declarer in separate parts (src/ui/table.ts).
+ */
+export async function expectContract(
+	page: Page,
+	bid: string,
+	direction: string,
+): Promise<void> {
+	const head = page.getByTestId("contract-head");
+	await expect(head.locator(".bid")).toHaveText(bid);
+	await expect(head.locator(".declarer")).toHaveText(
+		new RegExp(`^${direction}\\b`),
+	);
+}
+
+/** The result line of a finished board, from this page's side: "WON: Made +1", "LOST: Opponents down 2". */
+export const scoringLine = (page: Page): Locator =>
+	page.getByTestId("scoring").locator(".scoring-result");
+
+/**
+ * The defenders' result line for the declarer side's line: the outcome flips, and the detail names the
+ * opponents ("WON: Made +1" becomes "LOST: Opponents made +1").
+ */
+export function defendersLine(declarers: string): string {
+	const parts = /^(WON|LOST): (Made|Down) (.+)$/.exec(declarers);
+	if (!parts) throw new Error(`not a declarer result line: ${declarers}`);
+	const outcome = parts[1] === "WON" ? "LOST" : "WON";
+	return `${outcome}: Opponents ${parts[2]?.toLowerCase()} ${parts[3]}`;
+}
+
+/** One side's column of the "Previous game statistics" table. */
+export interface SideStatistics {
+	readonly won: number;
+	readonly lost: number;
+	readonly total: number;
+}
+
+/** Reads the "Previous game statistics" table: deals won, deals lost and total score of each side. */
+export async function readStatistics(
+	page: Page,
+): Promise<{ ew: SideStatistics; ns: SideStatistics }> {
+	const rows = await page
+		.getByTestId("scores")
+		.locator("tbody tr")
+		.evaluateAll((items) =>
+			items.map((row) => [
+				row.querySelector("th")?.textContent ?? "",
+				...[...row.querySelectorAll("td")].map((cell) =>
+					Number(cell.textContent),
+				),
+			]),
+		);
+	const row = (label: string): readonly (string | number)[] => {
+		const found = rows.find((cells) => cells[0] === label);
+		if (!found) throw new Error(`the statistics table has no "${label}" row`);
+		return found;
+	};
+	const side = (column: number): SideStatistics => ({
+		won: Number(row("Deals won")[column]),
+		lost: Number(row("Deals lost")[column]),
+		total: Number(row("Total score")[column]),
+	});
+	return { ew: side(1), ns: side(2) };
+}
+
 /** Waits until this page holds the seat: the title names the player and the seat, and the roster tags the row "You". */
 export async function expectSeat(
 	page: Page,
