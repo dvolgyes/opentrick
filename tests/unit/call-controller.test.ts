@@ -278,6 +278,21 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(camera.stops).toBe(1);
 	});
 
+	it("joins with the camera that the switches chose before Join and the preview confirmed", () => {
+		north.call.setSwitch("send", "video", true);
+		north.call.setSwitch("receive", "video", true);
+		north.prepareCamera();
+		north.call.join({
+			send: { audio: false, video: true },
+			receive: { audio: false, video: true },
+		});
+		expect(north.call.view.requested.inCall).toBe(true);
+		expect(north.call.view.requested.send.video).toBe(true);
+		// The confirmed preview track is the camera: the call asks for no other.
+		expect(north.call.view.camera).toBe("on");
+		expect(north.asked("video")).toEqual([]);
+	});
+
 	it("never asks a compact device for the camera: not for restored video switches, not for a video switch", async () => {
 		north.call.dispose();
 		north = new Player("N", wire, "compact");
