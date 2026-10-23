@@ -22,7 +22,6 @@ import {
 	commandText,
 	type HandDisplay,
 	positionOf,
-	resultText,
 	type TableView,
 	type TableViewInput,
 	tableView,
@@ -145,29 +144,6 @@ describe("text", () => {
 			"Play ♠2",
 		);
 	});
-
-	it("states the result of a board from the side that scored", () => {
-		const contract = {
-			level: 4,
-			strain: "H",
-			declarer: "E",
-			doubling: "X",
-		} as const;
-		expect(
-			resultText({ number: 1, contract, declarerTricks: 7, scoreNS: 500 }),
-		).toBe("4♥X-3 by East: N-S +500.");
-		expect(
-			resultText({
-				number: 1,
-				contract: { ...contract, doubling: "" },
-				declarerTricks: 11,
-				scoreNS: -450,
-			}),
-		).toBe("4♥+1 by East: E-W +450.");
-		expect(
-			resultText({ number: 1, contract: null, declarerTricks: 0, scoreNS: 0 }),
-		).toBe("Passed out. No score.");
-	});
 });
 
 describe("table layout", () => {
@@ -267,8 +243,6 @@ describe("play", () => {
 		expect(shownCards(seatView(west, "S").hand)).toHaveLength(13);
 		expect(seatView(west, "N").hand).toEqual({ visible: false, count: 13 });
 		expect(west.trick).toEqual({
-			title: "Current trick",
-			detail: "Trick 1",
 			cards: [
 				{
 					seat: "E",
@@ -285,7 +259,6 @@ describe("play", () => {
 	it("shows the last trick and its winner until the next card is led", () => {
 		const board = playing(LED, "S2 H3 SA");
 		const table = view("E", board);
-		expect(table.trick?.title).toBe("Previous trick");
 		expect(table.trick?.cards.map((c) => c.card)).toEqual([
 			"S7",
 			"S2",
@@ -594,7 +567,12 @@ describe("dealing and scores", () => {
 		);
 		const table = view("S", done);
 		expect(table.phase).toBe("complete");
-		expect(table.result).toBe("Winner: N-S. 1♠+6 by North: N-S +260.");
+		expect(table.scoring).toEqual({
+			contract: { level: 1, strain: "S", doubling: "", declarer: "N" },
+			compactOutcome: "WON",
+			compactDetail: "Made +6",
+			countdown: 10,
+		});
 		expect(table.scores).toEqual([
 			{
 				number: 1,

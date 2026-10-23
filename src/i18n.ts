@@ -400,10 +400,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Opponents made contract": "Gegner erfüllen den Kontrakt",
 		"Opponents made +{margin}": "Gegner erfüllen mit {margin} Überstichen",
 		"Opponents down {margin}": "Gegner fallen {margin} Stich(e)",
-		"Passed out. No score.": "Durchgepasst. Keine Wertung.",
-		"{contract}{outcome} by {direction}: {score}.":
-			"{contract}{outcome} von {direction}: {score}.",
-		"Winner: {side}. ": "Gewinner: {side}. ",
 		by: "von",
 		trick: "Stich",
 		tricks: "Stiche",
@@ -462,7 +458,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"OpenRouter spending total": "OpenRouter-Ausgaben gesamt",
 		Message: "Nachricht",
 		"Your call": "Dein Gebot",
-		"No score": "Kein Ergebnis",
 		"Trackers reachable": "Tracker erreichbar",
 		"Openrouter rate limit - I will retry in a moment":
 			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
@@ -720,10 +715,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Opponents made contract": "Az ellenfél teljesítette a vállalást",
 		"Opponents made +{margin}": "Az ellenfél többlete: {margin}",
 		"Opponents down {margin}": "Az ellenfél bukása: {margin}",
-		"Passed out. No score.": "Mindenki passzolt. Nincs pont.",
-		"{contract}{outcome} by {direction}: {score}.":
-			"{contract}{outcome}, bemondó: {direction}: {score}.",
-		"Winner: {side}. ": "Nyertes: {side}. ",
 		by: "–",
 		trick: "ütés",
 		tricks: "ütés",
@@ -1125,7 +1116,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Neste spillbrett {board} om {seconds} sekunder",
 		"Joining the call…": "Kobler til samtalen…",
 		"Your call": "Din melding",
-		"No score": "Ingen poeng",
 		Waiting: "Venter",
 		"Not in call": "Ikke i samtalen",
 		Reconnecting: "Kobler til igjen",
@@ -1202,10 +1192,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Opponents made contract": "Motstanderne vant kontrakten",
 		"Opponents made +{margin}": "Motstanderne vant med {margin} overstikk",
 		"Opponents down {margin}": "Motstanderne gikk {margin} bet",
-		"Passed out. No score.": "Alle passet. Ingen poeng.",
-		"{contract}{outcome} by {direction}: {score}.":
-			"{contract}{outcome} av {direction}: {score}.",
-		"Winner: {side}. ": "Vinner: {side}. ",
 		by: "av",
 		trick: "stikk",
 		tricks: "stikk",

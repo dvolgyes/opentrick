@@ -324,8 +324,7 @@ main:has(> .room) {
 	font-size: 1.05rem;
 }
 
-.table-prompt,
-.result {
+.table-prompt {
 	font-weight: 600;
 }
 

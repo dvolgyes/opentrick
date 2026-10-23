@@ -86,8 +86,6 @@ function playView(): TableView {
 		},
 		tricks: "0 tricks",
 		trick: {
-			title: "Current trick",
-			detail: "Trick 1",
 			cards: [
 				{
 					seat: "E",
@@ -108,7 +106,6 @@ function playView(): TableView {
 			status: "open",
 		},
 		trickStatus: "",
-		result: "",
 		scoring: undefined,
 		nextBoard: undefined,
 		actions: [],
@@ -352,7 +349,6 @@ describe("compact play controls", () => {
 			...view,
 			phase: "complete",
 			prompt: "",
-			result: "Winner: N-S. 1♠+6 by North: N-S +260.",
 			scoring: {
 				contract: { level: 1, strain: "S", doubling: "" },
 				compactOutcome: "WON",

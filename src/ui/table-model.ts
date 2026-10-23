@@ -86,27 +86,6 @@ export function outcomeText(result: BoardResult): string {
 	return over === 0 ? "=" : over > 0 ? `+${over}` : `${over}`;
 }
 
-/** The side that scored, for example "N-S +420"; "No score" for 0. */
-export function scoreText(scoreNS: number): string {
-	if (scoreNS > 0) return `N-S +${scoreNS}`;
-	if (scoreNS < 0) return `E-W +${-scoreNS}`;
-	return "No score";
-}
-
-export function resultText(
-	result: BoardResult,
-	t: Translate = english,
-): string {
-	if (result.contract === null) return t("Passed out. No score.");
-	const direction = t(SEAT_NAMES[result.contract.declarer]);
-	return t("{contract}{outcome} by {direction}: {score}.", {
-		contract: contractText(result.contract),
-		outcome: outcomeText(result),
-		direction,
-		score: t(scoreText(result.scoreNS)),
-	});
-}
-
 /** Short text of a table command, for the list of this seat's actions in flight. */
 export function commandText(payload: unknown, t: Translate = english): string {
 	if (!isObject(payload)) return "";
@@ -187,9 +166,6 @@ export interface PlayedCard {
 }
 
 export interface TrickView {
-	readonly title: string;
-	/** The second line, for example "Trick 1 · East won" (layout spec §8). */
-	readonly detail: string;
 	readonly cards: readonly PlayedCard[];
 }
 
@@ -320,7 +296,6 @@ export interface TableView {
 	readonly need: TrickNeed | undefined;
 	/** "Contract secured" or "Contract defeated" once decided; empty while open. */
 	readonly trickStatus: string;
-	readonly result: string;
 	readonly scoring: ScoringView | undefined;
 	readonly nextBoard: NextBoard | undefined;
 	readonly actions: readonly TableActionLine[];
@@ -378,7 +353,6 @@ const EMPTY: Omit<TableView, "phase" | "prompt"> = {
 	trick: undefined,
 	need: undefined,
 	trickStatus: "",
-	result: "",
 	scoring: undefined,
 	nextBoard: undefined,
 	actions: [],
@@ -955,14 +929,10 @@ export function tableView(input: TableViewInput): TableView {
 	const trickSource =
 		showLast && lastTrick
 			? {
-					title: "Previous trick",
-					detail: `Trick ${view.tricks.length} · ${SEAT_NAMES[lastTrick.winner]} won`,
 					leader: lastTrick.leader,
 					cards: lastTrick.cards,
 				}
 			: view.current && {
-					title: "Current trick",
-					detail: `Trick ${view.tricks.length + 1}`,
 					leader: view.current.leader,
 					cards: view.current.cards,
 				};
@@ -970,8 +940,6 @@ export function tableView(input: TableViewInput): TableView {
 		view.phase === "complete"
 			? undefined
 			: trickSource && {
-					title: trickSource.title,
-					detail: trickSource.detail,
 					cards: trickSource.cards.map((card, index) => {
 						const player = seatAfter(trickSource.leader, index);
 						return {
@@ -1058,9 +1026,6 @@ export function tableView(input: TableViewInput): TableView {
 			...common,
 			phase: "complete",
 			prompt: dealWait ?? "",
-			result: view.result
-				? `${view.result.contract !== null && view.result.scoreNS !== 0 ? t("Winner: {side}. ", { side: view.result.scoreNS > 0 ? "N-S" : "E-W" }) : ""}${resultText(view.result, t)}`
-				: "",
 			scoring: {
 				contract: contract ?? undefined,
 				compactOutcome: contract ? (viewerWon ? "WON" : "LOST") : "PASSED OUT",

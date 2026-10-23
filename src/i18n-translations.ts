@@ -992,14 +992,6 @@ const rows: readonly TranslationRow[] = [
 		"Geen directe verbinding met {names}.",
 	],
 	[
-		"No score",
-		"Sin puntuación",
-		"Sem pontuação",
-		"Aucun score",
-		"Nessun punteggio",
-		"Geen score",
-	],
-	[
 		"No working camera: others cannot see you.",
 		"La cámara no funciona: los demás no pueden verte.",
 		"A câmara não funciona: os outros não conseguem vê-lo.",
@@ -1234,14 +1226,6 @@ const rows: readonly TranslationRow[] = [
 		"Pages inaccessibles directement",
 		"Pagine non raggiungibili direttamente",
 		"Pagina's niet rechtstreeks bereikbaar",
-	],
-	[
-		"Passed out. No score.",
-		"Todos pasaron. Sin puntuación.",
-		"Todos passaram. Sem pontuação.",
-		"Tout le monde a passé. Aucun score.",
-		"Tutti passano. Nessun punteggio.",
-		"Iedereen past. Geen score.",
 	],
 	[
 		"Pause bots",
@@ -2081,14 +2065,6 @@ const rows: readonly TranslationRow[] = [
 	],
 	["West", "Oeste", "Oeste", "Ouest", "Ovest", "West"],
 	[
-		"Winner: {side}. ",
-		"Ganadores: {side}. ",
-		"Vencedores: {side}. ",
-		"Gagnants : {side}. ",
-		"Vincitori: {side}. ",
-		"Winnaar: {side}. ",
-	],
-	[
 		"YOUR TURN TO BID",
 		"TU TURNO PARA SUBASTAR",
 		"A SUA VEZ DE LICITAR",
@@ -2243,14 +2219,6 @@ const rows: readonly TranslationRow[] = [
 	["trick", "baza", "vaza", "levée", "presa", "slag"],
 	["tricks", "bazas", "vazas", "levées", "prese", "slagen"],
 	["yes", "sí", "sim", "oui", "sì", "ja"],
-	[
-		"{contract}{outcome} by {direction}: {score}.",
-		"{contract}{outcome} por {direction}: {score}.",
-		"{contract}{outcome} por {direction}: {score}.",
-		"{contract}{outcome} par {direction} : {score}.",
-		"{contract}{outcome} da {direction}: {score}.",
-		"{contract}{outcome} door {direction}: {score}.",
-	],
 	[
 		"{requester} asks to reset the game.",
 		"{requester} pide reiniciar la partida.",

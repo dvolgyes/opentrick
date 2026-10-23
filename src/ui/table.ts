@@ -175,10 +175,6 @@ export function tableSection(
 		attrs: { role: "status", "data-testid": "table-prompt" },
 	});
 	const contract = el("p", { className: "contract" });
-	const result = el("p", {
-		className: "result",
-		attrs: { "data-testid": "result" },
-	});
 	const actions = el("ul", {
 		className: "table-actions",
 		attrs: { "data-testid": "table-actions" },
@@ -627,7 +623,6 @@ export function tableSection(
 		details,
 		prompt,
 		contract,
-		result,
 		actions,
 	);
 	const element = el(
@@ -1774,8 +1769,6 @@ export function tableSection(
 			.join(" · ");
 		// The sidebar header and tricks panel show the contract and the tricks once play starts.
 		contract.hidden = contract.textContent === "" || view.header !== undefined;
-		result.textContent = view.scoring ? "" : view.result;
-		result.hidden = result.textContent === "";
 		actions.replaceChildren(...view.actions.map(actionItem));
 		actions.hidden = view.actions.length === 0;
 		gameSlot.hidden = view.scoring !== undefined;
