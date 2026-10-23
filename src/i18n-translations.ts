@@ -1794,12 +1794,12 @@ const rows: readonly TranslationRow[] = [
 		"Deze browser kon de OpenRouter-API-sleutel niet opslaan.",
 	],
 	[
-		"This browser does not allow storing data, so it cannot create a table",
-		"Este navegador no permite guardar datos, por lo que no puede crear una mesa",
-		"Este navegador não permite guardar dados, por isso não pode criar uma mesa",
-		"Ce navigateur ne permet pas le stockage de données et ne peut donc pas créer de table",
-		"Questo browser non consente di salvare dati e quindi non può creare un tavolo",
-		"Deze browser staat gegevensopslag niet toe en kan daarom geen tafel maken",
+		"This browser does not allow storing data, so it cannot create a table.",
+		"Este navegador no permite guardar datos, por lo que no puede crear una mesa.",
+		"Este navegador não permite guardar dados, por isso não pode criar uma mesa.",
+		"Ce navigateur ne permet pas le stockage de données et ne peut donc pas créer de table.",
+		"Questo browser non consente di salvare dati e quindi non può creare un tavolo.",
+		"Deze browser staat gegevensopslag niet toe en kan daarom geen tafel maken.",
 	],
 	[
 		"This browser does not store data ({problem}). You can play, but you cannot become the host, and a reload loses this copy of the table.",
@@ -1816,14 +1816,6 @@ const rows: readonly TranslationRow[] = [
 		"Ce client ne peut pas héberger la table",
 		"Questo client non può ospitare il tavolo",
 		"Deze client kan de tafel niet hosten",
-	],
-	[
-		"This game has expired or is no longer available",
-		"Esta partida ha caducado o ya no está disponible",
-		"Este jogo expirou ou já não está disponível",
-		"Cette partie a expiré ou n'est plus disponible",
-		"Questa partita è scaduta o non è più disponibile",
-		"Dit spel is verlopen of niet meer beschikbaar",
 	],
 	["This is me", "Soy yo", "Sou eu", "C'est moi", "Sono io", "Dit ben ik"],
 	[

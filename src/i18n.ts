@@ -270,9 +270,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Release failed: {reason}": "Freigabe fehlgeschlagen: {reason}",
 		"Release failed: no host is connected. Try again later.":
 			"Freigabe fehlgeschlagen: Kein Host verbunden. Versuche es später erneut.",
-		"This game has expired or is no longer available":
-			"Dieses Spiel ist abgelaufen oder nicht mehr verfügbar.",
-		"This browser does not allow storing data, so it cannot create a table":
+		"This browser does not allow storing data, so it cannot create a table.":
 			"Dieser Browser erlaubt keine Datenspeicherung und kann daher keinen Tisch erstellen.",
 		"This tab was superseded": "Dieser Tab wurde ersetzt",
 		"another tab of this browser holds this seat now":
@@ -787,9 +785,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Cancel reset": "Visszaállítás megszakítása",
 		"Copy table link": "Asztal hivatkozásának másolása",
 		Model: "Modell",
-		"This game has expired or is no longer available":
-			"Ez a játék lejárt vagy már nem érhető el.",
-		"This browser does not allow storing data, so it cannot create a table":
+		"This browser does not allow storing data, so it cannot create a table.":
 			"Ez a böngésző nem engedélyezi az adattárolást, ezért nem tud asztalt létrehozni.",
 		"This tab was superseded": "Ezt a lapot felváltotta egy másik",
 		"another tab of this browser holds this seat now":
@@ -941,10 +937,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Open this page over HTTPS.": "Åpne denne siden via HTTPS.",
 		"The game has expired or is no longer available":
 			"Spillet er utløpt eller ikke lenger tilgjengelig.",
-		"This game has expired or is no longer available":
-			"Dette spillet er utløpt eller ikke lenger tilgjengelig.",
 		"This browser cannot make calls.": "Nettleseren kan ikke ringe.",
-		"This browser does not allow storing data, so it cannot create a table":
+		"This browser does not allow storing data, so it cannot create a table.":
 			"Nettleseren tillater ikke lagring og kan derfor ikke opprette et bord.",
 		"This browser cannot store the table": "Nettleseren kan ikke lagre bordet.",
 		Connecting: "Kobler til",

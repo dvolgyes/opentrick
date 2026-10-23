@@ -90,7 +90,7 @@ export async function tableIdentity(
 }
 
 export const CANNOT_STORE =
-	"This browser does not allow storing data, so it cannot create a table";
+	"This browser does not allow storing data, so it cannot create a table.";
 
 export interface TableCreation {
 	readonly storage: TableStorage;

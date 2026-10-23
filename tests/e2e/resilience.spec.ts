@@ -150,7 +150,7 @@ test("a browser that does not store data cannot create a table, but it can take 
 	const create = await blocked.page("./");
 	await expect(
 		create.getByText(
-			"This browser does not allow storing data, so it cannot create a table",
+			"This browser does not allow storing data, so it cannot create a table.",
 			{ exact: true },
 		),
 	).toBeVisible();
