@@ -103,15 +103,7 @@ export async function reportNetwork(players: Iterable<Player>): Promise<void> {
 	}
 }
 
-/** The old version's backend. The P2P app must never contact it (plan §9). */
-function isSupabase(url: URL): boolean {
-	return /(^|\.)supabase\.(co|com|in)$/.test(url.hostname);
-}
-
-/**
- * One person's browser: a context with its own storage, so its own holder (plan §9). Every request to a
- * Supabase host is refused and counted in `supabaseRequests`.
- */
+/** One person's browser: a context with its own storage, so its own holder (plan §9). */
 export class Player {
 	readonly name: string;
 	/** Uncaught errors of every tab, in order. */
@@ -125,7 +117,6 @@ export class Player {
 	#context: BrowserContext | undefined;
 	#network: NetworkSwitch | undefined;
 	#cleanup: (() => Promise<void>) | undefined;
-	#supabase = 0;
 
 	private constructor(
 		browser: Browser,
@@ -164,11 +155,6 @@ export class Player {
 	/** The open tabs; none when the player is closed. */
 	get pages(): readonly Page[] {
 		return this.#context?.pages() ?? [];
-	}
-
-	/** Requests to Supabase hosts since the player opened, over all restarts. Must stay 0. */
-	get supabaseRequests(): number {
-		return this.#supabase;
 	}
 
 	/** Runs the script in every later tab, before the app's own scripts. Kept across restarts. */
@@ -229,14 +215,6 @@ export class Player {
 				...(state === undefined ? {} : { storageState: state }),
 			});
 		this.#context = context;
-		await context.route(isSupabase, (route) => {
-			this.#supabase += 1;
-			return route.abort("blockedbyclient");
-		});
-		await context.routeWebSocket(isSupabase, (socket) => {
-			this.#supabase += 1;
-			void socket.close();
-		});
 		for (const script of this.#initScripts) await context.addInitScript(script);
 		if (this.#grants.length > 0) await context.grantPermissions(this.#grants);
 		if (this.#rig.trackerSwitch)

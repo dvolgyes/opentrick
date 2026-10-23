@@ -19,7 +19,6 @@
 	"include": [
 		"src",
 		"tests",
-		"scripts",
 		"vite.config.ts",
 		"vite.harness.config.ts",
 		"playwright.config.ts"

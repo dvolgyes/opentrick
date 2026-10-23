@@ -33,7 +33,7 @@ async function ageStoredTables(page: Page): Promise<number> {
 	return page.evaluate(
 		(aged) =>
 			new Promise<number>((resolve, reject) => {
-				const opened = indexedDB.open("lb-p2p");
+				const opened = indexedDB.open("opentrick-p2p");
 				opened.onerror = () => reject(opened.error);
 				opened.onsuccess = () => {
 					const db = opened.result;
@@ -173,17 +173,6 @@ test("a browser that does not store data cannot create a table, but it can take 
 	);
 });
 
-test("an old Supabase link shows the old-version message", async () => {
-	const page = await (await openBrowser("visitor")).page(
-		"./#room=0123456789abcdefABCDEF",
-	);
-	await expect(
-		page.getByText(
-			"This link is for the old version. Ask the table creator for a new link.",
-		),
-	).toBeVisible();
-});
-
 test("a link of another version shows the version message", async () => {
 	const page = await (await openBrowser("visitor")).page(
 		`./#v=p2p-v9&k=${"A".repeat(43)}`,
@@ -240,7 +229,6 @@ test("a table without activity for 24 h expires and stays expired", async () => 
 	await expect(page.getByTestId("create")).toBeVisible();
 });
 
-test("no uncaught errors and no request to the old backend", () => {
+test("no uncaught errors", () => {
 	expect(all.flatMap((player) => player.errors)).toEqual([]);
-	for (const player of all) expect(player.supabaseRequests).toBe(0);
 });

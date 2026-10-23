@@ -114,10 +114,10 @@ const TERMINAL: ReadonlySet<TableStatus> = new Set([
 	"incompatible",
 ]);
 
-const BOT_SPEND_STORAGE_KEY = "libre-bridge.openrouter-spend-usd";
+const BOT_SPEND_STORAGE_KEY = "opentrick.openrouter-spend-usd";
 
 function botsPausedStorageKey(tableId: string): string {
-	return `libre-bridge.bots-paused.${tableId}`;
+	return `opentrick.bots-paused.${tableId}`;
 }
 
 /**

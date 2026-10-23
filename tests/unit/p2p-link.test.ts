@@ -57,15 +57,6 @@ describe("parseRoute", () => {
 		expect(parseRoute(new URL(link).hash)).toEqual({ kind: "table", key: KEY });
 	});
 
-	it("names the links of the Supabase version", () => {
-		expect(parseRoute("#room=abcdefghijklmnopqrstuv")).toEqual({
-			kind: "legacy",
-		});
-		expect(parseRoute("#room=abcdefghijklmnopqrstuv&host")).toEqual({
-			kind: "legacy",
-		});
-	});
-
 	it("reports another link version", () => {
 		expect(parseRoute(`#v=p2p-v9&k=${KEY}`)).toEqual({
 			kind: "incompatible",

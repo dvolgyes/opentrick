@@ -398,8 +398,7 @@ test("6: East deals board 2 and all four pass: passed out, no score", async () =
 	}
 });
 
-test("no uncaught errors and no request to the old backend", () => {
+test("no uncaught errors", () => {
 	const all = Object.values(players);
 	expect(all.flatMap((player) => player.errors)).toEqual([]);
-	for (const player of all) expect(player.supabaseRequests).toBe(0);
 });

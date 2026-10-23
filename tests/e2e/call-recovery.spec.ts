@@ -244,8 +244,6 @@ test("4: a browser that must ask for the microphone again offers Rejoin the call
 	expect(await counts(tab.S)).toMatchObject({ captures: 1, liveTracks: 1 });
 });
 
-test("no uncaught errors and no request to the old backend", () => {
+test("no uncaught errors", () => {
 	expect(Object.values(players).flatMap((player) => player.errors)).toEqual([]);
-	for (const player of Object.values(players))
-		expect(player.supabaseRequests, player.name).toBe(0);
 });

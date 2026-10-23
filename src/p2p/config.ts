@@ -9,7 +9,7 @@ import { parseStunUrls, rtcConfiguration } from "../call/ice";
 /** Unversioned, so pages of different versions meet and report the mismatch. */
 export const APP_ID = "libre-bridge";
 
-/** The three trackers that answered in every spike trial (spikes/p2p-discovery). */
+/** The three trackers that answered in every discovery spike trial (ADR 0004). */
 export const DEFAULT_TRACKER_URLS: readonly string[] = [
 	"wss://tracker.openwebtorrent.com",
 	"wss://tracker.webtorrent.dev",

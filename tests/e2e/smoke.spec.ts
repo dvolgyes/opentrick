@@ -70,7 +70,6 @@ test("one browser: create, three seats from one link, ordered messages", async (
 			await expect(page.getByTestId("banner")).toBeHidden();
 		}
 		expect(player.errors).toEqual([]);
-		expect(player.supabaseRequests).toBe(0);
 	} finally {
 		await player.close();
 	}

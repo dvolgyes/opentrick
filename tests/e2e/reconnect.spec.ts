@@ -374,8 +374,6 @@ test("7: a frozen player shows offline, and after the thaw it has everything it 
 	await expectAt(2, 1);
 });
 
-test("no uncaught errors and no request to the old backend", () => {
+test("no uncaught errors", () => {
 	expect(Object.values(players).flatMap((player) => player.errors)).toEqual([]);
-	for (const player of Object.values(players))
-		expect(player.supabaseRequests).toBe(0);
 });

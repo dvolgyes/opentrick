@@ -58,9 +58,9 @@ describe("SeatMemory on the page's sessionStorage and localStorage", () => {
 		const before = Date.now();
 		seats().remember(ROOM_ID, "E");
 		const after = Date.now();
-		expect(sessionStorage.getItem(`lb.tab.${ROOM_ID}`)).toBe("E");
+		expect(sessionStorage.getItem(`opentrick.tab.${ROOM_ID}`)).toBe("E");
 		const record = JSON.parse(
-			localStorage.getItem(`lb.seat.${ROOM_ID}`) ?? "null",
+			localStorage.getItem(`opentrick.seat.${ROOM_ID}`) ?? "null",
 		);
 		expect(record.seat).toBe("E");
 		expect(record.savedAt).toBeGreaterThanOrEqual(before);
@@ -76,28 +76,33 @@ describe("SeatMemory on the page's sessionStorage and localStorage", () => {
 		// Records that pages of this browser wrote 24 hours and 23 hours 59 minutes ago.
 		const now = Date.now();
 		localStorage.setItem(
-			`lb.seat.${ROOM_ID}`,
+			`opentrick.seat.${ROOM_ID}`,
 			JSON.stringify({ seat: "E", savedAt: now - SEAT_MEMORY_TTL_MS }),
 		);
 		localStorage.setItem(
-			`lb.seat.${OTHER_ROOM_ID}`,
+			`opentrick.seat.${OTHER_ROOM_ID}`,
 			JSON.stringify({ seat: "N", savedAt: now - SEAT_MEMORY_TTL_MS + 60_000 }),
 		);
-		localStorage.setItem("lb.seat.garbage", "{not json");
+		localStorage.setItem("opentrick.seat.garbage", "{not json");
 		localStorage.setItem("unrelated", "kept");
 		const memory = seats();
 		expect(memory.browserSeat(ROOM_ID)).toBeUndefined();
 		expect(memory.browserSeat(OTHER_ROOM_ID)).toBe("N");
 		memory.prune();
-		expect(localStorage.getItem(`lb.seat.${ROOM_ID}`)).toBeNull();
-		expect(localStorage.getItem("lb.seat.garbage")).toBeNull();
-		expect(localStorage.getItem(`lb.seat.${OTHER_ROOM_ID}`)).not.toBeNull();
+		expect(localStorage.getItem(`opentrick.seat.${ROOM_ID}`)).toBeNull();
+		expect(localStorage.getItem("opentrick.seat.garbage")).toBeNull();
+		expect(
+			localStorage.getItem(`opentrick.seat.${OTHER_ROOM_ID}`),
+		).not.toBeNull();
 		expect(localStorage.getItem("unrelated")).toBe("kept");
 	});
 
 	it("treats unreadable records and missing storage as no memory", () => {
-		sessionStorage.setItem(`lb.tab.${ROOM_ID}`, "X");
-		localStorage.setItem(`lb.seat.${ROOM_ID}`, '{"seat":"Q","savedAt":0}');
+		sessionStorage.setItem(`opentrick.tab.${ROOM_ID}`, "X");
+		localStorage.setItem(
+			`opentrick.seat.${ROOM_ID}`,
+			'{"seat":"Q","savedAt":0}',
+		);
 		expect(seats().tabSeat(ROOM_ID)).toBeUndefined();
 		expect(seats().browserSeat(ROOM_ID)).toBeUndefined();
 		const none = new SeatMemory(undefined, undefined, Date.now);
@@ -134,7 +139,7 @@ describe("guardedStorage", () => {
 				Date.now,
 			);
 			memory.remember(ROOM_ID, "N");
-			expect(localStorage.getItem(`lb.seat.${ROOM_ID}`)).toBeNull();
+			expect(localStorage.getItem(`opentrick.seat.${ROOM_ID}`)).toBeNull();
 			expect(memory.browserSeat(ROOM_ID)).toBeUndefined();
 			expect(memory.tabSeat(ROOM_ID)).toBe("N");
 		} finally {
@@ -163,7 +168,7 @@ describe("guardedStorage", () => {
 });
 
 describe("webSeatLocks on the page's lock manager", () => {
-	const LOCK_PREFIX = "lb.seat.";
+	const LOCK_PREFIX = "opentrick.seat.";
 	const locks = webSeatLocks(navigator.locks);
 	const releases: (() => void)[] = [];
 

@@ -2,7 +2,6 @@
 
 Date: 2026-10-19.
 This file records the tests of the peer-to-peer version (plan increments P0–P11, commits 1969c9e and later).
-The tests of the Supabase version are in [test-results-supabase.md](test-results-supabase.md); that evidence does not apply to this version.
 
 ## Environment
 
@@ -30,7 +29,7 @@ Every browser test goes through the public trackers and real WebRTC links.
 | `acceptance` | 13 | One link; the lobby offers only free seats; ordered messages; a reload; an active seat cannot be taken from another tab; release of a silent seat; reopening the link; a host crash with a waiting message; all four browsers quit and reopen; a lost result is stored once; a second game |
 | `seat-timeout` | 3 | A frozen player and a frozen host show offline, their seats free after the timeout, and the thawed tabs are superseded |
 | `election` | 8 | The button at 10 s and the witness rule; a lone seat volunteers when a witness comes after 30 s; the automatic volunteer; two clicks in the same millisecond give one host; a reloading host resumes; a thawed old host steps down; a sibling tab cannot take the host's active seat |
-| `resilience` | 7 | A tracker outage; a browser that blocks site data; an old Supabase link; a link of another version; a damaged key; expiry after 24 h |
+| `resilience` | 7 | A tracker outage; a browser that blocks site data; a link of the old server-based version; a link of another version; a damaged key; expiry after 24 h |
 | `reconnect` | 8 | Plan §12 R1 and R4 through the UI: crash and reload of a follower, a deal that waits for an absent player, a host crash mid-auction, dummy away during the play, three players away while one stays, a frozen player |
 | `bridge` | 7 | The six bridge flows; forced actions come from a modified tab |
 | `call-audio` | 15 | Joining, the switches, Leave, cut links, the keyboard, reloads, four seats at once, a seat that stops hearing, a late microphone, rapid toggles, a vanished tab |
@@ -39,8 +38,8 @@ Every browser test goes through the public trackers and real WebRTC links.
 | `call-recovery` | 5 | Plan §12 R2: after a crash, a host change and a lost microphone permission, the call comes back with the same status |
 | `layout` | 4 | The desktop and compact layouts and the names of the call controls |
 
-Eleven specs also check that no page reported an uncaught error and that no page sent a request to a Supabase host; `p2p-mesh` and `layout` do not.
-A page that the test player (`tests/e2e/player.ts`) opens refuses and counts each request to a Supabase host.
+Eleven specs also check that no page reported an uncaught error; `p2p-mesh` and `layout` do not.
+In these runs, the same specs also checked that no page sent a request to the old server-based backend.
 
 ### Runs
 
@@ -120,7 +119,7 @@ No test replaces a network, a server or a browser API with a stand-in.
 | 82fb7e4 | A frozen page keeps its WebRTC link, so the roster listed it as present while the host refused its seat | Before the fix, a paused North stayed online for 15 s (run st3); after it, `seat-timeout` 3 of 3 and `acceptance` 13 of 13 passed |
 | 95477c2 | A page without peers whose first WebRTC exchange failed stayed alone until the next tracker announce, up to 120 s | 2 of 11 failures in `smoke` and `p2p-mesh` after P8b; the new `p2p-mesh` case with `failLinksFor` passes |
 | ef97574 | In a browser that blocks site data, `navigator.locks.query()` rejects with a `SecurityError`, and the page stayed at "Connecting" with a page error | `resilience` failed in run rs1 and passed 7 of 7 in run rs2 |
-| 738caba | A denied microphone was announced as "Audio only" instead of "Mic off"; the Supabase version had the same defect | `call-audio` test 4 |
+| 738caba | A denied microphone was announced as "Audio only" instead of "Mic off" | `call-audio` test 4 |
 | 0e26b05 | A new page could stay without any link for more than 45 s: in `seat-timeout`, the latecomer's first offers went only to pages that cannot answer, and the trackers' next announce comes only after 120 s; in `call-recovery` test 3, the two pages of a seat pair kept their two-page rooms open at different times, because one side's retry wait continued after the other seat got a new page; the fix makes a page without links join the table room again after 10 s alone (then 20 s, 40 s, at most 60 s), and starts a seat pair again without a wait when the other seat has a new page | The two failures of run full2; the new `p2p-mesh` latecomer test failed 3 of 3 on the code before the fix (66b124b), each time with 3 trackers open and no link, and passed 3 of 3 with it, with the lobby after about 11.0 s and one rejoin; with the fix, `call-recovery`, `p2p-mesh` and `seat-timeout` passed 19 of 19, and `call-recovery` 15 of 15 (three repeats) |
 
 ## Test corrections and acceptance changes
@@ -177,7 +176,7 @@ No trigger was found for a `SecurityError` from `getUserMedia` either.
 ## Limits of this evidence
 
 - All browsers run on one machine, so the WebRTC links use host candidates, and STUN and NAT traversal are not exercised.
-  The cross-network evidence is the discovery spike (commit 09d887a): an Android phone on 4G connected directly to a desktop, without TURN.
+  The cross-network evidence is the discovery spike (ADR 0004; its code is no longer kept): an Android phone on 4G connected directly to a desktop, without TURN.
 - No test switches a device from Wi-Fi to a cellular network.
   The network change in `p2p-mesh` closes the links and the tracker sockets of a page; a real switch also changes the IP address.
 - Only headless Chrome on Linux was tested; there is no run with Firefox, Safari or a real phone for this version.
