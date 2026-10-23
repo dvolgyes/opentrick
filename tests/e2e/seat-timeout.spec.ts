@@ -3,7 +3,7 @@ import {
 	BEAT_MS,
 	BUTTON_MS,
 	HOST_LOST_MS,
-	SEAT_HOLD_MS,
+	SEAT_GRACE_MS,
 } from "../../src/p2p/limits";
 import { freeze } from "./lifecycle";
 import { Player, reportNetwork } from "./player";
@@ -22,17 +22,19 @@ import {
 } from "./room";
 
 /**
- * A seat whose player has gone silent (a suspended phone, a frozen tab) becomes free after the seat hold
- * (SEAT_HOLD_MS, plan §4.6), a fixed 3 minutes. The host counts from the last message of the seat's page, and a
- * page beats every 10 s, so the seat must not be offered within about 168 s of the silence (10 s for the last
- * beat and 2 s for timer and network jitter). Visitors get the lobby again every 5 s.
- * Each check waits about 3 minutes, so these tests run for several minutes.
+ * A seat whose player has gone silent (a suspended phone, a frozen tab) becomes free for another browser once its
+ * holder is offline and unseen for SEAT_GRACE_MS (plan §4.6). The host counts from the last message of the seat's
+ * page: the page is offline HOST_LOST_MS (20 s) after it, and a page beats every 10 s, so the seat must not be
+ * offered within about 8 s of the silence (10 s for the last beat and 2 s for timer and network jitter). A new host
+ * starts the clock of every seat at its claim (plan §4.4 rule 9). Visitors get the lobby again every 5 s.
  */
 test.describe.configure({ mode: "serial" });
 
-const EARLIEST_MS = SEAT_HOLD_MS - BEAT_MS - 2_000;
+const EARLIEST_MS = HOST_LOST_MS - BEAT_MS - 2_000;
+/** The old host's seat: SEAT_GRACE_MS after the new host's claim, less 2 s for timer and network jitter. */
+const HOST_SEAT_EARLIEST_MS = SEAT_GRACE_MS - 2_000;
 /** The latest time at which a free seat shows in a visitor's lobby, with room for a slow link. */
-const LATEST_MS = SEAT_HOLD_MS + 30_000;
+const LATEST_MS = HOST_LOST_MS + 45_000;
 /** A seat shows offline 20 s after its last message (HOST_LOST_MS), plus the 1 s roster coalesce. */
 const QUIET_MS = HOST_LOST_MS + 10_000;
 /**
@@ -165,7 +167,7 @@ test("a frozen host is replaced; its seat frees after the timeout; the thawed ol
 		type: "host seat offered after (ms)",
 		description: String(elapsed),
 	});
-	expect(elapsed).toBeGreaterThanOrEqual(EARLIEST_MS);
+	expect(elapsed).toBeGreaterThanOrEqual(HOST_SEAT_EARLIEST_MS);
 	tab.W = page;
 
 	await thaw();

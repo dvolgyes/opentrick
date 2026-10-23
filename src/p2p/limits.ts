@@ -4,7 +4,11 @@
 /** Every page sends a beat this often; a host, or a seat's peer, is offline after HOST_LOST_MS without one. */
 export const BEAT_MS = 10_000;
 export const HOST_LOST_MS = 20_000;
-/** A seat whose holder has been unseen this long is free for any other browser (plan §4.6). A fixed limit, not a setting. */
+/**
+ * A seat whose holder has been unseen this long is free for any other browser (plan §4.6). A fixed limit, not a
+ * setting. SEAT_GRACE_MS frees an offline holder's seat sooner, so this limit applies only to a holder that the
+ * host counts as online.
+ */
 export const SEAT_HOLD_MS = 180_000;
 /** A seat whose holder has been offline this long is free. Covers a short WebRTC drop: Trystero reports a leave only after its 5 s disconnect timer, and a page that returns is found again by re-announcement. */
 export const SEAT_GRACE_MS = 15_000;
