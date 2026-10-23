@@ -856,7 +856,8 @@ export function tableSection(
 			seat.hand.suits.some((row) => row.trump && row.cards.length > 0)
 				? [el("span", { className: "trump-label" }, t("Trump suit"))]
 				: [];
-		// The HCP pill belongs to the viewer's own hand; the turn pill marks the seat to call.
+		// The HCP pill shows on the viewer's own hand in the auction and on every hand once the board is over; the
+		// turn pill marks the seat to call.
 		const pills = [
 			...(seat.points === undefined
 				? []

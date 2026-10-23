@@ -592,6 +592,14 @@ describe("dealing and scores", () => {
 			ready: true,
 		});
 		expect(shownCards(seatView(table, "W").hand)).toHaveLength(13);
+		expect(
+			(["N", "E", "S", "W"] as const).map(
+				(seat) => seatView(table, seat).points,
+			),
+		).toEqual([30, 9, 1, 0]);
+		expect(seatView(view("S", playing(board, "S7")), "S").points).toBe(
+			undefined,
+		);
 	});
 
 	it("reports a table that is loading or holds no bridge table", () => {

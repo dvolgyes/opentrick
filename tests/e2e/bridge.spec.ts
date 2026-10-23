@@ -369,6 +369,12 @@ test("5: the board is played out; the result and the duplicate score agree in ev
 		// The finished board shows the whole deal, and nothing can be played.
 		for (const other of SEATS)
 			await expect(cards(hand(page, other))).toHaveCount(13);
+		// Every hand shows its HCP; together they hold 40.
+		const pills = await page.locator(".hcp-pill").allInnerTexts();
+		expect(pills).toHaveLength(4);
+		expect(
+			pills.reduce((sum, pill) => sum + Number.parseInt(pill, 10), 0),
+		).toBe(40);
 		await expect(playable(page)).toHaveCount(0);
 		await expect(page.getByTestId("scoring-countdown")).toContainText(
 			"Next board 2 in",

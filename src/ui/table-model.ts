@@ -151,7 +151,7 @@ export interface SeatView {
 	readonly connecting: boolean;
 	/** This seat is the one to call during the auction. */
 	readonly bidding: boolean;
-	/** Milton Work points of a hand the viewer can see during the auction; undefined otherwise. */
+	/** Milton Work points of a hand the viewer can see during the auction, or of every hand once the board is over. */
 	readonly points: number | undefined;
 }
 
@@ -917,7 +917,8 @@ export function tableView(input: TableViewInput): TableView {
 			connecting: false,
 			bidding: view.phase === "auction" && owner === view.turn,
 			points:
-				view.phase === "auction" && view.hands[owner].visible
+				(view.phase === "auction" || view.phase === "complete") &&
+				view.hands[owner].visible
 					? miltonPoints(view.hands[owner].cards)
 					: undefined,
 		};

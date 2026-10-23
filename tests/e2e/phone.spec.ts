@@ -169,6 +169,7 @@ for (const viewport of PHONES) {
 				"data-phase",
 				"complete",
 			);
+			await expect(page.locator(".hcp-pill:visible")).toHaveCount(4);
 		} finally {
 			await context.close();
 		}
