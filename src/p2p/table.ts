@@ -161,7 +161,7 @@ export interface TableDeps {
 	readonly identity: TableIdentity;
 	readonly storage: TableStorage;
 	readonly locks: SeatLocks;
-	readonly memory: Pick<SeatMemory, "tabSeat" | "remember">;
+	readonly memory: Pick<SeatMemory, "tabSeat" | "seatToReopen" | "remember">;
 	readonly module: GameModule;
 	readonly clock: Clock;
 	/** Runs `run` every `ms` until the returned function runs. */
@@ -309,6 +309,8 @@ export class TableController {
 	#undone: Entry[] = [];
 	#failures: CommandFailure[] = [];
 	#seatError: SeatCode | null = null;
+	/** The seat came from the browser's memory, not the URL, and the host has not bound it yet. */
+	#reopened = false;
 	#release: ReleaseResult | null = null;
 	#notifyQueued = false;
 
@@ -413,7 +415,8 @@ export class TableController {
 		this.#heldElsewhere = await locks.heldElsewhere(this.#tableId);
 		const tabSeat = memory.tabSeat(this.#tableId);
 		const wanted =
-			this.#deps.preferredSeat ?? (this.#deps.creator ? tabSeat : undefined);
+			this.#deps.preferredSeat ??
+			memory.seatToReopen(this.#tableId, this.#deps.creator === true);
 		let seated: Seated | null = null;
 		let seededHost = false;
 		if (wanted !== undefined && wanted === tabSeat) {
@@ -423,6 +426,7 @@ export class TableController {
 			const opened = await this.#openSeat(wanted);
 			if (opened.ok) {
 				seated = opened.seated;
+				this.#reopened = this.#deps.preferredSeat === undefined;
 				if (
 					this.#bootstrapAllowed &&
 					this.#deps.bootstrap?.host === wanted &&
@@ -913,12 +917,22 @@ export class TableController {
 		switch (status) {
 			case "bound":
 				this.#full = false;
+				this.#reopened = false;
 				if (seat) this.#deps.memory.remember(this.#tableId, seat);
 				return;
 			case "unseated":
 				this.#full = false;
 				return;
 			case "superseded":
+				// A remembered seat that another player took meanwhile only makes this page a visitor again.
+				if (
+					this.#reopened &&
+					!this.#replication?.follower.supersededByOwnBrowser
+				) {
+					this.#reopened = false;
+					this.#claimFailed("taken");
+					return;
+				}
 				this.#end({
 					status: "superseded",
 					by: this.#replication?.follower.supersededByOwnBrowser

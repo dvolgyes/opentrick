@@ -564,6 +564,48 @@ describe("seats", () => {
 		});
 	});
 
+	it("gives a seat back to its own holder once no peer of the seat is connected, before SEAT_GRACE_MS", async () => {
+		const rig = await new Rig().create();
+		await rig.seat(EAST, CLIENT_E, "E");
+		await rig.hello(SOUTH, CLIENT_S);
+		await rig.hello(EAST2, CLIENT_E);
+		const ownRow = (messages: ReturnType<Rig["to"]>) => {
+			const lobby = messages.findLast((message) => message.k === "lobby");
+			return lobby?.k === "lobby"
+				? lobby.seats.find((row) => row.seat === "E")
+				: undefined;
+		};
+		expect(ownRow(rig.to(EAST2))).toEqual({
+			seat: "E",
+			available: false,
+			online: true,
+			mine: true,
+		});
+		rig.host.leave(EAST);
+		await rig.hello(EAST2, CLIENT_E);
+		expect(ownRow(rig.to(EAST2))).toEqual({
+			seat: "E",
+			available: true,
+			online: false,
+			mine: true,
+		});
+		await rig.from(SOUTH, { k: "claim-seat", req: 8, seat: "E" });
+		expect(rig.to(SOUTH)).toContainEqual({
+			k: "seat-result",
+			req: 8,
+			ok: false,
+			code: "taken",
+		});
+		await rig.from(EAST2, { k: "claim-seat", req: 9, seat: "E" });
+		expect(rig.to(EAST2)).toContainEqual({
+			k: "seat-result",
+			req: 9,
+			ok: true,
+			seat: "E",
+			gen: 2,
+		});
+	});
+
 	it("a bound peer cannot claim another seat", async () => {
 		const rig = await new Rig().create();
 		await rig.seat(EAST, CLIENT_E, "E");

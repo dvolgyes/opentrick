@@ -66,6 +66,16 @@ export class SeatMemory {
 			: undefined;
 	}
 
+	/**
+	 * The seat a page of the room opens when its URL names none: this tab's seat after a reload of the page that
+	 * created the table, else the browser's last seat, so reopening the same link gives the same seat back.
+	 */
+	seatToReopen(roomId: string, creator: boolean): Seat | undefined {
+		return (
+			(creator ? this.tabSeat(roomId) : undefined) ?? this.browserSeat(roomId)
+		);
+	}
+
 	remember(roomId: string, seat: Seat): void {
 		this.#tab?.setItem(TAB_PREFIX + roomId, seat);
 		this.#browser?.setItem(

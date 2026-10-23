@@ -89,7 +89,7 @@ export interface Welcome {
 
 export interface LobbySeat {
 	readonly seat: Seat;
-	/** Free, released, timed out, or held by the receiver's own holder. */
+	/** Free, released, timed out, or held by the receiver's own holder with no connected peer on it. */
 	readonly available: boolean;
 	readonly online: boolean;
 	readonly mine: boolean;

@@ -97,6 +97,16 @@ describe("SeatMemory on the page's sessionStorage and localStorage", () => {
 		expect(localStorage.getItem("unrelated")).toBe("kept");
 	});
 
+	it("reopens the browser's last seat in a new tab, and this tab's seat after a reload of the creating page", () => {
+		seats().remember(ROOM_ID, "E");
+		sessionStorage.clear();
+		expect(seats().seatToReopen(ROOM_ID, false)).toBe("E");
+		expect(seats().seatToReopen(OTHER_ROOM_ID, false)).toBeUndefined();
+		sessionStorage.setItem(`opentrick.tab.${ROOM_ID}`, "N");
+		expect(seats().seatToReopen(ROOM_ID, true)).toBe("N");
+		expect(seats().seatToReopen(ROOM_ID, false)).toBe("E");
+	});
+
 	it("treats unreadable records and missing storage as no memory", () => {
 		sessionStorage.setItem(`opentrick.tab.${ROOM_ID}`, "X");
 		localStorage.setItem(

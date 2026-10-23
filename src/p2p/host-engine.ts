@@ -520,12 +520,10 @@ export class HostEngine {
 		this.#features.set(peer, hello.features ?? []);
 		if (hello.seat !== undefined) {
 			const row = seatRow(table, hello.seat);
-			const anotherActivePeer = [...this.#bindings].some(
-				([boundPeer, bound]) =>
-					boundPeer !== peer &&
-					bound.seat === hello.seat &&
-					this.#connected.has(boundPeer) &&
-					this.#current(table, bound),
+			const anotherActivePeer = this.#seatPeerConnected(
+				table,
+				hello.seat,
+				peer,
 			);
 			if (
 				row.holder === holder &&
@@ -590,7 +588,7 @@ export class HostEngine {
 			});
 			return;
 		}
-		if (!this.#available(table, claim.seat)) return reply("taken");
+		if (!this.#available(table, claim.seat, holder)) return reply("taken");
 		const row = seatRow(table, claim.seat);
 		const id = this.#deps.newId();
 		const seq = table.rev + 1;
@@ -1012,11 +1010,26 @@ export class HostEngine {
 		);
 	}
 
-	/** Free, or held by an offline holder past the seat hold or grace period (plan §4.6). */
-	#available(table: TableRecord, seat: Seat): boolean {
+	/** A connected peer other than `except` is bound to the seat's current generation. */
+	#seatPeerConnected(table: TableRecord, seat: Seat, except?: string): boolean {
+		return [...this.#bindings].some(
+			([boundPeer, bound]) =>
+				boundPeer !== except &&
+				bound.seat === seat &&
+				this.#connected.has(boundPeer) &&
+				this.#current(table, bound),
+		);
+	}
+
+	/**
+	 * Free; held by the asking holder with no connected peer on the seat, so a reopened page gets its seat back at
+	 * once; or held by an offline holder past the seat hold or grace period (plan §4.6).
+	 */
+	#available(table: TableRecord, seat: Seat, holder: string): boolean {
 		const row = seatRow(table, seat);
 		return (
 			row.holder === null ||
+			(row.holder === holder && !this.#seatPeerConnected(table, seat)) ||
 			this.#gracePassed(table, seat) ||
 			this.#timedOut(seat)
 		);
@@ -1033,7 +1046,7 @@ export class HostEngine {
 				const row = seatRow(table, seat);
 				return {
 					seat,
-					available: holder !== null && this.#available(table, seat),
+					available: holder !== null && this.#available(table, seat, holder),
 					online: this.#online(table, seat),
 					mine: holder !== null && row.holder === holder,
 				};
