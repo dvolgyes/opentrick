@@ -21,7 +21,7 @@ No browser test uses a fake network, a mock or a fake server for the table or th
 Every browser test of the table and the call goes through the public trackers and real WebRTC links.
 Two exceptions concern other services:
 
-- `host-bots`, `mobile-controls` and `phone` answer the bots' OpenRouter requests in the test (`page.route`), so no paid model runs; the table traffic of these specs is real.
+- `host-bots`, `mobile-controls`, `openrouter-key` and `phone` answer the bots' OpenRouter requests in the test (`page.route`), so no paid model runs; the table traffic of these specs is real.
 - `mobile-layout` checks the compact auction style on markup that the test writes into the page, not on the page that the app renders.
 
 ## Browser suites
@@ -43,12 +43,13 @@ Two exceptions concern other services:
 | `layout` | 4 | The scaled Full HD room on desktop viewports, the compact table on phone viewports and in a narrow desktop window, the play controls of each seat, and the names and states of the call controls |
 | `auto-seat` | 2 | The page that opens the link takes the last free seat, and the first board is dealt |
 | `bookmark` | 5 | A saved room link prefills the create screen, seats the host, offers the other seats, and seats the host again after a reload |
-| `host-bots` | 2 | Host bots play two boards from the auction to the last trick; a bidder switched to a bot acts at once |
+| `host-bots` | 4 | Host bots play two boards from the auction to the last trick; the create page stores a key also without bot seats; a bot bids when the site is served below a path, as on GitHub Pages; a bidder switched to a bot acts at once |
 | `mobile-controls` | 1 | On a phone, the host pauses the bots and changes the API key |
 | `mobile-layout` | 1 | The compact auction fits the visible width |
+| `openrouter-key` | 3 | Create and Save key check the key with one bid of the first model; a rejected key keeps the player on the create page, and a key without balance keeps the dialog open; without a key, no request is sent |
 | `phone` | 2 | At 390×844 and at 360×800, the host plays West from a phone against three bots: the compact table has no horizontal scroll, every card of the own hand and of dummy has a width, and the phone declares a board through the bid box and plays its 13 cards and dummy's 13 cards |
 
-Fourteen specs also check that no page reported an uncaught error; `layout`, `host-bots`, `mobile-controls`, `mobile-layout` and `phone` do not.
+Fourteen specs also check that no page reported an uncaught error; `layout`, `host-bots`, `mobile-controls`, `mobile-layout`, `openrouter-key` and `phone` do not.
 In runs full1 to full5, the same specs also checked that no page sent a request to the old server-based backend; commit 3f1b07b removed that backend's code and this check.
 
 ### Runs
@@ -166,6 +167,8 @@ The app defects below were found on 2026-10-23, when the specs were brought up t
 | 592f14a | After a table expired, a browser kept its seat, so the room link seeded the table from that seat instead of offering the four seats | A browser test in `tests/browser/session.test.ts` ("forgets both seats of one room only") |
 | 7a2a237 | Join with the camera switch on and a confirmed preview stayed outside the call without a message | A unit test in `tests/unit/call-controller.test.ts` failed before the fix and passes with it; `call-video` |
 | 11ad1bf | Cancel in the camera preview left the player outside the call, so a player with a blocked camera had to change the switches and press Join again; Cancel now joins with the other switches | A browser test in `tests/browser/camera-setup.test.ts`; `call-video` test 3 failed at the Leave button before the change and passed with it (9 of 9) |
+| 5601b41 | The create page stored the OpenRouter key only when a seat was a bot, so a key entered for later was lost | The new `host-bots` test failed before the fix (no stored key) and passed with it |
+| 18c8506 | The bots loaded their prompts from the site root, so on GitHub Pages (`/opentrick/`) the prompt requests got 404 and no hosted bot could act | The new `host-bots` test that serves the site below a path failed before the fix and passed with it |
 | fd42dcb | A phone showed the room as the scaled Full HD canvas; when the compact table was turned on, it rendered 19 px wide, the trump cards had no width, the language control covered its top bar, and the start page was 409 px wide in a 360 px window | The new `phone` spec failed before the fix (the hidden trump cards at 390×844; the start page at 360×800) and passed 2 of 2 with it; `layout` 4 of 4 |
 
 ## Test corrections and acceptance changes
@@ -208,6 +211,9 @@ Corrections of 2026-10-23, for an app that changed after the 2026-10-19 runs:
 - `call-video` (cf1fc36): the same acceptance change.
   Test 1 expects the phone's audio switches and no video switches.
   Test 7 expects no video switches while the desktop window is 800 px wide; its checks that the camera stops within 1 s, that the audio goes on and that the video switches are off at 1280 px stay.
+- `host-bots` (the commit that adds `openrouter-key`): Create now checks a saved key with one OpenRouter request.
+  The test "the create page stores the OpenRouter key also when no seat is a bot" refused every OpenRouter request, so the check failed and Create stayed on the page.
+  The test now answers that request with a valid bid; its checks of the stored key and of the key dialog stay.
 
 ## Unit tests
 
@@ -262,3 +268,8 @@ No trigger was found for a `SecurityError` from `getUserMedia` either.
   So the `p2p-mesh` visitor whose first links fail now connects after 31.1 s through the rejoin instead of 25.1 s through a two-page room; the budget is 45 s.
 - The address scan (`call-lifecycle` test 8) checks the text, the attributes, the field values and the console messages of the pages in that spec.
 - Each run used one worker on a loaded machine; the durations are not performance measurements.
+- The `phone` spec is unstable on a loaded machine.
+  On 2026-10-23, at a load average of about 4, it failed 7 of 20 times at 18c8506, before the key check, and 6 of 20 times with the key check.
+  Each failure counted 12 dummy cards and 14 own cards, although the board was complete.
+  The cause is not yet found.
+  Earlier that day, at a lower load, it failed once in about 23 runs and then passed 20 of 20.

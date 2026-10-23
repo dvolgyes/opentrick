@@ -104,7 +104,26 @@ test("host bots play two consecutive boards from auction through the final trick
 test("the create page stores the OpenRouter key also when no seat is a bot", async ({
 	page,
 }) => {
-	await page.route("https://openrouter.ai/**", (route) => route.abort());
+	// Create checks the key with one bot bid (openrouter-key.spec.ts); this mock passes the check.
+	await page.route("https://openrouter.ai/api/v1/responses", (route) =>
+		route.fulfill({
+			status: 200,
+			headers: {
+				"access-control-allow-origin": "*",
+				"access-control-allow-headers": "authorization,content-type",
+			},
+			contentType: "application/json",
+			body: JSON.stringify({
+				output: [
+					{
+						type: "message",
+						role: "assistant",
+						content: [{ type: "output_text", text: '{"call":"P"}' }],
+					},
+				],
+			}),
+		}),
+	);
 	await page.goto("/");
 	await page.locator('input[name="name-W"]').fill("host west");
 	await page.locator('input[name="openrouter-key"]').fill(" later-key ");

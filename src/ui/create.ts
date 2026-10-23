@@ -4,11 +4,13 @@ import {
 	writeHostApiKey,
 } from "../bot/host-key";
 import type { HostBotSettings } from "../bot/host-runner";
+import { checkOpenRouterKey } from "../bot/key-check";
 import { bridgeModule } from "../game/bridge";
 import { newCommandId } from "../ids";
 import { newTableKey } from "../p2p/link";
 import { CANNOT_STORE, createTable, tableIdentity } from "../p2p/table";
 import {
+	type BotModel,
 	botModelOrder,
 	DEFAULT_BOT_SETUP,
 	parseBotSetup,
@@ -236,7 +238,7 @@ export function showCreate(
 			return;
 		}
 		// A key without bot seats is kept for the table's bot controls later.
-		if (hostBotSettings || normalizedApiKey !== "") {
+		if (normalizedApiKey !== "") {
 			try {
 				writeHostApiKey(deps.browser, apiKey.value);
 			} catch {
@@ -248,9 +250,47 @@ export function showCreate(
 		}
 		showErrors([]);
 		submit.disabled = true;
-		submit.textContent = deps.t("Creating…");
-		void create(config, check.seat, hostBotSettings);
+		if (normalizedApiKey === "") {
+			submit.textContent = deps.t("Creating…");
+			void create(config, check.seat, hostBotSettings);
+			return;
+		}
+		void checkKeyThenCreate(
+			normalizedApiKey,
+			botModelOrder(botSetup)[0] as BotModel,
+			config,
+			check.seat,
+			hostBotSettings,
+		);
 	});
+
+	/** A key that fails the check keeps the player on this page, with the reason. */
+	async function checkKeyThenCreate(
+		key: string,
+		model: BotModel,
+		config: RoomConfig,
+		seat: Seat,
+		hostBotSettings?: HostBotSettings,
+	): Promise<void> {
+		submit.textContent = deps.t("Checking the OpenRouter key with {model}…", {
+			model,
+		});
+		const result = await checkOpenRouterKey(key, model);
+		if (disposed) return;
+		if (!result.ok) {
+			showErrors([
+				deps.t("The OpenRouter key check with {model} failed: {reason}", {
+					model,
+					reason: result.reason,
+				}),
+			]);
+			submit.disabled = false;
+			submit.textContent = deps.t("Create game");
+			return;
+		}
+		submit.textContent = deps.t("Creating…");
+		await create(config, seat, hostBotSettings);
+	}
 
 	async function create(
 		config: RoomConfig,

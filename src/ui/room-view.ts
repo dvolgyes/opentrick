@@ -8,6 +8,7 @@ import {
 	HostBotRunner,
 	type HostBotSettings,
 } from "../bot/host-runner";
+import { checkOpenRouterKey } from "../bot/key-check";
 import { type Board, boardStatus } from "../bridge/engine";
 import { CallController } from "../call/call";
 import {
@@ -310,6 +311,11 @@ export function showRoom(
 			"data-testid": "api-key-dialog",
 		},
 	});
+	const keyCheckStatus = el("p", { attrs: { role: "status" } });
+	keyDialog.addEventListener("close", () => {
+		keyCheckStatus.textContent = "";
+	});
+	const saveKey = button(deps.t("Save key"), () => void saveAndCheckKey());
 	const modelDialog = el("dialog", {
 		attrs: {
 			"aria-labelledby": "bot-model-title",
@@ -356,37 +362,67 @@ export function showRoom(
 			deps.t("Set OpenRouter API key"),
 		),
 		el("label", {}, `${deps.t("OpenRouter API key")} `, botKey),
-		button(deps.t("Save key"), () => {
-			try {
-				const normalizedApiKey = normalizeHostApiKey(botKey.value);
-				botKey.value = normalizedApiKey;
-				writeHostApiKey(deps.browser, normalizedApiKey);
-				botSettings = settingsFor(
-					controller.view().table?.config ?? fallbackConfig,
-					normalizedApiKey,
-					botSettings?.modelOrder ?? modelOrderFromUrl(),
-				);
-				botRunner?.updateApiKey(normalizedApiKey);
-				if (botBalancePaused) {
-					botBalancePaused = false;
-					setBotsPaused(false);
-					botRunner?.resume();
-				}
-				keyDialog.close();
-				botStatus.textContent = "";
-				if (pendingBotSeat !== undefined) {
-					const target = pendingBotSeat;
-					pendingBotSeat = undefined;
-					manageBotSeat(target, true);
-				} else if (!botRunner) void startHostBots();
-			} catch {
-				botStatus.textContent = deps.t(
-					"This browser could not store the OpenRouter API key.",
-				);
-			}
-		}),
+		keyCheckStatus,
+		saveKey,
 		button(deps.t("Cancel"), () => keyDialog.close()),
 	);
+
+	/** Stores the key, then checks it with the first model; a failed check keeps the dialog open with the reason. */
+	async function saveAndCheckKey(): Promise<void> {
+		const normalizedApiKey = normalizeHostApiKey(botKey.value);
+		botKey.value = normalizedApiKey;
+		try {
+			writeHostApiKey(deps.browser, normalizedApiKey);
+		} catch {
+			botStatus.textContent = deps.t(
+				"This browser could not store the OpenRouter API key.",
+			);
+			return;
+		}
+		botSettings = settingsFor(
+			controller.view().table?.config ?? fallbackConfig,
+			normalizedApiKey,
+			botSettings?.modelOrder ?? modelOrderFromUrl(),
+		);
+		botRunner?.updateApiKey(normalizedApiKey);
+		const model = botSettings.modelOrder[0] as BotModel;
+		if (normalizedApiKey !== "") {
+			saveKey.disabled = true;
+			keyCheckStatus.textContent = deps.t(
+				"Checking the OpenRouter key with {model}…",
+				{ model },
+			);
+			const result = await checkOpenRouterKey(normalizedApiKey, model);
+			if (disposed) return;
+			saveKey.disabled = false;
+			if (!result.ok) {
+				const failure = deps.t(
+					"The OpenRouter key check with {model} failed: {reason}",
+					{ model, reason: result.reason },
+				);
+				// The player can close the dialog while the check runs.
+				if (keyDialog.open) keyCheckStatus.textContent = failure;
+				else botStatus.textContent = failure;
+				return;
+			}
+		}
+		keyCheckStatus.textContent = "";
+		if (botBalancePaused) {
+			botBalancePaused = false;
+			setBotsPaused(false);
+			botRunner?.resume();
+		}
+		keyDialog.close();
+		botStatus.textContent =
+			normalizedApiKey === ""
+				? ""
+				: deps.t("The OpenRouter key works with {model}.", { model });
+		if (pendingBotSeat !== undefined) {
+			const target = pendingBotSeat;
+			pendingBotSeat = undefined;
+			manageBotSeat(target, true);
+		} else if (!botRunner) void startHostBots();
+	}
 	const banner = el(
 		"div",
 		{ className: "banner", attrs: { role: "status", "data-testid": "banner" } },

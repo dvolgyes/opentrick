@@ -86,6 +86,12 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Gib einen OpenRouter-API-Schlüssel ein, um Bots in diesem Browser zu verwenden.",
 		"This browser could not store the OpenRouter API key.":
 			"Dieser Browser konnte den OpenRouter-API-Schlüssel nicht speichern.",
+		"Checking the OpenRouter key with {model}…":
+			"Prüfe den OpenRouter-Schlüssel mit {model}…",
+		"The OpenRouter key works with {model}.":
+			"Der OpenRouter-Schlüssel funktioniert mit {model}.",
+		"The OpenRouter key check with {model} failed: {reason}":
+			"Die Prüfung des OpenRouter-Schlüssels mit {model} ist fehlgeschlagen: {reason}",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Gib die vier Spielernamen ein und wähle deinen Platz. Dein Browser hostet zuerst; alle am Tisch können übernehmen.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -526,6 +532,12 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Adj meg egy OpenRouter API-kulcsot a botok futtatásához ebben a böngészőben.",
 		"This browser could not store the OpenRouter API key.":
 			"A böngésző nem tudta eltárolni az OpenRouter API-kulcsot.",
+		"Checking the OpenRouter key with {model}…":
+			"Az OpenRouter-kulcs ellenőrzése ezzel: {model}…",
+		"The OpenRouter key works with {model}.":
+			"Az OpenRouter-kulcs működik ezzel: {model}.",
+		"The OpenRouter key check with {model} failed: {reason}":
+			"Az OpenRouter-kulcs ellenőrzése nem sikerült ezzel: {model}. Ok: {reason}",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Add meg a négy játékos nevét, majd válassz helyet. A böngésződ lesz először a host; bárki átveheti az asztalnál.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -1277,6 +1289,12 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Nettleseren kunne ikke lagre bordet.",
 		"This browser could not store the OpenRouter API key.":
 			"Nettleseren kunne ikke lagre OpenRouter API-nøkkelen.",
+		"Checking the OpenRouter key with {model}…":
+			"Kontrollerer OpenRouter-nøkkelen med {model}…",
+		"The OpenRouter key works with {model}.":
+			"OpenRouter-nøkkelen virker med {model}.",
+		"The OpenRouter key check with {model} failed: {reason}":
+			"Kontrollen av OpenRouter-nøkkelen med {model} mislyktes: {reason}",
 		"This browser does not store data ({problem}). You can play, but you cannot become the host, and a reload loses this copy of the table.":
 			"Nettleseren lagrer ikke data ({problem}). Du kan spille, men ikke bli vert. Hvis du laster inn siden på nytt, går denne bordkopien tapt.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
