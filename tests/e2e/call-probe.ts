@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { PRESETS } from "../../src/call/policy";
 import type { SeatKey } from "./room";
 
 /**
@@ -502,6 +503,17 @@ export const SEAT_NAMES: Readonly<Record<SeatKey, string>> = {
 
 export const panel = (page: Page): Locator => page.getByTestId("call-panel");
 export const note = (page: Page): Locator => page.getByTestId("call-note");
+
+/**
+ * The call note is for screen readers only (src/ui/call-panel.ts), so it takes no room in the call box. Playwright
+ * counts its 1 px box as visible, so the check measures the box.
+ */
+export async function expectNoteOffScreen(page: Page): Promise<void> {
+	const box = await note(page).boundingBox();
+	expect(box).not.toBeNull();
+	expect(box?.width).toBeLessThanOrEqual(1);
+	expect(box?.height).toBeLessThanOrEqual(1);
+}
 export const caption = (page: Page, seat: SeatKey): Locator =>
 	page.getByTestId(`tile-${seat}`).locator(".tile-caption");
 export const toggle = (page: Page, name: string): Locator =>
@@ -513,13 +525,43 @@ export const leaveButton = (page: Page): Locator =>
 export const rejoinButton = (page: Page): Locator =>
 	page.getByRole("button", { name: "Rejoin the call", exact: true });
 
-/** Opens the Join choices, picks a mode and confirms. */
+/** The four call switches by accessible name, with the way and the medium that each one sets. */
+const SWITCHES = [
+	["Send mic audio", "send", "audio"],
+	["Hear others: receive audio", "receive", "audio"],
+	["Send camera video", "send", "video"],
+	["See cameras: receive video", "receive", "video"],
+] as const;
+
+/**
+ * Sets the switches to the named mode (src/call/policy.ts PRESETS). Outside the call the switches choose what
+ * Join starts with. A compact page shows no video switches, so its mode must keep video off.
+ */
+export async function setSwitches(page: Page, mode: string): Promise<void> {
+	const preset = PRESETS.find((candidate) => candidate.label === mode);
+	if (preset === undefined) throw new Error(`No call mode is named "${mode}"`);
+	await expect(toggle(page, "Hear others: receive audio")).toBeEnabled();
+	for (const [name, way, medium] of SWITCHES) {
+		const node = toggle(page, name);
+		const on = preset.switches[way][medium];
+		if ((await node.count()) === 0) {
+			if (on)
+				throw new Error(
+					`"${mode}" needs "${name}", which the page does not show`,
+				);
+			continue;
+		}
+		if (((await node.getAttribute("aria-pressed")) === "true") !== on) {
+			await expect(node).toBeEnabled();
+			await node.click();
+		}
+		await expect(node).toHaveAttribute("aria-pressed", String(on));
+	}
+}
+
+/** Sets the switches to the named mode, presses Join and waits until the page is in the call. */
 export async function joinWith(page: Page, mode: string): Promise<void> {
+	await setSwitches(page, mode);
 	await joinButton(page).click();
-	const chooser = page.getByTestId("call-chooser");
-	await expect(chooser).toBeVisible();
-	await chooser.getByRole("radio", { name: mode, exact: true }).check();
-	await page.getByTestId("call-confirm").click();
-	await expect(chooser).toBeHidden();
 	await expect(leaveButton(page)).toBeVisible();
 }

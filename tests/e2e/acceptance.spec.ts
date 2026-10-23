@@ -4,17 +4,19 @@ import { Player, reportNetwork } from "./player";
 import {
 	CONNECT_MS,
 	createRoom,
+	expectAllConnected,
 	expectBanner,
+	expectSeat,
 	hostRows,
 	lines,
 	MESSAGE,
 	pick,
 	picks,
+	pressOffScreen,
 	rosterSeat,
 	type SeatKey,
 	sendDraft,
 	texts,
-	YOU,
 } from "./room";
 
 /**
@@ -111,14 +113,14 @@ test("2: three browsers take North, South and East from the same link; the lobby
 	}
 	// East is the last free seat, so its page takes it without a lobby.
 	tab.E = await east.page(link);
-	await expect(tab.E.getByTestId("you")).toHaveText(YOU.E, {
+	await expectSeat(tab.E, "E", {
 		timeout: CONNECT_MS,
 	});
 	for (const page of Object.values(tab)) {
 		await expect(
 			page.getByTestId("roster").locator('li[data-state="online"]'),
 		).toHaveCount(4, { timeout: CONNECT_MS });
-		await expect(page.getByTestId("all-connected")).toBeVisible({
+		await expectAllConnected(page, true, {
 			timeout: CONNECT_MS,
 		});
 	}
@@ -143,7 +145,7 @@ test("3: a test message and three replies arrive in one order everywhere", async
 
 test("4: a guest reload restores the seat and the transcript", async () => {
 	await tab.S.reload();
-	await expect(tab.S.getByTestId("you")).toHaveText(YOU.S, {
+	await expectSeat(tab.S, "S", {
 		timeout: CONNECT_MS,
 	});
 	await expect(texts(tab.S)).toHaveText(expected);
@@ -166,7 +168,7 @@ test("5b: a second tab cannot take an active seat from the first tab", async () 
 		timeout: CONNECT_MS,
 	});
 	await expect(page.locator('[data-testid="take-back-S"]')).toHaveCount(0);
-	await expect(old.getByTestId("you")).toHaveText(YOU.S);
+	await expectSeat(old, "S");
 	await expect(old.getByTestId("send")).toBeEnabled();
 	await expect(old.getByTestId("draft")).toBeEnabled();
 	await page.close();
@@ -183,13 +185,13 @@ test("5c: another player releases a silent seat; a new browser takes it; the old
 			timeout: QUIET_MS,
 		},
 	);
-	await tab.E.getByTestId("release-N").click();
-	await tab.E.getByTestId("confirm-release-N").click();
+	await pressOffScreen(tab.E.getByTestId("release-N"));
+	await pressOffScreen(tab.E.getByTestId("confirm-release-N"));
 	await expect(rosterSeat(tab.E, "N")).toHaveAttribute("data-state", "free");
 
 	// N is the only free seat, so the newcomer's page takes it without a picker.
 	const page = await newcomer.page(link);
-	await expect(page.getByTestId("you")).toHaveText(YOU.N, {
+	await expectSeat(page, "N", {
 		timeout: CONNECT_MS,
 	});
 	tab.N = page;
@@ -214,7 +216,7 @@ test("5c: another player releases a silent seat; a new browser takes it; the old
 test("5d: reopening the link after closing the tab gives the same seat back", async () => {
 	await tab.E.close();
 	const page = await east.page(link);
-	await expect(page.getByTestId("you")).toHaveText(YOU.E, {
+	await expectSeat(page, "E", {
 		timeout: CONNECT_MS,
 	});
 	await expect(
@@ -227,14 +229,14 @@ test("5d: reopening the link after closing the tab gives the same seat back", as
 test("6: the host crashes; a guest message waits; it is stored once after the host reopens", async () => {
 	await tab.W.close({ runBeforeUnload: false });
 	await expectBanner(tab.N, "waiting-for-host");
-	await tab.N.getByTestId("send").click();
+	await pressOffScreen(tab.N.getByTestId("send"));
 	const waiting = tab.N.getByTestId("pending").locator("li");
 	await expect(waiting).toHaveAttribute("data-state", "pending");
 	await expect(waiting).toContainText("Pending — waiting for the host");
 	await expect(texts(tab.N)).toHaveText(expected);
 
 	tab.W = await west.page(link);
-	await expect(tab.W.getByTestId("you")).toHaveText(YOU.W, {
+	await expectSeat(tab.W, "W", {
 		timeout: CONNECT_MS,
 	});
 	expected.push(MESSAGE.N);
@@ -256,7 +258,7 @@ test("7: all four browsers quit and reopen the link: same seats, same table", as
 	for (const seat of seats) await holder[seat].restart();
 	for (const seat of seats) {
 		tab[seat] = await holder[seat].page(link);
-		await expect(tab[seat].getByTestId("you")).toHaveText(YOU[seat], {
+		await expectSeat(tab[seat], seat, {
 			timeout: CONNECT_MS,
 		});
 	}
@@ -274,7 +276,7 @@ test("8: a message whose result is lost is stored once", async () => {
 	if (!seat) throw new Error("no guest seat");
 	// The host page holds the message unread while the guest's tab closes, so the result goes to a closed page.
 	const thaw = await freeze(tab[host]);
-	await tab[seat].getByTestId("send").click();
+	await pressOffScreen(tab[seat].getByTestId("send"));
 	await expect(
 		tab[seat].getByTestId("pending").locator('li[data-state="sending"]'),
 	).toHaveCount(1);
@@ -285,7 +287,7 @@ test("8: a message whose result is lost is stored once", async () => {
 		if (other !== seat) await expect(texts(tab[other])).toHaveText(expected);
 
 	tab[seat] = await holder[seat].page(link);
-	await expect(tab[seat].getByTestId("you")).toHaveText(YOU[seat], {
+	await expectSeat(tab[seat], seat, {
 		timeout: CONNECT_MS,
 	});
 	await expectAllTranscripts();

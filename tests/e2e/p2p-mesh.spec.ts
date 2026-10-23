@@ -6,11 +6,13 @@ import {
 	test,
 } from "@playwright/test";
 import type { StoredCallRecord } from "../../src/call/record";
+import { HOST_LOST_MS } from "../../src/p2p/limits";
 import type { TableView } from "../../src/p2p/table";
 import type { Seat } from "../../src/protocol";
 import type { CallView, Harness, TranscriptLine } from "./harness/main";
 import { withholdOffers } from "./network";
 import { buildTrackerUrls } from "./player";
+import { HARNESS_URL as HARNESS } from "./ports";
 
 /**
  * The P2P table on the real network (plan P6, P7 and §12 R1, R2): production modules in Chrome, Trystero over
@@ -19,7 +21,6 @@ import { buildTrackerUrls } from "./player";
  * an assertion message.
  */
 
-const HARNESS = "http://localhost:4174/";
 const SEATS: readonly Seat[] = ["N", "E", "S", "W"];
 /** Discovery took under 1 s in the spike; this leaves room for a slow tracker. */
 const CONNECT_MS = 45_000;
@@ -110,10 +111,11 @@ async function create(player: Player, seat: Seat): Promise<string> {
 	return key;
 }
 
-function openTable(page: Page, key: string): Promise<void> {
+/** Opens the shared link, or with `seat` the player's own link (ADR 0005), which gives the seat back. */
+function openTable(page: Page, key: string, seat?: Seat): Promise<void> {
 	return page.evaluate(
-		(link) => (window.lbHarness as Harness).openTable(link),
-		key,
+		({ link, own }) => (window.lbHarness as Harness).openTable(link, own),
+		{ link: key, own: seat },
 	);
 }
 
@@ -213,9 +215,10 @@ async function crash(player: Player) {
 	await player.page.close({ runBeforeUnload: false });
 }
 
-async function reopen(player: Player, key: string) {
+/** The player opens its own link for `seat` in a new tab. */
+async function reopen(player: Player, key: string, seat: Seat) {
 	player.page = await openPage(player.context);
-	await openTable(player.page, key);
+	await openTable(player.page, key, seat);
 }
 
 async function waitForButton(page: Page) {
@@ -423,12 +426,12 @@ test("four players form one table, take seats, and replicate commands", async ({
 	// R1: a follower reloads and gets its seat and the log back.
 	await players.E.page.reload();
 	await players.E.page.waitForFunction(() => window.lbHarness !== undefined);
-	await openTable(players.E.page, key);
+	await openTable(players.E.page, key, "E");
 	await expectSeated(players.E.page, "E", "N");
 
 	// R1: a follower crashes and reopens the link in a new tab.
 	await crash(players.S);
-	await reopen(players.S, key);
+	await reopen(players.S, key, "S");
 	await expectSeated(players.S.page, "S", "N");
 
 	expect(await send(players.S.page, "south is back")).toEqual({ ok: true });
@@ -465,7 +468,7 @@ test("the table survives the host and three players leaving", async ({
 	});
 
 	// The old host returns, sees the newer term, and follows.
-	await reopen(players.N, key);
+	await reopen(players.N, key, "N");
 	await expectSeated(players.N.page, "N", "E");
 	// The new host counts the players who were connected before its claim, not only the ones who came later.
 	await expectBound(players.E.page, ["N", "S", "W"]);
@@ -483,8 +486,8 @@ test("the table survives the host and three players leaving", async ({
 	});
 
 	// Two players return and are the witnesses; North's copy restores the table.
-	await reopen(players.S, key);
-	await reopen(players.W, key);
+	await reopen(players.S, key, "S");
+	await reopen(players.W, key, "W");
 	await expect
 		.poll(
 			async () => {
@@ -502,7 +505,7 @@ test("the table survives the host and three players leaving", async ({
 	}
 
 	// The last host returns, sees the newer term, and follows instead of resuming its own.
-	await reopen(players.E, key);
+	await reopen(players.E, key, "E");
 	await expectSeated(players.E.page, "E", "N");
 	await expectBound(players.N.page, ["E", "S", "W"]);
 
@@ -645,9 +648,13 @@ test("game actions wait for every player, except dummy during the play (R4)", as
 	const { key, players } = await fullTable(browser);
 	const pages = pagesOf(players, SEATS);
 	for (const page of pages) await expectAllConnected(page);
+	// The hosting page deals board 1 once the four seats are filled (src/ui/room-view.ts); the harness has no UI.
+	expect(
+		await players.N.page.evaluate(() => (window.lbHarness as Harness).deal(1)),
+	).toEqual({ ok: true });
 
-	// A quiet table: no command for longer than the 6 s presence window. All players are still there.
-	await players.N.page.waitForTimeout(8_000);
+	// A quiet table: no command for longer than the presence window (HOST_LOST_MS). All players are still there.
+	await players.N.page.waitForTimeout(HOST_LOST_MS + 2_000);
 	await expectCommands(pages, 1);
 
 	// West leaves. North dealt board 1, so North opens the auction; the call waits for West.
@@ -664,7 +671,7 @@ test("game actions wait for every player, except dummy during the play (R4)", as
 	expect(await commands(players.N.page)).toBe(1);
 
 	// West returns, and the stored call lands without a new click.
-	await reopen(players.W, key);
+	await reopen(players.W, key, "W");
 	await expectSeated(players.W.page, "W", "N");
 	const all = pagesOf(players, SEATS);
 	await expectCommands(all, 2);
@@ -858,15 +865,15 @@ test("call signaling and the call status come back after a network change and a 
 	expect(await sendMedia(players.E.page, 2, false)).toEqual({ ok: true });
 	await expectMedia(pages, { E: callStatus(2, false, eastHolder) });
 
-	// After a reload, East reads its call status from its own replica, holds a new generation, and its new inbox
-	// receives.
+	// After a reload, East reads its call status from its own replica and resumes its seat at the stored generation
+	// (src/p2p/follower.ts), and its new inbox receives.
 	await players.E.page.reload();
 	await players.E.page.waitForFunction(() => window.lbHarness !== undefined);
-	await openTable(players.E.page, key);
+	await openTable(players.E.page, key, "E");
 	await expectSeated(players.E.page, "E", "N");
 	await expectMedia([players.E.page], { E: callStatus(2, false, eastHolder) });
 	const reopened = await callOpen(players.E.page);
-	expect(reopened.generation).toBeGreaterThan(gens.E);
+	expect(reopened.generation).toBe(gens.E);
 	await expect
 		.poll(() => callView(players.N.page), { timeout: CONNECT_MS })
 		.toEqual({

@@ -1,6 +1,13 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { Player } from "./player";
-import { CONNECT_MS, createRoom, pick, type SeatKey } from "./room";
+import {
+	CONNECT_MS,
+	createRoom,
+	makeCall,
+	pick,
+	type SeatKey,
+	seatLabel,
+} from "./room";
 
 /**
  * Player-relative layout (call/layout plan C3). Four desktop browsers check the rotation, the tiles and the
@@ -11,18 +18,6 @@ import { CONNECT_MS, createRoom, pick, type SeatKey } from "./room";
 test.describe.configure({ mode: "serial" });
 
 const SEATS = ["N", "E", "S", "W"] as const satisfies readonly SeatKey[];
-const SEAT_NAMES: Readonly<Record<SeatKey, string>> = {
-	N: "North",
-	E: "East",
-	S: "South",
-	W: "West",
-};
-const NAMES: Readonly<Record<SeatKey, string>> = {
-	N: "player1",
-	E: "player3",
-	S: "player2",
-	W: "player4",
-};
 /** Play goes clockwise, so the next seat sits on the viewer's left. */
 const AROUND: Readonly<
 	Record<SeatKey, { left: SeatKey; partner: SeatKey; right: SeatKey }>
@@ -157,11 +152,11 @@ async function expectDesktopLayout(viewer: SeatKey): Promise<void> {
 	await expect(page.locator(".room")).toHaveAttribute("data-form", "desktop");
 	for (const seat of SEATS)
 		await expect(hand(page, seat).locator(".seat-label .name")).toHaveText(
-			`${SEAT_NAMES[seat]} — ${NAMES[seat]}`,
+			seatLabel(seat),
 		);
 	for (const seat of others) {
 		await expect(tile(page, seat).locator(".avatar")).toHaveText(seat);
-		await expect(tile(page, seat)).toContainText(SEAT_NAMES[seat]);
+		await expect(tile(page, seat)).toContainText(seatLabel(seat));
 	}
 	await expect(tile(page, viewer)).toHaveCount(0);
 
@@ -205,8 +200,9 @@ async function expectDesktopLayout(viewer: SeatKey): Promise<void> {
 	const card = shown(rects, "card");
 	for (const seat of others) {
 		const rect = tileOf(seat);
+		// Desktop windows are 40% taller than a card (src/ui/style.css `.video-row .tile`).
 		expect(
-			Math.abs(rect.height - card.height),
+			Math.abs(rect.height - card.height * 1.4),
 			`tile ${seat} height`,
 		).toBeLessThanOrEqual(1);
 		expect(
@@ -461,10 +457,7 @@ test("2: desktop, during play: dummy's cards and the trick keep apart from the r
 		["S", "P"],
 		["W", "P"],
 	] as const) {
-		await tab[seat]
-			.getByTestId("bid-box")
-			.locator(`button[data-call="${code}"]`)
-			.click();
+		await makeCall(tab[seat], code);
 		await expectAt(SEATS, SEATS.indexOf(seat) + 1);
 	}
 	await tab.E.locator("button.card:enabled").first().click();

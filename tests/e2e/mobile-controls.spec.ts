@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { Player } from "./player";
 
-test("mobile bidding shares the board link and hides Reset", async ({
+/*
+ * A phone shows the same scaled table as a desktop (src/ui/room-view.ts "one Full HD presentation"); layout.spec.ts
+ * checks that canvas. This test checks the host bot controls on a phone.
+ */
+test("on a phone the host pauses the bots and changes the API key", async ({
 	browser,
 	baseURL,
 }) => {
@@ -12,14 +16,6 @@ test("mobile bidding shares the board link and hides Reset", async ({
 		hasTouch: true,
 	});
 	try {
-		await player.addInitScript(() => {
-			Object.defineProperty(navigator, "share", {
-				configurable: true,
-				value: async ({ url }: { url?: string }) => {
-					(window as Window & { sharedUrl?: string }).sharedUrl = url;
-				},
-			});
-		});
 		const page = await player.page("./");
 		await page.route(
 			"https://openrouter.ai/api/v1/responses",
@@ -102,62 +98,6 @@ test("mobile bidding shares the board link and hides Reset", async ({
 				localStorage.getItem("opentrick.openrouter-api-key"),
 			),
 		).toBe("updated-test-key");
-		const boardUrl = new URL(page.url());
-		boardUrl.searchParams.delete("selected_player");
-		const sharedBoardUrl = boardUrl.toString();
-
-		const pageGaps = await page
-			.locator(".mobile-auction")
-			.evaluate((auction) => {
-				const bounds = auction.getBoundingClientRect();
-				return {
-					left: bounds.left,
-					right: document.documentElement.clientWidth - bounds.right,
-				};
-			});
-		expect(Math.abs(pageGaps.left - pageGaps.right)).toBeLessThanOrEqual(1);
-		const sections = await page
-			.locator(".mobile-auction > *")
-			.evaluateAll((nodes) => nodes.map((node) => node.classList[0]));
-		expect(sections.indexOf("mobile-auction-bids")).toBeLessThan(
-			sections.indexOf("mobile-auction-board"),
-		);
-		expect(sections.indexOf("mobile-auction-board")).toBeLessThan(
-			sections.indexOf("mobile-auction-controls"),
-		);
-		await expect(page.locator(".mobile-auction-bids .bid-box")).toHaveCount(0);
-		await expect(
-			page.locator(".mobile-auction-controls .bid-box"),
-		).toBeVisible();
-		await expect(page.locator(".mobile-auction-board")).toHaveCSS(
-			"background-color",
-			"rgb(61, 122, 92)",
-		);
-		const edgeGaps = await page
-			.locator(".mobile-auction-board")
-			.evaluate((board) => {
-				const cards = board.querySelectorAll<HTMLElement>(
-					".mobile-board-top .back",
-				);
-				const first = cards[0]?.getBoundingClientRect();
-				const last = cards[cards.length - 1]?.getBoundingClientRect();
-				const bounds = board.getBoundingClientRect();
-				if (!first || !last) throw new Error("top hand cards are missing");
-				return {
-					left: first.left - bounds.left,
-					right: bounds.right - last.right,
-				};
-			});
-		expect(Math.abs(edgeGaps.left - edgeGaps.right)).toBeLessThanOrEqual(1);
-		await expect(page.getByRole("button", { name: "Reset" })).toBeHidden();
-		await page.getByRole("button", { name: "Share URL" }).click();
-		await expect(
-			page.getByRole("status").filter({ hasText: "Share action completed." }),
-		).toBeAttached();
-		const sharedUrl = await page.evaluate(
-			() => (window as Window & { sharedUrl?: string }).sharedUrl,
-		);
-		expect(sharedUrl).toBe(sharedBoardUrl);
 	} finally {
 		await player.close();
 	}

@@ -27,13 +27,17 @@ import {
 } from "./call-probe";
 import type { CallReceived, CallView, Harness } from "./harness/main";
 import { Player, reportNetwork } from "./player";
+import { HARNESS_URL as HARNESS } from "./ports";
 import {
 	CONNECT_MS,
 	createRoom,
+	expectSeat,
+	makeCall,
 	pick,
+	pressOffScreen,
 	rosterSeat,
 	type SeatKey,
-	YOU,
+	seatLabel,
 } from "./room";
 
 /**
@@ -45,7 +49,6 @@ import {
  */
 test.describe.configure({ mode: "serial" });
 
-const HARNESS = "http://localhost:4174/";
 const SEATS = ["W", "N", "E", "S"] as const satisfies readonly SeatKey[];
 const IN_CALL = ["W", "N", "E"] as const satisfies readonly SeatKey[];
 
@@ -247,10 +250,7 @@ async function expectAt(at: number): Promise<void> {
 
 async function bid(seat: SeatKey, at: number, code: string): Promise<void> {
 	await expectAt(at);
-	await tab[seat]
-		.getByTestId("bid-box")
-		.locator(`button[data-call="${code}"]`)
-		.click();
+	await makeCall(tab[seat], code);
 }
 
 /** In the tab of `seat`, plays the first card that the tab offers from the hand of `from`. */
@@ -342,7 +342,9 @@ test("1: West, North and East join with audio; South's seat is held by a modifie
 	for (const seat of IN_CALL) await joinWith(tab[seat], "Audio only");
 	await expectConnected(IN_CALL);
 	for (const seat of IN_CALL)
-		await expect(caption(tab[seat], "S")).toHaveText("South · Not in call");
+		await expect(caption(tab[seat], "S")).toHaveText(
+			`${seatLabel("S")} · Not in call`,
+		);
 });
 
 test("2: frames from a page without a seat, or for another generation, of an unknown type, or without a target reach the browsers and change nothing", async ({
@@ -518,7 +520,9 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 	await south.page.evaluate(() => (window.lbHarness as Harness).callOpen());
 	await south.page.evaluate(() => (window.lbHarness as Harness).callSend(null));
 	for (const seat of IN_CALL)
-		await expect(caption(tab[seat], "S")).not.toHaveText("South · Not in call");
+		await expect(caption(tab[seat], "S")).not.toHaveText(
+			`${seatLabel("S")} · Not in call`,
+		);
 	for (const seat of ["N", "E"] as const)
 		await expect
 			.poll(async () => (await counts(tab[seat])).peers)
@@ -548,9 +552,12 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 
 	await south.context.close();
 	for (const seat of IN_CALL)
-		await expect(caption(tab[seat], "S")).toHaveText("South · Not in call", {
-			timeout: GONE_MS,
-		});
+		await expect(caption(tab[seat], "S")).toHaveText(
+			`${seatLabel("S")} · Not in call`,
+			{
+				timeout: GONE_MS,
+			},
+		);
 	for (const seat of ["N", "E"] as const)
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
 	await expect(rosterSeat(tab.W, "S")).toHaveAttribute(
@@ -560,8 +567,8 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 			timeout: GONE_MS,
 		},
 	);
-	await tab.W.getByTestId("release-S").click();
-	await tab.W.getByTestId("confirm-release-S").click();
+	await pressOffScreen(tab.W.getByTestId("release-S"));
+	await pressOffScreen(tab.W.getByTestId("confirm-release-S"));
 	await expect(rosterSeat(tab.W, "S")).toHaveAttribute("data-state", "free");
 
 	tab.S = await openPage(newcomer, link);
@@ -578,7 +585,9 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 	});
 	expect(await requestsFor(tab.S, "audio")).toBe(0);
 	for (const seat of IN_CALL)
-		await expect(caption(tab[seat], "S")).toHaveText("South · Not in call");
+		await expect(caption(tab[seat], "S")).toHaveText(
+			`${seatLabel("S")} · Not in call`,
+		);
 
 	await joinWith(tab.S, "Audio only");
 	await expectConnected(SEATS);
@@ -588,7 +597,9 @@ test("5: when one player leaves, the other three pairs keep their sound", async 
 	await leaveButton(tab.S).click();
 	for (const seat of IN_CALL) {
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
-		await expect(caption(tab[seat], "S")).toHaveText("South · Not in call");
+		await expect(caption(tab[seat], "S")).toHaveText(
+			`${seatLabel("S")} · Not in call`,
+		);
 	}
 	for (const seat of IN_CALL) {
 		const growth = await peerAudioGrowth(tab[seat]);
@@ -612,16 +623,19 @@ test("6: leaving the room during the call ends the tracks and the links; back in
 		})
 		.toEqual({ openPeers: 0, liveTracks: 0 });
 	for (const seat of ["W", "N"] as const) {
-		await expect(caption(tab[seat], "E")).toHaveText("East · Not in call", {
-			timeout: GONE_MS,
-		});
+		await expect(caption(tab[seat], "E")).toHaveText(
+			`${seatLabel("E")} · Not in call`,
+			{
+				timeout: GONE_MS,
+			},
+		);
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(1);
 	}
 
 	await tab.E.evaluate((hash) => {
 		location.hash = hash;
 	}, new URL(link).hash);
-	await expect(tab.E.getByTestId("you")).toHaveText(YOU.E, {
+	await expectSeat(tab.E, "E", {
 		timeout: CONNECT_MS,
 	});
 	// East joined with audio in test 1 and did not leave the call, so its stored status brings it back.
@@ -634,7 +648,9 @@ test("7: a browser limited to relays gets Retry for each of its pairs, the other
 	await leaveButton(tab.N).click();
 	await expect(joinButton(tab.N)).toBeVisible();
 	for (const seat of ["W", "E"] as const)
-		await expect(caption(tab[seat], "N")).toHaveText("North · Not in call");
+		await expect(caption(tab[seat], "N")).toHaveText(
+			`${seatLabel("N")} · Not in call`,
+		);
 	await setCallRelayOnly(tab.N, true);
 	await joinWith(tab.S, "Audio only");
 	const others = ["W", "E", "S"] as const;
@@ -650,10 +666,10 @@ test("7: a browser limited to relays gets Retry for each of its pairs, the other
 			`North offers Retry for ${seat}`,
 		).toBeVisible({ timeout: UNAVAILABLE_WITHIN_MS });
 		await expect(caption(tab.N, seat)).toHaveText(
-			`${SEAT_NAMES[seat]} · Direct connection unavailable`,
+			`${seatLabel(seat)} · Direct connection unavailable`,
 		);
 		await expect(caption(tab[seat], "N")).toHaveText(
-			"North · Direct connection unavailable",
+			`${seatLabel("N")} · Direct connection unavailable`,
 			{ timeout: UNAVAILABLE_WITHIN_MS },
 		);
 	}

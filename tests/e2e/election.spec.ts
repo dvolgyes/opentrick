@@ -1,17 +1,20 @@
 import { expect, type Page, test } from "@playwright/test";
+import { HOST_LOST_MS } from "../../src/p2p/limits";
 import { freeze } from "./lifecycle";
 import { Player, reportNetwork } from "./player";
 import {
 	CONNECT_MS,
 	createRoom,
+	expectAllConnected,
 	expectBanner,
+	expectReplica,
+	expectSeat,
 	hostRows,
 	MESSAGE,
 	pick,
 	type SeatKey,
 	sendDraft,
 	texts,
-	YOU,
 } from "./room";
 
 /**
@@ -24,10 +27,13 @@ import {
 const BUTTON_MS = 10_000;
 /** The owner's wait before a player volunteers automatically. */
 const VOLUNTEER_MS = 30_000;
-/** The latest time for the automatic host: 6 s until the host counts as lost, the stagger, the claim pull, slack. */
-const VOLUNTEER_LATEST_MS = 60_000;
-/** A page counts as lost 6 s after its last message; then the button needs 10 s more, with slack. */
-const BUTTON_LATEST_MS = 30_000;
+/**
+ * The latest time for the automatic host: the host counts as lost 20 s after its last beat (HOST_LOST_MS), then
+ * the volunteer wait, the stagger, the claim pull, slack.
+ */
+const VOLUNTEER_LATEST_MS = HOST_LOST_MS + VOLUNTEER_MS + 25_000;
+/** A page counts as lost 20 s after its last message (HOST_LOST_MS); then the button needs 10 s more, with slack. */
+const BUTTON_LATEST_MS = HOST_LOST_MS + BUTTON_MS + 15_000;
 const SEATS = ["W", "N", "E", "S"] as const satisfies readonly SeatKey[];
 
 /** Every browser of every test, for the final error check. */
@@ -61,6 +67,8 @@ async function seatTable(
 		await expect(hostRows(page)).toHaveAttribute("data-seat", "W", {
 			timeout: CONNECT_MS,
 		});
+		// The tests close the host next; a page whose replica does not bind its seat yet could not take over.
+		await expectReplica(page, { timeout: CONNECT_MS });
 		tab[seat] = page;
 	}
 	return { link, tab, west };
@@ -183,7 +191,7 @@ async function westFollowsNorth(
 	});
 	await pick(visitor, "E");
 	const west = await westBrowser.page(link);
-	await expect(west.getByTestId("you")).toHaveText(YOU.W, {
+	await expectSeat(west, "W", {
 		timeout: CONNECT_MS,
 	});
 	expect(await commonHost([north, visitor, west])).toBe("N");
@@ -244,7 +252,7 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 	test.setTimeout(180_000);
 	const { link, tab, west: westBrowser } = await seatTable(["N", "E"]);
 	// "All players connected" needs the other three seats.
-	await expect(tabOf(tab, "W").getByTestId("all-connected")).toBeHidden();
+	await expectAllConnected(tabOf(tab, "W"), false);
 	const south = await (await openBrowser("S")).page(link);
 	await expect(south.getByTestId("pick-S")).toBeVisible({
 		timeout: CONNECT_MS,
@@ -252,7 +260,7 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 	await pick(south, "S");
 	tab.S = south;
 	for (const seat of SEATS)
-		await expect(tabOf(tab, seat).getByTestId("all-connected")).toBeVisible({
+		await expectAllConnected(tabOf(tab, seat), true, {
 			timeout: CONNECT_MS,
 		});
 
@@ -279,7 +287,7 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 		await expect(page.getByTestId("banner")).toBeHidden();
 
 	const west = await westBrowser.page(link);
-	await expect(west.getByTestId("you")).toHaveText(YOU.W, {
+	await expectSeat(west, "W", {
 		timeout: CONNECT_MS,
 	});
 	expect(await commonHost([...guests, west])).toBe(host);
@@ -335,7 +343,7 @@ test("a host that reloads resumes its term, and no page shows the button", async
 		() => noButton(guests),
 	);
 	await west.reload();
-	await expect(west.getByTestId("you")).toHaveText(YOU.W, {
+	await expectSeat(west, "W", {
 		timeout: CONNECT_MS,
 	});
 	await holdsUntil(
@@ -365,7 +373,7 @@ test("a thawed old host steps down, and its later message still goes through", a
 	await thaw();
 	expect(await commonHost([west, north, east])).toBe("N");
 	await expect(west.getByTestId("banner")).toBeHidden({ timeout: CONNECT_MS });
-	await expect(west.getByTestId("you")).toHaveText(YOU.W);
+	await expectSeat(west, "W");
 	await sendDraft(west);
 	for (const page of [west, north, east])
 		await expect(texts(page)).toHaveText([MESSAGE.W]);
@@ -381,7 +389,7 @@ test("a second tab cannot take the host's active seat", async () => {
 		west.getByRole("heading", { name: "Choose your seat" }),
 	).toBeVisible({ timeout: CONNECT_MS });
 	await expect(west.getByTestId("pick-W")).toHaveCount(0);
-	await expect(old.getByTestId("you")).toHaveText(YOU.W);
+	await expectSeat(old, "W");
 	await expect(old.getByTestId("send")).toBeEnabled();
 
 	expect(await commonHost([old, north])).toBe("W");

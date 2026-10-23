@@ -5,6 +5,7 @@ import {
 	counts,
 	directions,
 	expectAudioArrives,
+	expectNoteOffScreen,
 	installCallProbe,
 	joinButton,
 	joinWith,
@@ -21,7 +22,7 @@ import {
 	toggle,
 } from "./call-probe";
 import { type ContextOptions, Player, reportNetwork } from "./player";
-import { createRoom, pick, type SeatKey } from "./room";
+import { createRoom, pick, type SeatKey, seatLabel } from "./room";
 
 /**
  * Desktop video and the asymmetric combinations (call/layout plan C6), on one P2P table through the public
@@ -251,7 +252,7 @@ test.afterAll(async () => {
 	for (const player of Object.values(players)) await player.close();
 });
 
-test("1: the desktop chooser offers video, the phone's offers audio only, and nothing asks for the camera before Join", async () => {
+test("1: the desktop panel shows the video switches, the phone's shows audio only, and nothing asks for the camera before Join", async () => {
 	tab.W = await players.W.page("./");
 	const link = await createRoom(tab.W);
 	for (const seat of ["N", "E", "S"] as const) {
@@ -263,20 +264,22 @@ test("1: the desktop chooser offers video, the phone's offers audio only, and no
 		"data-phase",
 		"auction",
 	);
-	for (const [seat, presets, switches] of [
-		["W", 5, 4],
-		["S", 2, 2],
-	] as const) {
-		const page = tab[seat];
-		await joinButton(page).click();
-		const chooser = page.getByTestId("call-chooser");
-		await expect(chooser.getByRole("radio")).toHaveCount(presets);
-		await expect(chooser.getByRole("checkbox")).toHaveCount(switches);
-		await chooser.getByRole("button", { name: "Cancel", exact: true }).click();
-		await expect(chooser).toBeHidden();
+	for (const seat of ["W", "S"] as const) {
+		for (const name of SWITCH_NAMES)
+			await expect(toggle(tab[seat], name)).toHaveCount(1);
+		await expect(joinButton(tab[seat])).toBeVisible();
 	}
-	await expect(toggle(tab.S, "Send camera video")).toHaveCount(0);
 	await expect(toggle(tab.W, "Send camera video")).toBeDisabled();
+	await expect(toggle(tab.W, "See cameras: receive video")).toBeEnabled();
+	// The phone shows the same panel, but its video switches stay off: a phone is audio only
+	// (src/call/device-class.ts).
+	for (const name of ["Send camera video", "See cameras: receive video"]) {
+		await expect(toggle(tab.S, name)).toBeDisabled();
+		await expect(toggle(tab.S, name)).toHaveAttribute(
+			"title",
+			"Video is not available on this device.",
+		);
+	}
 	for (const seat of SEATS) {
 		for (const other of SEATS) {
 			if (other === seat) continue;
@@ -293,21 +296,27 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 	const record = async (state: string): Promise<void> => {
 		boxes.push({ state, box: await tile.boundingBox() });
 	};
-	await expect(caption(tab.W, "N")).toHaveText("North");
+	await expect(caption(tab.W, "N")).toHaveText(seatLabel("N"));
 	await record("outside");
 
 	await joinWith(tab.W, MODE_LABELS.both);
-	await expect(caption(tab.W, "N")).toHaveText("North · Not in call");
+	await expect(caption(tab.W, "N")).toHaveText(
+		`${seatLabel("N")} · Not in call`,
+	);
 	await record("Not in call");
 
 	// West answers late: its call messages leave 4 s after the app sends them, so its link to North stays in
 	// "Connecting" for seconds.
 	await setCallSendDelay(tab.W, 4_000);
 	await joinWith(tab.N, MODE_LABELS.audio);
-	await expect(caption(tab.W, "N")).toHaveText("North · Connecting");
+	await expect(caption(tab.W, "N")).toHaveText(
+		`${seatLabel("N")} · Connecting`,
+	);
 	await record("Connecting");
 	await setCallSendDelay(tab.W, 0);
-	await expect(caption(tab.W, "N")).toHaveText("North · Audio only");
+	await expect(caption(tab.W, "N")).toHaveText(
+		`${seatLabel("N")} · Audio only`,
+	);
 	await expect(tile).toHaveAttribute("data-video", "off");
 	await record("Audio only");
 
@@ -316,7 +325,9 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 		"data-actual",
 		"on",
 	);
-	await expect(caption(tab.W, "N")).toHaveText("North · Audio + video");
+	await expect(caption(tab.W, "N")).toHaveText(
+		`${seatLabel("N")} · Audio + video`,
+	);
 	await expect(tile).toHaveAttribute("data-video", "on");
 	await expect(tab.W.getByTestId("video-N")).toHaveAttribute(
 		"data-play",
@@ -373,7 +384,9 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 		]);
 
 	await toggle(tab.W, "See cameras: receive video").click();
-	await expect(caption(tab.W, "N")).toHaveText("North · Video reception off");
+	await expect(caption(tab.W, "N")).toHaveText(
+		`${seatLabel("N")} · Video reception off`,
+	);
 	await expect(tile).toHaveAttribute("data-video", "off");
 	expect(await hasSource(tab.W, "N")).toBe(false);
 	await record("Video reception off");
@@ -390,7 +403,9 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 	}
 
 	await toggle(tab.W, "See cameras: receive video").click();
-	await expect(caption(tab.W, "N")).toHaveText("North · Audio + video");
+	await expect(caption(tab.W, "N")).toHaveText(
+		`${seatLabel("N")} · Audio + video`,
+	);
 });
 
 test("3: with the camera blocked, the microphone works, the call box stays clear, and nobody sees a picture of East", async () => {
@@ -401,7 +416,7 @@ test("3: with the camera blocked, the microphone works, the call box stays clear
 	await expect(note(tab.E)).toContainText(
 		"The browser blocks the camera: others cannot see you.",
 	);
-	await expect(note(tab.E)).toBeHidden();
+	await expectNoteOffScreen(tab.E);
 	await expect(toggle(tab.E, "Send mic audio")).toHaveAttribute(
 		"data-actual",
 		"on",
@@ -424,7 +439,9 @@ test("3: with the camera blocked, the microphone works, the call box stays clear
 			attached: ["N"],
 			arriving: ["N"],
 		});
-	await expect(caption(tab.W, "E")).toHaveText("East · Audio only");
+	await expect(caption(tab.W, "E")).toHaveText(
+		`${seatLabel("E")} · Audio only`,
+	);
 	await expect
 		.poll(() => videoFlow(tab.N))
 		.toEqual({
@@ -499,7 +516,9 @@ test("5: a seat that turns off See cameras gets no video from its partners, and 
 	expect(westSender).toBeGreaterThanOrEqual(0);
 
 	await toggle(tab.E, "See cameras: receive video").click();
-	await expect(caption(tab.E, "N")).toHaveText("North · Video reception off");
+	await expect(caption(tab.E, "N")).toHaveText(
+		`${seatLabel("N")} · Video reception off`,
+	);
 	// The sender side: North's sender to East has no track and sends nothing; its sender to West goes on.
 	await expect
 		.poll(async () => (await senderFlow(tab.N, "video"))[eastSender]?.track)
@@ -649,7 +668,9 @@ test("8: the phone leaves with its icon: its microphone and connections end, and
 		})
 		.toEqual({ openPeers: 0, liveTracks: 0 });
 	for (const seat of DESKTOPS) {
-		await expect(caption(tab[seat], "S")).toHaveText("South · Not in call");
+		await expect(caption(tab[seat], "S")).toHaveText(
+			`${seatLabel("S")} · Not in call`,
+		);
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
 	}
 });

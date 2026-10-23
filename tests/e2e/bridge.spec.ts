@@ -1,7 +1,14 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { type Card, isCard } from "../../src/bridge/cards";
 import { Player, reportNetwork } from "./player";
-import { CONNECT_MS, createRoom, pick, type SeatKey, YOU } from "./room";
+import {
+	CONNECT_MS,
+	createRoom,
+	expectSeat,
+	makeCall,
+	pick,
+	type SeatKey,
+} from "./room";
 
 /**
  * Bridge acceptance on the peer-to-peer table (plan §9). Four browsers play board 1 to the end, each tab taking
@@ -93,10 +100,7 @@ async function actor(): Promise<SeatKey> {
 async function call(board: number, at: number, code: string): Promise<SeatKey> {
 	await expectAt(board, at);
 	const seat = await actor();
-	await tab[seat]
-		.getByTestId("bid-box")
-		.locator(`button[data-call="${code}"]`)
-		.click();
+	await makeCall(tab[seat], code);
 	return seat;
 }
 
@@ -146,7 +150,7 @@ async function reloadKeepsTable(
 		).toHaveCount(4, { timeout: CONNECT_MS });
 		const before = await tableText(page);
 		await page.reload();
-		await expect(page.getByTestId("you")).toHaveText(YOU[seat], {
+		await expectSeat(page, seat, {
 			timeout: CONNECT_MS,
 		});
 		await expect(table(page)).toHaveAttribute("data-at", String(at));
@@ -190,7 +194,7 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 	}
 	// East is the last free seat, so its page takes it without a picker.
 	tab.E = await players.E.page(link);
-	await expect(tab.E.getByTestId("you")).toHaveText(YOU.E, {
+	await expectSeat(tab.E, "E", {
 		timeout: CONNECT_MS,
 	});
 	// The host deals board 1 automatically once all four seats are present.
@@ -201,7 +205,12 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 	for (const seat of SEATS) {
 		const page = tab[seat];
 		await expect(table(page)).toHaveAttribute("data-phase", "auction");
-		await expect(table(page)).toContainText("Dealer: North · Vulnerable: None");
+		// The desktop auction shows the board status in the sidebar beside the table (src/ui/table.ts placeStatus).
+		await expect(
+			page.getByText("Dealer: North · Vulnerable: Not vulnerable", {
+				exact: true,
+			}),
+		).toBeVisible();
 		await expect(page.getByTestId("deal")).toBeHidden();
 		for (const other of SEATS)
 			await expect(hand(page, other)).toHaveAttribute(
@@ -369,9 +378,11 @@ test("6: East deals board 2 and all four pass: passed out, no score", async () =
 	await tab.E.getByTestId("deal").click();
 	await expectAt(2, 0);
 	for (const seat of SEATS)
-		await expect(table(tab[seat])).toContainText(
-			"Dealer: East · Vulnerable: N-S",
-		);
+		await expect(
+			tab[seat].getByText("Dealer: East · Vulnerable: North-South", {
+				exact: true,
+			}),
+		).toBeVisible();
 	for (const [at, seat] of [
 		[0, "E"],
 		[1, "S"],

@@ -4,14 +4,18 @@ import { Player, reportNetwork } from "./player";
 import {
 	CONNECT_MS,
 	createRoom,
+	expectAllConnected,
 	expectBanner,
+	expectSeat,
 	hostRows,
 	lines,
+	makeCall,
 	pick,
+	pressOffScreen,
 	rosterSeat,
 	type SeatKey,
 	texts,
-	YOU,
+	typeOffScreen,
 } from "./room";
 
 /**
@@ -56,7 +60,7 @@ async function crash(seat: SeatKey): Promise<void> {
 
 async function reopen(seat: SeatKey): Promise<void> {
 	tab[seat] = await players[seat].page(link);
-	await expect(tab[seat].getByTestId("you")).toHaveText(YOU[seat], {
+	await expectSeat(tab[seat], seat, {
 		timeout: CONNECT_MS,
 	});
 	open.add(seat);
@@ -64,8 +68,8 @@ async function reopen(seat: SeatKey): Promise<void> {
 
 /** Types the text into the seat's message box and clicks Send. A send clears the box, so each message is typed. */
 async function type(seat: SeatKey, text: string): Promise<void> {
-	await tab[seat].getByRole("textbox", { name: "Message" }).fill(text);
-	await tab[seat].getByTestId("send").click();
+	await typeOffScreen(tab[seat], text);
+	await pressOffScreen(tab[seat].getByTestId("send"));
 }
 
 /** Sends a message and waits until the sender's transcript shows it; the message joins the expected transcript. */
@@ -140,10 +144,7 @@ async function actor(): Promise<SeatKey> {
 async function call(board: number, at: number, code: string): Promise<SeatKey> {
 	await expectAt(board, at);
 	const seat = await actor();
-	await tab[seat]
-		.getByTestId("bid-box")
-		.locator(`button[data-call="${code}"]`)
-		.click();
+	await makeCall(tab[seat], code);
 	return seat;
 }
 
@@ -190,12 +191,12 @@ test("1: four browsers sit down at one table", async () => {
 	}
 	// South is the last free seat, so its page takes it without a picker.
 	tab.S = await players.S.page(link);
-	await expect(tab.S.getByTestId("you")).toHaveText(YOU.S, {
+	await expectSeat(tab.S, "S", {
 		timeout: CONNECT_MS,
 	});
 	open.add("S");
 	for (const seat of SEATS)
-		await expect(tab[seat].getByTestId("all-connected")).toBeVisible({
+		await expectAllConnected(tab[seat], true, {
 			timeout: CONNECT_MS,
 		});
 });
@@ -210,7 +211,7 @@ test("2: a follower that crashes, or reloads, gets the messages it missed, each 
 	const reloading = tab.E.reload();
 	await say("S", "S: East reloads");
 	await reloading;
-	await expect(tab.E.getByTestId("you")).toHaveText(YOU.E, {
+	await expectSeat(tab.E, "E", {
 		timeout: CONNECT_MS,
 	});
 	await expectTranscripts();

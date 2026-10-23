@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { Player, reportNetwork } from "./player";
-import { CONNECT_MS, createRoom, YOU } from "./room";
+import { CONNECT_MS, createRoom, expectSeat } from "./room";
 
 /**
  * The last free seat needs no choice: a page that opens the table link when three seats are taken takes the
@@ -44,12 +44,12 @@ test("the last free seat is taken by the page that opens the link, and the first
 			timeout: CONNECT_MS,
 		});
 		await page.getByTestId(`pick-${seat}`).click();
-		await expect(page.getByTestId("you")).toHaveText(YOU[seat]);
+		await expectSeat(page, seat);
 	}
 
 	// Only South is free: this page takes it without a picker.
 	const page = await south.page(link);
-	await expect(page.getByTestId("you")).toHaveText(YOU.S, {
+	await expectSeat(page, "S", {
 		timeout: CONNECT_MS,
 	});
 	await expect(page.getByTestId("pick-S")).toHaveCount(0);

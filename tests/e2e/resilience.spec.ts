@@ -1,15 +1,19 @@
 import { expect, type Page, test } from "@playwright/test";
+import { HOST_LOST_MS } from "../../src/p2p/limits";
 import { Player, type RigOptions, reportNetwork } from "./player";
 import {
 	CONNECT_MS,
 	createRoom,
+	expectAllConnected,
 	expectBanner,
+	expectSeat,
 	MESSAGE,
+	makeCall,
 	pick,
+	picks,
 	type SeatKey,
 	sendDraft,
 	texts,
-	YOU,
 } from "./room";
 
 /**
@@ -92,7 +96,7 @@ test("a tracker outage keeps the table: messages, the deal and the auction go on
 		await pick(tab[seat], seat);
 	}
 	for (const seat of seats)
-		await expect(tab[seat].getByTestId("all-connected")).toBeVisible({
+		await expectAllConnected(tab[seat], true, {
 			timeout: CONNECT_MS,
 		});
 
@@ -112,16 +116,16 @@ test("a tracker outage keeps the table: messages, the deal and the auction go on
 			"auction",
 		);
 	// Board 1: North deals and calls first.
-	await tab.N.getByTestId("bid-box").locator('button[data-call="1C"]').click();
+	await makeCall(tab.N, "1C");
 	for (const seat of seats)
 		await expect(tab[seat].getByTestId("table")).toHaveAttribute(
 			"data-at",
 			"1",
 		);
-	// Longer than a host loss (6 s) and the roster coalesce: nobody counts as gone without the trackers.
+	// Longer than a host loss (HOST_LOST_MS) and the roster coalesce: nobody counts as gone without the trackers.
 	await expect
-		.poll(() => Date.now() - cutAt, { timeout: 30_000 })
-		.toBeGreaterThan(15_000);
+		.poll(() => Date.now() - cutAt, { timeout: HOST_LOST_MS + 15_000 })
+		.toBeGreaterThan(HOST_LOST_MS + 2_000);
 	for (const seat of seats) {
 		await expect(
 			tab[seat].getByTestId("roster").locator('li[data-state="online"]'),
@@ -146,7 +150,8 @@ test("a browser that does not store data cannot create a table, but it can take 
 	const create = await blocked.page("./");
 	await expect(
 		create.getByText(
-			"This browser does not allow storing data, so it cannot create a table.",
+			"This browser does not allow storing data, so it cannot create a table",
+			{ exact: true },
 		),
 	).toBeVisible();
 	await expect(create.getByTestId("create")).toBeDisabled();
@@ -190,16 +195,21 @@ test("a damaged key opens an empty table: nobody is there", async () => {
 	const link = await createRoom(creator);
 	// The same length and alphabet, the first key character changed: another table. The last character holds
 	// only 4 key bits, so a change there can make the link not valid instead.
-	const at = link.indexOf("k=") + 2;
+	// The query has "k=" too (bot_fallback=), so the search starts at the fragment.
+	const at = link.indexOf("k=", link.indexOf("#")) + 2;
 	const first = link[at] === "A" ? "B" : "A";
 	const damaged = `${link.slice(0, at)}${first}${link.slice(at + 1)}`;
+	expect(new URL(damaged).search).toBe(new URL(link).search);
+	expect(new URL(damaged).hash).not.toBe(new URL(link).hash);
 	const page = await (await openBrowser("visitor")).page(damaged);
 	await expect(
 		page.getByText("Nobody is at this table right now. Keep this page open"),
 	).toBeVisible({ timeout: CONNECT_MS });
-	await expect(page.getByTestId("pick-N")).toHaveCount(0);
+	// The damaged link keeps the room setup, so the page offers the four seats of that setup while no host answers
+	// (ADR 0005).
+	await expect(picks(page)).toHaveCount(4);
 	// The real table is unaffected.
-	await expect(creator.getByTestId("you")).toHaveText(YOU.W);
+	await expectSeat(creator, "W");
 });
 
 test("a table without activity for 24 h expires and stays expired", async () => {
@@ -209,10 +219,12 @@ test("a table without activity for 24 h expires and stays expired", async () => 
 	await sendDraft(page);
 	await page.goto("./");
 	expect(await ageStoredTables(page)).toBe(1);
-	await page.goto(link);
+	// Only the key: a link with the complete room setup starts the room again (ADR 0005, checked below).
+	const parsed = new URL(link);
+	await page.goto(`${parsed.origin}${parsed.pathname}${parsed.hash}`);
 	await expect(
 		page.getByRole("heading", {
-			name: "This game has expired or is no longer available",
+			name: "The game has expired or is no longer available",
 		}),
 	).toBeVisible({ timeout: CONNECT_MS });
 	await expect(
@@ -222,11 +234,14 @@ test("a table without activity for 24 h expires and stays expired", async () => 
 	await page.reload();
 	await expect(
 		page.getByRole("heading", {
-			name: "This game has expired or is no longer available",
+			name: "The game has expired or is no longer available",
 		}),
 	).toBeVisible({ timeout: CONNECT_MS });
 	await page.getByRole("button", { name: "Create new game" }).click();
 	await expect(page.getByTestId("create")).toBeVisible();
+	// The room link clears the tombstone and offers the four seats of its setup again.
+	await page.goto(link);
+	await expect(picks(page)).toHaveCount(4, { timeout: CONNECT_MS });
 });
 
 test("no uncaught errors", () => {

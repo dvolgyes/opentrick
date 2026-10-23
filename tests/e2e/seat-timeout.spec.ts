@@ -11,6 +11,7 @@ import {
 	CONNECT_MS,
 	createRoom,
 	expectBanner,
+	expectSeat,
 	hostRows,
 	MESSAGE,
 	pick,
@@ -18,7 +19,6 @@ import {
 	type SeatKey,
 	sendDraft,
 	texts,
-	YOU,
 } from "./room";
 
 /**
@@ -61,7 +61,7 @@ async function seatOffered(
 	seat: SeatKey,
 	since: number,
 ): Promise<number> {
-	await expect(page.getByTestId("you")).toHaveText(YOU[seat], {
+	await expectSeat(page, seat, {
 		timeout: LATEST_MS,
 	});
 	return Date.now() - since;
@@ -108,7 +108,7 @@ test("a frozen player's seat shows offline, frees after the timeout, and the tha
 	}
 	// South is the last free seat, so its page takes it without a picker. Its seat stays held during the test.
 	tab.S = await south.page(link);
-	await expect(tab.S.getByTestId("you")).toHaveText(YOU.S, {
+	await expectSeat(tab.S, "S", {
 		timeout: CONNECT_MS,
 	});
 	await expect(rosterSeat(tab.W, "N")).toHaveAttribute("data-state", "online", {
@@ -176,7 +176,7 @@ test("a frozen host is replaced; its seat frees after the timeout; the thawed ol
 	await sendDraft(tab.W);
 	for (const seat of ["W", "N", "E"] as const)
 		await expect(texts(tab[seat])).toHaveText([MESSAGE.W]);
-	await expect(tab.W.getByTestId("you")).toHaveText(YOU.W);
+	await expectSeat(tab.W, "W");
 });
 
 test("no uncaught errors", () => {

@@ -3,12 +3,13 @@ import { Player } from "./player";
 import {
 	CONNECT_MS,
 	createRoom,
+	expectAllConnected,
+	expectSeat,
 	lines,
 	MESSAGE,
 	pick,
 	picks,
 	sendDraft,
-	YOU,
 } from "./room";
 
 test("one browser: create, three seats from one link, ordered messages", async ({
@@ -31,7 +32,7 @@ test("one browser: create, three seats from one link, ordered messages", async (
 		for (const { seat, choices } of order) {
 			const page = await player.page(link);
 			if (choices === 1) {
-				await expect(page.getByTestId("you")).toHaveText(YOU[seat], {
+				await expectSeat(page, seat, {
 					timeout: CONNECT_MS,
 				});
 			} else {
@@ -48,7 +49,7 @@ test("one browser: create, three seats from one link, ordered messages", async (
 			await expect(
 				page.getByTestId("roster").locator('li[data-state="online"]'),
 			).toHaveCount(4, { timeout: CONNECT_MS });
-			await expect(page.getByTestId("all-connected")).toBeVisible({
+			await expectAllConnected(page, true, {
 				timeout: CONNECT_MS,
 			});
 		}

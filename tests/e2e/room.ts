@@ -2,11 +2,12 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 /** Page helpers shared by the browser tests. They use only what a person sees and clicks. */
 
-export const YOU = {
-	W: "You are West — player4",
-	N: "You are North — player1",
-	E: "You are East — player3",
-	S: "You are South — player2",
+/** The default player name of each seat. */
+export const NAME = {
+	W: "player4",
+	N: "player1",
+	E: "player3",
+	S: "player2",
 } as const;
 
 /** The prefilled test message of each seat. */
@@ -17,7 +18,10 @@ export const MESSAGE = {
 	S: "Connection test from South",
 } as const;
 
-export type SeatKey = keyof typeof YOU;
+export type SeatKey = keyof typeof NAME;
+
+/** The seat label of the hands and the call tiles, for example "N - player1". */
+export const seatLabel = (seat: SeatKey): string => `${seat} - ${NAME[seat]}`;
 
 /**
  * The wait for a link between two pages, as in p2p-mesh.spec.ts. A link whose first WebRTC exchange fails comes
@@ -67,14 +71,113 @@ export async function createRoom(page: Page): Promise<string> {
 
 export async function pick(page: Page, seat: SeatKey): Promise<void> {
 	await page.getByTestId(`pick-${seat}`).click();
-	const name = YOU[seat].split(" — ")[1];
-	await expect(page).toHaveTitle(new RegExp(`${name} \\(${seat}\\)$`));
+	await expect(page).toHaveTitle(new RegExp(`${NAME[seat]} \\(${seat}\\)$`));
+}
+
+const STRAIN_NAME: Readonly<Record<string, string>> = {
+	C: "Clubs",
+	D: "Diamonds",
+	H: "Hearts",
+	S: "Spades",
+	NT: "No trump",
+};
+const SPECIAL_NAME: Readonly<Record<string, string>> = {
+	P: "Pass",
+	X: "Double",
+	XX: "Redouble",
+};
+
+/**
+ * Makes the call `code` ("1C", "3NT", "P", "X", "XX") in the bid box as a player does: the level and the
+ * strain, or the special call, then Confirm, which carries the chosen call (src/ui/table.ts).
+ */
+export async function makeCall(page: Page, code: string): Promise<void> {
+	const box = page.getByTestId("bid-box");
+	const special = SPECIAL_NAME[code];
+	const bid = /^([1-7])(C|D|H|S|NT)$/.exec(code);
+	if (special !== undefined) {
+		await box.getByRole("button", { name: special, exact: true }).click();
+	} else if (bid?.[1] !== undefined && bid[2] !== undefined) {
+		const strain = STRAIN_NAME[bid[2]] ?? bid[2];
+		await box
+			.getByRole("button", { name: `Level ${bid[1]}`, exact: true })
+			.click();
+		await box.getByRole("button", { name: strain, exact: true }).click();
+	} else throw new Error(`not a call: ${code}`);
+	await box.locator(`button.confirm[data-call="${code}"]`).click();
+}
+
+/** Waits until this page holds the seat: the title names the player and the seat, and the roster tags the row "You". */
+export async function expectSeat(
+	page: Page,
+	seat: SeatKey,
+	options: { timeout?: number } = {},
+): Promise<void> {
+	await expect(page).toHaveTitle(
+		new RegExp(`${NAME[seat]} \\(${seat}\\)$`),
+		options,
+	);
+	await expect(
+		rosterSeat(page, seat).locator(".tag", { hasText: /^You$/ }),
+	).toBeAttached(options);
+}
+
+/**
+ * Waits until the seat's replica holds the table: the table leaves its loading phase. The host stores a seat claim
+ * before it answers the claimer, so from then on the replica binds the seat to this page. A pick alone does not:
+ * the page takes the seat lock at once, and the host's reply comes later.
+ */
+export async function expectReplica(
+	page: Page,
+	options: { timeout?: number } = {},
+): Promise<void> {
+	await expect(page.getByTestId("table")).toHaveAttribute(
+		"data-phase",
+		/^(waiting|auction|play|complete)$/,
+		options,
+	);
+}
+
+/*
+ * The player list, the messages and the links sit in an area that the table layout keeps off screen
+ * (src/ui/style.css `.room-extra`), so a person cannot reach them. The tests still use the chat and the seat release
+ * as protocol probes, and these helpers operate their controls through the DOM.
+ */
+
+/** Waits until the off-screen control is enabled, then clicks it. */
+export async function pressOffScreen(control: Locator): Promise<void> {
+	await expect(control).toBeEnabled();
+	await control.evaluate((node) => (node as HTMLButtonElement).click());
+}
+
+/** Types the text into the off-screen message box. */
+export async function typeOffScreen(page: Page, text: string): Promise<void> {
+	const draft = page.getByTestId("draft");
+	await expect(draft).toBeEditable();
+	await draft.evaluate((node, value) => {
+		(node as HTMLTextAreaElement).value = value;
+	}, text);
+}
+
+/**
+ * Checks the "All players connected" note. It is off screen, so the check reads the `hidden` attribute, which the
+ * page sets from the table state.
+ */
+export async function expectAllConnected(
+	page: Page,
+	connected: boolean,
+	options: { timeout?: number } = {},
+): Promise<void> {
+	const note = page.getByTestId("all-connected");
+	await expect(note).toBeAttached(options);
+	if (connected) await expect(note).not.toHaveAttribute("hidden", options);
+	else await expect(note).toHaveAttribute("hidden", "", options);
 }
 
 /** Sends the prefilled message and waits until this tab shows it in the transcript. */
 export async function sendDraft(page: Page): Promise<void> {
 	const before = await lines(page).count();
-	await page.getByTestId("send").click();
+	await pressOffScreen(page.getByTestId("send"));
 	await expect(lines(page)).toHaveCount(before + 1);
 }
 

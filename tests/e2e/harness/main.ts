@@ -14,6 +14,7 @@ import {
 import {
 	actionPayload,
 	bridgeModule,
+	dealPayload,
 	parseBridgeState,
 } from "../../../src/game/bridge";
 import { chatPayload } from "../../../src/game/chat";
@@ -72,11 +73,17 @@ export interface CallView {
 
 export interface Harness {
 	createTable(seat: Seat): Promise<{ readonly key: string }>;
-	openTable(key: string): Promise<void>;
+	/**
+	 * Opens the table link. `seat` is the seat in the player's own URL (`selected_player`, ADR 0005), which
+	 * gives a reloaded or reopened page its seat back; the shared link has none.
+	 */
+	openTable(key: string, seat?: Seat): Promise<void>;
 	view(): TableView | null;
 	transcript(): readonly TranscriptLine[];
 	choose(seat: Seat): Promise<ChooseResult>;
 	send(text: string): Promise<SubmitResult>;
+	/** Sends the deal of `board`, as the hosting page does for board 1 once the four seats are filled. */
+	deal(board: number): Promise<SubmitResult>;
 	/**
 	 * Takes the next game action when this page's seat is the actor, otherwise null: the dealer opens the lowest
 	 * bid, every other call is a pass, and a card is the first legal one.
@@ -180,7 +187,11 @@ async function storage() {
 	return opened.value;
 }
 
-async function open(key: string, creator: boolean): Promise<void> {
+async function open(
+	key: string,
+	creator: boolean,
+	preferredSeat?: Seat,
+): Promise<void> {
 	if (controller || stranger) throw new Error("this page already joined");
 	const identity = await tableIdentity(key, browser);
 	const config = meshConfig();
@@ -202,6 +213,7 @@ async function open(key: string, creator: boolean): Promise<void> {
 		newId: newCommandId,
 		nonce: randomNonce,
 		creator,
+		...(preferredSeat === undefined ? {} : { preferredSeat }),
 	});
 	controller = table;
 	await table.start();
@@ -265,7 +277,7 @@ window.lbHarness = {
 		await open(key, true);
 		return { key };
 	},
-	openTable: (key) => open(key, false),
+	openTable: (key, seat) => open(key, false, seat),
 	view: () => controller?.view() ?? null,
 	transcript: () =>
 		(controller?.entries() ?? []).map((entry) => ({
@@ -279,6 +291,10 @@ window.lbHarness = {
 	send: (text) => {
 		const table = seated();
 		return table.send(chatPayload(table.tableId, text));
+	},
+	deal: (board) => {
+		const table = seated();
+		return table.send(dealPayload(table.tableId, board));
 	},
 	async act() {
 		const table = seated();
