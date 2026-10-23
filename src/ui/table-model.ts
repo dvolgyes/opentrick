@@ -171,7 +171,10 @@ export interface TrickView {
 
 export interface AuctionView {
 	readonly seats: readonly Seat[];
-	/** Rows of four cells in `seats` order; empty cells before the dealer's first call. */
+	/**
+	 * Rows of up to four cells in `seats` order. A seat before the dealer could not call, so its cell is a dash; the
+	 * last row stops at the last call, and the calls still to come have no cell.
+	 */
 	readonly rows: readonly (readonly string[])[];
 }
 
@@ -549,7 +552,7 @@ function scoreRows(results: readonly BoardResult[]): ScoreRow[] {
 
 function auctionView(dealer: Seat, calls: readonly Call[]): AuctionView {
 	const cells = [
-		...Array.from({ length: SEATS.indexOf(dealer) }, () => ""),
+		...Array.from({ length: SEATS.indexOf(dealer) }, () => "—"),
 		...calls.map(callText),
 	];
 	const rows: string[][] = [];

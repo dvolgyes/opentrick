@@ -395,8 +395,14 @@ test("6: board 2 is dealt automatically, East deals, and all four pass: passed o
 				exact: true,
 			}),
 		).toBeVisible();
+	expect(await call(2, 0, "P")).toBe("E");
+	await expectAt(2, 1);
+	// North sits before the dealer and could not call, so a dash; the calls still to come stay empty.
+	for (const seat of SEATS)
+		await expect(
+			tab[seat].getByTestId("auction").locator("tbody td"),
+		).toHaveText(["—", "Pass", "", ""]);
 	for (const [at, seat] of [
-		[0, "E"],
 		[1, "S"],
 		[2, "W"],
 		[3, "N"],

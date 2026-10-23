@@ -205,8 +205,16 @@ describe("auction", () => {
 		expect(table.details).toBe("Dealer: East · Vulnerable: North-South");
 		expect(table.auction).toEqual({
 			seats: ["N", "E", "S", "W"],
-			rows: [["", "1♣", "Double", "Pass"]],
+			rows: [["—", "1♣", "Double", "Pass"]],
 		});
+	});
+
+	it("marks the seats before a South dealer with a dash and leaves calls to come out", () => {
+		const board3 = bidding(createBoard(3, DEAL), "1H P P P");
+		expect(view("N", board3).auction?.rows).toEqual([
+			["—", "—", "1♥", "Pass"],
+			["Pass", "Pass"],
+		]);
 	});
 });
 

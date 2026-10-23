@@ -101,8 +101,6 @@ const ACTION_STATUS: Readonly<Record<TableActionLine["state"], string>> = {
 	undone: "Undone after a host change",
 };
 
-const EMPTY_BID = "—";
-
 /** The strain that each suit mark or NT label stands for, as the bid box names it. */
 const MARK_STRAIN: ReadonlyMap<string, string> = new Map([
 	[SUIT_SYMBOLS.C, "C"],
@@ -1511,7 +1509,7 @@ export function tableSection(
 						"tr",
 						{},
 						...grid.seats.map((_, index) =>
-							el("td", {}, ...auctionCell(row[index] ?? EMPTY_BID)),
+							el("td", {}, ...auctionCell(row[index] ?? "")),
 						),
 					),
 				),
