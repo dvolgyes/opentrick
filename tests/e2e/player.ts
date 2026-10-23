@@ -40,7 +40,7 @@ async function blockedContext(
 	baseURL: string,
 ): Promise<{ context: BrowserContext; cleanup: () => Promise<void> }> {
 	const dir = await mkdtemp(
-		join(process.env.TMPDIR ?? tmpdir(), "lb-blocked-"),
+		join(process.env.TMPDIR ?? tmpdir(), "opentrick-blocked-"),
 	);
 	await mkdir(join(dir, "Default"));
 	await writeFile(

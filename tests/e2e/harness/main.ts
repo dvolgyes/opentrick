@@ -368,7 +368,7 @@ window.lbHarness = {
 			},
 			tableId,
 		);
-		const action = room.makeAction("lb-ctl");
+		const action = room.makeAction("opentrick-ctl");
 		const nonce = randomNonce();
 		const echoed = new Promise<boolean>((resolve) => {
 			action.onMessage = (data) => {

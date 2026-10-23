@@ -104,7 +104,7 @@ No test replaces a network, a server or a browser API with a stand-in.
   It has the effect of offers that reach only pages that cannot answer, such as a frozen tab or a tab that left the table but keeps its tracker sockets.
 - A relay-only call: the same limit for the call's connections only, so the game links stay direct.
 - A late call answer: the probe delays the page's call messages by 4 s.
-- Forged call frames: a harness page holds a seat and sends raw `lb-call` frames past the call signaling.
+- Forged call frames: a harness page holds a seat and sends raw `opentrick-call` frames past the call signaling.
 - A modified tab: the test enables a disabled control in the DOM and clicks it, so the page's own handler sends an action that the host must refuse.
 - A browser that blocks site data: a Chrome profile with "Don't allow sites to save data".
 - An old table: the stored table record is aged by 25 h.

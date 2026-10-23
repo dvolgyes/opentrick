@@ -34,7 +34,7 @@ Link and identity:
 
 - The link is `<page>#v=p2p-v1&k=<K>`, where K is 32 bytes from the platform CSPRNG in base64url.
   The fragment never reaches the web server, and the code never logs K.
-- The table identifier is the first 22 characters of base64url(SHA-256("libre-bridge|table|" + K)).
+- The table identifier is the first 22 characters of base64url(SHA-256("opentrick|table|" + K)).
   SHA-256 derives identifiers only; there is no custom cryptography.
 - Each browser has a random client identifier per table in localStorage.
   Only the host receives it, and the host derives the seat holder from it, so a player cannot copy another player's holder from the roster.
@@ -44,7 +44,7 @@ Transport:
 - Trystero 0.26.0 (`@trystero-p2p/torrent`, pinned exactly) joins one room per table through the public WebTorrent trackers, with K as the room password.
   The trackers see only an info hash that Trystero derives from the app name and the table identifier, the clients' IP addresses and encrypted session descriptions.
 - The pages form a full mesh of WebRTC data channels.
-  Four actions carry all traffic: `lb-ctl` (control, 8 KiB), `lb-log` (log replication, 256 KiB), `lb-call` (call signaling, 64 KiB) and `lb-mesh` (peer lists for the mesh repair, 2 KiB).
+  Four actions carry all traffic: `opentrick-ctl` (control, 8 KiB), `opentrick-log` (log replication, 256 KiB), `opentrick-call` (call signaling, 64 KiB) and `opentrick-mesh` (peer lists for the mesh repair, 2 KiB).
   Every received message passes a validator before any use.
 - Mesh repair (a deviation from one room per page): a tracker sends each announce to a few peers and repeats it only every 120 s, so in a room of four pages a link can stay missing for minutes.
   Two pages that miss each other join a Trystero room for only the two of them, which connects during the first announces.
@@ -94,7 +94,7 @@ Presence (owner requirement R4):
 
 Call signaling:
 
-- Call messages go over the `lb-call` data channel action to the peer bound to the target seat, never through a tracker or a database.
+- Call messages go over the `opentrick-call` data channel action to the peer bound to the target seat, never through a tracker or a database.
 - The receiver takes the sender seat and generation from the host's roster binding of the sending peer, never from the message.
   A message from an unbound peer or an old generation is dropped.
 - During a host change, the call keeps the last roster that it had, so the call between the remaining seats goes on.
