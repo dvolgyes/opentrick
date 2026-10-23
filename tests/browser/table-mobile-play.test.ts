@@ -288,6 +288,24 @@ describe("played card styles", () => {
 	});
 });
 
+describe("desktop play", () => {
+	it("lets the declarer click dummy's cards in the top seat", () => {
+		const { root, handlers } = renderView(playView(), "desktop");
+		const dummyCard = root.querySelector<HTMLElement>(
+			"[data-testid='hand-S'] [data-card='SA']",
+		);
+		if (!dummyCard) throw new Error("dummy's card is missing");
+		const box = dummyCard.getBoundingClientRect();
+		const hit = document.elementFromPoint(
+			box.left + box.width / 2,
+			box.top + box.height / 2,
+		);
+		expect(hit?.closest("[data-card]")).toBe(dummyCard);
+		(hit as HTMLElement).click();
+		expect(handlers.act).toHaveBeenCalledWith({ type: "play", card: "SA" });
+	});
+});
+
 describe("compact play controls", () => {
 	it("marks bot players by name and overlays their call tiles", () => {
 		const view = playView();

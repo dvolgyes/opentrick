@@ -2716,7 +2716,7 @@ main:has(> .room[data-form="compact"]) {
 	pointer-events: none;
 }
 
-.room[data-form="desktop"] .place-bottom button {
+.room[data-form="desktop"] :is(.place-top, .place-bottom) button {
 	pointer-events: auto;
 }
 
