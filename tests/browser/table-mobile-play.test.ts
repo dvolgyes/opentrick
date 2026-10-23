@@ -213,6 +213,47 @@ describe("played card styles", () => {
 		expect(root.dataset.playedCardStyle).toBe("corners-oriented");
 	});
 
+	it.each<[Form, string[]]>([
+		["desktop", ["top-left", "top-right", "bottom-left", "bottom-right"]],
+		["compact", ["top-left", "bottom-right"]],
+	])("shows the rank in the %s corners %j on screen", (form, shown) => {
+		const positions = [
+			["N", "top"],
+			["E", "left"],
+			["S", "bottom"],
+			["W", "right"],
+		] as const;
+		const view: TableView = {
+			...playView(),
+			trick: {
+				cards: positions.map(([seat, position]) => ({
+					seat,
+					position,
+					card: "SA",
+					text: "♠A",
+					rank: "A",
+					symbol: "♠",
+				})),
+			},
+		};
+		const { root } = renderView(view, form);
+		const played = [...root.querySelectorAll<HTMLElement>(".played")];
+		expect(played).toHaveLength(4);
+		// The corner where each visible rank is drawn, after the card's own transforms.
+		for (const face of played) {
+			const box = face.getBoundingClientRect();
+			const corners = [...face.querySelectorAll<HTMLElement>(".rank-corner")]
+				.filter((corner) => getComputedStyle(corner).display !== "none")
+				.map((corner) => {
+					const mark = corner.getBoundingClientRect();
+					const top = mark.top + mark.height / 2 < box.top + box.height / 2;
+					const left = mark.left + mark.width / 2 < box.left + box.width / 2;
+					return `${top ? "top" : "bottom"}-${left ? "left" : "right"}`;
+				});
+			expect(corners.sort(), face.className).toEqual([...shown].sort());
+		}
+	});
+
 	it.each<PlayedCardStyle>([
 		"classic-large",
 		"corners-upright",

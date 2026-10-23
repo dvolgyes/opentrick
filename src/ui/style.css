@@ -1240,6 +1240,35 @@ main:has(> .room) {
 	bottom: 0;
 }
 
+/* A phone's played cards are small: two ranks read better than four, so only top-left and bottom-right show. */
+[data-form="compact"] .rank-corner.top-right,
+[data-form="compact"] .rank-corner.bottom-left {
+	display: none;
+}
+
+/* The oriented bottom card is mirrored, so its top-right and bottom-left elements are drawn top-left and bottom-right. */
+[data-form="compact"]
+	.bridge-table[data-played-card-style="corners-oriented"]
+	.played.pos-bottom
+	.rank-corner.top-right,
+[data-form="compact"]
+	.bridge-table[data-played-card-style="corners-oriented"]
+	.played.pos-bottom
+	.rank-corner.bottom-left {
+	display: block;
+}
+
+[data-form="compact"]
+	.bridge-table[data-played-card-style="corners-oriented"]
+	.played.pos-bottom
+	.rank-corner.top-left,
+[data-form="compact"]
+	.bridge-table[data-played-card-style="corners-oriented"]
+	.played.pos-bottom
+	.rank-corner.bottom-right {
+	display: none;
+}
+
 .played-center-suit {
 	position: absolute;
 	top: 50%;
