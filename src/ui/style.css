@@ -693,10 +693,12 @@ main:has(> .room) {
 	background: transparent;
 }
 
+/* A row is as wide as its own cards, so the trump frame ends after the last trump card. */
 .hand-stack > .suit-row {
 	position: relative;
 	display: flex;
 	flex-direction: row;
+	align-self: flex-start;
 }
 
 .trump-label {
@@ -2525,6 +2527,27 @@ main:has(> .room[data-form="compact"]) {
 	--card-h: 2.6rem;
 	--card-w: 1.8rem;
 	--back-vstep: calc(var(--card-h) * 5 / 14);
+}
+
+/*
+ * A visible side hand fans each suit in a row, as on the desktop. The step uses the column's width (cqi), because a
+ * percentage would refer to the row, which takes its width from those same cards. The column is narrow, so the ranks
+ * are smaller and the strips derived from them are set again here.
+ */
+:is(.mobile-board-left, .mobile-board-right):has(.hand-stack) {
+	container-type: inline-size;
+}
+
+:is(.mobile-board-left, .mobile-board-right) .hand-stack {
+	--card-h: 2.6rem;
+	--card-w: 1.6rem;
+	--rank-size: 0.7rem;
+	--side-strip: calc(var(--rank-size) * 2.6);
+	--card-step: min(
+		calc(var(--rank-size) * 1.2 + 0.3rem),
+		(100cqi - var(--card-w)) /
+		max(1, var(--longest-suit) - 1)
+	);
 }
 
 .mobile-auction-bids {

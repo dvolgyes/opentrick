@@ -134,6 +134,40 @@ function playView(): TableView {
 	};
 }
 
+/** The play view with a visible left hand: one trump, then a long suit, as dummy late in play. */
+function sideHandView(): TableView {
+	const suit = (
+		name: "S" | "H" | "D" | "C",
+		symbol: string,
+		ranks: string[],
+		trump = false,
+	) => ({
+		suit: name,
+		symbol,
+		cards: ranks.map((rank) => ({
+			...card(`${name}${rank}` as Card),
+			playable: false,
+		})),
+		trump,
+	});
+	const hand = {
+		visible: true as const,
+		suits: [
+			suit("D", "♦", ["4"], true),
+			suit("C", "♣", ["K", "Q", "9", "6", "5", "3", "2"]),
+			suit("H", "♥", ["8", "7", "5"]),
+			suit("S", "♠", ["A", "Q"]),
+		],
+	};
+	const base = playView();
+	return {
+		...base,
+		seats: base.seats.map((player) =>
+			player.position === "left" ? { ...player, hand } : player,
+		),
+	};
+}
+
 function renderView(view: TableView, form: Form, style?: PlayedCardStyle) {
 	const handlers: TableHandlers = {
 		exit: vi.fn(),
@@ -740,6 +774,35 @@ describe("compact play controls", () => {
 		expect(last.right).toBeLessThanOrEqual(rowBounds.right + 1);
 	});
 
+	it("fans each suit of a visible side hand in a row, within its board column", () => {
+		const { root } = renderMobile(sideHandView());
+		const room = root.closest<HTMLElement>(".room");
+		const column = root.querySelector<HTMLElement>(".mobile-board-left");
+		if (!room || !column) throw new Error("left board column is missing");
+		room.style.width = "360px";
+
+		const bounds = column.getBoundingClientRect();
+		const rows = [...column.querySelectorAll<HTMLElement>(".suit-row")];
+		expect(
+			rows.map((row) => row.querySelectorAll("[data-card]").length),
+		).toEqual([1, 7, 3, 2]);
+		for (const row of rows) {
+			const cards = [...row.querySelectorAll<HTMLElement>("[data-card]")].map(
+				(item) => item.getBoundingClientRect(),
+			);
+			// Every card shows a strip of its own, left of the next card's strip.
+			for (const [index, box] of cards.entries()) {
+				expect(box.width, `card ${index}`).toBeGreaterThan(5);
+				const next = cards[index + 1];
+				if (next) expect(next.left).toBeGreaterThanOrEqual(box.right - 0.5);
+			}
+			const last = cards.at(-1);
+			if (!last) throw new Error("suit row is empty");
+			expect(cards[0]?.left).toBeGreaterThanOrEqual(bounds.left - 0.5);
+			expect(last.right).toBeLessThanOrEqual(bounds.right + 0.5);
+		}
+	});
+
 	it.each(["auction", "play"] as const)(
 		"keeps the %s bid cells and their spacing compact on a phone",
 		(phase) => {
@@ -761,6 +824,23 @@ describe("compact play controls", () => {
 			expect(
 				Number.parseFloat(getComputedStyle(table).borderSpacing),
 			).toBeLessThanOrEqual(0.125 * rem);
+		},
+	);
+
+	it.each<Form>(["compact", "desktop"])(
+		"frames only the trump cards of a %s side hand",
+		(form) => {
+			const { root } = renderView(sideHandView(), form);
+			const trump = [
+				...root.querySelectorAll<HTMLElement>(".hand-stack .suit-row.trump"),
+			].find((row) => row.getBoundingClientRect().width > 0);
+			if (!trump) throw new Error("trump row is missing");
+			const frame = trump.getBoundingClientRect();
+			const cards = [...trump.querySelectorAll<HTMLElement>("[data-card]")];
+			expect(cards).toHaveLength(1);
+			const last = cards[0]?.getBoundingClientRect();
+			expect(frame.left).toBeCloseTo(last?.left ?? Number.NaN, 0);
+			expect(frame.right).toBeCloseTo(last?.right ?? Number.NaN, 0);
 		},
 	);
 

@@ -733,6 +733,11 @@ export function tableSection(
 			node.dataset.mobileCardLayout = `${visibleSuits.length}-${trumpIsLast ? 1 : 2}`;
 		}
 		if (side) {
+			// The phone divides its side column by the longest suit, so that suit's row fits the column.
+			node.style.setProperty(
+				"--longest-suit",
+				String(Math.max(...hand.suits.map((row) => row.cards.length))),
+			);
 			for (const row of hand.suits) {
 				if (row.cards.length === 0) continue;
 				// The trump label sits in the flow above its row, so the seat name above the hand is not covered.
