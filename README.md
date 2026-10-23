@@ -55,6 +55,13 @@ The table records tricks and duplicate scores as the hand finishes.
 
 ![Four cards from a completed trick, with the contract and trick count shown beside the table.](docs/images/gameplay-trick.png)
 
+On a phone, or in a browser window narrower than 900 pixels, the table uses a compact layout.
+Your hand is at the bottom of the board, and the bid box is below it.
+When you declare, dummy's hand is at the top of the board, and you tap its cards there.
+The room controls are below the table, so scroll down to reach them.
+
+<img src="docs/images/phone-auction.png" width="320" alt="The compact phone table during the auction, with the bidding history, the board, the player's hand, and the bid box.">
+
 You must take one of the four player seats to use the table.
 There is no spectator or kibitz mode, so people who are not seated cannot watch the cards or the auction from inside the room.
 
