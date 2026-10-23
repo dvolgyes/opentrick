@@ -161,7 +161,10 @@ export interface TableDeps {
 	readonly identity: TableIdentity;
 	readonly storage: TableStorage;
 	readonly locks: SeatLocks;
-	readonly memory: Pick<SeatMemory, "tabSeat" | "seatToReopen" | "remember">;
+	readonly memory: Pick<
+		SeatMemory,
+		"tabSeat" | "seatToReopen" | "remember" | "forget"
+	>;
 	readonly module: GameModule;
 	readonly clock: Clock;
 	/** Runs `run` every `ms` until the returned function runs. */
@@ -1151,6 +1154,8 @@ export class TableController {
 		if (this.#closed()) return;
 		this.#lastTable = this.#replication?.log?.table ?? null;
 		this.#terminal = terminal;
+		// The room link can start the room again, and then nobody holds a seat yet.
+		if (terminal.status === "expired") this.#deps.memory.forget(this.#tableId);
 		this.#shutDown();
 		this.#notify();
 	}

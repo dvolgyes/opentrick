@@ -84,6 +84,12 @@ export class SeatMemory {
 		);
 	}
 
+	/** Forgets both seats of the room: an expired room starts again without seat claims (ADR 0005). */
+	forget(roomId: string): void {
+		this.#tab?.removeItem(TAB_PREFIX + roomId);
+		this.#browser?.removeItem(BROWSER_PREFIX + roomId);
+	}
+
 	/** Removes browser records older than the room lifetime. */
 	prune(): void {
 		const storage = this.#browser;
