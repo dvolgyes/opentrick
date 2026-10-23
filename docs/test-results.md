@@ -1,16 +1,16 @@
 # Test results
 
-Dates: 2026-10-19 (runs full1 to full5) and 2026-10-23 (runs full6 and full7).
+Dates: 2026-10-19 (runs full1 to full5) and 2026-10-23 (runs full6 to full9).
 This file records the tests of the peer-to-peer version (plan increments P0–P11, commits 1969c9e and later).
 
 ## Environment
 
 | Item | Value |
 | --- | --- |
-| OS | Linux 7.2.10 (liquorix, amd64), one machine; Linux 7.2.11 for full6 and full7 |
-| Browser | Google Chrome 155.0.8059.79, headless, through the Playwright `chrome` channel; Chrome 156.0.8078.47 for full6 and full7 |
+| OS | Linux 7.2.10 (liquorix, amd64), one machine; Linux 7.2.11 for full6 to full9 |
+| Browser | Google Chrome 155.0.8059.79, headless, through the Playwright `chrome` channel; Chrome 156.0.8078.47 for full6 to full9 |
 | Test tools | Playwright 1.64.1 (one worker, no retries, traces off), Vitest 5.0.5, Node.js 22.22.1 |
-| Site | Production build (`vite build`, Vite 8.3.4), served by `vite preview` on `http://localhost:4173`; the test harness page on `http://localhost:4174`; full6 used ports 4273 and 4274, and full7 ports 4373 and 4374 (`E2E_PORT`, `E2E_HARNESS_PORT`) |
+| Site | Production build (`vite build`, Vite 8.3.4), served by `vite preview` on `http://localhost:4173`; the test harness page on `http://localhost:4174`; full6 used ports 4273 and 4274, and full7 to full9 ports 4373 and 4374 (`E2E_PORT`, `E2E_HARNESS_PORT`) |
 | Discovery | Trystero 0.26.0 through the three default public WebTorrent trackers: `wss://tracker.openwebtorrent.com`, `wss://tracker.webtorrent.dev` and `wss://open.ftorrent.com`; from 718b51a, `@trystero-p2p/core` 0.26.0 with a copy of its torrent strategy in `src/p2p/torrent.ts` |
 | STUN | The default `stun:stun.cloudflare.com:3478`; no TURN |
 | Call media | Chrome's generated test devices (`--use-fake-device-for-media-stream`): a tone and a moving picture; each context gets only the permissions that its test needs |
@@ -21,7 +21,7 @@ No browser test uses a fake network, a mock or a fake server for the table or th
 Every browser test of the table and the call goes through the public trackers and real WebRTC links.
 Two exceptions concern other services:
 
-- `host-bots` and `mobile-controls` answer the bots' OpenRouter requests in the test (`page.route`), so no paid model runs; the table traffic of these specs is real.
+- `host-bots`, `mobile-controls` and `phone` answer the bots' OpenRouter requests in the test (`page.route`), so no paid model runs; the table traffic of these specs is real.
 - `mobile-layout` checks the compact auction style on markup that the test writes into the page, not on the page that the app renders.
 
 ## Browser suites
@@ -37,17 +37,18 @@ Two exceptions concern other services:
 | `reconnect` | 7 | Plan §12 R1 and R4 through the UI: crash and reload of a follower, a host crash mid-auction, dummy away during the play and a next board that waits for dummy, three players away while one stays, a frozen player |
 | `bridge` | 7 | The six bridge flows; forced actions come from a modified tab |
 | `call-audio` | 15 | Joining, the switches, Leave, cut links, the keyboard, reloads, four seats at once, a seat that stops hearing, a late microphone, rapid toggles, a vanished tab |
-| `call-video` | 9 | The desktop and phone choosers, the camera preview, the tile states, a blocked camera, video only where both sides agree, See cameras off, a phone next to camera senders, a desktop that becomes compact, the phone leaves |
+| `call-video` | 9 | The desktop and phone choosers, the camera preview, the tile states, a blocked camera and Cancel in its preview, video only where both sides agree, See cameras off, a phone next to camera senders, a desktop that becomes compact, the phone leaves |
 | `call-lifecycle` | 9 | Forged call frames from a modified client and from a page without a seat, a holder change after a release, one player leaves, leaving the room during the call, a browser limited to relays, no address in any page or console message |
 | `call-recovery` | 5 | Plan §12 R2: after a crash, a host change and a lost microphone permission, the call comes back with the same status |
-| `layout` | 4 | The scaled Full HD room on desktop and phone viewports, the play controls of each seat, and the names and states of the call controls |
+| `layout` | 4 | The scaled Full HD room on desktop viewports, the compact table on phone viewports and in a narrow desktop window, the play controls of each seat, and the names and states of the call controls |
 | `auto-seat` | 2 | The page that opens the link takes the last free seat, and the first board is dealt |
 | `bookmark` | 5 | A saved room link prefills the create screen, seats the host, offers the other seats, and seats the host again after a reload |
 | `host-bots` | 2 | Host bots play two boards from the auction to the last trick; a bidder switched to a bot acts at once |
 | `mobile-controls` | 1 | On a phone, the host pauses the bots and changes the API key |
 | `mobile-layout` | 1 | The compact auction fits the visible width |
+| `phone` | 2 | At 390×844 and at 360×800, the host plays West from a phone against three bots: the compact table has no horizontal scroll, every card of the own hand and of dummy has a width, and the phone declares a board through the bid box and plays its 13 cards and dummy's 13 cards |
 
-Fourteen specs also check that no page reported an uncaught error; `layout`, `host-bots`, `mobile-controls` and `mobile-layout` do not.
+Fourteen specs also check that no page reported an uncaught error; `layout`, `host-bots`, `mobile-controls`, `mobile-layout` and `phone` do not.
 In runs full1 to full5, the same specs also checked that no page sent a request to the old server-based backend; commit 3f1b07b removed that backend's code and this check.
 
 ### Runs
@@ -87,6 +88,16 @@ On 2026-10-23, after the Supabase cleanup, the app fixes and the spec correction
 
 Before full6, the specs that had changed passed alone: `call-video` 9 of 9 and `layout` 4 of 4.
 Between full6 and full7, three full runs were stopped before their end, on the owner's request, because of a network issue and a collision with other processes on the machine; they are not counted.
+
+After the compact phone table (fd42dcb), the suite has 19 specs and 112 tests:
+
+| Run | Result | Duration |
+| --- | --- | --- |
+| full8 | Failed: 103 passed, 1 failed, 8 did not run, at commit 20b4409; `call-video` test 1 still expected the phone's video switches, which the compact call row does not have (a test defect, fixed in cf1fc36, below); the later tests of that serial spec did not run | 18.7 min |
+| full9 | 112 of 112 passed, at commit cf1fc36 | 19.9 min |
+
+Before full8, the specs that had changed passed alone: `phone` 2 of 2, `layout` 4 of 4, `mobile-controls` 1 of 1, `mobile-layout` 1 of 1 and `host-bots` 2 of 2.
+`call-video` was not run alone before full8; after the fix in cf1fc36 it passed 9 of 9 alone.
 
 During P10, each call and layout spec passed alone before the full runs: `call-audio` 15 of 15 (1.8 min), `call-video` 9 of 9 (1.5 min), `call-lifecycle` 9 of 9, `call-recovery` 5 of 5 and `layout` 4 of 4.
 
@@ -154,6 +165,8 @@ The app defects below were found on 2026-10-23, when the specs were brought up t
 | 718b51a | One tracker announce carried one offer, so it could reach only one other seat; a page that left kept its stale offers at the trackers; a tracker message that was not JSON threw in the socket handler | `tests/unit/p2p-torrent.test.ts` and `tests/unit/p2p-mesh.test.ts`; the full runs |
 | 592f14a | After a table expired, a browser kept its seat, so the room link seeded the table from that seat instead of offering the four seats | A browser test in `tests/browser/session.test.ts` ("forgets both seats of one room only") |
 | 7a2a237 | Join with the camera switch on and a confirmed preview stayed outside the call without a message | A unit test in `tests/unit/call-controller.test.ts` failed before the fix and passes with it; `call-video` |
+| 11ad1bf | Cancel in the camera preview left the player outside the call, so a player with a blocked camera had to change the switches and press Join again; Cancel now joins with the other switches | A browser test in `tests/browser/camera-setup.test.ts`; `call-video` test 3 failed at the Leave button before the change and passed with it (9 of 9) |
+| fd42dcb | A phone showed the room as the scaled Full HD canvas; when the compact table was turned on, it rendered 19 px wide, the trump cards had no width, the language control covered its top bar, and the start page was 409 px wide in a 360 px window | The new `phone` spec failed before the fix (the hidden trump cards at 390×844; the start page at 360×800) and passed 2 of 2 with it; `layout` 4 of 4 |
 
 ## Test corrections and acceptance changes
 
@@ -186,10 +199,19 @@ Corrections of 2026-10-23, for an app that changed after the 2026-10-19 runs:
 - `call-video` (816eea7): the tests confirm the camera preview; a blocked camera shows in the preview, which keeps "Send camera" disabled.
   Outside the call the switches are enabled and choose what Join starts with; a phone shows its video switches off and disabled.
 - `layout` (816eea7): only the declarer on turn may claim, and only a seat that played a card may ask to undo; the card-label check scales the font metrics with the room canvas; the checks wait until the canvas scale follows a new viewport size.
+- `call-video` (11ad1bf): in test 3, Cancel in the camera preview joins the call, so the test expects Leave instead of a second Join.
+- `layout` and `mobile-controls` (fd42dcb): an acceptance change that the owner authorized on 2026-10-23, when the owner chose the compact table for phones.
+  Before, a phone and a narrow desktop window had to show the scaled Full HD canvas.
+  Now they must show the compact table without horizontal scroll, with the own hand, dummy and the bid box inside the window.
+  The canvas fit is checked on four desktop viewports (1440×1080, 1920×1080, 2560×1080 and 1080×1920) instead of the phone viewports.
+  The compact call row has no video switches, so the phone's camera switches are expected to be absent instead of disabled.
+- `call-video` (cf1fc36): the same acceptance change.
+  Test 1 expects the phone's audio switches and no video switches.
+  Test 7 expects no video switches while the desktop window is 800 px wide; its checks that the camera stops within 1 s, that the audio goes on and that the video switches are off at 1280 px stay.
 
 ## Unit tests
 
-`npm test` (Vitest, also part of `pre-commit run --all`): 1231 of 1231 tests passed in 45 files, at commit e47be4b, and 1351 of 1351 in 57 files, at commit 816eea7.
+`npm test` (Vitest, also part of `pre-commit run --all`): 1231 of 1231 tests passed in 45 files, at commit e47be4b, 1351 of 1351 in 57 files, at commit 816eea7, and 1353 of 1353 in 58 files, at commit fd42dcb.
 
 The unit tests check pure functions with real inputs: the link and identifier derivation, the validators, the election rules with a seeded simulation, the presence rule, the bridge rules and the view models.
 Some older unit suites use in-memory stand-ins:
@@ -224,7 +246,7 @@ No trigger was found for a `SecurityError` from `getUserMedia` either.
 - No test switches a device from Wi-Fi to a cellular network.
   The network change in `p2p-mesh` closes the links and the tracker sockets of a page; a real switch also changes the IP address.
 - Only headless Chrome on Linux was tested; there is no run with Firefox, Safari or a real phone for this version.
-  The compact layout is tested with phone-size viewports.
+  The compact layout is tested with phone-size viewports, touch input and Chrome's mobile viewport emulation.
 - A frozen page is simulated with a debugger pause, not with the freeze of a background tab or the suspension of an Android app.
 - The call media are generated test devices.
 - The public trackers are third-party services, so every run depends on them.
