@@ -2591,6 +2591,7 @@ main:has(> .room[data-form="compact"]) {
 	.bridge-table[data-phase="auction"]
 	.mobile-auction-bids
 	.auction {
+	border-spacing: 0.125rem;
 	font-size: 1.02rem;
 }
 
@@ -2599,11 +2600,24 @@ main:has(> .room[data-form="compact"]) {
 	.mobile-auction-bids
 	.auction {
 	display: table;
+	border-spacing: 0.125rem;
 	font-size: 1.02rem;
 }
 
 [data-form="compact"] .mobile-auction-bids .auction th {
 	font-size: 0.82rem;
+}
+
+/* A phone shows more bidding rounds: the bid cells are 30% lower than the text's line allows, and closer together. */
+[data-form="compact"] .mobile-auction-bids .auction td {
+	padding-block: 0.08rem;
+	line-height: 1;
+}
+
+/* The larger bid mark takes the cell's line height and its top, so the two font sizes do not raise the line. */
+[data-form="compact"] .mobile-auction-bids .auction .bid-mark {
+	line-height: 0.8;
+	vertical-align: top;
 }
 
 .mobile-auction-controls .bid-box {

@@ -740,6 +740,30 @@ describe("compact play controls", () => {
 		expect(last.right).toBeLessThanOrEqual(rowBounds.right + 1);
 	});
 
+	it.each(["auction", "play"] as const)(
+		"keeps the %s bid cells and their spacing compact on a phone",
+		(phase) => {
+			const { root } = renderMobile({ ...playView(), phase });
+			const cell = root.querySelector<HTMLElement>(
+				".mobile-auction-bids .auction td",
+			);
+			const table = cell?.closest("table");
+			if (!cell || !table) throw new Error("bid cell is missing");
+			const font = Number.parseFloat(getComputedStyle(cell).fontSize);
+			const rem = Number.parseFloat(
+				getComputedStyle(document.documentElement).fontSize,
+			);
+			// The cell was 1.695 times its font size high, with 0.25rem between cells: now 30% lower, half the spacing.
+			expect(cell.getBoundingClientRect().height / font).toBeLessThanOrEqual(
+				0.7 * 1.695,
+			);
+			// Chrome rounds the spacing down to whole pixels.
+			expect(
+				Number.parseFloat(getComputedStyle(table).borderSpacing),
+			).toBeLessThanOrEqual(0.125 * rem);
+		},
+	);
+
 	it("uses the desktop claim confirmation and undo vote handlers", () => {
 		const { root, handlers } = renderMobile(playView());
 		const controls = root.querySelector<HTMLElement>(
