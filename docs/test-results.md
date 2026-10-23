@@ -1,24 +1,28 @@
 # Test results
 
-Date: 2026-10-19.
+Dates: 2026-10-19 (runs full1 to full5) and 2026-10-23 (runs full6 and full7).
 This file records the tests of the peer-to-peer version (plan increments P0–P11, commits 1969c9e and later).
 
 ## Environment
 
 | Item | Value |
 | --- | --- |
-| OS | Linux 7.2.10 (liquorix, amd64), one machine |
-| Browser | Google Chrome 155.0.8059.79, headless, through the Playwright `chrome` channel |
+| OS | Linux 7.2.10 (liquorix, amd64), one machine; Linux 7.2.11 for full6 and full7 |
+| Browser | Google Chrome 155.0.8059.79, headless, through the Playwright `chrome` channel; Chrome 156.0.8078.47 for full6 and full7 |
 | Test tools | Playwright 1.64.1 (one worker, no retries, traces off), Vitest 5.0.5, Node.js 22.22.1 |
-| Site | Production build (`vite build`, Vite 8.3.4), served by `vite preview` on `http://localhost:4173`; the test harness page on `http://localhost:4174` |
-| Discovery | Trystero 0.26.0 through the three default public WebTorrent trackers: `wss://tracker.openwebtorrent.com`, `wss://tracker.webtorrent.dev` and `wss://open.ftorrent.com` |
+| Site | Production build (`vite build`, Vite 8.3.4), served by `vite preview` on `http://localhost:4173`; the test harness page on `http://localhost:4174`; full6 used ports 4273 and 4274, and full7 ports 4373 and 4374 (`E2E_PORT`, `E2E_HARNESS_PORT`) |
+| Discovery | Trystero 0.26.0 through the three default public WebTorrent trackers: `wss://tracker.openwebtorrent.com`, `wss://tracker.webtorrent.dev` and `wss://open.ftorrent.com`; from 718b51a, `@trystero-p2p/core` 0.26.0 with a copy of its torrent strategy in `src/p2p/torrent.ts` |
 | STUN | The default `stun:stun.cloudflare.com:3478`; no TURN |
 | Call media | Chrome's generated test devices (`--use-fake-device-for-media-stream`): a tone and a moving picture; each context gets only the permissions that its test needs |
 | Machine load | Other jobs ran on the same machine; the load average was about 36 during the earlier runs, and about 2.4 at the end of run full4 |
 
 Each simulated person has a separate browser context, so each has its own IndexedDB, localStorage and holder.
-No browser test uses a fake network, a mock or a fake server (owner instruction, 2026-10-19).
-Every browser test goes through the public trackers and real WebRTC links.
+No browser test uses a fake network, a mock or a fake server for the table or the call (owner instruction, 2026-10-19).
+Every browser test of the table and the call goes through the public trackers and real WebRTC links.
+Two exceptions concern other services:
+
+- `host-bots` and `mobile-controls` answer the bots' OpenRouter requests in the test (`page.route`), so no paid model runs; the table traffic of these specs is real.
+- `mobile-layout` checks the compact auction style on markup that the test writes into the page, not on the page that the app renders.
 
 ## Browser suites
 
@@ -29,17 +33,22 @@ Every browser test goes through the public trackers and real WebRTC links.
 | `acceptance` | 13 | One link; the lobby offers only free seats; ordered messages; a reload; an active seat cannot be taken from another tab; release of a silent seat; reopening the link; a host crash with a waiting message; all four browsers quit and reopen; a lost result is stored once; a second game |
 | `seat-timeout` | 3 | A frozen player and a frozen host show offline, their seats free after the timeout, and the thawed tabs are superseded |
 | `election` | 8 | The button at 10 s and the witness rule; a lone seat volunteers when a witness comes after 30 s; the automatic volunteer; two clicks in the same millisecond give one host; a reloading host resumes; a thawed old host steps down; a sibling tab cannot take the host's active seat |
-| `resilience` | 7 | A tracker outage; a browser that blocks site data; a link of the old server-based version; a link of another version; a damaged key; expiry after 24 h |
+| `resilience` | 6 | A tracker outage; a browser that blocks site data; a link of another version; a damaged key; expiry after 24 h |
 | `reconnect` | 7 | Plan §12 R1 and R4 through the UI: crash and reload of a follower, a host crash mid-auction, dummy away during the play and a next board that waits for dummy, three players away while one stays, a frozen player |
 | `bridge` | 7 | The six bridge flows; forced actions come from a modified tab |
 | `call-audio` | 15 | Joining, the switches, Leave, cut links, the keyboard, reloads, four seats at once, a seat that stops hearing, a late microphone, rapid toggles, a vanished tab |
-| `call-video` | 9 | The desktop and phone choosers, the tile states, a blocked camera, video only where both sides agree, See cameras off, a phone next to camera senders, a desktop that becomes compact, the phone leaves |
+| `call-video` | 9 | The desktop and phone choosers, the camera preview, the tile states, a blocked camera, video only where both sides agree, See cameras off, a phone next to camera senders, a desktop that becomes compact, the phone leaves |
 | `call-lifecycle` | 9 | Forged call frames from a modified client and from a page without a seat, a holder change after a release, one player leaves, leaving the room during the call, a browser limited to relays, no address in any page or console message |
 | `call-recovery` | 5 | Plan §12 R2: after a crash, a host change and a lost microphone permission, the call comes back with the same status |
-| `layout` | 4 | The desktop and compact layouts and the names of the call controls |
+| `layout` | 4 | The scaled Full HD room on desktop and phone viewports, the play controls of each seat, and the names and states of the call controls |
+| `auto-seat` | 2 | The page that opens the link takes the last free seat, and the first board is dealt |
+| `bookmark` | 5 | A saved room link prefills the create screen, seats the host, offers the other seats, and seats the host again after a reload |
+| `host-bots` | 2 | Host bots play two boards from the auction to the last trick; a bidder switched to a bot acts at once |
+| `mobile-controls` | 1 | On a phone, the host pauses the bots and changes the API key |
+| `mobile-layout` | 1 | The compact auction fits the visible width |
 
-Eleven specs also check that no page reported an uncaught error; `p2p-mesh` and `layout` do not.
-In these runs, the same specs also checked that no page sent a request to the old server-based backend.
+Fourteen specs also check that no page reported an uncaught error; `layout`, `host-bots`, `mobile-controls` and `mobile-layout` do not.
+In runs full1 to full5, the same specs also checked that no page sent a request to the old server-based backend; commit 3f1b07b removed that backend's code and this check.
 
 ### Runs
 
@@ -68,6 +77,16 @@ The P9 gate was two consecutive green runs of the game specs (58 tests: `smoke`,
 | gs2 | Failed: `bridge` test 2 (the same test defect) | — |
 | gs3 | 58 of 58 passed | 11.3 min |
 | gs4 | 58 of 58 passed | 10.9 min |
+
+On 2026-10-23, after the Supabase cleanup, the app fixes and the spec corrections below, the suite had 18 specs and 110 tests:
+
+| Run | Result | Duration |
+| --- | --- | --- |
+| full6 | 110 of 110 passed, at commit 816eea7 | 20.1 min |
+| full7 | 110 of 110 passed, at commit 39320dc (the Trystero app ID `github.com/dvolgyes/opentrick`) | 20.5 min |
+
+Before full6, the specs that had changed passed alone: `call-video` 9 of 9 and `layout` 4 of 4.
+Between full6 and full7, three full runs were stopped before their end, on the owner's request, because of a network issue and a collision with other processes on the machine; they are not counted.
 
 During P10, each call and layout spec passed alone before the full runs: `call-audio` 15 of 15 (1.8 min), `call-video` 9 of 9 (1.5 min), `call-lifecycle` 9 of 9, `call-recovery` 5 of 5 and `layout` 4 of 4.
 
@@ -122,6 +141,20 @@ No test replaces a network, a server or a browser API with a stand-in.
 | 738caba | A denied microphone was announced as "Audio only" instead of "Mic off" | `call-audio` test 4 |
 | 0e26b05 | A new page could stay without any link for more than 45 s: in `seat-timeout`, the latecomer's first offers went only to pages that cannot answer, and the trackers' next announce comes only after 120 s; in `call-recovery` test 3, the two pages of a seat pair kept their two-page rooms open at different times, because one side's retry wait continued after the other seat got a new page; the fix makes a page without links join the table room again after 10 s alone (then 20 s, 40 s, at most 60 s), and starts a seat pair again without a wait when the other seat has a new page | The two failures of run full2; the new `p2p-mesh` latecomer test failed 3 of 3 on the code before the fix (66b124b), each time with 3 trackers open and no link, and passed 3 of 3 with it, with the lobby after about 11.0 s and one rejoin; with the fix, `call-recovery`, `p2p-mesh` and `seat-timeout` passed 19 of 19, and `call-recovery` 15 of 15 (three repeats) |
 
+The app defects below were found on 2026-10-23, when the specs were brought up to the current app:
+
+| Commit | Defect | Evidence |
+| --- | --- | --- |
+| 6c8b272 | On desktop, dummy's cards in the top place did not take the declarer's click | A browser test in `tests/browser/table-mobile-play.test.ts` clicks dummy's card |
+| cd27954 | A page that reopened at once after a crash was refused as superseded while the host still counted the crashed page | Unit tests of the follower, the host engine and the wire format; `acceptance` and `reconnect` close pages without unload handlers and open them again |
+| 599f086 | A browser that reopened the table link waited for the seat grace time before it got its own seat back | Unit tests of the host engine, a browser test of the seat memory; `acceptance` (reopening the link) |
+| c677977 | A page that hosted its own reopened seat later reported the seat as taken by another page (a regression from 599f086) | `seat-timeout` |
+| fa962c8 | A joiner that took the host seat of the room setup seeded a second table although a host had answered, so the room split in two | `seat-timeout` test 2 |
+| a0cd362 | After a reload outside the call, the call kept the old link and showed the seat as in the call | Unit tests of the call mesh; `call-audio` tests 8 and 13 (reloads) |
+| 718b51a | One tracker announce carried one offer, so it could reach only one other seat; a page that left kept its stale offers at the trackers; a tracker message that was not JSON threw in the socket handler | `tests/unit/p2p-torrent.test.ts` and `tests/unit/p2p-mesh.test.ts`; the full runs |
+| 592f14a | After a table expired, a browser kept its seat, so the room link seeded the table from that seat instead of offering the four seats | A browser test in `tests/browser/session.test.ts` ("forgets both seats of one room only") |
+| 7a2a237 | Join with the camera switch on and a confirmed preview stayed outside the call without a message | A unit test in `tests/unit/call-controller.test.ts` failed before the fix and passes with it; `call-video` |
+
 ## Test corrections and acceptance changes
 
 Each change is recorded in its commit message.
@@ -143,9 +176,20 @@ Each change is recorded in its commit message.
   Back in the room after a navigation, the player rejoins the call with the stored status.
 - `layout` (0e1f78d): the creator's default name is "player4", and a deal waits for all four seats.
 
+Corrections of 2026-10-23, for an app that changed after the 2026-10-19 runs:
+
+- All specs (abf3d06): calls go through the bid box, the first deal is automatic, a link with the room setup offers its four seats (ADR 0005), and the ports come from `E2E_PORT` and `E2E_HARNESS_PORT`.
+  `mobile-controls` no longer checks the removed phone layout.
+- `seat-timeout` (37868c9): a seat whose holder is offline frees after about 20 s (`SEAT_GRACE_MS`), not 3 min; the owner accepted the 20 s behavior.
+- `bridge` and `reconnect` (416fc3a): the specs read the current table (the turn in the tab title, the contract in the sidebar, the scoring line and the statistics table) and use the desktop controls.
+  Board 1 is dealt automatically, so the old `reconnect` test of a forced deal while a player is away has no control to click; its check that the deal waits for the absent player moved into the dummy test.
+- `call-video` (816eea7): the tests confirm the camera preview; a blocked camera shows in the preview, which keeps "Send camera" disabled.
+  Outside the call the switches are enabled and choose what Join starts with; a phone shows its video switches off and disabled.
+- `layout` (816eea7): only the declarer on turn may claim, and only a seat that played a card may ask to undo; the card-label check scales the font metrics with the room canvas; the checks wait until the canvas scale follows a new viewport size.
+
 ## Unit tests
 
-`npm test` (Vitest, also part of `pre-commit run --all`): 1231 of 1231 tests passed in 45 files, at commit e47be4b.
+`npm test` (Vitest, also part of `pre-commit run --all`): 1231 of 1231 tests passed in 45 files, at commit e47be4b, and 1351 of 1351 in 57 files, at commit 816eea7.
 
 The unit tests check pure functions with real inputs: the link and identifier derivation, the validators, the election rules with a seeded simulation, the presence rule, the bridge rules and the view models.
 Some older unit suites use in-memory stand-ins:
