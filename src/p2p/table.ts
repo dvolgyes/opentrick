@@ -883,6 +883,10 @@ export class TableController {
 			case "status":
 				this.#followerStatus(event.status);
 				break;
+			case "lobby":
+				// A host answered, so the room exists: a seat comes from that host, and the setup link seeds nothing.
+				this.#bootstrapAllowed = false;
+				break;
 			case "seat-result":
 				if (event.result.ok) this.#seatError = null;
 				else this.#claimFailed(event.result.code);
