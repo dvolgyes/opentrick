@@ -1,7 +1,7 @@
-import { getRelaySockets, joinRoom, selfId } from "@trystero-p2p/torrent";
 import type { MeshConfig } from "./config";
 import { Mesh, type MeshHandlers, type TrackerSocket } from "./mesh";
 import type { Clock } from "./ports";
+import { getRelaySockets, joinRoom, selfId } from "./torrent";
 
 /** The production mesh: the real Trystero bundle over the configured public trackers. */
 export function trysteroMesh(

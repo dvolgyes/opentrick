@@ -53,6 +53,12 @@ export const PAIR_RETRY_MAX_MS = 120_000;
  */
 export const REJOIN_MS = 10_000;
 export const REJOIN_MAX_MS = 60_000;
+/**
+ * Offers in each announce of the table room (src/p2p/torrent.ts). A tracker gives each offer to one peer, so a page
+ * of a four-seat table reaches the other three in one announce, not one of them every 10 s. A pair room has two
+ * pages and keeps Trystero's one offer.
+ */
+export const TABLE_OFFERS = 3;
 
 // Replication (plan §4.5).
 export const ACK_DEBOUNCE_MS = 1_000;

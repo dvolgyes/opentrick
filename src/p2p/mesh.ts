@@ -1,10 +1,3 @@
-import type {
-	DataPayload,
-	JoinError,
-	JoinRoomCallbacks,
-	JoinRoomConfig,
-	MessageAction,
-} from "@trystero-p2p/torrent";
 import { APP_ID, type MeshConfig } from "./config";
 import {
 	CALL_BYTES,
@@ -18,9 +11,17 @@ import {
 	MESH_BYTES,
 	REJOIN_MAX_MS,
 	REJOIN_MS,
+	TABLE_OFFERS,
 } from "./limits";
 import type { Clock, Send } from "./ports";
 import { peerRendezvous, Rendezvous } from "./rendezvous";
+import type {
+	DataPayload,
+	JoinError,
+	JoinRoomCallbacks,
+	MessageAction,
+	TorrentRoomConfig,
+} from "./torrent";
 import {
 	type CallFrame,
 	type CtlMessage,
@@ -57,7 +58,7 @@ export interface MeshRoom {
 }
 
 export type JoinMeshRoom = (
-	config: JoinRoomConfig,
+	config: TorrentRoomConfig,
 	roomId: string,
 	callbacks: JoinRoomCallbacks,
 ) => MeshRoom;
@@ -158,7 +159,7 @@ export class Mesh implements Send {
 	readonly self: string;
 	readonly #deps: MeshDeps;
 	readonly #handlers: MeshHandlers;
-	readonly #roomConfig: JoinRoomConfig;
+	readonly #roomConfig: TorrentRoomConfig;
 	#table: TableRoom;
 	readonly #rendezvous: Rendezvous;
 	/** Peers that a neighbour listed and this page has no link to, until when they stay repair targets. */
@@ -192,7 +193,7 @@ export class Mesh implements Send {
 		this.#deps = deps;
 		this.#handlers = handlers;
 		const { config } = deps;
-		const roomConfig: JoinRoomConfig = {
+		const roomConfig: TorrentRoomConfig = {
 			appId: APP_ID,
 			password: deps.key,
 			rtcConfig: config.rtc,
@@ -301,7 +302,8 @@ export class Mesh implements Send {
 
 	/** Joins the table room and makes its actions. */
 	#joinTable(): TableRoom {
-		const room = this.#deps.joinRoom(this.#roomConfig, this.#deps.tableId, {
+		const config = { ...this.#roomConfig, offersPerAnnounce: TABLE_OFFERS };
+		const room = this.#deps.joinRoom(config, this.#deps.tableId, {
 			onJoinError: (error) => this.#joinError(error),
 		});
 		const table: TableRoom = {

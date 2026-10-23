@@ -41,7 +41,10 @@ Link and identity:
 
 Transport:
 
-- Trystero 0.26.0 (`@trystero-p2p/torrent`, pinned exactly) joins one room per table through the public WebTorrent trackers, with K as the room password.
+- Trystero 0.26.0 (`@trystero-p2p/core`, pinned exactly) joins one room per table through the public WebTorrent trackers, with K as the room password.
+  The torrent strategy is a copy of `@trystero-p2p/torrent` 0.26.0 in `src/p2p/torrent.ts`, under its MIT notice.
+  The copy sends three offers in each announce of the table room instead of one, sends a "stopped" announce when a page leaves a room, and ignores tracker messages that are not well-formed.
+  An upgrade of Trystero merges the upstream strategy into the copy by hand.
   The trackers see only an info hash that Trystero derives from the app name and the table identifier, the clients' IP addresses and encrypted session descriptions.
 - The pages form a full mesh of WebRTC data channels.
   Four actions carry all traffic: `opentrick-ctl` (control, 8 KiB), `opentrick-log` (log replication, 256 KiB), `opentrick-call` (call signaling, 64 KiB) and `opentrick-mesh` (peer lists for the mesh repair, 2 KiB).
