@@ -2,7 +2,8 @@ import type { PromptTemplates } from "./strategy";
 
 export async function loadBrowserPromptTemplates(): Promise<PromptTemplates> {
 	const [bidding, play] = await Promise.all(
-		["/bot-prompts/bidding.txt", "/bot-prompts/play.txt"].map(async (url) => {
+		// Relative to the page: the site can be served below a path (vite.config.ts `base`).
+		["bot-prompts/bidding.txt", "bot-prompts/play.txt"].map(async (url) => {
 			const response = await fetch(url);
 			if (!response.ok)
 				throw new Error(`could not load bot prompt (${response.status})`);

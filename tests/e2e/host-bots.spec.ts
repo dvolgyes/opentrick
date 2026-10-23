@@ -122,6 +122,67 @@ test("the create page stores the OpenRouter key also when no seat is a bot", asy
 	).toHaveValue("later-key");
 });
 
+test("a bot bids when the site is served below a path, as on GitHub Pages", async ({
+	page,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const origin = new URL(baseURL).origin;
+	// GitHub Pages serves the app below /opentrick/, and nothing of it at the root.
+	await page.route(`${origin}/**`, async (route) => {
+		const url = new URL(route.request().url());
+		if (!url.pathname.startsWith("/opentrick/")) {
+			await route.fulfill({ status: 404, body: "" });
+			return;
+		}
+		url.pathname = url.pathname.slice("/opentrick".length);
+		await route.fulfill({ response: await route.fetch({ url: url.href }) });
+	});
+	let requests = 0;
+	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
+		if (route.request().method() === "OPTIONS") {
+			await route.fulfill({
+				status: 204,
+				headers: {
+					"access-control-allow-origin": "*",
+					"access-control-allow-methods": "POST, OPTIONS",
+					"access-control-allow-headers": "authorization,content-type",
+				},
+			});
+			return;
+		}
+		requests++;
+		await route.fulfill({
+			status: 200,
+			headers: { "access-control-allow-origin": "*" },
+			contentType: "application/json",
+			body: JSON.stringify({
+				output: [
+					{
+						type: "message",
+						role: "assistant",
+						content: [{ type: "output_text", text: '{"call":"P"}' }],
+					},
+				],
+			}),
+		});
+	});
+
+	await page.goto("/opentrick/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	for (const seat of ["N", "E", "S"]) {
+		await page.locator(`input[name="name-${seat}"]`).fill(`bot ${seat}`);
+		await page.locator(`input[name="bot-${seat}"]`).check();
+	}
+	await page.locator('input[name="openrouter-key"]').fill("test-key");
+	await page.getByTestId("create").click();
+	// Board 1: North deals, so the North bot bids first.
+	await expect(page.getByTestId("bid-history")).toContainText("Pass", {
+		timeout: CONNECT_MS,
+	});
+	expect(requests).toBeGreaterThan(0);
+});
+
 test("switching the current bidder to a bot starts it immediately", async ({
 	browser,
 	baseURL,
