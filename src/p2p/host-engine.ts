@@ -20,7 +20,6 @@ import {
 	MAX_STATE_BYTES,
 	ROSTER_COALESCE_MS,
 	SEAT_GRACE_MS,
-	SEAT_HOLD_MS,
 } from "./limits";
 import { LINK_VERSION } from "./link";
 import { appendCommit, type LocalLog, seatEvent } from "./log";
@@ -993,14 +992,10 @@ export class HostEngine {
 		);
 	}
 
-	#timedOut(seat: Seat): boolean {
-		const seen = this.#seen.get(seat);
-		return (
-			seen === undefined || this.#deps.clock.monotonic() - seen > SEAT_HOLD_MS
-		);
-	}
-
-	/** The seat's holder is offline and has been unseen for SEAT_GRACE_MS. */
+	/**
+	 * The seat's holder is offline and has been unseen for SEAT_GRACE_MS. A holder that stays connected but goes
+	 * silent is offline after HOST_LOST_MS, which is longer, so its seat frees then.
+	 */
 	#gracePassed(table: TableRecord, seat: Seat): boolean {
 		const seen = this.#seen.get(seat);
 		return (
@@ -1023,15 +1018,14 @@ export class HostEngine {
 
 	/**
 	 * Free; held by the asking holder with no connected peer on the seat, so a reopened page gets its seat back at
-	 * once; or held by an offline holder past the seat hold or grace period (plan §4.6).
+	 * once; or held by an offline holder past the grace period (plan §4.6).
 	 */
 	#available(table: TableRecord, seat: Seat, holder: string): boolean {
 		const row = seatRow(table, seat);
 		return (
 			row.holder === null ||
 			(row.holder === holder && !this.#seatPeerConnected(table, seat)) ||
-			this.#gracePassed(table, seat) ||
-			this.#timedOut(seat)
+			this.#gracePassed(table, seat)
 		);
 	}
 

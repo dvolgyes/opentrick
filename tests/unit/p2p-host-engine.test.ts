@@ -10,7 +10,6 @@ import {
 	MAX_PENDING_PER_SEAT,
 	ROSTER_COALESCE_MS,
 	SEAT_GRACE_MS,
-	SEAT_HOLD_MS,
 	TABLE_IDLE_MS,
 } from "../../src/p2p/limits";
 import { LINK_VERSION } from "../../src/p2p/link";
@@ -516,12 +515,27 @@ describe("seats", () => {
 		});
 	});
 
-	it("gives a seat to another holder after the seat hold", async () => {
+	it("keeps a connected holder's seat until its peer is silent for HOST_LOST_MS, then gives it to another browser", async () => {
 		const rig = await new Rig().create();
 		await rig.seat(EAST, CLIENT_E, "E");
-		rig.clock.now += SEAT_HOLD_MS + 1;
-		const gen = await rig.seat(SOUTH, CLIENT_S, "E");
-		expect(gen).toBe(2);
+		await rig.hello(SOUTH, CLIENT_S);
+		rig.clock.now += HOST_LOST_MS - 1;
+		await rig.from(SOUTH, { k: "claim-seat", req: 8, seat: "E" });
+		expect(rig.to(SOUTH)).toContainEqual({
+			k: "seat-result",
+			req: 8,
+			ok: false,
+			code: "taken",
+		});
+		rig.clock.now += 1;
+		await rig.from(SOUTH, { k: "claim-seat", req: 9, seat: "E" });
+		expect(rig.to(SOUTH)).toContainEqual({
+			k: "seat-result",
+			req: 9,
+			ok: true,
+			seat: "E",
+			gen: 2,
+		});
 		expect(rig.row("E")?.holder).toBe(await deriveHolder(TABLE, CLIENT_S));
 	});
 
