@@ -1248,25 +1248,28 @@ main:has(> .room) {
 	display: none;
 }
 
-/* The oriented bottom card is mirrored, so its top-right and bottom-left elements are drawn top-left and bottom-right. */
+/*
+ * Each oriented card shows the two corners its own player sees as top-left and bottom-right. The bottom card is mirrored,
+ * and the side cards turn their ranks a quarter, so these are their top-right and bottom-left elements on screen.
+ */
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
+	.played:is(.pos-bottom, .pos-left, .pos-right)
 	.rank-corner.top-right,
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
+	.played:is(.pos-bottom, .pos-left, .pos-right)
 	.rank-corner.bottom-left {
 	display: block;
 }
 
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
+	.played:is(.pos-bottom, .pos-left, .pos-right)
 	.rank-corner.top-left,
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
+	.played:is(.pos-bottom, .pos-left, .pos-right)
 	.rank-corner.bottom-right {
 	display: none;
 }

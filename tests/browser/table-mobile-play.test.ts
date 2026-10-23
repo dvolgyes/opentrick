@@ -247,9 +247,28 @@ describe("played card styles", () => {
 		expect(root.dataset.playedCardStyle).toBe("corners-oriented");
 	});
 
-	it.each<[Form, string[]]>([
-		["desktop", ["top-left", "top-right", "bottom-left", "bottom-right"]],
-		["compact", ["top-left", "bottom-right"]],
+	const ALL_CORNERS = ["top-left", "top-right", "bottom-left", "bottom-right"];
+	// On a phone, each card shows its own top-left and bottom-right corners, as seen by the player who played it: the
+	// side cards are turned a quarter, so their ranks are top-right and bottom-left on screen.
+	it.each<[Form, Record<"top" | "left" | "bottom" | "right", string[]>]>([
+		[
+			"desktop",
+			{
+				top: ALL_CORNERS,
+				left: ALL_CORNERS,
+				bottom: ALL_CORNERS,
+				right: ALL_CORNERS,
+			},
+		],
+		[
+			"compact",
+			{
+				top: ["top-left", "bottom-right"],
+				left: ["top-right", "bottom-left"],
+				bottom: ["top-left", "bottom-right"],
+				right: ["top-right", "bottom-left"],
+			},
+		],
 	])("shows the rank in the %s corners %j on screen", (form, shown) => {
 		const positions = [
 			["N", "top"],
@@ -284,7 +303,13 @@ describe("played card styles", () => {
 					const left = mark.left + mark.width / 2 < box.left + box.width / 2;
 					return `${top ? "top" : "bottom"}-${left ? "left" : "right"}`;
 				});
-			expect(corners.sort(), face.className).toEqual([...shown].sort());
+			const position = positions.find(([, side]) =>
+				face.classList.contains(`pos-${side}`),
+			)?.[1];
+			if (!position) throw new Error(`no position on ${face.className}`);
+			expect(corners.sort(), face.className).toEqual(
+				[...shown[position]].sort(),
+			);
 		}
 	});
 
