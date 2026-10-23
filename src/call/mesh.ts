@@ -143,6 +143,8 @@ export class CallMesh {
 	#waiting: Waiting[] = [];
 	readonly #replies = new Map<Seat, ReturnType<typeof setTimeout>>();
 	readonly #vanishing = new Map<Seat, ReturnType<typeof setTimeout>>();
+	/** Returned seats that were greeted and have not answered yet. */
+	readonly #greeted = new Map<Seat, ReturnType<typeof setTimeout>>();
 	#silence: ReturnType<typeof setTimeout> | undefined;
 	#heard = new Set<Seat>();
 	#problem: FailureCode | undefined;
@@ -363,7 +365,32 @@ export class CallMesh {
 		if (self === undefined || !this.#joined?.announced) return;
 		for (const seat of returnedSeats(previous, snapshot, self.seat)) {
 			this.#announce("resync", seat);
+			this.#awaitAnswer(seat);
 		}
+	}
+
+	/**
+	 * A seat that comes back at the same generation can be a reloaded page that is not in the call: its old link
+	 * is dead, and it does not answer. Without an answer, the link ends once it is not connected; it is checked
+	 * every SILENCE_MS, because WebRTC can take longer than the reload to see the old page go.
+	 */
+	#awaitAnswer(seat: Seat): void {
+		const peer = this.#peers.get(seat);
+		if (peer === undefined) return;
+		clearTimeout(this.#greeted.get(seat));
+		this.#greeted.set(
+			seat,
+			setTimeout(() => {
+				this.#greeted.delete(seat);
+				if (this.#peers.get(seat) !== peer) return;
+				if (peer.link?.connected) {
+					this.#awaitAnswer(seat);
+					return;
+				}
+				this.#forget(seat);
+				this.#emit();
+			}, SILENCE_MS),
+		);
 	}
 
 	/** A send can be lost silently: one addressed `resync` per seat that stays silent, never more. */
@@ -427,6 +454,8 @@ export class CallMesh {
 		if (joined === undefined) return;
 		const { from, fromGen, message } = envelope;
 		this.#heard.add(from);
+		clearTimeout(this.#greeted.get(from));
+		this.#greeted.delete(from);
 		const known = this.#peers.get(from);
 		const current = known?.session === message.session ? known : undefined;
 		switch (message.type) {
@@ -592,6 +621,8 @@ export class CallMesh {
 		this.#peers.delete(seat);
 		clearTimeout(this.#vanishing.get(seat));
 		this.#vanishing.delete(seat);
+		clearTimeout(this.#greeted.get(seat));
+		this.#greeted.delete(seat);
 	}
 
 	/** Replaces call presence (ADR 0004): a peer that stays offline at its generation leaves the call. */

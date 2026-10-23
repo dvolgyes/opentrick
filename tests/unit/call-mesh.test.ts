@@ -655,6 +655,58 @@ describe("CallMesh membership and lifecycle", () => {
 		expectConnected(north, south);
 	});
 
+	it("ends the link to a seat that comes back within 10 s at the same generation and does not answer the greeting", async () => {
+		const north = table.take("N");
+		const east = table.take("E");
+		const south = table.take("S");
+		for (const player of [north, east, south]) player.mesh.join(AUDIO);
+		await settle();
+		// East reloads: the old page goes with its call, its farewell is lost, and the new page keeps the seat at the
+		// same generation without joining the call. South's network blinks; it stays in the call.
+		table.broker.drop = (traffic) => traffic.message.type === "leave";
+		east.mesh.dispose();
+		for (const player of [north, south]) player.live("E")[0]?.fail();
+		table.broker.online.delete("E");
+		table.broker.online.delete("S");
+		table.publish(north, south);
+		await settle(VANISHED_MS / 2);
+		table.broker.online.add("E");
+		table.broker.online.add("S");
+		table.publish(north, south);
+		await settle(SILENCE_MS - 1);
+		expect(north.mesh.peer("E")).toEqual(AUDIO);
+		await settle(1);
+		expect(north.live("E")).toEqual([]);
+		expect(north.mesh.peer("E")).toBeUndefined();
+		expect(south.live("E")).toEqual([]);
+		expect(south.mesh.peer("E")).toBeUndefined();
+		await settle();
+		expectConnected(north, south);
+	});
+
+	it("ends the link to a returned seat that does not answer once the link drops, also after the greeting wait", async () => {
+		const north = table.take("N");
+		const east = table.take("E");
+		north.mesh.join(AUDIO);
+		east.mesh.join(AUDIO);
+		await settle();
+		// East reloads fast: its seat is back before WebRTC sees the old link go, so the link still counts as
+		// connected when the greeting wait ends.
+		table.broker.drop = (traffic) => traffic.message.type === "leave";
+		east.mesh.dispose();
+		table.broker.online.delete("E");
+		table.publish(north);
+		await settle();
+		table.broker.online.add("E");
+		table.publish(north);
+		await settle(SILENCE_MS * 2);
+		expect(north.live("E")).toHaveLength(1);
+		north.live("E")[0]?.fail();
+		await settle(SILENCE_MS);
+		expect(north.live("E")).toEqual([]);
+		expect(north.mesh.peer("E")).toBeUndefined();
+	});
+
 	it("Leave closes every link and the peers forget the seat", async () => {
 		const north = table.take("N");
 		const east = table.take("E");
