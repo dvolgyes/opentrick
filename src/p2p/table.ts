@@ -853,6 +853,8 @@ export class TableController {
 			this.#replication?.apply(effect);
 			const seat = this.#lock?.seat;
 			if (effect.type === "host" && seat) {
+				// Hosting the seat confirms it, as a bound welcome does.
+				this.#reopened = false;
 				this.#deps.memory.remember(this.#tableId, seat);
 			}
 		}
