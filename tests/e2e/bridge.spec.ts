@@ -265,6 +265,12 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 			"data-visible",
 			"true",
 		);
+	// Dummy also sees declarer's hand; the defenders do not.
+	for (const seat of SEATS)
+		await expect(hand(tab[seat], "N")).toHaveAttribute(
+			"data-visible",
+			String(seat === "N" || seat === DUMMY),
+		);
 	await expect(prompt(tab.N)).toHaveText("Your turn: play a card from dummy.");
 	await expect(prompt(tab.S)).toHaveText(
 		"Waiting for North to play from dummy.",

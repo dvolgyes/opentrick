@@ -368,8 +368,8 @@ export interface PlayerView {
 }
 
 /**
- * What one player may see: their own hand, dummy after the opening lead, and every hand once the board is
- * over. Players are trusted not to read the full board from the room state; this view is what the table shows.
+ * What one player may see: their own hand, dummy after the opening lead (and, for dummy, declarer's hand),
+ * and every hand once the board is over. Players are trusted not to read the full board from the room state; this view is what the table shows.
  */
 export function viewForPlayer(
 	board: Board,
@@ -384,7 +384,10 @@ export function viewForPlayer(
 		const cards = status.remaining[owner];
 		return owner === seat ||
 			revealedSeats.includes(owner) ||
-			(dummyExposed && owner === status.dummy)
+			(dummyExposed && owner === status.dummy) ||
+			(dummyExposed &&
+				seat === status.dummy &&
+				owner === status.contract.declarer)
 			? { visible: true, cards }
 			: { visible: false, count: cards.length };
 	};

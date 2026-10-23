@@ -239,6 +239,9 @@ describe("play", () => {
 		const south = view("S", LED);
 		expect(south.prompt).toBe("Waiting for North to play from dummy.");
 		expect(playableCards(seatView(south, "S").hand)).toEqual([]);
+		expect(seatView(south, "N").position).toBe("top");
+		expect(shownCards(seatView(south, "N").hand)).toHaveLength(13);
+		expect(playableCards(seatView(south, "N").hand)).toEqual([]);
 		const west = view("W", LED);
 		expect(shownCards(seatView(west, "S").hand)).toHaveLength(13);
 		expect(seatView(west, "N").hand).toEqual({ visible: false, count: 13 });

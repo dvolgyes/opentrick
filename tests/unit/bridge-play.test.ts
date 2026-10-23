@@ -197,6 +197,28 @@ describe("viewForPlayer", () => {
 		expect(north.legal).toEqual([]);
 	});
 
+	it("shows declarer's hand to dummy only, after the opening lead", () => {
+		const beforeLead = fourHeartsByEast();
+		expect(viewForPlayer(beforeLead, "W").hands.E).toEqual({
+			visible: false,
+			count: 13,
+		});
+		const board = playing(beforeLead, "S4");
+		expect(viewForPlayer(board, "W").hands.E).toEqual({
+			visible: true,
+			cards: DEAL.E,
+		});
+		expect(viewForPlayer(board, "W").hands.N).toEqual({
+			visible: false,
+			count: 13,
+		});
+		for (const seat of ["N", "S"] as const)
+			expect(viewForPlayer(board, seat).hands.E).toEqual({
+				visible: false,
+				count: 13,
+			});
+	});
+
 	it("gives declarer the legal cards of dummy on dummy's turn", () => {
 		const board = playing(fourHeartsByEast(), "S4");
 		expect(viewForPlayer(board, "E").legal).toHaveLength(13);
