@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { Player } from "./player";
 
 /*
- * A phone shows the same scaled table as a desktop (src/ui/room-view.ts "one Full HD presentation"); layout.spec.ts
- * checks that canvas. This test checks the host bot controls on a phone.
+ * A phone shows the compact table (src/ui/room-view.ts sets the form from the device class); phone.spec.ts plays a
+ * board on it, and layout.spec.ts checks it at several phone sizes. This test checks the host bot controls on a phone.
  */
 test("on a phone the host pauses the bots and changes the API key", async ({
 	browser,

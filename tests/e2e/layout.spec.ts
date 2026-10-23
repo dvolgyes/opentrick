@@ -11,8 +11,9 @@ import {
 
 /**
  * Player-relative layout (call/layout plan C3). Four desktop browsers check the rotation, the tiles and the
- * free space between the table parts; a phone-sized browser checks the scaled room canvas at a second table. A deal
- * needs all four seats (plan §12 R4), so three of the desktop browsers also sit at the second table.
+ * free space between the table parts. At a second table a phone checks the compact table, and the host's desktop
+ * window checks the scaled room canvas. A deal needs all four seats (plan §12 R4), so three of the desktop browsers
+ * also sit at the second table.
  * Board 1: North deals; North's tab shows the full bid grid at the start of the auction.
  */
 test.describe.configure({ mode: "serial" });
@@ -27,14 +28,19 @@ const AROUND: Readonly<
 	S: { left: "W", partner: "N", right: "E" },
 	W: { left: "N", partner: "E", right: "S" },
 };
-/** Phone, 4:3 and Full HD viewports used to check the room canvas. */
-const CANVAS_VIEWPORTS = [
+/** Portrait and landscape phone viewports; a phone gets the compact table at each of them. */
+const PHONE_VIEWPORTS = [
 	{ width: 320, height: 568 },
 	{ width: 360, height: 640 },
 	{ width: 390, height: 664 },
 	{ width: 844, height: 390 },
+] as const;
+/** 4:3, Full HD, ultrawide and portrait desktop viewports used to check the room canvas. */
+const CANVAS_VIEWPORTS = [
 	{ width: 1440, height: 1080 },
 	{ width: 1920, height: 1080 },
+	{ width: 2560, height: 1080 },
+	{ width: 1080, height: 1920 },
 ] as const;
 /** Half a pixel absorbs subpixel rounding of the layout. */
 const SUBPIXEL = 0.5;
@@ -443,6 +449,36 @@ async function expectRoomCanvasFit(page: Page): Promise<void> {
 	expect(geometry.botControlInRightVideo).toBe(true);
 }
 
+/**
+ * A phone-width window gets the compact table (src/call/device-class.ts): the room is not the scaled Full HD canvas,
+ * the page has no horizontal scroll, and each given part lies within the window's width.
+ */
+async function expectCompactRoom(
+	page: Page,
+	parts: readonly Locator[] = [],
+): Promise<void> {
+	await expect(page.locator(".room")).toHaveAttribute("data-form", "compact");
+	expect(
+		await page.evaluate(() => ({
+			overflow:
+				document.documentElement.scrollWidth -
+				document.documentElement.clientWidth,
+			transform: getComputedStyle(document.querySelector("main") as Element)
+				.transform,
+		})),
+	).toEqual({ overflow: 0, transform: "none" });
+	const view = await pageViewport(page);
+	for (const part of parts) {
+		await expect(part).toBeVisible();
+		const box = await part.boundingBox();
+		if (!box) throw new Error(`${part} has no box`);
+		expect(box.x, `${part} left edge`).toBeGreaterThanOrEqual(-SUBPIXEL);
+		expect(box.x + box.width, `${part} right edge`).toBeLessThanOrEqual(
+			view.innerWidth + SUBPIXEL,
+		);
+	}
+}
+
 test.beforeAll(async ({ browser, baseURL }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
 	for (const [seat, identity] of [
@@ -529,16 +565,19 @@ test("2: desktop, during play: dummy's cards and the trick keep apart from the r
 	await expectDesktopLayout("E");
 	await tab.E.setViewportSize({ width: 1280, height: 720 });
 
-	// The entire room keeps its desktop composition at narrow sizes and scales as one 16:9 canvas.
+	// A desktop window narrower than 900 px gets the compact table, with dummy at the top; at 1280 px the room is the
+	// scaled Full HD canvas again.
 	await tab.E.setViewportSize({ width: 390, height: 664 });
-	await expectRoomCanvasFit(tab.E);
-	await expectSlotWithoutScroll(tab.E);
+	await expectCompactRoom(tab.E, [
+		tab.E.locator(".mobile-board-top"),
+		tab.E.locator(".mobile-auction-hand"),
+	]);
 	expect(await ranksCut(tab.E), "ranks under the next card").toEqual([]);
 	await tab.E.setViewportSize({ width: 1280, height: 720 });
-	await expect(tab.E.locator(".room")).toHaveAttribute("data-form", "desktop");
+	await expectRoomCanvasFit(tab.E);
 });
 
-test("3: the Full HD room canvas scales proportionally across viewport aspect ratios", async () => {
+test("3: a phone gets the compact table, and a desktop scales the Full HD room canvas across aspect ratios", async () => {
 	if (!phone) throw new Error("the phone browser is not open");
 	const host = await players.W.page("./");
 	const link = await createRoom(host);
@@ -546,18 +585,25 @@ test("3: the Full HD room canvas scales proportionally across viewport aspect ra
 	await pick(phoneTab, "N");
 	for (const seat of ["S", "E"] as const)
 		await pick(await players[seat].page(link), seat);
-	await expectRoomCanvasFit(phoneTab);
-	await expectSlotWithoutScroll(phoneTab);
+	await expectCompactRoom(phoneTab);
 
 	// The hosting page deals the first board by itself once all four seats are present.
 	await expect(table(phoneTab)).toHaveAttribute("data-phase", "auction", {
 		timeout: CONNECT_MS,
 	});
-	await expect(phoneTab.getByTestId("bid-box")).toBeVisible();
-	for (const size of CANVAS_VIEWPORTS) {
+	const phoneParts = [
+		phoneTab.locator(".mobile-auction-hand"),
+		phoneTab.getByTestId("bid-box"),
+	];
+	for (const size of PHONE_VIEWPORTS) {
 		await phoneTab.setViewportSize(size);
-		await test.step(`${size.width}×${size.height}`, () =>
-			expectRoomCanvasFit(phoneTab as Page));
+		await test.step(`phone ${size.width}×${size.height}`, () =>
+			expectCompactRoom(phoneTab as Page, phoneParts));
+	}
+	for (const size of CANVAS_VIEWPORTS) {
+		await host.setViewportSize(size);
+		await test.step(`desktop ${size.width}×${size.height}`, () =>
+			expectRoomCanvasFit(host));
 	}
 });
 
@@ -592,19 +638,20 @@ test("4: the call controls have names that spell out the way and the medium, and
 			);
 		}
 	}
-	// The phone shows the video switches too, off and disabled: a phone is audio only (src/call/device-class.ts).
-	for (const name of ["Send camera video", "See cameras: receive video"]) {
-		const toggle = phoneTab.getByRole("button", { name, exact: true });
-		await expect(toggle).toBeDisabled();
-		await expect(toggle).toHaveAttribute("aria-pressed", "false");
-		await expect(toggle.locator(".icon-slash")).toHaveCount(1);
-	}
-	// The phone uses the desktop room too: during the auction it offers no claim (src/ui/table.ts shows Claim only
-	// in play), and the bid box's Undo stays disabled before the first call.
+	// The compact call row has no video switches: a phone is audio only (src/call/device-class.ts,
+	// src/ui/call-panel.ts).
+	for (const name of ["Send camera video", "See cameras: receive video"])
+		await expect(
+			phoneTab.getByRole("button", { name, exact: true }),
+		).toHaveCount(0);
+	// The compact table offers no claim during the auction (src/ui/table.ts enables the claims only in play), and
+	// both Undo controls stay disabled before the first call.
+	for (const id of ["claim-compact", "claim-all-compact", "undo-compact"])
+		await expect(phoneTab.getByTestId(id)).toBeDisabled();
 	await expect(
-		phoneTab.getByRole("button", { name: "Claim all", exact: true }),
-	).toBeHidden();
-	await expect(
-		phoneTab.getByRole("button", { name: "Undo", exact: true }),
+		phoneTab.getByTestId("bid-box").getByRole("button", {
+			name: "Undo",
+			exact: true,
+		}),
 	).toBeDisabled();
 });

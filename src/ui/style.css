@@ -82,6 +82,12 @@ label {
 	margin: 0.6rem 0;
 }
 
+/* A name field shrinks with its column, so the create table fits a phone. */
+.create input[type="text"] {
+	width: 100%;
+	min-width: 5rem;
+}
+
 .language-control {
 	position: fixed;
 	top: 0.4rem;
@@ -1911,18 +1917,18 @@ button.call-join[data-in-call="true"] {
 	display: none;
 }
 
-main[data-screen="table"] > .room {
+main[data-screen="table"][data-form="desktop"] > .room {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) 20rem;
 	gap: 1rem;
 	align-items: start;
 }
 
-main[data-screen="table"] > .room > :not(.table-sidebar) {
+main[data-screen="table"][data-form="desktop"] > .room > :not(.table-sidebar) {
 	grid-column: 1;
 }
 
-main[data-screen="table"] > .room > .table-sidebar {
+main[data-screen="table"][data-form="desktop"] > .room > .table-sidebar {
 	grid-column: 2;
 	grid-row: 1;
 }
@@ -1931,47 +1937,47 @@ main[data-screen="table"] > .room > .table-sidebar {
 	/*
  * The room uses a 1920×1080 reference canvas. A single transform scales this whole layout for the viewport.
 	 */
-	html:has(main[data-screen="table"]) {
+	html:has(main[data-screen="table"][data-form="desktop"]) {
 		font-size: 22.68px;
 	}
 
 	/* At the reference size, the card height matches the existing Full HD layout. */
-	main[data-screen="table"] .bridge-table {
+	main[data-screen="table"][data-form="desktop"] .bridge-table {
 		--card-h: 162px;
 	}
 
 	/* The own cards overlap: each card shows its rank and suit, and the last card shows in full. The top hand has the same shape, so a card face never covers the next suit. */
-	main[data-screen="table"] .place-top,
-	main[data-screen="table"] .place-bottom {
+	main[data-screen="table"][data-form="desktop"] .place-top,
+	main[data-screen="table"][data-form="desktop"] .place-bottom {
 		--card-w: calc(var(--rank-size) * 2.2);
 	}
 
 	/* The top cards move 10px down; the bottom cards move up so their bottom edge is 20px above the felt's bottom edge, like the call panel and the right window. */
-	main[data-screen="table"] .place-top {
+	main[data-screen="table"][data-form="desktop"] .place-top {
 		position: relative;
 		top: 10px;
 	}
 
-	main[data-screen="table"] .place-bottom {
+	main[data-screen="table"][data-form="desktop"] .place-bottom {
 		position: relative;
 		top: -20px;
 	}
 
 	/* On the desktop the history and the bid box share the row equally, so the bid box is half the old width. */
-	main[data-screen="table"] .bid-row {
+	main[data-screen="table"][data-form="desktop"] .bid-row {
 		flex-direction: row;
 		align-items: stretch;
 		gap: 0.8rem;
 	}
 
-	main[data-screen="table"] .bid-row > .history-panel,
-	main[data-screen="table"] .bid-row > .bid-box {
+	main[data-screen="table"][data-form="desktop"] .bid-row > .history-panel,
+	main[data-screen="table"][data-form="desktop"] .bid-row > .bid-box {
 		flex: 1 1 0;
 		min-width: 0;
 	}
 
 	/* The bid box is 25% narrower than the history: 0.6 : 1 gives 37.5% of the row against 50% before. */
-	main[data-screen="table"] .bid-row > .bid-box {
+	main[data-screen="table"][data-form="desktop"] .bid-row > .bid-box {
 		flex-grow: 0.6;
 	}
 
@@ -1979,12 +1985,16 @@ main[data-screen="table"] > .room > .table-sidebar {
 	 * While bidding the top and bottom seats stay at the ends of the centre column, and the bidding windows are centred
 	 * on the body's height, the same line as the left and right seats' cards.
 	 */
-	main[data-screen="table"] .bridge-table[data-phase="auction"] .col-centre {
+	main[data-screen="table"][data-form="desktop"]
+		.bridge-table[data-phase="auction"]
+		.col-centre {
 		position: relative;
 		justify-content: space-between;
 	}
 
-	main[data-screen="table"] .bridge-table[data-phase="auction"] .center {
+	main[data-screen="table"][data-form="desktop"]
+		.bridge-table[data-phase="auction"]
+		.center {
 		position: absolute;
 		top: 50%;
 		left: 0;
@@ -1994,21 +2004,21 @@ main[data-screen="table"] > .room > .table-sidebar {
 	}
 
 	/* No margin or vertical padding around the felt or the right panel: that space is the active area's, not decoration. */
-	main[data-screen="table"] {
+	main[data-screen="table"][data-form="desktop"] {
 		padding: 0;
 	}
 
-	main[data-screen="table"] .felt {
+	main[data-screen="table"][data-form="desktop"] .felt {
 		margin-block: 0;
 		padding-block: 0;
 	}
 
-	main[data-screen="table"] .scores {
+	main[data-screen="table"][data-form="desktop"] .scores {
 		margin-block: 0;
 	}
 
 	/* The table and sidebar fill the fixed canvas. */
-	main[data-screen="table"] > .room {
+	main[data-screen="table"][data-form="desktop"] > .room {
 		align-items: stretch;
 		width: 100%;
 		height: 100%;
@@ -2016,40 +2026,40 @@ main[data-screen="table"] > .room > .table-sidebar {
 		grid-template-rows: minmax(0, 1fr);
 	}
 
-	main[data-screen="table"] .stage {
+	main[data-screen="table"][data-form="desktop"] .stage {
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
 	}
 
-	main[data-screen="table"] .bridge-table {
+	main[data-screen="table"][data-form="desktop"] .bridge-table {
 		display: flex;
 		flex: 1 1 auto;
 		flex-direction: column;
 		min-height: 0;
 	}
 
-	main[data-screen="table"] .felt {
+	main[data-screen="table"][data-form="desktop"] .felt {
 		flex: 1 1 auto;
 	}
 }
 
-main[data-screen="table"] {
+main[data-screen="table"][data-form="desktop"] {
 	max-width: none;
 }
 
-html:has(main[data-screen="table"]),
-body:has(main[data-screen="table"]) {
+html:has(main[data-screen="table"][data-form="desktop"]),
+body:has(main[data-screen="table"][data-form="desktop"]) {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
 }
 
-body:has(main[data-screen="table"]) {
+body:has(main[data-screen="table"][data-form="desktop"]) {
 	background: #000;
 }
 
-main[data-screen="table"] {
+main[data-screen="table"][data-form="desktop"] {
 	position: fixed;
 	top: 50%;
 	left: 50%;
@@ -2610,39 +2620,47 @@ main:has(> .room[data-form="compact"]) {
 	overflow: visible;
 }
 
+/*
+ * The card step divides the row's width. The row is a container and the step uses its width (cqi), because a
+ * percentage inside the trump frame would refer to the frame, which takes its width from those same cards.
+ */
+:is(.mobile-auction-hand, .mobile-board-top) .hand-row {
+	container-type: inline-size;
+}
+
 :is(.mobile-auction-hand, .mobile-board-top)
 	.hand-row[data-mobile-card-layout="1-1"] {
-	--card-step: calc((100% - 2.1rem) / 12);
+	--card-step: calc((100cqi - 2.1rem) / 12);
 }
 
 :is(.mobile-auction-hand, .mobile-board-top)
 	.hand-row[data-mobile-card-layout="2-1"] {
-	--card-step: calc((100% - 3rem) / 12);
+	--card-step: calc((100cqi - 3rem) / 12);
 }
 
 :is(.mobile-auction-hand, .mobile-board-top)
 	.hand-row[data-mobile-card-layout="2-2"] {
-	--card-step: calc((100% - 5.1rem) / 11);
+	--card-step: calc((100cqi - 5.1rem) / 11);
 }
 
 :is(.mobile-auction-hand, .mobile-board-top)
 	.hand-row[data-mobile-card-layout="3-1"] {
-	--card-step: calc((100% - 3.9rem) / 12);
+	--card-step: calc((100cqi - 3.9rem) / 12);
 }
 
 :is(.mobile-auction-hand, .mobile-board-top)
 	.hand-row[data-mobile-card-layout="3-2"] {
-	--card-step: calc((100% - 6rem) / 11);
+	--card-step: calc((100cqi - 6rem) / 11);
 }
 
 :is(.mobile-auction-hand, .mobile-board-top)
 	.hand-row[data-mobile-card-layout="4-1"] {
-	--card-step: calc((100% - 4.8rem) / 12);
+	--card-step: calc((100cqi - 4.8rem) / 12);
 }
 
 :is(.mobile-auction-hand, .mobile-board-top)
 	.hand-row[data-mobile-card-layout="4-2"] {
-	--card-step: calc((100% - 6.9rem) / 11);
+	--card-step: calc((100cqi - 6.9rem) / 11);
 }
 
 .mobile-auction-hand .hand-row .suit-group {
@@ -2823,4 +2841,9 @@ body:has(
 		.bridge-table:is([data-phase="auction"], [data-phase="play"])
 ) {
 	font-size: 1rem;
+}
+
+/* The compact table uses the full width at its top edge; the start page keeps the language control. */
+body:has(main[data-screen="table"][data-form="compact"]) .language-control {
+	display: none;
 }

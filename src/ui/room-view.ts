@@ -10,7 +10,12 @@ import {
 } from "../bot/host-runner";
 import { type Board, boardStatus } from "../bridge/engine";
 import { CallController } from "../call/call";
-import { classify, readSignals, watchDeviceClass } from "../call/device-class";
+import {
+	classify,
+	type Form,
+	readSignals,
+	watchDeviceClass,
+} from "../call/device-class";
 import { createCallSignaling } from "../call/signaling";
 import {
 	actionPayload,
@@ -996,9 +1001,14 @@ export function showRoom(
 			form,
 		),
 	);
-	// The room keeps one Full HD presentation; deviceForm remains the call policy for camera support.
-	room.dataset.form = "desktop";
-	table.setForm("desktop");
+	// The device class sets the layout: a desktop shows the scaled Full HD room, a phone the compact table.
+	// The page root carries the form too, so that only a desktop page becomes the fixed Full HD canvas.
+	const setRoomForm = (form: Form): void => {
+		root.dataset.form = form;
+		room.dataset.form = form;
+		table.setForm(form);
+	};
+	setRoomForm(deviceForm);
 	const updateRoomCanvasScale = (): void => {
 		const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
 		root.style.setProperty("--room-canvas-scale", String(scale));
@@ -1022,6 +1032,7 @@ export function showRoom(
 		render();
 	};
 	const stopWatching = watchDeviceClass(window, (form) => {
+		setRoomForm(form);
 		call?.setForm(form);
 	});
 	root.replaceChildren(room);
@@ -1528,6 +1539,7 @@ export function showRoom(
 		stopWatching();
 		window.removeEventListener("resize", updateRoomCanvasScale);
 		root.style.removeProperty("--room-canvas-scale");
+		delete root.dataset.form;
 		unsubscribe();
 		unsubscribeCamera?.();
 		camera?.dispose();
