@@ -5,7 +5,6 @@ import {
 	changeForm,
 	direction,
 	join,
-	joinPresets,
 	leave,
 	MEDIA,
 	type Medium,
@@ -68,20 +67,6 @@ describe("presets", () => {
 	it("lists the six presets in the handover order", () => {
 		expect(PRESETS.map((p) => p.id)).toEqual([
 			"out",
-			"audio",
-			"camera",
-			"watch",
-			"both",
-			"listen",
-		]);
-	});
-
-	it("offers only the audio presets on a compact device", () => {
-		expect(joinPresets("compact").map((p) => p.label)).toEqual([
-			"Audio only",
-			"Listen only",
-		]);
-		expect(joinPresets("desktop").map((p) => p.id)).toEqual([
 			"audio",
 			"camera",
 			"watch",

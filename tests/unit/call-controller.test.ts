@@ -239,13 +239,6 @@ describe("CallController (call/layout plan §4.5)", () => {
 		});
 		expect([view.mic, view.camera]).toEqual(["off", "off"]);
 		expect(view.media).toEqual(["audio", "video"]);
-		expect(view.presets.map((preset) => preset.id)).toEqual([
-			"audio",
-			"camera",
-			"watch",
-			"both",
-			"listen",
-		]);
 		expect(view.remotes.map((r) => [r.seat, r.status])).toEqual([
 			["E", "unknown"],
 			["S", "unknown"],
@@ -254,10 +247,6 @@ describe("CallController (call/layout plan §4.5)", () => {
 
 		north.call.setForm("compact");
 		expect(north.call.view.media).toEqual(["audio"]);
-		expect(north.call.view.presets.map((preset) => preset.id)).toEqual([
-			"audio",
-			"listen",
-		]);
 	});
 
 	it("does not send video until a preview track is explicitly prepared", () => {

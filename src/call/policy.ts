@@ -96,15 +96,6 @@ export function presetById(id: PresetId): Preset {
 	return preset;
 }
 
-/** The presets the Join chooser offers on this device: compact devices get only the audio presets. */
-export function joinPresets(form: Form): readonly Preset[] {
-	const ids: readonly PresetId[] =
-		form === "desktop"
-			? ["audio", "camera", "watch", "both", "listen"]
-			: ["audio", "listen"];
-	return ids.map(presetById);
-}
-
 export function supports(form: Form, medium: Medium): boolean {
 	return medium === "audio" || form === "desktop";
 }
