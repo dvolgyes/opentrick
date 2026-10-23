@@ -101,6 +101,27 @@ test("host bots play two consecutive boards from auction through the final trick
 	expect(requests).toBeGreaterThan(100);
 });
 
+test("the create page stores the OpenRouter key also when no seat is a bot", async ({
+	page,
+}) => {
+	await page.route("https://openrouter.ai/**", (route) => route.abort());
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	await page.locator('input[name="openrouter-key"]').fill(" later-key ");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	expect(page.url()).not.toContain("later-key");
+	expect(
+		await page.evaluate(() =>
+			localStorage.getItem("opentrick.openrouter-api-key"),
+		),
+	).toBe("later-key");
+	await page.getByRole("button", { name: "Set API key" }).click();
+	await expect(
+		page.getByRole("textbox", { name: "OpenRouter API key" }),
+	).toHaveValue("later-key");
+});
+
 test("switching the current bidder to a bot starts it immediately", async ({
 	browser,
 	baseURL,

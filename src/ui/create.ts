@@ -235,7 +235,8 @@ export function showCreate(
 			]);
 			return;
 		}
-		if (hostBotSettings) {
+		// A key without bot seats is kept for the table's bot controls later.
+		if (hostBotSettings || normalizedApiKey !== "") {
 			try {
 				writeHostApiKey(deps.browser, apiKey.value);
 			} catch {
