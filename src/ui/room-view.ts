@@ -727,10 +727,13 @@ export function showRoom(
 					if (selection.send.video && camera?.available !== false) {
 						void camera?.open().then((chosen) => {
 							if (chosen === undefined || call === undefined) return;
-							call.setVideoDevice(chosen.deviceId);
-							if (!call.prepareVideo(chosen.track)) {
-								chosen.track.stop();
-								return;
+							// Cancel joins with the other switches; without a prepared camera the call sends no video.
+							if (chosen !== "cancelled") {
+								call.setVideoDevice(chosen.deviceId);
+								if (!call.prepareVideo(chosen.track)) {
+									chosen.track.stop();
+									return;
+								}
 							}
 							call.join(selection);
 							memory?.acted();
@@ -757,7 +760,12 @@ export function showRoom(
 					) {
 						if (camera?.available === false) return;
 						void camera?.open().then((chosen) => {
-							if (chosen === undefined || call === undefined) return;
+							if (
+								chosen === undefined ||
+								chosen === "cancelled" ||
+								call === undefined
+							)
+								return;
 							call.setVideoDevice(chosen.deviceId);
 							if (!call.prepareVideo(chosen.track)) {
 								chosen.track.stop();

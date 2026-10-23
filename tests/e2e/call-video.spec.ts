@@ -417,7 +417,7 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 	);
 });
 
-test("3: with the camera blocked, the preview says so, the microphone works, the call box stays clear, and nobody sees a picture of East", async () => {
+test("3: with the camera blocked, the preview says so, Cancel joins without the camera, the microphone works, the call box stays clear, and nobody sees a picture of East", async () => {
 	// Join with the camera opens the camera preview first (src/ui/camera-setup.ts); it cannot send a blocked camera.
 	await setSwitches(tab.E, MODE_LABELS.both);
 	await joinButton(tab.E).click();
@@ -426,10 +426,10 @@ test("3: with the camera blocked, the preview says so, the microphone works, the
 	await expect(
 		preview.getByRole("button", { name: "Send camera", exact: true }),
 	).toBeDisabled();
+	// Cancel joins with the other switches, so East is in the call as "See cameras; send voice".
 	await preview.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(preview).toBeHidden();
-	await expect(joinButton(tab.E)).toBeVisible();
-	await joinWith(tab.E, MODE_LABELS.watch);
+	await expect(leaveButton(tab.E)).toBeVisible();
 	await expect(toggle(tab.E, "Send camera video")).toHaveAttribute(
 		"aria-pressed",
 		"false",

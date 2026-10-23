@@ -74,13 +74,15 @@ describe("camera setup", () => {
 			)
 			?.click();
 		const selection = await opening;
-		expect(selection?.deviceId).toBe("camera-two");
-		expect(selection?.track.readyState).toBe("live");
+		if (selection === undefined || selection === "cancelled")
+			throw new Error(`The preview gave no camera: ${selection}`);
+		expect(selection.deviceId).toBe("camera-two");
+		expect(selection.track.readyState).toBe("live");
 		expect(setup.element.open).toBe(false);
-		selection?.track.stop();
+		selection.track.stop();
 	});
 
-	it("stops the preview when the player cancels", async () => {
+	it("stops the preview and reports the cancel when the player cancels", async () => {
 		let preview: MediaStream | undefined;
 		const setup = cameraSetup({
 			devices: {
@@ -107,7 +109,21 @@ describe("camera setup", () => {
 		setup.element
 			.querySelector<HTMLButtonElement>("[data-testid='camera-preview-cancel']")
 			?.click();
-		expect(await opening).toBeUndefined();
+		expect(await opening).toBe("cancelled");
 		expect(preview?.getVideoTracks()[0]?.readyState).toBe("ended");
+	});
+
+	it("reports no choice, not a cancel, when the preview is already open or the view is gone", async () => {
+		const setup = cameraSetup({
+			devices: { enumerate: async () => [], subscribe: () => () => {} },
+			getUserMedia: () => new Promise<MediaStream>(() => {}),
+			t: englishTranslator,
+		});
+		setups.push(setup);
+		document.body.append(setup.element);
+		const first = setup.open();
+		expect(await setup.open()).toBeUndefined();
+		setup.dispose();
+		expect(await first).toBeUndefined();
 	});
 });

@@ -20,7 +20,8 @@ export interface CameraSelection {
 export interface CameraSetup {
 	readonly element: HTMLDialogElement;
 	readonly available: boolean | undefined;
-	open(): Promise<CameraSelection | undefined>;
+	/** `cancelled`: the player closed the preview without a camera; `undefined`: it was already open, or is gone. */
+	open(): Promise<CameraSelection | "cancelled" | undefined>;
 	onChange(listener: () => void): () => void;
 	dispose(): void;
 }
@@ -57,7 +58,7 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 	const status = el("p", {
 		attrs: { role: "status", "data-testid": "camera-preview-status" },
 	});
-	const cancel = button(deps.t("Cancel"), () => finish(undefined), {
+	const cancel = button(deps.t("Cancel"), () => finish("cancelled"), {
 		attrs: { "data-testid": "camera-preview-cancel" },
 	});
 	const confirm = button(
@@ -94,7 +95,9 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 	let sources: readonly CameraSource[] = [];
 	let preview: MediaStream | undefined;
 	let sequence = 0;
-	let pending: ((selection: CameraSelection | undefined) => void) | undefined;
+	let pending:
+		| ((selection: CameraSelection | "cancelled" | undefined) => void)
+		| undefined;
 	let disposed = false;
 
 	const changed = (): void => {
@@ -112,9 +115,9 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 		for (const track of stream?.getTracks() ?? []) track.stop();
 	}
 
-	function finish(selection: CameraSelection | undefined): void {
+	function finish(selection: CameraSelection | "cancelled" | undefined): void {
 		sequence++;
-		if (selection === undefined) stopPreview();
+		if (selection === undefined || selection === "cancelled") stopPreview();
 		else {
 			for (const track of preview?.getTracks() ?? []) {
 				if (track !== selection.track) track.stop();
@@ -233,10 +236,10 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 	);
 	element.addEventListener("cancel", (event) => {
 		event.preventDefault();
-		finish(undefined);
+		finish("cancelled");
 	});
 	element.addEventListener("close", () => {
-		if (pending !== undefined) finish(undefined);
+		if (pending !== undefined) finish("cancelled");
 	});
 	void refreshDevices();
 
@@ -250,9 +253,11 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 			status.textContent = deps.t("Starting camera preview…");
 			confirm.disabled = true;
 			element.showModal();
-			const result = new Promise<CameraSelection | undefined>((resolve) => {
-				pending = resolve;
-			});
+			const result = new Promise<CameraSelection | "cancelled" | undefined>(
+				(resolve) => {
+					pending = resolve;
+				},
+			);
 			void startPreview(selectedDeviceId());
 			return result;
 		},
