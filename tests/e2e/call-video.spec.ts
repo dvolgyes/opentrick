@@ -267,11 +267,10 @@ test("1: the desktop panel shows the video switches, the phone's shows audio onl
 		"data-phase",
 		"auction",
 	);
-	for (const seat of ["W", "S"] as const) {
-		for (const name of SWITCH_NAMES)
-			await expect(toggle(tab[seat], name)).toHaveCount(1);
+	for (const name of SWITCH_NAMES)
+		await expect(toggle(tab.W, name)).toHaveCount(1);
+	for (const seat of ["W", "S"] as const)
 		await expect(joinButton(tab[seat])).toBeVisible();
-	}
 	// Outside the call the switches choose what Join starts with (src/ui/call-model.ts); the camera starts off.
 	await expect(toggle(tab.W, "Send camera video")).toBeEnabled();
 	await expect(toggle(tab.W, "Send camera video")).toHaveAttribute(
@@ -279,15 +278,12 @@ test("1: the desktop panel shows the video switches, the phone's shows audio onl
 		"false",
 	);
 	await expect(toggle(tab.W, "See cameras: receive video")).toBeEnabled();
-	// The phone shows the same panel, but its video switches stay off: a phone is audio only
-	// (src/call/device-class.ts).
-	for (const name of ["Send camera video", "See cameras: receive video"]) {
-		await expect(toggle(tab.S, name)).toBeDisabled();
-		await expect(toggle(tab.S, name)).toHaveAttribute(
-			"title",
-			"Video is not available on this device.",
-		);
-	}
+	// The phone shows the compact call row, with the audio switches and no video switches: a phone is audio only
+	// (src/call/device-class.ts, src/ui/call-panel.ts).
+	for (const name of ["Send mic audio", "Hear others: receive audio"])
+		await expect(toggle(tab.S, name)).toBeEnabled();
+	for (const name of ["Send camera video", "See cameras: receive video"])
+		await expect(toggle(tab.S, name)).toHaveCount(0);
 	for (const seat of SEATS) {
 		for (const other of SEATS) {
 			if (other === seat) continue;
@@ -647,11 +643,13 @@ test("7: a desktop that becomes compact stops its camera at once and keeps the a
 	);
 	console.log(`compact: camera ended ${ended - start} ms after the resize`);
 	expect(ended - start).toBeLessThanOrEqual(1_000);
-	// A compact page keeps the video switches, off and disabled (tests/browser/call-model.test.ts).
-	await expect(toggle(tab.W, "Send camera video")).toBeDisabled();
-	await expect(toggle(tab.W, "Send camera video")).toHaveAttribute(
+	// A compact page shows the compact call row: the audio switches stay as they were, and there are no video
+	// switches (src/ui/call-panel.ts).
+	for (const name of ["Send camera video", "See cameras: receive video"])
+		await expect(toggle(tab.W, name)).toHaveCount(0);
+	await expect(toggle(tab.W, "Send mic audio")).toHaveAttribute(
 		"aria-pressed",
-		"false",
+		"true",
 	);
 	for (const seat of ["N", "E", "S"] as const)
 		expect(await hasSource(tab.W, seat)).toBe(false);
