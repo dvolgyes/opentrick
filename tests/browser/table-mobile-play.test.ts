@@ -503,6 +503,51 @@ describe("turn pill", () => {
 		},
 	);
 
+	// A long translation widens the call panel; where it reaches the hand, the cards stay on top and take the click.
+	it.each(["desktop", "compact"] as const)(
+		"keeps every card clickable under the call panel on the %s table",
+		(form) => {
+			const base = playView();
+			const hand = {
+				...visibleHand,
+				suits: [
+					...visibleHand.suits,
+					{
+						suit: "H" as const,
+						symbol: "♥",
+						cards: [card("HK"), card("HQ")],
+						trump: false,
+					},
+				],
+			};
+			const view: TableView = {
+				...base,
+				seats: base.seats.map((player) =>
+					player.seat === "N" ? { ...player, hand } : player,
+				),
+			};
+			const { root } = renderView(view, form);
+			const own = root.querySelector<HTMLElement>("[data-testid='hand-N']");
+			const slot = root.querySelector<HTMLElement>(".call-slot");
+			if (!own || !slot)
+				throw new Error("the hand or the call panel is missing");
+			const box = own.getBoundingClientRect();
+			slot.style.position = "fixed";
+			slot.style.inset = `${box.top}px auto auto ${box.left}px`;
+			slot.style.width = `${box.width}px`;
+			slot.style.height = `${box.height}px`;
+			const cards = (
+				pageReport(window, form, null).cards as {
+					hand: string;
+					card: string;
+					hit: string;
+				}[]
+			).filter((item) => item.hand === "N");
+			expect(cards.map((item) => item.card)).toEqual(["SA", "HK", "HQ"]);
+			for (const item of cards) expect(item.hit, item.card).toBe("self");
+		},
+	);
+
 	it("keeps a long pill of a side seat on the table", () => {
 		const base = playView();
 		const view: TableView = {

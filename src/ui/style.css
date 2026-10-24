@@ -638,6 +638,12 @@ main:has(> .room) {
 	display: flex;
 }
 
+/* Face-up cards are drawn above the call panel and the video windows, so a card that they reach still takes the click. */
+.hand:not(.backs) {
+	position: relative;
+	z-index: 3;
+}
+
 /* The hand of the seat whose turn it is sits on a light green sheet, so the cards it can play stand out. */
 .seat[data-turn="true"] .hand:not(.backs) {
 	padding: 0.3rem;
