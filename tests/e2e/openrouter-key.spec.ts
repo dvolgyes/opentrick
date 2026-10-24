@@ -1,58 +1,10 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { mockOpenRouter } from "./openrouter-mock";
 
 /*
  * Saving an OpenRouter key sends one bot bid to the first model in the priority list, so the player sees at once
  * whether the key and the model work (src/bot/key-check.ts). The mock answers with the HTTP status that the test sets.
  */
-interface OpenRouterMock {
-	status: number;
-	readonly requests: { readonly model: string; readonly key: string }[];
-}
-
-async function mockOpenRouter(page: Page): Promise<OpenRouterMock> {
-	const mock: OpenRouterMock = { status: 200, requests: [] };
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({
-				status: 204,
-				headers: {
-					"access-control-allow-origin": "*",
-					"access-control-allow-methods": "POST, OPTIONS",
-					"access-control-allow-headers": "authorization,content-type",
-				},
-			});
-			return;
-		}
-		const body = route.request().postDataJSON();
-		mock.requests.push({
-			model: body.model,
-			key: (await route.request().headerValue("authorization")) ?? "",
-		});
-		if (mock.status !== 200) {
-			await route.fulfill({
-				status: mock.status,
-				headers: { "access-control-allow-origin": "*" },
-				body: "",
-			});
-			return;
-		}
-		await route.fulfill({
-			status: 200,
-			headers: { "access-control-allow-origin": "*" },
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [{ type: "output_text", text: '{"call":"P"}' }],
-					},
-				],
-			}),
-		});
-	});
-	return mock;
-}
 
 test("Create checks the key with the first model, and a rejected key keeps the player on the create page", async ({
 	page,

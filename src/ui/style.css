@@ -1088,6 +1088,46 @@ main:has(> .room) {
 	padding: 0.15rem 0.45rem;
 }
 
+/* The settings dialog scrolls inside the screen, so Save stays in reach on a phone. */
+.settings-dialog {
+	box-sizing: border-box;
+	width: min(32rem, calc(100vw - 2rem));
+	max-height: calc(100dvh - 2rem);
+	overflow-y: auto;
+}
+
+.settings-dialog fieldset {
+	display: grid;
+	gap: 0.3rem;
+	margin: 0.6rem 0;
+}
+
+.settings-dialog fieldset > label {
+	margin: 0;
+}
+
+.settings-dialog .settings-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0.4rem 0;
+}
+
+.settings-dialog .settings-row input {
+	flex: 1;
+	min-width: 10rem;
+}
+
+.settings-order-title {
+	margin: 0.4rem 0 0;
+}
+
+.settings-actions {
+	display: flex;
+	gap: 0.4rem;
+}
+
 .bot-spend-counter {
 	margin-right: auto;
 	margin-left: auto;

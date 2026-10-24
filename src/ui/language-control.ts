@@ -4,8 +4,11 @@ import { el } from "./dom";
 
 const LOCALE_STORAGE_KEY = "opentrick.locale";
 
-/** The build date and the language picker; a change of language reloads the page. */
-export function languageControl(deps: AppDeps): HTMLElement {
+/**
+ * A select of the languages; "auto" follows the browser's preferred languages, and English when none of them is
+ * offered.
+ */
+export function languageSelect(deps: AppDeps): HTMLSelectElement {
 	const select = el("select", {
 		attrs: { "aria-label": deps.t("Language"), title: deps.t("Language") },
 	});
@@ -27,9 +30,20 @@ export function languageControl(deps: AppDeps): HTMLElement {
 			value === "auto" ? deps.savedLocale === undefined : value === deps.locale;
 		select.append(option);
 	}
+	return select;
+}
+
+/** Stores the value of a `languageSelect`; the page must reload for it to take effect. */
+export function saveLanguage(deps: AppDeps, value: string): void {
+	if (value === "auto") deps.browser?.removeItem(LOCALE_STORAGE_KEY);
+	else deps.browser?.setItem(LOCALE_STORAGE_KEY, value);
+}
+
+/** The build date and the language picker; a change of language reloads the page. */
+export function languageControl(deps: AppDeps): HTMLElement {
+	const select = languageSelect(deps);
 	select.addEventListener("change", () => {
-		if (select.value === "auto") deps.browser?.removeItem(LOCALE_STORAGE_KEY);
-		else deps.browser?.setItem(LOCALE_STORAGE_KEY, select.value);
+		saveLanguage(deps, select.value);
 		location.reload();
 	});
 	const version = el(

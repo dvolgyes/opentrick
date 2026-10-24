@@ -82,6 +82,7 @@ import { networkPanel } from "./network";
 import { pageReport, type TableFacts } from "./page-report";
 import { pageTitle } from "./page-title";
 import { remoteAudio } from "./remote-audio";
+import { settingsDialog } from "./settings-dialog";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
 import type { TurnSound } from "./turn-sound";
@@ -1047,6 +1048,10 @@ export function showRoom(
 		debug,
 		reloadPlayers,
 	);
+	const settings = settingsDialog(deps, handlers.reload);
+	const openSettings = button(deps.t("Settings"), () => settings.open(), {
+		className: "settings-button",
+	});
 	const setApiKey = button(deps.t("Set API key"), () => {
 		botKey.value = readHostApiKey(deps.browser);
 		if (!keyDialog.open) keyDialog.showModal();
@@ -1120,6 +1125,7 @@ export function showRoom(
 		el(
 			"div",
 			{ className: "room-control-row room-bot-controls" },
+			openSettings,
 			setApiKey,
 			chooseModel,
 			pauseBots,
@@ -1244,6 +1250,7 @@ export function showRoom(
 	});
 	root.replaceChildren(room);
 	root.append(keyDialog);
+	root.append(settings.element);
 	root.append(rateLimitReminder);
 	if (camera) root.append(camera.element);
 	if (initialBotSettings) void startHostBots();
