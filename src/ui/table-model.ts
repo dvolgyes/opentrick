@@ -173,6 +173,8 @@ export interface PlayedCard {
 
 export interface TrickView {
 	readonly cards: readonly PlayedCard[];
+	/** All four cards are played; the table shows this trick until the next card is led. */
+	readonly finished: boolean;
 }
 
 export interface AuctionView {
@@ -947,10 +949,12 @@ export function tableView(input: TableViewInput): TableView {
 			? {
 					leader: lastTrick.leader,
 					cards: lastTrick.cards,
+					finished: true,
 				}
 			: view.current && {
 					leader: view.current.leader,
 					cards: view.current.cards,
+					finished: false,
 				};
 	const trick: TrickView | undefined =
 		view.phase === "complete"
@@ -967,6 +971,7 @@ export function tableView(input: TableViewInput): TableView {
 							symbol: SUIT_SYMBOLS[suitOf(card)],
 						};
 					}),
+					finished: trickSource.finished,
 				};
 
 	const common = {

@@ -75,6 +75,9 @@ export type PlayedCardStyle =
 // Change this one value to switch the played-card design.
 const PLAYED_CARD_STYLE: PlayedCardStyle = "corners-oriented";
 
+/** A finished trick leaves the table after this time, after a click anywhere, or when the next card is led. */
+const FINISHED_TRICK_MS = 2000;
+
 /**
  * The call nodes of one remote seat. They outlive the table's re-rendering and only move with their place, so
  * a picture never restarts because the game changed.
@@ -251,6 +254,10 @@ export function tableSection(
 		attrs: { "data-testid": "bid-box", "aria-label": "Your call" },
 	});
 	let latestView: TableView | undefined;
+	/** The finished trick on the table, as board and position, and whether it has left the table. */
+	let finishedTrick: string | undefined;
+	let finishedTrickHidden = false;
+	let finishedTrickTimer: ReturnType<typeof setTimeout> | undefined;
 	let claimMode: "choose" | "all" | null = null;
 	let claimCount = 1;
 	const claim = button(t("Claim …"), () => {
@@ -1384,6 +1391,41 @@ export function tableSection(
 		if (latestView) renderClaimPanel(latestView);
 	});
 
+	/** Shows the trick. A finished trick stays until its timer or a click anywhere takes it off; the grid keeps its place. */
+	function showTrick(view: TableView): void {
+		const finished = view.trick?.finished
+			? `${view.board}:${view.at}`
+			: undefined;
+		if (finished !== finishedTrick) {
+			stopFinishedTrick();
+			finishedTrick = finished;
+			finishedTrickHidden = false;
+			if (finished !== undefined) {
+				finishedTrickTimer = setTimeout(hideFinishedTrick, FINISHED_TRICK_MS);
+				// Capture, so a click that a control stops still counts.
+				element.ownerDocument.addEventListener(
+					"click",
+					hideFinishedTrick,
+					true,
+				);
+			}
+		}
+		renderTrick(view.trick);
+		if (finishedTrickHidden) trick.replaceChildren();
+	}
+
+	function hideFinishedTrick(): void {
+		stopFinishedTrick();
+		finishedTrickHidden = true;
+		trick.replaceChildren();
+	}
+
+	function stopFinishedTrick(): void {
+		clearTimeout(finishedTrickTimer);
+		finishedTrickTimer = undefined;
+		element.ownerDocument.removeEventListener("click", hideFinishedTrick, true);
+	}
+
 	/** The cards played to the current trick, each drawn with its long edge towards the player who played it. */
 	function renderTrick(view: TrickView | undefined): void {
 		trick.hidden = view === undefined;
@@ -1815,7 +1857,7 @@ export function tableSection(
 		seatLabels = new Map(view.seats.map((seat) => [seat.seat, seat.label]));
 		renderCallStates();
 		renderAuction(view);
-		renderTrick(view.trick);
+		showTrick(view);
 		contract.textContent = [view.contract, view.tricks]
 			.filter((part) => part !== "")
 			.join(" · ");

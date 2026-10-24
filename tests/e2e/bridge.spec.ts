@@ -320,10 +320,11 @@ test("4: play to the end of trick 4; the host and declarer reload mid-play", asy
 	test.setTimeout(240_000);
 	for (let at = 6; at < 20; at += 1) await playFirst(at);
 	await expectAt(1, 20);
-	// Every tab shows the finished trick 4 and counts four tricks won: ours and the opponents' together.
+	// In every tab the finished trick 4 leaves the table after a short look, and the tab counts four tricks won: ours
+	// and the opponents' together.
 	for (const seat of SEATS) {
 		await expect(tab[seat].getByTestId("trick").locator(".played")).toHaveCount(
-			4,
+			0,
 		);
 		const counts = tab[seat]
 			.getByTestId("tricks-panel")

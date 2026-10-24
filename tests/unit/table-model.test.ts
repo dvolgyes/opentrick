@@ -298,6 +298,7 @@ describe("play", () => {
 					symbol: "♠",
 				},
 			],
+			finished: false,
 		});
 	});
 
@@ -310,6 +311,7 @@ describe("play", () => {
 			"H3",
 			"SA",
 		]);
+		expect(table.trick?.finished).toBe(true);
 		expect(table.tricks).toBe("Tricks: N-S 1 · E-W 0");
 		expect(table.prompt).toBe("Waiting for North to play.");
 	});

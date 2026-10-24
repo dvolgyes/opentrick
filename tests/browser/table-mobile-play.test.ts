@@ -99,6 +99,7 @@ function playView(): TableView {
 					symbol: "♠",
 				},
 			],
+			finished: false,
 		},
 		need: {
 			ours: 2,
@@ -292,6 +293,7 @@ describe("played card styles", () => {
 					rank: "A",
 					symbol: "♠",
 				})),
+				finished: false,
 			},
 		};
 		const { root } = renderView(view, form);
@@ -779,6 +781,77 @@ describe("undo request off turn", () => {
 			expect(handlers.undoRequest).toHaveBeenCalledWith(view.board);
 		},
 	);
+});
+
+describe("finished trick", () => {
+	/** North, the viewer, has just played the fourth card of the first trick. */
+	function finishedView(at = 8): TableView {
+		const base = playView();
+		const played = base.trick?.cards[0];
+		if (!played) throw new Error("the trick fixture has no card");
+		return {
+			...base,
+			at,
+			trick: {
+				cards: [
+					{ ...played, seat: "E", position: "left" },
+					{ ...played, seat: "S", position: "top", card: "S2", text: "♠2" },
+					{ ...played, seat: "W", position: "right", card: "S3", text: "♠3" },
+					{ ...played, seat: "N", position: "bottom", card: "S4", text: "♠4" },
+				],
+				finished: true,
+			},
+		};
+	}
+
+	function trickShown(root: HTMLElement): boolean {
+		const trick = root.querySelector<HTMLElement>(".trick");
+		return (
+			trick !== null &&
+			!trick.hidden &&
+			trick.querySelectorAll(".played").length > 0
+		);
+	}
+
+	afterEach(() => vi.useRealTimers());
+
+	it.each<Form>(["desktop", "compact"])(
+		"hides a finished trick after two seconds on %s",
+		(form) => {
+			vi.useFakeTimers();
+			const { root } = renderView(finishedView(), form);
+			expect(trickShown(root)).toBe(true);
+			vi.advanceTimersByTime(1900);
+			expect(trickShown(root)).toBe(true);
+			vi.advanceTimersByTime(100);
+			expect(trickShown(root)).toBe(false);
+		},
+	);
+
+	it("hides a finished trick when the player clicks a place with no control", () => {
+		vi.useFakeTimers();
+		const { root } = renderView(finishedView(), "desktop");
+		document.body.click();
+		expect(trickShown(root)).toBe(false);
+	});
+
+	it("keeps a hidden trick hidden when the same view comes again, and shows the next finished trick", () => {
+		vi.useFakeTimers();
+		const { root, section } = renderView(finishedView(), "desktop");
+		document.body.click();
+		section.render(finishedView());
+		expect(trickShown(root)).toBe(false);
+		section.render(finishedView(12));
+		expect(trickShown(root)).toBe(true);
+	});
+
+	it("keeps a trick that is not finished on the table", () => {
+		vi.useFakeTimers();
+		const { root } = renderView(playView(), "desktop");
+		document.body.click();
+		vi.advanceTimersByTime(5000);
+		expect(trickShown(root)).toBe(true);
+	});
 });
 
 describe("mobile board names", () => {
