@@ -2635,6 +2635,8 @@ main:has(> .room[data-form="compact"]) {
 .mobile-board-left,
 .mobile-board-right {
 	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
 	align-items: center;
 	justify-content: center;
 	min-width: 0;
@@ -2643,12 +2645,35 @@ main:has(> .room[data-form="compact"]) {
 
 .mobile-board-left {
 	grid-area: left;
-	justify-content: flex-start;
+	align-items: flex-start;
 }
 
 .mobile-board-right {
 	grid-area: right;
-	justify-content: flex-end;
+	align-items: flex-end;
+}
+
+/* An opponent's name above their hand, in the look of the seat names. */
+.mobile-board-name {
+	display: block;
+	max-width: 100%;
+	margin-bottom: 0.15rem;
+	padding: 0 0.3rem;
+	border-radius: 0.3rem;
+	background: var(--felt-fg);
+	color: var(--felt);
+	font-size: 0.7rem;
+	font-weight: 600;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.mobile-board-top .mobile-board-name {
+	width: fit-content;
+}
+
+.mobile-board-name[data-turn="true"] {
+	color: #ff2a2a;
 }
 
 .mobile-board-center {

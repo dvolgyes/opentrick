@@ -1736,7 +1736,22 @@ export function tableSection(
 				["right", mobileOpponentRight],
 			] as const) {
 				const hand = opponentHand(position);
-				target.replaceChildren(...(hand ? [hand] : []));
+				const player = view.seats.find((seat) => seat.position === position);
+				// The hand moves here without its seat label, so the player's name is shown above it.
+				const name =
+					player === undefined
+						? []
+						: [
+								el(
+									"span",
+									{
+										className: "mobile-board-name",
+										attrs: { "data-turn": String(player.turn) },
+									},
+									player.label,
+								),
+							];
+				target.replaceChildren(...name, ...(hand ? [hand] : []));
 				target.setAttribute(
 					"aria-hidden",
 					String(

@@ -781,6 +781,33 @@ describe("undo request off turn", () => {
 	);
 });
 
+describe("mobile board names", () => {
+	it.each<TableView["phase"]>(["auction", "play"])(
+		"shows each opponent's player name above their hand in the %s",
+		(phase) => {
+			const { root } = renderMobile({ ...playView(), phase });
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			if (!board) throw new Error("the mobile board is missing");
+			for (const [area, label] of [
+				["top", "S - playerS"],
+				["left", "E - playerE"],
+				["right", "W - playerW"],
+			] as const) {
+				const place = board.querySelector<HTMLElement>(`.mobile-board-${area}`);
+				const name = [
+					...(place?.querySelectorAll<HTMLElement>("*") ?? []),
+				].find((part) => part.textContent === label);
+				const hand = place?.querySelector<HTMLElement>(".hand");
+				if (!name || !hand) throw new Error(`${label} is missing`);
+				expect(name.checkVisibility()).toBe(true);
+				expect(name.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+					hand.getBoundingClientRect().top + 1,
+				);
+			}
+		},
+	);
+});
+
 describe("compact play controls", () => {
 	it("marks bot players by name and overlays their call tiles", () => {
 		const view = playView();
