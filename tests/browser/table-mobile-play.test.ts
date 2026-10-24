@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { cdp } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { Form } from "../../src/call/device-class";
@@ -779,6 +780,79 @@ describe("undo request off turn", () => {
 			expect(hit?.closest("button")).toBe(target);
 			(hit as HTMLElement).click();
 			expect(handlers.undoRequest).toHaveBeenCalledWith(view.board);
+		},
+	);
+});
+
+describe("bid box under a held press", () => {
+	/** Presses or releases the left mouse button over this element, as the real mouse does. */
+	async function mouse(
+		type: "mousePressed" | "mouseReleased",
+		target: HTMLElement,
+	): Promise<void> {
+		// The test page is a frame of the tester page; the mouse events use the tester page's coordinates.
+		const frame = window.frameElement?.getBoundingClientRect();
+		const box = target.getBoundingClientRect();
+		await cdp().send("Input.dispatchMouseEvent", {
+			type,
+			x: (frame?.left ?? 0) + box.left + box.width / 2,
+			y: (frame?.top ?? 0) + box.top + box.height / 2,
+			button: "left",
+			buttons: type === "mousePressed" ? 1 : 0,
+			clickCount: 1,
+		});
+	}
+
+	const auctionView: TableView = {
+		...playView(),
+		phase: "auction",
+		prompt: "",
+		yourTurn: true,
+		auction: { seats: ["N", "E", "S", "W"], rows: [] },
+		bids: [
+			{ call: "1C", text: "1♣" },
+			{ call: "2C", text: "2♣" },
+			{ call: "P", text: "Pass" },
+		],
+		contract: "",
+		header: undefined,
+		trick: undefined,
+		need: undefined,
+	};
+
+	/** Presses level 2, lets the update happen while the button is down, releases, and returns level 2 as drawn. */
+	async function pressLevelTwo(
+		root: HTMLElement,
+		update: () => void,
+	): Promise<HTMLElement | undefined> {
+		const level = () =>
+			[...root.querySelectorAll<HTMLElement>(".bid-levels button")].find(
+				(button) => button.textContent === "2",
+			);
+		const pressed = level();
+		if (!pressed) throw new Error("level 2 is missing");
+		await mouse("mousePressed", pressed);
+		update();
+		await mouse("mouseReleased", pressed);
+		return level();
+	}
+
+	it("selects a level when the room updates the autoplay controls during the press", async () => {
+		const { root, section } = renderView(auctionView, "desktop");
+		const level = await pressLevelTwo(root, () =>
+			section.setPlayerAutoplay(false, false, false, ""),
+		);
+		expect(level?.getAttribute("aria-pressed")).toBe("true");
+	});
+
+	it.each(["desktop", "compact"] as const)(
+		"selects a level when the table changes outside the bid box during the press (%s)",
+		async (form) => {
+			const { root, section } = renderView(auctionView, form);
+			const level = await pressLevelTwo(root, () =>
+				section.render({ ...auctionView, prompt: "playerE is thinking" }),
+			);
+			expect(level?.getAttribute("aria-pressed")).toBe("true");
 		},
 	);
 });

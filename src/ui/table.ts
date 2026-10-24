@@ -12,7 +12,7 @@ import {
 	remoteCallStatus,
 } from "./call-model";
 import { type CallHandlers, callControls, retryButton } from "./call-panel";
-import { button, el } from "./dom";
+import { button, el, placeChildren } from "./dom";
 import { icon } from "./icons";
 import { play } from "./remote-audio";
 import { robotArtwork } from "./robot-artwork";
@@ -1161,6 +1161,14 @@ export function tableSection(
 		pending: boolean,
 		status: string,
 	): void {
+		// The room calls this on each of its renders; a render with no change would replace the button under a press.
+		if (
+			available === playerAutoplayAvailable &&
+			enabled === playerAutoplayEnabled &&
+			pending === playerAutoplayPending &&
+			status === playerAutoplayStatus
+		)
+			return;
 		playerAutoplayAvailable = available;
 		playerAutoplayEnabled = enabled;
 		playerAutoplayPending = pending;
@@ -1174,6 +1182,7 @@ export function tableSection(
 	 */
 	let pick: { level?: string; strain?: string; call?: Call } = {};
 	let shown: TableView | undefined;
+	let drawnBidBox = "";
 
 	const STRAIN_BUTTONS: readonly {
 		readonly strain: string;
@@ -1221,6 +1230,16 @@ export function tableSection(
 		)
 			pick = {};
 		shown = view;
+		// A rebuild between the press and the release of a button loses the click, so draw only what changed.
+		const key = JSON.stringify([
+			view.board,
+			view.bids,
+			view.undo,
+			pick,
+			compact,
+		]);
+		if (key === drawnBidBox) return;
+		drawnBidBox = key;
 		const legal = new Set<string>(view.bids.map((bid) => bid.call));
 		const bidCall =
 			pick.level !== undefined && pick.strain !== undefined
@@ -1803,8 +1822,9 @@ export function tableSection(
 					),
 				);
 			}
-			mobileBids.replaceChildren(bidHistory);
-			mobileBidControls.replaceChildren(
+			placeChildren(mobileBids, bidHistory);
+			placeChildren(
+				mobileBidControls,
 				...(view.phase === "auction" ? [bidBox] : [playControls, claimPanel]),
 			);
 			renderMobileTricks(view);
@@ -1821,8 +1841,10 @@ export function tableSection(
 				mobileOpponentRight,
 			])
 				target.setAttribute("aria-hidden", "true");
-			bidRow.replaceChildren(bidBox);
-			if (view.phase === "auction") bidRow.prepend(bidHistory);
+			placeChildren(
+				bidRow,
+				...(view.phase === "auction" ? [bidHistory, bidBox] : [bidBox]),
+			);
 		}
 		renderMobilePlayers(view);
 		const mobileUndoVisible = compact && view.undo.requestId !== undefined;

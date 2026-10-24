@@ -40,6 +40,20 @@ export function button(
 	return node;
 }
 
+/**
+ * Gives the parent these children, in this order. Nodes already in place stay attached: the browser cancels the
+ * click of a button that leaves the page between the press and the release.
+ */
+export function placeChildren(parent: Element, ...children: Node[]): void {
+	const current = parent.childNodes;
+	if (
+		current.length === children.length &&
+		children.every((child, index) => current[index] === child)
+	)
+		return;
+	parent.replaceChildren(...children);
+}
+
 /** Copies a link without displaying its URL. */
 export function copyButton(
 	label: string,
