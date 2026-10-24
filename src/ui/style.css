@@ -1037,7 +1037,12 @@ main:has(> .room) {
 }
 
 .room-debug-controls {
-	justify-content: flex-start;
+	display: flex;
+	gap: 0.3rem;
+}
+
+.room-debug-controls[hidden] {
+	display: none;
 }
 
 /* The debug and bot status lines take no room while they are empty. */
@@ -1908,14 +1913,40 @@ button.call-join[data-in-call="true"] {
 
 .room-header-controls .language-control {
 	position: static;
+	gap: 0.3rem;
+	margin-left: auto;
 }
 
-/* The compact table keeps its controls short; the start page offers the language. */
-[data-form="compact"] .room-header-controls {
+/* The top row is smaller than the room buttons, so the debug buttons, the date and the language fit in one row. */
+.room-header-controls button {
+	padding: 0.15rem 0.4rem;
+	font-size: 0.6rem;
+	line-height: 1.1;
+}
+
+.room-header-controls .build-version {
+	font-size: 0.6rem;
+}
+
+.room-header-controls .language-control label {
+	margin: 0;
+}
+
+.room-header-controls .language-control select {
+	padding: 0.15rem 0.2rem;
+	font-size: 0.6rem;
+}
+
+/* The compact table keeps its controls short; the start page offers the language. Only the host's debug buttons stay. */
+[data-form="compact"] .room-header-controls .language-control {
 	display: none;
 }
 
-/* The host's debug controls and the bot status end the sidebar, so their messages push nothing down; it takes no room while nothing in it shows. */
+[data-form="compact"] .room-header-controls:not(:has(> .room-debug-controls:not([hidden]))) {
+	display: none;
+}
+
+/* The bot status ends the sidebar, so its messages push nothing down; it takes no room while nothing in it shows. */
 .sidebar-end {
 	display: flex;
 	flex-direction: column;

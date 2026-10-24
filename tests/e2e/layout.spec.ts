@@ -383,7 +383,7 @@ async function expectDesktopFit(
 const LOW_LAPTOP = { width: 1366, height: 650 };
 
 /** The whole room keeps its 1920×1080 layout and fits the viewport without reflow. */
-async function expectRoomCanvasFit(page: Page): Promise<void> {
+async function expectRoomCanvasFit(page: Page, hosting = false): Promise<void> {
 	await expect(page.locator(".room")).toHaveAttribute("data-form", "desktop");
 	await expectCanvasScaled(page);
 	const geometry = await page.locator(".room").evaluate((node) => {
@@ -448,24 +448,39 @@ async function expectRoomCanvasFit(page: Page): Promise<void> {
 	);
 	expect(Math.abs(geometry.rightVideoBottomGap - 40)).toBeLessThanOrEqual(1);
 	expect(geometry.botControlInRightVideo).toBe(true);
-	await expectHeaderRow(page);
+	await expectHeaderRow(page, hosting);
 }
 
-/** The build date and the language picker share the sidebar's top row, above its buttons. */
-async function expectHeaderRow(page: Page): Promise<void> {
+/**
+ * The build date and the language picker share the sidebar's top row, above its buttons. The host's debug buttons
+ * come first in that row, so no content of a long board pushes them off the canvas.
+ */
+async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
 	const rects = await measure(page, {
 		sidebar: ".table-sidebar",
 		version: `.table-sidebar ${byTestId("build-version")}`,
 		language: ".table-sidebar select[aria-label=Language]",
 		copy: byTestId("copy-board-url"),
+		debug: byTestId("debug-export"),
+		reload: byTestId("reload-players"),
 	});
 	const sidebar = shown(rects, "sidebar");
 	const version = shown(rects, "version");
 	const language = shown(rects, "language");
 	const copy = shown(rects, "copy");
+	const debugParts = hosting
+		? ([
+				["debug", shown(rects, "debug")],
+				["reload", shown(rects, "reload")],
+			] as const)
+		: [];
+	expect(rects.debug === undefined, "the debug buttons only for the host").toBe(
+		!hosting,
+	);
 	for (const [name, rect] of [
 		["version", version],
 		["language", language],
+		...debugParts,
 	] as const) {
 		expect(rect.x, `${name} left edge`).toBeGreaterThanOrEqual(
 			sidebar.x - SUBPIXEL,
@@ -485,6 +500,15 @@ async function expectHeaderRow(page: Page): Promise<void> {
 			Math.max(version.y, language.y),
 		"the date and the language in one row",
 	).toBeGreaterThan(SUBPIXEL);
+	for (const [name, rect] of debugParts) {
+		expect(right(rect), `${name} before the date`).toBeLessThanOrEqual(
+			version.x + SUBPIXEL,
+		);
+		expect(
+			Math.min(bottom(rect), bottom(language)) - Math.max(rect.y, language.y),
+			`${name} in the language row`,
+		).toBeGreaterThan(SUBPIXEL);
+	}
 }
 
 /**
@@ -641,7 +665,7 @@ test("3: a phone gets the compact table, and a desktop scales the Full HD room c
 	for (const size of CANVAS_VIEWPORTS) {
 		await host.setViewportSize(size);
 		await test.step(`desktop ${size.width}×${size.height}`, () =>
-			expectRoomCanvasFit(host));
+			expectRoomCanvasFit(host, true));
 	}
 });
 

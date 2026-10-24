@@ -70,6 +70,13 @@ test("the host copies a debug export with each player's page report, and reloads
 			"Debug export copied.",
 			{ timeout: CONNECT_MS },
 		);
+		// The debug message sits under the sidebar's top row, above the room buttons.
+		const status = await hostPage.getByTestId("debug-status").boundingBox();
+		const copy = await hostPage.getByTestId("copy-board-url").boundingBox();
+		expect(
+			(status?.y ?? Number.NaN) + (status?.height ?? 0),
+			"the debug message above the room buttons",
+		).toBeLessThanOrEqual(copy?.y ?? Number.NaN);
 		const text = await hostPage.evaluate(() => navigator.clipboard.readText());
 		const exported = JSON.parse(text);
 		expect(exported.kind).toBe("opentrick-debug-export");

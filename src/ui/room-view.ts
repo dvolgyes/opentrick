@@ -1016,7 +1016,7 @@ export function showRoom(
 	);
 	const debugRow = el(
 		"div",
-		{ className: "room-control-row room-debug-controls" },
+		{ className: "room-debug-controls" },
 		debug,
 		reloadPlayers,
 	);
@@ -1070,12 +1070,15 @@ export function showRoom(
 	const resetControls = el(
 		"section",
 		{ className: "room-controls", attrs: { "data-testid": "room-controls" } },
-		// The build date and the language picker head the sidebar, so they scale with the room canvas.
+		// The host's debug buttons, the build date and the language picker head the sidebar, so they scale with the
+		// room canvas, and no content of a long board pushes the debug buttons off it.
 		el(
 			"div",
 			{ className: "room-control-row room-header-controls" },
+			debugRow,
 			languageControl(deps),
 		),
+		debugStatus,
 		el(
 			"div",
 			{ className: "room-control-row room-primary-controls" },
@@ -1126,7 +1129,7 @@ export function showRoom(
 	);
 	resetControls.append(resetDecision);
 	table.sidebar.prepend(resetControls);
-	table.sidebarEnd.append(debugRow, debugStatus, botStatus);
+	table.sidebarEnd.append(botStatus);
 
 	// A storage warning stays visible on every screen, so it sits in the stage, not in the extras.
 	const storageNotices =
