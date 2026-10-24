@@ -216,6 +216,8 @@ export function showRoom(
 	let playerAutoplayStatus = "";
 	let playerAutoplayWasEnabled = false;
 	let playerAutoplayConfirmedRoster = false;
+	/** This player stopped autoplay, and the roster may still show the bot until the host sends the next one. */
+	let playerAutoplayStopped = false;
 	let playerAutoplayHost = "";
 	let shownModel: ReturnType<typeof tableView> | undefined;
 
@@ -850,9 +852,12 @@ export function showRoom(
 					playerAutoplayPending = false;
 					if (status === "enabled") {
 						playerAutoplayWasEnabled = true;
+						playerAutoplayStopped = false;
 						playerAutoplayStatus = deps.t("The host is playing your seat.");
 					} else if (status === "disabled") {
 						playerAutoplayWasEnabled = false;
+						playerAutoplayConfirmedRoster = false;
+						playerAutoplayStopped = true;
 						playerAutoplayStatus = deps.t("Autoplay stopped.");
 					} else if (status === "unavailable") {
 						playerAutoplayWasEnabled = false;
@@ -1663,9 +1668,12 @@ export function showRoom(
 			playerAutoplayHost = rosterHost;
 			playerAutoplayWasEnabled = false;
 			playerAutoplayConfirmedRoster = false;
+			playerAutoplayStopped = false;
 		}
 		const rosterAutoplay = view.roster?.bots.includes(seat) ?? false;
-		if (rosterAutoplay) playerAutoplayConfirmedRoster = true;
+		if (!rosterAutoplay) playerAutoplayStopped = false;
+		if (rosterAutoplay && !playerAutoplayStopped)
+			playerAutoplayConfirmedRoster = true;
 		if (playerAutoplayConfirmedRoster && !rosterAutoplay) {
 			playerAutoplayConfirmedRoster = false;
 			playerAutoplayWasEnabled = false;

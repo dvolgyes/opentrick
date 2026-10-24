@@ -586,6 +586,10 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		await autoplay.click();
 		await expect(overlay).toBeHidden({ timeout: CONNECT_MS });
 		await expect(autoplay).toHaveText("Enable autoplay (bot)");
+		// The player stopped the bot, so the roster without it does not blame the host.
+		await expect(northPage.locator(".player-autoplay-status")).toHaveText(
+			"Autoplay stopped.",
+		);
 		// A later host reload must not bring the bot back.
 		await expect
 			.poll(() => new URL(hostPage.url()).searchParams.get("bot_seats"))
@@ -596,6 +600,25 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		await expect(
 			northPage.getByRole("button", { name: "Leave call", exact: true }),
 		).toBeVisible();
+
+		// When the host stops the bot instead, the player's page says so.
+		await autoplay.click();
+		await expect(autoplay).toHaveText("Stop autoplay", { timeout: CONNECT_MS });
+		await expect(overlay).toBeVisible();
+		// North's page has the roster with its bot before the host stops it.
+		await expect(
+			northPage.locator('.name[data-bot="true"]', { hasText: /^N - / }),
+		).toBeVisible({ timeout: CONNECT_MS });
+		await hostPage
+			.getByTestId("tile-N")
+			.getByRole("button", { name: "Switch to player" })
+			.click();
+		await expect(autoplay).toHaveText("Enable autoplay (bot)", {
+			timeout: CONNECT_MS,
+		});
+		await expect(northPage.locator(".player-autoplay-status")).toHaveText(
+			"Autoplay stopped by the host.",
+		);
 	} finally {
 		await Promise.all(
 			[host, north, east, south].map((player) => player.close()),
