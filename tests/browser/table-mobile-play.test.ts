@@ -548,6 +548,66 @@ describe("turn pill", () => {
 		},
 	);
 
+	it("puts the pill of a top or bottom seat after its trump label, above the cards", () => {
+		const base = playView();
+		const view: TableView = {
+			...base,
+			seats: base.seats.map((player) => ({
+				...player,
+				turnPill: { action: "play", yours: player.seat === "N" },
+			})),
+		};
+		const { root } = renderView(view, "desktop");
+		for (const seatName of ["N", "S"]) {
+			const seat = root.querySelector<HTMLElement>(
+				`[data-testid="hand-${seatName}"]`,
+			);
+			const box = (selector: string) => {
+				const node = seat?.querySelector<HTMLElement>(selector);
+				if (!node) throw new Error(`${seatName} has no ${selector}`);
+				return node.getBoundingClientRect();
+			};
+			const [pill, label, hand] = [
+				box(".turn-pill"),
+				box(".trump-label"),
+				box(".hand"),
+			];
+			expect(pill.left, seatName).toBeGreaterThanOrEqual(label.right);
+			expect(pill.top, seatName).toBeLessThan(label.bottom);
+			expect(pill.bottom, seatName).toBeGreaterThan(label.top);
+			expect(pill.bottom, seatName).toBeLessThanOrEqual(hand.top);
+		}
+	});
+
+	it("stands the pill of a side seat along the inner edge of its cards", () => {
+		const base = sideHandView();
+		const view: TableView = {
+			...base,
+			seats: base.seats.map((player) => ({
+				...player,
+				turnPill: { action: "play", yours: player.seat === "N" },
+			})),
+		};
+		const { root } = renderView(view, "desktop");
+		for (const [seatName, inner] of [
+			["E", "right"],
+			["W", "left"],
+		] as const) {
+			const seat = root.querySelector<HTMLElement>(
+				`[data-testid="hand-${seatName}"]`,
+			);
+			const pill = seat?.querySelector(".turn-pill")?.getBoundingClientRect();
+			const hand = seat?.querySelector(".hand")?.getBoundingClientRect();
+			if (!pill || !hand) throw new Error(`${seatName} has no pill or hand`);
+			expect(pill.height, seatName).toBeGreaterThan(pill.width);
+			if (inner === "right")
+				expect(pill.left, seatName).toBeGreaterThanOrEqual(hand.right);
+			else expect(pill.right, seatName).toBeLessThanOrEqual(hand.left);
+			expect(pill.top, seatName).toBeLessThan(hand.bottom);
+			expect(pill.bottom, seatName).toBeGreaterThan(hand.top);
+		}
+	});
+
 	it("keeps a long pill of a side seat on the table", () => {
 		const base = playView();
 		const view: TableView = {

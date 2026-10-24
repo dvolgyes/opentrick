@@ -887,22 +887,29 @@ export function tableSection(
 			seat.hand.suits.some((row) => row.trump && row.cards.length > 0)
 				? [el("span", { className: "trump-label" }, t("Trump suit"))]
 				: [];
-		// The HCP pill shows on the viewer's own hand in the auction and on every hand once the board is over; the
-		// turn pill marks the seat to call or play.
-		const pills = [
-			...(seat.points === undefined
+		// The HCP pill shows on the viewer's own hand in the auction and on every hand once the board is over.
+		const pills =
+			seat.points === undefined
 				? []
-				: [el("span", { className: "hcp-pill" }, `${seat.points} HCP`)]),
-			...(seat.turnPill
-				? [
-						el(
-							"span",
-							{ className: "turn-pill", attrs: { "data-testid": "turn-pill" } },
-							turnPillText(seat.turnPill, seat.seat, t),
-						),
-					]
-				: []),
-		];
+				: [el("span", { className: "hcp-pill" }, `${seat.points} HCP`)];
+		// The turn pill marks the seat to call or play. A top or bottom seat shows it next to the trump label; a side
+		// seat stands it along the inner edge of its cards.
+		const turnPill = seat.turnPill
+			? [
+					el(
+						"span",
+						{ className: "turn-pill", attrs: { "data-testid": "turn-pill" } },
+						turnPillText(seat.turnPill, seat.seat, t),
+					),
+				]
+			: [];
+		const side = seat.position === "left" || seat.position === "right";
+		const tags = side
+			? []
+			: [el("div", { className: "seat-tags" }, ...trumpLabel, ...turnPill)];
+		const handLine = side
+			? el("div", { className: "hand-line" }, hand, ...turnPill)
+			: hand;
 		return el(
 			"div",
 			{
@@ -918,8 +925,8 @@ export function tableSection(
 			...pills,
 			label,
 			...banner,
-			...trumpLabel,
-			hand,
+			...tags,
+			handLine,
 		);
 	}
 
@@ -1636,7 +1643,7 @@ export function tableSection(
 		position: "top" | "left" | "right",
 	): HTMLElement | undefined {
 		return (
-			places[position].querySelector<HTMLElement>(".seat > .hand") ?? undefined
+			places[position].querySelector<HTMLElement>(".seat .hand") ?? undefined
 		);
 	}
 

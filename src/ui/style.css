@@ -1763,36 +1763,75 @@ button.call-join[data-in-call="true"] {
 
 .hcp-pill,
 .turn-pill {
-	position: absolute;
-	top: 0.35rem;
-	z-index: 1;
-	padding: 0.1rem 0.6rem;
+	padding-block: 0.1rem;
+	padding-inline: 0.6rem;
 	border-radius: 999px;
 	font-size: 0.8rem;
 	font-weight: 700;
+	line-height: 1.25;
 	white-space: nowrap;
 }
 
 .hcp-pill {
+	position: absolute;
+	top: 0.35rem;
 	left: 0.5rem;
+	z-index: 1;
 	background: #e8b923;
 	color: #1b1b1b;
 }
 
-/* The pill sits above the seat's golden frame (4px outline, 4px offset), not inside it. */
 .turn-pill {
-	top: auto;
-	right: 0.5rem;
-	bottom: calc(100% + 0.7rem);
 	border: 1px solid #e8b923;
 	background: #fff8dc;
 	color: #1b1b1b;
 }
 
-/* The left seat is at the table's edge, so its pill grows to the right, into the table. */
-.pos-left .turn-pill {
-	right: auto;
-	left: 0.5rem;
+/* A top or bottom seat shows its trump label and its turn pill in one row between the name and the hand. */
+.seat-tags {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.15rem;
+}
+
+.seat-tags > .trump-label {
+	margin-bottom: 0;
+}
+
+.seat-tags:empty {
+	display: none;
+}
+
+/* On the desktop the row keeps the pill's height, so the hand does not move when the turn comes or the trump is set. */
+.room[data-form="desktop"] .seat-tags {
+	display: flex;
+	min-height: calc(1.2rem + 2px);
+}
+
+/*
+ * A side seat's pill stands along the inner edge of its cards, turned so that the tops of its letters face the table's
+ * centre. The line is as wide as the cards, and the pill takes no room in it, so the hand does not move.
+ */
+.hand-line {
+	position: relative;
+	width: fit-content;
+}
+
+.hand-line > .turn-pill {
+	position: absolute;
+	top: 0;
+	z-index: 1;
+	writing-mode: vertical-rl;
+}
+
+.pos-left .hand-line > .turn-pill {
+	left: calc(100% + 0.4rem);
+}
+
+.pos-right .hand-line > .turn-pill {
+	right: calc(100% + 0.4rem);
+	transform: rotate(180deg);
 }
 
 .play-controls {
@@ -2739,7 +2778,7 @@ main:has(> .room[data-form="compact"]) {
 	outline-offset: 0;
 }
 
-.mobile-auction-hand .turn-pill,
+.mobile-auction-hand .seat-tags,
 .mobile-auction-hand .hcp-pill,
 .mobile-auction-hand .trump-label {
 	display: none;
