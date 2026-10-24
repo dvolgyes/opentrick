@@ -3,6 +3,7 @@ import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { Form } from "../../src/call/device-class";
 import { type Locale, type Translate, translator } from "../../src/i18n";
+import { pageReport } from "../../src/ui/page-report";
 import {
 	type PlayedCardStyle,
 	type TableHandlers,
@@ -49,7 +50,7 @@ function seat(
 				: { visible: false, count: 13 },
 		presence: "online",
 		connecting: false,
-		bidding: false,
+		turnPill: seatName === "N" ? { action: "play", yours: true } : undefined,
 		points: undefined,
 		...options,
 	};
@@ -437,11 +438,13 @@ describe("turn pill", () => {
 		const view: TableView = {
 			...base,
 			phase: "auction",
-			seats: base.seats.map((player) =>
-				player.seat === "N" || player.seat === "E"
-					? { ...player, bidding: true }
-					: player,
-			),
+			seats: base.seats.map((player) => ({
+				...player,
+				turnPill:
+					player.seat === "N" || player.seat === "E"
+						? { action: "bid", yours: player.seat === "N" }
+						: undefined,
+			})),
 		};
 		const { root } = renderView(view, "desktop", undefined, translator(locale));
 		const pill = (seat: string) =>
@@ -450,16 +453,68 @@ describe("turn pill", () => {
 		expect([pill("N"), pill("E")]).toEqual([own, other]);
 	});
 
+	it.each<[Locale, string, string]>([
+		["en", "YOUR TURN TO PLAY", "East TO PLAY"],
+		["de", "DU BIST AM ZUG", "Osten IST AM ZUG"],
+		["hu", "TE KÖVETKEZEL", "Kelet KÖVETKEZIK"],
+		["no", "DIN TUR TIL Å SPILLE", "Øst SKAL SPILLE"],
+		["es", "TU TURNO PARA JUGAR", "TURNO DE Este PARA JUGAR"],
+		["pt", "A SUA VEZ DE JOGAR", "Este A JOGAR"],
+		["fr", "À VOUS DE JOUER", "À Est DE JOUER"],
+		["it", "TOCCA A TE GIOCARE", "TOCCA A Est GIOCARE"],
+		["nl", "JOUW BEURT OM TE SPELEN", "BEURT VAN Oost OM TE SPELEN"],
+	])("names the seat to play in %s", (locale, own, other) => {
+		const base = playView();
+		const view: TableView = {
+			...base,
+			seats: base.seats.map((player) => ({
+				...player,
+				turnPill:
+					player.seat === "N" || player.seat === "E"
+						? { action: "play", yours: player.seat === "N" }
+						: undefined,
+			})),
+		};
+		const { root } = renderView(view, "desktop", undefined, translator(locale));
+		const pill = (seat: string) =>
+			root.querySelector(`[data-testid="hand-${seat}"] .turn-pill`)
+				?.textContent;
+		expect([pill("N"), pill("E")]).toEqual([own, other]);
+	});
+
+	it.each<Form>(["desktop", "compact"])(
+		"leaves every visible card clickable in play on the %s table",
+		(form) => {
+			const base = playView();
+			const view: TableView = {
+				...base,
+				seats: base.seats.map((player) => ({
+					...player,
+					turnPill: { action: "play", yours: player.seat === "N" },
+				})),
+			};
+			renderView(view, form, undefined, translator("de"));
+			const cards = pageReport(window, form, null).cards as {
+				card: string;
+				hit: string;
+			}[];
+			expect(cards.length).toBeGreaterThan(0);
+			for (const card of cards) expect(card.hit, card.card).toBe("self");
+		},
+	);
+
 	it("keeps a long pill of a side seat on the table", () => {
 		const base = playView();
 		const view: TableView = {
 			...base,
 			phase: "auction",
-			seats: base.seats.map((player) =>
-				player.seat === "E" || player.seat === "W"
-					? { ...player, bidding: true }
-					: player,
-			),
+			seats: base.seats.map((player) => ({
+				...player,
+				turnPill:
+					player.seat === "E" || player.seat === "W"
+						? { action: "bid", yours: false }
+						: undefined,
+			})),
 		};
 		const { root } = renderView(view, "desktop", undefined, translator("de"));
 		const table = root.getBoundingClientRect();

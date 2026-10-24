@@ -25,6 +25,7 @@ import type {
 	TableActionLine,
 	TableView,
 	TrickView,
+	TurnPill,
 } from "./table-model";
 
 export interface TableHandlers {
@@ -160,6 +161,17 @@ function translateLobbyPrompt(text: string, t: Translate): string {
 
 /** Left and right hands are vertical stacks; the top and bottom hands are horizontal fans. */
 /** The card back of a board: red on odd boards and before the first deal, blue on even boards. */
+function turnPillText(pill: TurnPill, seat: Seat, t: Translate): string {
+	const name = t(SEAT_NAMES[seat]);
+	if (pill.action === "bid")
+		return pill.yours
+			? t("YOUR TURN TO BID")
+			: t("{seat} TO BID", { seat: name });
+	return pill.yours
+		? t("YOUR TURN TO PLAY")
+		: t("{seat} TO PLAY", { seat: name });
+}
+
 function cardBackFor(board: number): string {
 	return board >= 2 && board % 2 === 0 ? cardBackBlue : cardBackRed;
 }
@@ -872,19 +884,17 @@ export function tableSection(
 				? [el("span", { className: "trump-label" }, t("Trump suit"))]
 				: [];
 		// The HCP pill shows on the viewer's own hand in the auction and on every hand once the board is over; the
-		// turn pill marks the seat to call.
+		// turn pill marks the seat to call or play.
 		const pills = [
 			...(seat.points === undefined
 				? []
 				: [el("span", { className: "hcp-pill" }, `${seat.points} HCP`)]),
-			...(seat.bidding
+			...(seat.turnPill
 				? [
 						el(
 							"span",
 							{ className: "turn-pill", attrs: { "data-testid": "turn-pill" } },
-							seat.hand.visible
-								? t("YOUR TURN TO BID")
-								: t("{seat} TO BID", { seat: t(SEAT_NAMES[seat.seat]) }),
+							turnPillText(seat.turnPill, seat.seat, t),
 						),
 					]
 				: []),
@@ -897,7 +907,7 @@ export function tableSection(
 					"data-testid": `hand-${seat.seat}`,
 					"data-visible": String(seat.hand.visible),
 					"data-turn": String(seat.turn),
-					"data-bidding": String(seat.bidding),
+					"data-bidding": String(seat.turnPill?.action === "bid"),
 					"data-presence": seat.presence,
 				},
 			},

@@ -469,6 +469,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
 		"YOUR TURN TO BID": "DU BIST MIT BIETEN DRAN",
 		"{seat} TO BID": "{seat} IST MIT BIETEN DRAN",
+		"YOUR TURN TO PLAY": "DU BIST AM ZUG",
+		"{seat} TO PLAY": "{seat} IST AM ZUG",
 		Debug: "Debug",
 		"Reload players": "Spieler neu laden",
 		"Collecting the players' reports…":
@@ -916,6 +918,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Erősítsd meg mind a hátralévő {count} Tricks igénylését.",
 		"YOUR TURN TO BID": "TE LICITÁLSZ",
 		"{seat} TO BID": "{seat} LICITÁL",
+		"YOUR TURN TO PLAY": "TE KÖVETKEZEL",
+		"{seat} TO PLAY": "{seat} KÖVETKEZIK",
 		Debug: "Hibakeresés",
 		"Reload players": "Játékosok újratöltése",
 		"Collecting the players' reports…": "A játékosok jelentéseinek gyűjtése…",
@@ -1335,6 +1339,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Stemmen om å angre ble ikke sendt: {reason}",
 		"YOUR TURN TO BID": "DIN TUR TIL Å MELDE",
 		"{seat} TO BID": "{seat} SKAL MELDE",
+		"YOUR TURN TO PLAY": "DIN TUR TIL Å SPILLE",
+		"{seat} TO PLAY": "{seat} SKAL SPILLE",
 		"You ask to undo your {action}. Your cancellation is being sent.":
 			"Du ber om å angre {action}. Avbrytingen sendes.",
 		"You ask to undo your {action}. {waiting}":

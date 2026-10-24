@@ -132,6 +132,12 @@ export type HandDisplay =
 	| { readonly visible: true; readonly suits: readonly SuitRow[] }
 	| { readonly visible: false; readonly count: number };
 
+/** The seat's call or card is next. Declarer acts for dummy, so dummy's pill is declarer's. */
+export interface TurnPill {
+	readonly action: "bid" | "play";
+	readonly yours: boolean;
+}
+
 export interface SeatView {
 	readonly seat: Seat;
 	readonly position: Position;
@@ -149,8 +155,8 @@ export interface SeatView {
 	readonly presence: RosterRow["state"];
 	/** The viewer is not the host and the host is not connected yet (bridge-connection-room). */
 	readonly connecting: boolean;
-	/** This seat is the one to call during the auction. */
-	readonly bidding: boolean;
+	/** The pill on the seat whose call or card is next; it is the viewer's when the viewer acts for that seat. */
+	readonly turnPill: TurnPill | undefined;
 	/** Milton Work points of a hand the viewer can see during the auction, or of every hand once the board is over. */
 	readonly points: number | undefined;
 }
@@ -436,7 +442,7 @@ function lobbySeats(input: TableViewInput, t: Translate): SeatView[] {
 			hand: { visible: false, count: backs ? 13 : 0 },
 			presence,
 			connecting,
-			bidding: false,
+			turnPill: undefined,
 			points: undefined,
 		};
 	});
@@ -918,7 +924,13 @@ export function tableView(input: TableViewInput): TableView {
 			),
 			presence: presenceOf(input.roster, owner),
 			connecting: false,
-			bidding: view.phase === "auction" && owner === view.turn,
+			turnPill:
+				view.phase !== "complete" && owner === view.turn
+					? {
+							action: view.phase === "auction" ? "bid" : "play",
+							yours: view.actor === seat,
+						}
+					: undefined,
 			points:
 				(view.phase === "auction" || view.phase === "complete") &&
 				view.hands[owner].visible

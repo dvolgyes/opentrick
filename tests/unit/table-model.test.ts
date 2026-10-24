@@ -154,6 +154,35 @@ describe("table layout", () => {
 		expect(view("E", NORTH_DUMMY_TURN).claim.canRequest).toBe(false);
 	});
 
+	it("puts the turn pill on the seat to call or play, and marks it as the viewer's when the viewer acts", () => {
+		const pills = (table: TableView) =>
+			Object.fromEntries(
+				table.seats.flatMap((item) =>
+					item.turnPill ? [[item.seat, item.turnPill]] : [],
+				),
+			);
+		expect(pills(view("N", BOARD))).toEqual({
+			N: { action: "bid", yours: true },
+		});
+		expect(pills(view("E", BOARD))).toEqual({
+			N: { action: "bid", yours: false },
+		});
+		// Dummy's turn: the pill is on dummy (South), and declarer North plays its card.
+		expect(pills(view("N", NORTH_DUMMY_TURN))).toEqual({
+			S: { action: "play", yours: true },
+		});
+		expect(pills(view("S", NORTH_DUMMY_TURN))).toEqual({
+			S: { action: "play", yours: false },
+		});
+		expect(pills(view("N", NORTH_OWN_TURN))).toEqual({
+			N: { action: "play", yours: true },
+		});
+		expect(pills(view("W", NORTH_OWN_TURN))).toEqual({
+			N: { action: "play", yours: false },
+		});
+		expect(pills(view("N", bidding(BOARD, "P P P P")))).toEqual({});
+	});
+
 	it("puts the viewer at the bottom and the others clockwise: left, top, right", () => {
 		expect(
 			(["S", "W", "N", "E"] as Seat[]).map((s) => positionOf("S", s)),
