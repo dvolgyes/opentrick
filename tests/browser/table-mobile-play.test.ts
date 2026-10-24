@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cdp } from "vitest/browser";
+import { cdp, page } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { Form } from "../../src/call/device-class";
@@ -788,7 +788,7 @@ describe("desktop auction", () => {
 			}),
 			"desktop",
 		);
-		clickAsPointer(root, "Approve");
+		clickAsPointer(root, "Approve undo");
 		expect(handlers.undoVote).toHaveBeenCalledWith("undo-1", true);
 	});
 });
@@ -1581,32 +1581,6 @@ describe("compact play controls", () => {
 		undo?.click();
 		expect(handlers.undoRequest).toHaveBeenCalledWith(1);
 	});
-
-	it("shows a pending undo in the mobile overlay and routes approval", () => {
-		const view = playView();
-		const { root, handlers } = renderMobile({
-			...view,
-			undo: {
-				canRequest: false,
-				message: "playerW asks to undo their last played card.",
-				requestId: "undo-1",
-				canVote: true,
-				canCancel: false,
-			},
-		});
-		const overlay = root.querySelector<HTMLElement>(
-			'[data-testid="mobile-undo-overlay"]',
-		);
-		expect(overlay?.hidden).toBe(false);
-		expect(overlay?.textContent).toContain("playerW asks to undo");
-		expect(overlay?.textContent).toContain("Approve");
-		expect(overlay?.textContent).toContain("Reject");
-		const approve = [...(overlay?.querySelectorAll("button") ?? [])].find(
-			(button) => button.textContent === "Approve",
-		);
-		approve?.click();
-		expect(handlers.undoVote).toHaveBeenCalledWith("undo-1", true);
-	});
 });
 
 describe("mobile folds", () => {
@@ -1655,5 +1629,242 @@ describe("mobile folds", () => {
 		section.render(playView());
 		section.setBotControls(true, ["E"]);
 		expect(shown(root, toggle)).toBe(true);
+	});
+});
+
+describe("approval of an undo or a claim", () => {
+	/** Sets the viewport and waits for the window's resize event. */
+	async function resizeTo(width: number, height: number): Promise<void> {
+		if (innerWidth === width && innerHeight === height) return;
+		const resized = new Promise((resolve) =>
+			addEventListener("resize", resolve, { once: true }),
+		);
+		await page.viewport(width, height);
+		await resized;
+	}
+
+	const QUESTION = "playerW asks to undo their last bid. Do you approve?";
+	const auctionUndo = (undo: Partial<TableView["undo"]> = {}): TableView => ({
+		...playView(),
+		phase: "auction",
+		yourTurn: false,
+		trick: undefined,
+		undo: {
+			canRequest: false,
+			message: QUESTION,
+			requestId: "undo-1",
+			canVote: true,
+			canCancel: false,
+			...undo,
+		},
+	});
+	const playUndo = (): TableView => ({
+		...playView(),
+		undo: {
+			canRequest: false,
+			message: "playerW asks to undo their last played card. Do you approve?",
+			requestId: "undo-1",
+			canVote: true,
+			canCancel: false,
+		},
+	});
+	const playClaim = (): TableView => ({
+		...playView(),
+		undo: { ...playView().undo, canRequest: false },
+		claim: {
+			canRequest: false,
+			maxTricks: 0,
+			requestId: "claim-1",
+			requester: "playerW",
+			tricks: 3,
+			message: "playerW claims 3 tricks. Do you accept the claim?",
+			canVote: true,
+		},
+	});
+	type Case = [
+		string,
+		() => TableView,
+		string,
+		string,
+		keyof Pick<TableHandlers, "undoVote" | "claimVote">,
+		string,
+	];
+	const CASES: Case[] = [
+		[
+			"an undo in the auction",
+			auctionUndo,
+			"Approve undo",
+			"Reject undo",
+			"undoVote",
+			"undo-1",
+		],
+		[
+			"an undo in play",
+			playUndo,
+			"Approve undo",
+			"Reject undo",
+			"undoVote",
+			"undo-1",
+		],
+		[
+			"a claim in play",
+			playClaim,
+			"Accept claim",
+			"Reject claim",
+			"claimVote",
+			"claim-1",
+		],
+	];
+
+	const approval = (root: HTMLElement) => {
+		const found = root.querySelector<HTMLElement>('[data-testid="approval"]');
+		if (!found) throw new Error("the approval panel is missing");
+		return found;
+	};
+	const visibleButtons = (text: string) =>
+		[...document.querySelectorAll<HTMLButtonElement>("button")].filter(
+			(button) => button.textContent === text && button.checkVisibility(),
+		);
+	/** Clicks the button where a pointer would land on it, so a covering element fails the test. */
+	function pointerClick(button: HTMLElement): void {
+		const box = button.getBoundingClientRect();
+		const hit = document.elementFromPoint(
+			box.left + box.width / 2,
+			box.top + box.height / 2,
+		);
+		expect(hit?.closest("button")).toBe(button);
+		(hit as HTMLElement).click();
+	}
+	/** The hue of a computed rgb() color, in degrees. */
+	function hue(color: string): number {
+		const [r = 0, g = 0, b = 0] = (color.match(/\d+/g) ?? []).map(Number);
+		const max = Math.max(r, g, b);
+		const range = max - Math.min(r, g, b);
+		if (range === 0) return Number.NaN;
+		const degrees =
+			max === r
+				? ((g - b) / range) * 60
+				: max === g
+					? ((b - r) / range + 2) * 60
+					: ((r - g) / range + 4) * 60;
+		return (degrees + 360) % 360;
+	}
+	function expectColors(panel: HTMLElement, accept: string, reject: string) {
+		const question = panel.querySelector<HTMLElement>("p");
+		if (!question) throw new Error("the question is missing");
+		const style = getComputedStyle(question);
+		expect(style.fontWeight).toBe("400");
+		expect(style.fontStyle).toBe("normal");
+		expect(question.textContent).toMatch(/\?$/);
+		const [acceptButton] = visibleButtons(accept);
+		const [rejectButton] = visibleButtons(reject);
+		if (!acceptButton || !rejectButton) throw new Error("a button is missing");
+		const green = hue(getComputedStyle(acceptButton).backgroundColor);
+		expect(green).toBeGreaterThanOrEqual(90);
+		expect(green).toBeLessThanOrEqual(170);
+		const red = hue(getComputedStyle(rejectButton).backgroundColor);
+		expect(Math.min(red, 360 - red)).toBeLessThanOrEqual(20);
+	}
+
+	it.each(CASES)(
+		"asks about %s in a large dialog in the middle of a desktop screen",
+		async (_, view, accept, reject, vote, id) => {
+			await resizeTo(1280, 800);
+			const { root, handlers } = renderView(view(), "desktop");
+			const panel = approval(root);
+			expect(panel.checkVisibility()).toBe(true);
+			const box = panel.getBoundingClientRect();
+			expect(Math.abs(box.left + box.width / 2 - innerWidth / 2)).toBeLessThan(
+				2,
+			);
+			expect(Math.abs(box.top + box.height / 2 - innerHeight / 2)).toBeLessThan(
+				2,
+			);
+			expect(box.width).toBeGreaterThanOrEqual(480);
+			// The dialog is modal: the table and the sidebar around it do not take a click.
+			expect(panel.contains(document.elementFromPoint(5, 5))).toBe(false);
+			expect(
+				document
+					.elementFromPoint(5, 5)
+					?.closest(".bridge-table, .table-sidebar"),
+			).toBe(root);
+			expect(
+				document.elementFromPoint(5, 5)?.closest(".approval-backdrop"),
+			).not.toBeNull();
+			// Only the dialog has the buttons.
+			expect(visibleButtons(accept)).toHaveLength(1);
+			expect(visibleButtons(reject)).toHaveLength(1);
+			expect(visibleButtons("Approve")).toHaveLength(0);
+			expect(visibleButtons("Reject")).toHaveLength(0);
+			expectColors(panel, accept, reject);
+			const [acceptButton] = visibleButtons(accept);
+			const [rejectButton] = visibleButtons(reject);
+			if (!acceptButton || !rejectButton)
+				throw new Error("a button is missing");
+			pointerClick(acceptButton);
+			expect(handlers[vote]).toHaveBeenLastCalledWith(id, true);
+			pointerClick(rejectButton);
+			expect(handlers[vote]).toHaveBeenLastCalledWith(id, false);
+		},
+	);
+
+	it.each(CASES)(
+		"asks about %s directly below the board on a phone",
+		async (_, view, accept, reject, vote, id) => {
+			await resizeTo(400, 860);
+			const { root, handlers } = renderMobile(view());
+			const panel = approval(root);
+			expect(panel.checkVisibility()).toBe(true);
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			if (!board) throw new Error("the board is missing");
+			expect(board.nextElementSibling).toBe(panel);
+			expect(getComputedStyle(panel).position).not.toBe("fixed");
+			const gap =
+				panel.getBoundingClientRect().top -
+				board.getBoundingClientRect().bottom;
+			expect(gap).toBeGreaterThanOrEqual(0);
+			expect(gap).toBeLessThan(16);
+			expect(visibleButtons(accept)).toHaveLength(1);
+			expect(visibleButtons(reject)).toHaveLength(1);
+			expectColors(panel, accept, reject);
+			const [acceptButton] = visibleButtons(accept);
+			if (!acceptButton) throw new Error("the accept button is missing");
+			pointerClick(acceptButton);
+			expect(handlers[vote]).toHaveBeenLastCalledWith(id, true);
+		},
+	);
+
+	it("shows no dialog on a desktop after the player decided or to the requester", async () => {
+		await resizeTo(1280, 800);
+		const decided = renderView(
+			auctionUndo({ canVote: false, message: "Waiting for playerE." }),
+			"desktop",
+		);
+		expect(approval(decided.root).checkVisibility()).toBe(false);
+		const requester = renderView(
+			auctionUndo({ canVote: false, canCancel: true }),
+			"desktop",
+		);
+		expect(approval(requester.root).checkVisibility()).toBe(false);
+		expect(visibleButtons("Cancel undo")).toHaveLength(1);
+	});
+
+	it("lets the requester cancel an undo below the board on a phone", async () => {
+		await resizeTo(400, 860);
+		const { root, handlers } = renderMobile(
+			auctionUndo({
+				canVote: false,
+				canCancel: true,
+				message: "You ask to undo your last bid.",
+			}),
+		);
+		const panel = approval(root);
+		expect(panel.checkVisibility()).toBe(true);
+		expect(panel.textContent).toContain("You ask to undo your last bid.");
+		const [cancel] = visibleButtons("Cancel undo");
+		if (!cancel) throw new Error("Cancel undo is missing");
+		expect(panel.contains(cancel)).toBe(true);
+		pointerClick(cancel);
+		expect(handlers.undoCancel).toHaveBeenCalledWith("undo-1");
 	});
 });

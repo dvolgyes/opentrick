@@ -631,6 +631,8 @@ function undoPanelView(
 			item.payload.type === "undo-cancel" &&
 			item.payload.requestId === pending.id,
 	);
+	const canVote =
+		!terminal && pending.required.includes(seat) && !voted && !voteSending;
 	return {
 		canRequest: false,
 		message:
@@ -654,14 +656,18 @@ function undoPanelView(
 								"{requester} asks to undo their {action}. Your approval is recorded. {waiting}",
 								{ requester, action, waiting: waitingText },
 							)
-						: t("{requester} asks to undo their {action}. {waiting}", {
-								requester,
-								action,
-								waiting: waitingText,
-							}),
+						: canVote
+							? t("{requester} asks to undo their {action}. Do you approve?", {
+									requester,
+									action,
+								})
+							: t("{requester} asks to undo their {action}. {waiting}", {
+									requester,
+									action,
+									waiting: waitingText,
+								}),
 		requestId: pending.id,
-		canVote:
-			!terminal && pending.required.includes(seat) && !voted && !voteSending,
+		canVote,
 		canCancel: !terminal && pending.requester === seat && !cancelSending,
 	};
 }
@@ -720,6 +726,8 @@ function claimPanelView(
 	);
 	const approved = pending.approved.includes(seat);
 	const tricks = t(pending.tricks === 1 ? "trick" : "tricks");
+	const canVote =
+		!terminal && pending.required.includes(seat) && !approved && !voteSending;
 	return {
 		canRequest: false,
 		maxTricks: 0,
@@ -748,12 +756,18 @@ function claimPanelView(
 									waiting: waitingText,
 								},
 							)
-						: t(
-								"{requester} claims {count} {tricks}. Your decision is needed.",
-								{ requester, count: pending.tricks, tricks },
-							),
-		canVote:
-			!terminal && pending.required.includes(seat) && !approved && !voteSending,
+						: canVote
+							? t(
+									"{requester} claims {count} {tricks}. Do you accept the claim?",
+									{ requester, count: pending.tricks, tricks },
+								)
+							: t("{requester} claims {count} {tricks}. {waiting}", {
+									requester,
+									count: pending.tricks,
+									tricks,
+									waiting: waitingText,
+								}),
+		canVote,
 	};
 }
 

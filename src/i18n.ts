@@ -111,8 +111,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Approve undo": "Rückgängigmachen bestätigen",
 		"Reject undo": "Rückgängigmachen ablehnen",
 		"Cancel undo": "Rückgängigmachen abbrechen",
-		Approve: "Bestätigen",
-		Reject: "Ablehnen",
 		"Confirm claim": "Beanspruchen bestätigen",
 		"Go back": "Zurück",
 		"Previous game statistics": "Statistik der vorherigen Spiele",
@@ -375,8 +373,12 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{requester} beansprucht {count} {tricks}. Deine Entscheidung wird gesendet.",
 		"{requester} claims {count} {tricks}. You accepted. {waiting}":
 			"{requester} beansprucht {count} {tricks}. Du hast zugestimmt. {waiting}",
-		"{requester} claims {count} {tricks}. Your decision is needed.":
-			"{requester} beansprucht {count} {tricks}. Deine Entscheidung ist erforderlich.",
+		"{requester} claims {count} {tricks}. {waiting}":
+			"{requester} beansprucht {count} {tricks}. {waiting}",
+		"{requester} claims {count} {tricks}. Do you accept the claim?":
+			"{requester} beansprucht {count} {tricks}. Nimmst du die Beanspruchung an?",
+		"{requester} asks to undo their {action}. Do you approve?":
+			"{requester} möchte sein {action} rückgängig machen. Stimmst du zu?",
 		"Waiting for {players} to approve.":
 			"Warte auf die Zustimmung von {players}.",
 		"Waiting for {players} to decide.":
@@ -587,8 +589,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Reject undo": "Visszavonás elutasítása",
 		"Cancel undo": "Visszavonás megszakítása",
 		"Undo request": "Visszavonási kérelem",
-		Approve: "Jóváhagyás",
-		Reject: "Elutasítás",
 		"Number of tricks to claim": "Igényelt ütések száma",
 		"Confirm claim": "Igénylés megerősítése",
 		"Go back": "Vissza",
@@ -911,8 +911,12 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{requester} {count} {tricks}-t igényel. A döntésed küldése folyamatban.",
 		"{requester} claims {count} {tricks}. You accepted. {waiting}":
 			"{requester} {count} {tricks}-t igényel. Elfogadtad. {waiting}",
-		"{requester} claims {count} {tricks}. Your decision is needed.":
-			"{requester} {count} {tricks}-t igényel. Döntened kell.",
+		"{requester} claims {count} {tricks}. {waiting}":
+			"{requester} {count} {tricks}-t igényel. {waiting}",
+		"{requester} claims {count} {tricks}. Do you accept the claim?":
+			"{requester} {count} {tricks}-t igényel. Elfogadod az igénylést?",
+		"{requester} asks to undo their {action}. Do you approve?":
+			"{requester} kéri az utolsó {action} visszavonását. Jóváhagyod?",
 		"last played card": "utoljára kijátszott lap",
 		"last bid": "utolsó bid",
 		"Choose how many of the {count} remaining tricks you claim.":
@@ -1018,8 +1022,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Reject undo": "Avslå angre",
 		"Cancel undo": "Avbryt angre",
 		"Undo request": "Angreforespørsel",
-		Approve: "Godta",
-		Reject: "Avslå",
 		"Number of tricks to claim": "Antall stikk som kreves",
 		"Confirm claim": "Bekreft kravet",
 		"Go back": "Gå tilbake",
@@ -1370,8 +1372,12 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{requester} krever {count} {tricks}. Du godtok kravet. {waiting}",
 		"{requester} claims {count} {tricks}. Your decision is being sent.":
 			"{requester} krever {count} {tricks}. Avgjørelsen din sendes.",
-		"{requester} claims {count} {tricks}. Your decision is needed.":
-			"{requester} krever {count} {tricks}. Du må ta en avgjørelse.",
+		"{requester} claims {count} {tricks}. {waiting}":
+			"{requester} krever {count} {tricks}. {waiting}",
+		"{requester} claims {count} {tricks}. Do you accept the claim?":
+			"{requester} krever {count} {tricks}. Godtar du kravet?",
+		"{requester} asks to undo their {action}. Do you approve?":
+			"{requester} ber om å angre {action}. Godtar du?",
 		"{seat}: use at most {max} characters.":
 			"{seat}: bruk maksimalt {max} tegn.",
 		Debug: "Feilsøking",

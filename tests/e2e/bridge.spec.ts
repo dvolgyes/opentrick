@@ -275,14 +275,17 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	await expect(prompt(tab.S)).toHaveText(
 		"Waiting for North to play from dummy.",
 	);
-	// The room always shows the desktop form (src/ui/room-view.ts), so the undo and the claim use the sidebar.
+	// The room always shows the desktop form (src/ui/room-view.ts): a dialog asks about the undo, and the claim uses
+	// the sidebar.
 	await tab.E.getByTestId("undo-request").click();
-	await expect(tab.N.getByTestId("undo-approve")).toBeVisible();
-	await tab.N.getByTestId("undo-approve").click();
+	const approval = tab.N.getByRole("dialog", { name: "Undo request" });
+	await expect(approval).toBeVisible();
+	await expect(approval).toContainText("Do you approve?");
+	await approval.getByTestId("approval-accept").click();
 	await expectAt(1, 4);
 	expect(await playFirst(4)).toBe("E");
 	await expectAt(1, 5);
-	await expect(tab.N.getByTestId("undo-approve")).toBeHidden();
+	await expect(approval).toBeHidden();
 	const controls = tab.N.locator(".play-controls");
 	const claims = tab.N.getByTestId("claim-panel");
 	await controls.getByRole("button", { name: "Claim …" }).click();

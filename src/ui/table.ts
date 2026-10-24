@@ -290,20 +290,6 @@ export function tableSection(
 		className: "undo-message",
 		attrs: { role: "status", "data-testid": "undo-message" },
 	});
-	const approveUndo = button(
-		t("Approve undo"),
-		() => {
-			if (undoRequestId !== undefined) handlers.undoVote(undoRequestId, true);
-		},
-		{ attrs: { "data-testid": "undo-approve" } },
-	);
-	const rejectUndo = button(
-		t("Reject undo"),
-		() => {
-			if (undoRequestId !== undefined) handlers.undoVote(undoRequestId, false);
-		},
-		{ attrs: { "data-testid": "undo-reject" } },
-	);
 	const cancelUndo = button(
 		t("Cancel undo"),
 		() => {
@@ -319,47 +305,61 @@ export function tableSection(
 		},
 		el("h3", { className: "panel-title" }, t("Undo")),
 		undoMessage,
-		approveUndo,
-		rejectUndo,
 		cancelUndo,
 	);
-	const mobileUndoMessage = el("p", {
-		attrs: { role: "status", "aria-live": "polite" },
+	/** The request that the approval panel shows: an undo request, or a claim. */
+	let approvalKind: "undo" | "claim" | undefined;
+	const approvalVote = (accept: boolean) => {
+		if (approvalKind === "undo" && undoRequestId !== undefined)
+			handlers.undoVote(undoRequestId, accept);
+		if (approvalKind === "claim" && claimRequestId !== undefined)
+			handlers.claimVote(claimRequestId, accept);
+	};
+	const approvalTitle = el("h2", { attrs: { id: "approval-title" } });
+	const approvalQuestion = el("p", {
+		className: "approval-question",
+		attrs: { "aria-live": "polite" },
 	});
-	const mobileUndoApprove = button(t("Approve"), () => {
-		if (undoRequestId !== undefined) handlers.undoVote(undoRequestId, true);
+	const approvalAccept = button("", () => approvalVote(true), {
+		className: "approval-accept",
+		attrs: { "data-testid": "approval-accept" },
 	});
-	const mobileUndoReject = button(t("Reject"), () => {
-		if (undoRequestId !== undefined) handlers.undoVote(undoRequestId, false);
+	const approvalReject = button("", () => approvalVote(false), {
+		className: "approval-reject",
+		attrs: { "data-testid": "approval-reject" },
 	});
-	const mobileUndoCancel = button(t("Cancel undo"), () => {
-		if (undoRequestId !== undefined) handlers.undoCancel(undoRequestId);
-	});
-	const mobileUndoDialog = el(
+	const approvalCancel = button(
+		t("Cancel undo"),
+		() => {
+			if (undoRequestId !== undefined) handlers.undoCancel(undoRequestId);
+		},
+		{ attrs: { "data-testid": "approval-cancel" } },
+	);
+	// A desktop asks in a dialog in the middle of the screen; a phone game asks directly below the board.
+	const approval = el(
 		"section",
 		{
-			className: "mobile-undo-overlay",
+			className: "approval",
 			attrs: {
-				role: "dialog",
-				"aria-modal": "true",
-				"aria-labelledby": "mobile-undo-title",
-				"data-testid": "mobile-undo-overlay",
+				"aria-labelledby": "approval-title",
+				"data-testid": "approval",
 				tabindex: "-1",
 			},
 		},
+		approvalTitle,
+		approvalQuestion,
 		el(
 			"div",
-			{ className: "mobile-undo-dialog" },
-			el("h2", { attrs: { id: "mobile-undo-title" } }, t("Undo request")),
-			mobileUndoMessage,
-			el(
-				"div",
-				{ className: "mobile-undo-actions" },
-				mobileUndoApprove,
-				mobileUndoReject,
-				mobileUndoCancel,
-			),
+			{ className: "approval-actions" },
+			approvalAccept,
+			approvalReject,
+			approvalCancel,
 		),
+	);
+	const approvalBackdrop = el(
+		"div",
+		{ className: "approval-backdrop" },
+		approval,
 	);
 	const claimMessage = el("p", {
 		className: "undo-message",
@@ -386,12 +386,6 @@ export function tableSection(
 		claimMode = null;
 		if (latestView) renderClaimPanel(latestView);
 	});
-	const approveClaim = button(t("Accept claim"), () => {
-		if (claimRequestId !== undefined) handlers.claimVote(claimRequestId, true);
-	});
-	const rejectClaim = button(t("Reject claim"), () => {
-		if (claimRequestId !== undefined) handlers.claimVote(claimRequestId, false);
-	});
 	const claimPanel = el(
 		"section",
 		{
@@ -403,8 +397,6 @@ export function tableSection(
 		claimCountSelect,
 		confirmClaim,
 		cancelClaimChoice,
-		approveClaim,
-		rejectClaim,
 	);
 	const compactUndo = button(
 		"",
@@ -599,7 +591,7 @@ export function tableSection(
 		mobilePlayers,
 	);
 	let compact = false;
-	let mobileUndoWasVisible = false;
+	let approvalWasVisible = false;
 	let mobileBidsPhase: TableView["phase"] | undefined;
 	// The bid picker sits in the felt centre under the bids; the call panel sits in the felt corner (reference layout).
 	center.append(gameSlot);
@@ -685,7 +677,7 @@ export function tableSection(
 		},
 		status,
 		mobileAuction,
-		mobileUndoDialog,
+		approvalBackdrop,
 		felt,
 		dock,
 	);
@@ -1352,33 +1344,17 @@ export function tableSection(
 		undo.disabled =
 			view.undo.requestId !== undefined || (!view.undo.canRequest && hasPick);
 		const requestId = view.undo.requestId;
-		const approve = button(t("Approve"), () => {
-			if (requestId !== undefined) handlers.undoVote(requestId, true);
-		});
-		const reject = button(t("Reject"), () => {
-			if (requestId !== undefined) handlers.undoVote(requestId, false);
-		});
 		const cancel = button(t("Cancel undo"), () => {
 			if (requestId !== undefined) handlers.undoCancel(requestId);
 		});
-		approve.hidden = !view.undo.canVote || compact;
-		reject.hidden = !view.undo.canVote || compact;
 		cancel.hidden = !view.undo.canCancel || compact;
+		// The approval dialog asks the question.
 		const status = el("span", { className: "undo-message" }, view.undo.message);
-		status.hidden = view.undo.message === "";
+		status.hidden = view.undo.message === "" || view.undo.canVote;
 		bidBox.replaceChildren(
 			levels,
 			calls,
-			el(
-				"div",
-				{ className: "bid-actions" },
-				confirm,
-				undo,
-				approve,
-				reject,
-				cancel,
-				status,
-			),
+			el("div", { className: "bid-actions" }, confirm, undo, cancel, status),
 		);
 	}
 
@@ -1413,13 +1389,54 @@ export function tableSection(
 		claimCountSelect.hidden = !choosing;
 		confirmClaim.hidden = !choosing && !confirmingAll;
 		cancelClaimChoice.hidden = !choosing && !confirmingAll;
-		approveClaim.hidden = !view.claim.canVote;
-		rejectClaim.hidden = !view.claim.canVote;
+		// The approval panel asks the players who decide the claim.
 		claimPanel.hidden =
-			claimMessage.textContent === "" &&
-			!choosing &&
-			!confirmingAll &&
-			!view.claim.canVote;
+			view.claim.canVote ||
+			(claimMessage.textContent === "" && !choosing && !confirmingAll);
+	}
+
+	/**
+	 * Asks a player who decides an undo or a claim. A phone game shows the panel directly below the board, also to the
+	 * requester of an undo, who can cancel it there. Elsewhere the panel is a dialog for the players who decide, and a
+	 * compact screen also shows it to the requester of an undo.
+	 */
+	function renderApproval(view: TableView, inline: boolean): void {
+		const undoOpen = view.undo.requestId !== undefined;
+		approvalKind =
+			view.undo.canVote || (compact && undoOpen)
+				? "undo"
+				: view.claim.canVote
+					? "claim"
+					: undefined;
+		if (inline) {
+			if (mobileBoard.nextElementSibling !== approval)
+				mobileBoard.after(approval);
+		} else if (approval.parentElement !== approvalBackdrop) {
+			approvalBackdrop.append(approval);
+		}
+		const visible = approvalKind !== undefined;
+		approval.hidden = !visible;
+		approvalBackdrop.hidden = inline || !visible;
+		if (inline) {
+			approval.setAttribute("role", "region");
+			approval.removeAttribute("aria-modal");
+		} else {
+			approval.setAttribute("role", "dialog");
+			approval.setAttribute("aria-modal", "true");
+		}
+		const undo = approvalKind === "undo";
+		approvalTitle.textContent = t(undo ? "Undo request" : "Claim tricks");
+		approvalQuestion.textContent = undo
+			? view.undo.message
+			: view.claim.message;
+		approvalAccept.textContent = t(undo ? "Approve undo" : "Accept claim");
+		approvalReject.textContent = t(undo ? "Reject undo" : "Reject claim");
+		const canVote = undo ? view.undo.canVote : view.claim.canVote;
+		approvalAccept.hidden = !canVote;
+		approvalReject.hidden = !canVote;
+		approvalCancel.hidden = !undo || !view.undo.canCancel;
+		if (visible && !approvalWasVisible) approval.focus();
+		approvalWasVisible = visible;
 	}
 
 	claimCountSelect.addEventListener("change", () => {
@@ -1869,14 +1886,7 @@ export function tableSection(
 			);
 		}
 		renderMobilePlayers(view);
-		const mobileUndoVisible = compact && view.undo.requestId !== undefined;
-		mobileUndoDialog.hidden = !mobileUndoVisible;
-		mobileUndoMessage.textContent = view.undo.message;
-		mobileUndoApprove.hidden = !view.undo.canVote;
-		mobileUndoReject.hidden = !view.undo.canVote;
-		mobileUndoCancel.hidden = !view.undo.canCancel;
-		if (mobileUndoVisible && !mobileUndoWasVisible) mobileUndoDialog.focus();
-		mobileUndoWasVisible = mobileUndoVisible;
+		renderApproval(view, mobileGameActive);
 		const bottom = view.seats.find((seat) => seat.position === "bottom");
 		const ownTurn = bottom?.turn === true && !bottom.tags.includes("Dummy");
 		const gameOver = view.phase === "complete";
@@ -1926,8 +1936,6 @@ export function tableSection(
 		playUndo.disabled = !view.undo.canRequest;
 		compactUndo.hidden = view.phase === "auction";
 		compactUndo.disabled = !view.undo.canRequest;
-		approveUndo.hidden = !view.undo.canVote || compact;
-		rejectUndo.hidden = !view.undo.canVote || compact;
 		cancelUndo.hidden = !view.undo.canCancel;
 		renderClaimPanel(view);
 		if (mobileGameActive)
@@ -1941,6 +1949,7 @@ export function tableSection(
 		undoPanel.hidden =
 			compact ||
 			view.phase === "auction" ||
+			view.undo.canVote ||
 			(view.undo.requestId === undefined && view.undo.message === "");
 		bidHistory.hidden = view.auction === undefined;
 		historyTitle.hidden = view.phase === "auction" && !mobileGameActive;

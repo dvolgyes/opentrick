@@ -159,6 +159,55 @@ describe("table layout", () => {
 		expect(view("E", LED).undo.canRequest).toBe(true);
 	});
 
+	it("asks each player who must decide an undo or a claim, and tells the other players who must decide", () => {
+		const undoOf = (board: Board, calls: number, cards: number) => ({
+			state: {
+				...tableState(board),
+				undo: {
+					id: "undo-1",
+					board: 1,
+					requester: "N" as const,
+					required: ["E", "S", "W"] as const,
+					approved: [],
+					calls,
+					cards,
+				},
+			},
+		});
+		const auctionUndo = undoOf(bidding(BOARD, "1C"), 0, 0);
+		expect(view("E", BOARD, auctionUndo).undo).toMatchObject({
+			canVote: true,
+			message: "player1 asks to undo their last bid. Do you approve?",
+		});
+		const playUndo = undoOf(NORTH_OWN_TURN, 4, 2);
+		expect(view("W", BOARD, playUndo).undo).toMatchObject({
+			canVote: true,
+			message: "player1 asks to undo their last played card. Do you approve?",
+		});
+		const claim = {
+			state: {
+				...tableState(NORTH_OWN_TURN),
+				claim: {
+					id: "claim-1",
+					board: 1,
+					requester: "N" as const,
+					tricks: 3,
+					required: ["E", "W"] as const,
+					approved: ["W"] as const,
+				},
+			},
+		};
+		expect(view("E", BOARD, claim).claim).toMatchObject({
+			canVote: true,
+			message: "player1 claims 3 tricks. Do you accept the claim?",
+		});
+		// Dummy does not decide a claim.
+		expect(view("S", BOARD, claim).claim).toMatchObject({
+			canVote: false,
+			message: "player1 claims 3 tricks. Waiting for player3 to decide.",
+		});
+	});
+
 	it("puts the turn pill on the seat to call or play, and marks it as the viewer's when the viewer acts", () => {
 		const pills = (table: TableView) =>
 			Object.fromEntries(
