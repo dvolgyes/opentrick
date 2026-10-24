@@ -384,3 +384,75 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		);
 	}
 });
+
+test("the bots approve the host's claim", async ({ page }) => {
+	// North opens 1NT and every other bot call is a pass; each bot card is its first legal card.
+	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
+		if (route.request().method() === "OPTIONS") {
+			await route.fulfill({
+				status: 204,
+				headers: {
+					"access-control-allow-origin": "*",
+					"access-control-allow-methods": "POST, OPTIONS",
+					"access-control-allow-headers": "authorization,content-type",
+				},
+			});
+			return;
+		}
+		const body = route.request().postDataJSON();
+		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
+		const values = body.text.format.schema.properties[kind].enum as string[];
+		const choice =
+			kind === "call" && body.input.includes("No calls yet")
+				? (values.find((value) => value === "1NT") ?? values[0])
+				: kind === "call"
+					? (values.find((value) => value === "P") ?? values[0])
+					: values[0];
+		await route.fulfill({
+			status: 200,
+			headers: { "access-control-allow-origin": "*" },
+			contentType: "application/json",
+			body: JSON.stringify({
+				output: [
+					{
+						type: "message",
+						role: "assistant",
+						content: [
+							{ type: "output_text", text: JSON.stringify({ [kind]: choice }) },
+						],
+					},
+				],
+			}),
+		});
+	});
+
+	await page.goto("/");
+	for (const seat of ["N", "E", "S"])
+		await page.locator(`input[name="bot-${seat}"]`).check();
+	await page.locator('input[name="openrouter-key"]').fill("test-key");
+	await page.getByTestId("create").click();
+	const phase = page.locator("[data-phase]").first();
+
+	// West overcalls 2NT and the bots pass, so West declares.
+	const bidBox = page.getByTestId("bid-box");
+	await expect(bidBox.getByRole("button", { name: "Level 2" })).toBeEnabled({
+		timeout: 30_000,
+	});
+	await bidBox.getByRole("button", { name: "Level 2" }).click();
+	await bidBox.getByRole("button", { name: "No trump" }).click();
+	await bidBox.getByRole("button", { name: "Confirm" }).click();
+	await expect(phase).toHaveAttribute("data-phase", "play", {
+		timeout: 30_000,
+	});
+
+	// North leads, and West claims all tricks at its first turn.
+	const claimAll = page
+		.locator(".play-controls")
+		.getByRole("button", { name: "Claim all" });
+	await expect(claimAll).toBeEnabled({ timeout: 30_000 });
+	await claimAll.click();
+	await page.getByTestId("claim-confirm").click();
+	await expect(phase).toHaveAttribute("data-phase", "complete", {
+		timeout: 30_000,
+	});
+});

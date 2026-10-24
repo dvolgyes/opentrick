@@ -204,8 +204,9 @@ export class HostBotRunner {
 							: undefined;
 			if (voteKey && !this.#processed.has(voteKey)) {
 				this.#processed.add(voteKey);
+				// A bot accepts every claim, undo and reset, so that only the human players decide them.
 				const payload = state.claim
-					? claimVotePayload(this.#controller.tableId, state.claim.id, false)
+					? claimVotePayload(this.#controller.tableId, state.claim.id, true)
 					: state.undo
 						? undoVotePayload(this.#controller.tableId, state.undo.id, true)
 						: resetVotePayload(

@@ -375,7 +375,7 @@ async function run(options: Options): Promise<void> {
 			strategyKey = undefined;
 			await submitVote(
 				`claim:${state.claim.id}`,
-				claimVotePayload(identity.tableId, state.claim.id, false),
+				claimVotePayload(identity.tableId, state.claim.id, true),
 			);
 			return;
 		}
