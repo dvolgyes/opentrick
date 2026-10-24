@@ -740,6 +740,47 @@ describe("desktop auction", () => {
 	});
 });
 
+describe("undo request off turn", () => {
+	it.each<Form>(["desktop", "compact"])(
+		"lets a %s player ask to undo their last bid while another player calls",
+		(form) => {
+			const base = playView();
+			const view: TableView = {
+				...base,
+				phase: "auction",
+				prompt: "",
+				yourTurn: false,
+				auction: { seats: ["N", "E", "S", "W"], rows: [["1♣"]] },
+				bids: [],
+				contract: "",
+				header: undefined,
+				trick: undefined,
+				need: undefined,
+				undo: {
+					canRequest: true,
+					message: "",
+					requestId: undefined,
+					canVote: false,
+					canCancel: false,
+				},
+			};
+			const { root, handlers } = renderView(view, form);
+			const target = [...root.querySelectorAll<HTMLElement>(".undo-call")].find(
+				(button) => button.checkVisibility(),
+			);
+			if (!target) throw new Error("Undo is missing");
+			const box = target.getBoundingClientRect();
+			const hit = document.elementFromPoint(
+				box.left + box.width / 2,
+				box.top + box.height / 2,
+			);
+			expect(hit?.closest("button")).toBe(target);
+			(hit as HTMLElement).click();
+			expect(handlers.undoRequest).toHaveBeenCalledWith(view.board);
+		},
+	);
+});
+
 describe("compact play controls", () => {
 	it("marks bot players by name and overlays their call tiles", () => {
 		const view = playView();

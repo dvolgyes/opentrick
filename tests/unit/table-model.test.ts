@@ -154,6 +154,11 @@ describe("table layout", () => {
 		expect(view("E", NORTH_DUMMY_TURN).claim.canRequest).toBe(false);
 	});
 
+	it("lets a player ask to undo their last action while another player is to act", () => {
+		expect(view("N", bidding(BOARD, "1C")).undo.canRequest).toBe(true);
+		expect(view("E", LED).undo.canRequest).toBe(true);
+	});
+
 	it("puts the turn pill on the seat to call or play, and marks it as the viewer's when the viewer acts", () => {
 		const pills = (table: TableView) =>
 			Object.fromEntries(
