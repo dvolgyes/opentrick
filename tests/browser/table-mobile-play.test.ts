@@ -669,6 +669,77 @@ describe("desktop play", () => {
 	});
 });
 
+describe("desktop auction", () => {
+	/** An open undo request in the auction: no call is legal for anybody until it is decided. */
+	function undoOpenView(undo: Partial<TableView["undo"]>): TableView {
+		const base = playView();
+		return {
+			...base,
+			phase: "auction",
+			prompt: "",
+			yourTurn: false,
+			seats: base.seats.map((player) => ({
+				...player,
+				tags: [],
+				turnPill: undefined,
+			})),
+			auction: { seats: ["N", "E", "S", "W"], rows: [["1♣", "Pass"]] },
+			bids: [],
+			contract: "",
+			header: undefined,
+			trick: undefined,
+			need: undefined,
+			undo: {
+				canRequest: false,
+				message: "",
+				requestId: "undo-1",
+				canVote: false,
+				canCancel: false,
+				...undo,
+			},
+		};
+	}
+
+	/** Clicks the visible button with this text where a pointer would land on it. */
+	function clickAsPointer(root: HTMLElement, text: string): void {
+		const target = [...root.querySelectorAll<HTMLElement>("button")].find(
+			(button) => button.textContent === text && button.checkVisibility(),
+		);
+		if (!target) throw new Error(`${text} is missing`);
+		const box = target.getBoundingClientRect();
+		const hit = document.elementFromPoint(
+			box.left + box.width / 2,
+			box.top + box.height / 2,
+		);
+		expect(hit?.closest("button")).toBe(target);
+		(hit as HTMLElement).click();
+	}
+
+	it("lets the requester cancel an open undo while no call is legal", () => {
+		const { root, handlers } = renderView(
+			undoOpenView({
+				canCancel: true,
+				message: "You ask to undo your last bid.",
+			}),
+			"desktop",
+		);
+		clickAsPointer(root, "Cancel undo");
+		expect(handlers.undoCancel).toHaveBeenCalledWith("undo-1");
+	});
+
+	it("lets another player approve an open undo while no call is legal", () => {
+		const { root, handlers } = renderView(
+			undoOpenView({
+				canVote: true,
+				message: "playerW asks to undo their last bid.",
+			}),
+			"desktop",
+		);
+		clickAsPointer(root, "Approve");
+		expect(handlers.undoVote).toHaveBeenCalledWith("undo-1", true);
+	});
+});
+
 describe("compact play controls", () => {
 	it("marks bot players by name and overlays their call tiles", () => {
 		const view = playView();

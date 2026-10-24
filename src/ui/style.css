@@ -1699,10 +1699,18 @@ button.call-join[data-in-call="true"] {
 	font-size: 1.15rem;
 }
 
-/* Not the viewer's call: the levels and suits stay visible, but grayed out and inactive. */
-.bid-box.not-turn {
+/*
+ * Not the viewer's call: the levels and suits stay visible, but grayed out and inactive. The undo controls stay
+ * active, because an undo request can be decided or cancelled while nobody may call.
+ */
+.bid-box.not-turn .bid-levels,
+.bid-box.not-turn .bid-calls {
 	opacity: 0.4;
 	pointer-events: none;
+}
+
+.bid-box.not-turn .bid-actions button:disabled {
+	opacity: 0.4;
 }
 
 .bid-actions .confirm {
