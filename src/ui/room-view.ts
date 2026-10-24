@@ -54,6 +54,7 @@ import type { CallDisplay, RemoteCallPresence } from "./call-model";
 import { cameraSetup } from "./camera-setup";
 import type { AppDeps, Dispose, Navigation } from "./deps";
 import { button, el } from "./dom";
+import { documentFullscreen, FullscreenPolicy } from "./fullscreen";
 import {
 	type Banner,
 	bannerFor,
@@ -146,6 +147,7 @@ export function showRoom(
 
 	// The call is optional and separate from the game: it reads the table, and its actions never send a command.
 	const deviceForm = classify(readSignals(window));
+	const fullscreen = new FullscreenPolicy(documentFullscreen);
 	const support = deps.call;
 	const camera = support.available
 		? cameraSetup({
@@ -1344,6 +1346,7 @@ export function showRoom(
 		if (config === undefined) {
 			root.dataset.screen = "table";
 			root.dataset.waiting = "true";
+			fullscreen.update(false);
 			you.hidden = false;
 			you.textContent = deps.t(TEXT.connecting);
 			send.textContent = deps.t(TEXT.send);
@@ -1511,6 +1514,12 @@ export function showRoom(
 		// The lobby uses the table layout, so it looks like the game; only the sidebar is hidden while waiting.
 		root.dataset.screen = "table";
 		root.dataset.waiting = String(tableModel.phase === "waiting");
+		fullscreen.update(
+			deviceForm === "desktop" &&
+				!terminal &&
+				tableModel.board > 0 &&
+				present.size === SEATS.length,
+		);
 		const tableKey = JSON.stringify(
 			tableModel.scoring
 				? {
@@ -1555,6 +1564,12 @@ export function showRoom(
 	};
 	room.addEventListener("pointerdown", onGesture);
 	room.addEventListener("keydown", onGesture);
+	// Full screen needs a gesture; the capture phase sees it before a control can stop it.
+	const onFullscreenGesture = (): void => {
+		fullscreen.gesture();
+	};
+	window.addEventListener("pointerdown", onFullscreenGesture, true);
+	window.addEventListener("keydown", onFullscreenGesture, true);
 	document.addEventListener("visibilitychange", onPageStateChange);
 	const unsubscribe = controller.onChange(render);
 	call?.onChange(renderCall);
@@ -1582,6 +1597,9 @@ export function showRoom(
 		document.removeEventListener("visibilitychange", onPageStateChange);
 		room.removeEventListener("pointerdown", onGesture);
 		room.removeEventListener("keydown", onGesture);
+		window.removeEventListener("pointerdown", onFullscreenGesture, true);
+		window.removeEventListener("keydown", onFullscreenGesture, true);
+		fullscreen.update(false);
 		memory?.stop();
 		call?.dispose();
 		audio.detach();
