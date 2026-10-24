@@ -14,24 +14,24 @@ const contract = (
 ): Contract => ({ level, strain, declarer, doubling: "" });
 
 describe("playSuitOrder", () => {
-	it("puts the trump suit first, then the other suits clubs, diamonds, hearts, spades", () => {
-		expect(playSuitOrder("C")).toEqual(["C", "D", "H", "S"]);
-		expect(playSuitOrder("S")).toEqual(["S", "C", "D", "H"]);
+	it("puts the trump suit first, then the other suits spades, hearts, diamonds, clubs", () => {
+		expect(playSuitOrder("C")).toEqual(["C", "S", "H", "D"]);
+		expect(playSuitOrder("S")).toEqual(["S", "H", "D", "C"]);
 	});
 
 	it("keeps trump first in a hand on the top or left", () => {
-		expect(playSuitOrder("C", "top")).toEqual(["C", "D", "H", "S"]);
-		expect(playSuitOrder("D", "left")).toEqual(["D", "C", "H", "S"]);
-		expect(playSuitOrder("D", "bottom")).toEqual(["D", "C", "H", "S"]);
+		expect(playSuitOrder("C", "top")).toEqual(["C", "S", "H", "D"]);
+		expect(playSuitOrder("D", "left")).toEqual(["D", "S", "H", "C"]);
+		expect(playSuitOrder("D", "bottom")).toEqual(["D", "S", "H", "C"]);
 	});
 
 	it("puts the trump suit last in a hand on the right", () => {
-		expect(playSuitOrder("H", "right")).toEqual(["C", "D", "S", "H"]);
+		expect(playSuitOrder("H", "right")).toEqual(["S", "D", "C", "H"]);
 	});
 
 	it("uses the base order with no trump suit", () => {
-		expect(playSuitOrder("NT")).toEqual(["C", "D", "H", "S"]);
-		expect(playSuitOrder(undefined)).toEqual(["C", "D", "H", "S"]);
+		expect(playSuitOrder("NT")).toEqual(["S", "H", "D", "C"]);
+		expect(playSuitOrder(undefined)).toEqual(["S", "H", "D", "C"]);
 	});
 });
 

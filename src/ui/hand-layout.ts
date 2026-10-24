@@ -14,7 +14,7 @@ export type Edge = "bottom" | "left" | "top" | "right";
 export const AUCTION_SUIT_ORDER: readonly Suit[] = ["C", "D", "H", "S"];
 
 /** The base order of the play screen; the trump suit moves in front of it or to its end. */
-const PLAY_SUIT_ORDER: readonly Suit[] = ["C", "D", "H", "S"];
+const PLAY_SUIT_ORDER: readonly Suit[] = ["S", "H", "D", "C"];
 
 /** Milton Work points: the only values the auction screen counts. */
 const MILTON_POINTS: Readonly<Partial<Record<string, number>>> = {
@@ -31,7 +31,7 @@ export function sideOf(seat: Seat): "NS" | "EW" {
 
 /**
  * The suit order of one hand on the play screen: the trump suit first, then the other suits in the base order,
- * clubs, diamonds, hearts, spades. The trump suit goes last only in a hand on the right side of the viewer's
+ * spades, hearts, diamonds, clubs. The trump suit goes last only in a hand on the right side of the viewer's
  * screen, so the trump suit is always on the left of the hand as its owner's side of the table reads it.
  */
 export function playSuitOrder(
