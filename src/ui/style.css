@@ -1284,27 +1284,27 @@ main:has(> .room) {
 }
 
 /*
- * Each oriented card shows the two corners its own player sees as top-left and bottom-right. The bottom card is mirrored,
- * and the side cards turn their ranks a quarter, so these are their top-right and bottom-left elements on screen.
+ * Each oriented card shows its rank in the top-left and bottom-right corners on screen. The bottom card is mirrored, so
+ * these are its top-right and bottom-left elements.
  */
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played:is(.pos-bottom, .pos-left, .pos-right)
+	.played.pos-bottom
 	.rank-corner.top-right,
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played:is(.pos-bottom, .pos-left, .pos-right)
+	.played.pos-bottom
 	.rank-corner.bottom-left {
 	display: block;
 }
 
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played:is(.pos-bottom, .pos-left, .pos-right)
+	.played.pos-bottom
 	.rank-corner.top-left,
 [data-form="compact"]
 	.bridge-table[data-played-card-style="corners-oriented"]
-	.played:is(.pos-bottom, .pos-left, .pos-right)
+	.played.pos-bottom
 	.rank-corner.bottom-right {
 	display: none;
 }
@@ -1333,22 +1333,11 @@ main:has(> .room) {
 	display: block;
 }
 
+/* The marks of the side cards stand upright, as on the top card; only the card itself lies landscape. */
 .bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-top
+	.played:is(.pos-top, .pos-left, .pos-right)
 	.rank-corner {
 	transform: rotate(0deg);
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-left
-	.rank-corner {
-	transform: rotate(90deg);
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-right
-	.rank-corner {
-	transform: rotate(-90deg);
 }
 
 .bridge-table[data-played-card-style="corners-oriented"]
@@ -1358,21 +1347,9 @@ main:has(> .room) {
 }
 
 .bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-top
+	.played:is(.pos-top, .pos-left, .pos-right)
 	.played-center-suit {
 	transform: translate(-50%, -50%) rotate(0deg);
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-left
-	.played-center-suit {
-	transform: translate(-50%, -50%) rotate(90deg);
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-right
-	.played-center-suit {
-	transform: translate(-50%, -50%) rotate(-90deg);
 }
 
 .bridge-table[data-played-card-style="corners-oriented"]

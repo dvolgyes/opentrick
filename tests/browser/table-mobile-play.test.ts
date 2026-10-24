@@ -255,8 +255,8 @@ describe("played card styles", () => {
 	});
 
 	const ALL_CORNERS = ["top-left", "top-right", "bottom-left", "bottom-right"];
-	// On a phone, each card shows its own top-left and bottom-right corners, as seen by the player who played it: the
-	// side cards are turned a quarter, so their ranks are top-right and bottom-left on screen.
+	// On a phone, each card shows its rank in the top-left and bottom-right corners on screen. The side cards keep their
+	// marks upright, like the top and bottom cards.
 	it.each<[Form, Record<"top" | "left" | "bottom" | "right", string[]>]>([
 		[
 			"desktop",
@@ -271,9 +271,9 @@ describe("played card styles", () => {
 			"compact",
 			{
 				top: ["top-left", "bottom-right"],
-				left: ["top-right", "bottom-left"],
+				left: ["top-left", "bottom-right"],
 				bottom: ["top-left", "bottom-right"],
-				right: ["top-right", "bottom-left"],
+				right: ["top-left", "bottom-right"],
 			},
 		],
 	])("shows the rank in the %s corners %j on screen", (form, shown) => {
@@ -357,7 +357,7 @@ describe("played card styles", () => {
 		}
 
 		expect(getComputedStyle(marker).transform).toBe(
-			style === "corners-oriented" ? "matrix(0, 1, -1, 0, 0, 0)" : "none",
+			style === "corners-oriented" ? "matrix(1, 0, 0, 1, 0, 0)" : "none",
 		);
 	});
 
@@ -381,18 +381,26 @@ describe("played card styles", () => {
 			},
 			"desktop",
 		);
+		// The bottom card is mirrored as a whole, and its mirrored marks read upright again; the side marks stay upright.
 		const rotations: Record<string, string> = {
 			top: "matrix(1, 0, 0, 1, 0, 0)",
-			left: "matrix(0, 1, -1, 0, 0, 0)",
-			right: "matrix(0, -1, 1, 0, 0, 0)",
+			left: "matrix(1, 0, 0, 1, 0, 0)",
+			right: "matrix(1, 0, 0, 1, 0, 0)",
 			bottom: "matrix(-1, 0, 0, 1, 0, 0)",
 		};
 		for (const [position, transform] of Object.entries(rotations)) {
-			const marker = root.querySelector<HTMLElement>(
-				`.played.pos-${position} .rank-corner`,
-			);
-			if (!marker) throw new Error(`${position} corner marker is missing`);
-			expect(getComputedStyle(marker).transform).toBe(transform);
+			for (const mark of [".rank-corner", ".played-center-suit"]) {
+				const marker = root.querySelector<HTMLElement>(
+					`.played.pos-${position} ${mark}`,
+				);
+				if (!marker) throw new Error(`${position} ${mark} is missing`);
+				// The center suit is also moved to the middle of the card, so only the linear part is compared.
+				const linear = getComputedStyle(marker).transform.replace(
+					/, [-\d.]+, [-\d.]+\)$/,
+					", 0, 0)",
+				);
+				expect(linear, `${position} ${mark}`).toBe(transform);
+			}
 		}
 	});
 
