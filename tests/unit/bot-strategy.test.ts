@@ -245,6 +245,24 @@ describe("bot decisions", () => {
 		expect(prompt).not.toContain("♠ 765  ♥ JT987  ♦ QJT  ♣ KQ");
 	});
 
+	it("gives the bidder the high-card points of its own hand", () => {
+		const board = createBoard(1, DEAL);
+		const east = renderBidPrompt(
+			board,
+			"E",
+			legalActions(board, board.dealer),
+			NODE_PROMPT_TEMPLATES,
+		);
+		const west = renderBidPrompt(
+			board,
+			"W",
+			legalActions(board, board.dealer),
+			NODE_PROMPT_TEMPLATES,
+		);
+		expect(east).toContain("Your high-card points: 9");
+		expect(west).toContain("Your high-card points: 0");
+	});
+
 	it("shows only the player's hand and dummy during play", () => {
 		const board = bidding(createBoard(1, DEAL), "1S P 4S P P P");
 		const legal = legalActions(board, "E");

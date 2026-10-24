@@ -100,6 +100,25 @@ function handText(cards: readonly Card[]): string {
 	}).join("  ");
 }
 
+/** Milton Work points: A 4, K 3, Q 2, J 1. */
+function highCardPoints(cards: readonly Card[]): number {
+	return cards.reduce((points, card) => {
+		const rank = rankOf(card);
+		return (
+			points +
+			(rank === "A"
+				? 4
+				: rank === "K"
+					? 3
+					: rank === "Q"
+						? 2
+						: rank === "J"
+							? 1
+							: 0)
+		);
+	}, 0);
+}
+
 function callLabel(call: Call): string {
 	if (call === "P") return "Pass";
 	if (call === "X") return "Double";
@@ -178,6 +197,7 @@ export function renderBidPrompt(
 		SEAT: `${SEAT_NAMES[seat]} (${seat})`,
 		VULNERABILITY: VULNERABILITY[board.vulnerability],
 		HAND: handText(board.deal[seat]),
+		HCP: String(highCardPoints(board.deal[seat])),
 		AUCTION: callsText(board),
 		LEGAL_BIDS: legalChoices(legal).join(", "),
 	});
@@ -245,21 +265,6 @@ export function decisionState(
 		const shape = SUITS.map(
 			(suit) => hand.filter((card) => suitOf(card) === suit).length,
 		).toSorted((a, b) => b - a);
-		const highCardPoints = hand.reduce((points, card) => {
-			const rank = rankOf(card);
-			return (
-				points +
-				(rank === "A"
-					? 4
-					: rank === "K"
-						? 3
-						: rank === "Q"
-							? 2
-							: rank === "J"
-								? 1
-								: 0)
-			);
-		}, 0);
 		return {
 			board: board.number,
 			dealer: board.dealer,
@@ -274,7 +279,7 @@ export function decisionState(
 						.join(""),
 				]),
 			),
-			high_card_points: highCardPoints,
+			high_card_points: highCardPoints(hand),
 			suit_shape_longest_first: shape,
 			auction,
 		};

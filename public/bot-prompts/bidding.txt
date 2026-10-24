@@ -37,6 +37,7 @@ Dealer: {{DEALER}}
 Your seat: {{SEAT}}
 Vulnerability: {{VULNERABILITY}}
 Your hand: {{HAND}}
+Your high-card points: {{HCP}}
 Auction: {{AUCTION}}
 Legal bids: {{LEGAL_BIDS}}
 
