@@ -9,11 +9,12 @@ import { parseStunUrls, rtcConfiguration } from "../call/ice";
 /** Unversioned, so pages of different versions meet and report the mismatch. */
 export const APP_ID = "github.com/dvolgyes/opentrick";
 
-/** The three trackers that answered in every discovery spike trial (ADR 0004). */
+/** The trackers that relayed an offer between two sockets in every check (ADR 0004). */
 export const DEFAULT_TRACKER_URLS: readonly string[] = [
 	"wss://tracker.openwebtorrent.com",
 	"wss://tracker.webtorrent.dev",
 	"wss://open.ftorrent.com",
+	"wss://tracker.novage.com.ua",
 ];
 
 const MAX_TRACKER_URLS = 8;
@@ -43,11 +44,13 @@ function isTrackerUrl(text: string): boolean {
 	);
 }
 
+/** Empty or absent gives the default; `none` turns the trackers off for tests, so no tracker sees the page. */
 export function parseTrackerUrls(
 	value: string | undefined,
 ):
 	| { readonly ok: true; readonly urls: readonly string[] }
 	| { readonly ok: false; readonly error: string } {
+	if (value?.trim().toLowerCase() === "none") return { ok: true, urls: [] };
 	const urls = (value ?? "").split(/[\s,]+/).filter((url) => url !== "");
 	if (urls.length === 0) return { ok: true, urls: DEFAULT_TRACKER_URLS };
 	if (urls.length > MAX_TRACKER_URLS) {

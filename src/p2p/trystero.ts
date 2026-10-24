@@ -1,6 +1,7 @@
 import type { MeshConfig } from "./config";
 import { Mesh, type MeshHandlers, type TrackerSocket } from "./mesh";
 import type { Clock } from "./ports";
+import { stunProbe } from "./stun-probe";
 import { getRelaySockets, joinRoom, selfId } from "./torrent";
 
 /** The production mesh: the real Trystero bundle over the configured public trackers. */
@@ -22,6 +23,7 @@ export function trysteroMesh(
 				self: selfId,
 				trackerSockets: () =>
 					getRelaySockets() as Readonly<Record<string, TrackerSocket>>,
+				probeStun: stunProbe(rtcPolyfill ?? RTCPeerConnection),
 				clock,
 			},
 			handlers,

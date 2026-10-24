@@ -11,12 +11,28 @@ describe("parseTrackerUrls", () => {
 		["absent", undefined],
 		["empty", ""],
 		["blank", "  ,  "],
-	])("gives the three spike trackers when %s", (_name, value) => {
+	])("gives the four default trackers when %s", (_name, value) => {
 		expect(parseTrackerUrls(value)).toEqual({
 			ok: true,
 			urls: DEFAULT_TRACKER_URLS,
 		});
-		expect(DEFAULT_TRACKER_URLS).toHaveLength(3);
+		expect(DEFAULT_TRACKER_URLS).toEqual([
+			"wss://tracker.openwebtorrent.com",
+			"wss://tracker.webtorrent.dev",
+			"wss://open.ftorrent.com",
+			"wss://tracker.novage.com.ua",
+		]);
+	});
+
+	it.each(["none", " None "])("turns the trackers off with %j", (value) => {
+		expect(parseTrackerUrls(value)).toEqual({ ok: true, urls: [] });
+	});
+
+	it("refuses none together with a URL", () => {
+		expect(parseTrackerUrls("wss://a.example none")).toEqual({
+			ok: false,
+			error: "Not a valid wss: tracker URL in VITE_TRACKER_URLS: none",
+		});
 	});
 
 	it("accepts wss: URLs separated by commas or spaces and removes duplicates", () => {
@@ -69,6 +85,12 @@ describe("readMeshConfig", () => {
 				rtc: { iceServers: [{ urls: ["stun:stun.example:3478"] }] },
 			},
 		});
+	});
+
+	it("turns trackers and STUN off independently", () => {
+		expect(
+			readMeshConfig({ VITE_TRACKER_URLS: "none", VITE_STUN_URLS: "none" }),
+		).toEqual({ ok: true, config: { trackers: [], rtc: { iceServers: [] } } });
 	});
 
 	it("gives the tracker error before the STUN error", () => {

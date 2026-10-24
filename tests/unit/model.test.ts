@@ -260,6 +260,8 @@ describe("networkLines", () => {
 	const NETWORK: MeshDiagnostics = {
 		trackersOpen: 2,
 		trackers: 3,
+		relays: [],
+		stun: null,
 		peers: 2,
 		wrongKey: 1,
 		unreachable: 1,

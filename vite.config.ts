@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import dgram from "node:dgram";
 import { playwright } from "@vitest/browser-playwright";
 import { configDefaults, defineConfig } from "vitest/config";
 import type { BrowserCommandContext } from "vitest/node";
@@ -24,8 +25,32 @@ const BUILD = {
 	date: git("log", "-1", "--format=%cI"),
 };
 
+/**
+ * A STUN server on 127.0.0.1 that answers each Binding request with the documentation address 203.0.113.7:4242
+ * (RFC 5389 XOR-MAPPED-ADDRESS); it stands in for a public STUN server in the discovery tests.
+ */
+async function fakeStunServer(): Promise<dgram.Socket> {
+	const socket = dgram.createSocket("udp4");
+	socket.on("message", (request, from) => {
+		if (request.length < 20 || request.readUInt16BE(0) !== 0x0001) return;
+		const response = Buffer.alloc(32);
+		response.writeUInt16BE(0x0101, 0);
+		response.writeUInt16BE(12, 2);
+		request.copy(response, 4, 4, 20);
+		response.writeUInt16BE(0x0020, 20);
+		response.writeUInt16BE(8, 22);
+		response.writeUInt16BE(0x0001, 24);
+		response.writeUInt16BE(4242 ^ 0x2112, 26);
+		response.writeUInt32BE((0xcb007107 ^ 0x2112a442) >>> 0, 28);
+		socket.send(response, from.port, from.address);
+	});
+	await new Promise<void>((resolve) => socket.bind(0, "127.0.0.1", resolve));
+	return socket;
+}
+
 /** Headless Chrome with its generated test microphone and camera, as in the end-to-end tests. */
 function chrome(fakeDevices = "--use-fake-device-for-media-stream") {
+	const stunServers = new Map<number, dgram.Socket>();
 	return {
 		enabled: true,
 		headless: true,
@@ -40,6 +65,17 @@ function chrome(fakeDevices = "--use-fake-device-for-media-stream") {
 				context.context.clearPermissions(),
 			grantPermissions: (context: BrowserCommandContext, names: string[]) =>
 				context.context.grantPermissions(names),
+			/** Starts a fake STUN server and gives its port. */
+			startStunServer: async () => {
+				const socket = await fakeStunServer();
+				const { port } = socket.address();
+				stunServers.set(port, socket);
+				return port;
+			},
+			stopStunServer: (_context: BrowserCommandContext, port: number) => {
+				stunServers.get(port)?.close();
+				stunServers.delete(port);
+			},
 		},
 	};
 }

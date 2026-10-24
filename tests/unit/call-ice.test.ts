@@ -10,9 +10,28 @@ describe("parseStunUrls", () => {
 		["absent", undefined],
 		["empty", ""],
 		["blank", "  ,  "],
-	])("gives the Cloudflare default when %s", (_name, value) => {
+	])("gives the Cloudflare and Google defaults when %s", (_name, value) => {
 		expect(parseStunUrls(value)).toEqual({ ok: true, urls: DEFAULT_STUN_URLS });
-		expect(DEFAULT_STUN_URLS).toEqual(["stun:stun.cloudflare.com:3478"]);
+		expect(DEFAULT_STUN_URLS).toEqual([
+			"stun:stun.cloudflare.com:3478",
+			"stun:stun.l.google.com:19302",
+		]);
+	});
+
+	it.each(["none", " NONE "])(
+		"turns STUN off with %j, so WebRTC uses no ICE server",
+		(value) => {
+			expect(parseStunUrls(value)).toEqual({ ok: true, urls: [] });
+			// An empty list, not an absent one: Trystero adds its own servers when `iceServers` is absent.
+			expect(rtcConfiguration([])).toEqual({ iceServers: [] });
+		},
+	);
+
+	it("refuses none together with a URL", () => {
+		expect(parseStunUrls("none stun:stun.example.org")).toEqual({
+			ok: false,
+			error: "Not a valid stun: or stuns: URL in VITE_STUN_URLS: none",
+		});
 	});
 
 	it("accepts stun: and stuns: URLs separated by commas or spaces", () => {
@@ -64,7 +83,14 @@ describe("parseStunUrls", () => {
 describe("rtcConfiguration", () => {
 	it("puts the STUN URLs into one ICE server entry without credentials", () => {
 		expect(rtcConfiguration(DEFAULT_STUN_URLS)).toEqual({
-			iceServers: [{ urls: ["stun:stun.cloudflare.com:3478"] }],
+			iceServers: [
+				{
+					urls: [
+						"stun:stun.cloudflare.com:3478",
+						"stun:stun.l.google.com:19302",
+					],
+				},
+			],
 		});
 	});
 });

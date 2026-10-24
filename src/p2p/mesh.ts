@@ -15,6 +15,7 @@ import {
 } from "./limits";
 import type { Clock, Send } from "./ports";
 import { peerRendezvous, Rendezvous } from "./rendezvous";
+import { type ProbeStun, StunChecks, type StunStatus } from "./stun-probe";
 import type {
 	DataPayload,
 	JoinError,
@@ -66,6 +67,20 @@ export type JoinMeshRoom = (
 /** A tracker socket as Trystero's `getRelaySockets` reports it. */
 export interface TrackerSocket {
 	readonly readyState: number;
+	addEventListener(type: "message", listener: () => void): void;
+	removeEventListener(type: "message", listener: () => void): void;
+}
+
+/**
+ * A signalling relay and the evidence that it is alive: its socket is open, and when it last sent a message. A
+ * Nostr relay can be a later kind of the same record.
+ */
+export interface RelayStatus {
+	readonly kind: "tracker";
+	readonly url: string;
+	readonly open: boolean;
+	/** Undefined until the relay sends its first message to this page. */
+	readonly heardAgoMs: number | undefined;
 }
 
 const OPEN = 1;
@@ -82,6 +97,8 @@ export interface MeshDeps {
 	readonly self: string;
 	/** Trystero's tracker sockets by URL. */
 	readonly trackerSockets: () => Readonly<Record<string, TrackerSocket>>;
+	/** Asks one STUN server for this page's public address; a mesh without it does not check. */
+	readonly probeStun?: ProbeStun;
 	readonly clock: Clock;
 }
 
@@ -101,6 +118,10 @@ export type DropReason = Rejection | "oversize" | "rate" | "stranger";
 export interface MeshDiagnostics {
 	readonly trackersOpen: number;
 	readonly trackers: number;
+	/** The configured trackers, in configuration order. */
+	readonly relays: readonly RelayStatus[];
+	/** The configured STUN servers; null on a page that does not check them. */
+	readonly stun: readonly StunStatus[] | null;
 	/** Admitted peers with a data channel. */
 	readonly peers: number;
 	/** Pages with another key that tried to connect: strangers at the tracker, or a damaged link. */
@@ -187,6 +208,14 @@ export class Mesh implements Send {
 	};
 	#sendFailures = 0;
 	#left = false;
+	/** The listener on each tracker's current socket; Trystero replaces a socket when it reconnects. */
+	readonly #listening = new Map<
+		string,
+		{ readonly socket: TrackerSocket; readonly listener: () => void }
+	>();
+	/** When each tracker last sent a message, by URL; it outlives the socket. */
+	readonly #heardAt = new Map<string, number>();
+	readonly #stun: StunChecks | null;
 
 	constructor(deps: MeshDeps, handlers: MeshHandlers) {
 		this.self = deps.self;
@@ -211,6 +240,15 @@ export class Mesh implements Send {
 			key: deps.key,
 			join: (roomId) => deps.joinRoom(roomConfig, roomId, {}),
 		});
+		// The join opened the sockets, and a tracker can answer before the first tick.
+		this.#listenToTrackers();
+		this.#stun =
+			deps.probeStun === undefined
+				? null
+				: new StunChecks(stunUrls(config.rtc), deps.probeStun, () =>
+						this.#handlers.change(),
+					);
+		this.#stun?.tick(deps.clock.monotonic(), true);
 	}
 
 	/** Admitted peers that still have a data channel, in join order. */
@@ -236,6 +274,8 @@ export class Mesh implements Send {
 		return {
 			trackersOpen: this.#trackersOpen(),
 			trackers: this.#deps.config.trackers.length,
+			relays: this.#relays(),
+			stun: this.#stun?.statuses() ?? null,
 			peers: this.peers().length,
 			wrongKey: this.#wrongKey.size,
 			unreachable: this.#unreachable.size,
@@ -263,7 +303,9 @@ export class Mesh implements Send {
 	tick(): void {
 		if (this.#left) return;
 		const now = this.#deps.clock.monotonic();
+		this.#listenToTrackers();
 		this.#rejoinWhenAlone(now);
+		this.#stun?.tick(now, this.peers().length === 0);
 		if (now - this.#linksAt >= LINKS_MS) this.#sendLinks(now);
 		const admitted = new Set(this.peers());
 		const wanted = new Map(this.#seats);
@@ -293,6 +335,11 @@ export class Mesh implements Send {
 		if (this.#left) return Promise.resolve();
 		this.#left = true;
 		Mesh.#detach(this.#table);
+		for (const { socket, listener } of this.#listening.values()) {
+			socket.removeEventListener("message", listener);
+		}
+		this.#listening.clear();
+		this.#stun?.close();
 		this.#admitted.clear();
 		this.#rendezvous.close();
 		return this.#table.room.leave();
@@ -489,6 +536,41 @@ export class Mesh implements Send {
 		return false;
 	}
 
+	/**
+	 * Listens to each tracker's current socket for the time of its messages, not their content, which Trystero
+	 * reads. A replaced socket loses its listener.
+	 */
+	#listenToTrackers(): void {
+		const sockets = this.#deps.trackerSockets();
+		for (const url of this.#deps.config.trackers) {
+			const socket = sockets[url];
+			const current = this.#listening.get(url);
+			if (current?.socket === socket) continue;
+			current?.socket.removeEventListener("message", current.listener);
+			this.#listening.delete(url);
+			if (socket === undefined) continue;
+			const listener = () =>
+				this.#heardAt.set(url, this.#deps.clock.monotonic());
+			socket.addEventListener("message", listener);
+			this.#listening.set(url, { socket, listener });
+		}
+	}
+
+	#relays(): RelayStatus[] {
+		if (!this.#left) this.#listenToTrackers();
+		const now = this.#deps.clock.monotonic();
+		const sockets = this.#deps.trackerSockets();
+		return this.#deps.config.trackers.map((url) => {
+			const heardAt = this.#heardAt.get(url);
+			return {
+				kind: "tracker",
+				url,
+				open: sockets[url]?.readyState === OPEN,
+				heardAgoMs: heardAt === undefined ? undefined : now - heardAt,
+			};
+		});
+	}
+
 	#trackersOpen(): number {
 		const sockets = this.#deps.trackerSockets();
 		return this.#deps.config.trackers.filter(
@@ -519,4 +601,11 @@ export class Mesh implements Send {
 			this.#sendFailures++;
 		});
 	}
+}
+
+/** The STUN URLs of an ICE configuration (src/call/ice.ts puts them in one entry). */
+function stunUrls(rtc: RTCConfiguration): string[] {
+	return (rtc.iceServers ?? []).flatMap(({ urls }) =>
+		typeof urls === "string" ? [urls] : urls,
+	);
 }

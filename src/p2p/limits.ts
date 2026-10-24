@@ -65,6 +65,12 @@ export const REJOIN_MAX_MS = 60_000;
  */
 export const TABLE_OFFERS = 3;
 
+// Discovery evidence (src/p2p/stun-probe.ts).
+/** A STUN server that gave no public address in this time counts as not answering. */
+export const STUN_PROBE_MS = 5_000;
+/** A page without links asks the STUN servers again this often. */
+export const STUN_RECHECK_MS = 60_000;
+
 // Replication (plan §4.5).
 export const ACK_DEBOUNCE_MS = 1_000;
 export const GAP_WAIT_MS = 1_500;
