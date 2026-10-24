@@ -435,7 +435,7 @@ async function run(options: Options): Promise<void> {
 						kind,
 						prompt,
 						actions,
-						decisionState(state.board, seat, kind),
+						decisionState(state.board, seat, kind, NODE_PROMPT_TEMPLATES),
 					);
 			if (!decision) throw new Error("bot strategy is not configured");
 			await sendAction(state, seat, actionKey, decision, controller.view());

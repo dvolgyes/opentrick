@@ -69,7 +69,7 @@ export async function checkOpenRouterKey(
 			"call",
 			renderBidPrompt(board, seat, legal, templates),
 			legal,
-			decisionState(board, seat, "call"),
+			decisionState(board, seat, "call", templates),
 		);
 		return { ok: true };
 	} catch (error) {

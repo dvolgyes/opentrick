@@ -263,6 +263,40 @@ describe("bot decisions", () => {
 		expect(west).toContain("Your high-card points: 0");
 	});
 
+	it("gives the SAYC summary in the bidding prompt and only names SAYC in play", () => {
+		const summary = NODE_PROMPT_TEMPLATES.sayc.trim();
+		const auction = createBoard(1, DEAL);
+		const bid = renderBidPrompt(
+			auction,
+			auction.dealer,
+			legalActions(auction, auction.dealer),
+			NODE_PROMPT_TEMPLATES,
+		);
+		const board = bidding(createBoard(1, DEAL), "1S P 4S P P P");
+		const play = renderPlayPrompt(
+			board,
+			"E",
+			legalActions(board, "E"),
+			NODE_PROMPT_TEMPLATES,
+		);
+		expect(summary).toContain("Jacoby");
+		expect(bid).toContain(summary);
+		const order = [
+			"You are an expert contract bridge player",
+			summary,
+			"Your hand:",
+			"Your high-card points:",
+			"Board:",
+			"Vulnerability:",
+			"Auction:",
+			"Legal bids:",
+		].map((text) => bid.indexOf(text));
+		expect(order).toEqual(order.toSorted((a, b) => a - b));
+		expect(order).not.toContain(-1);
+		expect(play).toContain("Standard American Yellow Card");
+		expect(play).not.toContain("Jacoby");
+	});
+
 	it("shows only the player's hand and dummy during play", () => {
 		const board = bidding(createBoard(1, DEAL), "1S P 4S P P P");
 		const legal = legalActions(board, "E");

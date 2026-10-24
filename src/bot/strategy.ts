@@ -48,6 +48,8 @@ export function reasoningSettings(
 export interface PromptTemplates {
 	readonly bidding: string;
 	readonly play: string;
+	/** The SAYC summary that every bot gets when it bids, whatever its model type. */
+	readonly sayc: string;
 }
 
 export type Decision =
@@ -198,6 +200,7 @@ export function renderBidPrompt(
 		VULNERABILITY: VULNERABILITY[board.vulnerability],
 		HAND: handText(board.deal[seat]),
 		HCP: String(highCardPoints(board.deal[seat])),
+		SAYC_SUMMARY: templates.sayc.trim(),
 		AUCTION: callsText(board),
 		LEGAL_BIDS: legalChoices(legal).join(", "),
 	});
@@ -255,6 +258,7 @@ export function decisionState(
 	board: Board,
 	seat: Seat,
 	kind: "call" | "play",
+	templates: PromptTemplates,
 ): BridgeDecisionState {
 	const auction = board.calls.map((call, index) => ({
 		seat: seatAfter(board.dealer, index),
@@ -265,11 +269,12 @@ export function decisionState(
 		const shape = SUITS.map(
 			(suit) => hand.filter((card) => suitOf(card) === suit).length,
 		).toSorted((a, b) => b - a);
+		// The same order as the bidding prompt: the system, the bidder's own hand and points, then the board.
 		return {
-			board: board.number,
-			dealer: board.dealer,
-			vulnerability: board.vulnerability,
-			seat,
+			bidding_system: {
+				name: "Standard American Yellow Card",
+				summary: templates.sayc.trim(),
+			},
 			hand: Object.fromEntries(
 				SUITS.map((suit) => [
 					suit,
@@ -281,6 +286,10 @@ export function decisionState(
 			),
 			high_card_points: highCardPoints(hand),
 			suit_shape_longest_first: shape,
+			board: board.number,
+			dealer: board.dealer,
+			vulnerability: board.vulnerability,
+			seat,
 			auction,
 		};
 	}

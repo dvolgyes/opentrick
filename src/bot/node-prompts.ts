@@ -10,4 +10,8 @@ export const NODE_PROMPT_TEMPLATES: PromptTemplates = {
 		new URL("../../public/bot-prompts/play.txt", import.meta.url),
 		"utf8",
 	),
+	sayc: readFileSync(
+		new URL("../../public/bot-prompts/sayc.txt", import.meta.url),
+		"utf8",
+	),
 };

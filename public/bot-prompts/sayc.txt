@@ -1,0 +1,25 @@
+Partner uses these agreements. HCP: A=4, K=3, Q=2, J=1. "Forcing" means partner must bid again; "game-forcing" means the partnership must reach game.
+
+Openings:
+- 1H/1S: 5+ cards. With equal-length long suits, open the higher-ranking suit.
+- 1C/1D: 1D normally has 4+ diamonds; 1C may have 3 clubs. Open 1D with 4-4 in the minors and 1C with 3-3.
+- 1NT = 15-17, 2NT = 20-21, 3NT = 25-27, all balanced. A five-card suit is allowed.
+- 2C: artificial and forcing, 22+ points or equivalent playing strength.
+- 2D/2H/2S: weak two, normally a six-card suit and 5-11 HCP. Three- and four-level suit openings are preemptive.
+
+Responses:
+- A new suit by responder is forcing for one round. A two-over-one response is not automatically game-forcing.
+- Over 1C/1D: bid a four-card major at the one level when available. Minor raises need good support. 2NT = 13-15, game-forcing; 3NT = 16-17.
+- Over 1H/1S: one-level new suit = 6+ HCP, usually 4+ cards. 1NT = 6-10, nonforcing. Two-level new suit = 11+ HCP. 2M = 6-10 points with 3+ trumps. 3M = limit raise, about 10-12 with 3+ trumps. 2NT = Jacoby, game-forcing raise with 4+ trumps; opener then shows a singleton or void. 4M = weak, distributional raise.
+- Over 1NT: 2C = nonforcing Stayman, asks for a four-card major. 2D/2H = transfer to hearts/spades, normally 5+ cards. 2S asks opener to bid 3C; responder passes or corrects to 3D to play. 3C/3D = long minor, invites 3NT. 4C = Gerber. Direct 4NT invites 6NT.
+- Over 2NT: 3C = Stayman; 3D/3H = transfers to hearts/spades; 4C = Gerber; 4NT invites slam.
+- Over 2C: 2D = artificial waiting response. 2H/2S/3C/3D = positive, a good 5+ card suit and about 8+ HCP, game-forcing.
+- Over a weak two: 2NT is forcing and asks about strength or side-suit features. A raise of opener's suit is nonforcing. A new suit is forcing for one round and usually shows 5+ cards.
+
+Competition:
+- Takeout double: usually shortage in the opened suit; asks partner to bid an unbid suit. Negative doubles by responder apply through 2S and show at least four cards in an unbid major.
+- Simple suit overcall: natural, about 8-16 points. Direct 1NT overcall: balanced, about 15-18. Jump overcalls are preemptive. Michaels cue-bids and the Unusual 2NT show two-suited hands.
+- Fourth suit: artificial when needed, forcing for one round.
+
+Slam:
+- 4NT = Blackwood, asks for aces; a following 5NT asks for kings. 4C = Gerber over notrump. A jump to 5NT = Grand Slam Force, asks about the top trump honors.

@@ -3,6 +3,7 @@ import {
 	decisionsRequestBody,
 	parseDecisionsResponse,
 } from "../../src/bot/decision-model";
+import { NODE_PROMPT_TEMPLATES } from "../../src/bot/node-prompts";
 import { decisionState } from "../../src/bot/strategy";
 import {
 	applyAction,
@@ -24,7 +25,12 @@ describe("OpenRouter decision models", () => {
 	it("builds one bounded choice from the engine legal actions", () => {
 		const board = createBoard(1, DEAL);
 		const legal = legalActions(board, board.dealer);
-		const state = decisionState(board, board.dealer, "call");
+		const state = decisionState(
+			board,
+			board.dealer,
+			"call",
+			NODE_PROMPT_TEMPLATES,
+		);
 		const request = decisionsRequestBody(
 			DECISION_BOT_MODELS[0],
 			"call",
@@ -45,6 +51,44 @@ describe("OpenRouter decision models", () => {
 			),
 		);
 		expect(JSON.stringify(state)).not.toContain("H3");
+	});
+
+	it("sends the SAYC summary when bidding and only names SAYC in play", () => {
+		const summary = NODE_PROMPT_TEMPLATES.sayc.trim();
+		const auction = createBoard(1, DEAL);
+		const bid = JSON.stringify(
+			decisionsRequestBody(
+				DECISION_BOT_MODELS[0],
+				"call",
+				decisionState(auction, auction.dealer, "call", NODE_PROMPT_TEMPLATES),
+				legalActions(auction, auction.dealer),
+			),
+		);
+		const board = bidding(createBoard(1, DEAL), "1S P 4S P P P");
+		const play = JSON.stringify(
+			decisionsRequestBody(
+				DECISION_BOT_MODELS[0],
+				"play",
+				decisionState(board, "E", "play", NODE_PROMPT_TEMPLATES),
+				legalActions(board, "E"),
+			),
+		);
+		expect(summary).toContain("Jacoby");
+		expect(bid).toContain(JSON.stringify(summary));
+		expect(play).toContain("Standard American Yellow Card");
+		expect(play).not.toContain("Jacoby");
+	});
+
+	it("lists the bidding state as system, own hand and points, then the board", () => {
+		const board = createBoard(1, DEAL);
+		const state = decisionState(board, "E", "call", NODE_PROMPT_TEMPLATES);
+		expect(Object.keys(state).slice(0, 4)).toEqual([
+			"bidding_system",
+			"hand",
+			"high_card_points",
+			"suit_shape_longest_first",
+		]);
+		expect(state.high_card_points).toBe(9);
 	});
 
 	it("accepts a typed choice only when it matches a legal action", () => {
@@ -88,7 +132,9 @@ describe("OpenRouter decision models", () => {
 	it("includes play state only for the acting hand and visible dummy", () => {
 		let board = bidding(createBoard(1, DEAL), "1NT P P P");
 		const leader = "E";
-		expect(decisionState(board, leader, "play").dummy_hand).toBe(null);
+		expect(
+			decisionState(board, leader, "play", NODE_PROMPT_TEMPLATES).dummy_hand,
+		).toBe(null);
 		const openingLead = legalActions(board, leader)[0];
 		if (openingLead?.type !== "play")
 			throw new Error("test needs a legal opening lead");
@@ -97,7 +143,7 @@ describe("OpenRouter decision models", () => {
 		board = result.board;
 		const actor = boardStatus(board).actor;
 		if (actor === undefined) throw new Error("test needs a play actor");
-		const state = decisionState(board, actor, "play");
+		const state = decisionState(board, actor, "play", NODE_PROMPT_TEMPLATES);
 		const serialized = JSON.stringify(state);
 		expect(serialized).toContain('"dummy_hand":');
 		expect(serialized).not.toContain("H3");

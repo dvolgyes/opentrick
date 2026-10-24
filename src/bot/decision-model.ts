@@ -25,8 +25,8 @@ export function decisionsRequestBody(
 				type: "choice",
 				instructions:
 					kind === "call"
-						? "Which legal call is the soundest action for this hand and auction in Standard American Yellow Card? Use the supplied high-card points and suit shape as computed facts. Assume opponents usually play well but may make ordinary mistakes."
-						: "Which legal card best advances this side's bridge contract, given the visible cards, contract, and play so far? Treat the supplied card and trick counts as computed facts. Assume opponents usually play well but may make ordinary mistakes.",
+						? "Which legal call is the soundest action for this hand and auction in Standard American Yellow Card? Follow the agreements in the supplied bidding_system summary. Use the supplied high-card points and suit shape as computed facts. Assume opponents usually play well but may make ordinary mistakes."
+						: "Which legal card best advances this side's bridge contract, given the visible cards, contract, and play so far? Both partnerships bid using Standard American Yellow Card, so read the auction with SAYC meanings. Treat the supplied card and trick counts as computed facts. Assume opponents usually play well but may make ordinary mistakes.",
 				criteria: Object.fromEntries(
 					legal.map((action) => [
 						decisionActionValue(action),

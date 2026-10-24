@@ -253,7 +253,7 @@ export class HostBotRunner {
 					kind,
 					prompt,
 					actions,
-					decisionState(state.board, seat, kind),
+					decisionState(state.board, seat, kind, this.#templates),
 				);
 			} catch (error) {
 				this.#processed.delete(key);
