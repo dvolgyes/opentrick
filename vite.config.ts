@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { playwright } from "@vitest/browser-playwright";
 import { configDefaults, defineConfig } from "vitest/config";
 import type { BrowserCommandContext } from "vitest/node";
@@ -9,6 +10,19 @@ const ENV_PREFIXES = ["VITE_TRACKER_", "VITE_STUN_"];
 const TOUCH = "tests/browser/call-device-class.test.ts";
 // This file needs a Chrome whose test devices have no camera.
 const NO_CAMERA = "tests/browser/call-media-no-camera.test.ts";
+
+/** One line of `git` output; "unknown" when git or the repository is not available. */
+function git(...args: string[]): string {
+	const result = spawnSync("git", args, { encoding: "utf8" });
+	const text = result.status === 0 ? result.stdout.trim() : "";
+	return text === "" ? "unknown" : text;
+}
+
+// The commit that the page shows next to the language selector and reports to the host (src/build.ts).
+const BUILD = {
+	commit: git("rev-parse", "--short", "HEAD"),
+	date: git("log", "-1", "--format=%cI"),
+};
 
 /** Headless Chrome with its generated test microphone and camera, as in the end-to-end tests. */
 function chrome(fakeDevices = "--use-fake-device-for-media-stream") {
@@ -33,6 +47,7 @@ function chrome(fakeDevices = "--use-fake-device-for-media-stream") {
 export default defineConfig({
 	base: "./",
 	envPrefix: ENV_PREFIXES,
+	define: { __OPENTRICK_BUILD__: JSON.stringify(BUILD) },
 	build: {
 		target: "es2022",
 		sourcemap: true,

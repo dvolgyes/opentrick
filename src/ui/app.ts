@@ -1,3 +1,4 @@
+import { formatBuildDate } from "../build";
 import { parseRoute, tableFragment } from "../p2p/link";
 import {
 	bookmarkQuery,
@@ -40,7 +41,20 @@ function languageControl(deps: AppDeps): HTMLElement {
 		else deps.browser?.setItem(LOCALE_STORAGE_KEY, select.value);
 		location.reload();
 	});
-	return el("label", { className: "language-control" }, select);
+	const version = el(
+		"span",
+		{
+			className: "build-version",
+			attrs: { title: deps.build.commit, "data-testid": "build-version" },
+		},
+		formatBuildDate(deps.build.date),
+	);
+	return el(
+		"div",
+		{ className: "language-control" },
+		version,
+		el("label", {}, select),
+	);
 }
 
 /**

@@ -1,3 +1,4 @@
+import type { BuildInfo } from "../build";
 import type { GetUserMedia } from "../call/media";
 import type { Medium } from "../call/policy";
 import type { Locale, Translate } from "../i18n";
@@ -27,6 +28,8 @@ export type CallSupport =
 
 /** Everything the screens need from the browser. Only main.ts builds it. */
 export interface AppDeps {
+	/** The commit of this page, shown next to the language selector. */
+	readonly build: BuildInfo;
 	/** Browser-specific display language; never shared with the table. */
 	readonly locale: Locale;
 	/** Language selected by browser preference, used when the user chooses automatic language selection. */

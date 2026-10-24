@@ -93,7 +93,16 @@ label {
 	top: 0.4rem;
 	right: 0.5rem;
 	z-index: 1200;
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
 	margin: 0;
+}
+
+.build-version {
+	font-size: 0.8rem;
+	color: var(--muted);
+	white-space: nowrap;
 }
 
 .language-control select {

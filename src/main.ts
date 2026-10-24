@@ -1,4 +1,5 @@
 import "./ui/style.css";
+import type { BuildInfo } from "./build";
 import { parseStunUrls, rtcConfiguration } from "./call/ice";
 import { detectLocale, translator } from "./i18n";
 import { readMeshConfig } from "./p2p/config";
@@ -12,6 +13,9 @@ import { trysteroMesh } from "./p2p/trystero";
 import { guardedStorage, SeatMemory, webSeatLocks } from "./session";
 import { startApp } from "./ui/app";
 import type { CallSupport } from "./ui/deps";
+
+/** Set by vite.config.ts at build time. */
+declare const __OPENTRICK_BUILD__: BuildInfo;
 
 const LOCALE_STORAGE_KEY = "opentrick.locale";
 const browser = guardedStorage(() => window.localStorage);
@@ -186,6 +190,7 @@ async function main(root: HTMLElement): Promise<void> {
 	const { storage, problem } = await openStorage();
 	let persisted: Promise<boolean> | undefined;
 	startApp(root, {
+		build: __OPENTRICK_BUILD__,
 		locale,
 		detectedLocale,
 		savedLocale,

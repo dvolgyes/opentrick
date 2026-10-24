@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
 import { Player } from "./player";
 import {
@@ -74,4 +75,19 @@ test("one browser: create, three seats from one link, ordered messages", async (
 	} finally {
 		await player.close();
 	}
+});
+
+test("the page shows the commit date of its build, and the commit on hover", async ({
+	page,
+}) => {
+	const commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+		encoding: "utf8",
+	}).trim();
+	await page.goto("./");
+	const version = page.getByTestId("build-version");
+	await expect(version).toBeVisible();
+	await expect(version).toHaveText(
+		/^[A-Z][a-z]{2} \d{1,2},'\d{2}, [0-2]\d:[0-5]\d$/,
+	);
+	await expect(version).toHaveAttribute("title", commit);
 });
