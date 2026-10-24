@@ -421,6 +421,61 @@ describe("presence (plan §12 R4)", () => {
 		const table = view("N", done, { present: without("S") });
 		expect(table.nextBoard?.ready).toBe(false);
 		expect(table.prompt).toBe("Waiting for South to come back");
+		expect(table.waiting).toBe("Waiting for South to come back");
+	});
+
+	it("names the absent players for the waiting overlay only while a board waits for them", () => {
+		expect(view("E", null, { present: without("N") }).waiting).toBe("");
+		expect(view("N", BOARD, { present: without("S") }).waiting).toBe(
+			"Waiting for South to come back",
+		);
+		expect(view("N", BOARD).waiting).toBe("");
+		expect(view("N", LED, { present: without("S") }).waiting).toBe("");
+		expect(view("N", LED, { present: without("W") }).waiting).toBe(
+			"Waiting for West to come back",
+		);
+	});
+});
+
+describe("round trips", () => {
+	it("shows the round trip in seconds with one decimal, colored by the shown value", () => {
+		const table = view("N", BOARD, {
+			roundTrips: [
+				{ seat: "E", ms: 149 },
+				{ seat: "S", ms: 150 },
+				{ seat: "W", ms: 1049 },
+			],
+		});
+		expect(seatView(table, "E").roundTrip).toEqual({
+			text: "(0.1s roundtrip)",
+			quality: "good",
+		});
+		expect(seatView(table, "S").roundTrip).toEqual({
+			text: "(0.2s roundtrip)",
+			quality: "fair",
+		});
+		expect(seatView(table, "W").roundTrip).toEqual({
+			text: "(1.0s roundtrip)",
+			quality: "fair",
+		});
+		expect(seatView(table, "N").roundTrip).toBeUndefined();
+	});
+
+	it("marks a slow or unanswered probe as poor, and shows a lower bound with >", () => {
+		const table = view("N", null, {
+			roundTrips: [
+				{ seat: "E", ms: 1050 },
+				{ seat: "S", ms: 5000, lower: true },
+			],
+		});
+		expect(seatView(table, "E").roundTrip).toEqual({
+			text: "(1.1s roundtrip)",
+			quality: "poor",
+		});
+		expect(seatView(table, "S").roundTrip).toEqual({
+			text: "(>5.0s roundtrip)",
+			quality: "poor",
+		});
 	});
 });
 

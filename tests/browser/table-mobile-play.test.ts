@@ -67,6 +67,7 @@ function playView(): TableView {
 		heading: "Board 1",
 		details: "Dealer: North · Vulnerable: None",
 		prompt: "Your turn to play from dummy.",
+		waiting: "",
 		yourTurn: true,
 		seats: [
 			seat("N", "bottom"),
@@ -1819,6 +1820,22 @@ describe("approval of an undo or a claim", () => {
 		if (!found) throw new Error("the approval panel is missing");
 		return found;
 	};
+	const feltBox = (root: HTMLElement) => {
+		const felt = root.querySelector<HTMLElement>(".felt");
+		if (!felt) throw new Error("the felt is missing");
+		return felt.getBoundingClientRect();
+	};
+	/** The panel is in the middle of the felt, and the felt is not in the middle of the screen. */
+	function expectCentredIn(panel: HTMLElement, felt: DOMRect): void {
+		const box = panel.getBoundingClientRect();
+		const feltX = felt.left + felt.width / 2;
+		const feltY = felt.top + felt.height / 2;
+		expect(
+			Math.hypot(feltX - innerWidth / 2, feltY - innerHeight / 2),
+		).toBeGreaterThan(20);
+		expect(Math.abs(box.left + box.width / 2 - feltX)).toBeLessThan(2);
+		expect(Math.abs(box.top + box.height / 2 - feltY)).toBeLessThan(2);
+	}
 	const visibleButtons = (text: string) =>
 		[...document.querySelectorAll<HTMLButtonElement>("button")].filter(
 			(button) => button.textContent === text && button.checkVisibility(),
@@ -1865,30 +1882,29 @@ describe("approval of an undo or a claim", () => {
 	}
 
 	it.each(CASES)(
-		"asks about %s in a large dialog in the middle of a desktop screen",
+		"asks about %s in a large dialog in the middle of a desktop felt",
 		async (_, view, accept, reject, vote, id) => {
 			await resizeTo(1280, 800);
 			const { root, handlers } = renderView(view(), "desktop");
 			const panel = approval(root);
 			expect(panel.checkVisibility()).toBe(true);
-			const box = panel.getBoundingClientRect();
-			expect(Math.abs(box.left + box.width / 2 - innerWidth / 2)).toBeLessThan(
-				2,
-			);
-			expect(Math.abs(box.top + box.height / 2 - innerHeight / 2)).toBeLessThan(
-				2,
-			);
-			expect(box.width).toBeGreaterThanOrEqual(480);
-			// The dialog is modal: the table and the sidebar around it do not take a click.
-			expect(panel.contains(document.elementFromPoint(5, 5))).toBe(false);
+			const felt = feltBox(root);
+			expectCentredIn(panel, felt);
+			expect(panel.getBoundingClientRect().width).toBeGreaterThanOrEqual(480);
+			// The felt does not take a click past the dialog; the sidebar beside the felt does.
+			const corner = document.elementFromPoint(felt.left + 5, felt.top + 5);
+			expect(panel.contains(corner)).toBe(false);
+			expect(corner?.closest(".approval-backdrop")).not.toBeNull();
+			const sidebar =
+				root.parentElement?.parentElement?.querySelector(".table-sidebar");
+			if (!(sidebar instanceof HTMLElement))
+				throw new Error("the sidebar is missing");
+			const side = sidebar.getBoundingClientRect();
 			expect(
 				document
-					.elementFromPoint(5, 5)
-					?.closest(".bridge-table, .table-sidebar"),
-			).toBe(root);
-			expect(
-				document.elementFromPoint(5, 5)?.closest(".approval-backdrop"),
-			).not.toBeNull();
+					.elementFromPoint(side.left + 5, side.top + 5)
+					?.closest(".approval-backdrop"),
+			).toBeNull();
 			// Only the dialog has the buttons.
 			expect(visibleButtons(accept)).toHaveLength(1);
 			expect(visibleButtons(reject)).toHaveLength(1);
@@ -1964,5 +1980,68 @@ describe("approval of an undo or a claim", () => {
 		expect(panel.contains(cancel)).toBe(true);
 		pointerClick(cancel);
 		expect(handlers.undoCancel).toHaveBeenCalledWith("undo-1");
+	});
+
+	it("asks about an undo below the felt on a phone after the play", async () => {
+		await resizeTo(400, 860);
+		const { root } = renderMobile({ ...auctionUndo(), phase: "complete" });
+		const panel = approval(root);
+		expect(panel.checkVisibility()).toBe(true);
+		expect(root.querySelector(".felt")?.nextElementSibling).toBe(panel);
+		expect(getComputedStyle(panel).position).not.toBe("fixed");
+		expect(root.querySelector(".approval-backdrop")?.checkVisibility()).toBe(
+			false,
+		);
+	});
+
+	const WAITING = "Waiting for South to come back";
+	const waiting = (root: HTMLElement) => {
+		const found = root.querySelector<HTMLElement>('[data-testid="waiting"]');
+		if (!found) throw new Error("the waiting notice is missing");
+		return found;
+	};
+
+	it("names absent players in the middle of a desktop felt, and lets clicks through", async () => {
+		await resizeTo(1280, 800);
+		const { root } = renderView(
+			{ ...playView(), waiting: WAITING },
+			"desktop",
+			undefined,
+			translator("de"),
+		);
+		const notice = waiting(root);
+		expect(notice.checkVisibility()).toBe(true);
+		expect(notice.getAttribute("role")).toBe("status");
+		expect(notice.textContent).toBe("Warten auf die Rückkehr von Süden");
+		expectCentredIn(notice, feltBox(root));
+		const box = notice.getBoundingClientRect();
+		const hit = document.elementFromPoint(
+			box.left + box.width / 2,
+			box.top + box.height / 2,
+		);
+		expect(notice.contains(hit)).toBe(false);
+	});
+
+	it("shows no waiting notice while nobody is absent", async () => {
+		await resizeTo(1280, 800);
+		expect(
+			waiting(renderView(playView(), "desktop").root).checkVisibility(),
+		).toBe(false);
+		await resizeTo(400, 860);
+		expect(waiting(renderMobile(playView()).root).checkVisibility()).toBe(
+			false,
+		);
+	});
+
+	it("names absent players below the board on a phone, after an approval", async () => {
+		await resizeTo(400, 860);
+		const { root } = renderMobile({ ...auctionUndo(), waiting: WAITING });
+		const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+		const notice = waiting(root);
+		expect(notice.checkVisibility()).toBe(true);
+		expect(notice.textContent).toBe(WAITING);
+		expect(board?.nextElementSibling).toBe(approval(root));
+		expect(approval(root).nextElementSibling).toBe(notice);
+		expect(getComputedStyle(notice).position).not.toBe("fixed");
 	});
 });

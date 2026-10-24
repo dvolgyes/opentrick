@@ -1720,10 +1720,14 @@ button.call-join[data-in-call="true"] {
 	display: none;
 }
 
-/* An undo or a claim to decide: a dialog in the middle of the screen, or a panel directly below a phone's board. */
+/*
+ * An undo or a claim to decide: a dialog in the middle of a desktop felt, or a panel directly below a phone's board.
+ * The backdrop covers only the felt, so the sidebar stays usable.
+ */
 .approval-backdrop {
-	position: fixed;
+	position: absolute;
 	inset: 0;
+	border-radius: inherit;
 	z-index: 1000;
 	display: grid;
 	place-items: center;
@@ -1743,6 +1747,39 @@ button.call-join[data-in-call="true"] {
 	width: min(100%, 36rem);
 	padding: 2rem;
 	box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 25%);
+}
+
+/* Absent players: a notice in the middle of a desktop felt that lets clicks through, or a panel below a phone's board. */
+.waiting-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 900;
+	display: grid;
+	place-items: center;
+	padding: 1rem;
+	pointer-events: none;
+}
+
+.waiting-notice {
+	padding: 0.75rem;
+	border: 1px solid var(--line);
+	border-radius: 0.45rem;
+	background: var(--card-bg);
+	color: var(--card-fg);
+}
+
+.waiting-overlay .waiting-notice {
+	width: min(100%, 36rem);
+	padding: 2rem;
+	border-radius: 0.75rem;
+	box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 25%);
+	text-align: center;
+}
+
+.waiting-notice-text {
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 700;
 }
 
 .approval h2 {

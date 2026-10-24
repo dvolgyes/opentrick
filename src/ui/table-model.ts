@@ -304,6 +304,8 @@ export interface TableView {
 	readonly heading: string;
 	readonly details: string;
 	readonly prompt: string;
+	/** "Waiting for … to come back" while a dealt board waits for absent players (plan §12 R4); empty otherwise. */
+	readonly waiting: string;
 	/** This player can act now. */
 	readonly yourTurn: boolean;
 	readonly seats: readonly SeatView[];
@@ -366,6 +368,7 @@ const EMPTY: Omit<TableView, "phase" | "prompt"> = {
 	at: 0,
 	heading: "",
 	details: "",
+	waiting: "",
 	yourTurn: false,
 	seats: [],
 	auction: undefined,
@@ -1096,6 +1099,7 @@ export function tableView(input: TableViewInput): TableView {
 			...common,
 			phase: "complete",
 			prompt: dealWait ?? "",
+			waiting: dealWait ?? "",
 			scoring: {
 				contract: contract ?? undefined,
 				compactOutcome: contract ? (viewerWon ? "WON" : "LOST") : "PASSED OUT",
@@ -1119,6 +1123,7 @@ export function tableView(input: TableViewInput): TableView {
 			heading: "AUCTION",
 			bids,
 			prompt: actionWait ?? `${SEAT_NAMES[turn]} to bid`,
+			waiting: actionWait ?? "",
 		};
 	}
 	const actor = view.actor as Seat;
@@ -1137,5 +1142,6 @@ export function tableView(input: TableViewInput): TableView {
 		phase: "play",
 		yourTurn: canAct && actionWait === undefined && actor === seat,
 		prompt,
+		waiting: actionWait ?? "",
 	};
 }

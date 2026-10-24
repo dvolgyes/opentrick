@@ -363,6 +363,21 @@ export function tableSection(
 		{ className: "approval-backdrop" },
 		approval,
 	);
+	// Absent players: a notice in the middle of a desktop felt, or below a phone's board.
+	const waitingText = el("p", { className: "waiting-notice-text" });
+	const waitingNotice = el(
+		"section",
+		{
+			className: "waiting-notice",
+			attrs: { role: "status", "data-testid": "waiting" },
+		},
+		waitingText,
+	);
+	const waitingOverlay = el(
+		"div",
+		{ className: "waiting-overlay" },
+		waitingNotice,
+	);
 	const claimMessage = el("p", {
 		className: "undo-message",
 		attrs: { role: "status", "data-testid": "claim-message" },
@@ -628,6 +643,8 @@ export function tableSection(
 			),
 			el("div", { className: "col col-right" }, places.right),
 		),
+		waitingOverlay,
+		approvalBackdrop,
 	);
 	const dock = el("div", { className: "dock" }, call.alert, call.row);
 	let callDisplay: CallDisplay | undefined;
@@ -688,7 +705,6 @@ export function tableSection(
 		},
 		status,
 		mobileAuction,
-		approvalBackdrop,
 		felt,
 		dock,
 	);
@@ -1426,11 +1442,14 @@ export function tableSection(
 	}
 
 	/**
-	 * Asks a player who decides an undo or a claim. A phone game shows the panel directly below the board, also to the
-	 * requester of an undo, who can cancel it there. Elsewhere the panel is a dialog for the players who decide, and a
-	 * compact screen also shows it to the requester of an undo.
+	 * Asks a player who decides an undo or a claim. A compact screen shows the panel directly below `below`, also to
+	 * the requester of an undo, who can cancel it there. A desktop shows a dialog in the middle of the felt to the
+	 * players who decide; the sidebar stays usable.
 	 */
-	function renderApproval(view: TableView, inline: boolean): void {
+	function renderApproval(
+		view: TableView,
+		below: HTMLElement | undefined,
+	): void {
 		const undoOpen = view.undo.requestId !== undefined;
 		approvalKind =
 			view.undo.canVote || (compact && undoOpen)
@@ -1438,22 +1457,15 @@ export function tableSection(
 				: view.claim.canVote
 					? "claim"
 					: undefined;
-		if (inline) {
-			if (mobileBoard.nextElementSibling !== approval)
-				mobileBoard.after(approval);
+		if (below !== undefined) {
+			if (below.nextElementSibling !== approval) below.after(approval);
 		} else if (approval.parentElement !== approvalBackdrop) {
 			approvalBackdrop.append(approval);
 		}
 		const visible = approvalKind !== undefined;
 		approval.hidden = !visible;
-		approvalBackdrop.hidden = inline || !visible;
-		if (inline) {
-			approval.setAttribute("role", "region");
-			approval.removeAttribute("aria-modal");
-		} else {
-			approval.setAttribute("role", "dialog");
-			approval.setAttribute("aria-modal", "true");
-		}
+		approvalBackdrop.hidden = below !== undefined || !visible;
+		approval.setAttribute("role", below === undefined ? "dialog" : "region");
 		const undo = approvalKind === "undo";
 		approvalTitle.textContent = t(undo ? "Undo request" : "Claim tricks");
 		approvalQuestion.textContent = undo
@@ -1467,6 +1479,28 @@ export function tableSection(
 		approvalCancel.hidden = !undo || !view.undo.canCancel;
 		if (visible && !approvalWasVisible) approval.focus();
 		approvalWasVisible = visible;
+	}
+
+	/**
+	 * Names the players a dealt board waits for: in the middle of a desktop felt, where clicks pass through to the
+	 * table, or after the approval panel below `below` on a compact screen.
+	 */
+	function renderWaiting(
+		view: TableView,
+		below: HTMLElement | undefined,
+	): void {
+		if (below !== undefined) {
+			if (approval.nextElementSibling !== waitingNotice)
+				approval.after(waitingNotice);
+		} else if (waitingNotice.parentElement !== waitingOverlay) {
+			waitingOverlay.append(waitingNotice);
+		}
+		const visible = view.waiting !== "";
+		waitingNotice.hidden = !visible;
+		waitingOverlay.hidden = below !== undefined || !visible;
+		waitingText.textContent = visible
+			? translateLobbyPrompt(view.waiting, t)
+			: "";
 	}
 
 	claimCountSelect.addEventListener("change", () => {
@@ -1917,7 +1951,10 @@ export function tableSection(
 			);
 		}
 		renderMobilePlayers(view);
-		renderApproval(view, mobileGameActive);
+		// A compact screen shows these below its board, or below the felt outside the auction and the play.
+		const below = compact ? (mobileGameActive ? mobileBoard : felt) : undefined;
+		renderApproval(view, below);
+		renderWaiting(view, below);
 		const bottom = view.seats.find((seat) => seat.position === "bottom");
 		const ownTurn = bottom?.turn === true && !bottom.tags.includes("Dummy");
 		const gameOver = view.phase === "complete";
