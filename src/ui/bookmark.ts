@@ -97,12 +97,33 @@ export function selectedPlayerQuery(search: string, seat: Seat): string {
 	return params.toString();
 }
 
-/** Replaces the bot-seat snapshot in a room URL while preserving player, model, and selection parameters. */
-export function botSeatsQuery(search: string, bots: readonly Seat[]): string {
+const AUTOPLAY_SEATS_PARAM = "autoplay_seats";
+
+/**
+ * Replaces the bot-seat snapshot in a room URL while preserving player, model, and selection parameters.
+ * `autoplay` names the bot seats whose players asked for the bot; the query keeps only those that are also in `bots`.
+ */
+export function botSeatsQuery(
+	search: string,
+	bots: readonly Seat[],
+	autoplay: readonly Seat[] = [],
+): string {
 	const params = new URLSearchParams(search);
 	const selected = new Set(bots);
 	params.set("bot_seats", SEATS.filter((seat) => selected.has(seat)).join(","));
+	const delegated = SEATS.filter(
+		(seat) => selected.has(seat) && autoplay.includes(seat),
+	);
+	if (delegated.length === 0) params.delete(AUTOPLAY_SEATS_PARAM);
+	else params.set(AUTOPLAY_SEATS_PARAM, delegated.join(","));
 	return params.toString();
+}
+
+/** The seats of `autoplay_seats` in seat order; the value is untrusted, so an unknown or repeated entry is ignored. */
+export function parseAutoplaySeats(search: string): Seat[] {
+	const values =
+		new URLSearchParams(search).get(AUTOPLAY_SEATS_PARAM)?.split(",") ?? [];
+	return SEATS.filter((seat) => values.includes(seat));
 }
 
 /** The query of a bookmark for a table: the four names and the creator's seat. */

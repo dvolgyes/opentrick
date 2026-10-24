@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	bookmarkQuery,
 	botSeatsQuery,
+	parseAutoplaySeats,
 	parseBookmark,
 	parseRoomSetup,
 } from "../../src/ui/bookmark";
@@ -56,6 +57,13 @@ describe("bookmarkQuery", () => {
 		expect(params.get("bot_model")).toBe("custom/model");
 		expect(params.get("selected_player")).toBe("W");
 		expect(params.get("north")).toBe("North");
+		expect(params.has("autoplay_seats")).toBe(false);
+	});
+
+	it("keeps the bot seats whose players asked for autoplay, among the bot seats only", () => {
+		const query = botSeatsQuery("?bot_seats=N", ["W", "E"], ["S", "E"]);
+		expect(new URLSearchParams(query).get("autoplay_seats")).toBe("E");
+		expect(parseAutoplaySeats(`?${query}`)).toEqual(["E"]);
 	});
 
 	it("writes the names by direction and the host seat", () => {

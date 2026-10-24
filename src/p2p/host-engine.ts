@@ -241,6 +241,24 @@ export class HostEngine {
 	}
 
 	/** Host-only automation. An occupied player's holder stays; an empty seat gets a deterministic bot holder. */
+	/**
+	 * Marks a bot seat of this host as one whose own player asked for autoplay, as before a reload of the host page.
+	 * It returns false, and changes nothing, unless this host's bot plays that other player's seat.
+	 */
+	restoreAutoplay(seat: Seat): boolean {
+		if (
+			this.#stopped ||
+			seat === this.#deps.log.seat ||
+			!this.#localBots.has(seat)
+		)
+			return false;
+		if (!this.#autoplaySeats.has(seat)) {
+			this.#autoplaySeats.add(seat);
+			this.#markRoster();
+		}
+		return true;
+	}
+
 	async setBotSeat(seat: Seat, enabled: boolean): Promise<boolean> {
 		let table = this.#table();
 		if (!table || this.#stopped) return false;
@@ -1102,10 +1120,12 @@ export class HostEngine {
 	}
 
 	/** A connected peer other than `except` is bound to the seat's current generation. */
+	/** A connected peer other than `except` plays `seat`; this host's own bot does not count, as it never blocks the seat's player. */
 	#seatPeerConnected(table: TableRecord, seat: Seat, except?: string): boolean {
 		return [...this.#bindings].some(
 			([boundPeer, bound]) =>
 				boundPeer !== except &&
+				boundPeer !== this.#localPeer(seat) &&
 				bound.seat === seat &&
 				this.#connected.has(boundPeer) &&
 				this.#current(table, bound),

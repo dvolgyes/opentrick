@@ -47,6 +47,7 @@ import {
 } from "../protocol";
 import {
 	botSeatsQuery,
+	parseAutoplaySeats,
 	parseBookmark,
 	SELECTED_PLAYER_PARAM,
 } from "./bookmark";
@@ -295,6 +296,7 @@ export function showRoom(
 			const ok = await controller.setBotSeat(targetSeat, false);
 			if (!ok) return "failed";
 			delegatedBotSeats.delete(targetSeat);
+			botSeatOverrides.delete(targetSeat);
 			botRunner?.setSeatEnabled(targetSeat, false);
 			return "disabled";
 		}
@@ -309,6 +311,7 @@ export function showRoom(
 		const enabledSeat = await controller.setBotSeat(targetSeat, true);
 		if (!enabledSeat) return "failed";
 		delegatedBotSeats.add(targetSeat);
+		botSeatOverrides.delete(targetSeat);
 		if (botRunner) {
 			botRunner.setSeatEnabled(targetSeat, true);
 			setBotsPaused(false);
@@ -740,7 +743,11 @@ export function showRoom(
 	}
 
 	function rememberBotSeats(bots: readonly Seat[]): void {
-		const query = botSeatsQuery(location.search, bots);
+		const query = botSeatsQuery(
+			location.search,
+			bots,
+			controller.view().roster?.autoplaySeats ?? [],
+		);
 		history.replaceState(
 			null,
 			"",
@@ -750,21 +757,30 @@ export function showRoom(
 
 	async function restoreBotSeats(bots: readonly Seat[]): Promise<void> {
 		const desired = new Set(bots);
+		const autoplay = parseAutoplaySeats(location.search);
 		for (const targetSeat of SEATS) {
 			const current =
 				controller.view().roster?.bots.includes(targetSeat) ?? false;
-			if (current === desired.has(targetSeat)) continue;
-			const ok = await controller.setBotSeat(
-				targetSeat,
-				desired.has(targetSeat),
-			);
-			if (!ok) {
-				botStatus.textContent = deps.t(
-					"The host could not restore the saved bot seats.",
+			if (current !== desired.has(targetSeat)) {
+				const ok = await controller.setBotSeat(
+					targetSeat,
+					desired.has(targetSeat),
 				);
-				break;
+				if (!ok) {
+					botStatus.textContent = deps.t(
+						"The host could not restore the saved bot seats.",
+					);
+					break;
+				}
+				botSeatOverrides.set(targetSeat, desired.has(targetSeat));
 			}
-			botSeatOverrides.set(targetSeat, desired.has(targetSeat));
+			// The player of this seat asked for the bot before the reload, so the player stays at the table and can stop it.
+			if (
+				desired.has(targetSeat) &&
+				autoplay.includes(targetSeat) &&
+				controller.restoreAutoplay(targetSeat)
+			)
+				delegatedBotSeats.add(targetSeat);
 		}
 		botRestorePending = false;
 		render();
@@ -1428,8 +1444,14 @@ export function showRoom(
 			view.roster !== null &&
 			!botRestorePending &&
 			(view.hosting || (view.hostSeat !== null && view.hostSeat !== seat)) &&
-			new URLSearchParams(location.search).get("bot_seats") !==
-				SEATS.filter((targetSeat) => activeBotSet.has(targetSeat)).join(",")
+			(new URLSearchParams(location.search).get("bot_seats") !==
+				SEATS.filter((targetSeat) => activeBotSet.has(targetSeat)).join(",") ||
+				parseAutoplaySeats(location.search).join(",") !==
+					SEATS.filter(
+						(targetSeat) =>
+							activeBotSet.has(targetSeat) &&
+							view.roster?.autoplaySeats.includes(targetSeat),
+					).join(","))
 		)
 			rememberBotSeats(activeBots);
 		debugRow.hidden = !view.hosting;

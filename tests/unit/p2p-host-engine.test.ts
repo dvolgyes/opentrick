@@ -301,6 +301,20 @@ describe("host-local bots", () => {
 		expect(rig.log.entries.at(-1)).toMatchObject({ seat: "E", kind: "cmd" });
 	});
 
+	it("takes back a saved autoplay request after a reload only for a seat that its bot plays", async () => {
+		const rig = await new Rig().create();
+		await rig.seat(EAST, CLIENT_E, "E");
+		expect(rig.host.restoreAutoplay("E")).toBe(false);
+		expect(rig.host.roster()?.autoplaySeats).toEqual([]);
+
+		expect(await rig.host.setBotSeat("E", true)).toBe(true);
+		expect(rig.host.restoreAutoplay("E")).toBe(true);
+		expect(rig.host.roster()?.autoplaySeats).toEqual(["E"]);
+
+		expect(await rig.host.setBotSeat("E", false)).toBe(true);
+		expect(rig.host.roster()?.autoplaySeats).toEqual([]);
+	});
+
 	it("lets the host automate an active player's seat without ending that player's seat", async () => {
 		const rig = await new Rig().create();
 		const gen = await rig.seat(EAST, CLIENT_E, "E");
@@ -479,6 +493,23 @@ describe("hello", () => {
 			status: "accepted",
 			seq: 3,
 		});
+	});
+
+	it("binds a returning player while the host's bot plays that player's seat", async () => {
+		const rig = await new Rig().create();
+		const gen = await rig.seat(EAST, CLIENT_E, "E");
+		rig.host.leave(EAST);
+		// A reloaded host restores its saved bot seats before the player's page connects again.
+		expect(await rig.host.setBotSeat("E", true)).toBe(true);
+		await rig.hello(EAST2, CLIENT_E, { seat: "E", gen });
+		expect(rig.to(EAST2)[0]).toEqual({
+			k: "welcome",
+			status: "bound",
+			auth: rig.auth,
+			seat: "E",
+			gen,
+		});
+		expect(rig.host.roster()?.bots).toContain("E");
 	});
 
 	it("binds the second peer of the same holder and generation after the first one leaves", async () => {

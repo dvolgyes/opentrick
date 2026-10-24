@@ -561,6 +561,12 @@ export class TableController {
 		return this.#replication.setBotSeat(seat, enabled);
 	}
 
+	/** Marks a bot seat of this host as one whose own player asked for autoplay before a reload of the host page. */
+	restoreAutoplay(seat: Seat): boolean {
+		if (this.#closed() || !this.#replication) return false;
+		return this.#replication.restoreAutoplay(seat);
+	}
+
 	setAutoplayHandler(
 		handler: (seat: Seat, enabled: boolean) => Promise<AutoplayStatus>,
 	): void {

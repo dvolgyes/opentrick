@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
@@ -476,4 +476,129 @@ test("the bots approve the host's claim", async ({ page }) => {
 	await expect(phase).toHaveAttribute("data-phase", "complete", {
 		timeout: 30_000,
 	});
+});
+
+/** The bots of `page` answer with the first legal call or card. */
+async function firstChoiceBots(page: Page): Promise<void> {
+	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
+		if (route.request().method() === "OPTIONS") {
+			await route.fulfill({
+				status: 204,
+				headers: {
+					"access-control-allow-origin": "*",
+					"access-control-allow-methods": "POST, OPTIONS",
+					"access-control-allow-headers": "authorization,content-type",
+				},
+			});
+			return;
+		}
+		const body = route.request().postDataJSON();
+		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
+		const values = body.text.format.schema.properties[kind].enum as string[];
+		await route.fulfill({
+			status: 200,
+			headers: { "access-control-allow-origin": "*" },
+			contentType: "application/json",
+			body: JSON.stringify({
+				output: [
+					{
+						type: "message",
+						role: "assistant",
+						content: [
+							{
+								type: "output_text",
+								text: JSON.stringify({ [kind]: values[0] }),
+							},
+						],
+					},
+				],
+			}),
+		});
+	});
+}
+
+test("a player on autoplay stays in the call when the host reloads, and can still stop autoplay", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const host = await Player.open(browser, baseURL, "host");
+	const north = await Player.open(browser, baseURL, "north");
+	const east = await Player.open(browser, baseURL, "east");
+	const south = await Player.open(browser, baseURL, "south");
+	try {
+		const hostPage = await host.page("./");
+		await firstChoiceBots(hostPage);
+		const link = await createRoom(hostPage);
+		const northPage = await north.page(link);
+		await pick(northPage, "N");
+		await pick(await south.page(link), "S");
+		await east.page(link);
+		await expect(hostPage.getByTestId("table")).toHaveAttribute(
+			"data-phase",
+			"auction",
+			{ timeout: CONNECT_MS },
+		);
+		await hostPage.getByRole("button", { name: "Set API key" }).click();
+		await hostPage
+			.getByTestId("api-key-dialog")
+			.getByRole("textbox", { name: "OpenRouter API key" })
+			.fill("test-key");
+		await hostPage.getByRole("button", { name: "Save key" }).click();
+		await host.grantPermissions(["microphone"]);
+		await north.grantPermissions(["microphone"]);
+		for (const page of [hostPage, northPage])
+			await page
+				.getByRole("button", { name: "Join call", exact: true })
+				.click();
+		await expect(hostPage.getByTestId("call-note")).toContainText(
+			"Connected to North.",
+			{ timeout: CONNECT_MS },
+		);
+
+		const overlay = hostPage.getByTestId("tile-N").locator(".bot-overlay");
+		const autoplay = northPage.getByTestId("player-autoplay-toggle");
+		await autoplay.click();
+		await expect(autoplay).toHaveText("Stop autoplay", { timeout: CONNECT_MS });
+		await expect(overlay).toBeVisible();
+		await expect(
+			northPage.getByRole("button", { name: "Leave call", exact: true }),
+		).toBeVisible();
+
+		// The host's reload keeps the seat a bot that its player asked for, so the player stays in the call.
+		expect(new URL(hostPage.url()).searchParams.get("autoplay_seats")).toBe(
+			"N",
+		);
+		await hostPage.reload();
+		await expect(overlay).toBeVisible({ timeout: CONNECT_MS });
+		await expect(hostPage.getByTestId("call-note")).toContainText(
+			"Connected to North.",
+			{ timeout: CONNECT_MS },
+		);
+		await expect(
+			northPage.getByRole("button", { name: "Leave call", exact: true }),
+		).toBeVisible();
+		await expect(
+			northPage.getByRole("button", { name: "Send mic audio", exact: true }),
+		).toHaveAttribute("data-actual", "on");
+
+		// The reloaded host still knows that the player asked for the bot, so the player can stop it.
+		await autoplay.click();
+		await expect(overlay).toBeHidden({ timeout: CONNECT_MS });
+		await expect(autoplay).toHaveText("Enable autoplay (bot)");
+		// A later host reload must not bring the bot back.
+		await expect
+			.poll(() => new URL(hostPage.url()).searchParams.get("bot_seats"))
+			.toBe("");
+		expect(new URL(hostPage.url()).searchParams.has("autoplay_seats")).toBe(
+			false,
+		);
+		await expect(
+			northPage.getByRole("button", { name: "Leave call", exact: true }),
+		).toBeVisible();
+	} finally {
+		await Promise.all(
+			[host, north, east, south].map((player) => player.close()),
+		);
+	}
 });
