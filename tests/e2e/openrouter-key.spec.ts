@@ -136,3 +136,36 @@ test("Save key at the table checks the key, keeps the dialog open on a failure, 
 		),
 	).toBe("good-key");
 });
+
+test("a key stored in this browser fills a new create page and runs the bots, also after a reload", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	await page.goto("/");
+	// The key stays in this browser from an earlier visit; the player does not type it again.
+	await page.evaluate(() =>
+		localStorage.setItem("opentrick.openrouter-api-key", "stored-key"),
+	);
+	await page.reload();
+	await expect(page.locator('input[name="openrouter-key"]')).toHaveValue(
+		"stored-key",
+	);
+	for (const seat of ["N", "E", "S", "W"]) {
+		await page.locator(`input[name="name-${seat}"]`).fill(`robot ${seat}`);
+		await page.locator(`input[name="bot-${seat}"]`).check();
+	}
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	// The key check, then at least one bot call.
+	await expect.poll(() => openRouter.requests.length).toBeGreaterThan(1);
+	await page.getByRole("button", { name: "Pause bots" }).click();
+	await page.reload();
+	const beforeResume = openRouter.requests.length;
+	await page.getByRole("button", { name: "Resume bots" }).click();
+	await expect
+		.poll(() => openRouter.requests.length, { timeout: 60_000 })
+		.toBeGreaterThan(beforeResume);
+	expect(new Set(openRouter.requests.map((request) => request.key))).toEqual(
+		new Set(["Bearer stored-key"]),
+	);
+});
