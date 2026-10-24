@@ -216,8 +216,12 @@ export function showRoom(
 	let playerAutoplayStatus = "";
 	let playerAutoplayWasEnabled = false;
 	let playerAutoplayConfirmedRoster = false;
-	/** This player stopped autoplay, and the roster may still show the bot until the host sends the next one. */
-	let playerAutoplayStopped = false;
+	/**
+	 * The roster shown when the host answered this player's last autoplay request. The host sends rosters and answers
+	 * on one ordered channel and builds each roster when it sends it, so only a later roster shows the seat after the
+	 * answer.
+	 */
+	let playerAutoplayAnswerRoster: unknown;
 	let playerAutoplayHost = "";
 	let shownModel: ReturnType<typeof tableView> | undefined;
 
@@ -852,12 +856,12 @@ export function showRoom(
 					playerAutoplayPending = false;
 					if (status === "enabled") {
 						playerAutoplayWasEnabled = true;
-						playerAutoplayStopped = false;
+						playerAutoplayAnswerRoster = controller.view().roster;
 						playerAutoplayStatus = deps.t("The host is playing your seat.");
 					} else if (status === "disabled") {
 						playerAutoplayWasEnabled = false;
 						playerAutoplayConfirmedRoster = false;
-						playerAutoplayStopped = true;
+						playerAutoplayAnswerRoster = controller.view().roster;
 						playerAutoplayStatus = deps.t("Autoplay stopped.");
 					} else if (status === "unavailable") {
 						playerAutoplayWasEnabled = false;
@@ -1668,11 +1672,13 @@ export function showRoom(
 			playerAutoplayHost = rosterHost;
 			playerAutoplayWasEnabled = false;
 			playerAutoplayConfirmedRoster = false;
-			playerAutoplayStopped = false;
+			playerAutoplayAnswerRoster = undefined;
 		}
 		const rosterAutoplay = view.roster?.bots.includes(seat) ?? false;
-		if (!rosterAutoplay) playerAutoplayStopped = false;
-		if (rosterAutoplay && !playerAutoplayStopped)
+		if (
+			view.roster !== playerAutoplayAnswerRoster &&
+			(rosterAutoplay || playerAutoplayWasEnabled)
+		)
 			playerAutoplayConfirmedRoster = true;
 		if (playerAutoplayConfirmedRoster && !rosterAutoplay) {
 			playerAutoplayConfirmedRoster = false;
