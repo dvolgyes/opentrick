@@ -975,6 +975,11 @@ main:has(> .room) {
 	display: none;
 }
 
+/* A player who lets the bot play can stay in the call: their camera replaces the bot image. */
+.tile[data-video="on"] .bot-overlay {
+	display: none;
+}
+
 .bot-artwork {
 	width: min(68%, 8rem);
 	height: min(68%, 8rem);

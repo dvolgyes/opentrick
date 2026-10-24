@@ -3,6 +3,7 @@ import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { Form } from "../../src/call/device-class";
 import { type Locale, type Translate, translator } from "../../src/i18n";
+import type { Seat } from "../../src/protocol";
 import { pageReport } from "../../src/ui/page-report";
 import {
 	type PlayedCardStyle,
@@ -706,6 +707,65 @@ describe("compact play controls", () => {
 		section.setBotControls(false, ["E"], "unmapped/model");
 		expect(artwork?.hidden).toBe(true);
 		expect(fallback?.hidden).toBe(false);
+	});
+
+	it("shows a camera of a bot seat in place of the bot image", () => {
+		const view = playView();
+		const { root, section } = renderView(
+			{
+				...view,
+				seats: view.seats.map((player) =>
+					player.seat === "E" ? { ...player, bot: true } : player,
+				),
+			},
+			"desktop",
+		);
+		section.setBotControls(false, ["E"], "inception/mercury-3");
+		const canvas = document.createElement("canvas");
+		const track = canvas.captureStream().getVideoTracks()[0];
+		if (track === undefined) throw new Error("the canvas gives no track");
+		const remote = (seat: Seat) => ({
+			seat,
+			status: "connected" as const,
+			audio: undefined,
+			video: seat === "E" ? track : undefined,
+			peerSendsAudio: false,
+			peerSendsVideo: seat === "E",
+			fault: undefined,
+		});
+		const callView = (remotes: ReturnType<typeof remote>[]) => ({
+			available: true as const,
+			view: {
+				status: "subscribed" as const,
+				canJoin: false,
+				form: "desktop" as const,
+				media: ["audio", "video"] as const,
+				requested: {
+					inCall: true,
+					send: { audio: false, video: false },
+					receive: { audio: false, video: true },
+				},
+				mic: "off" as const,
+				camera: "off" as const,
+				problem: undefined,
+				remotes,
+			},
+		});
+		const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
+		const video = root.querySelector<HTMLVideoElement>(
+			"[data-testid='video-E']",
+		);
+		if (tile === null || video === null) throw new Error("no tile of East");
+		const overlay = tile.querySelector<HTMLElement>(".bot-overlay");
+		// The overlay lets clicks through, so only its visibility tells what covers the tile.
+		const shown = () => [video.checkVisibility(), overlay?.checkVisibility()];
+		expect(shown()).toEqual([false, true]);
+		section.renderCall(callView((["N", "E"] as const).map(remote)));
+		expect(shown()).toEqual([true, false]);
+		// Without the camera, the bot image returns.
+		section.renderCall(callView([]));
+		expect(shown()).toEqual([false, true]);
+		track.stop();
 	});
 
 	it("shows the viewer's result with context during scoring", () => {
