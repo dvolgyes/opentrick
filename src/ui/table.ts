@@ -636,7 +636,8 @@ export function tableSection(
 		className: "side-panel tricks-panel",
 		attrs: { "data-testid": "tricks-panel" },
 	});
-	// render() fills the sidebar in order: contract, bidding history, tricks, statistics, claim controls.
+	// render() fills the sidebar in order: contract, undo, claim controls, bidding history, tricks, statistics.
+	// The controls come before the long lists, so they stay on the canvas when the lists grow.
 	const sidebar = el("div", { className: "table-sidebar" });
 	const status = el(
 		"div",
@@ -1837,11 +1838,11 @@ export function tableSection(
 		renderTricks(view);
 		sidebar.append(
 			contractPanel,
+			undoPanel,
+			...(mobileGameActive ? [] : [claimPanel, playControls]),
 			...(mobileGameActive || view.phase === "auction" ? [] : [bidHistory]),
 			tricksPanel,
 			scores,
-			undoPanel,
-			...(mobileGameActive ? [] : [claimPanel, playControls]),
 		);
 	}
 

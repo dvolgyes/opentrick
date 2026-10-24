@@ -1029,6 +1029,11 @@ main:has(> .room) {
 	justify-content: flex-start;
 }
 
+/* The debug status takes no room until the host uses Debug or Reload players. */
+.debug-status:empty {
+	display: none;
+}
+
 .model-priority-list {
 	display: grid;
 	gap: 0.25rem;

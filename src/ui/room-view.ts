@@ -969,7 +969,7 @@ export function showRoom(
 			() => undefined,
 		);
 	const debugStatus = el("p", {
-		className: "note",
+		className: "note debug-status",
 		attrs: { role: "status", "data-testid": "debug-status" },
 	});
 	// The host asks for new reports and copies the export once they had time to arrive; the copy starts in the click.
