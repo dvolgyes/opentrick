@@ -471,6 +471,9 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{seat} TO BID": "{seat} IST MIT BIETEN DRAN",
 		"YOUR TURN TO PLAY": "DU BIST AM ZUG",
 		"{seat} TO PLAY": "{seat} IST AM ZUG",
+		Bridge: "Bridge",
+		"{game}: {name} ({seat})": "{game}: {name} ({seat})",
+		"TURN - {title}": "AM ZUG - {title}",
 		Debug: "Debug",
 		"Reload players": "Spieler neu laden",
 		"Collecting the players' reports…":
@@ -920,6 +923,9 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{seat} TO BID": "{seat} LICITÁL",
 		"YOUR TURN TO PLAY": "TE KÖVETKEZEL",
 		"{seat} TO PLAY": "{seat} KÖVETKEZIK",
+		Bridge: "Bridzs",
+		"{game}: {name} ({seat})": "{game}: {name} ({seat})",
+		"TURN - {title}": "TE JÖSSZ - {title}",
 		Debug: "Hibakeresés",
 		"Reload players": "Játékosok újratöltése",
 		"Collecting the players' reports…": "A játékosok jelentéseinek gyűjtése…",
@@ -1341,6 +1347,9 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{seat} TO BID": "{seat} SKAL MELDE",
 		"YOUR TURN TO PLAY": "DIN TUR TIL Å SPILLE",
 		"{seat} TO PLAY": "{seat} SKAL SPILLE",
+		Bridge: "Bridge",
+		"{game}: {name} ({seat})": "{game}: {name} ({seat})",
+		"TURN - {title}": "DIN TUR - {title}",
 		"You ask to undo your {action}. Your cancellation is being sent.":
 			"Du ber om å angre {action}. Avbrytingen sendes.",
 		"You ask to undo your {action}. {waiting}":

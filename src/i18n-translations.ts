@@ -2120,6 +2120,23 @@ const rows: readonly TranslationRow[] = [
 		"TOCCA A {seat} GIOCARE",
 		"BEURT VAN {seat} OM TE SPELEN",
 	],
+	["Bridge", "Bridge", "Bridge", "Bridge", "Bridge", "Bridge"],
+	[
+		"{game}: {name} ({seat})",
+		"{game}: {name} ({seat})",
+		"{game}: {name} ({seat})",
+		"{game} : {name} ({seat})",
+		"{game}: {name} ({seat})",
+		"{game}: {name} ({seat})",
+	],
+	[
+		"TURN - {title}",
+		"TU TURNO - {title}",
+		"A SUA VEZ - {title}",
+		"À VOUS - {title}",
+		"TOCCA A TE - {title}",
+		"JOUW BEURT - {title}",
+	],
 	["You", "Tú", "Você", "Vous", "Tu", "Jij"],
 	[
 		"You ask to undo your {action}. Your cancellation is being sent.",

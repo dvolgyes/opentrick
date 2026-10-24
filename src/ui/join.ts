@@ -23,6 +23,7 @@ import {
 	TEXT,
 } from "./model";
 import { networkPanel } from "./network";
+import { pageTitle } from "./page-title";
 import { showRoom } from "./room-view";
 import { turnSound } from "./turn-sound";
 
@@ -95,7 +96,7 @@ export function showTable(
 
 	const showConnecting = (): void => {
 		shown = undefined;
-		document.title = "Bridge";
+		document.title = pageTitle(deps.t);
 		root.replaceChildren(message(el("p", {}, deps.t(TEXT.connecting))));
 	};
 
@@ -170,7 +171,11 @@ export function showTable(
 		}
 		if (view.seat !== null) {
 			navigation.rememberSeat(view.seat);
-			document.title = `Bridge: ${view.table?.config.names[view.seat] ?? SEAT_NAMES[view.seat]} (${deps.t(view.seat)})`;
+			document.title = pageTitle(deps.t, {
+				name: view.table?.config.names[view.seat] ?? SEAT_NAMES[view.seat],
+				seat: view.seat,
+				turn: false,
+			});
 			shown = undefined;
 			notice = undefined;
 			roomSeat = view.seat;
@@ -191,7 +196,7 @@ export function showTable(
 			);
 			return;
 		}
-		document.title = "Bridge";
+		document.title = pageTitle(deps.t);
 		const screen = lobbyScreen({
 			status: view.status,
 			supersededBy: view.supersededBy,
@@ -319,7 +324,7 @@ export function showTable(
 
 	return () => {
 		disposed = true;
-		document.title = "Bridge";
+		document.title = pageTitle(deps.t);
 		document.removeEventListener("visibilitychange", onVisible);
 		window.removeEventListener("online", onWake);
 		window.removeEventListener("pageshow", onWake);

@@ -77,6 +77,7 @@ import {
 import { modelPriorityControl } from "./model-priority";
 import { networkPanel } from "./network";
 import { pageReport, type TableFacts } from "./page-report";
+import { pageTitle } from "./page-title";
 import { remoteAudio } from "./remote-audio";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
@@ -1635,7 +1636,11 @@ export function showRoom(
 		currentTurnKey = yourTurn
 			? `${tableModel.board}:${tableModel.at}:${seat}`
 			: undefined;
-		document.title = `${yourTurn ? "TURN - " : ""}Bridge: ${config.names[seat]} (${deps.t(seat)})`;
+		document.title = pageTitle(deps.t, {
+			name: config.names[seat],
+			seat,
+			turn: yourTurn,
+		});
 		checkTurnAlert();
 		// The lobby uses the table layout, so it looks like the game; only the sidebar is hidden while waiting.
 		root.dataset.screen = "table";
