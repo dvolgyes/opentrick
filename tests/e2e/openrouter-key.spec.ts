@@ -123,7 +123,7 @@ test("Save key at the table checks the key, keeps the dialog open on a failure, 
 	await field.fill("good-key");
 	await dialog.getByRole("button", { name: "Save key" }).click();
 	await expect(dialog).toBeHidden();
-	await expect(page.getByTestId("room-controls")).toContainText(
+	await expect(page.getByTestId("bot-status")).toContainText(
 		"The OpenRouter key works with inception/mercury-3.",
 	);
 	expect(openRouter.requests.at(-1)).toEqual({

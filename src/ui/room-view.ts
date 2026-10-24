@@ -357,7 +357,10 @@ export function showRoom(
 		),
 		deps.t,
 	);
-	const botStatus = el("p", { attrs: { role: "status" } });
+	const botStatus = el("p", {
+		className: "bot-status",
+		attrs: { role: "status", "data-testid": "bot-status" },
+	});
 	const botSpendCounter = el("span", {
 		className: "bot-spend-counter",
 		attrs: {
@@ -1077,7 +1080,6 @@ export function showRoom(
 			resumeBots,
 			botSpendCounter,
 		),
-		botStatus,
 		keyDialog,
 		modelDialog,
 	);
@@ -1112,7 +1114,7 @@ export function showRoom(
 	);
 	resetControls.append(resetDecision);
 	table.sidebar.prepend(resetControls);
-	table.sidebarEnd.append(debugRow, debugStatus);
+	table.sidebarEnd.append(debugRow, debugStatus, botStatus);
 
 	// A storage warning stays visible on every screen, so it sits in the stage, not in the extras.
 	const storageNotices =

@@ -1035,8 +1035,9 @@ main:has(> .room) {
 	justify-content: flex-start;
 }
 
-/* The debug status takes no room until the host uses Debug or Reload players. */
-.debug-status:empty {
+/* The debug and bot status lines take no room while they are empty. */
+.debug-status:empty,
+.bot-status:empty {
 	display: none;
 }
 
@@ -1858,14 +1859,14 @@ button.call-join[data-in-call="true"] {
 	padding-top: 2.8rem;
 }
 
-/* The host's debug controls end the sidebar; it takes no room while the viewer is not the host. */
+/* The host's debug controls and the bot status end the sidebar, so their messages push nothing down; it takes no room while nothing in it shows. */
 .sidebar-end {
 	display: flex;
 	flex-direction: column;
 	gap: 0.45rem;
 }
 
-.sidebar-end:not(:has(> :not([hidden]))) {
+.sidebar-end:not(:has(> :not([hidden], :empty))) {
 	display: none;
 }
 

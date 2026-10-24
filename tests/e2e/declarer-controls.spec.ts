@@ -112,13 +112,14 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 				page.getByRole("button", { name, exact: true }),
 			);
 
-		// The sidebar reads top to bottom: bidding, tricks, the controls, statistics, and the host's debug row last.
+		// The sidebar reads top to bottom: bidding, tricks, the controls, statistics, the host's debug row, and the bot status last.
 		const parts = {
 			bidding: page.getByTestId("bid-history"),
 			tricks: page.getByTestId("tricks-panel"),
 			claim: page.getByRole("button", { name: "Claim all", exact: true }),
 			statistics: page.getByTestId("scores"),
 			debug: page.getByTestId("debug-export"),
+			botStatus: page.getByTestId("bot-status"),
 		};
 		const tops: Record<string, number> = {};
 		for (const [part, locator] of Object.entries(parts)) {

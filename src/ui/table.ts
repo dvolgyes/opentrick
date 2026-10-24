@@ -47,7 +47,7 @@ export interface TableSection {
 	/** The score sheet. The room page places it after the table, so the table can fill the screen. */
 	/** The right column: bidding history, Tricks, and the previous-game statistics. */
 	readonly sidebar: HTMLElement;
-	/** The last part of the sidebar. The room page puts the host's debug controls here, so their messages push nothing down. */
+	/** The last part of the sidebar. The room page puts the host's debug controls and the bot status here, so their messages push nothing down. */
 	readonly sidebarEnd: HTMLElement;
 	render(view: TableView): void;
 	setCountdown(seconds: number | undefined): void;
