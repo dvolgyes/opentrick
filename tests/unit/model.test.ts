@@ -9,11 +9,18 @@ import type {
 	TableStatus,
 } from "../../src/p2p/table";
 import type { Entry, Lobby, Roster } from "../../src/p2p/wire";
-import type { JsonObject, RoomConfig, Seat } from "../../src/protocol";
+import {
+	type JsonObject,
+	type RoomConfig,
+	SEATS,
+	type Seat,
+} from "../../src/protocol";
 import {
 	type BannerInput,
 	bannerFor,
 	bannerText,
+	botPlays,
+	callSeats,
 	checkCreateFields,
 	DEFAULT_CREATE_FIELDS,
 	draftFor,
@@ -347,10 +354,34 @@ describe("seats", () => {
 				{ peer: "peer-e", seat: "E", gen: 1 },
 			],
 			bots: [],
+			autoplaySeats: [],
 		};
 		expect([...presentSeats("W", roster)].sort()).toEqual(["E", "W"]);
 		expect([...presentSeats(null, null)]).toEqual([]);
 		expect([...heldSeats(roster.seats)].sort()).toEqual(["E", "N", "W"]);
+	});
+
+	it("keeps a seat in the call only while its own page is there and no bot that the host chose plays it", () => {
+		const roster: Roster = {
+			k: "roster",
+			auth: AUTH,
+			seats: [
+				{ seat: "N", holder: "h-n", gen: 1, acked: 0 },
+				{ seat: "E", holder: "h-e", gen: 1, acked: 0 },
+				{ seat: "S", holder: "h-s", gen: 1, acked: 0 },
+				{ seat: "W", holder: "h-w", gen: 1, acked: 0 },
+			],
+			peers: [
+				{ peer: "peer-n", seat: "N", gen: 1 },
+				{ peer: "peer-e", seat: "E", gen: 1 },
+			],
+			// The host chose the bot of North; East asked for autoplay; South asked for it and left.
+			bots: ["N", "E", "S"],
+			autoplaySeats: ["E", "S"],
+		};
+		expect([...callSeats("W", roster)].sort()).toEqual(["E", "W"]);
+		expect(SEATS.filter((seat) => botPlays(roster, seat))).toEqual(["N"]);
+		expect([...callSeats(null, null)]).toEqual([]);
 	});
 });
 

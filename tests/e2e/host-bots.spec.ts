@@ -302,24 +302,45 @@ test("switching the current bidder to a bot starts it immediately", async ({
 			.getByTestId("tile-N")
 			.getByRole("button", { name: /Switch to bot$/ })
 			.click();
+		// A bot that the host chose plays the seat alone: the player's page leaves the call, and nobody expects
+		// audio from the seat.
 		await expect(
 			northPage.getByRole("button", { name: "Leave call", exact: true }),
-		).toBeVisible();
+		).toHaveCount(0);
 		await expect(
 			northPage.getByRole("button", { name: "Send mic audio", exact: true }),
-		).toHaveAttribute("data-actual", "on");
-		await expect(eastPage.getByTestId("call-presence-N")).toBeVisible();
+		).toHaveAttribute("data-actual", "off");
+		await expect(hostPage.getByTestId("call-note")).not.toContainText(
+			"Connected to North.",
+		);
+		await expect(eastPage.getByTestId("call-presence-N")).toBeHidden();
 		await hostPage
 			.getByTestId("tile-N")
 			.getByRole("button", { name: /Switch to player$/ })
 			.click();
 		await expect(
+			hostPage.getByTestId("tile-N").locator(".bot-overlay"),
+		).toBeHidden();
+		// The player is back, and the call stays off until the player joins again: also after a reload.
+		await expect(
+			northPage.getByRole("button", { name: "Join call", exact: true }),
+		).toBeEnabled();
+		await northPage.reload();
+		await expect(northPage.getByTestId("table")).toHaveAttribute(
+			"data-phase",
+			"auction",
+			{ timeout: CONNECT_MS },
+		);
+		await expect(
+			northPage.getByRole("button", { name: "Join call", exact: true }),
+		).toBeEnabled();
+		await expect(
 			northPage.getByRole("button", { name: "Leave call", exact: true }),
-		).toBeVisible();
+		).toHaveCount(0);
 		await expect(
 			northPage.getByRole("button", { name: "Send mic audio", exact: true }),
-		).toHaveAttribute("data-actual", "on");
-		await expect(eastPage.getByTestId("call-presence-N")).toBeVisible();
+		).toHaveAttribute("data-actual", "off");
+		await expect(eastPage.getByTestId("call-presence-N")).toBeHidden();
 		await hostPage
 			.getByTestId("tile-N")
 			.getByRole("button", { name: /Switch to bot$/ })

@@ -189,6 +189,7 @@ const CTL: Case[] = [
 			],
 			peers: [{ peer: PEER, seat: "N", gen: 2 }],
 			bots: [],
+			autoplaySeats: [],
 		},
 		["auth", "seats", "peers"],
 	],
@@ -615,6 +616,17 @@ describe("message rules", () => {
 		["a bad peer id", [{ peer: "short", seat: "N", gen: 2 }]],
 	])("roster rejects %s", (_label, peers) => {
 		malformed(parseCtl, { ...roster, peers });
+	});
+
+	it("roster keeps the autoplay seats only among its bots", () => {
+		expect(
+			parseCtl(wire({ ...roster, bots: ["N"], autoplaySeats: ["N"] }), TABLE),
+		).toMatchObject({
+			ok: true,
+			message: { bots: ["N"], autoplaySeats: ["N"] },
+		});
+		malformed(parseCtl, { ...roster, bots: ["N"], autoplaySeats: ["E"] });
+		malformed(parseCtl, { ...roster, bots: ["N"], autoplaySeats: ["N", "N"] });
 	});
 
 	it("roster rejects seats out of order", () => {

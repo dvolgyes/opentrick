@@ -545,6 +545,28 @@ export function presentSeats(
 	return present;
 }
 
+/** A bot plays the seat alone: the host chose it, so the seat's player did not ask for autoplay. */
+export function botPlays(roster: Roster | null, seat: Seat): boolean {
+	return (
+		roster?.bots.includes(seat) === true && !roster.autoplaySeats.includes(seat)
+	);
+}
+
+/** The seats whose own page is at the table and plays it, so that page can be in the call. A bot sends no audio. */
+export function callSeats(
+	hostSeat: Seat | null,
+	roster: Roster | null,
+): ReadonlySet<Seat> {
+	const seats = new Set<Seat>();
+	if (hostSeat !== null) seats.add(hostSeat);
+	for (const binding of roster?.peers ?? []) {
+		const row = roster?.seats.find((item) => item.seat === binding.seat);
+		if (row?.gen === binding.gen) seats.add(binding.seat);
+	}
+	for (const seat of SEATS) if (botPlays(roster, seat)) seats.delete(seat);
+	return seats;
+}
+
 export function roomView(input: RoomViewInput): RoomView {
 	return {
 		roster: SEATS.map((rowSeat) => rosterRow(input, rowSeat)),

@@ -260,6 +260,8 @@ describe("host-local bots", () => {
 		});
 		expect(rig.row("E")).toEqual({ seat: "E", holder, gen });
 		expect(rig.host.roster()?.bots).toContain("E");
+		// The player asked for the bot, so the player stays at the table, and can stay in the call.
+		expect(rig.host.roster()?.autoplaySeats).toEqual(["E"]);
 		await rig.command(EAST, 61, gen, "blocked while autoplay is on");
 		expect(rig.to(EAST)).toContainEqual(
 			expect.objectContaining({ id: commandId(61), status: "rejected" }),
@@ -273,6 +275,7 @@ describe("host-local bots", () => {
 		});
 		expect(rig.row("E")).toEqual({ seat: "E", holder, gen });
 		expect(rig.host.roster()?.bots).not.toContain("E");
+		expect(rig.host.roster()?.autoplaySeats).toEqual([]);
 		await rig.command(EAST, 62, gen, "human control restored");
 		expect(rig.to(EAST)).toContainEqual(
 			expect.objectContaining({ id: commandId(62), status: "accepted" }),
@@ -307,6 +310,8 @@ describe("host-local bots", () => {
 		expect(await rig.host.setBotSeat("E", true)).toBe(true);
 		expect(rig.row("E")).toEqual({ seat: "E", holder, gen });
 		expect(rig.host.roster()?.bots).toContain("E");
+		// The host chose the bot: the bot plays the seat, so the player's page leaves the call.
+		expect(rig.host.roster()?.autoplaySeats).toEqual([]);
 		expect(rig.host.roster()?.peers).toContainEqual({
 			peer: EAST,
 			seat: "E",

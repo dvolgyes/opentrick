@@ -237,6 +237,8 @@ export interface Roster {
 	readonly peers: readonly Binding[];
 	/** Bot seats currently controlled inside the host page, without a separate peer connection. */
 	readonly bots: readonly Seat[];
+	/** The bot seats whose player asked for autoplay: that player stays at the table and can stay in the call. */
+	readonly autoplaySeats: readonly Seat[];
 	/** This host understands player autoplay requests. */
 	readonly autoplay?: boolean;
 }
@@ -913,9 +915,20 @@ const parseRoster: Parser<Roster> = (value) => {
 					)
 				? [...value.bots]
 				: undefined;
+	const autoplaySeats =
+		value.autoplaySeats === undefined
+			? []
+			: Array.isArray(value.autoplaySeats) &&
+					new Set(value.autoplaySeats).size === value.autoplaySeats.length &&
+					value.autoplaySeats.every(
+						(seat) => isSeat(seat) && bots?.includes(seat),
+					)
+				? [...value.autoplaySeats]
+				: undefined;
 	if (
 		!peers ||
 		!bots ||
+		!autoplaySeats ||
 		(value.autoplay !== undefined && typeof value.autoplay !== "boolean")
 	)
 		return undefined;
@@ -925,6 +938,7 @@ const parseRoster: Parser<Roster> = (value) => {
 		seats,
 		peers,
 		bots,
+		autoplaySeats,
 		...(value.autoplay === true ? { autoplay: true } : {}),
 	};
 };

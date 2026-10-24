@@ -79,6 +79,21 @@ export class CallMemory {
 		this.#store();
 	}
 
+	/**
+	 * A bot that the host chose played the seat, so the call ended, and the seat is back. The page stays outside
+	 * the call and stores that as an action, because the seat refused the page's commands while the bot played.
+	 * A reload then does not join again either.
+	 */
+	seatReturned(): void {
+		this.#decided = true;
+		this.#dirty = true;
+		if (this.#rejoin !== undefined) {
+			this.#rejoin = undefined;
+			this.#deps.changed();
+		}
+		this.#store();
+	}
+
 	/** The table changed. */
 	update(table: CallTable): void {
 		this.#table = table;

@@ -62,6 +62,8 @@ import {
 	type Banner,
 	bannerFor,
 	bannerText,
+	botPlays,
+	callSeats,
 	draftFor,
 	heldSeats,
 	networkLines,
@@ -195,6 +197,8 @@ export function showRoom(
 	let alertedTurn: string | undefined;
 	let botRunner: HostBotRunner | undefined;
 	const delegatedBotSeats = new Set<Seat>();
+	/** A bot that the host chose plays this page's seat. */
+	let botHoldsSeat = false;
 	let botStarting = false;
 	let botAutoAttempted = false;
 	let botRestoreStarted = false;
@@ -1450,7 +1454,15 @@ export function showRoom(
 		)
 			void startHostBots();
 		const terminal = view.seat !== seat || TERMINAL.has(view.status);
-		call?.update(controller.callSnapshot());
+		// A bot that the host chose plays the seat alone, and a bot sends no audio, so the page leaves the call. The
+		// call stays off when the seat comes back.
+		const botAlone = botPlays(view.roster, seat);
+		const snapshot = controller.callSnapshot();
+		call?.update(botAlone ? { ...snapshot, self: null } : snapshot);
+		if (botAlone !== botHoldsSeat) {
+			botHoldsSeat = botAlone;
+			if (!botAlone) memory?.seatReturned();
+		}
 		renderBanner(bannerFor(view));
 		actionNote.textContent = actionError ?? "";
 		actionNote.hidden = actionError === undefined;
@@ -1517,6 +1529,7 @@ export function showRoom(
 			view.table === null
 				? undefined
 				: (parseBridgeState(view.table.state, tableId) ?? null);
+		const inCallSeats = callSeats(view.hostSeat, view.roster);
 		remoteCallPresence = {};
 		for (const targetSeat of SEATS) {
 			const record = state?.media[targetSeat];
@@ -1527,7 +1540,7 @@ export function showRoom(
 				record === undefined ||
 				!record.prefs.inCall ||
 				record.holder !== currentHolder?.holder ||
-				!present.has(targetSeat)
+				!inCallSeats.has(targetSeat)
 			) {
 				continue;
 			}

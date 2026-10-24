@@ -134,6 +134,8 @@ export class HostEngine {
 	readonly #acked = new Map<Seat, number>();
 	readonly #pending = new Map<Seat, number>();
 	readonly #localBots = new Set<Seat>();
+	/** Bot seats whose own player asked for autoplay, so that player stays at the table. */
+	readonly #autoplaySeats = new Set<Seat>();
 	readonly #autoplayPending = new Set<Seat>();
 	readonly #autoplayRequests = new Map<string, number>();
 	readonly #reports = new Map<string, PlayerReport>();
@@ -277,6 +279,7 @@ export class HostEngine {
 			}
 		} else {
 			this.#localBots.delete(seat);
+			this.#autoplaySeats.delete(seat);
 			const peer = this.#localPeer(seat);
 			this.#bindings.delete(peer);
 			this.#connected.delete(peer);
@@ -440,6 +443,10 @@ export class HostEngine {
 				({ peer }) => !peer.startsWith("opentrick-host-bot:"),
 			),
 			bots: [...this.#localBots],
+			// The host plays from its own page, so a bot at its seat is always its own autoplay.
+			autoplaySeats: [...this.#localBots].filter(
+				(seat) => seat === this.#deps.log.seat || this.#autoplaySeats.has(seat),
+			),
 			autoplay: true,
 		};
 	}
@@ -562,6 +569,10 @@ export class HostEngine {
 			stillBound.gen === bound.gen &&
 			current !== null &&
 			this.#current(current, bound);
+		if (valid && status === "enabled" && this.#localBots.has(bound.seat)) {
+			this.#autoplaySeats.add(bound.seat);
+			this.#markRoster();
+		}
 		if (!valid && status === "enabled") {
 			try {
 				await this.#deps.autoplay?.(bound.seat, false);
