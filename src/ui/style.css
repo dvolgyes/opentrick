@@ -1025,6 +1025,10 @@ main:has(> .room) {
 	justify-content: space-between;
 }
 
+.room-debug-controls {
+	justify-content: flex-start;
+}
+
 .model-priority-list {
 	display: grid;
 	gap: 0.25rem;

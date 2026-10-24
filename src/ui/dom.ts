@@ -70,6 +70,32 @@ export function copyButton(
 	return el("div", { className: "copy-field" }, copy, status);
 }
 
+/**
+ * Copies text that is ready later. Call it in the click handler: the write starts there, so the click's user
+ * activation covers it in browsers that need one.
+ */
+export async function copyWhenReady(
+	text: Promise<string>,
+): Promise<"copied" | "unavailable" | "refused"> {
+	if (!navigator.clipboard) return "unavailable";
+	try {
+		if (typeof ClipboardItem === "function") {
+			const blob = text.then(
+				(value) => new Blob([value], { type: "text/plain" }),
+			);
+			await navigator.clipboard.write([
+				new ClipboardItem({ "text/plain": blob }),
+			]);
+		} else {
+			await navigator.clipboard.writeText(await text);
+		}
+		return "copied";
+	} catch (error) {
+		if (!(error instanceof DOMException)) throw error;
+		return "refused";
+	}
+}
+
 export async function copyToClipboard(text: string): Promise<string> {
 	if (!navigator.clipboard) {
 		return "Clipboard access is unavailable.";

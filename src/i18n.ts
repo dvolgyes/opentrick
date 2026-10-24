@@ -469,6 +469,16 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
 		"YOUR TURN TO BID": "DU BIST MIT BIETEN DRAN",
 		"{seat} TO BID": "{seat} IST MIT BIETEN DRAN",
+		Debug: "Debug",
+		"Reload players": "Spieler neu laden",
+		"Collecting the players' reports…":
+			"Berichte der Spieler werden gesammelt…",
+		"Debug export copied.": "Debug-Export kopiert.",
+		"Could not copy the debug export. Allow clipboard access and try again.":
+			"Der Debug-Export konnte nicht kopiert werden. Erlaube den Zugriff auf die Zwischenablage und versuche es erneut.",
+		"Asked {count} pages to reload.":
+			"{count} Seiten zum Neuladen aufgefordert.",
+		"no report": "kein Bericht",
 	},
 	hu: {
 		Language: "Nyelv",
@@ -906,6 +916,14 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Erősítsd meg mind a hátralévő {count} Tricks igénylését.",
 		"YOUR TURN TO BID": "TE LICITÁLSZ",
 		"{seat} TO BID": "{seat} LICITÁL",
+		Debug: "Hibakeresés",
+		"Reload players": "Játékosok újratöltése",
+		"Collecting the players' reports…": "A játékosok jelentéseinek gyűjtése…",
+		"Debug export copied.": "Hibakeresési export másolva.",
+		"Could not copy the debug export. Allow clipboard access and try again.":
+			"A hibakeresési exportot nem sikerült másolni. Engedélyezd a vágólap elérését, és próbáld újra.",
+		"Asked {count} pages to reload.": "{count} oldal újratöltése kérve.",
+		"no report": "nincs jelentés",
 	},
 	no: {
 		Language: "Språk",
@@ -1341,6 +1359,14 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{requester} krever {count} {tricks}. Du må ta en avgjørelse.",
 		"{seat}: use at most {max} characters.":
 			"{seat}: bruk maksimalt {max} tegn.",
+		Debug: "Feilsøking",
+		"Reload players": "Last inn spillerne på nytt",
+		"Collecting the players' reports…": "Henter rapportene fra spillerne…",
+		"Debug export copied.": "Feilsøkingseksporten er kopiert.",
+		"Could not copy the debug export. Allow clipboard access and try again.":
+			"Kunne ikke kopiere feilsøkingseksporten. Tillat tilgang til utklippstavlen og prøv igjen.",
+		"Asked {count} pages to reload.": "Ba {count} sider laste inn på nytt.",
+		"no report": "ingen rapport",
 	},
 	...additionalCatalogs,
 };

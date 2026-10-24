@@ -10,6 +10,7 @@ import {
 } from "../bot/host-runner";
 import { checkOpenRouterKey } from "../bot/key-check";
 import { type Board, boardStatus } from "../bridge/engine";
+import { type BuildInfo, formatBuildDate } from "../build";
 import { CallController } from "../call/call";
 import {
 	classify,
@@ -52,8 +53,9 @@ import {
 import { CallMemory } from "./call-memory";
 import type { CallDisplay, RemoteCallPresence } from "./call-model";
 import { cameraSetup } from "./camera-setup";
+import { debugExport, pageAddress } from "./debug-export";
 import type { AppDeps, Dispose, Navigation } from "./deps";
-import { button, el } from "./dom";
+import { button, copyWhenReady, el } from "./dom";
 import { documentFullscreen, FullscreenPolicy } from "./fullscreen";
 import {
 	type Banner,
@@ -74,6 +76,7 @@ import {
 } from "./model";
 import { modelPriorityControl } from "./model-priority";
 import { networkPanel } from "./network";
+import { pageReport, type TableFacts } from "./page-report";
 import { remoteAudio } from "./remote-audio";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
@@ -121,6 +124,8 @@ const TERMINAL: ReadonlySet<TableStatus> = new Set([
 	"incompatible",
 ]);
 
+/** How long the Debug button waits for the players' new reports before it copies the export. */
+const REPORT_WAIT_MS = 1_500;
 const BOT_SPEND_STORAGE_KEY = "opentrick.openrouter-spend-usd";
 
 function botsPausedStorageKey(tableId: string): string {
@@ -205,6 +210,77 @@ export function showRoom(
 	let playerAutoplayWasEnabled = false;
 	let playerAutoplayConfirmedRoster = false;
 	let playerAutoplayHost = "";
+	let shownModel: ReturnType<typeof tableView> | undefined;
+
+	function tableFacts(): TableFacts | null {
+		if (!shownModel) return null;
+		const view = controller.view();
+		return {
+			seat,
+			phase: shownModel.phase,
+			board: shownModel.board,
+			at: shownModel.at,
+			yourTurn: shownModel.yourTurn,
+			outbox: view.outbox.length,
+			failures: view.failures.length,
+			undone: view.undone.length,
+		};
+	}
+
+	function debugText(asked: number): string {
+		const view = controller.view();
+		const exported = debugExport({
+			exportedAt: Date.now(),
+			build: deps.build,
+			page: pageAddress(location.href),
+			hostSeat: seat,
+			host: pageReport(window, deviceForm, tableFacts()),
+			bots: view.roster?.bots ?? [],
+			reports: controller.reports(),
+			asked,
+			view,
+			entries: controller.entries(),
+		});
+		return JSON.stringify(exported, null, 2);
+	}
+
+	/** The reload button's tooltip lists each seat's build; it is marked when a player's build is not the host's. */
+	function showPlayerBuilds(bots: readonly Seat[]): void {
+		const reports = controller.reports();
+		const buildText = (build: BuildInfo): string =>
+			`${formatBuildDate(build.date)} (${build.commit})`;
+		reloadPlayers.title = SEATS.map((target) => {
+			const report = reports.find((item) => item.seat === target);
+			const text =
+				target === seat
+					? buildText(deps.build)
+					: report
+						? buildText(report.build)
+						: bots.includes(target)
+							? deps.t("Bot")
+							: deps.t("no report");
+			return `${deps.t(target)}: ${text}`;
+		}).join("\n");
+		reloadPlayers.dataset.outdated = String(
+			reports.some((report) => report.build.commit !== deps.build.commit),
+		);
+	}
+
+	controller.setReportSource(() =>
+		disposed
+			? undefined
+			: {
+					build: deps.build,
+					detail: pageReport(window, deviceForm, tableFacts()),
+				},
+	);
+	// The page fetches itself past the HTTP cache first, so the reload gets the site's latest build.
+	controller.setReloadHandler(() => {
+		if (disposed) return;
+		void fetch(location.href, { cache: "reload" })
+			.catch(() => undefined)
+			.finally(() => location.reload());
+	});
 
 	controller.setAutoplayHandler(async (targetSeat, enabled) => {
 		if (!controller.view().hosting) return "failed";
@@ -892,6 +968,49 @@ export function showRoom(
 			},
 			() => undefined,
 		);
+	const debugStatus = el("p", {
+		className: "note",
+		attrs: { role: "status", "data-testid": "debug-status" },
+	});
+	// The host asks for new reports and copies the export once they had time to arrive; the copy starts in the click.
+	const debug = button(
+		deps.t("Debug"),
+		() => {
+			const asked = controller.requestReports();
+			debugStatus.textContent = deps.t("Collecting the players' reports…");
+			const text = new Promise<string>((resolve) => {
+				window.setTimeout(
+					() => resolve(debugText(asked)),
+					asked > 0 ? REPORT_WAIT_MS : 0,
+				);
+			});
+			void copyWhenReady(text).then((result) => {
+				debugStatus.textContent = deps.t(
+					result === "copied"
+						? "Debug export copied."
+						: result === "unavailable"
+							? "Clipboard access is unavailable."
+							: "Could not copy the debug export. Allow clipboard access and try again.",
+				);
+			});
+		},
+		{ attrs: { "data-testid": "debug-export" } },
+	);
+	const reloadPlayers = button(
+		deps.t("Reload players"),
+		() => {
+			debugStatus.textContent = deps.t("Asked {count} pages to reload.", {
+				count: controller.reloadPlayers(),
+			});
+		},
+		{ attrs: { "data-testid": "reload-players" } },
+	);
+	const debugRow = el(
+		"div",
+		{ className: "room-control-row room-debug-controls" },
+		debug,
+		reloadPlayers,
+	);
 	const setApiKey = button(deps.t("Set API key"), () => {
 		botKey.value = readHostApiKey(deps.browser);
 		if (!keyDialog.open) keyDialog.showModal();
@@ -958,7 +1077,9 @@ export function showRoom(
 			resumeBots,
 			botSpendCounter,
 		),
+		debugRow,
 		botStatus,
+		debugStatus,
 		keyDialog,
 		modelDialog,
 	);
@@ -1295,6 +1416,9 @@ export function showRoom(
 				SEATS.filter((targetSeat) => activeBotSet.has(targetSeat)).join(",")
 		)
 			rememberBotSeats(activeBots);
+		debugRow.hidden = !view.hosting;
+		debugStatus.hidden = !view.hosting;
+		if (view.hosting) showPlayerBuilds(view.roster?.bots ?? []);
 		setApiKey.hidden = !view.hosting;
 		chooseModel.hidden = !view.hosting;
 		pauseBots.hidden =
@@ -1473,6 +1597,7 @@ export function showRoom(
 			undone: view.undone,
 			t: deps.t,
 		});
+		shownModel = tableModel;
 		const displayBotModel = view.hosting
 			? (botSettings?.model ??
 				config.botSetup?.model ??
@@ -1599,6 +1724,8 @@ export function showRoom(
 		room.removeEventListener("keydown", onGesture);
 		window.removeEventListener("pointerdown", onFullscreenGesture, true);
 		window.removeEventListener("keydown", onFullscreenGesture, true);
+		controller.setReportSource(() => undefined);
+		controller.setReloadHandler(() => undefined);
 		fullscreen.update(false);
 		memory?.stop();
 		call?.dispose();
