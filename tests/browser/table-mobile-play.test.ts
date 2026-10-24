@@ -955,6 +955,50 @@ describe("mobile board names", () => {
 	);
 });
 
+describe("mobile turn frame", () => {
+	const GOLD = "rgb(232, 185, 35)";
+
+	it.each<[TableView["phase"], Seat]>([
+		["auction", "N"],
+		["auction", "E"],
+		["play", "S"],
+		["play", "W"],
+	])(
+		"frames only the hand of the player to act in the %s (%s)",
+		(phase, active) => {
+			const view = playView();
+			const { root } = renderMobile({
+				...view,
+				phase,
+				seats: view.seats.map((player) => ({
+					...player,
+					turn: player.seat === active,
+				})),
+			});
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			if (!board) throw new Error("the mobile board is missing");
+			for (const [seatName, area] of [
+				["N", "mobile-auction-hand"],
+				["E", "mobile-board-left"],
+				["S", "mobile-board-top"],
+				["W", "mobile-board-right"],
+			] as const) {
+				const hand = board.querySelector<HTMLElement>(`.${area} .hand`);
+				if (!hand) throw new Error(`the hand of ${seatName} is missing`);
+				// A top or bottom hand has an outline; a side hand, in a clipping column, has a border drawn over its cards.
+				const style = getComputedStyle(hand);
+				const overlay = getComputedStyle(hand, "::after");
+				const framed =
+					(style.outlineStyle === "solid" && style.outlineColor === GOLD) ||
+					(overlay.content !== "none" &&
+						overlay.borderTopStyle === "solid" &&
+						overlay.borderTopColor === GOLD);
+				expect(framed, seatName).toBe(seatName === active);
+			}
+		},
+	);
+});
+
 describe("compact play controls", () => {
 	it("marks bot players by name and overlays their call tiles", () => {
 		const view = playView();

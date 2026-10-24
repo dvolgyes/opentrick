@@ -2676,6 +2676,34 @@ main:has(> .room[data-form="compact"]) {
 	color: #ff2a2a;
 }
 
+/* The hand of the player to act gets the gold frame of the desktop seat. */
+.mobile-auction-hand .seat[data-turn="true"] .hand,
+.mobile-board-name[data-turn="true"] + .hand {
+	outline: 3px solid #e8b923;
+	outline-offset: 2px;
+	border-radius: 0.4rem;
+}
+
+/* The side columns clip what leaves them, so a side hand draws its frame over the edge of its cards. */
+:is(.mobile-board-left, .mobile-board-right)
+	.mobile-board-name[data-turn="true"]
+	+ .hand {
+	position: relative;
+	outline: none;
+}
+
+:is(.mobile-board-left, .mobile-board-right)
+	.mobile-board-name[data-turn="true"]
+	+ .hand::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	border: 3px solid #e8b923;
+	border-radius: 0.4rem;
+	pointer-events: none;
+}
+
 .mobile-board-center {
 	grid-area: center;
 }
