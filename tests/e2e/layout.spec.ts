@@ -41,6 +41,7 @@ const CANVAS_VIEWPORTS = [
 	{ width: 1920, height: 1080 },
 	{ width: 2560, height: 1080 },
 	{ width: 1080, height: 1920 },
+	{ width: 1910, height: 800 },
 ] as const;
 /** Half a pixel absorbs subpixel rounding of the layout. */
 const SUBPIXEL = 0.5;
@@ -447,6 +448,43 @@ async function expectRoomCanvasFit(page: Page): Promise<void> {
 	);
 	expect(Math.abs(geometry.rightVideoBottomGap - 40)).toBeLessThanOrEqual(1);
 	expect(geometry.botControlInRightVideo).toBe(true);
+	await expectHeaderRow(page);
+}
+
+/** The build date and the language picker share the sidebar's top row, above its buttons. */
+async function expectHeaderRow(page: Page): Promise<void> {
+	const rects = await measure(page, {
+		sidebar: ".table-sidebar",
+		version: `.table-sidebar ${byTestId("build-version")}`,
+		language: ".table-sidebar select[aria-label=Language]",
+		copy: byTestId("copy-board-url"),
+	});
+	const sidebar = shown(rects, "sidebar");
+	const version = shown(rects, "version");
+	const language = shown(rects, "language");
+	const copy = shown(rects, "copy");
+	for (const [name, rect] of [
+		["version", version],
+		["language", language],
+	] as const) {
+		expect(rect.x, `${name} left edge`).toBeGreaterThanOrEqual(
+			sidebar.x - SUBPIXEL,
+		);
+		expect(right(rect), `${name} right edge`).toBeLessThanOrEqual(
+			right(sidebar) + SUBPIXEL,
+		);
+		expect(bottom(rect), `${name} above the buttons`).toBeLessThanOrEqual(
+			copy.y + SUBPIXEL,
+		);
+	}
+	expect(right(version), "the date before the language").toBeLessThanOrEqual(
+		language.x + SUBPIXEL,
+	);
+	expect(
+		Math.min(bottom(version), bottom(language)) -
+			Math.max(version.y, language.y),
+		"the date and the language in one row",
+	).toBeGreaterThan(SUBPIXEL);
 }
 
 /**

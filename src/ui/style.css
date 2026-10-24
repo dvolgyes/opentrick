@@ -1895,7 +1895,19 @@ button.call-join[data-in-call="true"] {
 	display: flex;
 	flex-direction: column;
 	gap: 0.45rem;
-	padding-top: 2.8rem;
+}
+
+.room-header-controls {
+	justify-content: flex-end;
+}
+
+.room-header-controls .language-control {
+	position: static;
+}
+
+/* The compact table keeps its controls short; the start page offers the language. */
+[data-form="compact"] .room-header-controls {
+	display: none;
 }
 
 /* The host's debug controls and the bot status end the sidebar, so their messages push nothing down; it takes no room while nothing in it shows. */
@@ -3019,7 +3031,7 @@ body:has(
 	font-size: 1rem;
 }
 
-/* The compact table uses the full width at its top edge; the start page keeps the language control. */
-body:has(main[data-screen="table"][data-form="compact"]) .language-control {
+/* The table shows the build date and the language picker at the top of its sidebar, in the room canvas. */
+body:has(main[data-screen="table"]) > .language-control {
 	display: none;
 }

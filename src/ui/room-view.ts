@@ -57,6 +57,7 @@ import { debugExport, pageAddress } from "./debug-export";
 import type { AppDeps, Dispose, Navigation } from "./deps";
 import { button, copyWhenReady, el } from "./dom";
 import { documentFullscreen, FullscreenPolicy } from "./fullscreen";
+import { languageControl } from "./language-control";
 import {
 	type Banner,
 	bannerFor,
@@ -1065,6 +1066,12 @@ export function showRoom(
 	const resetControls = el(
 		"section",
 		{ className: "room-controls", attrs: { "data-testid": "room-controls" } },
+		// The build date and the language picker head the sidebar, so they scale with the room canvas.
+		el(
+			"div",
+			{ className: "room-control-row room-header-controls" },
+			languageControl(deps),
+		),
 		el(
 			"div",
 			{ className: "room-control-row room-primary-controls" },
