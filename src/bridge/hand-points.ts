@@ -1,5 +1,12 @@
 import type { Translate } from "../i18n";
-import type { Card, Rank } from "./cards";
+import {
+	type Card,
+	type Rank,
+	rankOf,
+	SUITS,
+	sortCards,
+	suitOf,
+} from "./cards";
 
 /**
  * The hand evaluation scales a player can show. "none" shows no points. Sources for the honour values:
@@ -43,9 +50,60 @@ const SHORT_NAMES: Readonly<Record<Exclude<PointSystem, "none">, string>> = {
 	"four-aces": "Four Aces",
 };
 
-/** The correction rules of corrected HCP are not defined yet, so the correction is 0 for every hand. */
-function hcpCorrection(_cards: readonly Card[]): number {
-	return 0;
+/** Unsupported doubleton honours count 1 less; Jx is any jack with a lower card. */
+const WEAK_DOUBLETONS: ReadonlySet<string> = new Set(["AJ", "KQ", "KJ", "QJ"]);
+const GOOD_SUIT_HONOURS: ReadonlySet<Rank> = new Set(["A", "K", "Q", "J", "T"]);
+
+/**
+ * The shapes, longest suit first, that add distribution points: the three-suited hands and the two-suited hands
+ * without a six-card suit. Balanced hands add none; hands with a six-card suit are valued by playing tricks, so they
+ * add none either.
+ */
+const DISTRIBUTION_SHAPES: ReadonlySet<string> = new Set([
+	"4441",
+	"5440",
+	"5422",
+	"5431",
+	"5521",
+	"5530",
+]);
+
+/** The opener's distribution points of a short suit, by its length. Dummy's values need a known trump fit. */
+const SHORTNESS_POINTS: readonly number[] = [3, 2, 1];
+
+/** The honour value of one suit's ranks, highest first, for its length. */
+function suitCorrection(ranks: readonly Rank[]): number {
+	const [first, second] = ranks;
+	if (ranks.length === 1)
+		return first === "K" || first === "Q" || first === "J" ? -1 : 0;
+	if (ranks.length === 2)
+		return first === "J" || WEAK_DOUBLETONS.has(`${first}${second}`) ? -1 : 0;
+	const honours = ranks.filter((rank) => GOOD_SUIT_HONOURS.has(rank)).length;
+	return ranks.length >= 5 && honours >= 3 ? 1 : 0;
+}
+
+/**
+ * The corrections of corrected HCP for a dealt hand of 13 cards: unsupported honours, a 4333 shape, all four aces, good
+ * long suits, and the distribution points of unbalanced hands.
+ */
+function hcpCorrection(cards: readonly Card[]): number {
+	const suits = SUITS.map((suit) =>
+		sortCards(cards.filter((card) => suitOf(card) === suit)).map(rankOf),
+	);
+	const honours = suits.reduce((sum, ranks) => sum + suitCorrection(ranks), 0);
+	const shape = suits
+		.map((ranks) => ranks.length)
+		.sort((a, b) => b - a)
+		.join("");
+	const aces = suits.every((ranks) => ranks.includes("A")) ? 1 : 0;
+	const flat = shape === "4333" ? -1 : 0;
+	const distribution = DISTRIBUTION_SHAPES.has(shape)
+		? suits.reduce(
+				(sum, ranks) => sum + (SHORTNESS_POINTS[ranks.length] ?? 0),
+				0,
+			)
+		: 0;
+	return honours + aces + flat + distribution;
 }
 
 /** The points of a hand on a scale; undefined for "none". */
