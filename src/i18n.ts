@@ -241,6 +241,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Deals lost": "Verlorene Boards",
 		"Total score": "Gesamtpunktzahl",
 		Round: "Runde",
+		"{points}p": "{points}P",
 		Target: "Ziel",
 		Confirm: "Bestätigen",
 		"Next board {board} in {seconds} second":
@@ -725,6 +726,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Deals lost": "Elvesztett leosztások",
 		"Total score": "Összpontszám",
 		Round: "Forduló",
+		"{points}p": "{points}p",
 		"Opponents'": "Ellenfél",
 		"Bidding history": "Licitek",
 		"Trump suit": "Aduszín",
@@ -1127,6 +1129,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Deals lost": "Tapte gitte",
 		"Total score": "Poengsum totalt",
 		Round: "Runde",
+		"{points}p": "{points}p",
 		"Opponents'": "Motstanderne",
 		Confirm: "Bekreft",
 		None: "Ingen",

@@ -796,6 +796,7 @@ export function showRoom(
 	const table = tableSection(
 		{
 			exit: handlers.createNew,
+			reload: handlers.reload,
 			async shareUrl() {
 				if (navigator.share === undefined)
 					throw new Error("Web Share API is unavailable");
@@ -1071,6 +1072,9 @@ export function showRoom(
 		},
 		{ className: "reset-button" },
 	);
+	const reload = button(deps.t("Reload"), handlers.reload, {
+		className: "sidebar-reload",
+	});
 	const exit = button(deps.t("Exit"), handlers.createNew, {
 		className: "sidebar-exit",
 	});
@@ -1110,6 +1114,7 @@ export function showRoom(
 			{ className: "room-control-row room-primary-controls" },
 			copyRoomLink,
 			reset,
+			reload,
 			exit,
 		),
 		el(

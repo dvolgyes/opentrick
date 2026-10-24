@@ -2539,6 +2539,7 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-auction-topbar .icon-group button,
+.mobile-auction-reload,
 .mobile-auction-exit,
 .mobile-auction-share {
 	min-width: 2.6rem;

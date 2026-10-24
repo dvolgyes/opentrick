@@ -1449,6 +1449,14 @@ const rows: readonly TranslationRow[] = [
 	],
 	["Round", "Ronda", "Ronda", "Manche", "Mano", "Ronde"],
 	[
+		"{points}p",
+		"{points}p",
+		"{points}p",
+		"{points}p",
+		"{points}p",
+		"{points}p",
+	],
+	[
 		"Rubber (later)",
 		"Rubber (más adelante)",
 		"Rubber (mais tarde)",

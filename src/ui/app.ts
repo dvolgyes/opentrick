@@ -22,7 +22,13 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 	let dispose: Dispose | undefined;
 	const navigation: Navigation = {
 		createNew: () => {
-			location.hash = "";
+			// Stop the table first, then load a new document: the site root has no setup query and no table link.
+			dispose?.();
+			dispose = undefined;
+			location.assign(new URL("./", location.href).toString());
+		},
+		reload: () => {
+			location.reload();
 		},
 		rememberSeat: (seat) => {
 			const query = selectedPlayerQuery(location.search, seat);

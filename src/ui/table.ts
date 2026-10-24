@@ -30,6 +30,7 @@ import type {
 
 export interface TableHandlers {
 	exit(): void;
+	reload(): void;
 	shareUrl(): Promise<void>;
 	act(action: Action): void;
 	undoRequest(board: number): void;
@@ -466,6 +467,12 @@ export function tableSection(
 		if (!controls) throw new Error("room call controls are missing");
 		return controls;
 	})();
+	// An icon keeps the top bar within a 360 px phone; the name stays "Reload" for assistive technology.
+	const mobileReload = button("", handlers.reload, {
+		className: "icon-button mobile-auction-reload",
+		attrs: { "aria-label": t("Reload"), title: t("Reload") },
+	});
+	mobileReload.append(icon("reload"));
 	const mobileExit = button(t("Exit"), handlers.exit, {
 		className: "mobile-auction-exit",
 	});
@@ -494,6 +501,7 @@ export function tableSection(
 		{ className: "mobile-auction-topbar" },
 		audioGroup,
 		mobileShare,
+		mobileReload,
 		mobileExit,
 		mobileShareStatus,
 	);
@@ -1721,6 +1729,7 @@ export function tableSection(
 				},
 				`${label}: `,
 				el("strong", {}, net > 0 ? `+${net}` : String(net)),
+				` (${t("{points}p", { points: stats.total })})`,
 			);
 		};
 		mobileRoundStatus.replaceChildren(

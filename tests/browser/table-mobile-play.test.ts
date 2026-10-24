@@ -181,6 +181,7 @@ function renderView(
 ) {
 	const handlers: TableHandlers = {
 		exit: vi.fn(),
+		reload: vi.fn(),
 		shareUrl: vi.fn(async () => {}),
 		act: vi.fn(),
 		undoRequest: vi.fn(),
@@ -1629,6 +1630,55 @@ describe("mobile folds", () => {
 		section.render(playView());
 		section.setBotControls(true, ["E"]);
 		expect(shown(root, toggle)).toBe(true);
+	});
+});
+
+describe("mobile top bar and round status", () => {
+	const roundView = (): TableView => ({
+		...playView(),
+		board: 3,
+		statistics: {
+			ew: { won: 3, lost: 1, total: 1250 },
+			ns: { won: 1, lost: 3, total: 1000 },
+		},
+	});
+	const records = (root: HTMLElement) =>
+		[...root.querySelectorAll(".mobile-round-record")].map(
+			(record) => record.textContent,
+		);
+
+	it("shows the points of each side after the won and lost balance", () => {
+		const { root } = renderMobile(roundView());
+		expect(root.querySelector(".mobile-round-number")?.textContent).toBe(
+			"Round 3",
+		);
+		expect(records(root)).toEqual(["E-W: +2 (1250p)", "N-S: -2 (1000p)"]);
+	});
+
+	it("translates the points mark", () => {
+		const { root } = renderView(
+			roundView(),
+			"compact",
+			undefined,
+			translator("de"),
+		);
+		expect(records(root)).toEqual(["E-W: +2 (1250P)", "N-S: -2 (1000P)"]);
+	});
+
+	it("puts Reload beside Exit, and each button calls its own handler", () => {
+		const { root, handlers } = renderMobile(roundView());
+		const topbar = root.querySelector<HTMLElement>(".mobile-auction-topbar");
+		const named = (name: string) =>
+			[...(topbar?.querySelectorAll("button") ?? [])].find(
+				(control) =>
+					(control.getAttribute("aria-label") ?? control.textContent) === name,
+			);
+		named("Reload")?.click();
+		expect(handlers.reload).toHaveBeenCalledOnce();
+		expect(handlers.exit).not.toHaveBeenCalled();
+		named("Exit")?.click();
+		expect(handlers.exit).toHaveBeenCalledOnce();
+		expect(handlers.reload).toHaveBeenCalledOnce();
 	});
 });
 

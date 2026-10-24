@@ -59,8 +59,10 @@ export interface AppDeps {
 }
 
 export interface Navigation {
-	/** Opens the create screen. Never reuses the current table. */
+	/** Loads the create screen at the site root from the server. Never reuses the current table or its setup query. */
 	createNew(): void;
+	/** Loads this page again from the server, so a new version of the site takes effect. */
+	reload(): void;
 	/** Stores the seat choice in this page's URL without navigating. */
 	rememberSeat(seat: Seat): void;
 }
