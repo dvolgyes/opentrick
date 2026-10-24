@@ -185,3 +185,96 @@ for (const viewport of PHONES) {
 		}
 	});
 }
+
+test("a phone keeps its screen on during the bidding and the play, not on the start page", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const context = await browser.newContext({
+		baseURL,
+		viewport: PHONES[0],
+		isMobile: true,
+		hasTouch: true,
+	});
+	try {
+		const page = await context.newPage();
+		// A fake screen lock that counts the requests, and a visibility the test can change.
+		await page.addInitScript(() => {
+			const state = {
+				requests: 0,
+				locks: [] as { released: boolean }[],
+				visibility: "visible",
+			};
+			Object.assign(window, { wakeTest: state });
+			Object.defineProperty(document, "visibilityState", {
+				configurable: true,
+				get: () => state.visibility,
+			});
+			Object.defineProperty(navigator, "wakeLock", {
+				configurable: true,
+				value: {
+					request: async () => {
+						state.requests++;
+						const lock = {
+							released: false,
+							release: async () => {
+								lock.released = true;
+							},
+						};
+						state.locks.push(lock);
+						return lock;
+					},
+				},
+			});
+		});
+		const wake = () =>
+			page.evaluate(() => {
+				const state = (
+					window as unknown as {
+						wakeTest: { requests: number; locks: { released: boolean }[] };
+					}
+				).wakeTest;
+				return {
+					requests: state.requests,
+					held: state.locks.filter((lock) => !lock.released).length,
+				};
+			});
+		/** The browser releases the lock of a hidden page; the page is then shown again. */
+		const hideAndShow = () =>
+			page.evaluate(() => {
+				const state = (
+					window as unknown as {
+						wakeTest: { locks: { released: boolean }[]; visibility: string };
+					}
+				).wakeTest;
+				state.visibility = "hidden";
+				for (const lock of state.locks) lock.released = true;
+				document.dispatchEvent(new Event("visibilitychange"));
+				state.visibility = "visible";
+				document.dispatchEvent(new Event("visibilitychange"));
+			});
+		await mockBots(page);
+		await page.goto("/");
+		for (const seat of ["N", "E", "S"])
+			await page.locator(`input[name="bot-${seat}"]`).check();
+		await page.locator('input[name="openrouter-key"]').fill("test-key");
+		expect(await wake()).toEqual({ requests: 0, held: 0 });
+		await page.getByTestId("create").tap();
+
+		await expect.poll(() => phoneTurn(page), { timeout: 30_000 }).toBe(true);
+		expect(await phase(page)).toBe("auction");
+		expect(await wake()).toEqual({ requests: 1, held: 1 });
+		await hideAndShow();
+		await expect.poll(wake).toEqual({ requests: 2, held: 1 });
+
+		// West passes 1NT, so the bots declare and the board goes to play with West on lead.
+		const auction = page.getByTestId("mobile-auction");
+		await auction.getByRole("button", { name: "Pass" }).tap();
+		await auction.getByRole("button", { name: "Confirm" }).tap();
+		await expect.poll(() => phase(page), { timeout: 30_000 }).toBe("play");
+		expect(await wake()).toEqual({ requests: 2, held: 1 });
+	} finally {
+		await context.close();
+	}
+});

@@ -85,6 +85,7 @@ import { remoteAudio } from "./remote-audio";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
 import type { TurnSound } from "./turn-sound";
+import { screenWakeLock, WakeLockPolicy } from "./wake-lock";
 
 export interface RoomScreenHandlers extends Navigation {
 	/** Tries to claim this seat again after it becomes available. */
@@ -153,6 +154,8 @@ export function showRoom(
 ): Dispose {
 	const tableId = controller.tableId;
 	let disposed = false;
+	// The screen stays on during the bidding and the play, so a phone or tablet does not sleep in the middle of a board.
+	const wakeLock = new WakeLockPolicy(screenWakeLock);
 
 	// The call is optional and separate from the game: it reads the table, and its actions never send a command.
 	const deviceForm = classify(readSignals(window));
@@ -1226,6 +1229,7 @@ export function showRoom(
 		}
 	};
 	const onPageStateChange = (): void => {
+		if (document.visibilityState === "visible") wakeLock.pageShown();
 		checkTurnAlert();
 		render();
 	};
@@ -1523,6 +1527,7 @@ export function showRoom(
 		if (config === undefined) {
 			root.dataset.screen = "table";
 			root.dataset.waiting = "true";
+			wakeLock.update(false);
 			you.hidden = false;
 			you.textContent = deps.t(TEXT.connecting);
 			send.textContent = deps.t(TEXT.send);
@@ -1701,6 +1706,9 @@ export function showRoom(
 		// The lobby uses the table layout, so it looks like the game; only the sidebar is hidden while waiting.
 		root.dataset.screen = "table";
 		root.dataset.waiting = String(tableModel.phase === "waiting");
+		wakeLock.update(
+			tableModel.phase === "auction" || tableModel.phase === "play",
+		);
 		const tableKey = JSON.stringify(
 			tableModel.scoring
 				? {
@@ -1774,6 +1782,7 @@ export function showRoom(
 		room.removeEventListener("keydown", onGesture);
 		controller.setReportSource(() => undefined);
 		controller.setReloadHandler(() => undefined);
+		wakeLock.update(false);
 		memory?.stop();
 		call?.dispose();
 		audio.detach();
