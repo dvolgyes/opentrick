@@ -34,7 +34,6 @@ import {
 } from "../protocol";
 
 import {
-	AUCTION_SUIT_ORDER,
 	miltonPoints,
 	playSuitOrder,
 	type TrickNeed,
@@ -893,9 +892,10 @@ export function tableView(input: TableViewInput): TableView {
 	// Dealer, declarer and dummy are shown in the details and the contract line, not as panel badges (layout spec §4).
 	// Every hand carries the trump suit first, or last on the right of the viewer (layout spec §7).
 	const suitOrder = (owner: Seat): readonly Suit[] =>
-		view.phase === "auction"
-			? AUCTION_SUIT_ORDER
-			: playSuitOrder(contract?.strain, positionOf(seat, owner));
+		playSuitOrder(
+			view.phase === "auction" ? undefined : contract?.strain,
+			positionOf(seat, owner),
+		);
 	const trumpOf = (): Suit | undefined =>
 		contract && contract.strain !== "NT" ? contract.strain : undefined;
 	const need =

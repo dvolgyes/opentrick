@@ -10,11 +10,8 @@ import type { Seat } from "../protocol";
 /** Where a seat sits on the viewer's screen. */
 export type Edge = "bottom" | "left" | "top" | "right";
 
-/** The auction screen lists the suits in this fixed order, from left to right. */
-export const AUCTION_SUIT_ORDER: readonly Suit[] = ["C", "D", "H", "S"];
-
-/** The base order of the play screen; the trump suit moves in front of it or to its end. */
-const PLAY_SUIT_ORDER: readonly Suit[] = ["S", "H", "D", "C"];
+/** The base order of every hand, from left to right; in play the trump suit moves in front of it or to its end. */
+const SUIT_ORDER: readonly Suit[] = ["S", "H", "D", "C"];
 
 /** Milton Work points: the only values the auction screen counts. */
 const MILTON_POINTS: Readonly<Partial<Record<string, number>>> = {
@@ -30,16 +27,16 @@ export function sideOf(seat: Seat): "NS" | "EW" {
 }
 
 /**
- * The suit order of one hand on the play screen: the trump suit first, then the other suits in the base order,
- * spades, hearts, diamonds, clubs. The trump suit goes last only in a hand on the right side of the viewer's
+ * The suit order of one hand: spades, hearts, diamonds, clubs. With a trump suit, which the auction does not have
+ * yet, the trump suit comes first and the other suits keep the base order. The trump suit goes last only in a hand on the right side of the viewer's
  * screen, so the trump suit is always on the left of the hand as its owner's side of the table reads it.
  */
 export function playSuitOrder(
 	strain: Strain | undefined,
 	edge?: Edge,
 ): readonly Suit[] {
-	if (strain === undefined || strain === "NT") return PLAY_SUIT_ORDER;
-	const others = PLAY_SUIT_ORDER.filter((suit) => suit !== strain);
+	if (strain === undefined || strain === "NT") return SUIT_ORDER;
+	const others = SUIT_ORDER.filter((suit) => suit !== strain);
 	return edge === "right" ? [...others, strain] : [strain, ...others];
 }
 

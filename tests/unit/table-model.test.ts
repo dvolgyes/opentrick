@@ -205,7 +205,7 @@ describe("table layout", () => {
 		expect(own.tags).toEqual([]);
 		expect(own.position).toBe("bottom");
 		expect(own.hand.visible && own.hand.suits.map((row) => row.symbol)).toEqual(
-			["♣", "♦", "♥", "♠"],
+			["♠", "♥", "♦", "♣"],
 		);
 		expect(
 			own.hand.visible &&
