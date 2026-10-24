@@ -1836,12 +1836,11 @@ export function tableSection(
 					(control) => !control.hasAttribute("hidden"),
 				) &&
 				claimPanel.hidden;
+		// The Undo button of the play controls asks for an undo; the panel shows only an open request or its outcome.
 		undoPanel.hidden =
 			compact ||
 			view.phase === "auction" ||
-			(!view.undo.canRequest &&
-				view.undo.requestId === undefined &&
-				view.undo.message === "");
+			(view.undo.requestId === undefined && view.undo.message === "");
 		bidHistory.hidden = view.auction === undefined;
 		historyTitle.hidden = view.phase === "auction" && !mobileGameActive;
 		renderContractHead(view.header);

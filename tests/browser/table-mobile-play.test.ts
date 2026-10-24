@@ -653,6 +653,19 @@ describe("desktop play", () => {
 		(hit as HTMLElement).click();
 		expect(handlers.act).toHaveBeenCalledWith({ type: "play", card: "SA" });
 	});
+
+	it("shows one Undo in the sidebar while no undo request is open", () => {
+		const { section } = renderView(playView(), "desktop");
+		const undos = [
+			...section.sidebar.querySelectorAll<HTMLElement>("*"),
+		].filter(
+			(node) =>
+				node.childElementCount === 0 &&
+				node.textContent === "Undo" &&
+				node.checkVisibility(),
+		);
+		expect(undos.map((node) => node.tagName)).toEqual(["BUTTON"]);
+	});
 });
 
 describe("compact play controls", () => {
