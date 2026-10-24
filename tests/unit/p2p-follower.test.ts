@@ -232,7 +232,12 @@ describe("joining", () => {
 					k: "hello",
 					b: LINK_VERSION,
 					client: CLIENT_E,
-					features: ["bridge-undo-v1", "bridge-claim-v1", "bridge-reset-v1"],
+					features: [
+						"bridge-undo-v1",
+						"bridge-claim-v1",
+						"bridge-reset-v1",
+						"client-report-v1",
+					],
 				},
 			],
 			[HOST, { k: "claim-seat", req: 1, seat: "E" }],
@@ -268,7 +273,12 @@ describe("joining", () => {
 				k: "hello",
 				b: LINK_VERSION,
 				client: CLIENT_E,
-				features: ["bridge-undo-v1", "bridge-claim-v1", "bridge-reset-v1"],
+				features: [
+					"bridge-undo-v1",
+					"bridge-claim-v1",
+					"bridge-reset-v1",
+					"client-report-v1",
+				],
 				seat: "E",
 				gen: 1,
 				pos: { rev: 3, lastAuth: AUTH_1 },
@@ -413,6 +423,16 @@ describe("live entries", () => {
 		rig.follower.accepted(4);
 		await rig.tick(GAP_WAIT_MS);
 		expect(rig.sent.of("sync")).toHaveLength(1);
+	});
+
+	it("takes a report request and a reload only from the followed host", async () => {
+		const rig = await Rig.synced();
+		rig.ctl(OTHER, { k: "report-request" });
+		rig.ctl(OTHER, { k: "reload" });
+		expect(rig.types()).toEqual([]);
+		rig.ctl(HOST, { k: "report-request" });
+		rig.ctl(HOST, { k: "reload" });
+		expect(rig.types()).toEqual(["report-request", "reload"]);
 	});
 
 	it("drops entries from any peer but the followed host, and of another authority", async () => {

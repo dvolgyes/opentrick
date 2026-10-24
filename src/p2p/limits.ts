@@ -91,6 +91,8 @@ export const MAX_STATE_BYTES = 128 * 1024;
 export const MAX_PAGE_ENTRIES = 200;
 export const MAX_PAGE_BYTES = 192 * 1024;
 export const MAX_REASON_LENGTH = 200;
+/** The detail of a player's report; the whole report fits in CTL_BYTES. */
+export const MAX_REPORT_BYTES = 6 * 1024;
 export const MAX_PENDING_PER_SEAT = 50;
 export const MAX_OUTBOX = 50;
 export const MAX_LOG_ENTRIES = 20_000;

@@ -14,11 +14,12 @@ import {
 } from "../../src/p2p/limits";
 import { LINK_VERSION } from "../../src/p2p/link";
 import { creationCommit, LocalLog, storeClaim } from "../../src/p2p/log";
-import type {
-	AutoplayStatus,
-	CtlMessage,
-	Entry,
-	EntryMessage,
+import {
+	type AutoplayStatus,
+	CLIENT_REPORT_FEATURE,
+	type CtlMessage,
+	type Entry,
+	type EntryMessage,
 } from "../../src/p2p/wire";
 import type { RoomConfig, Seat } from "../../src/protocol";
 import {
@@ -57,6 +58,7 @@ class Rig {
 	autoplay: (seat: Seat, enabled: boolean) => Promise<AutoplayStatus> =
 		async () => "unavailable";
 	autoplayRequests: { seat: Seat; enabled: boolean }[] = [];
+	reportChanges = 0;
 	#next = 100;
 
 	async create(config: RoomConfig = CONFIG): Promise<this> {
@@ -94,6 +96,9 @@ class Rig {
 				return this.autoplay(seat, enabled);
 			},
 			onStop: (reason) => this.stops.push(reason),
+			onReport: () => {
+				this.reportChanges += 1;
+			},
 		});
 		return this.engine;
 	}
@@ -113,6 +118,7 @@ class Rig {
 		peer: string,
 		client: string,
 		bound: { seat: Seat; gen: number } | null = null,
+		features?: string[],
 	): Promise<void> {
 		this.host.join(peer);
 		await this.from(peer, {
@@ -120,12 +126,18 @@ class Rig {
 			b: LINK_VERSION,
 			client,
 			...(bound ?? {}),
+			...(features === undefined ? {} : { features }),
 		});
 	}
 
 	/** A visitor says hello and claims `seat`; returns its generation. */
-	async seat(peer: string, client: string, seat: Seat): Promise<number> {
-		await this.hello(peer, client);
+	async seat(
+		peer: string,
+		client: string,
+		seat: Seat,
+		features?: string[],
+	): Promise<number> {
+		await this.hello(peer, client, null, features);
 		await this.from(peer, { k: "claim-seat", req: 1, seat });
 		const result = this.to(peer).find((message) => message.k === "seat-result");
 		if (result?.k !== "seat-result" || !result.ok)
@@ -343,6 +355,72 @@ describe("host-local bots", () => {
 		expect(rig.row("E")).toEqual({ seat: "E", holder, gen: 1 });
 		expect(await rig.host.setBotSeat("E", false)).toBe(true);
 		expect(rig.row("E")).toEqual({ seat: "E", holder: null, gen: 2 });
+	});
+});
+
+describe("player reports", () => {
+	const REPORTS = [CLIENT_REPORT_FEATURE];
+	const BUILD = { commit: "1d12f39", date: "2026-10-24T13:29:07+02:00" };
+	const report = (commit: string): CtlMessage => ({
+		k: "report",
+		build: { ...BUILD, commit },
+		detail: { screen: { width: 1910, height: 800 } },
+	});
+
+	it("asks a player for a report when the player takes a seat, and keeps the latest report of the seat", async () => {
+		const rig = await new Rig().create();
+		await rig.hello(EAST, CLIENT_E, null, REPORTS);
+		expect(rig.to(EAST).map((message) => message.k)).not.toContain(
+			"report-request",
+		);
+		await rig.from(EAST, { k: "claim-seat", req: 1, seat: "E" });
+		expect(
+			rig.to(EAST).filter((message) => message.k === "report-request"),
+		).toEqual([{ k: "report-request" }]);
+
+		await rig.from(EAST, report("aaaaaaa"));
+		await rig.from(EAST, report("bbbbbbb"));
+		expect(rig.host.reports()).toEqual([
+			{
+				seat: "E",
+				build: { ...BUILD, commit: "bbbbbbb" },
+				detail: { screen: { width: 1910, height: 800 } },
+				receivedAt: rig.clock.wall(),
+			},
+		]);
+		expect(rig.reportChanges).toBe(2);
+		rig.host.leave(EAST);
+		expect(rig.host.reports()).toEqual([]);
+	});
+
+	it("ignores a report from a page without a seat", async () => {
+		const rig = await new Rig().create();
+		await rig.hello(EAST, CLIENT_E, null, REPORTS);
+		await rig.from(EAST, report("aaaaaaa"));
+		expect(rig.host.reports()).toEqual([]);
+		expect(rig.reportChanges).toBe(0);
+	});
+
+	it("asks for reports and reloads only the pages that understand them, never a bot or an older page", async () => {
+		const rig = await new Rig().create();
+		await rig.seat(EAST, CLIENT_E, "E", REPORTS);
+		await rig.seat(SOUTH, CLIENT_S, "S");
+		await rig.hello(EAST2, "clientE2-0123456789abc", null, REPORTS);
+		expect(await rig.host.setBotSeat("W", true)).toBe(true);
+		rig.sent.take();
+
+		expect(rig.host.requestReports()).toBe(1);
+		expect(rig.host.reloadPeers()).toBe(2);
+		expect(
+			rig.sent
+				.take()
+				.filter((item) => item.channel === "ctl")
+				.map((item) => [item.to, item.message]),
+		).toEqual([
+			[EAST, { k: "report-request" }],
+			[EAST, { k: "reload" }],
+			[EAST2, { k: "reload" }],
+		]);
 	});
 });
 

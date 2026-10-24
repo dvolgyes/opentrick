@@ -25,17 +25,18 @@ import type { Clock, Send } from "./ports";
 import type { TableRecord } from "./records";
 import type { StorageCode } from "./storage";
 import { type SyncOutcome, SyncRequest, samePosition } from "./sync";
-import type {
-	CtlMessage,
-	Entry,
-	EntryMessage,
-	GoneReason,
-	Lobby,
-	LogMessage,
-	ReleaseResult,
-	Roster,
-	SeatResult,
-	Welcome,
+import {
+	CLIENT_REPORT_FEATURE,
+	type CtlMessage,
+	type Entry,
+	type EntryMessage,
+	type GoneReason,
+	type Lobby,
+	type LogMessage,
+	type ReleaseResult,
+	type Roster,
+	type SeatResult,
+	type Welcome,
 } from "./wire";
 
 /**
@@ -78,6 +79,10 @@ export type FollowerEvent =
 	/** A claim pull ended, with or without a better log. */
 	| { readonly type: "pulled" }
 	| { readonly type: "gone"; readonly reason: GoneReason }
+	/** The followed host asks for this page's report. */
+	| { readonly type: "report-request" }
+	/** The followed host asks this page to load the latest site. */
+	| { readonly type: "reload" }
 	/** A write failed; `conflict` means another tab writes this partition. */
 	| { readonly type: "storage"; readonly code: StorageCode };
 
@@ -309,6 +314,10 @@ export class Follower {
 				if (message.reason === "expired") this.#setStatus("expired");
 				this.#deps.onEvent({ type: "gone", reason: message.reason });
 				return;
+			case "report-request":
+			case "reload":
+				this.#deps.onEvent({ type: message.k });
+				return;
 			default:
 				return;
 		}
@@ -393,6 +402,7 @@ export class Follower {
 				APPLICATION_FEATURES.bridgeUndo,
 				APPLICATION_FEATURES.bridgeClaim,
 				APPLICATION_FEATURES.bridgeReset,
+				CLIENT_REPORT_FEATURE,
 			],
 			...(binding ?? {}),
 			...(log?.table ? { pos: log.position() } : {}),

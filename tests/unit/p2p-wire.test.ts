@@ -27,6 +27,7 @@ const CONFIG = {
 };
 const PAYLOAD = { v: 1, roomId: TABLE, type: "chat", text: "hi" };
 const EVENT = { v: 1, roomId: TABLE, type: "event", seq: 4 };
+const BUILD = { commit: "1d12f39", date: "2026-10-24T13:29:07+02:00" };
 
 type Sample = Record<string, unknown> & { k: string };
 /** A label, one valid message, and the fields whose removal or wrong type must reject it. */
@@ -194,6 +195,17 @@ const CTL: Case[] = [
 	["sync", { k: "sync", req: 1, pos: POS }, ["req", "pos"]],
 	["behind", { k: "behind", req: 1, pos: EMPTY }, ["req", "pos"]],
 	["gone", { k: "gone", reason: "expired" }, ["reason"]],
+	[
+		"report",
+		{
+			k: "report",
+			build: BUILD,
+			detail: { screen: { width: 1920, height: 1080 }, form: "desktop" },
+		},
+		["build", "detail"],
+	],
+	["report-request", { k: "report-request" }, []],
+	["reload", { k: "reload" }, []],
 	[
 		"welcome (busy)",
 		{ k: "welcome", status: "superseded", auth: AUTH, busy: true },
@@ -402,6 +414,19 @@ describe("size and depth caps", () => {
 			...fits,
 			payload: { ...PAYLOAD, text: `${text}x` },
 		});
+	});
+
+	it("rejects a report whose detail is above 6 KiB, or whose build is not a commit", () => {
+		const base = { k: "report", build: BUILD, detail: { text: "" } };
+		const text = "x".repeat(6 * 1024 - jsonBytes(base.detail));
+		const fits = { ...base, detail: { text } };
+		expect(parseCtl(wire(fits), TABLE).ok).toBe(true);
+		malformed(parseCtl, { ...fits, detail: { text: `${text}x` } });
+		malformed(parseCtl, {
+			...base,
+			build: { commit: "<img src=x>", date: BUILD.date },
+		});
+		malformed(parseCtl, { ...base, detail: [1, 2] as unknown as Sample });
 	});
 
 	it("rejects a payload nested deeper than 32 levels", () => {

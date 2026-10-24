@@ -14,6 +14,6 @@ export interface Send {
 export interface Clock {
 	/** Milliseconds for in-page timers (`performance.now()`). */
 	monotonic(): number;
-	/** `Date.now()`; used only for `lastActivityAt` and expiry. */
+	/** `Date.now()`; used only for `lastActivityAt`, expiry, and the time of a player's report. */
 	wall(): number;
 }

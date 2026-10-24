@@ -1,4 +1,5 @@
 import { botSeatClaims } from "../bot/seats";
+import type { BuildInfo } from "../build";
 import type { CallRoomSnapshot } from "../call/mesh";
 import type { CallTransport } from "../call/signaling";
 import type { GameModule } from "../game/module";
@@ -29,6 +30,7 @@ import {
 } from "./election";
 import { cleanup, isIdle } from "./expiry";
 import type { FollowerStatus } from "./follower";
+import type { PlayerReport } from "./host-engine";
 import {
 	deriveHolder,
 	deriveTableId,
@@ -204,6 +206,12 @@ export interface PeerView {
 	readonly path: PathTypes | null;
 }
 
+/** This page's answer to the host's report request. */
+export interface PageReport {
+	readonly build: BuildInfo;
+	readonly detail: JsonObject;
+}
+
 export interface CommandFailure {
 	readonly id: string;
 	readonly payload: JsonObject;
@@ -288,6 +296,8 @@ export class TableController {
 	#replication: Replication | null = null;
 	#autoplayHandler: (seat: Seat, enabled: boolean) => Promise<AutoplayStatus> =
 		async () => "unavailable";
+	#reportSource: () => PageReport | undefined = () => undefined;
+	#reloadHandler: () => void = () => undefined;
 	/** Changes with every replication, so that events of a disposed one are ignored. */
 	#session = 0;
 	#election: ElectionState | null = null;
@@ -561,6 +571,34 @@ export class TableController {
 	requestAutoplay(enabled: boolean): Promise<AutoplayStatus> {
 		if (this.#closed() || !this.#replication) return Promise.resolve("failed");
 		return this.#replication.requestAutoplay(enabled);
+	}
+
+	/** What this page reports when the host asks; undefined sends nothing. */
+	setReportSource(source: () => PageReport | undefined): void {
+		this.#reportSource = source;
+	}
+
+	/** Called when the followed host asks this page to load the latest site. */
+	setReloadHandler(handler: () => void): void {
+		this.#reloadHandler = handler;
+	}
+
+	/** The players' latest reports; empty unless this page hosts. */
+	reports(): PlayerReport[] {
+		if (this.#closed()) return [];
+		return this.#replication?.reports() ?? [];
+	}
+
+	/** Asks the seated players' pages for new reports; returns how many pages were asked. */
+	requestReports(): number {
+		if (this.#closed()) return 0;
+		return this.#replication?.requestReports() ?? 0;
+	}
+
+	/** Asks every connected page to load the latest site; returns how many pages were asked. */
+	reloadPlayers(): number {
+		if (this.#closed()) return 0;
+		return this.#replication?.reloadPeers() ?? 0;
 	}
 
 	/** Submits one action as a host-managed bot through the host's normal game validation. */
@@ -902,6 +940,14 @@ export class TableController {
 			case "undone":
 				this.#undone.push(...event.entries);
 				break;
+			case "report-request": {
+				const report = this.#reportSource();
+				if (report) this.#replication?.report(report.build, report.detail);
+				return;
+			}
+			case "reload":
+				this.#reloadHandler();
+				return;
 			case "failed":
 				this.#failures.push({
 					id: event.id,

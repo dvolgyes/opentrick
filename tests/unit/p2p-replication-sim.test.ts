@@ -420,6 +420,34 @@ describe("four pages play a board across a host crash", () => {
 		expect(result).toBe("enabled");
 	});
 
+	it("brings a seated player's report to the host, and the host's reload to the player", async () => {
+		const sim = new Sim(43);
+		const north = await sim.create();
+		const east = await sim.visit("E", "eastreport");
+		sim.mesh.connectAll();
+		await sim.mesh.until(() => east.replication.follower.ready, 10_000);
+		await sim.mesh.until(
+			() => east.events.some((event) => event.type === "report-request"),
+			10_000,
+		);
+		const build = { commit: "1d12f39", date: "2026-10-24T13:29:07+02:00" };
+		expect(east.replication.report(build, { inner: [1910, 800] })).toBe(true);
+		expect(north.replication.report(build, {})).toBe(false);
+		await sim.mesh.until(() => north.replication.reports().length > 0, 10_000);
+		expect(north.replication.reports()).toMatchObject([
+			{ seat: "E", build, detail: { inner: [1910, 800] } },
+		]);
+		expect(north.events.some((event) => event.type === "reports")).toBe(true);
+		expect(east.replication.reports()).toEqual([]);
+
+		expect(north.replication.reloadPeers()).toBe(1);
+		await sim.mesh.until(
+			() => east.events.some((event) => event.type === "reload"),
+			10_000,
+		);
+		expect(east.replication.reloadPeers()).toBe(0);
+	});
+
 	it.each<Scenario>([
 		{ from: "other", crashDelay: 11, seed: 1 },
 		{ from: "N", crashDelay: 11, seed: 2 },

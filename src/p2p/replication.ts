@@ -1,9 +1,10 @@
+import type { BuildInfo } from "../build";
 import type { GameModule } from "../game/module";
 import type { JsonObject, Seat } from "../protocol";
 import { type Authority, sameAuthority } from "./authority";
 import type { ElectionEffect } from "./election";
 import { Follower, type FollowerEvent } from "./follower";
-import { HostEngine, type HostStop } from "./host-engine";
+import { HostEngine, type HostStop, type PlayerReport } from "./host-engine";
 import { type LocalLog, storeClaim } from "./log";
 import { Outbox, type OutboxEvent, type SubmitResult } from "./outbox";
 import type { Clock, Send } from "./ports";
@@ -30,7 +31,9 @@ export type ReplicationEvent =
 	| { readonly type: "pulled"; readonly auth: Authority }
 	| { readonly type: "stored"; readonly auth: Authority; readonly ok: boolean }
 	/** The host engine stopped on its own; this page should not host. */
-	| { readonly type: "host-stopped"; readonly reason: HostStop };
+	| { readonly type: "host-stopped"; readonly reason: HostStop }
+	/** The host engine stored a player's report. */
+	| { readonly type: "reports" };
 
 export interface ReplicationDeps {
 	readonly tableId: string;
@@ -171,6 +174,8 @@ export class Replication {
 			case "roster":
 			case "gone":
 			case "behind":
+			case "report-request":
+			case "reload":
 				this.follower.receive(peer, message);
 				return;
 			default:
@@ -209,6 +214,27 @@ export class Replication {
 		handler: (seat: Seat, enabled: boolean) => Promise<AutoplayStatus>,
 	): void {
 		this.#autoplayHandler = handler;
+	}
+
+	/** Sends this page's report to the followed host; a hosting page keeps its own report. */
+	report(build: BuildInfo, detail: JsonObject): boolean {
+		const peer = this.follower.host?.peer;
+		if (this.#engine || !peer) return false;
+		this.#send.ctl(peer, { k: "report", build, detail });
+		return true;
+	}
+
+	/** The players' latest reports; empty unless this page hosts. */
+	reports(): PlayerReport[] {
+		return this.#engine?.reports() ?? [];
+	}
+
+	requestReports(): number {
+		return this.#engine?.requestReports() ?? 0;
+	}
+
+	reloadPeers(): number {
+		return this.#engine?.reloadPeers() ?? 0;
 	}
 
 	requestAutoplay(enabled: boolean): Promise<AutoplayStatus> {
@@ -336,6 +362,9 @@ export class Replication {
 			clock: this.#deps.clock,
 			newId: this.#deps.newId,
 			autoplay: (seat, enabled) => this.#autoplayHandler(seat, enabled),
+			onReport: () => {
+				if (this.#engine === engine) this.#deps.onEvent({ type: "reports" });
+			},
 			onStop: (reason) => {
 				if (this.#engine === engine) {
 					this.#deps.onEvent({ type: "host-stopped", reason });

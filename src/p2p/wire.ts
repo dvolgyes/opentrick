@@ -1,3 +1,4 @@
+import { type BuildInfo, isBuildInfo } from "../build";
 import {
 	type CallMessage,
 	MAX_GENERATION,
@@ -33,6 +34,7 @@ import {
 	MAX_PAYLOAD_BYTES,
 	MAX_PEERS,
 	MAX_REASON_LENGTH,
+	MAX_REPORT_BYTES,
 	MAX_STATE_BYTES,
 	MAX_TERM,
 } from "./limits";
@@ -274,6 +276,27 @@ export interface Gone {
 	readonly reason: GoneReason;
 }
 
+/** A hello feature: the page answers a report request and follows a reload. */
+export const CLIENT_REPORT_FEATURE = "client-report-v1";
+
+/** A player's page, for the host's debug export: its build and its screen and table diagnostics. */
+export interface Report {
+	readonly k: "report";
+	readonly build: BuildInfo;
+	/** Read only by the debug export, so its fields are not checked; only its size is. */
+	readonly detail: JsonObject;
+}
+
+/** The host asks a page with CLIENT_REPORT_FEATURE for a report. */
+export interface ReportRequest {
+	readonly k: "report-request";
+}
+
+/** The host asks a page with CLIENT_REPORT_FEATURE to load the latest version of the site. */
+export interface Reload {
+	readonly k: "reload";
+}
+
 export type CtlMessage =
 	| Hello
 	| Welcome
@@ -293,7 +316,10 @@ export type CtlMessage =
 	| AutoplayResult
 	| Sync
 	| Behind
-	| Gone;
+	| Gone
+	| Report
+	| ReportRequest
+	| Reload;
 
 export type SeatOp =
 	| { readonly type: "claim"; readonly holder: string }
@@ -939,6 +965,21 @@ const parseGone: Parser<Gone> = (value) =>
 		? { k: "gone", reason: value.reason }
 		: undefined;
 
+const parseReport: Parser<Report> = (value) =>
+	isBuildInfo(value.build) && isJsonObjectWithin(value.detail, MAX_REPORT_BYTES)
+		? {
+				k: "report",
+				build: { commit: value.build.commit, date: value.build.date },
+				detail: value.detail,
+			}
+		: undefined;
+
+const parseReportRequest: Parser<ReportRequest> = () => ({
+	k: "report-request",
+});
+
+const parseReload: Parser<Reload> = () => ({ k: "reload" });
+
 const parseEntryMessage: Parser<EntryMessage> = (value) => {
 	const e = parseEntry(value.e);
 	return e && isJsonObjectWithin(value.state, MAX_STATE_BYTES)
@@ -1017,6 +1058,9 @@ const CTL_PARSERS = new Map<string, Parser<CtlMessage>>([
 	["sync", parseSync],
 	["behind", parseBehind],
 	["gone", parseGone],
+	["report", parseReport],
+	["report-request", parseReportRequest],
+	["reload", parseReload],
 ]);
 
 const LOG_PARSERS = new Map<string, Parser<LogMessage>>([

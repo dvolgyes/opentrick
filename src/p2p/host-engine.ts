@@ -28,6 +28,7 @@ import type { TableRecord } from "./records";
 import {
 	type AutoplayRequest,
 	type AutoplayStatus,
+	CLIENT_REPORT_FEATURE,
 	type ClaimSeat,
 	type Command,
 	type CommandResult,
@@ -38,6 +39,7 @@ import {
 	type Lobby,
 	type Release,
 	type ReleaseCode,
+	type Report,
 	type Roster,
 	type SeatCode,
 	type SeatHolder,
@@ -71,6 +73,17 @@ export interface HostDeps {
 	/** Called once, when the engine stops on its own. */
 	readonly onStop: (reason: HostStop) => void;
 	readonly autoplay?: (seat: Seat, enabled: boolean) => Promise<AutoplayStatus>;
+	/** Called when a player's report is stored. */
+	readonly onReport?: () => void;
+}
+
+/** The latest report of a seated player's page. */
+export interface PlayerReport {
+	readonly seat: Seat;
+	readonly build: Report["build"];
+	readonly detail: Report["detail"];
+	/** `clock.wall()` when the host stored it. */
+	readonly receivedAt: number;
 }
 
 interface Bound {
@@ -123,6 +136,7 @@ export class HostEngine {
 	readonly #localBots = new Set<Seat>();
 	readonly #autoplayPending = new Set<Seat>();
 	readonly #autoplayRequests = new Map<string, number>();
+	readonly #reports = new Map<string, PlayerReport>();
 	readonly #localResults = new Map<
 		string,
 		(result: LocalCommandResult) => void
@@ -333,6 +347,7 @@ export class HostEngine {
 		this.#holders.delete(peer);
 		this.#features.delete(peer);
 		this.#autoplayRequests.delete(peer);
+		this.#reports.delete(peer);
 		this.#visitors.delete(peer);
 		if (this.#bindings.delete(peer)) this.#markRoster();
 	}
@@ -365,6 +380,9 @@ export class HostEngine {
 				return;
 			case "ack":
 				this.#ack(peer, message.rev);
+				return;
+			case "report":
+				this.#report(peer, message);
 				return;
 			default:
 				return;
@@ -424,6 +442,71 @@ export class HostEngine {
 			bots: [...this.#localBots],
 			autoplay: true,
 		};
+	}
+
+	/** The latest report of each page that still holds its seat. */
+	reports(): PlayerReport[] {
+		const table = this.#deps.log.table;
+		if (!table) return [];
+		return [...this.#reports]
+			.filter(([peer, report]) => {
+				const bound = this.#bindings.get(peer);
+				return bound?.seat === report.seat && this.#current(table, bound);
+			})
+			.map(([, report]) => report);
+	}
+
+	/** Asks each seated player's page for a report; returns how many pages were asked. */
+	requestReports(): number {
+		const table = this.#deps.log.table;
+		if (!table) return 0;
+		const peers = [...this.#bindings]
+			.filter(
+				([peer, bound]) =>
+					this.#reportable(peer) && this.#current(table, bound),
+			)
+			.map(([peer]) => peer);
+		for (const peer of peers)
+			this.#deps.send.ctl(peer, { k: "report-request" });
+		return peers.length;
+	}
+
+	/** Asks each connected page, seated or not, to load the latest site; returns how many pages were asked. */
+	reloadPeers(): number {
+		const peers = [...this.#connected].filter((peer) => this.#reportable(peer));
+		for (const peer of peers) this.#deps.send.ctl(peer, { k: "reload" });
+		return peers.length;
+	}
+
+	/** Another person's connected page that understands report and reload messages. */
+	#reportable(peer: string): boolean {
+		return (
+			peer !== this.#deps.self &&
+			!peer.startsWith("opentrick-host-bot:") &&
+			this.#connected.has(peer) &&
+			(this.#features.get(peer) ?? []).includes(CLIENT_REPORT_FEATURE)
+		);
+	}
+
+	/** Keeps the report of a page that holds its seat; a report from any other page is ignored. */
+	#report(peer: string, message: Report): void {
+		const bound = this.#bindings.get(peer);
+		const table = this.#deps.log.table;
+		if (
+			peer === this.#deps.self ||
+			!this.#connected.has(peer) ||
+			!bound ||
+			!table ||
+			!this.#current(table, bound)
+		)
+			return;
+		this.#reports.set(peer, {
+			seat: bound.seat,
+			build: message.build,
+			detail: message.detail,
+			receivedAt: this.#deps.clock.wall(),
+		});
+		this.#deps.onReport?.();
 	}
 
 	async #autoplay(peer: string, message: AutoplayRequest): Promise<void> {
@@ -949,6 +1032,8 @@ export class HostEngine {
 		}
 		this.#seen.set(seat, this.#deps.clock.monotonic());
 		this.#markRoster();
+		if (this.#reportable(peer))
+			this.#deps.send.ctl(peer, { k: "report-request" });
 	}
 
 	#unbindSeat(seat: Seat, except: string | null): void {
