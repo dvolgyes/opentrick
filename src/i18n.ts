@@ -467,6 +467,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Trackers reachable": "Tracker erreichbar",
 		"Openrouter rate limit - I will retry in a moment":
 			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
+		"YOUR TURN TO BID": "DU BIST MIT BIETEN DRAN",
+		"{seat} TO BID": "{seat} IST MIT BIETEN DRAN",
 	},
 	hu: {
 		Language: "Nyelv",
@@ -902,6 +904,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Válaszd ki, hányat igényelsz a hátralévő {count} Tricksből.",
 		"Confirm that you claim all {count} remaining tricks.":
 			"Erősítsd meg mind a hátralévő {count} Tricks igénylését.",
+		"YOUR TURN TO BID": "TE LICITÁLSZ",
+		"{seat} TO BID": "{seat} LICITÁL",
 	},
 	no: {
 		Language: "Språk",
@@ -1312,6 +1316,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Undo vote not sent: {reason}":
 			"Stemmen om å angre ble ikke sendt: {reason}",
 		"YOUR TURN TO BID": "DIN TUR TIL Å MELDE",
+		"{seat} TO BID": "{seat} SKAL MELDE",
 		"You ask to undo your {action}. Your cancellation is being sent.":
 			"Du ber om å angre {action}. Avbrytingen sendes.",
 		"You ask to undo your {action}. {waiting}":

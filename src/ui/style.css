@@ -1764,6 +1764,12 @@ button.call-join[data-in-call="true"] {
 	color: #1b1b1b;
 }
 
+/* The left seat is at the table's edge, so its pill grows to the right, into the table. */
+.pos-left .turn-pill {
+	right: auto;
+	left: 0.5rem;
+}
+
 .play-controls {
 	display: flex;
 	flex-wrap: wrap;

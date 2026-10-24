@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { Form } from "../../src/call/device-class";
+import { type Locale, type Translate, translator } from "../../src/i18n";
 import {
 	type PlayedCardStyle,
 	type TableHandlers,
@@ -168,7 +169,12 @@ function sideHandView(): TableView {
 	};
 }
 
-function renderView(view: TableView, form: Form, style?: PlayedCardStyle) {
+function renderView(
+	view: TableView,
+	form: Form,
+	style?: PlayedCardStyle,
+	t?: Translate,
+) {
 	const handlers: TableHandlers = {
 		exit: vi.fn(),
 		shareUrl: vi.fn(async () => {}),
@@ -185,10 +191,7 @@ function renderView(view: TableView, form: Form, style?: PlayedCardStyle) {
 			retry: vi.fn(),
 		},
 	};
-	const section =
-		style === undefined
-			? tableSection(handlers)
-			: tableSection(handlers, style);
+	const section = tableSection(handlers, style, t);
 	const room = document.createElement("section");
 	room.className = "room";
 	room.dataset.form = form;
@@ -415,6 +418,62 @@ describe("played card styles", () => {
 		const leftCard = root.querySelector<HTMLElement>(".played.pos-left");
 		if (!leftCard) throw new Error("left played card is missing");
 		expect(getComputedStyle(leftCard).transform).toBe("none");
+	});
+});
+
+describe("turn pill", () => {
+	it.each<[Locale, string, string]>([
+		["en", "YOUR TURN TO BID", "East TO BID"],
+		["de", "DU BIST MIT BIETEN DRAN", "Osten IST MIT BIETEN DRAN"],
+		["hu", "TE LICITÁLSZ", "Kelet LICITÁL"],
+		["no", "DIN TUR TIL Å MELDE", "Øst SKAL MELDE"],
+		["es", "TU TURNO PARA SUBASTAR", "TURNO DE Este PARA SUBASTAR"],
+		["pt", "A SUA VEZ DE LICITAR", "Este A LICITAR"],
+		["fr", "À VOUS D'ENCHÉRIR", "À Est D'ENCHÉRIR"],
+		["it", "TOCCA A TE DICHIARARE", "TOCCA A Est DICHIARARE"],
+		["nl", "JOUW BEURT OM TE BIEDEN", "BEURT VAN Oost OM TE BIEDEN"],
+	])("names the seat to bid in %s", (locale, own, other) => {
+		const base = playView();
+		const view: TableView = {
+			...base,
+			phase: "auction",
+			seats: base.seats.map((player) =>
+				player.seat === "N" || player.seat === "E"
+					? { ...player, bidding: true }
+					: player,
+			),
+		};
+		const { root } = renderView(view, "desktop", undefined, translator(locale));
+		const pill = (seat: string) =>
+			root.querySelector(`[data-testid="hand-${seat}"] .turn-pill`)
+				?.textContent;
+		expect([pill("N"), pill("E")]).toEqual([own, other]);
+	});
+
+	it("keeps a long pill of a side seat on the table", () => {
+		const base = playView();
+		const view: TableView = {
+			...base,
+			phase: "auction",
+			seats: base.seats.map((player) =>
+				player.seat === "E" || player.seat === "W"
+					? { ...player, bidding: true }
+					: player,
+			),
+		};
+		const { root } = renderView(view, "desktop", undefined, translator("de"));
+		const table = root.getBoundingClientRect();
+		const pills = [...root.querySelectorAll<HTMLElement>(".turn-pill")];
+		expect(pills).toHaveLength(2);
+		for (const pill of pills) {
+			const box = pill.getBoundingClientRect();
+			expect(box.left, pill.textContent ?? "").toBeGreaterThanOrEqual(
+				table.left,
+			);
+			expect(box.right, pill.textContent ?? "").toBeLessThanOrEqual(
+				table.right,
+			);
+		}
 	});
 });
 

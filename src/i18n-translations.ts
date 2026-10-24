@@ -2096,6 +2096,14 @@ const rows: readonly TranslationRow[] = [
 		"TOCCA A TE DICHIARARE",
 		"JOUW BEURT OM TE BIEDEN",
 	],
+	[
+		"{seat} TO BID",
+		"TURNO DE {seat} PARA SUBASTAR",
+		"{seat} A LICITAR",
+		"À {seat} D'ENCHÉRIR",
+		"TOCCA A {seat} DICHIARARE",
+		"BEURT VAN {seat} OM TE BIEDEN",
+	],
 	["You", "Tú", "Você", "Vous", "Tu", "Jij"],
 	[
 		"You ask to undo your {action}. Your cancellation is being sent.",

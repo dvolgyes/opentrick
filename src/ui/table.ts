@@ -884,7 +884,7 @@ export function tableSection(
 							{ className: "turn-pill", attrs: { "data-testid": "turn-pill" } },
 							seat.hand.visible
 								? t("YOUR TURN TO BID")
-								: `${t(SEAT_NAMES[seat.seat])} TO BID`,
+								: t("{seat} TO BID", { seat: t(SEAT_NAMES[seat.seat]) }),
 						),
 					]
 				: []),
