@@ -57,6 +57,7 @@ import type {
 	ReleaseResult,
 	Roster,
 	SeatCode,
+	SeatRoundTrip,
 } from "./wire";
 
 /**
@@ -232,6 +233,8 @@ export interface TableView {
 	readonly table: TableRecord | null;
 	readonly lobby: Lobby | null;
 	readonly roster: Roster | null;
+	/** The host's latest round trip to each other player's page; none for the host's own seat or a bot. */
+	readonly roundTrips: readonly SeatRoundTrip[];
 	/** Own commands reach a host now. */
 	readonly ready: boolean;
 	readonly outbox: readonly OutboxItem[];
@@ -706,6 +709,11 @@ export class TableController {
 			table: log?.table ?? this.#lastTable,
 			lobby: replication?.follower.lobby ?? null,
 			roster,
+			roundTrips: hosting
+				? engine.roundTrips()
+				: live
+					? (replication?.follower.roundTrips ?? [])
+					: [],
 			ready: live && (hosting || replication?.follower.ready === true),
 			outbox: replication?.outbox?.items ?? [],
 			undone: [...this.#undone],
@@ -842,6 +850,7 @@ export class TableController {
 				clock,
 				module,
 				newId,
+				nonce: this.#deps.nonce,
 				onEvent: (event) =>
 					queueMicrotask(() => {
 						if (this.#session === session) this.#replicationEvent(event);
@@ -1073,8 +1082,9 @@ export class TableController {
 				this.#mesh?.ctl(peer, ConnectionChecks.echoOf(message));
 				return;
 			case "echo":
+				// The host engine also gets the echo: it measures the round trips of the player pages.
 				this.#checks.echo(peer, message);
-				return;
+				break;
 			case "gone":
 				if (message.reason === "full") {
 					this.#full = true;

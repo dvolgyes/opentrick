@@ -47,6 +47,8 @@ export interface ReplicationDeps {
 	readonly clock: Clock;
 	readonly module: GameModule;
 	readonly newId: () => string;
+	/** Round-trip ping nonces of the host engine. */
+	readonly nonce: () => string;
 	readonly onEvent: (event: ReplicationEvent) => void;
 }
 
@@ -176,6 +178,7 @@ export class Replication {
 			case "behind":
 			case "report-request":
 			case "reload":
+			case "round-trips":
 				this.follower.receive(peer, message);
 				return;
 			default:
@@ -365,9 +368,14 @@ export class Replication {
 			send: this.#send,
 			clock: this.#deps.clock,
 			newId: this.#deps.newId,
+			nonce: this.#deps.nonce,
 			autoplay: (seat, enabled) => this.#autoplayHandler(seat, enabled),
 			onReport: () => {
 				if (this.#engine === engine) this.#deps.onEvent({ type: "reports" });
+			},
+			onRoundTrip: () => {
+				if (this.#engine === engine)
+					this.#deps.onEvent({ type: "round-trips" });
 			},
 			onStop: (reason) => {
 				if (this.#engine === engine) {

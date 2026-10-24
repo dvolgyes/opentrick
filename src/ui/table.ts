@@ -21,6 +21,7 @@ import type {
 	ContractHeader,
 	HandDisplay,
 	Position,
+	RoundTripView,
 	SeatView,
 	TableActionLine,
 	TableView,
@@ -643,6 +644,8 @@ export function tableSection(
 	let hostAutoplayControl: HTMLButtonElement | undefined;
 	/** The tag and player name of each seat, as the last table view gave them ("E - David"). */
 	let seatLabels = new Map<Seat, string>();
+	/** The host's last round trip to each seat, as the last table view gave it. */
+	let seatRoundTrips = new Map<Seat, RoundTripView | undefined>();
 
 	const scores = el("table", {
 		className: "scores",
@@ -1109,15 +1112,34 @@ export function tableSection(
 			spot.callPresence.title =
 				presence !== undefined && showPresence ? t("In call") : "";
 			const label = seatLabels.get(seat) ?? SEAT_NAMES[seat];
-			const shown = `${label}|${
+			const roundTrip = seatRoundTrips.get(seat);
+			const shown = `${label}|${roundTrip?.text ?? ""}|${roundTrip?.quality ?? ""}|${
 				status?.text === undefined
 					? ""
 					: `${status.text}|${status.connected}|${status.retry}`
 			}`;
 			if (shown === spot.shown) continue;
 			spot.shown = shown;
-			spot.caption.textContent =
-				status?.text === undefined ? label : `${label} · ${status.text}`;
+			spot.caption.replaceChildren(
+				label,
+				...(roundTrip === undefined
+					? []
+					: [
+							" ",
+							el(
+								"span",
+								{
+									className: "round-trip",
+									attrs: {
+										"data-quality": roundTrip.quality,
+										"data-testid": `round-trip-${seat}`,
+									},
+								},
+								roundTrip.text,
+							),
+						]),
+				...(status?.text === undefined ? [] : [` · ${status.text}`]),
+			);
 			spot.state.hidden = status?.text === undefined;
 			spot.state.replaceChildren(
 				icon("phone", !status?.connected),
@@ -1918,6 +1940,9 @@ export function tableSection(
 		compactClaimAll.hidden = view.phase !== "play";
 		compactClaimAll.disabled = !view.claim.canRequest;
 		seatLabels = new Map(view.seats.map((seat) => [seat.seat, seat.label]));
+		seatRoundTrips = new Map(
+			view.seats.map((seat) => [seat.seat, seat.roundTrip]),
+		);
 		renderCallStates();
 		renderAuction(view);
 		showTrick(view);

@@ -31,6 +31,12 @@ export const TICK_MS = 500;
 // Connection checks and failure states (plan §4.9).
 export const PING_COUNT = 3;
 export const PING_TIMEOUT_MS = 5_000;
+/** The host pings a player page that had no ping this long (src/p2p/round-trips.ts). */
+export const ROUND_TRIP_IDLE_MS = 10_000;
+/** Open pings of one page; a new ping drops the oldest. */
+export const MAX_OPEN_PINGS = 16;
+/** The longest round trip that a report carries. */
+export const MAX_ROUND_TRIP_MS = 60_000;
 export const NOBODY_MS = 10_000;
 export const CONNECTION_FAILED_MS = 20_000;
 export const MAX_PEERS = 12;

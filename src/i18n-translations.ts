@@ -2078,6 +2078,22 @@ const rows: readonly TranslationRow[] = [
 		"Wachten op goedkeuring van {players}.",
 	],
 	[
+		"({seconds}s roundtrip)",
+		"({seconds}s ida y vuelta)",
+		"({seconds}s ida e volta)",
+		"({seconds}s aller-retour)",
+		"({seconds}s andata e ritorno)",
+		"({seconds}s heen en terug)",
+	],
+	[
+		"(>{seconds}s roundtrip)",
+		"(>{seconds}s ida y vuelta)",
+		"(>{seconds}s ida e volta)",
+		"(>{seconds}s aller-retour)",
+		"(>{seconds}s andata e ritorno)",
+		"(>{seconds}s heen en terug)",
+	],
+	[
 		"Waiting for {players} to come back",
 		"Esperando a que vuelva {players}",
 		"À espera do regresso de {players}",

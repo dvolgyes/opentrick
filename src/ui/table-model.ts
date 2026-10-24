@@ -23,7 +23,7 @@ import {
 import { englishTranslator as english, type Translate } from "../i18n";
 import type { OutboxItem } from "../p2p/outbox";
 import type { CommandFailure } from "../p2p/table";
-import type { Entry } from "../p2p/wire";
+import type { Entry, SeatRoundTrip } from "../p2p/wire";
 import {
 	isObject,
 	type RoomConfig,
@@ -158,6 +158,17 @@ export interface SeatView {
 	readonly turnPill: TurnPill | undefined;
 	/** Milton Work points of a hand the viewer can see during the auction, or of every hand once the board is over. */
 	readonly points: number | undefined;
+	/** The host's last round trip to this seat's player; undefined while the host has not measured one. */
+	readonly roundTrip: RoundTripView | undefined;
+}
+
+/**
+ * A round trip for the video tile, such as "(0.2s roundtrip)". The quality follows the shown value: good below
+ * 0.2 s, fair up to 1.0 s, poor above it.
+ */
+export interface RoundTripView {
+	readonly text: string;
+	readonly quality: "good" | "fair" | "poor";
 }
 
 export interface PlayedCard {
@@ -345,6 +356,8 @@ export interface TableViewInput {
 	readonly outbox: readonly OutboxItem[];
 	readonly failures: readonly CommandFailure[];
 	readonly undone: readonly Entry[];
+	/** The host's last round trip to each measured seat. */
+	readonly roundTrips?: readonly SeatRoundTrip[];
 	readonly t?: Translate;
 }
 
@@ -445,8 +458,27 @@ function lobbySeats(input: TableViewInput, t: Translate): SeatView[] {
 			connecting,
 			turnPill: undefined,
 			points: undefined,
+			roundTrip: roundTripView(input, owner, t),
 		};
 	});
+}
+
+function roundTripView(
+	input: TableViewInput,
+	owner: Seat,
+	t: Translate,
+): RoundTripView | undefined {
+	const measured = input.roundTrips?.find((row) => row.seat === owner);
+	if (measured === undefined) return undefined;
+	// The colour follows the shown tenths, so 0.15 s shows as "0.2s" and is not green.
+	const tenths = Math.round(measured.ms / 100);
+	const seconds = (tenths / 10).toFixed(1);
+	return {
+		text: measured.lower
+			? t("(>{seconds}s roundtrip)", { seconds })
+			: t("({seconds}s roundtrip)", { seconds }),
+		quality: tenths < 2 ? "good" : tenths <= 10 ? "fair" : "poor",
+	};
 }
 
 function payloadBoard(payload: unknown): number {
@@ -954,6 +986,7 @@ export function tableView(input: TableViewInput): TableView {
 				view.hands[owner].visible
 					? miltonPoints(view.hands[owner].cards)
 					: undefined,
+			roundTrip: roundTripView(input, owner, t),
 		};
 	});
 

@@ -1658,6 +1658,7 @@ export function showRoom(
 			outbox: view.outbox,
 			failures: view.failures,
 			undone: view.undone,
+			roundTrips: view.roundTrips,
 			t: deps.t,
 		});
 		shownModel = tableModel;

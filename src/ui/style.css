@@ -19,6 +19,10 @@
 	--call-orange: #c75b00;
 	--tile-bg: #2f5f47;
 	--tile-caption-bg: #1d3a2c;
+	/* Round-trip figures on the dark tile caption. */
+	--round-trip-good: #7ee08a;
+	--round-trip-fair: #ffb347;
+	--round-trip-poor: #ff8a80;
 	color-scheme: light;
 }
 
@@ -1003,6 +1007,18 @@ main:has(> .room) {
 	line-height: 1.5;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.round-trip[data-quality="good"] {
+	color: var(--round-trip-good);
+}
+
+.round-trip[data-quality="fair"] {
+	color: var(--round-trip-fair);
+}
+
+.round-trip[data-quality="poor"] {
+	color: var(--round-trip-poor);
 }
 
 .tile-bot-control {

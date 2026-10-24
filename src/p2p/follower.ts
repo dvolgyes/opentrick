@@ -34,8 +34,10 @@ import {
 	type Lobby,
 	type LogMessage,
 	type ReleaseResult,
+	ROUND_TRIP_FEATURE,
 	type Roster,
 	type SeatResult,
+	type SeatRoundTrip,
 	type Welcome,
 } from "./wire";
 
@@ -74,6 +76,8 @@ export type FollowerEvent =
 	| { readonly type: "seat-result"; readonly result: SeatResult }
 	| { readonly type: "release-result"; readonly result: ReleaseResult }
 	| { readonly type: "roster"; readonly roster: Roster }
+	/** The followed host, or this page's host engine, measured a round trip. */
+	| { readonly type: "round-trips" }
 	/** Own commands that a replacement log does not contain: "Undone after a host change". */
 	| { readonly type: "undone"; readonly entries: readonly Entry[] }
 	/** A claim pull ended, with or without a better log. */
@@ -147,6 +151,7 @@ export class Follower {
 	#releaseReq: number | null = null;
 	#lobby: Lobby | null = null;
 	#roster: Roster | null = null;
+	#roundTrips: readonly SeatRoundTrip[] = [];
 	/** The host binds this page's seat to an earlier page of this browser: when the wait began, the next hello. */
 	#busy: { readonly since: number; readonly next: number } | null = null;
 	#supersededByOwnBrowser = false;
@@ -185,6 +190,11 @@ export class Follower {
 
 	get roster(): Roster | null {
 		return this.#roster;
+	}
+
+	/** The followed host's latest round trips to the seats' pages. */
+	get roundTrips(): readonly SeatRoundTrip[] {
+		return this.#roundTrips;
 	}
 
 	get binding(): { readonly seat: Seat; readonly gen: number } | null {
@@ -310,6 +320,12 @@ export class Follower {
 					this.#deps.onEvent({ type: "roster", roster: message });
 				}
 				return;
+			case "round-trips":
+				if (sameAuthority(message.auth, host.auth)) {
+					this.#roundTrips = message.seats;
+					this.#deps.onEvent({ type: "round-trips" });
+				}
+				return;
 			case "gone":
 				if (message.reason === "expired") this.#setStatus("expired");
 				this.#deps.onEvent({ type: "gone", reason: message.reason });
@@ -382,6 +398,7 @@ export class Follower {
 		this.#claimReq = null;
 		this.#releaseReq = null;
 		this.#roster = null;
+		this.#roundTrips = [];
 		this.#busy = null;
 		if (this.#announced) {
 			this.#announced = false;
@@ -403,6 +420,7 @@ export class Follower {
 				APPLICATION_FEATURES.bridgeClaim,
 				APPLICATION_FEATURES.bridgeReset,
 				CLIENT_REPORT_FEATURE,
+				ROUND_TRIP_FEATURE,
 			],
 			...(binding ?? {}),
 			...(log?.table ? { pos: log.position() } : {}),

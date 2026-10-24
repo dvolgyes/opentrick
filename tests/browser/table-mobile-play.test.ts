@@ -54,6 +54,7 @@ function seat(
 		connecting: false,
 		turnPill: seatName === "N" ? { action: "play", yours: true } : undefined,
 		points: undefined,
+		roundTrip: undefined,
 		...options,
 	};
 }
@@ -1581,6 +1582,53 @@ describe("compact play controls", () => {
 		);
 		undo?.click();
 		expect(handlers.undoRequest).toHaveBeenCalledWith(1);
+	});
+});
+
+describe("round trip on the video tile", () => {
+	const rgb = (element: Element | null) =>
+		element === null ? "" : getComputedStyle(element).color;
+
+	it("shows each player's round trip beside the name, in the colour of its quality", () => {
+		const view = playView();
+		const roundTrips = {
+			E: { text: "(0.1s roundtrip)", quality: "good" },
+			S: { text: "(0.4s roundtrip)", quality: "fair" },
+			W: { text: "(>5.0s roundtrip)", quality: "poor" },
+		} as const;
+		const { root } = renderView(
+			{
+				...view,
+				seats: view.seats.map((player) =>
+					player.seat === "N"
+						? player
+						: { ...player, roundTrip: roundTrips[player.seat] },
+				),
+			},
+			"desktop",
+		);
+		const caption = (seat: Seat) =>
+			root.querySelector<HTMLElement>(
+				`[data-testid='tile-${seat}'] .tile-caption`,
+			);
+		expect(caption("E")?.textContent).toBe("E - playerE (0.1s roundtrip)");
+		expect(caption("W")?.textContent).toBe("W - playerW (>5.0s roundtrip)");
+		const colours = (["E", "S", "W"] as const).map((seat) =>
+			rgb(root.querySelector(`[data-testid='round-trip-${seat}']`)),
+		);
+		expect(colours).toEqual([
+			"rgb(126, 224, 138)",
+			"rgb(255, 179, 71)",
+			"rgb(255, 138, 128)",
+		]);
+	});
+
+	it("shows no round trip before the host measured one", () => {
+		const { root } = renderView(playView(), "desktop");
+		expect(
+			root.querySelector("[data-testid='tile-E'] .tile-caption")?.textContent,
+		).toBe("E - playerE");
+		expect(root.querySelector(".round-trip")).toBeNull();
 	});
 });
 

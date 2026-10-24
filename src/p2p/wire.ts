@@ -35,6 +35,7 @@ import {
 	MAX_PEERS,
 	MAX_REASON_LENGTH,
 	MAX_REPORT_BYTES,
+	MAX_ROUND_TRIP_MS,
 	MAX_STATE_BYTES,
 	MAX_TERM,
 } from "./limits";
@@ -299,6 +300,23 @@ export interface Reload {
 	readonly k: "reload";
 }
 
+/** A hello feature: the page shows the host's round-trip reports. */
+export const ROUND_TRIP_FEATURE = "round-trip-v1";
+
+/** The host's latest round trip to a seat's page; `lower`: no echo came within the time, so it is at least `ms`. */
+export interface SeatRoundTrip {
+	readonly seat: Seat;
+	readonly ms: number;
+	readonly lower?: true;
+}
+
+/** The host sends the round trips to the pages with ROUND_TRIP_FEATURE after each measurement; it pings no page for it. */
+export interface RoundTripReport {
+	readonly k: "round-trips";
+	readonly auth: Authority;
+	readonly seats: readonly SeatRoundTrip[];
+}
+
 export type CtlMessage =
 	| Hello
 	| Welcome
@@ -321,7 +339,8 @@ export type CtlMessage =
 	| Gone
 	| Report
 	| ReportRequest
-	| Reload;
+	| Reload
+	| RoundTripReport;
 
 export type SeatOp =
 	| { readonly type: "claim"; readonly holder: string }
@@ -994,6 +1013,35 @@ const parseReportRequest: Parser<ReportRequest> = () => ({
 
 const parseReload: Parser<Reload> = () => ({ k: "reload" });
 
+function parseSeatRoundTrip(value: unknown): SeatRoundTrip | undefined {
+	if (
+		!isObject(value) ||
+		!isSeat(value.seat) ||
+		!isIntegerIn(value.ms, 0, MAX_ROUND_TRIP_MS) ||
+		(value.lower !== undefined && value.lower !== true)
+	)
+		return undefined;
+	return {
+		seat: value.seat,
+		ms: value.ms,
+		...(value.lower === true ? { lower: true } : {}),
+	};
+}
+
+const parseRoundTripReport: Parser<RoundTripReport> = (value) => {
+	const auth = parseAuthority(value.auth);
+	if (!auth || !Array.isArray(value.seats) || value.seats.length > SEATS.length)
+		return undefined;
+	const seats: SeatRoundTrip[] = [];
+	for (const raw of value.seats) {
+		const row = parseSeatRoundTrip(raw);
+		if (!row || seats.some((other) => other.seat === row.seat))
+			return undefined;
+		seats.push(row);
+	}
+	return { k: "round-trips", auth, seats };
+};
+
 const parseEntryMessage: Parser<EntryMessage> = (value) => {
 	const e = parseEntry(value.e);
 	return e && isJsonObjectWithin(value.state, MAX_STATE_BYTES)
@@ -1075,6 +1123,7 @@ const CTL_PARSERS = new Map<string, Parser<CtlMessage>>([
 	["report", parseReport],
 	["report-request", parseReportRequest],
 	["reload", parseReload],
+	["round-trips", parseRoundTripReport],
 ]);
 
 const LOG_PARSERS = new Map<string, Parser<LogMessage>>([

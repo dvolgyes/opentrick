@@ -212,6 +212,18 @@ const CTL: Case[] = [
 		{ k: "welcome", status: "superseded", auth: AUTH, busy: true },
 		["status", "auth"],
 	],
+	[
+		"round-trips",
+		{
+			k: "round-trips",
+			auth: AUTH,
+			seats: [
+				{ seat: "E", ms: 180 },
+				{ seat: "W", ms: 5000, lower: true },
+			],
+		},
+		["auth", "seats"],
+	],
 ];
 
 const LOG: Case[] = [
@@ -635,6 +647,27 @@ describe("message rules", () => {
 			...roster,
 			seats: [seats[1], seats[0], seats[2], seats[3]],
 		});
+	});
+
+	it.each([
+		[
+			"a repeated seat",
+			[
+				{ seat: "E", ms: 1 },
+				{ seat: "E", ms: 2 },
+			],
+		],
+		["an unknown seat", [{ seat: "X", ms: 1 }]],
+		["a negative time", [{ seat: "E", ms: -1 }]],
+		["a fractional time", [{ seat: "E", ms: 1.5 }]],
+		["a time above a minute", [{ seat: "E", ms: 60_001 }]],
+		["a false lower bound", [{ seat: "E", ms: 1, lower: false }]],
+		[
+			"more rows than seats",
+			["N", "E", "S", "W", "N"].map((seat) => ({ seat, ms: 1 })),
+		],
+	])("round-trips rejects %s", (_label, seats) => {
+		malformed(parseCtl, { k: "round-trips", auth: AUTH, seats });
 	});
 
 	it.each([

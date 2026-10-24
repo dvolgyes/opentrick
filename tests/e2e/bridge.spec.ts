@@ -229,9 +229,17 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 		for (const button of await own.all()) dealt.push(await cardOf(button));
 	}
 	expect(new Set(dealt).size).toBe(52);
+	// The host (West) measures the round trip to each guest and reports it to every page; its own seat has none.
+	for (const seat of SEATS) {
+		for (const other of SEATS.filter((item) => item !== seat && item !== "W"))
+			await expect(tab[seat].getByTestId(`round-trip-${other}`)).toHaveText(
+				/^\(\d+\.\ds roundtrip\)$/,
+			);
+		await expect(tab[seat].getByTestId("round-trip-W")).toHaveCount(0);
+	}
 });
 
-test("2: the auction 1♣ and three passes; a guest and the host reload mid-auction", async () => {
+test("2:the auction 1♣ and three passes; a guest and the host reload mid-auction", async () => {
 	expect(await call(1, 0, "1C")).toBe("N");
 	expect(await call(1, 1, "P")).toBe("E");
 	await expectAt(1, 2);

@@ -38,6 +38,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		and: "und",
 		"ROOM CONNECTION": "RAUMVERBINDUNG",
 		"Room lobby": "Raumlobby",
+		"({seconds}s roundtrip)": "({seconds}s Umlaufzeit)",
+		"(>{seconds}s roundtrip)": "(>{seconds}s Umlaufzeit)",
 		"Waiting for {players} to come back":
 			"Warten auf die Rückkehr von {players}",
 		"The first board is dealt now.": "Das erste Board wird jetzt gegeben.",
@@ -502,6 +504,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		and: "és",
 		"ROOM CONNECTION": "SZOBAKAPCSOLAT",
 		"Room lobby": "Játékszoba várója",
+		"({seconds}s roundtrip)": "({seconds}s oda-vissza)",
+		"(>{seconds}s roundtrip)": "(>{seconds}s oda-vissza)",
 		"Waiting for {players} to come back":
 			"Várakozás, hogy visszatérjenek: {players}",
 		"The first board is dealt now.": "Az első leosztás most következik.",
@@ -955,6 +959,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		and: "og",
 		"ROOM CONNECTION": "ROMTILKOBLING",
 		"Room lobby": "Romlobby",
+		"({seconds}s roundtrip)": "({seconds}s tur-retur)",
+		"(>{seconds}s roundtrip)": "(>{seconds}s tur-retur)",
 		"Waiting for {players} to come back":
 			"Venter på at {players} kommer tilbake",
 		"The first board is dealt now.": "Den første given deles ut nå.",
