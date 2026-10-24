@@ -1858,6 +1858,17 @@ button.call-join[data-in-call="true"] {
 	padding-top: 2.8rem;
 }
 
+/* The host's debug controls end the sidebar; it takes no room while the viewer is not the host. */
+.sidebar-end {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.sidebar-end:not(:has(> :not([hidden]))) {
+	display: none;
+}
+
 .reset-decision {
 	display: flex;
 	flex-wrap: wrap;
@@ -1990,7 +2001,7 @@ button.call-join[data-in-call="true"] {
 	display: flex;
 }
 
-[data-waiting="true"] .table-sidebar > :not(.room-controls) {
+[data-waiting="true"] .table-sidebar > :not(.room-controls, .sidebar-end) {
 	display: none;
 }
 
@@ -2843,7 +2854,7 @@ main:has(> .room[data-form="compact"]) {
 		.bridge-table:is([data-phase="auction"], [data-phase="play"])
 	)
 	.table-sidebar
-	> :not(.room-controls) {
+	> :not(.room-controls, .sidebar-end) {
 	display: none;
 }
 

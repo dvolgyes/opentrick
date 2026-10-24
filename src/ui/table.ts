@@ -47,6 +47,8 @@ export interface TableSection {
 	/** The score sheet. The room page places it after the table, so the table can fill the screen. */
 	/** The right column: bidding history, Tricks, and the previous-game statistics. */
 	readonly sidebar: HTMLElement;
+	/** The last part of the sidebar. The room page puts the host's debug controls here, so their messages push nothing down. */
+	readonly sidebarEnd: HTMLElement;
 	render(view: TableView): void;
 	setCountdown(seconds: number | undefined): void;
 	/** The call changed: updates only the call controls and the call status of each remote seat. */
@@ -636,9 +638,10 @@ export function tableSection(
 		className: "side-panel tricks-panel",
 		attrs: { "data-testid": "tricks-panel" },
 	});
-	// render() fills the sidebar in order: contract, undo, claim controls, bidding history, tricks, statistics.
-	// The controls come before the long lists, so they stay on the canvas when the lists grow.
-	const sidebar = el("div", { className: "table-sidebar" });
+	// render() fills the sidebar in order: contract, bidding history, tricks, undo, claim controls, statistics, end.
+	// The controls come before the statistics and the debug messages, so these do not push them off the canvas.
+	const sidebarEnd = el("div", { className: "sidebar-end" });
+	const sidebar = el("div", { className: "table-sidebar" }, sidebarEnd);
 	const status = el(
 		"div",
 		{ className: "table-status" },
@@ -1838,11 +1841,12 @@ export function tableSection(
 		renderTricks(view);
 		sidebar.append(
 			contractPanel,
-			undoPanel,
-			...(mobileGameActive ? [] : [claimPanel, playControls]),
 			...(mobileGameActive || view.phase === "auction" ? [] : [bidHistory]),
 			tricksPanel,
+			undoPanel,
+			...(mobileGameActive ? [] : [claimPanel, playControls]),
 			scores,
+			sidebarEnd,
 		);
 	}
 
@@ -1938,6 +1942,7 @@ export function tableSection(
 	return {
 		element,
 		sidebar,
+		sidebarEnd,
 		render,
 		renderCall,
 		setBotControls,

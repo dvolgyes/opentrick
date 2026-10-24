@@ -111,6 +111,24 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 				page,
 				page.getByRole("button", { name, exact: true }),
 			);
+
+		// The sidebar reads top to bottom: bidding, tricks, the controls, statistics, and the host's debug row last.
+		const parts = {
+			bidding: page.getByTestId("bid-history"),
+			tricks: page.getByTestId("tricks-panel"),
+			claim: page.getByRole("button", { name: "Claim all", exact: true }),
+			statistics: page.getByTestId("scores"),
+			debug: page.getByTestId("debug-export"),
+		};
+		const tops: Record<string, number> = {};
+		for (const [part, locator] of Object.entries(parts)) {
+			await expect(locator, part).toBeVisible();
+			tops[part] = (await locator.boundingBox())?.y ?? Number.NaN;
+		}
+		const order = Object.keys(tops).sort(
+			(a, b) => (tops[a] ?? 0) - (tops[b] ?? 0),
+		);
+		expect(order, JSON.stringify(tops)).toEqual(Object.keys(parts));
 		expect(host.errors).toEqual([]);
 	} finally {
 		await host.close();

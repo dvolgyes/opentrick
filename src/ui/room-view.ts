@@ -1077,9 +1077,7 @@ export function showRoom(
 			resumeBots,
 			botSpendCounter,
 		),
-		debugRow,
 		botStatus,
-		debugStatus,
 		keyDialog,
 		modelDialog,
 	);
@@ -1114,6 +1112,7 @@ export function showRoom(
 	);
 	resetControls.append(resetDecision);
 	table.sidebar.prepend(resetControls);
+	table.sidebarEnd.append(debugRow, debugStatus);
 
 	// A storage warning stays visible on every screen, so it sits in the stage, not in the extras.
 	const storageNotices =
