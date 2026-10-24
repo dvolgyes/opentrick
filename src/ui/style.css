@@ -1187,16 +1187,19 @@ main:has(> .room) {
 	color: var(--red-suit);
 }
 
-/* Center: the cards of the current trick, each on the side of the player who played it. */
+/*
+ * Center: the cards of the current trick, each on the side of the player who played it. The side cards span the
+ * height of the trick, so they stand portrait beside the top and bottom cards.
+ */
 
 .trick {
 	display: grid;
-	grid-template-columns: var(--card-h) var(--card-w) var(--card-h);
+	grid-template-columns: var(--card-w) var(--card-w) var(--card-w);
 	grid-template-rows: var(--card-h) var(--card-w) var(--card-h);
 	grid-template-areas:
-		". top ."
+		"left top right"
 		"left . right"
-		". bottom .";
+		"left bottom right";
 	gap: 0.2rem;
 	align-items: center;
 	justify-items: center;
@@ -1229,12 +1232,6 @@ main:has(> .room) {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-}
-
-.played.pos-left .played-legacy,
-.played.pos-right .played-legacy {
-	flex-direction: row;
-	gap: 0.3rem;
 }
 
 .played-corners,
@@ -1333,7 +1330,7 @@ main:has(> .room) {
 	display: block;
 }
 
-/* The marks of the side cards stand upright, as on the top card; only the card itself lies landscape. */
+/* The marks of the side cards stand upright, as on the top card. */
 .bridge-table[data-played-card-style="corners-oriented"]
 	.played:is(.pos-top, .pos-left, .pos-right)
 	.rank-corner {
@@ -1373,15 +1370,6 @@ main:has(> .room) {
 
 .played.pos-right {
 	grid-area: right;
-}
-
-/* The long edge points to the player who played the card: landscape on the left and right, portrait at top and bottom. */
-.played.pos-left,
-.played.pos-right {
-	flex-direction: row;
-	width: var(--card-h);
-	height: var(--card-w);
-	gap: 0.3rem;
 }
 
 .played.pos-bottom {

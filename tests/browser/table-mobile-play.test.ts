@@ -432,6 +432,46 @@ describe("played card styles", () => {
 		if (!leftCard) throw new Error("left played card is missing");
 		expect(getComputedStyle(leftCard).transform).toBe("none");
 	});
+
+	it.each<Form>(["desktop", "compact"])(
+		"stands every played card portrait, apart from the others (%s)",
+		(form) => {
+			const view = playView();
+			if (!view.trick) throw new Error("current trick is missing");
+			const firstPlayed = view.trick.cards[0];
+			if (!firstPlayed) throw new Error("played card fixture is missing");
+			const { root } = renderView(
+				{
+					...view,
+					trick: {
+						...view.trick,
+						cards: [
+							{ ...firstPlayed, seat: "N", position: "top" },
+							{ ...firstPlayed, seat: "E", position: "left" },
+							{ ...firstPlayed, seat: "W", position: "right" },
+							{ ...firstPlayed, seat: "S", position: "bottom" },
+						],
+					},
+				},
+				form,
+			);
+			const boxes = [...root.querySelectorAll<HTMLElement>(".played")].map(
+				(card) => card.getBoundingClientRect(),
+			);
+			expect(boxes).toHaveLength(4);
+			for (const box of boxes) expect(box.height).toBeGreaterThan(box.width);
+			for (const [index, box] of boxes.entries()) {
+				for (const other of boxes.slice(index + 1)) {
+					const apart =
+						box.right <= other.left ||
+						other.right <= box.left ||
+						box.bottom <= other.top ||
+						other.bottom <= box.top;
+					expect(apart).toBe(true);
+				}
+			}
+		},
+	);
 });
 
 describe("turn pill", () => {
