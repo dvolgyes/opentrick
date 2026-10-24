@@ -150,12 +150,22 @@ for (const viewport of PHONES) {
 				}
 				expect(await hiddenCards(page)).toEqual([]);
 				await expectCompactPage(page);
-				const card = auction.locator("button.card:not([disabled])").first();
-				const { id, dummy } = await card.evaluate((button) => ({
-					id: button.getAttribute("data-card"),
-					dummy: button.closest(".mobile-board-top") !== null,
-				}));
-				await card.tap();
+				// One script finds the card and its hand. A re-render can detach a button between two steps, and a
+				// detached button is in no hand.
+				const next = await page.evaluate(() => {
+					const button = document.querySelector(
+						"[data-testid='mobile-auction'] button.card:not([disabled])",
+					);
+					return button === null
+						? undefined
+						: {
+								id: button.getAttribute("data-card"),
+								dummy: button.closest(".mobile-board-top") !== null,
+							};
+				});
+				if (next === undefined) continue;
+				const { id, dummy } = next;
+				await auction.locator(`button.card[data-card="${id}"]`).tap();
 				taps[dummy ? "dummy" : "own"]++;
 				// The played card leaves its hand before the phone acts again.
 				await expect(
