@@ -1770,7 +1770,10 @@ button.call-join[data-in-call="true"] {
 	color: #1b1b1b;
 }
 
-/* A top or bottom seat shows its trump label and its turn pill in one row between the name and the hand. */
+/*
+ * A top or bottom seat shows its trump label and its turn pill in one row between the name and the hand. A side seat
+ * shows its turn pill in this row above the name.
+ */
 .seat-tags {
 	display: flex;
 	align-items: center;
@@ -1790,31 +1793,6 @@ button.call-join[data-in-call="true"] {
 .room[data-form="desktop"] .seat-tags {
 	display: flex;
 	min-height: calc(1.2rem + 2px);
-}
-
-/*
- * A side seat's pill stands along the inner edge of its cards, turned so that the tops of its letters face the table's
- * centre. The line is as wide as the cards, and the pill takes no room in it, so the hand does not move.
- */
-.hand-line {
-	position: relative;
-	width: fit-content;
-}
-
-.hand-line > .turn-pill {
-	position: absolute;
-	top: 0;
-	z-index: 1;
-	writing-mode: vertical-rl;
-}
-
-.pos-left .hand-line > .turn-pill {
-	left: calc(100% + 0.4rem);
-}
-
-.pos-right .hand-line > .turn-pill {
-	right: calc(100% + 0.4rem);
-	transform: rotate(180deg);
 }
 
 .play-controls {

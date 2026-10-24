@@ -631,8 +631,16 @@ describe("turn pill", () => {
 		}
 	});
 
-	it("stands the pill of a side seat along the inner edge of its cards", () => {
+	it("lays the pill of a side seat flat above the name, and keeps the name and hand in place", () => {
 		const base = sideHandView();
+		const handTops = (root: HTMLElement) =>
+			["E", "W"].map(
+				(seatName) =>
+					root
+						.querySelector(`[data-testid="hand-${seatName}"] .hand`)
+						?.getBoundingClientRect().top,
+			);
+		const before = handTops(renderView(base, "desktop").root);
 		const view: TableView = {
 			...base,
 			seats: base.seats.map((player) => ({
@@ -641,23 +649,17 @@ describe("turn pill", () => {
 			})),
 		};
 		const { root } = renderView(view, "desktop");
-		for (const [seatName, inner] of [
-			["E", "right"],
-			["W", "left"],
-		] as const) {
+		for (const seatName of ["E", "W"]) {
 			const seat = root.querySelector<HTMLElement>(
 				`[data-testid="hand-${seatName}"]`,
 			);
 			const pill = seat?.querySelector(".turn-pill")?.getBoundingClientRect();
-			const hand = seat?.querySelector(".hand")?.getBoundingClientRect();
-			if (!pill || !hand) throw new Error(`${seatName} has no pill or hand`);
-			expect(pill.height, seatName).toBeGreaterThan(pill.width);
-			if (inner === "right")
-				expect(pill.left, seatName).toBeGreaterThanOrEqual(hand.right);
-			else expect(pill.right, seatName).toBeLessThanOrEqual(hand.left);
-			expect(pill.top, seatName).toBeLessThan(hand.bottom);
-			expect(pill.bottom, seatName).toBeGreaterThan(hand.top);
+			const name = seat?.querySelector(".seat-label")?.getBoundingClientRect();
+			if (!pill || !name) throw new Error(`${seatName} has no pill or name`);
+			expect(pill.width, seatName).toBeGreaterThan(pill.height);
+			expect(pill.bottom, seatName).toBeLessThanOrEqual(name.top);
 		}
+		expect(handTops(root)).toEqual(before);
 	});
 
 	it("keeps a long pill of a side seat on the table", () => {

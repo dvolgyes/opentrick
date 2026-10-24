@@ -900,7 +900,7 @@ export function tableSection(
 				? []
 				: [el("span", { className: "hcp-pill" }, `${seat.points} HCP`)];
 		// The turn pill marks the seat to call or play. A top or bottom seat shows it next to the trump label; a side
-		// seat stands it along the inner edge of its cards.
+		// seat shows it flat above the name.
 		const turnPill = seat.turnPill
 			? [
 					el(
@@ -911,12 +911,12 @@ export function tableSection(
 				]
 			: [];
 		const side = seat.position === "left" || seat.position === "right";
-		const tags = side
-			? []
-			: [el("div", { className: "seat-tags" }, ...trumpLabel, ...turnPill)];
-		const handLine = side
-			? el("div", { className: "hand-line" }, hand, ...turnPill)
-			: hand;
+		const tags = el(
+			"div",
+			{ className: "seat-tags" },
+			...trumpLabel,
+			...turnPill,
+		);
 		return el(
 			"div",
 			{
@@ -930,10 +930,11 @@ export function tableSection(
 				},
 			},
 			...pills,
+			...(side ? [tags] : []),
 			label,
 			...banner,
-			...tags,
-			handLine,
+			...(side ? [] : [tags]),
+			hand,
 		);
 	}
 
