@@ -286,6 +286,16 @@ describe("play", () => {
 		expect(playableCards(seatView(south, "N").hand)).toEqual([]);
 		const west = view("W", LED);
 		expect(shownCards(seatView(west, "S").hand)).toHaveLength(13);
+		// Dummy's trump suit, spades, is on dummy's own right: the top on the viewer's right, the bottom on the left.
+		const symbols = (table: TableView) => {
+			const hand = seatView(table, "S").hand;
+			return hand.visible && hand.suits.map((row) => row.symbol);
+		};
+		expect(seatView(west, "S").position).toBe("right");
+		expect(symbols(west)).toEqual(["♠", "♥", "♦", "♣"]);
+		const east = view("E", LED);
+		expect(seatView(east, "S").position).toBe("left");
+		expect(symbols(east)).toEqual(["♥", "♦", "♣", "♠"]);
 		expect(seatView(west, "N").hand).toEqual({ visible: false, count: 13 });
 		expect(west.trick).toEqual({
 			cards: [

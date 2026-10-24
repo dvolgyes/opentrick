@@ -32,6 +32,17 @@ describe("playSuitOrder", () => {
 	it("uses the base order with no trump suit", () => {
 		expect(playSuitOrder("NT")).toEqual(["S", "H", "D", "C"]);
 		expect(playSuitOrder(undefined)).toEqual(["S", "H", "D", "C"]);
+		expect(playSuitOrder("NT", "left", true)).toEqual(["S", "H", "D", "C"]);
+	});
+
+	// A side hand stacks its suits from the top down: dummy's right is the bottom on the left, the top on the right.
+	it("puts the trump suit on dummy's own right in a side hand", () => {
+		expect(playSuitOrder("D", "left", true)).toEqual(["S", "H", "C", "D"]);
+		expect(playSuitOrder("H", "right", true)).toEqual(["H", "S", "D", "C"]);
+	});
+
+	it("keeps the screen rule for dummy at the top", () => {
+		expect(playSuitOrder("C", "top", true)).toEqual(["C", "S", "H", "D"]);
 	});
 });
 

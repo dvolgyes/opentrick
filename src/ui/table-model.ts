@@ -890,11 +890,13 @@ export function tableView(input: TableViewInput): TableView {
 	);
 	const { contract, dummy } = view;
 	// Dealer, declarer and dummy are shown in the details and the contract line, not as panel badges (layout spec §4).
-	// Every hand carries the trump suit first, or last on the right of the viewer (layout spec §7).
+	// Every hand carries the trump suit first, or last on the right of the viewer (layout spec §7); dummy on a side
+	// carries it on dummy's own right.
 	const suitOrder = (owner: Seat): readonly Suit[] =>
 		playSuitOrder(
 			view.phase === "auction" ? undefined : contract?.strain,
 			positionOf(seat, owner),
+			owner === dummy,
 		);
 	const trumpOf = (): Suit | undefined =>
 		contract && contract.strain !== "NT" ? contract.strain : undefined;

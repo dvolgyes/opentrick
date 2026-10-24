@@ -30,14 +30,18 @@ export function sideOf(seat: Seat): "NS" | "EW" {
  * The suit order of one hand: spades, hearts, diamonds, clubs. With a trump suit, which the auction does not have
  * yet, the trump suit comes first and the other suits keep the base order. The trump suit goes last only in a hand on the right side of the viewer's
  * screen, so the trump suit is always on the left of the hand as its owner's side of the table reads it.
+ * Dummy on a side of the screen is the exception: its trump suit is on dummy's own right, which is the bottom of the
+ * stacked suits on the left and the top on the right.
  */
 export function playSuitOrder(
 	strain: Strain | undefined,
 	edge?: Edge,
+	dummy = false,
 ): readonly Suit[] {
 	if (strain === undefined || strain === "NT") return SUIT_ORDER;
 	const others = SUIT_ORDER.filter((suit) => suit !== strain);
-	return edge === "right" ? [...others, strain] : [strain, ...others];
+	const last = dummy ? edge === "left" : edge === "right";
+	return last ? [...others, strain] : [strain, ...others];
 }
 
 /** The Milton Work points of a set of cards: A 4, K 3, Q 2, J 1. */
