@@ -1504,9 +1504,13 @@ describe("compact play controls", () => {
 		"keeps the %s bid cells and their spacing compact on a phone",
 		(phase) => {
 			const { root } = renderMobile({ ...playView(), phase });
+			// In play the history is folded; it is opened so that its cells have a size.
+			const fold = root.querySelector<HTMLDetailsElement>(".mobile-bids-fold");
+			if (fold) fold.open = true;
 			const cell = root.querySelector<HTMLElement>(
 				".mobile-auction-bids .auction td",
 			);
+			expect(cell?.checkVisibility()).toBe(true);
 			const table = cell?.closest("table");
 			if (!cell || !table) throw new Error("bid cell is missing");
 			const font = Number.parseFloat(getComputedStyle(cell).fontSize);
@@ -1602,5 +1606,54 @@ describe("compact play controls", () => {
 		);
 		approve?.click();
 		expect(handlers.undoVote).toHaveBeenCalledWith("undo-1", true);
+	});
+});
+
+describe("mobile folds", () => {
+	const shown = (root: HTMLElement, selector: string) =>
+		root.querySelector<HTMLElement>(selector)?.checkVisibility() ?? false;
+
+	it("folds the bidding history in play, and a click opens and folds it", () => {
+		const { root, section } = renderMobile({
+			...playView(),
+			phase: "auction",
+		});
+		const cell = ".mobile-auction-bids .auction td";
+		expect(shown(root, cell)).toBe(true);
+		section.render(playView());
+		expect(shown(root, cell)).toBe(false);
+		const title = root.querySelector<HTMLElement>(
+			".mobile-auction-bids summary",
+		);
+		expect(title?.textContent).toBe("Bidding history");
+		title?.click();
+		expect(shown(root, cell)).toBe(true);
+		// A new render in play keeps the player's choice.
+		section.render(playView());
+		expect(shown(root, cell)).toBe(true);
+		title?.click();
+		expect(shown(root, cell)).toBe(false);
+		section.render({ ...playView(), phase: "auction" });
+		expect(shown(root, cell)).toBe(true);
+	});
+
+	it("folds the bot switches by default, and a click opens them", () => {
+		const { root, section } = renderMobile({
+			...playView(),
+			phase: "auction",
+		});
+		section.setBotControls(true, []);
+		const toggle = ".mobile-player-control button";
+		expect(root.querySelector(toggle)?.textContent).toBe("🤖 Switch to bot");
+		expect(shown(root, toggle)).toBe(false);
+		const title = root.querySelector<HTMLElement>(
+			".mobile-auction-players summary",
+		);
+		expect(title?.textContent).toBe("🤖 Optional automated players");
+		title?.click();
+		expect(shown(root, toggle)).toBe(true);
+		section.render(playView());
+		section.setBotControls(true, ["E"]);
+		expect(shown(root, toggle)).toBe(true);
 	});
 });

@@ -1085,6 +1085,14 @@ main:has(> .room) {
 	gap: 0.3rem;
 }
 
+.mobile-bot-fold > summary {
+	cursor: pointer;
+}
+
+.mobile-bot-fold[open] > summary {
+	margin-bottom: 0.3rem;
+}
+
 .mobile-player-control {
 	display: flex;
 	align-items: center;
@@ -2738,8 +2746,19 @@ main:has(> .room[data-form="compact"]) {
 	gap: 0.2rem;
 }
 
+/* The fold's title replaces the panel title, at the same size; a click on it opens or folds the history. */
 .mobile-auction-bids .history-panel .panel-title {
+	display: none;
+}
+
+.mobile-bids-fold > summary {
 	font-size: 0.75rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.mobile-bids-fold[open] > summary {
+	margin-bottom: 0.2rem;
 }
 
 .mobile-auction-bids .auction-scroll {

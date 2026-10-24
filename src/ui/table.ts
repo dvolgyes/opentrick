@@ -509,10 +509,18 @@ export function tableSection(
 		className: "mobile-round-status",
 		attrs: { "data-testid": "mobile-round-status", "aria-live": "polite" },
 	});
+	// On a phone the history folds away when play starts; its title opens and folds it again.
+	const mobileBidsTitle = el("summary", {}, t("Bidding history"));
+	const mobileBidsFold = el(
+		"details",
+		{ className: "mobile-bids-fold" },
+		mobileBidsTitle,
+		bidHistory,
+	);
 	const mobileBids = el(
 		"section",
 		{ className: "mobile-auction-bids" },
-		bidHistory,
+		mobileBidsFold,
 	);
 	const mobileBidControls = el(
 		"section",
@@ -560,6 +568,13 @@ export function tableSection(
 	});
 	const connectedPlayers = el("p", { className: "mobile-players-connected" });
 	const mobileBotControls = el("div", { className: "mobile-bot-controls" });
+	// The bot switches stay folded until their title opens them.
+	const mobileBotFold = el(
+		"details",
+		{ className: "mobile-bot-fold" },
+		el("summary", {}, `🤖 ${t("Optional automated players")}`),
+		mobileBotControls,
+	);
 	const mobilePlayers = el(
 		"section",
 		{
@@ -567,7 +582,7 @@ export function tableSection(
 			attrs: { "aria-label": t("Other players") },
 		},
 		connectedPlayers,
-		mobileBotControls,
+		mobileBotFold,
 	);
 	const mobileAuction = el(
 		"section",
@@ -585,6 +600,7 @@ export function tableSection(
 	);
 	let compact = false;
 	let mobileUndoWasVisible = false;
+	let mobileBidsPhase: TableView["phase"] | undefined;
 	// The bid picker sits in the felt centre under the bids; the call panel sits in the felt corner (reference layout).
 	center.append(gameSlot);
 	const felt = el(
@@ -1620,7 +1636,7 @@ export function tableSection(
 
 	function renderMobilePlayers(view: TableView): void {
 		const own = view.seats.find((player) => player.position === "bottom")?.seat;
-		mobileBotControls.hidden = !botControlHost && !playerAutoplayAvailable;
+		mobileBotFold.hidden = !botControlHost && !playerAutoplayAvailable;
 		const others = view.seats.filter(
 			(player) =>
 				player.seat !== own &&
@@ -1823,7 +1839,12 @@ export function tableSection(
 					),
 				);
 			}
-			placeChildren(mobileBids, bidHistory);
+			placeChildren(mobileBidsFold, mobileBidsTitle, bidHistory);
+			// The history opens for each auction and folds when play starts; between those, the player's choice stays.
+			if (view.phase !== mobileBidsPhase) {
+				mobileBidsPhase = view.phase;
+				mobileBidsFold.open = view.phase !== "play";
+			}
 			placeChildren(
 				mobileBidControls,
 				...(view.phase === "auction" ? [bidBox] : [playControls, claimPanel]),
