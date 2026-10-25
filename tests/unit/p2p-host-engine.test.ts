@@ -618,6 +618,48 @@ describe("hello", () => {
 		expect(rig.row("E")?.gen).toBe(gen);
 	});
 
+	it("tells a page whose seat is free on this table that it is unseated, so it claims the seat again", async () => {
+		// After a merge the winning table has no claim of the seat that the page held on the losing table.
+		const rig = await new Rig().create();
+		await rig.hello(EAST, CLIENT_E, { seat: "E", gen: 3 });
+		const [welcome, lobby] = rig.to(EAST);
+		expect(welcome).toEqual({
+			k: "welcome",
+			status: "unseated",
+			auth: rig.auth,
+		});
+		expect(lobby?.k === "lobby" && lobby.seats[1]).toMatchObject({
+			seat: "E",
+			available: true,
+		});
+		await rig.from(EAST, { k: "claim-seat", req: 1, seat: "E" });
+		expect(rig.to(EAST)).toContainEqual({
+			k: "seat-result",
+			req: 1,
+			ok: true,
+			seat: "E",
+			gen: 1,
+		});
+	});
+
+	it("lets a page whose seat another browser holds offline wait for SEAT_GRACE_MS, then tells it that it is unseated", async () => {
+		const rig = await new Rig().create();
+		await rig.seat(SOUTH, CLIENT_S, "E");
+		rig.host.leave(SOUTH);
+		rig.to(SOUTH);
+		await rig.hello(EAST, CLIENT_E, { seat: "E", gen: 1 });
+		expect(rig.to(EAST)).toEqual([
+			{ k: "welcome", status: "superseded", auth: rig.auth, busy: true },
+		]);
+		rig.clock.now += SEAT_GRACE_MS;
+		await rig.hello(EAST, CLIENT_E, { seat: "E", gen: 1 });
+		expect(rig.to(EAST)[0]).toEqual({
+			k: "welcome",
+			status: "unseated",
+			auth: rig.auth,
+		});
+	});
+
 	it("deletes an expired table, tells every peer and stops", async () => {
 		const rig = await new Rig().create();
 		rig.clock.now += TABLE_IDLE_MS + 1;

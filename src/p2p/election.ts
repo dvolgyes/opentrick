@@ -247,6 +247,21 @@ export function followedHost(state: ElectionState): Followed | null {
 		: null;
 }
 
+/**
+ * Rule 14: of the seated pages that have no table, the one whose seat is first clockwise from the link's host seat
+ * seeds the table. A page whose link names no host seat never seeds, and a peer counts only while its beats come
+ * and only when it can host and its link names the same host seat.
+ */
+export function seedsFirst(state: ElectionState): boolean {
+	const { seating, pref } = state.self;
+	if (seating === null || pref === undefined) return false;
+	for (const { beat } of state.heard.values()) {
+		if (beat.elig && priorityOrder(pref, beat, seating.seat) === true)
+			return false;
+	}
+	return true;
+}
+
 export function electionView(state: ElectionState): ElectionView {
 	const { mode } = state;
 	if (mode.kind === "superseded") return { phase: "superseded" };
@@ -356,7 +371,7 @@ function apply(
 	}
 }
 
-/** Rules 4 and 8–12: step down, finish the claim pull, resume, take over or volunteer; then the periodic beat. */
+/** Rules 4 and 8–13: step down, finish the claim pull, resume, take over or volunteer; then the periodic beat. */
 function decide(
 	state: ElectionState,
 	effects: ElectionEffect[],
@@ -371,7 +386,9 @@ function decide(
 			if (mode.kind === "hosting") {
 				effects.push({ type: "step-down", auth: mode.auth });
 			}
-			return sendBeat({ ...state, mode: IDLE }, effects);
+			// A page whose table survives the merge (rule 13) claims before it follows the better host and syncs.
+			const idle = considerClaim({ ...state, mode: IDLE }, effects);
+			return idle.mode.kind === "idle" ? sendBeat(idle, effects) : idle;
 		}
 		if (
 			mode.kind === "claiming" &&
@@ -397,17 +414,20 @@ function considerClaim(
 	effects: ElectionEffect[],
 ): ElectionState {
 	const { seating } = state.self;
+	const blocked = seating === null || claimBlock(state) !== null;
+	// A followed host has the best known authority, so a resume cannot succeed: the takeover does not wait for it.
+	const over = blocked ? null : takeOver(state, seating);
+	if (over !== null) {
+		const done = { ...state, resumePending: false };
+		return startClaim(done, newAuthority(done), over.source, effects);
+	}
 	if (state.resumePending) {
 		if (!state.online || state.onlineMs < RESUME_ONLINE_MS) return state;
 		const done = { ...state, resumePending: false };
 		const resume = resumeAuthority(done);
 		return resume ? startClaim(done, resume, null, effects) : done;
 	}
-	if (seating === null || claimBlock(state) !== null) return state;
-	const over = handover(state, seating);
-	if (over !== null) {
-		return startClaim(state, newAuthority(state), over, effects);
-	}
+	if (blocked) return state;
 	const due = VOLUNTEER_MS + STAGGER_MS * rank(state, seating);
 	return state.absentMs >= due
 		? startClaim(state, newAuthority(state), pullSource(state), effects)
@@ -415,22 +435,37 @@ function considerClaim(
 }
 
 /**
- * Rule 12: the followed host's peer when this page takes over from it. The host's link names the same host seat as
- * this page's link, this page's seat is closer clockwise to that seat, and the replica has every entry that the
- * host's last beat shows, on the host's line: it ends with an entry of the same authority, or of the host itself.
- * The claim pulls from the host, for the entries written after that beat.
+ * Rules 12 and 13: the claim that takes over from the followed host, whose link names the same host seat as this
+ * page's link. `source` is the peer to pull from.
+ *
+ * Rule 12: on the host's line (the replica ends with an entry of the same authority, or of the host itself), this
+ * page takes over when its seat is closer clockwise to that seat and the replica has every entry that the host's
+ * last beat shows. The claim pulls from the host, for the entries written after that beat. More entries do not
+ * count here: the host's beat can be a beat period old.
+ *
+ * Rule 13: when the logs diverged, the table with more entries survives, and at an equal number the table of the
+ * closer seat. The claim does not pull, and the host's pages then replace their logs with this page's log.
  */
-function handover(state: ElectionState, seating: Seating): string | null {
+function takeOver(
+	state: ElectionState,
+	seating: Seating,
+): { readonly source: string | null } | null {
 	const lead = leader(state);
 	if (lead?.kind !== "direct" || lead.role !== "host") return null;
 	const beat = state.heard.get(lead.peer)?.beat;
 	if (beat?.pos === undefined || beat.auth === undefined) return null;
-	if (priorityOrder(state.self.pref, beat, seating.seat) !== false) return null;
+	const { pref } = state.self;
+	if (pref === undefined || beat.pref !== pref) return null;
+	const closer = priorityOrder(pref, beat, seating.seat) === false;
 	const { pos } = seating;
 	const line =
 		sameAuthority(pos.lastAuth, beat.pos.lastAuth) ||
 		sameAuthority(pos.lastAuth, beat.auth);
-	return line && pos.rev >= beat.pos.rev ? lead.peer : null;
+	if (line) {
+		return closer && pos.rev >= beat.pos.rev ? { source: lead.peer } : null;
+	}
+	const more = pos.rev > beat.pos.rev || (pos.rev === beat.pos.rev && closer);
+	return more ? { source: null } : null;
 }
 
 /** Rule 10: the stored host is this page's tag, and nothing better is known. */

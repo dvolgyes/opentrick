@@ -4,10 +4,12 @@ import { newCommandId } from "../../src/ids";
 import { randomNonce } from "../../src/p2p/checks";
 import { deriveHolder, makeTag } from "../../src/p2p/keys";
 import { BEAT_MS, SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
+import { LINK_VERSION } from "../../src/p2p/link";
+import { creationCommit, LocalLog } from "../../src/p2p/log";
 import type { MeshDiagnostics, MeshHandlers } from "../../src/p2p/mesh";
 import { TableController, type TableMesh } from "../../src/p2p/table";
-import type { CtlMessage } from "../../src/p2p/wire";
-import type { Seat } from "../../src/protocol";
+import type { CtlMessage, Roster } from "../../src/p2p/wire";
+import { SEATS, type Seat } from "../../src/protocol";
 import type { HoldOptions, SeatLocks } from "../../src/session";
 import { settle, syncDigest, TestStorage, VirtualClock } from "./fake-mesh";
 import { CONFIG, TABLE } from "./p2p-fixtures";
@@ -85,6 +87,13 @@ class Rig {
 	left = 0;
 	controller: TableController | null = null;
 	handlers: MeshHandlers | null = null;
+	/** The peers that the mesh has when the page starts. */
+	peers: string[] = [];
+	/** Every control message that the page sent, with its receiver. */
+	readonly sentTo: {
+		readonly to: string | null;
+		readonly message: CtlMessage;
+	}[] = [];
 	/** Every control message that the page sent. */
 	readonly sentCtl: CtlMessage[] = [];
 	#tick: () => void = () => {};
@@ -110,12 +119,13 @@ class Rig {
 		const holder = await deriveHolder(TABLE, CLIENT);
 		const mesh: TableMesh = {
 			self: "self0000000000000000",
-			peers: () => [],
+			peers: () => this.peers,
 			connection: () => undefined,
 			online: () => true,
 			diagnostics: () => DIAGNOSTICS,
-			ctl: (_peer, message) => {
+			ctl: (peer, message) => {
 				this.sentCtl.push(message);
+				this.sentTo.push({ to: peer, message });
 			},
 			log: () => {},
 			call: () => {},
@@ -299,6 +309,44 @@ describe("table controller seeding from the setup link", () => {
 		expect(rig.storage.commits).toBe(0);
 	});
 
+	/** A beat of West's page, which has no table either; its link names S as the host seat. */
+	async function westBeat(): Promise<void> {
+		const holder = await deriveHolder(TABLE, "clientW-0123456789abcd");
+		rig.handlers?.ctl("west000000000000000", {
+			k: "beat",
+			role: "follower",
+			holder,
+			seat: "W",
+			elig: true,
+			pos: { rev: 0, lastAuth: null },
+			pref: "S",
+		});
+		await settle();
+	}
+
+	it("seeds from another seat than the link's host seat when no page higher in the order is there (rule 14)", async () => {
+		// host=S: the order is S, W, N, E.
+		const table = await rig.start("N", undefined, "S");
+		await rig.advance(SEED_WAIT_MS + 2 * TICK_MS);
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("does not seed while a page higher in the order is there, and seeds when it leaves", async () => {
+		const table = await rig.start("N", undefined, "S");
+		for (let beats = 0; beats < (2 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			await westBeat();
+			await rig.advance(BEAT_MS);
+		}
+		expect(table.view().hosting).toBe(false);
+		expect(rig.storage.commits).toBe(0);
+
+		rig.handlers?.leave("west000000000000000");
+		await settle();
+		await rig.advance(2 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
+	});
+
 	it("seeds the host seat SEED_WAIT_MS after the last beat that showed the table", async () => {
 		const table = await rig.start("N");
 		await rig.advance(5_000);
@@ -313,5 +361,117 @@ describe("table controller seeding from the setup link", () => {
 		await rig.advance(4 * TICK_MS);
 
 		expect(table.view().hosting).toBe(true);
+	});
+});
+
+describe("table controller after a failed seat claim", () => {
+	const EAST = "east000000000000000";
+	const SOUTH = "south00000000000000";
+
+	it("hosts later with the peers that connected before the failed claim", async () => {
+		// This browser created the table at N and still has its replica; East hosts a later term.
+		const holder = await deriveHolder(TABLE, CLIENT);
+		const log = new LocalLog(rig.storage, TABLE, "N");
+		const written = await log.write(() =>
+			creationCommit({
+				tableId: TABLE,
+				seat: "N",
+				holder,
+				config: CONFIG,
+				state: chatModule.initialState(TABLE, CONFIG),
+				auth: { term: 1, tag: makeTag(holder, "N"), inc: 1 },
+				id: newCommandId(),
+				now: rig.clock.wall(),
+			}),
+		);
+		expect(written.ok).toBe(true);
+		rig.peers = [EAST, SOUTH];
+		const table = await rig.start(null);
+		const eastHolder = await deriveHolder(TABLE, "clientE-0123456789abcd");
+		const southHolder = await deriveHolder(TABLE, "clientS-0123456789abcd");
+		const auth = { term: 2, tag: makeTag(eastHolder, "E"), inc: 1 };
+		const eastBeat = (): void =>
+			rig.handlers?.ctl(EAST, {
+				k: "beat",
+				role: "host",
+				holder: eastHolder,
+				seat: "E",
+				elig: true,
+				auth,
+				pos: { rev: 5, lastAuth: auth },
+			});
+		const southBeat = (): void =>
+			rig.handlers?.ctl(SOUTH, {
+				k: "beat",
+				role: "follower",
+				holder: southHolder,
+				seat: "S",
+				elig: true,
+				pos: { rev: 0, lastAuth: null },
+			});
+		eastBeat();
+		await settle();
+		rig.handlers?.ctl(EAST, { k: "welcome", status: "unseated", auth });
+		rig.handlers?.ctl(EAST, {
+			k: "lobby",
+			auth,
+			config: CONFIG,
+			idleMs: 0,
+			seats: SEATS.map((seat) => ({
+				seat,
+				available: seat === "S",
+				online: seat !== "S",
+				mine: false,
+			})),
+		});
+		await settle();
+
+		// East gives South away before this page's claim arrives.
+		expect(await table.choose("S")).toEqual({ ok: true });
+		await settle();
+		const claim = rig.sentCtl.find((message) => message.k === "claim-seat");
+		if (claim?.k !== "claim-seat") throw new Error("no claim");
+		rig.handlers?.ctl(EAST, {
+			k: "seat-result",
+			req: claim.req,
+			ok: false,
+			code: "taken",
+		});
+		await settle();
+		expect(table.view().seat).toBeNull();
+
+		// East leaves; the page reopens its own seat and hosts with South as the witness.
+		rig.handlers?.leave(EAST);
+		await settle();
+		expect(await table.choose("N")).toEqual({ ok: true });
+		for (
+			let at = 0;
+			at < 3 * SEED_WAIT_MS && !table.view().hosting;
+			at += BEAT_MS
+		) {
+			southBeat();
+			await rig.advance(BEAT_MS);
+		}
+		expect(table.view().hosting).toBe(true);
+
+		// South, connected all the time, takes its seat; the host counts it as present.
+		rig.handlers?.ctl(SOUTH, {
+			k: "hello",
+			b: LINK_VERSION,
+			client: "clientS-0123456789abcd",
+			features: [],
+		});
+		await settle();
+		rig.handlers?.ctl(SOUTH, { k: "claim-seat", req: 1, seat: "S" });
+		await settle();
+		southBeat();
+		await rig.advance(4 * TICK_MS);
+		const rosters = rig.sentTo.filter(
+			(item): item is { to: string | null; message: Roster } =>
+				item.message.k === "roster" && item.to === SOUTH,
+		);
+		expect(rosters.at(-1)?.message.peers).toContainEqual(
+			expect.objectContaining({ peer: SOUTH, seat: "S" }),
+		);
 	});
 });

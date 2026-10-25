@@ -355,6 +355,22 @@ describe("joining", () => {
 		expect(rig.follower.status).toBe("bound");
 	});
 
+	it("a seated page that the host calls unseated claims its own seat again after the lobby", async () => {
+		const rig = await Rig.stored();
+		rig.follower.adopt(1);
+		rig.follower.follow(FIRST);
+		rig.sent.take();
+		rig.ctl(HOST, { k: "welcome", status: "unseated", auth: AUTH_1 });
+		expect(rig.follower.binding).toBeNull();
+		rig.ctl(HOST, lobby(AUTH_1));
+		expect(rig.sent.of("claim-seat").map((item) => item.message)).toEqual([
+			{ k: "claim-seat", req: 1, seat: "E" },
+		]);
+		rig.ctl(HOST, { k: "seat-result", req: 1, ok: true, seat: "E", gen: 4 });
+		expect(rig.follower.status).toBe("bound");
+		expect(rig.follower.binding).toEqual({ seat: "E", gen: 4 });
+	});
+
 	it("a page whose seat stays busy is superseded by its own browser after the wait", async () => {
 		const rig = await Rig.stored();
 		rig.follower.adopt(1);

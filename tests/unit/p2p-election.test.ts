@@ -10,6 +10,7 @@ import {
 	initElection,
 	type Seating,
 	type SelfFacts,
+	seedsFirst,
 	stepElection,
 } from "../../src/p2p/election";
 import { makeTag } from "../../src/p2p/keys";
@@ -663,6 +664,159 @@ describe("the handover to a seat closer to the link's host seat (rule 12)", () =
 			]);
 			expect(page.mode, String(pref)).toBe("idle");
 		}
+	});
+});
+
+describe("the merge of two tables with diverged logs (rule 13)", () => {
+	// host=S: the order is S, W, N, E. W and N each started a table; N's has the better authority.
+	const AUTH_W2: Authority = { term: 2, tag: TAG_W, inc: 1 };
+	const AUTH_N3: Authority = { term: 3, tag: makeTag(HOLDER_N, "N"), inc: 1 };
+	const CLAIM_W: Authority = { term: 4, tag: TAG_W, inc: 2 };
+
+	function page(holder: string, seat: Seat, rev: number, pref?: Seat): Page {
+		const pos = { rev, lastAuth: AUTH_W2 };
+		return new Page({
+			...facts(holder, seating(seat, { pos, host: AUTH_W2, inc: 1 })),
+			...(pref === undefined ? {} : { pref }),
+		});
+	}
+
+	/** `pref` null: the host's link names no host seat. */
+	function hostN(rev: number, pref: Seat | null = "S"): Beat {
+		return {
+			...leaderBeat(AUTH_N3, "host", { rev, lastAuth: AUTH_N3 }),
+			...(pref === null ? {} : { pref }),
+		};
+	}
+
+	it("claims at once, without a pull, when its replica has more entries than the host's", () => {
+		const west = page(HOLDER_W, "W", 6, "S");
+		const effects = west.hear("pN", hostN(2));
+		expect(west.state.mode).toMatchObject({ kind: "claiming", auth: CLAIM_W });
+		expect(ofType(effects, "pull")).toEqual([]);
+		expect(ofType(effects, "store")).toEqual([
+			{ type: "store", auth: CLAIM_W },
+		]);
+		expect(ofType(effects, "follow")).toEqual([]);
+	});
+
+	it("at an equal number of entries, claims only from a seat closer to the link's host seat", () => {
+		const west = page(HOLDER_W, "W", 2, "S");
+		west.hear("pN", hostN(2));
+		expect(west.state.mode).toMatchObject({ kind: "claiming", auth: CLAIM_W });
+
+		const east = page(HOLDER_E, "E", 2, "S");
+		const effects = east.hear("pN", hostN(2));
+		expect(east.mode).toBe("idle");
+		expect(ofType(effects, "follow")).toEqual([
+			{ type: "follow", host: { auth: AUTH_N3, peer: "pN" } },
+		]);
+	});
+
+	it("follows the host when its replica has fewer entries", () => {
+		const west = page(HOLDER_W, "W", 1, "S");
+		const effects = west.hear("pN", hostN(2));
+		expect(west.mode).toBe("idle");
+		expect(ofType(effects, "follow")).toHaveLength(1);
+	});
+
+	it("follows the host when the links name different host seats or none", () => {
+		for (const [own, other] of [
+			["S", "N"],
+			[undefined, null],
+			["S", null],
+		] as const) {
+			const west = page(HOLDER_W, "W", 6, own);
+			west.hear("pN", hostN(2, other));
+			expect(west.mode, `${own} ${other}`).toBe("idle");
+		}
+	});
+
+	it("keeps following a host of its own line when its replica is ahead of the host's last beat", () => {
+		// The host's beat can be a beat period old, so a follower can have more entries than it shows.
+		const pos = { rev: 6, lastAuth: AUTH_N3 };
+		const east = new Page({
+			...facts(HOLDER_E, seating("E", { pos, host: AUTH_N3, inc: 1 })),
+			pref: "S",
+		});
+		east.run(VOLUNTEER_MS, [{ peer: "pN", beat: hostN(4) }]);
+		expect(east.mode).toBe("idle");
+	});
+
+	it("a host that steps down for a host with fewer entries claims in the same step and never follows it", () => {
+		const pos = { rev: 6, lastAuth: AUTH_W2 };
+		const host = new Page(
+			{
+				...facts(HOLDER_W, seating("W", { pos, host: AUTH_W2, inc: 1 })),
+				pref: "S",
+			},
+			{ creator: true },
+		);
+		const effects = host.hear("pN", hostN(2), 100);
+		expect(ofType(effects, "step-down")).toEqual([
+			{ type: "step-down", auth: AUTH_W2 },
+		]);
+		expect(host.state.mode).toMatchObject({ kind: "claiming", auth: CLAIM_W });
+		expect(ofType(effects, "follow")).toEqual([]);
+	});
+});
+
+describe("the seed of a table that nobody has (rule 14)", () => {
+	// host=S: the order is S, W, N, E. None of the pages has a table.
+	const EMPTY: Position = { rev: 0, lastAuth: null };
+
+	function empty(holder: string, seat: Seat, pref?: Seat): Page {
+		return new Page({
+			...facts(holder, seating(seat, { pos: EMPTY, host: null })),
+			...(pref === undefined ? {} : { pref }),
+		});
+	}
+
+	function peer(holder: string, seat: Seat, pref?: Seat, elig = true) {
+		return followerBeat(holder, seat, {
+			pos: EMPTY,
+			elig,
+			...(pref === undefined ? {} : { pref }),
+		});
+	}
+
+	it("seeds from the seat highest in the order of the pages that it hears", () => {
+		const west = empty(HOLDER_W, "W", "S");
+		west.hear("pN", peer(HOLDER_N, "N", "S"));
+		west.hear("pE", peer(HOLDER_E, "E", "S"));
+		expect(seedsFirst(west.state)).toBe(true);
+
+		const north = empty(HOLDER_N, "N", "S");
+		north.hear("pW", peer(HOLDER_W, "W", "S"));
+		expect(seedsFirst(north.state)).toBe(false);
+	});
+
+	it("seeds again when the higher seat is not heard for HOST_LOST_MS", () => {
+		const north = empty(HOLDER_N, "N", "S");
+		north.hear("pW", peer(HOLDER_W, "W", "S"));
+		north.run(HOST_LOST_MS - TICK_MS);
+		expect(seedsFirst(north.state)).toBe(false);
+		north.run(TICK_MS);
+		expect(seedsFirst(north.state)).toBe(true);
+	});
+
+	it("does not wait for a page that cannot host or whose link names another host seat or none", () => {
+		for (const [pref, elig] of [
+			["S", false],
+			["N", true],
+			[undefined, true],
+		] as const) {
+			const north = empty(HOLDER_N, "N", "S");
+			north.hear("pW", peer(HOLDER_W, "W", pref, elig));
+			expect(seedsFirst(north.state), `${pref} ${elig}`).toBe(true);
+		}
+	});
+
+	it("never seeds without a seat or without a host seat in its link", () => {
+		expect(
+			seedsFirst(new Page({ ...facts(VISITOR, null), pref: "S" }).state),
+		).toBe(false);
+		expect(seedsFirst(empty(HOLDER_S, "S").state)).toBe(false);
 	});
 });
 

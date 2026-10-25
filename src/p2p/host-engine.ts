@@ -690,15 +690,29 @@ export class HostEngine {
 				if (roster) send.ctl(peer, roster);
 				return;
 			}
-			const busy =
-				row.holder === holder && row.gen === hello.gen && anotherActivePeer;
-			send.ctl(peer, {
-				k: "welcome",
-				status: "superseded",
-				auth,
-				...(busy ? { busy: true } : {}),
-			});
-			return;
+			// A seat that is free, or that another browser holds offline past the grace time, makes the page a visitor
+			// that claims the seat again, as after the merge of its table into this one (election rule 13). Before the
+			// grace time ends, the page asks again.
+			const foreign = row.holder !== holder;
+			if (!foreign || this.#online(table, hello.seat)) {
+				const busy = !foreign && row.gen === hello.gen && anotherActivePeer;
+				send.ctl(peer, {
+					k: "welcome",
+					status: "superseded",
+					auth,
+					...(busy ? { busy: true } : {}),
+				});
+				return;
+			}
+			if (row.holder !== null && !this.#gracePassed(table, hello.seat)) {
+				send.ctl(peer, {
+					k: "welcome",
+					status: "superseded",
+					auth,
+					busy: true,
+				});
+				return;
+			}
 		}
 		if (this.#bindings.delete(peer)) this.#markRoster();
 		this.#visitors.add(peer);

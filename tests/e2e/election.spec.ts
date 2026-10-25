@@ -98,6 +98,17 @@ async function commonHost(
 	return found;
 }
 
+/** Each page shows `seat` as the host, in exactly one roster row. */
+async function expectHost(
+	pages: readonly Page[],
+	seat: SeatKey,
+): Promise<void> {
+	for (const page of pages)
+		await expect(hostRows(page)).toHaveAttribute("data-seat", seat, {
+			timeout: CONNECT_MS,
+		});
+}
+
 /** Checks the condition every 250 ms until the deadline (`Date.now()` value); fails at the first miss. */
 async function holdsUntil(
 	until: number,
@@ -179,8 +190,11 @@ async function northAlone(): Promise<{
 	return { link, north, westBrowser, since };
 }
 
-/** The old host reopens and follows North; West's message reaches every page. */
-async function westFollowsNorth(
+/**
+ * The old host reopens. Its seat is the link's host seat, so it takes the host role back from North at once
+ * (election rule 12). West's message reaches every page.
+ */
+async function westTakesOver(
 	link: string,
 	westBrowser: Player,
 	north: Page,
@@ -194,7 +208,7 @@ async function westFollowsNorth(
 	await expectSeat(west, "W", {
 		timeout: CONNECT_MS,
 	});
-	expect(await commonHost([north, visitor, west])).toBe("N");
+	await expectHost([north, visitor, west], "W");
 	await sendDraft(west);
 	for (const page of [north, visitor, west])
 		await expect(texts(page)).toHaveText([MESSAGE.W]);
@@ -222,7 +236,7 @@ test("the button shows after 10 s without a host; it waits for a witness, and a 
 		timeout: CONNECT_MS,
 	});
 	await expect(north.getByTestId("banner")).toBeHidden();
-	await westFollowsNorth(link, westBrowser, north, visitor);
+	await westTakesOver(link, westBrowser, north, visitor);
 });
 
 test("alone, a seated player never becomes the host; after 30 s it volunteers as soon as a witness comes", async () => {
@@ -245,10 +259,10 @@ test("alone, a seated player never becomes the host; after 30 s it volunteers as
 		timeout: CONNECT_MS,
 	});
 	await expect(north.getByTestId("banner")).toBeHidden();
-	await westFollowsNorth(link, westBrowser, north, visitor);
+	await westTakesOver(link, westBrowser, north, visitor);
 });
 
-test("with four seats, a player volunteers about 30 s after the host leaves; the old host follows when it returns", async () => {
+test("with four seats, a player volunteers about 30 s after the host leaves; the old host takes the role back when it returns", async () => {
 	test.setTimeout(180_000);
 	const { link, tab, west: westBrowser } = await seatTable(["N", "E"]);
 	// "All players connected" needs the other three seats.
@@ -290,7 +304,8 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 	await expectSeat(west, "W", {
 		timeout: CONNECT_MS,
 	});
-	expect(await commonHost([...guests, west])).toBe(host);
+	// West's seat is the link's host seat (election rule 12).
+	await expectHost([...guests, west], "W");
 	await sendDraft(west);
 	for (const page of [...guests, west])
 		await expect(texts(page)).toHaveText([MESSAGE.W]);
