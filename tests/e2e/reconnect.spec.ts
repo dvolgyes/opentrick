@@ -104,6 +104,14 @@ async function commonHost(): Promise<SeatKey> {
 	return seat;
 }
 
+/** Every open tab shows the page at `seat` as the host. */
+async function expectHost(seat: SeatKey): Promise<void> {
+	for (const open of openSeats())
+		await expect(hostRows(tab[open])).toHaveAttribute("data-seat", seat, {
+			timeout: CONNECT_MS,
+		});
+}
+
 /** Every open tab shows the board at the position: the number of calls and cards made. */
 async function expectAt(board: number, at: number): Promise<void> {
 	for (const seat of openSeats()) {
@@ -224,7 +232,7 @@ test("2: a follower that crashes, or reloads, gets the messages it missed, each 
 	await expectTranscripts();
 });
 
-test("3: the host crashes mid-auction; a player clicks Make me the host; the auction goes on until West is to bid; the old host reopens, follows, and bids", async () => {
+test("3: the host crashes mid-auction; a player clicks Make me the host, and the seat next in priority takes over; the auction goes on until West is to bid; the old host reopens, hosts again, and bids", async () => {
 	test.setTimeout(180_000);
 	expect(await call(1, 0, "1C")).toBe("N");
 	await expectAt(1, 1);
@@ -233,7 +241,9 @@ test("3: the host crashes mid-auction; a player clicks Make me the host; the auc
 	const become = tab.E.getByTestId("become-host");
 	await expect(become).toBeEnabled({ timeout: BUTTON_LATEST_MS });
 	await become.click();
-	expect(await commonHost()).toBe("E");
+	// The link names West as the host seat, so North comes first after West (ADR 0007, election rule 12): it takes
+	// over from East at once.
+	await expectHost("N");
 	// The new host keeps the board, and East and South bid while West is away (R4).
 	expect(await call(1, 1, "P")).toBe("E");
 	expect(await call(1, 2, "P")).toBe("S");
@@ -248,7 +258,8 @@ test("3: the host crashes mid-auction; a player clicks Make me the host; the auc
 	}
 
 	await reopen("W");
-	expect(await commonHost()).toBe("E");
+	// West comes first in the order of priority, so it takes over from North when it comes back (rule 12).
+	await expectHost("W");
 	await expect(tab.W.getByTestId("banner")).toBeHidden({ timeout: CONNECT_MS });
 	expect(await call(1, 3, "P")).toBe("W");
 	await expectAt(1, 4);
