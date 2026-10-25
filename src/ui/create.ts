@@ -93,9 +93,11 @@ export function showCreate(
 	);
 	const apiKey = el("input", {
 		attrs: {
-			type: "password",
+			type: "text",
 			name: "openrouter-key",
-			autocomplete: "new-password",
+			autocomplete: "off",
+			autocapitalize: "off",
+			spellcheck: "false",
 			"aria-label": deps.t("OpenRouter API key"),
 		},
 	});

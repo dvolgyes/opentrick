@@ -135,8 +135,10 @@ export function settingsDialog(
 	});
 	const apiKey = el("input", {
 		attrs: {
-			type: "password",
-			autocomplete: "new-password",
+			type: "text",
+			autocomplete: "off",
+			autocapitalize: "off",
+			spellcheck: "false",
 			"aria-label": t("OpenRouter API key"),
 		},
 	});

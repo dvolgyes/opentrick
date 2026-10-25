@@ -233,3 +233,35 @@ test("a key without its sk-or-v1- start, or with parts of it, gets the full star
 	});
 	expect(await stored()).toBe(`sk-or-v1-${second}`);
 });
+
+/** A key field that shows the key as typed, and that a phone keyboard does not change. */
+const SHOWN_KEY_FIELD = [
+	["type", "text"],
+	["autocapitalize", "off"],
+	["spellcheck", "false"],
+] as const;
+
+test("the key is shown as typed, not masked, on the create page and in Settings", async ({
+	page,
+}) => {
+	await mockOpenRouter(page);
+	const key = `sk-or-v1-${"0123456789abcdef".repeat(4)}`;
+	await page.goto("/");
+	const create = page.locator('input[name="openrouter-key"]');
+	await page.locator('input[name="name-W"]').fill("host west");
+	await page.locator('input[name="bot-N"]').check();
+	await create.fill(key);
+	for (const [name, value] of SHOWN_KEY_FIELD)
+		await expect(create).toHaveAttribute(name, value);
+	await expect(create).toHaveValue(key);
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	const settings = page
+		.getByTestId("settings-dialog")
+		.getByRole("textbox", { name: "OpenRouter API key" });
+	for (const [name, value] of SHOWN_KEY_FIELD)
+		await expect(settings).toHaveAttribute(name, value);
+	await expect(settings).toHaveValue(key);
+});
