@@ -98,3 +98,50 @@ test("each player sees the others' bidding systems, and a change in Settings rea
 		await host.close();
 	}
 });
+
+test("Settings shows or hides the points and the turn text at once, also without a new bidding system", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const host = await Player.open(browser, baseURL, "host", {
+		viewport: { width: 1920, height: 1080 },
+	});
+	try {
+		const page = await host.page("./");
+		await passingBots(page);
+		for (const seat of ["N", "E", "S"])
+			await page.locator(`input[name="bot-${seat}"]`).check();
+		await page.locator('input[name="openrouter-key"]').fill("test-key");
+		await createRoom(page);
+		await expect(page.getByTestId("table")).toHaveAttribute(
+			"data-phase",
+			"auction",
+			{ timeout: CONNECT_MS },
+		);
+		const pills = page.locator(".hcp-pill:visible");
+		const turn = page.getByTestId("turn-pill");
+		await expect(pills).toHaveCount(1);
+		await expect(turn).toHaveCount(1, { timeout: CONNECT_MS });
+
+		const dialog = page.getByTestId("settings-dialog");
+		async function save(label: string, on: boolean): Promise<void> {
+			await page.getByRole("button", { name: "Settings", exact: true }).click();
+			await dialog.getByLabel(label).setChecked(on);
+			await dialog.getByRole("button", { name: "Save settings" }).click();
+			await expect(dialog).toBeHidden();
+		}
+		// The bots pass and West is to bid, so the table state stays the same after each Save.
+		await save("Show the points next to the cards", false);
+		await expect(pills).toHaveCount(0);
+		await save("Show as text whose turn it is to bid", false);
+		await expect(turn).toHaveCount(0);
+		await save("Show the points next to the cards", true);
+		await expect(pills).toHaveCount(1);
+		await save("Show as text whose turn it is to bid", true);
+		await expect(turn).toHaveCount(1);
+		expect(host.errors).toEqual([]);
+	} finally {
+		await host.close();
+	}
+});

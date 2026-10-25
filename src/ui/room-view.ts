@@ -432,6 +432,8 @@ export function showRoom(
 			botStatus.textContent = "";
 		else if (modelOrderChanged && botRunner)
 			botStatus.textContent = runningBotStatus();
+		// The table reads the display settings when it renders, so it renders again although its view did not change.
+		shownTable = undefined;
 		render();
 	}
 	const banner = el(
