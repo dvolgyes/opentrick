@@ -3,13 +3,14 @@ Tel A=7, K=5, Q=3, J=1. Het spel bevat 64 punten.
 Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkbaar met Standard American. De puntenbereiken zijn de 4-3-2-1-bereiken vermenigvuldigd met 1.6 (64 / 40) en afgerond, dus ze zijn bij benadering. Het historische Weense systeem heeft zijn eigen biedsysteem; deze gids gebruikt alleen de puntenschaal ervan.
 
 ## Openingsbiedingen
-- 0–18 punten: [P], of een zwakke twee of een preëmptief bod.
-- [1C] [1D] [1H] [1S]: 19–34 punten. Open [1H] of [1S] met vijf of meer kaarten in de kleur. Zonder vijfkaart hoge kleur open je de langste lage kleur: [1D] met vier of meer ruiten, anders [1C].
-- [1NT]: 24–28 punten, evenwichtige hand.
-- [2C]: 35 of meer punten, elke verdeling. Kunstmatig en forcing.
-- [2D] [2H] [2S]: zwakke twee, 8–18 punten met een goede zeskaart.
-- [2NT]: 32–34 punten, evenwichtige hand.
-- [3C] [3D] [3H] [3S]: preëmptief, minder dan een openingshand met een goede zevenkaart.
+- 0–18 punten: [P], als geen zwakke twee en geen preëmptief bod past.
+- 8–18 punten: zwakke twee, [2D] [2H] [2S]. Een zeskaart met twee van A K Q of drie van A K Q J 10, en geen vierkaart hoge kleur ernaast.
+- 8–17 punten: preëmptief, [3C] [3D] [3H] [3S]. Een zevenkaart met dezelfde hoge kaarten als een zwakke twee.
+- 19–34 punten: [1C] [1D] [1H] [1S]. [1H] of [1S] vraagt vijf of meer kaarten in de kleur; met twee vijfkaarten open je de hoogste. Zonder vijfkaart hoge kleur open je de langste lage kleur: [1D] met 4–4 in de lage kleuren, [1C] met 3–3.
+- 24–28 punten: [1NT], evenwichtig: minstens twee kaarten in elke kleur en hoogstens één doubleton (4333, 4432, 5332).
+- 32–34 punten: [2NT], evenwichtig zoals bij [1NT].
+- 35 of meer punten: [2C], elke verdeling. Kunstmatig en forcing. Met een evenwichtige hand van 35–39 punten bied je [2NT] na het antwoord van partner.
+- 40–44 punten: [3NT], evenwichtig zoals bij [1NT], in plaats van [2C].
 
 ## Antwoorden op een opening van één in een kleur
 - 0–9 punten: [P].
@@ -26,6 +27,7 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - 0–12 punten: [P], of een transfer met een vijfkaart hoge kleur.
 - [2C] (Stayman): 13 of meer punten met een vierkaart hoge kleur. De openaar antwoordt [2D] zonder vierkaart hoge kleur, anders [2H] of [2S].
 - [2D] belooft vijf of meer harten, [2H] belooft vijf of meer schoppen (transfers). De openaar biedt de volgende kleur.
+- [2S]: een zwakke hand met zes of meer kaarten in een lage kleur. De openaar moet [3C] bieden; pas met klaveren, of bied [3D] met ruiten.
 - [2NT]: 13–15 punten, uitnodigend.
 - [3NT]: 16–25 punten, afsluitend.
 

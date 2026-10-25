@@ -3,13 +3,14 @@ Számolj így: A=3, K=2, Q=1, J=½. A pakliban 26 pont van.
 Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ, a Standard Americanhez hasonlót. A pontsávok a 0.65-tel (26 / 40) szorzott és fél pontra kerekített 4-3-2-1 sávok, ezért közelítőek.
 
 ## Nyitások
-- 0–7½ pont: [P], vagy gyenge kettes, vagy blokk.
-- [1C] [1D] [1H] [1S]: 8–14 pont. Legalább öt lappal a színben [1H] vagy [1S] a nyitásod. Ötlapos nemes szín nélkül a hosszabb alacsony színedet nyisd: legalább négy káróval [1D], egyébként [1C].
-- [1NT]: 10–11 pont, kiegyensúlyozott kéz.
-- [2C]: legalább 14½ pont, bármilyen elosztás. Mesterséges és forszírozó.
-- [2D] [2H] [2S]: gyenge kettes, 3½–7½ pont jó hatlapos színnel.
-- [2NT]: 13–14 pont, kiegyensúlyozott kéz.
-- [3C] [3D] [3H] [3S]: blokk, nyitóerő alatti kéz jó hétlapos színnel.
+- 0–7½ pont: [P], ha sem gyenge kettes, sem blokk nem illik a kézre.
+- 3½–7½ pont: gyenge kettes, [2D] [2H] [2S]. Hatlapos szín az A K Q lapokból kettővel, vagy az A K Q J 10 lapokból hárommal, és mellette nincs négylapos nemes szín.
+- 3½–7 pont: blokk, [3C] [3D] [3H] [3S]. Hétlapos szín ugyanolyan magas lapokkal, mint a gyenge kettesnél.
+- 8–14 pont: [1C] [1D] [1H] [1S]. [1H] vagy [1S] nyitáshoz legalább öt lap kell a színben; két ötlapos színnel a magasabbat nyisd. Ötlapos nemes szín nélkül a hosszabb alacsony színedet nyisd: 4–4-es alacsony színekkel [1D], 3–3-mal [1C].
+- 10–11 pont: [1NT], kiegyensúlyozott: minden színben legalább két lap, és legfeljebb egy kétlapos szín (4333, 4432, 5332).
+- 13–14 pont: [2NT], kiegyensúlyozott, mint az [1NT] nyitásnál.
+- 14½ vagy több pont: [2C], bármilyen elosztás. Mesterséges és forszírozó. Kiegyensúlyozott 14½–16 ponttal a partner válasza után [2NT] a licited.
+- 16½–18 pont: [3NT], kiegyensúlyozott, mint az [1NT] nyitásnál, a [2C] helyett.
 
 ## Válaszok egyes színnyitásra
 - 0–3½ pont: [P].
@@ -26,6 +27,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - 0–4½ pont: [P], vagy ötlapos nemes színnel transzfer.
 - [2C] (Stayman): legalább 5 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D] választ ad, egyébként [2H] vagy [2S].
 - [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek). A nyitó a következő színt licitálja.
+- [2S]: gyenge kéz legalább hatlapos alacsony színnel. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited.
 - [2NT]: 5–6 pont, invitáló.
 - [3NT]: 6½–10 pont, lezáró.
 

@@ -3,13 +3,14 @@ Contar A=7, K=5, Q=3, J=1. O baralho tem 64 pontos.
 Este guia usa um método natural com maiores quintos, semelhante ao Standard American. Os intervalos de pontos são os intervalos de 4-3-2-1 multiplicados por 1.6 (64 / 40) e arredondados, pelo que são aproximados. O histórico Sistema de Viena tem o seu próprio leilão; este guia usa apenas a sua escala de pontos.
 
 ## Aberturas
-- 0–18 pontos: [P], ou um dois fraco ou uma barragem.
-- [1C] [1D] [1H] [1S]: 19–34 pontos. Abrir [1H] ou [1S] com cinco ou mais cartas no naipe. Sem naipe maior quinto, abrir o naipe menor mais longo: [1D] com quatro ou mais ouros, caso contrário [1C].
-- [1NT]: 24–28 pontos, mão equilibrada.
-- [2C]: 35 ou mais pontos, qualquer distribuição. Artificial e forcing.
-- [2D] [2H] [2S]: dois fraco, 8–18 pontos com um bom naipe sexto.
-- [2NT]: 32–34 pontos, mão equilibrada.
-- [3C] [3D] [3H] [3S]: barragem, menos do que uma mão de abertura, com um bom naipe sétimo.
+- 0–18 pontos: [P], se não servir um dois fraco nem uma barragem.
+- 8–18 pontos: dois fraco, [2D] [2H] [2S]. Um naipe sexto com duas de A K Q ou três de A K Q J 10, e sem naipe maior quarto ao lado.
+- 8–17 pontos: barragem, [3C] [3D] [3H] [3S]. Um naipe sétimo com as mesmas cartas altas de um dois fraco.
+- 19–34 pontos: [1C] [1D] [1H] [1S]. [1H] ou [1S] exige cinco ou mais cartas no naipe; com dois naipes quintos, abrir o mais alto. Sem naipe maior quinto, abrir o naipe menor mais longo: [1D] com 4–4 nos menores, [1C] com 3–3.
+- 24–28 pontos: [1NT], equilibrada: pelo menos duas cartas em cada naipe e no máximo um doubleton (4333, 4432, 5332).
+- 32–34 pontos: [2NT], equilibrada como para [1NT].
+- 35 ou mais pontos: [2C], qualquer distribuição. Artificial e forcing. Com uma mão equilibrada de 35–39 pontos, marcar [2NT] depois da resposta do parceiro.
+- 40–44 pontos: [3NT], equilibrada como para [1NT], em vez de [2C].
 
 ## Respostas à abertura de um num naipe
 - 0–9 pontos: [P].
@@ -26,6 +27,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - 0–12 pontos: [P], ou uma transferência com um naipe maior quinto.
 - [2C] (Stayman): 13 ou mais pontos com um naipe maior quarto. O abridor responde [2D] sem naipe maior quarto; caso contrário, [2H] ou [2S].
 - [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências). O abridor declara o naipe seguinte.
+- [2S]: uma mão fraca com seis ou mais cartas num naipe menor. O abridor tem de marcar [3C]; passar com paus, ou marcar [3D] com ouros.
 - [2NT]: 13–15 pontos, convidativo.
 - [3NT]: 16–25 pontos, para jogar.
 

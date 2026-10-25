@@ -10,13 +10,14 @@ A korrekciók már tartalmazzák az elosztást, ezért ne adj hozzá hosszúság
 Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ, a Standard Americanhez hasonlót.
 
 ## Nyitások
-- 0–11 pont: [P], vagy gyenge kettes, vagy blokk.
-- [1C] [1D] [1H] [1S]: 12–21 pont. Legalább öt lappal a színben [1H] vagy [1S] a nyitásod. Ötlapos nemes szín nélkül a hosszabb alacsony színedet nyisd: legalább négy káróval [1D], egyébként [1C].
-- [1NT]: 15–17 pont, kiegyensúlyozott kéz.
-- [2C]: legalább 22 pont, bármilyen elosztás. Mesterséges és forszírozó.
-- [2D] [2H] [2S]: gyenge kettes, 5–11 pont jó hatlapos színnel.
-- [2NT]: 20–21 pont, kiegyensúlyozott kéz.
-- [3C] [3D] [3H] [3S]: blokk, nyitóerő alatti kéz jó hétlapos színnel.
+- 0–11 pont: [P], ha sem gyenge kettes, sem blokk nem illik a kézre.
+- 5–11 pont: gyenge kettes, [2D] [2H] [2S]. Hatlapos szín az A K Q lapokból kettővel, vagy az A K Q J 10 lapokból hárommal, és mellette nincs négylapos nemes szín.
+- 5–10 pont: blokk, [3C] [3D] [3H] [3S]. Hétlapos szín ugyanolyan magas lapokkal, mint a gyenge kettesnél.
+- 12–21 pont: [1C] [1D] [1H] [1S]. [1H] vagy [1S] nyitáshoz legalább öt lap kell a színben; két ötlapos színnel a magasabbat nyisd. Ötlapos nemes szín nélkül a hosszabb alacsony színedet nyisd: 4–4-es alacsony színekkel [1D], 3–3-mal [1C].
+- 15–17 pont: [1NT], kiegyensúlyozott: minden színben legalább két lap, és legfeljebb egy kétlapos szín (4333, 4432, 5332).
+- 20–21 pont: [2NT], kiegyensúlyozott, mint az [1NT] nyitásnál.
+- 22 vagy több pont: [2C], bármilyen elosztás. Mesterséges és forszírozó. Kiegyensúlyozott 22–24 ponttal a partner válasza után [2NT] a licited.
+- 25–27 pont: [3NT], kiegyensúlyozott, mint az [1NT] nyitásnál, a [2C] helyett.
 
 ## Válaszok egyes színnyitásra
 - 0–5 pont: [P].
@@ -33,6 +34,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - 0–7 pont: [P], vagy ötlapos nemes színnel transzfer.
 - [2C] (Stayman): legalább 8 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D] választ ad, egyébként [2H] vagy [2S].
 - [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek). A nyitó a következő színt licitálja.
+- [2S]: gyenge kéz legalább hatlapos alacsony színnel. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited.
 - [2NT]: 8–9 pont, invitáló.
 - [3NT]: 10–15 pont, lezáró.
 

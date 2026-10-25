@@ -3,13 +3,14 @@ Tell A=6, K=4, Q=3, J=2, 10=1. Kortstokken inneholder 64 poeng.
 Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Standard American. Poengintervallene er 4-3-2-1-intervallene multiplisert med 1.6 (64 / 40) og avrundet, så de er omtrentlige.
 
 ## Åpningsmeldinger
-- 0–18 poeng: [P], eller en svak to-åpning eller en sperremelding.
-- [1C] [1D] [1H] [1S]: 19–34 poeng. Åpne [1H] eller [1S] med fem eller flere kort i fargen. Uten femkorts høyfarge åpner du i den lengste lavfargen: [1D] med fire eller flere ruter, ellers [1C].
-- [1NT]: 24–28 poeng, balansert hånd.
-- [2C]: 35 eller flere poeng, vilkårlig fordeling. Kunstig og krav.
-- [2D] [2H] [2S]: svak to-åpning, 8–18 poeng med god sekskortsfarge.
-- [2NT]: 32–34 poeng, balansert hånd.
-- [3C] [3D] [3H] [3S]: sperremelding, svakere enn en åpningshånd, med god sjukortsfarge.
+- 0–18 poeng: [P], når verken en svak to-åpning eller en sperremelding passer.
+- 8–18 poeng: svak to-åpning, [2D] [2H] [2S]. En sekskortsfarge med to av A K Q eller tre av A K Q J 10, og ingen firekorts høyfarge ved siden av.
+- 8–17 poeng: sperremelding, [3C] [3D] [3H] [3S]. En sjukortsfarge med de samme høye kortene som en svak to-åpning.
+- 19–34 poeng: [1C] [1D] [1H] [1S]. [1H] eller [1S] krever fem eller flere kort i fargen; med to femkortsfarger åpner du i den høyeste. Uten femkorts høyfarge åpner du i den lengste lavfargen: [1D] med 4–4 i lavfargene, [1C] med 3–3.
+- 24–28 poeng: [1NT], balansert: minst to kort i hver farge og høyst én doubleton (4333, 4432, 5332).
+- 32–34 poeng: [2NT], balansert som for [1NT].
+- 35 eller flere poeng: [2C], vilkårlig fordeling. Kunstig og krav. Med balanserte 35–39 poeng melder du [2NT] etter makkers svar.
+- 40–44 poeng: [3NT], balansert som for [1NT], i stedet for [2C].
 
 ## Svar på åpning med én i farge
 - 0–9 poeng: [P].
@@ -26,6 +27,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - 0–12 poeng: [P], eller overføring med femkorts høyfarge.
 - [2C] (Stayman): 13 eller flere poeng med firekorts høyfarge. Åpner svarer [2D] uten firekorts høyfarge, ellers [2H] eller [2S].
 - [2D] viser fem eller flere hjerter, [2H] viser fem eller flere spar (overføringer). Åpner melder neste farge.
+- [2S]: en svak hånd med seks eller flere kort i en lavfarge. Åpner må melde [3C]; pass med kløver, eller meld [3D] med ruter.
 - [2NT]: 13–15 poeng, invitasjon.
 - [3NT]: 16–25 poeng, sluttmelding.
 

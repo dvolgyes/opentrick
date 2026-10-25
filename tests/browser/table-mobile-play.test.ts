@@ -2246,7 +2246,10 @@ describe("bidding guide", () => {
 			return [bid.textContent, getComputedStyle(bid).color];
 		};
 		expect(color(".guide-bid.strain-NT")).toEqual(["1NT", "rgb(31, 122, 70)"]);
-		expect(color(".guide-bid.strain-H")).toEqual(["1♥", "rgb(192, 38, 45)"]);
+		expect(color(".guide-bid.strain-H")).toEqual([
+			expect.stringMatching(/^[1-7]♥$/),
+			"rgb(192, 38, 45)",
+		]);
 		expect(color(".guide-bid.strain-S")?.[1]).not.toBe("rgb(192, 38, 45)");
 		expect(color(".guide-bid.call-double")?.[0]).toBe("double(X)");
 		expect(color(".guide-bid.call-redouble")?.[0]).toBe("redouble(XX)");

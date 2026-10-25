@@ -3,13 +3,14 @@ Cuenta A=6, K=4, Q=3, J=2, 10=1. La baraja contiene 64 puntos.
 Esta guía usa un sistema natural de mayores quintos, similar al Standard Americano. Los rangos de puntos son los rangos 4-3-2-1 multiplicados por 1.6 (64 / 40) y redondeados, así que son aproximados.
 
 ## Aperturas
-- 0–18 puntos: [P], o un dos débil o un barrage.
-- [1C] [1D] [1H] [1S]: 19–34 puntos. Abre [1H] o [1S] con cinco o más cartas en el palo. Sin mayor quinto, abre el menor más largo: [1D] con cuatro o más diamantes; si no, [1C].
-- [1NT]: 24–28 puntos, mano equilibrada.
-- [2C]: 35 o más puntos, cualquier distribución. Artificial y forzante.
-- [2D] [2H] [2S]: dos débil, 8–18 puntos con un buen palo de seis cartas.
-- [2NT]: 32–34 puntos, mano equilibrada.
-- [3C] [3D] [3H] [3S]: barrage, menos que una mano de apertura, con un buen palo de siete cartas.
+- 0–18 puntos: [P], si no encaja un dos débil ni un barrage.
+- 8–18 puntos: dos débil, [2D] [2H] [2S]. Un palo de seis cartas con dos de A K Q o tres de A K Q J 10, y sin mayor cuarto al lado.
+- 8–17 puntos: barrage, [3C] [3D] [3H] [3S]. Un palo de siete cartas con las mismas cartas altas que un dos débil.
+- 19–34 puntos: [1C] [1D] [1H] [1S]. [1H] o [1S] pide cinco o más cartas en el palo; con dos palos de cinco cartas, abre el más alto. Sin mayor quinto, abre el menor más largo: [1D] con 4–4 en los menores, [1C] con 3–3.
+- 24–28 puntos: [1NT], equilibrada: al menos dos cartas en cada palo y como mucho un doubleton (4333, 4432, 5332).
+- 32–34 puntos: [2NT], equilibrada como para [1NT].
+- 35 o más puntos: [2C], cualquier distribución. Artificial y forzante. Con una mano equilibrada de 35–39 puntos, redeclara [2NT] tras la respuesta del compañero.
+- 40–44 puntos: [3NT], equilibrada como para [1NT], en lugar de [2C].
 
 ## Respuestas a uno a palo
 - 0–9 puntos: [P].
@@ -26,6 +27,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - 0–12 puntos: [P], o una transferencia con un mayor quinto.
 - [2C] (Stayman): 13 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto; si no, [2H] o [2S].
 - [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias). El abridor declara el palo siguiente.
+- [2S]: una mano débil con seis o más cartas en un menor. El abridor debe declarar [3C]; pasa con tréboles, o declara [3D] con diamantes.
 - [2NT]: 13–15 puntos, invitativo.
 - [3NT]: 16–25 puntos, para jugar.
 

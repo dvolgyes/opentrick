@@ -3,13 +3,14 @@ Count A=4, K=3, Q=2, J=1. The deck holds 40 points.
 This guide uses a natural five-card-major method, similar to Standard American.
 
 ## Opening bids
-- 0–11 points: [P], or a weak two or a preempt.
-- [1C] [1D] [1H] [1S]: 12–21 points. Open [1H] or [1S] with five or more cards in the suit. Without a five-card major, open the longer minor: [1D] with four or more diamonds, otherwise [1C].
-- [1NT]: 15–17 points, balanced hand.
-- [2C]: 22 or more points, any shape. Artificial and forcing.
-- [2D] [2H] [2S]: weak two, 5–11 points with a good six-card suit.
-- [2NT]: 20–21 points, balanced hand.
-- [3C] [3D] [3H] [3S]: preempt, less than an opening hand with a good seven-card suit.
+- 0–11 points: [P], unless a weak two or a preempt fits.
+- 5–11 points: weak two, [2D] [2H] [2S]. A six-card suit with two of A K Q or three of A K Q J 10, and no four-card side major.
+- 5–10 points: preempt, [3C] [3D] [3H] [3S]. A seven-card suit with the same top cards as a weak two.
+- 12–21 points: [1C] [1D] [1H] [1S]. [1H] or [1S] needs five or more cards in the suit; with two five-card suits, open the higher. Without a five-card major, open the longer minor: [1D] with 4–4 in the minors, [1C] with 3–3.
+- 15–17 points: [1NT], balanced: at least two cards in each suit and at most one doubleton (4333, 4432, 5332).
+- 20–21 points: [2NT], balanced as for [1NT].
+- 22 or more points: [2C], any shape. Artificial and forcing. With a balanced 22–24 points, rebid [2NT] after partner's answer.
+- 25–27 points: [3NT], balanced as for [1NT], instead of [2C].
 
 ## Responses to one of a suit
 - 0–5 points: [P].
@@ -26,6 +27,7 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - 0–7 points: [P], or a transfer with a five-card major.
 - [2C] (Stayman): 8 or more points with a four-card major. Opener answers [2D] without a four-card major, otherwise [2H] or [2S].
 - [2D] shows five or more hearts, [2H] shows five or more spades (transfers). Opener bids the next suit.
+- [2S]: a weak hand with six or more cards in a minor. Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds.
 - [2NT]: 8–9 points, invitational.
 - [3NT]: 10–15 points, to play.
 

@@ -10,13 +10,14 @@ As correções já incluem a distribuição, por isso não se somam pontos de co
 Este guia usa um método natural com maiores quintos, semelhante ao Standard American.
 
 ## Aberturas
-- 0–11 pontos: [P], ou um dois fraco ou uma barragem.
-- [1C] [1D] [1H] [1S]: 12–21 pontos. Abrir [1H] ou [1S] com cinco ou mais cartas no naipe. Sem naipe maior quinto, abrir o naipe menor mais longo: [1D] com quatro ou mais ouros, caso contrário [1C].
-- [1NT]: 15–17 pontos, mão equilibrada.
-- [2C]: 22 ou mais pontos, qualquer distribuição. Artificial e forcing.
-- [2D] [2H] [2S]: dois fraco, 5–11 pontos com um bom naipe sexto.
-- [2NT]: 20–21 pontos, mão equilibrada.
-- [3C] [3D] [3H] [3S]: barragem, menos do que uma mão de abertura, com um bom naipe sétimo.
+- 0–11 pontos: [P], se não servir um dois fraco nem uma barragem.
+- 5–11 pontos: dois fraco, [2D] [2H] [2S]. Um naipe sexto com duas de A K Q ou três de A K Q J 10, e sem naipe maior quarto ao lado.
+- 5–10 pontos: barragem, [3C] [3D] [3H] [3S]. Um naipe sétimo com as mesmas cartas altas de um dois fraco.
+- 12–21 pontos: [1C] [1D] [1H] [1S]. [1H] ou [1S] exige cinco ou mais cartas no naipe; com dois naipes quintos, abrir o mais alto. Sem naipe maior quinto, abrir o naipe menor mais longo: [1D] com 4–4 nos menores, [1C] com 3–3.
+- 15–17 pontos: [1NT], equilibrada: pelo menos duas cartas em cada naipe e no máximo um doubleton (4333, 4432, 5332).
+- 20–21 pontos: [2NT], equilibrada como para [1NT].
+- 22 ou mais pontos: [2C], qualquer distribuição. Artificial e forcing. Com uma mão equilibrada de 22–24 pontos, marcar [2NT] depois da resposta do parceiro.
+- 25–27 pontos: [3NT], equilibrada como para [1NT], em vez de [2C].
 
 ## Respostas à abertura de um num naipe
 - 0–5 pontos: [P].
@@ -33,6 +34,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - 0–7 pontos: [P], ou uma transferência com um naipe maior quinto.
 - [2C] (Stayman): 8 ou mais pontos com um naipe maior quarto. O abridor responde [2D] sem naipe maior quarto; caso contrário, [2H] ou [2S].
 - [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências). O abridor declara o naipe seguinte.
+- [2S]: uma mão fraca com seis ou mais cartas num naipe menor. O abridor tem de marcar [3C]; passar com paus, ou marcar [3D] com ouros.
 - [2NT]: 8–9 pontos, convidativo.
 - [3NT]: 10–15 pontos, para jogar.
 

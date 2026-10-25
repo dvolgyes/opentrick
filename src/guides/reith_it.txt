@@ -3,13 +3,14 @@ Conta A=6, K=4, Q=3, J=2, 10=1. Il mazzo contiene 64 punti.
 Questa guida usa un sistema naturale a quinta nobile, simile allo Standard American. Gli intervalli di punti sono quelli della scala 4-3-2-1 moltiplicati per 1.6 (64 / 40) e arrotondati, quindi sono approssimativi.
 
 ## Aperture
-- 0–18 punti: [P], oppure un due debole o uno sbarramento.
-- [1C] [1D] [1H] [1S]: 19–34 punti. Apri [1H] o [1S] con cinque o più carte nel colore. Senza un nobile quinto, apri nel minore più lungo: [1D] con quattro o più quadri, altrimenti [1C].
-- [1NT]: 24–28 punti, mano bilanciata.
-- [2C]: 35 o più punti, qualsiasi distribuzione. Artificiale e forzante.
-- [2D] [2H] [2S]: due debole, 8–18 punti con un buon colore sesto.
-- [2NT]: 32–34 punti, mano bilanciata.
-- [3C] [3D] [3H] [3S]: sbarramento, meno di una mano d'apertura con un buon colore settimo.
+- 0–18 punti: [P], se non va bene né un due debole né uno sbarramento.
+- 8–18 punti: due debole, [2D] [2H] [2S]. Un colore sesto con due tra A K Q o tre tra A K Q J 10, e senza un nobile quarto a lato.
+- 8–17 punti: sbarramento, [3C] [3D] [3H] [3S]. Un colore settimo con le stesse carte alte di un due debole.
+- 19–34 punti: [1C] [1D] [1H] [1S]. [1H] o [1S] richiede cinque o più carte nel colore; con due colori quinti, apri nel più alto. Senza un nobile quinto, apri nel minore più lungo: [1D] con 4–4 nei minori, [1C] con 3–3.
+- 24–28 punti: [1NT], bilanciata: almeno due carte in ogni colore e al massimo un doubleton (4333, 4432, 5332).
+- 32–34 punti: [2NT], bilanciata come per [1NT].
+- 35 o più punti: [2C], qualsiasi distribuzione. Artificiale e forzante. Con una mano bilanciata di 35–39 punti, ridichiara [2NT] dopo la risposta del compagno.
+- 40–44 punti: [3NT], bilanciata come per [1NT], invece di [2C].
 
 ## Risposte all'apertura di uno a colore
 - 0–9 punti: [P].
@@ -26,6 +27,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - 0–12 punti: [P], oppure un transfer con un nobile quinto.
 - [2C] (Stayman): 13 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, altrimenti [2H] o [2S].
 - [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer). L'apertore dichiara il colore successivo.
+- [2S]: una mano debole con sei o più carte in un minore. L'apertore deve dichiarare [3C]; passa con i fiori, oppure dichiara [3D] con i quadri.
 - [2NT]: 13–15 punti, invitante.
 - [3NT]: 16–25 punti, conclusivo.
 

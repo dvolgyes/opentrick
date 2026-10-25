@@ -3,13 +3,14 @@ Comptez A=4, K=3, Q=2, J=1. Le jeu contient 40 points.
 Ce guide utilise un système naturel à majeure cinquième, proche du Standard American.
 
 ## Ouvertures
-- 0–11 points : [P], ou un deux faible ou un barrage.
-- [1C] [1D] [1H] [1S] : 12–21 points. Ouvrez de [1H] ou de [1S] avec cinq cartes ou plus dans la couleur. Sans majeure cinquième, ouvrez de la mineure la plus longue : [1D] avec quatre carreaux ou plus, sinon [1C].
-- [1NT] : 15–17 points, main régulière.
-- [2C] : 22 points ou plus, toute distribution. Artificiel et forcing.
-- [2D] [2H] [2S] : deux faible, 5–11 points avec une bonne couleur sixième.
-- [2NT] : 20–21 points, main régulière.
-- [3C] [3D] [3H] [3S] : barrage, moins qu'une main d'ouverture avec une bonne couleur septième.
+- 0–11 points : [P], si ni un deux faible ni un barrage ne convient.
+- 5–11 points : deux faible, [2D] [2H] [2S]. Une couleur sixième avec deux des cartes A K Q ou trois des cartes A K Q J 10, et sans majeure quatrième à côté.
+- 5–10 points : barrage, [3C] [3D] [3H] [3S]. Une couleur septième avec les mêmes hautes cartes qu'un deux faible.
+- 12–21 points : [1C] [1D] [1H] [1S]. [1H] ou [1S] demande cinq cartes ou plus dans la couleur ; avec deux couleurs cinquièmes, ouvrez de la plus haute. Sans majeure cinquième, ouvrez de la mineure la plus longue : [1D] avec 4–4 en mineures, [1C] avec 3–3.
+- 15–17 points : [1NT], main régulière : au moins deux cartes dans chaque couleur et au plus un doubleton (4333, 4432, 5332).
+- 20–21 points : [2NT], main régulière comme pour [1NT].
+- 22 points ou plus : [2C], toute distribution. Artificiel et forcing. Avec une main régulière de 22–24 points, annoncez [2NT] après la réponse du partenaire.
+- 25–27 points : [3NT], main régulière comme pour [1NT], au lieu de [2C].
 
 ## Réponses à l'ouverture d'un à la couleur
 - 0–5 points : [P].
@@ -26,6 +27,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - 0–7 points : [P], ou un transfert avec une majeure cinquième.
 - [2C] (Stayman) : 8 points ou plus avec une majeure quatrième. L'ouvreur répond [2D] sans majeure quatrième, sinon [2H] ou [2S].
 - [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts). L'ouvreur nomme la couleur suivante.
+- [2S] : une main faible avec six cartes ou plus dans une mineure. L'ouvreur doit dire [3C] ; passez avec les trèfles, ou dites [3D] avec les carreaux.
 - [2NT] : 8–9 points, invitant.
 - [3NT] : 10–15 points, pour jouer.
 

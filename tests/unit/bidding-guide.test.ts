@@ -103,4 +103,39 @@ describe("bidding guide files", () => {
 			}
 		},
 	);
+
+	it.each(GUIDES)(
+		"starts each opening of %s with its minimum points, lowest first, up to a [3NT] opening",
+		async (guide) => {
+			const system = POINT_SYSTEMS.find(
+				(candidate) => guideName(candidate) === guide,
+			);
+			if (system === undefined) throw new Error(`no scale for ${guide}`);
+			for (const locale of LOCALES) {
+				const blocks = parseGuide((await loadGuide(system, locale)) ?? "");
+				const start = blocks.findIndex((block) => block.kind === "section");
+				const end = blocks.findIndex(
+					(block, index) => index > start && block.kind === "section",
+				);
+				const openings = blocks.slice(start + 1, end);
+				const minimums = openings.map((block) => {
+					const first = block.parts[0];
+					const match =
+						first?.kind === "text" ? /^(\d+)(½)?/.exec(first.text) : null;
+					if (match === null)
+						throw new Error(`${guide}_${locale}: an opening has no minimum`);
+					return Number(match[1]) + (match[2] === undefined ? 0 : 0.5);
+				});
+				expect(minimums, locale).toEqual([...minimums].sort((a, b) => a - b));
+				expect(
+					openings.flatMap((block) =>
+						block.parts.flatMap((part) =>
+							part.kind === "bid" ? [part.call] : [],
+						),
+					),
+					locale,
+				).toContain("3NT");
+			}
+		},
+	);
 });

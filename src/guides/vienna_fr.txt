@@ -3,13 +3,14 @@ Comptez A=7, K=5, Q=3, J=1. Le jeu contient 64 points.
 Ce guide utilise un système naturel à majeure cinquième, proche du Standard American. Les fourchettes de points sont celles du 4-3-2-1 multipliées par 1.6 (64 / 40) et arrondies ; elles sont donc approximatives. Le système viennois historique a ses propres enchères ; ce guide n'utilise que son échelle de points.
 
 ## Ouvertures
-- 0–18 points : [P], ou un deux faible ou un barrage.
-- [1C] [1D] [1H] [1S] : 19–34 points. Ouvrez de [1H] ou de [1S] avec cinq cartes ou plus dans la couleur. Sans majeure cinquième, ouvrez de la mineure la plus longue : [1D] avec quatre carreaux ou plus, sinon [1C].
-- [1NT] : 24–28 points, main régulière.
-- [2C] : 35 points ou plus, toute distribution. Artificiel et forcing.
-- [2D] [2H] [2S] : deux faible, 8–18 points avec une bonne couleur sixième.
-- [2NT] : 32–34 points, main régulière.
-- [3C] [3D] [3H] [3S] : barrage, moins qu'une main d'ouverture avec une bonne couleur septième.
+- 0–18 points : [P], si ni un deux faible ni un barrage ne convient.
+- 8–18 points : deux faible, [2D] [2H] [2S]. Une couleur sixième avec deux des cartes A K Q ou trois des cartes A K Q J 10, et sans majeure quatrième à côté.
+- 8–17 points : barrage, [3C] [3D] [3H] [3S]. Une couleur septième avec les mêmes hautes cartes qu'un deux faible.
+- 19–34 points : [1C] [1D] [1H] [1S]. [1H] ou [1S] demande cinq cartes ou plus dans la couleur ; avec deux couleurs cinquièmes, ouvrez de la plus haute. Sans majeure cinquième, ouvrez de la mineure la plus longue : [1D] avec 4–4 en mineures, [1C] avec 3–3.
+- 24–28 points : [1NT], main régulière : au moins deux cartes dans chaque couleur et au plus un doubleton (4333, 4432, 5332).
+- 32–34 points : [2NT], main régulière comme pour [1NT].
+- 35 points ou plus : [2C], toute distribution. Artificiel et forcing. Avec une main régulière de 35–39 points, annoncez [2NT] après la réponse du partenaire.
+- 40–44 points : [3NT], main régulière comme pour [1NT], au lieu de [2C].
 
 ## Réponses à l'ouverture d'un à la couleur
 - 0–9 points : [P].
@@ -26,6 +27,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - 0–12 points : [P], ou un transfert avec une majeure cinquième.
 - [2C] (Stayman) : 13 points ou plus avec une majeure quatrième. L'ouvreur répond [2D] sans majeure quatrième, sinon [2H] ou [2S].
 - [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts). L'ouvreur nomme la couleur suivante.
+- [2S] : une main faible avec six cartes ou plus dans une mineure. L'ouvreur doit dire [3C] ; passez avec les trèfles, ou dites [3D] avec les carreaux.
 - [2NT] : 13–15 points, invitant.
 - [3NT] : 16–25 points, pour jouer.
 
