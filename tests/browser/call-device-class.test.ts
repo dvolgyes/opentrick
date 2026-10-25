@@ -10,15 +10,15 @@ import {
 // The tests use this page's window in Chrome. The viewport changes the layout width, and Chrome's DevTools
 // emulation changes the user agent and the pointer.
 
-/** Sets the viewport width and waits for the window's resize event. */
-async function resizeTo(width: number): Promise<void> {
-	if (innerWidth === width) return;
+/** Sets the viewport size and waits for the window's resize event. */
+async function resizeTo(width: number, height = 720): Promise<void> {
+	if (innerWidth === width && innerHeight === height) return;
 	const resized = new Promise((resolve) =>
 		addEventListener("resize", resolve, { once: true }),
 	);
-	await page.viewport(width, 720);
+	await page.viewport(width, height);
 	await resized;
-	expect(innerWidth).toBe(width);
+	expect([innerWidth, innerHeight]).toEqual([width, height]);
 }
 
 describe("readSignals on Chrome's window", () => {
@@ -27,6 +27,7 @@ describe("readSignals on Chrome's window", () => {
 		const signals = readSignals(window);
 		expect(signals).toEqual({
 			viewportWidth: 1280,
+			viewportHeight: 720,
 			uaMobile: false,
 			userAgent: navigator.userAgent,
 			maxTouchPoints: 0,
@@ -66,10 +67,12 @@ describe("watchDeviceClass on Chrome's window", () => {
 		await resizeTo(800); // compact
 		await resizeTo(700); // still compact
 		await resizeTo(1280); // desktop
-		expect(seen).toEqual(["compact", "desktop"]);
+		await resizeTo(1000, 1200); // compact: a portrait window
+		await resizeTo(1280); // desktop
+		expect(seen).toEqual(["compact", "desktop", "compact", "desktop"]);
 		stop();
 		await resizeTo(800);
-		expect(seen).toEqual(["compact", "desktop"]);
+		expect(seen).toEqual(["compact", "desktop", "compact", "desktop"]);
 	});
 
 	// Last test of the file: Chrome keeps the touch-only pointer until the browser closes.

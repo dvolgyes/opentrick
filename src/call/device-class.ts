@@ -4,12 +4,14 @@
  */
 export type Form = "desktop" | "compact";
 
-/** A layout viewport narrower than this many CSS pixels is compact. */
+/** A layout viewport narrower than this many CSS pixels is compact. A portrait viewport is compact at any width. */
 export const COMPACT_BELOW_WIDTH = 900;
 
 export interface DeviceSignals {
 	/** Layout viewport width in CSS pixels. */
 	readonly viewportWidth: number;
+	/** Layout viewport height in CSS pixels. */
+	readonly viewportHeight: number;
 	/** `navigator.userAgentData.mobile`, or undefined when the browser does not expose it. */
 	readonly uaMobile: boolean | undefined;
 	readonly userAgent: string;
@@ -23,9 +25,11 @@ function isIPadDesktopMode(signals: DeviceSignals): boolean {
 	return /\bMacintosh\b/.test(signals.userAgent) && signals.maxTouchPoints > 1;
 }
 
-/** Without evidence of a desktop (a fine pointer, a wide viewport, no mobile signal) the result is compact. */
+/** Without evidence of a desktop (a fine pointer, a wide landscape viewport, no mobile signal) the result is compact. */
 export function classify(signals: DeviceSignals): Form {
 	if (signals.viewportWidth < COMPACT_BELOW_WIDTH) return "compact";
+	// A portrait viewport, such as a phone or tablet held upright, has no room for the Full HD room and the video.
+	if (signals.viewportHeight > signals.viewportWidth) return "compact";
 	if (signals.uaMobile === true) return "compact";
 	if (isIPadDesktopMode(signals)) return "compact";
 	if (!signals.anyFinePointer) return "compact";
@@ -44,6 +48,7 @@ interface MediaQueryLike {
 /** The part of `window` the adapter reads. */
 export interface DeviceWindow {
 	readonly innerWidth: number;
+	readonly innerHeight: number;
 	readonly navigator: {
 		readonly userAgent: string;
 		readonly maxTouchPoints: number;
@@ -67,6 +72,7 @@ export function uaMobile(userAgentData: unknown): boolean | undefined {
 export function readSignals(win: DeviceWindow): DeviceSignals {
 	return {
 		viewportWidth: win.innerWidth,
+		viewportHeight: win.innerHeight,
 		uaMobile: uaMobile(win.navigator.userAgentData),
 		userAgent: win.navigator.userAgent,
 		maxTouchPoints: win.navigator.maxTouchPoints,

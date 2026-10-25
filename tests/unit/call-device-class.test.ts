@@ -16,6 +16,7 @@ const FIREFOX_DESKTOP_UA =
 function desktop(overrides: Partial<DeviceSignals> = {}): DeviceSignals {
 	return {
 		viewportWidth: 1280,
+		viewportHeight: 800,
 		uaMobile: false,
 		userAgent: CHROME_DESKTOP_UA,
 		maxTouchPoints: 0,
@@ -29,6 +30,16 @@ describe("classify", () => {
 		["a wide desktop with a mouse", {}, "desktop"],
 		["width 899", { viewportWidth: 899 }, "compact"],
 		["width 900 with a fine pointer", { viewportWidth: 900 }, "desktop"],
+		[
+			"a portrait 1000 × 1200 window with a mouse",
+			{ viewportWidth: 1000, viewportHeight: 1200 },
+			"compact",
+		],
+		[
+			"a square 1000 × 1000 window with a mouse",
+			{ viewportWidth: 1000, viewportHeight: 1000 },
+			"desktop",
+		],
 		[
 			"userAgentData.mobile at 1400 px",
 			{ viewportWidth: 1400, uaMobile: true },
