@@ -12,6 +12,7 @@ import {
 	selfId,
 } from "./signaling";
 import { stunProbe } from "./stun-probe";
+import { webRtcCheck } from "./webrtc-check";
 
 export interface TrysteroMeshOptions {
 	/** A Node-compatible WebRTC implementation; browsers use their global constructor. */
@@ -60,6 +61,14 @@ export function trysteroMesh(
 								),
 						}),
 				probeStun: stunProbe(rtcPolyfill ?? RTCPeerConnection),
+				...(typeof window === "undefined"
+					? {}
+					: {
+							checkWebRtc: webRtcCheck(
+								rtcPolyfill ?? RTCPeerConnection,
+								config.rtc,
+							),
+						}),
 				...(relayChecks === undefined
 					? {}
 					: {

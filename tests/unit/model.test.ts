@@ -266,6 +266,7 @@ describe("networkLines", () => {
 		nostrRelays: 5,
 		relays: [],
 		stun: null,
+		webRtc: null,
 		peers: 2,
 		wrongKey: 1,
 		unreachable: 1,
@@ -315,6 +316,8 @@ describe("networkLines", () => {
 		).toEqual([
 			{ label: "Trackers reachable", value: "2 of 3" },
 			{ label: "Nostr relays reachable", value: "4 of 5" },
+			{ label: "Data channel inside this page", value: "checking" },
+			{ label: "Local candidates", value: "checking" },
 			{ label: "Direct connections", value: "3" },
 			{ label: "Players checked", value: "East (42 ms)" },
 			{ label: "Pages not reachable directly", value: "1" },
@@ -417,6 +420,75 @@ describe("networkLines", () => {
 		expect(detail({ kind: "incompatible" })).toBeUndefined();
 		expect(detail({ kind: "full" })).toBeUndefined();
 		expect(detail(undefined)).toBeUndefined();
+	});
+
+	it("shows the WebRTC check inside the page: whether its data channel works, and the kinds of local candidates", () => {
+		const lines = (webRtc: MeshDiagnostics["webRtc"]) =>
+			networkLines({
+				network: { ...NETWORK, webRtc },
+				peers: [],
+				publicAddress: false,
+				persistent: true,
+				persisted: true,
+			}).filter(
+				(line) =>
+					line.label === "Data channel inside this page" ||
+					line.label === "Local candidates",
+			);
+		expect(lines(null)).toEqual([
+			{ label: "Data channel inside this page", value: "checking" },
+			{ label: "Local candidates", value: "checking" },
+		]);
+		expect(
+			lines({
+				kind: "checked",
+				candidates: ["host mDNS", "srflx IPv4", "srflx IPv6"],
+				channel: "open",
+			}),
+		).toEqual([
+			{ label: "Data channel inside this page", value: "works" },
+			{
+				label: "Local candidates",
+				value: "host mDNS, srflx IPv4, srflx IPv6",
+			},
+		]);
+		expect(
+			lines({ kind: "checked", candidates: [], channel: "failed" }),
+		).toEqual([
+			{ label: "Data channel inside this page", value: "failed" },
+			{ label: "Local candidates", value: "none" },
+		]);
+	});
+
+	it("counts a STUN answer or a server-reflexive candidate of the check as a public address, before any link", () => {
+		const found = (network: MeshDiagnostics) =>
+			connectionSummary({ network, peers: [], publicAddress: false }).endsWith(
+				"Public address found: yes",
+			);
+		expect(found(NETWORK)).toBe(false);
+		expect(
+			found({
+				...NETWORK,
+				stun: [{ url: "stun:a.test", state: "answered" }],
+			}),
+		).toBe(true);
+		expect(
+			found({
+				...NETWORK,
+				webRtc: {
+					kind: "checked",
+					candidates: ["srflx IPv6"],
+					channel: "open",
+				},
+			}),
+		).toBe(true);
+		expect(
+			found({
+				...NETWORK,
+				stun: [{ url: "stun:a.test", state: "no-answer" }],
+				webRtc: { kind: "checked", candidates: ["host IPv4"], channel: "open" },
+			}),
+		).toBe(false);
 	});
 
 	it("reports the storage in the words of plan §4.3", () => {

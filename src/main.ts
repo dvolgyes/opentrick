@@ -197,6 +197,13 @@ async function main(root: HTMLElement): Promise<void> {
 		root.textContent = t("Open this page over HTTPS.");
 		return;
 	}
+	// The table reaches the other pages over WebRTC data channels only. Lockdown Mode on an iPhone turns WebRTC off.
+	if (typeof RTCPeerConnection !== "function") {
+		root.textContent = t(
+			"This browser has WebRTC turned off, so this page cannot reach the other players. On an iPhone or iPad, Lockdown Mode turns WebRTC off: turn it off for this website in the website settings of Safari, or use another device.",
+		);
+		return;
+	}
 	const mesh = readMeshConfig(import.meta.env);
 	if (!mesh.ok) {
 		root.textContent = configErrorText(mesh.error);

@@ -25,6 +25,7 @@ import type {
 	SignalingRoomConfig,
 } from "../../src/p2p/signaling";
 import type { ProbeStun, StunAnswer } from "../../src/p2p/stun-probe";
+import type { CheckWebRtc, WebRtcReport } from "../../src/p2p/webrtc-check";
 import { TABLE } from "./p2p-fixtures";
 
 const KEY = "k".repeat(43);
@@ -140,7 +141,11 @@ interface RelayCheckFake {
  */
 function statusMesh(
 	trackers: readonly string[],
-	stun: { readonly urls: readonly string[]; readonly probe?: ProbeStun } = {
+	stun: {
+		readonly urls: readonly string[];
+		readonly probe?: ProbeStun;
+		readonly checkWebRtc?: CheckWebRtc;
+	} = {
 		urls: [],
 	},
 	nostrRelays: readonly string[] = [],
@@ -176,6 +181,9 @@ function statusMesh(
 			},
 			clock: { monotonic: () => clock.now, wall: () => clock.now },
 			...(stun.probe === undefined ? {} : { probeStun: stun.probe }),
+			...(stun.checkWebRtc === undefined
+				? {}
+				: { checkWebRtc: stun.checkWebRtc }),
 			...(checks === undefined
 				? {}
 				: {
@@ -605,6 +613,56 @@ describe("the mesh's STUN checks", () => {
 	it("reports no STUN result on a page that does not check", () => {
 		const { mesh } = statusMesh([A], { urls: ["stun:a.test"] });
 		expect(mesh.diagnostics().stun).toBeNull();
+	});
+});
+
+describe("the mesh's WebRTC check", () => {
+	const report = (candidates: string[]): WebRtcReport => ({
+		kind: "checked",
+		candidates,
+		channel: "open",
+	});
+
+	it("checks WebRTC at the start and again after a network change, and reports the newest result", async () => {
+		const pending: ((report: WebRtcReport) => void)[] = [];
+		const { mesh, network } = statusMesh([A], {
+			urls: [],
+			checkWebRtc: () => new Promise((resolve) => pending.push(resolve)),
+		});
+		expect(pending).toHaveLength(1);
+		expect(mesh.diagnostics().webRtc).toBeNull();
+		pending[0]?.(report(["host IPv4", "srflx IPv4"]));
+		await expect
+			.poll(() => mesh.diagnostics().webRtc)
+			.toEqual(report(["host IPv4", "srflx IPv4"]));
+
+		network.change();
+		expect(pending).toHaveLength(2);
+		pending[1]?.(report(["host IPv6"]));
+		await expect
+			.poll(() => mesh.diagnostics().webRtc)
+			.toEqual(report(["host IPv6"]));
+	});
+
+	it("keeps the result of the newest check when an older check ends later", async () => {
+		const pending: ((report: WebRtcReport) => void)[] = [];
+		const { mesh, network } = statusMesh([A], {
+			urls: [],
+			checkWebRtc: () => new Promise((resolve) => pending.push(resolve)),
+		});
+		network.change();
+		pending[1]?.(report(["host IPv6"]));
+		await expect
+			.poll(() => mesh.diagnostics().webRtc)
+			.toEqual(report(["host IPv6"]));
+		pending[0]?.(report(["host IPv4"]));
+		await Promise.resolve();
+		expect(mesh.diagnostics().webRtc).toEqual(report(["host IPv6"]));
+	});
+
+	it("reports no WebRTC result on a page that does not check", () => {
+		const { mesh } = statusMesh([A]);
+		expect(mesh.diagnostics().webRtc).toBeNull();
 	});
 });
 

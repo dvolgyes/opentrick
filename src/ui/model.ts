@@ -397,8 +397,9 @@ export interface NetworkLine {
 }
 
 /**
- * Counts, yes-or-no facts and the host names of the configured trackers, Nostr relays and STUN servers only: never
- * a peer's address, a candidate or a session description.
+ * Counts, yes-or-no facts, the kinds of this page's local candidates (type, protocol and address family) and the
+ * host names of the configured trackers, Nostr relays and STUN servers only: never an address, a candidate or a
+ * session description.
  */
 export function networkLines(input: NetworkInput): NetworkLine[] {
 	const { network } = input;
@@ -419,6 +420,7 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 			label: t("STUN {host}", { host: serverName(stun.url) }),
 			value: t(STUN_STATE[stun.state]),
 		})),
+		...webRtcLines(network?.webRtc ?? null, t),
 		direct,
 		{
 			label: t("Players checked"),
@@ -496,7 +498,48 @@ function summaryLines(
 		{ label: t("Direct connections"), value: String(input.peers.length) },
 		{
 			label: t("Public address found"),
-			value: input.publicAddress ? t("yes") : t("no"),
+			value: publicAddressFound(input) ? t("yes") : t("no"),
+		},
+	];
+}
+
+/**
+ * A link's server-reflexive candidate, a STUN server's answer, or a server-reflexive candidate of the WebRTC check:
+ * each shows that STUN gave this page a public address, and the last two need no link.
+ */
+function publicAddressFound({ network, publicAddress }: SummaryInput): boolean {
+	return (
+		publicAddress ||
+		(network?.stun ?? []).some((stun) => stun.state === "answered") ||
+		(network?.webRtc?.kind === "checked" &&
+			network.webRtc.candidates.some((label) => label.startsWith("srflx ")))
+	);
+}
+
+/** The WebRTC check inside the page; a browser without WebRTC never gets this far (src/main.ts). */
+function webRtcLines(
+	report: MeshDiagnostics["webRtc"],
+	t: Translate,
+): NetworkLine[] {
+	const checked = report?.kind === "checked" ? report : undefined;
+	return [
+		{
+			label: t("Data channel inside this page"),
+			value:
+				checked === undefined
+					? t("checking")
+					: checked.channel === "open"
+						? t("works")
+						: t("failed"),
+		},
+		{
+			label: t("Local candidates"),
+			value:
+				checked === undefined
+					? t("checking")
+					: checked.candidates.length === 0
+						? t("none")
+						: checked.candidates.join(", "),
 		},
 	];
 }

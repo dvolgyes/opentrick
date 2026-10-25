@@ -108,6 +108,8 @@ export const TABLE_OFFERS = 3;
 export const STUN_PROBE_MS = 5_000;
 /** A page without links asks the STUN servers again this often. */
 export const STUN_RECHECK_MS = 60_000;
+/** The WebRTC check inside the page (src/p2p/webrtc-check.ts) ends after this long, with what it has found. */
+export const WEBRTC_CHECK_MS = 8_000;
 
 // Replication (plan §4.5).
 export const ACK_DEBOUNCE_MS = 1_000;
