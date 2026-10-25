@@ -2108,6 +2108,11 @@ button.call-join[data-in-call="true"] {
 	white-space: nowrap;
 }
 
+/* The [4NT] hint has two lines; they wrap, and Confirm grows to hold them. */
+.bid-actions .convention-hint.convention-lines {
+	white-space: pre-line;
+}
+
 .mobile-auction {
 	display: none;
 }

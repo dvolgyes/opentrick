@@ -3497,6 +3497,22 @@ const rows: readonly TranslationRow[] = [
 		"Blackwood, vraagt naar azen: een klein slem vraagt samen ongeveer {small}, een groot slem ongeveer {grand}",
 	],
 	[
+		"Blackwood: {small}/{grand}",
+		"Blackwood: {small}/{grand}",
+		"Blackwood: {small}/{grand}",
+		"Blackwood : {small}/{grand}",
+		"Blackwood: {small}/{grand}",
+		"Blackwood: {small}/{grand}",
+	],
+	[
+		"Aces: {answers}",
+		"Ases: {answers}",
+		"Ases: {answers}",
+		"As : {answers}",
+		"Assi: {answers}",
+		"Azen: {answers}",
+	],
+	[
 		"aces: {counts}",
 		"ases: {counts}",
 		"ases: {counts}",

@@ -7,6 +7,7 @@ import {
 } from "../bridge/cards";
 import type { PointRange } from "../bridge/convention-rules";
 import {
+	ACE_ANSWERS,
 	type CallMeaning,
 	callMeaning,
 	type Shape,
@@ -771,7 +772,7 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 }
 
 /** For example "15–17 HCP, balanced". */
-export function meaningText(
+function meaningText(
 	meaning: CallMeaning,
 	system: PointSystem,
 	t: Translate,
@@ -782,6 +783,27 @@ export function meaningText(
 	]
 		.filter((part) => part !== "")
 		.join(", ");
+}
+
+/**
+ * The Confirm hint of the [4NT] ask, two lines: the slam targets, and the answers. For example "Blackwood: 33+/37+
+ * HCP" and "Aces: 5♣:0/4 5♦:1 5♥:2 5♠:3".
+ */
+export function blackwoodHint(
+	shape: Extract<Shape, { kind: "blackwood" }>,
+	system: PointSystem,
+	t: Translate,
+): string {
+	const answers = Object.entries(ACE_ANSWERS)
+		.map(([call, counts]) => `${callText(call as Call)}:${counts.join("/")}`)
+		.join(" ");
+	return [
+		t("Blackwood: {small}/{grand}", {
+			small: `${pointsText(shape.small.min)}+`,
+			grand: rangeText(shape.grand, system, t),
+		}),
+		t("Aces: {answers}", { answers }),
+	].join("\n");
 }
 
 function auctionView(

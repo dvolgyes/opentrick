@@ -483,7 +483,7 @@ function overcallMeaning(
 }
 
 /** "[4NT] (Blackwood) asks for aces: [5C] 0 or 4, [5D] 1, [5H] 2, [5S] 3." */
-const ACE_ANSWERS: Readonly<Partial<Record<Call, readonly number[]>>> = {
+export const ACE_ANSWERS: Readonly<Partial<Record<Call, readonly number[]>>> = {
 	"5C": [0, 4],
 	"5D": [1],
 	"5H": [2],

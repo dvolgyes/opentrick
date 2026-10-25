@@ -2908,20 +2908,39 @@ describe("convention hint", () => {
 		expect(hint(root)).toBeUndefined();
 	});
 
-	it("gives the meaning of the [4NT] ask and no verdict, with any hand", () => {
-		// The guide gives this hand [2NT], [3H] or [4H] after partner's weak two, but [4NT] fits any hand.
-		const { root } = renderView(
-			bidView(["2H", "P"]),
-			"desktop",
-			undefined,
-			undefined,
-			hcp,
-		);
-		pickBid(root, "4", "NT");
-		expect(hint(root)).toBe(
-			"(Blackwood, asks for aces: a small slam needs about 33+ HCP together, a grand slam about 37+ HCP)",
-		);
-	});
+	it.each([
+		["compact", 414, 896],
+		["desktop", 1280, 800],
+	] as const)(
+		"gives the slam targets and the answers of the [4NT] ask in full, and no verdict, with any hand (%s, %i×%i)",
+		async (form, width, height) => {
+			await page.viewport(width, height);
+			try {
+				// The guide gives this hand [2NT], [3H] or [4H] after partner's weak two, but [4NT] fits any hand.
+				const { root } = renderView(
+					bidView(["2H", "P"]),
+					form,
+					undefined,
+					undefined,
+					hcp,
+				);
+				pickBid(root, "4", "NT");
+				expect(hint(root)).toBe(
+					"Blackwood: 33+/37+ HCP\nAces: 5♣:0/4 5♦:1 5♥:2 5♠:3",
+				);
+				// Confirm grows for the two lines, and no text is cut.
+				const box = confirm(root)?.getBoundingClientRect();
+				const text =
+					confirm(root)?.querySelector<HTMLElement>(".convention-hint");
+				const lines = text?.getBoundingClientRect();
+				expect(text?.scrollWidth).toBeLessThanOrEqual(text?.clientWidth ?? 0);
+				expect(lines?.bottom).toBeLessThanOrEqual(box?.bottom ?? 0);
+				expect(lines?.right).toBeLessThanOrEqual(box?.right ?? 0);
+			} finally {
+				await page.viewport(414, 896);
+			}
+		},
+	);
 
 	it("reads the hand with the viewer's point system, in the viewer's language", () => {
 		const { root } = renderView(

@@ -37,7 +37,7 @@ import type {
 	TrickView,
 	TurnPill,
 } from "./table-model";
-import { meaningText } from "./table-model";
+import { blackwoodHint } from "./table-model";
 
 export interface TableHandlers {
 	exit(): void;
@@ -278,7 +278,7 @@ const HINT_CALLS = 3;
 /**
  * The hint on Confirm when the chosen call is not one that the guide of `system` gives the viewer's hand: the guide
  * calls, or "Unconventional" when the guide gives none. Undefined when the guide does not describe the position. The
- * [4NT] ask fits any hand, so its hint is its meaning and not a verdict.
+ * [4NT] ask fits any hand, so its hint is its meaning and not a verdict, on two lines.
  */
 function conventionHint(
 	system: PointSystem,
@@ -292,7 +292,7 @@ function conventionHint(
 	const before = view.auction.calls;
 	const meaning = callMeaning(system, [...before, chosen], before.length);
 	if (meaning?.shape.kind === "blackwood")
-		return `(${meaningText(meaning, system, t)})`;
+		return blackwoodHint(meaning.shape, system, t);
 	const guide = conventionCalls(system, cards, before);
 	if (guide === undefined || guide.some(({ call }) => call === chosen))
 		return undefined;
@@ -1585,7 +1585,18 @@ export function tableSection(
 		);
 		const hint = conventionHint(shownPointSystem, view, chosen, t);
 		if (hint !== undefined)
-			confirm.append(" ", el("span", { className: "convention-hint" }, hint));
+			confirm.append(
+				" ",
+				el(
+					"span",
+					{
+						className: hint.includes("\n")
+							? "convention-hint convention-lines"
+							: "convention-hint",
+					},
+					hint,
+				),
+			);
 		confirm.disabled = chosen === undefined || !legal.has(chosen);
 		const undo = button(
 			t("Undo"),
