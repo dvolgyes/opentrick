@@ -30,6 +30,7 @@ describe("OpenRouter decision models", () => {
 			board.dealer,
 			"call",
 			NODE_PROMPT_TEMPLATES,
+			{},
 		);
 		const request = decisionsRequestBody(
 			DECISION_BOT_MODELS[0],
@@ -60,7 +61,13 @@ describe("OpenRouter decision models", () => {
 			decisionsRequestBody(
 				DECISION_BOT_MODELS[0],
 				"call",
-				decisionState(auction, auction.dealer, "call", NODE_PROMPT_TEMPLATES),
+				decisionState(
+					auction,
+					auction.dealer,
+					"call",
+					NODE_PROMPT_TEMPLATES,
+					{},
+				),
 				legalActions(auction, auction.dealer),
 			),
 		);
@@ -69,7 +76,7 @@ describe("OpenRouter decision models", () => {
 			decisionsRequestBody(
 				DECISION_BOT_MODELS[0],
 				"play",
-				decisionState(board, "E", "play", NODE_PROMPT_TEMPLATES),
+				decisionState(board, "E", "play", NODE_PROMPT_TEMPLATES, {}),
 				legalActions(board, "E"),
 			),
 		);
@@ -81,7 +88,7 @@ describe("OpenRouter decision models", () => {
 
 	it("lists the bidding state as system, own hand and points, then the board", () => {
 		const board = createBoard(1, DEAL);
-		const state = decisionState(board, "E", "call", NODE_PROMPT_TEMPLATES);
+		const state = decisionState(board, "E", "call", NODE_PROMPT_TEMPLATES, {});
 		expect(Object.keys(state).slice(0, 4)).toEqual([
 			"bidding_system",
 			"hand",
@@ -89,6 +96,37 @@ describe("OpenRouter decision models", () => {
 			"suit_shape_longest_first",
 		]);
 		expect(state.high_card_points).toBe(9);
+	});
+
+	it("gives each earlier call the meaning of its caller's system, and the bot's own guide calls", () => {
+		const board = bidding(createBoard(1, DEAL), "2C P");
+		const state = decisionState(board, "S", "call", NODE_PROMPT_TEMPLATES, {
+			N: "vienna",
+			E: "hcp",
+		});
+		expect(state.auction).toEqual([
+			{
+				seat: "N",
+				call: "2♣",
+				system: "vienna",
+				meaning: "35+ Vienna points, artificial and forcing",
+			},
+			{ seat: "E", call: "Pass", system: "hcp", meaning: null },
+		]);
+		expect(state.guide_system).toBe("hcp");
+		expect(state.guide_calls).toEqual([
+			{ call: "2♦", meaning: "0–7 HCP, waiting" },
+		]);
+		// After the first response the guide is silent.
+		expect(
+			decisionState(
+				bidding(createBoard(1, DEAL), "2C P 2D P"),
+				"N",
+				"call",
+				NODE_PROMPT_TEMPLATES,
+				{},
+			).guide_calls,
+		).toBe(null);
 	});
 
 	it("accepts a typed choice only when it matches a legal action", () => {
@@ -133,7 +171,8 @@ describe("OpenRouter decision models", () => {
 		let board = bidding(createBoard(1, DEAL), "1NT P P P");
 		const leader = "E";
 		expect(
-			decisionState(board, leader, "play", NODE_PROMPT_TEMPLATES).dummy_hand,
+			decisionState(board, leader, "play", NODE_PROMPT_TEMPLATES, {})
+				.dummy_hand,
 		).toBe(null);
 		const openingLead = legalActions(board, leader)[0];
 		if (openingLead?.type !== "play")
@@ -143,7 +182,13 @@ describe("OpenRouter decision models", () => {
 		board = result.board;
 		const actor = boardStatus(board).actor;
 		if (actor === undefined) throw new Error("test needs a play actor");
-		const state = decisionState(board, actor, "play", NODE_PROMPT_TEMPLATES);
+		const state = decisionState(
+			board,
+			actor,
+			"play",
+			NODE_PROMPT_TEMPLATES,
+			{},
+		);
 		const serialized = JSON.stringify(state);
 		expect(serialized).toContain('"dummy_hand":');
 		expect(serialized).not.toContain("H3");
@@ -156,7 +201,8 @@ describe("OpenRouter decision models", () => {
 			"HJ H4 H3 HA SA S7 S2 D2 SK",
 		);
 		expect(
-			decisionState(board, "E", "play", NODE_PROMPT_TEMPLATES).card_knowledge,
+			decisionState(board, "E", "play", NODE_PROMPT_TEMPLATES, {})
+				.card_knowledge,
 		).toMatchObject({
 			unaccounted: { S: "QJT98", H: "KQ2", D: "AK543", C: "A8765432" },
 			hands: [

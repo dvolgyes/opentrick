@@ -27,6 +27,7 @@ import {
 	isChatEvent,
 	isTableCommand,
 	parseBridgeState,
+	seatSystems,
 	systemPayload,
 	totals,
 } from "../../src/game/bridge";
@@ -711,6 +712,17 @@ describe("bidding systems at the table", () => {
 			S: "hcp",
 			E: "other",
 		});
+	});
+
+	it("gives a bot seat HCP, whatever an earlier player of its seat sent, and a human seat the system it sent", () => {
+		const systems = { N: "vienna", E: "other", W: "reith" } as const;
+		expect(seatSystems(systems, ["W", "S"])).toEqual({
+			N: "vienna",
+			E: "other",
+			S: "hcp",
+			W: "hcp",
+		});
+		expect(seatSystems(systems, [])).toEqual(systems);
 	});
 
 	it("keeps the systems after a new deal", () => {

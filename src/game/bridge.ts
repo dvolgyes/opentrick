@@ -187,6 +187,22 @@ export function parseBridgeState(
 	};
 }
 
+/** The system that every bot bids with: its prompt tells it to count Milton Work points (src/bot/strategy.ts). */
+export const BOT_SYSTEM: PointSystem = "hcp";
+
+/**
+ * The system of each seat: a bot bids with BOT_SYSTEM, whatever an earlier player of its seat sent, and a human seat
+ * uses the system it sent, if any.
+ */
+export function seatSystems(
+	systems: Partial<Record<Seat, PointSystem>>,
+	bots: Iterable<Seat>,
+): Partial<Record<Seat, PointSystem>> {
+	const result = { ...systems };
+	for (const seat of bots) result[seat] = BOT_SYSTEM;
+	return result;
+}
+
 /** A state stored before the bidding systems has none. */
 function parseSystems(
 	value: unknown,

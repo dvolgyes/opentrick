@@ -19,5 +19,10 @@ Vulnerability: {{VULNERABILITY}}
 Auction: {{AUCTION}}
 Legal bids: {{LEGAL_BIDS}}
 
+### WHAT THE CALLS MEAN
+Each player counts points by a point system and follows a short bidding guide for it. The lines below give what each earlier call shows by the guide of its caller's system, and the calls that the HCP guide gives your hand. The guide covers only the opening and the first response, and it is guidance, not a rule. Always choose from Legal bids; where the guide is silent, bid by SAYC.
+{{AUCTION_MEANINGS}}
+{{YOUR_GUIDE_CALLS}}
+
 ### OUTPUT FORMAT
 Return JSON matching {"call":"one legal bid token"}. Bid tokens are P, X, XX, or a level and strain such as 1S or 3NT.

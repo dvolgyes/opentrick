@@ -67,9 +67,9 @@ export async function checkOpenRouterKey(
 		const templates = await loadBrowserPromptTemplates();
 		await strategy.choose(
 			"call",
-			renderBidPrompt(board, seat, legal, templates),
+			renderBidPrompt(board, seat, legal, templates, {}),
 			legal,
-			decisionState(board, seat, "call", templates),
+			decisionState(board, seat, "call", templates, {}),
 		);
 		return { ok: true };
 	} catch (error) {

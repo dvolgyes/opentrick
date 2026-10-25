@@ -236,6 +236,7 @@ describe("bot decisions", () => {
 			board.dealer,
 			legal,
 			NODE_PROMPT_TEMPLATES,
+			{},
 		);
 		expect(prompt).toContain("Standard American Yellow Card");
 		expect(prompt).toContain("Legal bids:");
@@ -252,12 +253,14 @@ describe("bot decisions", () => {
 			"E",
 			legalActions(board, board.dealer),
 			NODE_PROMPT_TEMPLATES,
+			{},
 		);
 		const west = renderBidPrompt(
 			board,
 			"W",
 			legalActions(board, board.dealer),
 			NODE_PROMPT_TEMPLATES,
+			{},
 		);
 		expect(east).toContain("Your high-card points: 9");
 		expect(west).toContain("Your high-card points: 0");
@@ -271,6 +274,7 @@ describe("bot decisions", () => {
 			auction.dealer,
 			legalActions(auction, auction.dealer),
 			NODE_PROMPT_TEMPLATES,
+			{},
 		);
 		const board = bidding(createBoard(1, DEAL), "1S P 4S P P P");
 		const play = renderPlayPrompt(
@@ -295,6 +299,70 @@ describe("bot decisions", () => {
 		expect(order).not.toContain(-1);
 		expect(play).toContain("Standard American Yellow Card");
 		expect(play).not.toContain("Jacoby");
+	});
+
+	it("decodes each earlier call by its caller's system and lists the bot's own guide calls", () => {
+		const board = bidding(createBoard(1, DEAL), "2C P");
+		const legal = legalActions(board, "S");
+		const prompt = renderBidPrompt(board, "S", legal, NODE_PROMPT_TEMPLATES, {
+			N: "vienna",
+			E: "hcp",
+		});
+		expect(prompt).toContain("### WHAT THE CALLS MEAN");
+		expect(prompt).toContain(
+			[
+				"North - Vienna bidding: 2♣ -> 35+ Vienna points, artificial and forcing",
+				"East - HCP bidding: Pass -> not described by the guide",
+				"Your bids according to HCP likely could be 2♦ (0–7 HCP, waiting).",
+			].join("\n"),
+		);
+		const unknown = renderBidPrompt(board, "S", legal, NODE_PROMPT_TEMPLATES, {
+			N: "other",
+		});
+		expect(unknown).toContain("North - other system: 2♣ -> meaning unknown");
+		expect(unknown).toContain("East - unknown system: Pass -> meaning unknown");
+
+		// North opens with 30 HCP, unbalanced: only 2♣. After the first response the guide is silent.
+		const opening = createBoard(1, DEAL);
+		expect(
+			renderBidPrompt(
+				opening,
+				"N",
+				legalActions(opening, "N"),
+				NODE_PROMPT_TEMPLATES,
+				{},
+			),
+		).toContain(
+			"No calls yet.\nYour bids according to HCP likely could be 2♣ (22+ HCP, artificial and forcing).",
+		);
+		const rebid = bidding(createBoard(1, DEAL), "2C P 2D P");
+		expect(
+			renderBidPrompt(
+				rebid,
+				"N",
+				legalActions(rebid, "N"),
+				NODE_PROMPT_TEMPLATES,
+				{},
+			),
+		).toContain("The guide has no suggestion here; use SAYC.");
+	});
+
+	it("gives the same bid prompt whatever the other hands hold", () => {
+		const board = bidding(createBoard(1, DEAL), "2C P");
+		const swapped = {
+			...board,
+			deal: {
+				...board.deal,
+				N: board.deal.W,
+				E: board.deal.N,
+				W: board.deal.E,
+			},
+		} satisfies typeof board;
+		const legal = legalActions(board, "S");
+		const systems = { N: "vienna", E: "hcp" } as const;
+		expect(
+			renderBidPrompt(swapped, "S", legal, NODE_PROMPT_TEMPLATES, systems),
+		).toBe(renderBidPrompt(board, "S", legal, NODE_PROMPT_TEMPLATES, systems));
 	});
 
 	it("shows only the player's hand and dummy during play", () => {

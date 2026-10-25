@@ -10,13 +10,22 @@ import {
 	SUITS,
 	suitOf,
 } from "../bridge/cards";
+import type { PointRange } from "../bridge/convention-rules";
+import {
+	type CallMeaning,
+	callMeaning,
+	conventionCalls,
+	type Shape,
+} from "../bridge/conventions";
 import {
 	type Action,
 	type Board,
 	boardStatus,
 	type CompletedTrick,
 } from "../bridge/engine";
+import type { PointSystem } from "../bridge/hand-points";
 import type { Call, Contract } from "../bridge/rules";
+import { BOT_SYSTEM } from "../game/bridge";
 import { SEAT_NAMES, type Seat, seatAfter } from "../protocol";
 
 export const BOT_MODEL = "inception/mercury-3";
@@ -131,6 +140,149 @@ function callLabel(call: Call): string {
 	if (call === "X") return "Double";
 	if (call === "XX") return "Redouble";
 	return `${call[0]}${call.slice(1) === "NT" ? "NT" : SUIT_SYMBOLS[call.slice(1) as keyof typeof SUIT_SYMBOLS]}`;
+}
+
+/** The English names of the point scales, for the prompt only; the players see translated names. */
+const SCALE_NAMES: Readonly<Record<PointSystem, string>> = {
+	hcp: "HCP",
+	"hcp-corrected": "corrected HCP",
+	vienna: "Vienna points",
+	reith: "Reith points",
+	"four-aces": "Four Aces points",
+	other: "points",
+};
+
+const SYSTEM_NAMES: Readonly<Record<PointSystem, string>> = {
+	hcp: "HCP bidding",
+	"hcp-corrected": "corrected HCP bidding",
+	vienna: "Vienna bidding",
+	reith: "Reith bidding",
+	"four-aces": "Four Aces bidding",
+	other: "other system",
+};
+
+/** Half points as in the guides: 7.5 is "7½". */
+function pointsText(points: number): string {
+	return Number.isInteger(points) ? String(points) : `${Math.floor(points)}½`;
+}
+
+function rangeText(range: PointRange, system: PointSystem): string {
+	const points =
+		range.max === undefined
+			? `${pointsText(range.min)}+`
+			: `${pointsText(range.min)}–${pointsText(range.max)}`;
+	return `${points} ${SCALE_NAMES[system]}`;
+}
+
+function shapeText(shape: Shape): string {
+	switch (shape.kind) {
+		case "none":
+			return "";
+		case "balanced":
+			return "balanced";
+		case "artificial":
+			return "artificial and forcing";
+		case "cards":
+			return `${shape.min}+ ${SUIT_SYMBOLS[shape.suit]}`;
+		case "support":
+			return `${shape.min}+ ${SUIT_SYMBOLS[shape.suit]} support`;
+		case "weak-two":
+			return `weak two, a good ${shape.length}-card ${SUIT_SYMBOLS[shape.suit]} suit`;
+		case "preempt":
+			return `preempt, a good ${shape.length}-card ${SUIT_SYMBOLS[shape.suit]} suit`;
+		case "transfer":
+			return `transfer, ${shape.min}+ ${SUIT_SYMBOLS[shape.suit]}`;
+		case "stayman":
+			return `Stayman, a ${shape.min}-card major`;
+		case "weak-minor":
+			return `weak, a ${shape.min}+ card minor`;
+		case "waiting":
+			return "waiting";
+		case "good-suit":
+			return `a good ${shape.min}+ card ${SUIT_SYMBOLS[shape.suit]} suit`;
+	}
+}
+
+/** For example "15–17 HCP, balanced". */
+function meaningText(meaning: CallMeaning, system: PointSystem): string {
+	return [
+		meaning.range === undefined ? "" : rangeText(meaning.range, system),
+		shapeText(meaning.shape),
+	]
+		.filter((text) => text !== "")
+		.join(", ");
+}
+
+/** The guide meaning of each call in the auction, by the system of its caller; null when the guide does not say. */
+function auctionMeanings(
+	board: Board,
+	systems: Partial<Record<Seat, PointSystem>>,
+): {
+	seat: Seat;
+	call: string;
+	system: PointSystem | null;
+	meaning: string | null;
+}[] {
+	return board.calls.map((call, index) => {
+		const seat = seatAfter(board.dealer, index);
+		const system = systems[seat];
+		const meaning =
+			system === undefined
+				? undefined
+				: callMeaning(system, board.calls, index);
+		return {
+			seat,
+			call: callLabel(call),
+			system: system ?? null,
+			meaning:
+				system === undefined || meaning === undefined
+					? null
+					: meaningText(meaning, system),
+		};
+	});
+}
+
+/** For example "East - HCP bidding: 1NT -> 15–17 HCP, balanced", one line for each call. */
+function auctionMeaningsText(
+	board: Board,
+	systems: Partial<Record<Seat, PointSystem>>,
+): string {
+	if (board.calls.length === 0) return "No calls yet.";
+	return auctionMeanings(board, systems)
+		.map(({ seat, call, system, meaning }) => {
+			const caller = SEAT_NAMES[seat];
+			if (system === null || system === "other")
+				return `${caller} - ${system === null ? "unknown system" : SYSTEM_NAMES.other}: ${call} -> meaning unknown`;
+			return `${caller} - ${SYSTEM_NAMES[system]}: ${call} -> ${meaning ?? "not described by the guide"}`;
+		})
+		.join("\n");
+}
+
+function guideCalls(
+	board: Board,
+	seat: Seat,
+): { call: string; meaning: string }[] | null {
+	const calls = conventionCalls(BOT_SYSTEM, board.deal[seat], board.calls);
+	return calls === undefined
+		? null
+		: calls.map((guide) => ({
+				call: callLabel(guide.call),
+				meaning: meaningText(guide.meaning, BOT_SYSTEM),
+			}));
+}
+
+/** For example "Your bids according to HCP likely could be 1NT (15–17 HCP, balanced) or Pass (0–11 HCP)." */
+function guideCallsText(board: Board, seat: Seat): string {
+	const calls = guideCalls(board, seat);
+	if (calls === null) return "The guide has no suggestion here; use SAYC.";
+	const options = calls.map(({ call, meaning }) =>
+		meaning === "" ? call : `${call} (${meaning})`,
+	);
+	const list =
+		options.length > 1
+			? `${options.slice(0, -1).join(", ")} or ${options.at(-1)}`
+			: (options[0] ?? "");
+	return `Your bids according to ${SCALE_NAMES[BOT_SYSTEM]} likely could be ${list}.`;
 }
 
 function contractLabel(contract: Contract): string {
@@ -273,6 +425,7 @@ export function renderBidPrompt(
 	seat: Seat,
 	legal: readonly Action[],
 	templates: PromptTemplates,
+	systems: Partial<Record<Seat, PointSystem>>,
 ): string {
 	return renderTemplate(templates.bidding, {
 		BOARD: String(board.number),
@@ -284,6 +437,8 @@ export function renderBidPrompt(
 		SAYC_SUMMARY: templates.sayc.trim(),
 		AUCTION: callsText(board),
 		LEGAL_BIDS: legalChoices(legal).join(", "),
+		AUCTION_MEANINGS: auctionMeaningsText(board, systems),
+		YOUR_GUIDE_CALLS: guideCallsText(board, seat),
 	});
 }
 
@@ -331,6 +486,7 @@ export function decisionState(
 	seat: Seat,
 	kind: "call" | "play",
 	templates: PromptTemplates,
+	systems: Partial<Record<Seat, PointSystem>>,
 ): BridgeDecisionState {
 	const auction = board.calls.map((call, index) => ({
 		seat: seatAfter(board.dealer, index),
@@ -362,7 +518,9 @@ export function decisionState(
 			dealer: board.dealer,
 			vulnerability: board.vulnerability,
 			seat,
-			auction,
+			auction: auctionMeanings(board, systems),
+			guide_system: BOT_SYSTEM,
+			guide_calls: guideCalls(board, seat),
 		};
 	}
 

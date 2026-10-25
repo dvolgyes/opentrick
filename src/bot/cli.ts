@@ -6,6 +6,7 @@ import {
 	claimVotePayload,
 	parseBridgeState,
 	resetVotePayload,
+	seatSystems,
 	undoVotePayload,
 } from "../game/bridge";
 import { newCommandId } from "../ids";
@@ -426,9 +427,20 @@ async function run(options: Options): Promise<void> {
 		strategyKey = actionKey;
 		const kind = actions[0]?.type;
 		if (!kind) return;
+		// This bot bids with HCP like the host's bots, but the roster lists only the host's bots.
+		const systems = seatSystems(state.systems, [
+			seat,
+			...(view.roster?.bots ?? []),
+		]);
 		const prompt =
 			kind === "call"
-				? renderBidPrompt(state.board, seat, actions, NODE_PROMPT_TEMPLATES)
+				? renderBidPrompt(
+						state.board,
+						seat,
+						actions,
+						NODE_PROMPT_TEMPLATES,
+						systems,
+					)
 				: renderPlayPrompt(state.board, seat, actions, NODE_PROMPT_TEMPLATES);
 		try {
 			const decision = options.random
@@ -437,7 +449,13 @@ async function run(options: Options): Promise<void> {
 						kind,
 						prompt,
 						actions,
-						decisionState(state.board, seat, kind, NODE_PROMPT_TEMPLATES),
+						decisionState(
+							state.board,
+							seat,
+							kind,
+							NODE_PROMPT_TEMPLATES,
+							systems,
+						),
 					);
 			if (!decision) throw new Error("bot strategy is not configured");
 			await sendAction(state, seat, actionKey, decision, controller.view());

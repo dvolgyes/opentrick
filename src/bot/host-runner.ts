@@ -4,6 +4,7 @@ import {
 	claimVotePayload,
 	parseBridgeState,
 	resetVotePayload,
+	seatSystems,
 	undoVotePayload,
 } from "../game/bridge";
 import type { TableController } from "../p2p/table";
@@ -185,11 +186,11 @@ export class HostBotRunner {
 		)
 			return;
 		const config = view.table.config;
-		const seats = this.#activeSeats(
-			view.roster?.bots ?? configuredBotSeats(config),
-		);
+		const bots = view.roster?.bots ?? configuredBotSeats(config);
+		const seats = this.#activeSeats(bots);
 		const state = parseBridgeState(view.table.state, this.#controller.tableId);
 		if (!state) return;
+		const systems = seatSystems(state.systems, bots);
 		for (const seat of seats) {
 			const voteKey =
 				state.claim?.required.includes(seat) &&
@@ -231,7 +232,13 @@ export class HostBotRunner {
 			this.#templates ??= await loadBrowserPromptTemplates();
 			const prompt =
 				kind === "call"
-					? renderBidPrompt(state.board, seat, actions, this.#templates)
+					? renderBidPrompt(
+							state.board,
+							seat,
+							actions,
+							this.#templates,
+							systems,
+						)
 					: renderPlayPrompt(state.board, seat, actions, this.#templates);
 			const strategy = new BrowserOpenRouterStrategy(
 				this.#settings.apiKey,
@@ -253,7 +260,7 @@ export class HostBotRunner {
 					kind,
 					prompt,
 					actions,
-					decisionState(state.board, seat, kind, this.#templates),
+					decisionState(state.board, seat, kind, this.#templates, systems),
 				);
 			} catch (error) {
 				this.#processed.delete(key);

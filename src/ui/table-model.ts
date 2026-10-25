@@ -18,6 +18,7 @@ import type { Call, Contract, Strain, Vulnerability } from "../bridge/rules";
 import {
 	type BridgeState,
 	isTableCommand,
+	seatSystems,
 	totals,
 	waitingText,
 } from "../game/bridge";
@@ -608,7 +609,6 @@ function scoreRows(results: readonly BoardResult[]): ScoreRow[] {
 	});
 }
 
-/** A bot bids with HCP (src/bot/strategy.ts), whatever an earlier player of its seat sent. */
 function auctionView(
 	dealer: Seat,
 	calls: readonly Call[],
@@ -621,10 +621,11 @@ function auctionView(
 	];
 	const rows: string[][] = [];
 	for (let i = 0; i < cells.length; i += 4) rows.push(cells.slice(i, i + 4));
+	const bySeat = seatSystems(systems, bots ?? []);
 	return {
 		seats: SEATS,
 		rows,
-		systems: SEATS.map((seat) => (bots?.has(seat) ? "hcp" : systems[seat])),
+		systems: SEATS.map((seat) => bySeat[seat]),
 	};
 }
 
