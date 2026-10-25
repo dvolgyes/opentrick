@@ -14,6 +14,8 @@ The host needs to reopen a weekly room even when its local copy has expired or i
 A complete room setup in the URL allows the page to clear its local expiry tombstone when it has no local replica.
 The page shows all four seats while no host lobby is available.
 When a page selects the configured host seat, it seeds the local replica from the URL setup and starts hosting.
+It seeds only after `SEED_WAIT_MS` (30 s) online without a host, and only while no beat with an authority or with entries and no host lobby has reached it (src/p2p/table.ts `#seedWhenAlone`).
+Until then, the seat waits for a host like any other seat.
 Other pages can select seats and wait for that host.
 The table link carries `selected_player=none`; a player's own URL keeps the player's seat for reload.
 With `none`, a page takes no seat by itself: it does not reopen a seat that the browser remembers, and it does not take the last free seat.
@@ -27,18 +29,20 @@ The room key remains a bearer capability, so anyone with the link can select the
 The existing trusted-player model and host-election tie-break govern simultaneous host attempts.
 The host bootstrap requires persistent browser storage.
 
-### Accepted residual risk: a start link can seed the host seat early
+### Residual risk: a host-seat page that finds nobody in 30 s seeds a second table
 
-Status: accepted (2026-10-23) by the owner, David Völgyes, who owns this risk.
+History: on 2026-10-23 the owner, David Völgyes, accepted that a page on the setup's host seat seeded a fresh term-1 room at once, before the mesh opened.
+On 2026-10-25 the owner reported a lost session: a new browser took the departed host's seat from the table link and seeded a second table.
+In a reproduction (tests/e2e/host-seat-new-browser.spec.ts), the other three pages showed "superseded" within 10 s.
+The seed now waits as the Decision describes.
 
-A player URL whose `selected_player` is the host seat passes that seat as `preferredSeat` (src/ui/join.ts `claimHint` and `open`).
-On a device without a local replica of the room, `TableController.start` seeds a fresh term-1 room before the mesh opens (src/p2p/table.ts `start` and `#seedHost`).
-The page does not wait for a lobby from a host that already runs the room on another device.
+A page that does not reach the other pages within `SEED_WAIT_MS` still seeds a second table.
 The election then compares the two authorities (src/p2p/authority.ts `compareAuthority`): a higher term wins, and in term 1 the lower tag wins.
-Inference, not tested: when the running room is still in term 1 and the seeded page wins the tag comparison, the running group can lose its entries since the split, as ADR 0004 describes for split groups.
-The owner chose no code change, because the room key is already a bearer capability and the players are trusted (see Consequences above).
-A fix would need a host proof, for example a host-only secret in the creator's link, and a security review before code.
-Review this decision if the trusted-player model changes or if a player reports a lost session after a start link.
+The group that loses can lose its entries since the split, as ADR 0004 describes for split groups.
+The room key remains a bearer capability, so a player who wants to seed a second table can still do so.
+A full fix would need a host proof, for example a host-only secret in the creator's link, and a security review before code.
+This remaining risk has not been reviewed by the owner yet.
+Review this decision if the trusted-player model changes or if a player reports a lost session after a setup link again.
 
 ## Alternatives Considered
 

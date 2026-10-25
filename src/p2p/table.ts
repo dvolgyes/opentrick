@@ -39,7 +39,12 @@ import {
 	newClientId,
 	tagSeat,
 } from "./keys";
-import { CLEANUP_MS, CONNECTION_FAILED_MS, TICK_MS } from "./limits";
+import {
+	CLEANUP_MS,
+	CONNECTION_FAILED_MS,
+	SEED_WAIT_MS,
+	TICK_MS,
+} from "./limits";
 import { creationCommit, LocalLog, openLog } from "./log";
 import type { Mesh, MeshDiagnostics, MeshHandlers } from "./mesh";
 import type { FailedStatus, OutboxItem, SubmitResult } from "./outbox";
@@ -311,6 +316,8 @@ export class TableController {
 	#heldElsewhere: ReadonlySet<Seat> = new Set();
 	#querying = false;
 	#bootstrapAllowed = false;
+	/** The setup's host seat, open without a table, until the page seeds it after SEED_WAIT_MS alone. */
+	#seedCandidate: Seated | null = null;
 	#busy = false;
 	#started = false;
 	#stopped = false;
@@ -437,7 +444,6 @@ export class TableController {
 				: (preferredSeat ??
 					memory.seatToReopen(this.#tableId, this.#deps.creator === true));
 		let seated: Seated | null = null;
-		let seededHost = false;
 		if (wanted !== undefined && wanted === tabSeat) {
 			await this.#waitForReloadLock(wanted);
 		}
@@ -446,13 +452,7 @@ export class TableController {
 			if (opened.ok) {
 				seated = opened.seated;
 				this.#reopened = this.#deps.preferredSeat === undefined;
-				if (
-					this.#bootstrapAllowed &&
-					this.#deps.bootstrap?.host === wanted &&
-					seated.log.table === null
-				) {
-					seededHost = await this.#seedHost(seated, wanted);
-				}
+				if (this.#seedable(seated)) this.#seedCandidate = seated;
 			} else if (opened.code === "expired") this.#end({ status: "expired" });
 			else if (opened.code === "storage") this.#writable = false;
 		}
@@ -474,7 +474,7 @@ export class TableController {
 			this.#deps.creator === true &&
 			seated !== null &&
 			seated.log.table?.host.tag === makeTag(holder, seated.log.seat);
-		this.#begin(seated, creator || seededHost);
+		this.#begin(seated, creator);
 		this.#stopTimer = this.#deps.every(TICK_MS, () => this.#tick());
 		this.#notify();
 	}
@@ -489,18 +489,7 @@ export class TableController {
 			if (this.#heldElsewhere.has(seat)) return refused("held-elsewhere");
 			const opened = await this.#openSeat(seat);
 			if (!opened.ok) return this.#openFailed(opened.code);
-			if (
-				this.#bootstrapAllowed &&
-				this.#deps.bootstrap?.host === seat &&
-				opened.seated.log.table === null
-			) {
-				const seeded = await this.#seedHost(opened.seated, seat);
-				if (seeded) {
-					this.#seatError = null;
-					this.#begin(opened.seated, true);
-					return { ok: true };
-				}
-			}
+			if (this.#seedable(opened.seated)) this.#seedCandidate = opened.seated;
 			const replication = this.#replication;
 			if (this.#closed() || !replication) {
 				this.#dropLock();
@@ -516,7 +505,45 @@ export class TableController {
 		}
 	}
 
-	/** Starts a fresh room from its shared setup when the configured host seat is selected. */
+	/** The open seat is the setup's host seat, and nothing has shown this page a table yet. */
+	#seedable(seated: Seated): boolean {
+		return (
+			this.#bootstrapAllowed &&
+			this.#deps.bootstrap?.host === seated.log.seat &&
+			seated.log.table === null
+		);
+	}
+
+	/**
+	 * Seeds the setup's host seat after SEED_WAIT_MS online without a host (ADR 0005). Until then the seat waits for
+	 * a host like any other seat: a beat or a lobby that shows the table ends the right to seed.
+	 */
+	#seedWhenAlone(): void {
+		const candidate = this.#seedCandidate;
+		if (!candidate || this.#busy) return;
+		if (!this.#seedable(candidate) || this.#lock?.seat !== candidate.log.seat) {
+			this.#seedCandidate = null;
+			return;
+		}
+		if ((this.#election?.absentMs ?? 0) < SEED_WAIT_MS) return;
+		this.#seedCandidate = null;
+		this.#busy = true;
+		void this.#seedHost(candidate, candidate.log.seat)
+			.then((seeded) => {
+				if (
+					seeded &&
+					!this.#closed() &&
+					this.#lock?.seat === candidate.log.seat
+				)
+					this.#begin(candidate, true);
+			})
+			.finally(() => {
+				this.#busy = false;
+				this.#notify();
+			});
+	}
+
+	/** Starts a fresh room from its shared setup on the configured host seat. */
 	async #seedHost(seated: Seated, seat: Seat): Promise<boolean> {
 		const bootstrap = this.#deps.bootstrap;
 		if (!bootstrap || !this.#deps.storage.persistent) return false;
@@ -1078,6 +1105,10 @@ export class TableController {
 		if (this.#closed()) return;
 		switch (message.k) {
 			case "beat":
+				// A beat with an authority or with entries comes from a page that has the table: the setup link seeds
+				// nothing.
+				if (message.auth !== undefined || (message.pos?.rev ?? 0) > 0)
+					this.#bootstrapAllowed = false;
 				// The host engine also gets the beat: it is how the host knows that a quiet player is present.
 				this.#step({ type: "beat", now: this.#now(), peer, beat: message });
 				break;
@@ -1124,6 +1155,7 @@ export class TableController {
 			this.#step({ type: "network", now, online });
 		}
 		this.#step({ type: "tick", now });
+		this.#seedWhenAlone();
 		this.#replication?.tick();
 		this.#checks.tick();
 		mesh.seek(this.#missingSeats(mesh));

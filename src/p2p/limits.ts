@@ -23,6 +23,12 @@ export const VOLUNTEER_MS = 30_000;
 export const STAGGER_MS = 1_500;
 export const CLAIM_PULL_MS = 3_000;
 export const RESUME_ONLINE_MS = 3_000;
+/**
+ * A page without a replica that holds the setup link's host seat starts a fresh table only after this long online
+ * with no host and no beat that shows the table (ADR 0005). The first links of a page can take about 20 s, and a
+ * fresh table next to the running one splits the room.
+ */
+export const SEED_WAIT_MS = 30_000;
 /** A timer tick this late means the tab was frozen; the absence clock starts again. */
 export const LATE_TICK_MS = 5_000;
 /** The controller steps the election at least this often. */

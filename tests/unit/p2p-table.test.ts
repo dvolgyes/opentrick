@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { chatModule, chatPayload } from "../../src/game/chat";
 import { newCommandId } from "../../src/ids";
 import { randomNonce } from "../../src/p2p/checks";
-import { deriveHolder } from "../../src/p2p/keys";
+import { deriveHolder, makeTag } from "../../src/p2p/keys";
+import { SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
 import type { MeshDiagnostics, MeshHandlers } from "../../src/p2p/mesh";
 import { TableController, type TableMesh } from "../../src/p2p/table";
 import type { Seat } from "../../src/protocol";
@@ -82,6 +83,17 @@ class Rig {
 	readonly locks = new FakeLocks();
 	left = 0;
 	controller: TableController | null = null;
+	handlers: MeshHandlers | null = null;
+	#tick: () => void = () => {};
+
+	/** Moves the clock by `ms`, one controller tick at a time. */
+	async advance(ms: number): Promise<void> {
+		for (let at = 0; at < ms; at += TICK_MS) {
+			this.clock.now += TICK_MS;
+			this.#tick();
+			await settle();
+		}
+	}
 
 	/** `seat` is the URL seat (null: none); `remembered` is the seat that this browser reopens without one. */
 	async start(
@@ -116,8 +128,16 @@ class Rig {
 			},
 			module: chatModule,
 			clock: this.clock,
-			every: () => () => {},
-			openMesh: (_handlers: MeshHandlers) => mesh,
+			every: (_ms, tick) => {
+				this.#tick = tick;
+				return () => {
+					this.#tick = () => {};
+				};
+			},
+			openMesh: (handlers: MeshHandlers) => {
+				this.handlers = handlers;
+				return mesh;
+			},
 			newId: newCommandId,
 			nonce: randomNonce,
 			creator: true,
@@ -153,6 +173,7 @@ describe("table controller seat from the URL", () => {
 describe("table controller seat lock", () => {
 	it("hosts the seat whose lock it holds", async () => {
 		const table = await rig.start("N");
+		await rig.advance(SEED_WAIT_MS);
 		const view = table.view();
 		expect(view.status).toBe("open");
 		expect(view.seat).toBe("N");
@@ -163,6 +184,7 @@ describe("table controller seat lock", () => {
 
 	it("stops at once and reports the other tab when another tab takes the seat lock", async () => {
 		const table = await rig.start("N");
+		await rig.advance(SEED_WAIT_MS);
 		expect(await table.send(chatPayload(TABLE, "before"))).toMatchObject({
 			ok: true,
 		});
@@ -197,5 +219,63 @@ describe("table controller seat lock", () => {
 
 		expect(table.view().supersededBy).toBeNull();
 		expect(table.view().status).toBe("starting");
+	});
+});
+
+describe("table controller seeding from the setup link", () => {
+	/** A beat of East's page, which has a replica of the table that North hosted. */
+	async function eastBeat(): Promise<void> {
+		const holder = await deriveHolder(TABLE, "clientE-0123456789abcd");
+		const host = await deriveHolder(TABLE, "clientW-0123456789abcd");
+		rig.handlers?.ctl("east000000000000000", {
+			k: "beat",
+			role: "follower",
+			holder,
+			seat: "E",
+			elig: true,
+			auth: { term: 1, tag: makeTag(host, "N"), inc: 1 },
+			seenAgoMs: 60_000,
+			pos: {
+				rev: 4,
+				lastAuth: { term: 1, tag: makeTag(host, "N"), inc: 1 },
+			},
+		});
+		await settle();
+	}
+
+	it("seeds the host seat only after the page was alone for SEED_WAIT_MS", async () => {
+		const table = await rig.start("N");
+		expect(table.view().seat).toBe("N");
+		expect(table.view().hosting).toBe(false);
+		await rig.advance(SEED_WAIT_MS - 2 * TICK_MS);
+		expect(table.view().hosting).toBe(false);
+		expect(rig.storage.commits).toBe(0);
+
+		await rig.advance(4 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("seeds the host seat that a visitor chooses only after the page was alone for SEED_WAIT_MS", async () => {
+		const table = await rig.start(null);
+		expect(await table.choose("N")).toEqual({ ok: true });
+		await settle();
+		expect(table.view().hosting).toBe(false);
+
+		await rig.advance(SEED_WAIT_MS + 2 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("seeds no table once a beat shows that the table exists", async () => {
+		const table = await rig.start("N");
+		await rig.advance(5_000);
+		await eastBeat();
+
+		await rig.advance(3 * SEED_WAIT_MS);
+
+		expect(table.view().seat).toBe("N");
+		expect(table.view().hosting).toBe(false);
+		expect(rig.storage.commits).toBe(0);
 	});
 });
