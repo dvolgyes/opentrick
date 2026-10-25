@@ -54,34 +54,60 @@ export class BotRequestAbortedError extends Error {
 	}
 }
 
-export function botRequestFailureMessage(error: unknown): string {
+/** Why the bots stopped, as a catalog text with its values, for the host page. */
+export function botRequestFailureMessage(error: unknown): BotMessage {
 	if (error instanceof OpenRouterRequestError) {
 		switch (error.status) {
 			case 401:
-				return "OpenRouter rejected the API key (401). Set the key again, then resume bots.";
+				return {
+					text: "OpenRouter rejected the API key (401). Set the key again, then resume bots.",
+				};
 			case 402:
-				return "OpenRouter has insufficient balance. Update the balance or API key, then resume bots.";
+				return {
+					text: "OpenRouter has insufficient balance. Update the balance or API key, then resume bots.",
+				};
 			case 403:
-				return "OpenRouter denied access to this model (403). Check the account and model access.";
+				return {
+					text: "OpenRouter denied access to this model (403). Check the account and model access.",
+				};
 			case 404:
-				return "OpenRouter could not find this model or endpoint (404). Choose another model.";
+				return {
+					text: "OpenRouter could not find this model or endpoint (404). Choose another model.",
+				};
 			case 413:
-				return "OpenRouter rejected the request as too large (413). Choose another model.";
+				return {
+					text: "OpenRouter rejected the request as too large (413). Choose another model.",
+				};
 			case 429:
-				return "OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.";
+				return {
+					text: "OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.",
+				};
 			default:
-				return error.status >= 500
-					? `OpenRouter or the model provider returned HTTP ${error.status} after retries. Check provider status or choose another model.`
-					: `OpenRouter returned HTTP ${error.status} after retries. Check the selected model and request settings.`;
+				return {
+					text:
+						error.status >= 500
+							? "OpenRouter or the model provider returned HTTP {status} after retries. Check provider status or choose another model."
+							: "OpenRouter returned HTTP {status} after retries. Check the selected model and request settings.",
+					values: { status: error.status },
+				};
 		}
 	}
 	if (error instanceof Error && error.name === "AbortError")
-		return "The OpenRouter request timed out. Resume bots to try again.";
+		return {
+			text: "The OpenRouter request timed out. Resume bots to try again.",
+		};
 	if (error instanceof TypeError)
-		return "The browser could not reach OpenRouter. Check the connection, then resume bots.";
+		return {
+			text: "The browser could not reach OpenRouter. Check the connection, then resume bots.",
+		};
 	if (error instanceof Error && error.message.startsWith("OpenRouter "))
-		return `The selected model returned an unusable decision: ${error.message}. Choose another model or resume bots.`;
-	return "The bot could not use the model response. Choose another model or resume bots.";
+		return {
+			text: "The selected model returned an unusable decision: {detail}. Choose another model or resume bots.",
+			values: { detail: error.message },
+		};
+	return {
+		text: "The bot could not use the model response. Choose another model or resume bots.",
+	};
 }
 
 function retryAfterMs(
@@ -123,13 +149,28 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
 	});
 }
 
+/** An English catalog text with its values, which the host page shows in its language. */
+export interface BotMessage {
+	readonly text: string;
+	readonly values?: Readonly<Record<string, string | number>>;
+}
+
+/**
+ * A progress or retry message for the host page: an English catalog text with its values, so the page shows it
+ * in its language.
+ */
+export type BotStatus = (
+	message: string,
+	values?: Readonly<Record<string, string | number>>,
+) => void;
+
 export class BrowserOpenRouterStrategy {
 	readonly #apiKey: string;
 	readonly #settings: BrowserStrategySettings;
 	readonly #signal: AbortSignal;
 	readonly #onRateLimit: () => void;
 	readonly #onUsageCost: (cost: number) => void;
-	readonly #onStatus: (message: string) => void;
+	readonly #onStatus: BotStatus;
 
 	constructor(
 		apiKey: string,
@@ -137,7 +178,7 @@ export class BrowserOpenRouterStrategy {
 		signal: AbortSignal,
 		onRateLimit: () => void = () => {},
 		onUsageCost: (cost: number) => void = () => {},
-		onStatus: (message: string) => void = () => {},
+		onStatus: BotStatus = () => {},
 	) {
 		const normalizedApiKey = normalizeHostApiKey(apiKey);
 		if (!normalizedApiKey) throw new Error("OpenRouter API key is required");
@@ -169,7 +210,10 @@ export class BrowserOpenRouterStrategy {
 		let model = modelOrder[modelIndex] as BotModel;
 		for (let attempt = 0; ; attempt++) {
 			this.#onStatus(
-				`Asking ${model} for a ${kind === "call" ? "bid" : "card play"} (attempt ${attempt + 1} of ${this.#settings.retries + 1}).`,
+				kind === "call"
+					? "Asking {model} for a bid (attempt {attempt} of {attempts})."
+					: "Asking {model} for a card play (attempt {attempt} of {attempts}).",
+				{ model, attempt: attempt + 1, attempts: this.#settings.retries + 1 },
 			);
 			try {
 				const response = await this.#request(model, kind, prompt, legal, state);
@@ -205,29 +249,39 @@ export class BrowserOpenRouterStrategy {
 						? 5000
 						: 0,
 				);
-				const delayText = `${Math.ceil(delay / 1000)} seconds`;
+				const seconds = Math.ceil(delay / 1000);
 				if (previousModel !== model) {
 					this.#onStatus(
-						`HTTP ${(error as OpenRouterRequestError).status} from ${previousModel}; trying next priority model ${model} in ${delayText}.`,
+						"HTTP {status} from {previous}; trying next priority model {model} in {seconds} seconds.",
+						{
+							status: (error as OpenRouterRequestError).status,
+							previous: previousModel,
+							model,
+							seconds,
+						},
 					);
 				} else if (
 					error instanceof OpenRouterRequestError &&
 					error.status === 429
 				) {
 					this.#onStatus(
-						`OpenRouter rate limit (429). Retrying in ${delayText}.`,
+						"OpenRouter rate limit (429). Retrying in {seconds} seconds.",
+						{ seconds },
 					);
 				} else if (error instanceof OpenRouterRequestError) {
 					this.#onStatus(
-						`OpenRouter returned HTTP ${error.status}. Retrying in ${delayText}.`,
+						"OpenRouter returned HTTP {status}. Retrying in {seconds} seconds.",
+						{ status: error.status, seconds },
 					);
 				} else if (error instanceof Error && error.name === "AbortError") {
 					this.#onStatus(
-						`OpenRouter request timed out. Retrying in ${delayText}.`,
+						"OpenRouter request timed out. Retrying in {seconds} seconds.",
+						{ seconds },
 					);
 				} else {
 					this.#onStatus(
-						`Could not reach OpenRouter. Retrying in ${delayText}.`,
+						"Could not reach OpenRouter. Retrying in {seconds} seconds.",
+						{ seconds },
 					);
 				}
 				await wait(delay, this.#signal);
@@ -245,7 +299,9 @@ export class BrowserOpenRouterStrategy {
 		const timeout = new AbortController();
 		const timer = window.setTimeout(() => timeout.abort(), 45_000);
 		const slowRequestTimer = window.setTimeout(() => {
-			this.#onStatus(`Still waiting for ${model} to return a decision.`);
+			this.#onStatus("Still waiting for {model} to return a decision.", {
+				model,
+			});
 		}, 10_000);
 		const abort = (): void => timeout.abort();
 		this.#signal.addEventListener("abort", abort, { once: true });

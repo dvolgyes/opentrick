@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	BrowserOpenRouterStrategy,
+	botRequestFailureMessage,
 	InsufficientBalanceError,
+	OpenRouterRequestError,
 } from "../../src/bot/browser-openrouter";
 import { createBoard, legalActions } from "../../src/bridge/engine";
+import { translatedMessageKeys, translator } from "../../src/i18n";
 import type { BotModel } from "../../src/protocol";
 import { DECISION_BOT_MODELS } from "../../src/protocol";
 import { DEAL } from "./bridge-fixtures";
@@ -178,5 +181,71 @@ describe("browser OpenRouter retry policy", () => {
 			"https://openrouter.ai/api/alpha/decisions",
 		);
 		expect(onUsageCost).toHaveBeenCalledWith(0.00001);
+	});
+});
+
+describe("browser OpenRouter status", () => {
+	it("reports each attempt and retry as a catalog text with values, which the host page shows in its language", async () => {
+		stubTimers();
+		const replies: (Response | Error)[] = [
+			new Response("", { status: 503 }),
+			new Response("", { status: 400 }),
+			new TypeError("Failed to fetch"),
+			new DOMException("The request timed out", "AbortError"),
+		];
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => {
+				const reply = replies.shift() ?? responseForCall("P");
+				if (reply instanceof Error) throw reply;
+				return reply;
+			}),
+		);
+		const statuses: string[] = [];
+		const keys = new Set(translatedMessageKeys);
+		const hu = translator("hu");
+		const board = createBoard(1, DEAL);
+		const strategy = new BrowserOpenRouterStrategy(
+			"private-test-key",
+			{ ...SETTINGS, retries: 5 },
+			new AbortController().signal,
+			() => {},
+			() => {},
+			(message, values) => {
+				expect(keys.has(message), message).toBe(true);
+				statuses.push(hu(message, values));
+			},
+		);
+
+		await strategy.choose("call", "prompt", legalActions(board, board.dealer));
+		expect(statuses).toEqual([
+			"Licit kérése: inception/mercury-3 (1. kísérlet / 6).",
+			"HTTP 503 ettől: inception/mercury-3; a következő modell (openai/gpt-6-luna) 0 másodperc múlva.",
+			"Licit kérése: openai/gpt-6-luna (2. kísérlet / 6).",
+			"Az OpenRouter HTTP 400 választ adott. Újra 0 másodperc múlva.",
+			"Licit kérése: openai/gpt-6-luna (3. kísérlet / 6).",
+			"Az OpenRouter nem érhető el. Újra 0 másodperc múlva.",
+			"Licit kérése: openai/gpt-6-luna (4. kísérlet / 6).",
+			"Az OpenRouter-kérés túllépte az időkorlátot. Újra 0 másodperc múlva.",
+			"Licit kérése: openai/gpt-6-luna (5. kísérlet / 6).",
+		]);
+	});
+
+	it("gives each reason why the bots stopped as a catalog text with values", () => {
+		const keys = new Set(translatedMessageKeys);
+		const hu = translator("hu");
+		const reasons = [
+			...[401, 402, 403, 404, 413, 429, 400, 503].map(
+				(status) => new OpenRouterRequestError(status),
+			),
+			new DOMException("The request timed out", "AbortError"),
+			new TypeError("Failed to fetch"),
+			new Error("OpenRouter response had no decision"),
+			new Error("unexpected"),
+		].map(botRequestFailureMessage);
+		expect(reasons.filter((reason) => !keys.has(reason.text))).toEqual([]);
+		expect(hu(reasons[7]?.text ?? "", reasons[7]?.values)).toBe(
+			"Az OpenRouter vagy a modell szolgáltatója HTTP 503 választ adott az újrapróbálások után. Ellenőrizd a szolgáltató állapotát, vagy válassz másik modellt.",
+		);
 	});
 });

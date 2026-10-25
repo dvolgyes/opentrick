@@ -2195,8 +2195,9 @@ describe("approval of an undo or a claim", () => {
 
 	it("names absent players in the middle of a desktop felt, and lets clicks through", async () => {
 		await resizeTo(1280, 800);
+		// The table model writes the notice in the viewer's language.
 		const { root } = renderView(
-			{ ...playView(), waiting: WAITING },
+			{ ...playView(), waiting: "Warten auf die Rückkehr von Süden" },
 			"desktop",
 			undefined,
 			translator("de"),

@@ -20,7 +20,6 @@ import {
 	isTableCommand,
 	seatSystems,
 	totals,
-	waitingText,
 } from "../game/bridge";
 import { englishTranslator as english, type Translate } from "../i18n";
 import type { OutboxItem } from "../p2p/outbox";
@@ -90,8 +89,27 @@ export function commandText(payload: unknown, t: Translate = english): string {
 	const action = payload.type === "call" ? payload.call : payload.card;
 	if (typeof action !== "string") return "";
 	if (payload.type === "call")
-		return t("Call {call}", { call: callText(action as Call) });
+		return t("Call {call}", { call: t(callText(action as Call)) });
 	return t("Play {card}", { card: cardText(action as Card) });
+}
+
+/**
+ * "Waiting for East, South and West to come back", in the viewer's language, when seats of `needed` are not
+ * present; undefined when all are. The host refuses the action with the same English text (`waitingText`).
+ */
+function waitingFor(
+	needed: readonly Seat[],
+	present: readonly Seat[],
+	t: Translate,
+): string | undefined {
+	const names = needed
+		.filter((seat) => !present.includes(seat))
+		.map((seat) => t(SEAT_NAMES[seat]));
+	const last = names.pop();
+	if (last === undefined) return undefined;
+	const players =
+		names.length > 0 ? `${names.join(", ")} ${t("and")} ${last}` : last;
+	return t("Waiting for {players} to come back", { players });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -840,12 +858,12 @@ export function tableView(input: TableViewInput): TableView {
 	const { state, seat, config } = input;
 	const t = input.t ?? english;
 	if (state === undefined)
-		return { ...EMPTY, phase: "loading", prompt: "Loading the table…" };
+		return { ...EMPTY, phase: "loading", prompt: t("Loading the table…") };
 	if (state === null)
 		return {
 			...EMPTY,
 			phase: "unreadable",
-			prompt: "This room has no bridge table.",
+			prompt: t("This room has no bridge table."),
 		};
 	const scores = scoreRows(state.results);
 	const sums = totals(state.results);
@@ -888,7 +906,7 @@ export function tableView(input: TableViewInput): TableView {
 	// The host refuses the first deal unless all four seats are present; later, only the seat to act must be
 	// (plan §12 R4).
 	const allPresent = [...input.present];
-	const dealWait = board ? undefined : waitingText(SEATS, allPresent);
+	const dealWait = board ? undefined : waitingFor(SEATS, allPresent, t);
 	const nextBoard = (): NextBoard => {
 		const next = current + 1;
 		return {
@@ -902,7 +920,7 @@ export function tableView(input: TableViewInput): TableView {
 			phase: "waiting",
 			heading: "ROOM CONNECTION",
 			details: "Room lobby",
-			prompt: dealWait ?? "The first board is dealt now.",
+			prompt: dealWait ?? t("The first board is dealt now."),
 			seats: lobbySeats(input, t),
 			nextBoard: nextBoard(),
 			actions,
@@ -962,7 +980,7 @@ export function tableView(input: TableViewInput): TableView {
 				? view.actor
 				: undefined;
 	const actionWait =
-		toAct === undefined ? undefined : waitingText([toAct], allPresent);
+		toAct === undefined ? undefined : waitingFor([toAct], allPresent, t);
 	const legal = canAct && actionWait === undefined ? view.legal : [];
 	const playable = new Set(
 		legal.flatMap((action: Action) =>
@@ -1070,7 +1088,10 @@ export function tableView(input: TableViewInput): TableView {
 		seats,
 		auction: auctionView(view.dealer, view.calls, state.systems, input.bots),
 		contract: contract
-			? `${contractText(contract)} by ${SEAT_NAMES[contract.declarer]}`
+			? t("{contract} by {declarer}", {
+					contract: contractText(contract),
+					declarer: t(SEAT_NAMES[contract.declarer]),
+				})
 			: "",
 		header: contractHeader(contract, seats, t),
 		tricks: contract
@@ -1144,7 +1165,7 @@ export function tableView(input: TableViewInput): TableView {
 	const turn = view.turn as Seat;
 	const bids = legal.flatMap((action): BidView[] =>
 		action.type === "call"
-			? [{ call: action.call, text: callText(action.call) }]
+			? [{ call: action.call, text: t(callText(action.call)) }]
 			: [],
 	);
 	if (view.phase === "auction") {
@@ -1154,7 +1175,7 @@ export function tableView(input: TableViewInput): TableView {
 			yourTurn: canAct && actionWait === undefined && turn === seat,
 			heading: "AUCTION",
 			bids,
-			prompt: actionWait ?? `${SEAT_NAMES[turn]} to bid`,
+			prompt: actionWait ?? t("{seat} to bid", { seat: t(SEAT_NAMES[turn]) }),
 			waiting: actionWait ?? "",
 		};
 	}
@@ -1164,11 +1185,13 @@ export function tableView(input: TableViewInput): TableView {
 	if (actionWait !== undefined) prompt = actionWait;
 	else if (actor === seat)
 		prompt = fromDummy
-			? "Your turn: play a card from dummy."
-			: "Your turn to play.";
+			? t("Your turn: play a card from dummy.")
+			: t("Your turn to play.");
 	else if (fromDummy)
-		prompt = `Waiting for ${SEAT_NAMES[actor]} to play from dummy.`;
-	else prompt = `Waiting for ${SEAT_NAMES[turn]} to play.`;
+		prompt = t("Waiting for {seat} to play from dummy.", {
+			seat: t(SEAT_NAMES[actor]),
+		});
+	else prompt = t("Waiting for {seat} to play.", { seat: t(SEAT_NAMES[turn]) });
 	return {
 		...common,
 		phase: "play",

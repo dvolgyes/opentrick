@@ -585,7 +585,10 @@ export function showRoom(
 
 	function updateBotSpendCounter(): void {
 		botSpendCounter.textContent = `$${botSpendUsd.toFixed(5)}`;
-		botSpendCounter.title = `Five-decimal display. Exact total reported by OpenRouter: $${botSpendUsd.toFixed(10)} USD.`;
+		botSpendCounter.title = deps.t(
+			"Five-decimal display. Exact total reported by OpenRouter: {total} USD.",
+			{ total: `$${botSpendUsd.toFixed(10)}` },
+		);
 	}
 
 	function recordBotSpend(cost: number): void {
@@ -1217,17 +1220,17 @@ export function showRoom(
 					botRunner = undefined;
 					setBotsPaused(true);
 					botStatus.textContent =
-						detail ??
-						deps.t(
-							detail ??
-								"The bot request failed. Check the model and resume bots.",
-						);
+						detail === undefined
+							? deps.t(
+									"The bot request failed. Check the model and resume bots.",
+								)
+							: deps.t(detail.text, detail.values);
 				}
 				render();
 			},
 			recordBotSpend,
-			(message) => {
-				botStatus.textContent = deps.t(message);
+			(name, message, values) => {
+				botStatus.textContent = `${name}: ${deps.t(message, values)}`;
 			},
 		);
 		// A reload after a pause starts the runner paused, so it restores the bot seats without playing.

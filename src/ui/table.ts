@@ -165,14 +165,15 @@ const MARK_STRAIN: ReadonlyMap<string, string> = new Map([
  * One cell of the bidding history. A bid such as "1♠" becomes a level and a suit mark, each large and in the strain's
  * colour; Double and Redouble get their own colours; anything else (Pass, a dash) stays plain text.
  */
-function auctionCell(text: string): (string | HTMLElement)[] {
+function auctionCell(text: string, t: Translate): (string | HTMLElement)[] {
 	if (text === "Double")
-		return [el("span", { className: "call-double" }, text)];
+		return [el("span", { className: "call-double" }, t(text))];
 	if (text === "Redouble") {
-		return [el("span", { className: "call-redouble" }, text)];
+		return [el("span", { className: "call-redouble" }, t(text))];
 	}
 	const strain = MARK_STRAIN.get(text.slice(1));
-	if (!/^[1-7]$/.test(text.slice(0, 1)) || strain === undefined) return [text];
+	if (!/^[1-7]$/.test(text.slice(0, 1)) || strain === undefined)
+		return [t(text)];
 	const className = `bid-mark strain strain-${strain}`;
 	return [
 		el("span", { className }, text.slice(0, 1)),
@@ -208,7 +209,11 @@ function suitMarked(text: string): (string | HTMLElement)[] {
 const WAITING_TEXT = "WAITING";
 const CONNECTING_TEXT = "CONNECTING TO HOST";
 
-function translateLobbyPrompt(text: string, t: Translate): string {
+/**
+ * A reason from the host, in the viewer's language. The host names the seats it waits for in English
+ * (`waitingText`), so the seat names are translated one by one.
+ */
+function translateHostReason(text: string, t: Translate): string {
 	const waiting = /^Waiting for (.+) to come back$/.exec(text);
 	if (!waiting) return t(text);
 	const names = (waiting[1] as string).split(/, | and /).map((name) => t(name));
@@ -1472,7 +1477,7 @@ export function tableSection(
 				const text = String(level);
 				return pickButton(
 					text,
-					`Level ${level}`,
+					t("Level {level}", { level }),
 					view.bids.some((bid) => bid.call.startsWith(text)),
 					pick.level === text,
 					() => {
@@ -1489,7 +1494,7 @@ export function tableSection(
 			...STRAIN_BUTTONS.map(({ strain, label, symbol }) =>
 				pickButton(
 					symbol,
-					label,
+					t(label),
 					pick.level === undefined
 						? view.bids.some((bid) => bid.call.endsWith(strain))
 						: legal.has(`${pick.level}${strain}`),
@@ -1503,8 +1508,8 @@ export function tableSection(
 			),
 			...SPECIAL_CALLS.map(({ call, label }) =>
 				pickButton(
-					call === "P" ? "PASS" : call,
-					label,
+					call === "P" ? t("PASS") : call,
+					t(label),
 					legal.has(call),
 					pick.call === call,
 					() => {
@@ -1667,9 +1672,7 @@ export function tableSection(
 		const visible = view.waiting !== "";
 		waitingNotice.hidden = !visible;
 		waitingOverlay.hidden = below !== undefined || !visible;
-		waitingText.textContent = visible
-			? translateLobbyPrompt(view.waiting, t)
-			: "";
+		waitingText.textContent = visible ? view.waiting : "";
 	}
 
 	claimCountSelect.addEventListener("change", () => {
@@ -1894,7 +1897,7 @@ export function tableSection(
 						"tr",
 						{},
 						...grid.seats.map((_, index) =>
-							el("td", {}, ...auctionCell(row[index] ?? "")),
+							el("td", {}, ...auctionCell(row[index] ?? "", t)),
 						),
 					),
 				),
@@ -2039,8 +2042,8 @@ export function tableSection(
 		// A pending action's reason says which players the host waits for.
 		const status =
 			line.state === "not-accepted"
-				? `${t(ACTION_STATUS[line.state])}: ${t(line.reason ?? "rejected")}`
-				: t(line.reason ?? ACTION_STATUS[line.state]);
+				? `${t(ACTION_STATUS[line.state])}: ${translateHostReason(line.reason ?? "rejected", t)}`
+				: translateHostReason(line.reason ?? ACTION_STATUS[line.state], t);
 		return el(
 			"li",
 			{ attrs: { "data-state": line.state } },
@@ -2059,7 +2062,7 @@ export function tableSection(
 		element.dataset.at = String(view.at);
 		heading.textContent = t(view.heading || "Bridge table");
 		details.textContent = t(view.details);
-		prompt.textContent = translateLobbyPrompt(view.prompt, t);
+		prompt.textContent = view.prompt;
 		felt.hidden = view.seats.length === 0;
 		for (const place of Object.values(places)) place.replaceChildren();
 		for (const slot of Object.values(videoSlots)) slot.replaceChildren();

@@ -6,6 +6,7 @@ import {
 	type BridgeState,
 	dealPayload,
 } from "../../src/game/bridge";
+import { translator } from "../../src/i18n";
 import type { OutboxItem } from "../../src/p2p/outbox";
 import type { CommandFailure } from "../../src/p2p/table";
 import type { Entry } from "../../src/p2p/wire";
@@ -445,6 +446,60 @@ describe("presence (plan §12 R4)", () => {
 		expect(view("N", LED, { present: without("S", "W") }).waiting).toBe("");
 		expect(view("W", LED, { present: without("N") }).waiting).toBe(
 			"Waiting for North to come back",
+		);
+	});
+});
+
+describe("the viewer's language", () => {
+	const hu = { t: translator("hu") };
+
+	it("names the seat to bid and the seat to play in Hungarian", () => {
+		const east = view("E", BOARD, hu);
+		expect(east.prompt).toBe("Észak licitál");
+		expect(east.waiting).toBe("");
+		expect(view("N", LED, hu).prompt).toBe(
+			"Te következel: játssz ki egy lapot az asztalról.",
+		);
+		expect(view("S", LED, hu).prompt).toBe(
+			"Várakozás: Észak játszik az asztalról.",
+		);
+		expect(view("E", NORTH_OWN_TURN, hu).prompt).toBe(
+			"Várakozás: Észak játszik.",
+		);
+	});
+
+	it("writes the own turn to play, and the absent seats, in Hungarian", () => {
+		const west = view("W", playing(NORTH_DECLARER_BOARD, "S7 S4"), hu);
+		expect(west.prompt).toBe("Te következel.");
+		expect(west.contract).toBe("1♣, felvevő: Észak");
+		const away = view("E", BOARD, {
+			...hu,
+			present: new Set<Seat>(["E", "S"]),
+		});
+		expect(away.prompt).toBe("Várakozás, hogy visszatérjenek: Észak");
+		expect(away.waiting).toBe("Várakozás, hogy visszatérjenek: Észak");
+		expect(
+			view("E", null, { ...hu, present: new Set<Seat>(["E", "S"]) }).prompt,
+		).toBe("Várakozás, hogy visszatérjenek: Észak és Nyugat");
+	});
+
+	it("writes the loading and unreadable tables, the calls to confirm, and the sent call in Hungarian", () => {
+		expect(view("N", null, { ...hu, state: undefined }).prompt).toBe(
+			"Az asztal betöltése…",
+		);
+		expect(view("N", null, { ...hu, state: null }).prompt).toBe(
+			"Ebben a szobában nincs bridzsasztal.",
+		);
+		const east = view("E", bidding(BOARD, "1C"), hu);
+		expect(
+			east.bids.filter((bid) => ["P", "X", "1NT"].includes(bid.call)),
+		).toEqual([
+			{ call: "P", text: "Passz" },
+			{ call: "X", text: "Kontra" },
+			{ call: "1NT", text: "1NT" },
+		]);
+		expect(commandText(actionPayload(TABLE_ID, BOARD, call("XX")), hu.t)).toBe(
+			"Licit: Rekontra",
 		);
 	});
 });

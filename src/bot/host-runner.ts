@@ -10,7 +10,9 @@ import {
 import type { TableController } from "../p2p/table";
 import { type BotModel, type RoomConfig, SEATS, type Seat } from "../protocol";
 import {
+	type BotMessage,
 	BotRequestAbortedError,
+	type BotStatus,
 	BrowserOpenRouterStrategy,
 	botRequestFailureMessage,
 	InsufficientBalanceError,
@@ -40,16 +42,22 @@ export function configuredBotSeats(config: RoomConfig): Seat[] {
 	return SEATS.filter((seat) => config.botSetup?.seats.includes(seat) === true);
 }
 
+/** A bot status line of the seat named `name`: a catalog text and its values (`BotStatus`). */
+export type SeatBotStatus = (
+	name: string,
+	...status: Parameters<BotStatus>
+) => void;
+
 /** Runs host-managed bot decisions in the page that currently owns the host. */
 export class HostBotRunner {
 	readonly #controller: TableController;
 	#settings: HostBotSettings;
 	readonly #onError: (
 		kind: "balance" | "failed" | "rate-limit",
-		detail?: string,
+		detail?: BotMessage,
 	) => void;
 	readonly #onUsageCost: (cost: number) => void;
-	readonly #onStatus: (message: string) => void;
+	readonly #onStatus: SeatBotStatus;
 	#requestAbort = new AbortController();
 	readonly #processed = new Set<string>();
 	#unsubscribe: (() => void) | undefined;
@@ -67,10 +75,10 @@ export class HostBotRunner {
 		settings: HostBotSettings,
 		onError: (
 			kind: "balance" | "failed" | "rate-limit",
-			detail?: string,
+			detail?: BotMessage,
 		) => void = () => {},
 		onUsageCost: (cost: number) => void = () => {},
-		onStatus: (message: string) => void = () => {},
+		onStatus: SeatBotStatus = () => {},
 	) {
 		const normalizedApiKey = normalizeHostApiKey(settings.apiKey);
 		if (!normalizedApiKey) throw new Error("OpenRouter API key is required");
@@ -252,7 +260,8 @@ export class HostBotRunner {
 				this.#requestAbort.signal,
 				() => this.#onError("rate-limit"),
 				this.#onUsageCost,
-				(message) => this.#onStatus(`${config.names[seat]}: ${message}`),
+				(message, values) =>
+					this.#onStatus(config.names[seat], message, values),
 			);
 			let decision: Decision;
 			try {

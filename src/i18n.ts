@@ -567,6 +567,68 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		pass: "Passe",
 		"The bidding guide could not be loaded.":
 			"Die Reizanleitung konnte nicht geladen werden.",
+		"{seat} to bid": "{seat} ist mit Bieten dran",
+		"Your turn to play.": "Du bist am Zug.",
+		"Your turn: play a card from dummy.":
+			"Du bist am Zug: Spiele eine Karte vom Tisch.",
+		"Waiting for {seat} to play.": "Warten, bis {seat} spielt.",
+		"Waiting for {seat} to play from dummy.":
+			"Warten, bis {seat} vom Tisch spielt.",
+		"{contract} by {declarer}": "{contract} von {declarer}",
+		"Loading the table…": "Der Tisch wird geladen…",
+		"This room has no bridge table.": "Dieser Raum hat keinen Bridgetisch.",
+		Pass: "Passe",
+		Double: "Kontra",
+		Redouble: "Rekontra",
+		PASS: "PASSE",
+		"Level {level}": "Stufe {level}",
+		Clubs: "Kreuz",
+		Diamonds: "Karo",
+		Hearts: "Herz",
+		Spades: "Pik",
+		"No trump": "Ohne Trumpf",
+		"Asking {model} for a bid (attempt {attempt} of {attempts}).":
+			"{model} wird nach einem Gebot gefragt (Versuch {attempt} von {attempts}).",
+		"Asking {model} for a card play (attempt {attempt} of {attempts}).":
+			"{model} wird nach einer Karte gefragt (Versuch {attempt} von {attempts}).",
+		"HTTP {status} from {previous}; trying next priority model {model} in {seconds} seconds.":
+			"HTTP {status} von {previous}; nächstes Modell {model} in {seconds} Sekunden.",
+		"OpenRouter rate limit (429). Retrying in {seconds} seconds.":
+			"OpenRouter-Ratenlimit (429). Neuer Versuch in {seconds} Sekunden.",
+		"OpenRouter returned HTTP {status}. Retrying in {seconds} seconds.":
+			"OpenRouter hat HTTP {status} geantwortet. Neuer Versuch in {seconds} Sekunden.",
+		"OpenRouter request timed out. Retrying in {seconds} seconds.":
+			"Die OpenRouter-Anfrage hat das Zeitlimit überschritten. Neuer Versuch in {seconds} Sekunden.",
+		"Could not reach OpenRouter. Retrying in {seconds} seconds.":
+			"OpenRouter ist nicht erreichbar. Neuer Versuch in {seconds} Sekunden.",
+		"Still waiting for {model} to return a decision.":
+			"Warte noch auf eine Entscheidung von {model}.",
+		"OpenRouter rejected the API key (401). Set the key again, then resume bots.":
+			"OpenRouter hat den API-Schlüssel abgelehnt (401). Gib den Schlüssel neu ein und setze dann die Bots fort.",
+		"OpenRouter has insufficient balance. Update the balance or API key, then resume bots.":
+			"Das OpenRouter-Guthaben reicht nicht. Aktualisiere Guthaben oder API-Schlüssel und setze dann die Bots fort.",
+		"OpenRouter denied access to this model (403). Check the account and model access.":
+			"OpenRouter hat den Zugriff auf dieses Modell verweigert (403). Prüfe das Konto und den Modellzugriff.",
+		"OpenRouter could not find this model or endpoint (404). Choose another model.":
+			"OpenRouter hat dieses Modell oder diesen Endpunkt nicht gefunden (404). Wähle ein anderes Modell.",
+		"OpenRouter rejected the request as too large (413). Choose another model.":
+			"OpenRouter hat die Anfrage als zu groß abgelehnt (413). Wähle ein anderes Modell.",
+		"OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.":
+			"OpenRouter hat den Bot auch nach neuen Versuchen gebremst (Ratenlimit). Warte und setze dann die Bots fort.",
+		"OpenRouter or the model provider returned HTTP {status} after retries. Check provider status or choose another model.":
+			"OpenRouter oder der Modellanbieter hat nach neuen Versuchen HTTP {status} geantwortet. Prüfe den Anbieterstatus oder wähle ein anderes Modell.",
+		"OpenRouter returned HTTP {status} after retries. Check the selected model and request settings.":
+			"OpenRouter hat nach neuen Versuchen HTTP {status} geantwortet. Prüfe das gewählte Modell und die Anfrageeinstellungen.",
+		"The OpenRouter request timed out. Resume bots to try again.":
+			"Die OpenRouter-Anfrage hat das Zeitlimit überschritten. Setze die Bots fort, um es erneut zu versuchen.",
+		"The browser could not reach OpenRouter. Check the connection, then resume bots.":
+			"Der Browser erreicht OpenRouter nicht. Prüfe die Verbindung und setze dann die Bots fort.",
+		"The selected model returned an unusable decision: {detail}. Choose another model or resume bots.":
+			"Das gewählte Modell hat eine unbrauchbare Entscheidung geliefert: {detail}. Wähle ein anderes Modell oder setze die Bots fort.",
+		"The bot could not use the model response. Choose another model or resume bots.":
+			"Der Bot konnte die Modellantwort nicht verwenden. Wähle ein anderes Modell oder setze die Bots fort.",
+		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Anzeige mit fünf Dezimalstellen. Genauer Gesamtbetrag laut OpenRouter: {total} USD.",
 	},
 	hu: {
 		Language: "Nyelv",
@@ -1104,6 +1166,68 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		pass: "passz",
 		"The bidding guide could not be loaded.":
 			"A licitálási útmutatót nem sikerült betölteni.",
+		"{seat} to bid": "{seat} licitál",
+		"Your turn to play.": "Te következel.",
+		"Your turn: play a card from dummy.":
+			"Te következel: játssz ki egy lapot az asztalról.",
+		"Waiting for {seat} to play.": "Várakozás: {seat} játszik.",
+		"Waiting for {seat} to play from dummy.":
+			"Várakozás: {seat} játszik az asztalról.",
+		"{contract} by {declarer}": "{contract}, felvevő: {declarer}",
+		"Loading the table…": "Az asztal betöltése…",
+		"This room has no bridge table.": "Ebben a szobában nincs bridzsasztal.",
+		Pass: "Passz",
+		Double: "Kontra",
+		Redouble: "Rekontra",
+		PASS: "PASSZ",
+		"Level {level}": "{level}. szint",
+		Clubs: "Treff",
+		Diamonds: "Káró",
+		Hearts: "Kőr",
+		Spades: "Pikk",
+		"No trump": "Szanzadu",
+		"Asking {model} for a bid (attempt {attempt} of {attempts}).":
+			"Licit kérése: {model} ({attempt}. kísérlet / {attempts}).",
+		"Asking {model} for a card play (attempt {attempt} of {attempts}).":
+			"Lapkijátszás kérése: {model} ({attempt}. kísérlet / {attempts}).",
+		"HTTP {status} from {previous}; trying next priority model {model} in {seconds} seconds.":
+			"HTTP {status} ettől: {previous}; a következő modell ({model}) {seconds} másodperc múlva.",
+		"OpenRouter rate limit (429). Retrying in {seconds} seconds.":
+			"OpenRouter-sebességkorlát (429). Újra {seconds} másodperc múlva.",
+		"OpenRouter returned HTTP {status}. Retrying in {seconds} seconds.":
+			"Az OpenRouter HTTP {status} választ adott. Újra {seconds} másodperc múlva.",
+		"OpenRouter request timed out. Retrying in {seconds} seconds.":
+			"Az OpenRouter-kérés túllépte az időkorlátot. Újra {seconds} másodperc múlva.",
+		"Could not reach OpenRouter. Retrying in {seconds} seconds.":
+			"Az OpenRouter nem érhető el. Újra {seconds} másodperc múlva.",
+		"Still waiting for {model} to return a decision.":
+			"Még várunk a döntésre: {model}.",
+		"OpenRouter rejected the API key (401). Set the key again, then resume bots.":
+			"Az OpenRouter elutasította az API-kulcsot (401). Add meg újra a kulcsot, majd folytasd a botokat.",
+		"OpenRouter has insufficient balance. Update the balance or API key, then resume bots.":
+			"Az OpenRouter egyenlege nem elegendő. Frissítsd az egyenleget vagy az API-kulcsot, majd folytasd a botokat.",
+		"OpenRouter denied access to this model (403). Check the account and model access.":
+			"Az OpenRouter megtagadta a hozzáférést ehhez a modellhez (403). Ellenőrizd a fiókot és a modell-hozzáférést.",
+		"OpenRouter could not find this model or endpoint (404). Choose another model.":
+			"Az OpenRouter nem találja ezt a modellt vagy végpontot (404). Válassz másik modellt.",
+		"OpenRouter rejected the request as too large (413). Choose another model.":
+			"Az OpenRouter túl nagynak találta a kérést (413). Válassz másik modellt.",
+		"OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.":
+			"Az OpenRouter az újrapróbálások után is korlátozta a botot. Várj, majd folytasd a botokat.",
+		"OpenRouter or the model provider returned HTTP {status} after retries. Check provider status or choose another model.":
+			"Az OpenRouter vagy a modell szolgáltatója HTTP {status} választ adott az újrapróbálások után. Ellenőrizd a szolgáltató állapotát, vagy válassz másik modellt.",
+		"OpenRouter returned HTTP {status} after retries. Check the selected model and request settings.":
+			"Az OpenRouter HTTP {status} választ adott az újrapróbálások után. Ellenőrizd a választott modellt és a kérés beállításait.",
+		"The OpenRouter request timed out. Resume bots to try again.":
+			"Az OpenRouter-kérés túllépte az időkorlátot. Folytasd a botokat egy új próbához.",
+		"The browser could not reach OpenRouter. Check the connection, then resume bots.":
+			"A böngésző nem éri el az OpenRoutert. Ellenőrizd a kapcsolatot, majd folytasd a botokat.",
+		"The selected model returned an unusable decision: {detail}. Choose another model or resume bots.":
+			"A választott modell használhatatlan döntést adott: {detail}. Válassz másik modellt, vagy folytasd a botokat.",
+		"The bot could not use the model response. Choose another model or resume bots.":
+			"A bot nem tudta használni a modell válaszát. Válassz másik modellt, vagy folytasd a botokat.",
+		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Öt tizedesjegyes kijelzés. Az OpenRouter által jelentett pontos összeg: {total} USD.",
 	},
 	no: {
 		Language: "Språk",
@@ -1634,6 +1758,68 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		pass: "pass",
 		"The bidding guide could not be loaded.":
 			"Meldeveiledningen kunne ikke lastes inn.",
+		"{seat} to bid": "{seat} skal melde",
+		"Your turn to play.": "Din tur til å spille.",
+		"Your turn: play a card from dummy.":
+			"Din tur: spill et kort fra blindemann.",
+		"Waiting for {seat} to play.": "Venter på at {seat} spiller.",
+		"Waiting for {seat} to play from dummy.":
+			"Venter på at {seat} spiller fra blindemann.",
+		"{contract} by {declarer}": "{contract} av {declarer}",
+		"Loading the table…": "Laster bordet…",
+		"This room has no bridge table.": "Dette rommet har ikke noe bridgebord.",
+		Pass: "Pass",
+		Double: "Dobling",
+		Redouble: "Redobling",
+		PASS: "PASS",
+		"Level {level}": "Trinn {level}",
+		Clubs: "Kløver",
+		Diamonds: "Ruter",
+		Hearts: "Hjerter",
+		Spades: "Spar",
+		"No trump": "Grand",
+		"Asking {model} for a bid (attempt {attempt} of {attempts}).":
+			"Spør {model} om en melding (forsøk {attempt} av {attempts}).",
+		"Asking {model} for a card play (attempt {attempt} of {attempts}).":
+			"Spør {model} om et kort (forsøk {attempt} av {attempts}).",
+		"HTTP {status} from {previous}; trying next priority model {model} in {seconds} seconds.":
+			"HTTP {status} fra {previous}; prøver neste modell {model} om {seconds} sekunder.",
+		"OpenRouter rate limit (429). Retrying in {seconds} seconds.":
+			"OpenRouter-grense for forespørsler (429). Prøver igjen om {seconds} sekunder.",
+		"OpenRouter returned HTTP {status}. Retrying in {seconds} seconds.":
+			"OpenRouter svarte med HTTP {status}. Prøver igjen om {seconds} sekunder.",
+		"OpenRouter request timed out. Retrying in {seconds} seconds.":
+			"OpenRouter-forespørselen tok for lang tid. Prøver igjen om {seconds} sekunder.",
+		"Could not reach OpenRouter. Retrying in {seconds} seconds.":
+			"Får ikke kontakt med OpenRouter. Prøver igjen om {seconds} sekunder.",
+		"Still waiting for {model} to return a decision.":
+			"Venter fortsatt på en avgjørelse fra {model}.",
+		"OpenRouter rejected the API key (401). Set the key again, then resume bots.":
+			"OpenRouter avviste API-nøkkelen (401). Angi nøkkelen på nytt, og fortsett så botene.",
+		"OpenRouter has insufficient balance. Update the balance or API key, then resume bots.":
+			"OpenRouter-saldoen er for lav. Oppdater saldoen eller API-nøkkelen, og fortsett så botene.",
+		"OpenRouter denied access to this model (403). Check the account and model access.":
+			"OpenRouter nektet tilgang til denne modellen (403). Sjekk kontoen og modelltilgangen.",
+		"OpenRouter could not find this model or endpoint (404). Choose another model.":
+			"OpenRouter fant ikke denne modellen eller dette endepunktet (404). Velg en annen modell.",
+		"OpenRouter rejected the request as too large (413). Choose another model.":
+			"OpenRouter avviste forespørselen som for stor (413). Velg en annen modell.",
+		"OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.":
+			"OpenRouter fortsatte å begrense boten etter nye forsøk. Vent, og fortsett så botene.",
+		"OpenRouter or the model provider returned HTTP {status} after retries. Check provider status or choose another model.":
+			"OpenRouter eller modelleverandøren svarte med HTTP {status} etter nye forsøk. Sjekk leverandørens status eller velg en annen modell.",
+		"OpenRouter returned HTTP {status} after retries. Check the selected model and request settings.":
+			"OpenRouter svarte med HTTP {status} etter nye forsøk. Sjekk den valgte modellen og forespørselsinnstillingene.",
+		"The OpenRouter request timed out. Resume bots to try again.":
+			"OpenRouter-forespørselen tok for lang tid. Fortsett botene for å prøve igjen.",
+		"The browser could not reach OpenRouter. Check the connection, then resume bots.":
+			"Nettleseren får ikke kontakt med OpenRouter. Sjekk tilkoblingen, og fortsett så botene.",
+		"The selected model returned an unusable decision: {detail}. Choose another model or resume bots.":
+			"Den valgte modellen ga en ubrukelig avgjørelse: {detail}. Velg en annen modell eller fortsett botene.",
+		"The bot could not use the model response. Choose another model or resume bots.":
+			"Boten kunne ikke bruke svaret fra modellen. Velg en annen modell eller fortsett botene.",
+		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Vist med fem desimaler. Nøyaktig total fra OpenRouter: {total} USD.",
 	},
 	...additionalCatalogs,
 };
