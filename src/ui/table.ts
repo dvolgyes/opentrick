@@ -8,7 +8,7 @@ import {
 	type PointSystem,
 } from "../bridge/hand-points";
 import type { Call } from "../bridge/rules";
-import type { Form } from "../call/device-class";
+import type { Layout } from "../call/device-class";
 import { englishTranslator, type Locale, type Translate } from "../i18n";
 import { SEAT_NAMES, type Seat } from "../protocol";
 import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?url";
@@ -78,8 +78,11 @@ export interface TableSection {
 		pending: boolean,
 		status: string,
 	): void;
-	/** The device form changed: the desktop moves the band beside the statistics in the sidebar. */
-	setForm(form: Form): void;
+	/**
+	 * The layout changed: the desktop moves the band beside the statistics in the sidebar, and a phone held sideways
+	 * also moves the call buttons and the bot switches to the top of the sidebar.
+	 */
+	setForm(layout: Layout): void;
 }
 
 export interface TableOptions {
@@ -737,6 +740,8 @@ export function tableSection(
 		mobilePlayers,
 	);
 	let compact = false;
+	let sideways = false;
+	const sidewaysControls = el("div", { className: "sideways-controls" });
 	let approvalWasVisible = false;
 	let mobileBidsPhase: TableView["phase"] | undefined;
 	// The bid picker sits in the felt centre under the bids; the call panel sits in the felt corner (reference layout).
@@ -2153,6 +2158,17 @@ export function tableSection(
 				...(view.phase === "auction" ? [bidHistory, bidBox] : [bidBox]),
 			);
 		}
+		// A phone held sideways has no call box and no video tiles, so the call buttons and the bot switches go to the
+		// top of the sidebar.
+		if (sideways) {
+			placeChildren(sidewaysControls, audioGroup, mobilePlayers);
+			if (sidebar.firstElementChild !== sidewaysControls)
+				sidebar.prepend(sidewaysControls);
+		} else {
+			sidewaysControls.remove();
+			if (mobilePlayers.parentElement !== mobileAuction)
+				mobileAuction.append(mobilePlayers);
+		}
 		renderMobilePlayers(view);
 		// A compact screen shows these below its board, or below the felt outside the auction and the play.
 		const below = compact ? (mobileGameActive ? mobileBoard : felt) : undefined;
@@ -2322,9 +2338,10 @@ export function tableSection(
 		mobileTricks.replaceChildren(tricksCounts(view.header, need));
 	}
 
-	function setForm(form: Form): void {
-		desktop = form === "desktop";
-		compact = form === "compact";
+	function setForm(layout: Layout): void {
+		desktop = layout !== "compact";
+		compact = layout === "compact";
+		sideways = layout === "sideways";
 		placeStatus();
 		if (latestView) render(latestView);
 	}

@@ -3347,41 +3347,79 @@ main:has(> .room[data-form="compact"]) {
  * The card step divides the row's width. The row is a container and the step uses its width (cqi), because a
  * percentage inside the trump frame would refer to the frame, which takes its width from those same cards.
  */
-:is(.mobile-auction-hand, .mobile-board-top) .hand-row {
+:is(.mobile-auction-hand, .mobile-board-top) .hand-row,
+.room[data-layout="sideways"]
+	:is(.place-top, .place-bottom)
+	.hand-row:not(.backs) {
 	container-type: inline-size;
 }
 
-:is(.mobile-auction-hand, .mobile-board-top)
+:is(
+		.mobile-auction-hand,
+		.mobile-board-top,
+		.room[data-layout="sideways"] .place-top,
+		.room[data-layout="sideways"] .place-bottom
+	)
 	.hand-row[data-mobile-card-layout="1-1"] {
 	--card-step: calc((100cqi - 2.1rem) / 12);
 }
 
-:is(.mobile-auction-hand, .mobile-board-top)
+:is(
+		.mobile-auction-hand,
+		.mobile-board-top,
+		.room[data-layout="sideways"] .place-top,
+		.room[data-layout="sideways"] .place-bottom
+	)
 	.hand-row[data-mobile-card-layout="2-1"] {
 	--card-step: calc((100cqi - 3rem) / 12);
 }
 
-:is(.mobile-auction-hand, .mobile-board-top)
+:is(
+		.mobile-auction-hand,
+		.mobile-board-top,
+		.room[data-layout="sideways"] .place-top,
+		.room[data-layout="sideways"] .place-bottom
+	)
 	.hand-row[data-mobile-card-layout="2-2"] {
 	--card-step: calc((100cqi - 5.1rem) / 11);
 }
 
-:is(.mobile-auction-hand, .mobile-board-top)
+:is(
+		.mobile-auction-hand,
+		.mobile-board-top,
+		.room[data-layout="sideways"] .place-top,
+		.room[data-layout="sideways"] .place-bottom
+	)
 	.hand-row[data-mobile-card-layout="3-1"] {
 	--card-step: calc((100cqi - 3.9rem) / 12);
 }
 
-:is(.mobile-auction-hand, .mobile-board-top)
+:is(
+		.mobile-auction-hand,
+		.mobile-board-top,
+		.room[data-layout="sideways"] .place-top,
+		.room[data-layout="sideways"] .place-bottom
+	)
 	.hand-row[data-mobile-card-layout="3-2"] {
 	--card-step: calc((100cqi - 6rem) / 11);
 }
 
-:is(.mobile-auction-hand, .mobile-board-top)
+:is(
+		.mobile-auction-hand,
+		.mobile-board-top,
+		.room[data-layout="sideways"] .place-top,
+		.room[data-layout="sideways"] .place-bottom
+	)
 	.hand-row[data-mobile-card-layout="4-1"] {
 	--card-step: calc((100cqi - 4.8rem) / 12);
 }
 
-:is(.mobile-auction-hand, .mobile-board-top)
+:is(
+		.mobile-auction-hand,
+		.mobile-board-top,
+		.room[data-layout="sideways"] .place-top,
+		.room[data-layout="sideways"] .place-bottom
+	)
 	.hand-row[data-mobile-card-layout="4-2"] {
 	--card-step: calc((100cqi - 6.9rem) / 11);
 }
@@ -3557,6 +3595,186 @@ main:has(> .room[data-form="compact"]) {
 	left: 20px;
 	bottom: 40px;
 	z-index: 1;
+}
+
+/*
+ * A phone held sideways (src/call/device-class.ts `layout`): the desktop table at the size of the screen instead of
+ * the scaled Full HD canvas. It has no video windows and no call box; the call buttons and the bot switches are at
+ * the top of the sidebar (src/ui/table.ts). The top and own hands reach the edges of the felt.
+ */
+html:has(main[data-screen="table"][data-layout="sideways"]) {
+	font-size: clamp(11px, 3.5dvh, 15px);
+}
+
+main[data-screen="table"][data-form="desktop"][data-layout="sideways"] {
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100dvh;
+	transform: none;
+}
+
+main[data-screen="table"][data-layout="sideways"] > .room {
+	grid-template-columns: minmax(0, 1fr) 14rem;
+	gap: 0.4rem;
+	min-height: 0;
+}
+
+main[data-screen="table"][data-layout="sideways"] .bridge-table {
+	--card-h: 3.1rem;
+	--card-w: 2.1rem;
+	--rank-size: 0.95rem;
+	--card-step: 1rem;
+	--suit-gap: 0.9rem;
+}
+
+.room[data-layout="sideways"] .video-row {
+	display: none;
+}
+
+/* The face-up top and own hands span the felt; their card step divides the felt's width as on a phone held upright. */
+main[data-screen="table"][data-layout="sideways"]
+:is(.place-top, .place-bottom) {
+	top: 0;
+}
+
+.room[data-layout="sideways"]
+	:is(.place-top, .place-bottom)
+	:is(.seat:has(> .hand:not(.backs)), .hand:not(.backs)) {
+	align-self: stretch;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+/* A top or own seat has one row of points pill, name, tags and turn pill above its cards, as on a phone held upright. */
+.room[data-layout="sideways"] :is(.place-top, .place-bottom) .seat {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.15rem 0.4rem;
+}
+
+.room[data-layout="sideways"] :is(.place-top, .place-bottom) .seat > * {
+	flex-basis: 100%;
+	order: 1;
+}
+
+.room[data-layout="sideways"]
+	:is(.place-top, .place-bottom)
+	.seat
+	> :is(.hcp-pill, .seat-label, .seat-tags) {
+	flex: 0 1 auto;
+	order: 0;
+	min-width: 0;
+	margin-bottom: 0;
+}
+
+.room[data-layout="sideways"] :is(.place-top, .place-bottom) .hcp-pill {
+	position: static;
+}
+
+.room[data-layout="sideways"]
+	:is(.place-top, .place-bottom)
+	.seat[data-visible="true"]
+	.seat-label {
+	padding-top: 0;
+}
+
+/*
+ * A side seat stays in its strip beside the bidding windows: a tag wraps below the name, and the right seat's cards
+ * keep to the felt's edge.
+ */
+.room[data-layout="sideways"] :is(.place-left, .place-right) .seat {
+	max-width: 6.4rem;
+}
+
+.room[data-layout="sideways"] .place-right .seat {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+}
+
+.room[data-layout="sideways"] .place-right .seat-label {
+	justify-content: flex-end;
+}
+
+/* The gold frame of the own seat stays on the screen. */
+main[data-screen="table"][data-layout="sideways"] .felt {
+	padding-bottom: 0.6rem;
+}
+
+/* The bidding windows keep clear of the side seats' names and cards, and share the centre equally. */
+main[data-screen="table"][data-layout="sideways"] .center {
+	padding-inline: 7rem;
+}
+
+main[data-screen="table"][data-layout="sideways"] .bid-row > .bid-box {
+	flex-grow: 1;
+}
+
+/* The bid box has the phone's rows: the seven levels in one row, then the suits and the calls in two rows. */
+.room[data-layout="sideways"] .bid-box {
+	gap: 0.2rem;
+	padding: 0.3rem;
+}
+
+.room[data-layout="sideways"] .bid-levels {
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 0.2rem;
+}
+
+.room[data-layout="sideways"] .bid-calls {
+	gap: 0.2rem;
+}
+
+/* The trick has the room of the centre: its cards are larger than the hands', so a 10 keeps its corners apart. */
+.room[data-layout="sideways"] .trick {
+	--card-w: 2.8rem;
+	--card-h: 3.9rem;
+}
+
+/* The bidding history fits the half of the centre and the narrow sidebar. */
+.room[data-layout="sideways"] .auction {
+	width: 100%;
+	min-width: 0;
+	table-layout: fixed;
+}
+
+.room[data-layout="sideways"]
+	:is(.bid-guide, .bid-levels, .bid-calls, .bid-actions)
+	button {
+	min-height: 1.9rem;
+	padding: 0.1rem;
+	font-size: 0.85rem;
+}
+
+.room[data-layout="sideways"] .table-sidebar {
+	min-height: 0;
+	overflow-y: auto;
+	font-size: 0.85rem;
+}
+
+.room[data-layout="sideways"] .room-control-row {
+	flex-wrap: wrap;
+	gap: 0.3rem;
+}
+
+.room[data-layout="sideways"]
+	.room-control-row:not(.room-header-controls)
+	button {
+	padding: 0.25rem 0.45rem;
+	font-size: 0.8rem;
+}
+
+.room[data-layout="sideways"] .contract-head {
+	font-size: 1.3rem;
+}
+
+.room[data-layout="sideways"] .sideways-controls .icon-group button {
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	padding: 0;
 }
 
 [data-form="compact"]

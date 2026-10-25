@@ -45,10 +45,14 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Show as text whose turn it is to bid",
 		"Show as text whose turn it is to play",
 		"Show the network quality",
-		"On a phone or tablet in landscape, show the desktop view",
 		"On a computer with a portrait window, show the mobile view",
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
+	await expect(
+		dialog.getByLabel(
+			"On a phone or tablet in landscape, show the desktop view",
+		),
+	).not.toBeChecked();
 	const relayChecks = dialog.getByLabel("Check the connection more often");
 	await expect(relayChecks).not.toBeChecked();
 	await expect(relayChecks).toHaveAccessibleDescription(

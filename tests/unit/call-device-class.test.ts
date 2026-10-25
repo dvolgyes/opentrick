@@ -3,6 +3,9 @@ import {
 	classify,
 	type DeviceSignals,
 	type Form,
+	formOf,
+	type Layout,
+	layout,
 	type OrientationChoices,
 	uaMobile,
 } from "../../src/call/device-class";
@@ -31,7 +34,7 @@ const NO_FORCING: OrientationChoices = {
 	landscapeDesktop: false,
 	portraitMobile: false,
 };
-const DEFAULT_CHOICES: OrientationChoices = {
+const BOTH_CHOICES: OrientationChoices = {
 	landscapeDesktop: true,
 	portraitMobile: true,
 };
@@ -148,9 +151,70 @@ describe("classify", () => {
 			"compact",
 		],
 	])("%s → %s", (_name, overrides, choices, expected) => {
-		expect(
-			classify(desktop(overrides), { ...DEFAULT_CHOICES, ...choices }),
-		).toBe(expected);
+		expect(classify(desktop(overrides), { ...BOTH_CHOICES, ...choices })).toBe(
+			expected,
+		);
+	});
+});
+
+describe("layout", () => {
+	const PHONE = { uaMobile: true, anyFinePointer: false } as const;
+	const TABLET = {
+		userAgent: IPAD_DESKTOP_UA,
+		maxTouchPoints: 5,
+		uaMobile: undefined,
+		anyFinePointer: false,
+	} as const;
+	it.each<
+		[string, Partial<DeviceSignals>, Partial<OrientationChoices>, Layout]
+	>([
+		["a wide desktop with a mouse", {}, {}, "desktop"],
+		[
+			"a phone in landscape without the landscape choice",
+			{ ...PHONE, viewportWidth: 844, viewportHeight: 390 },
+			{ landscapeDesktop: false },
+			"sideways",
+		],
+		[
+			"a phone in landscape with the landscape choice",
+			{ ...PHONE, viewportWidth: 844, viewportHeight: 390 },
+			{},
+			"desktop",
+		],
+		[
+			"a phone in portrait",
+			{ ...PHONE, viewportWidth: 390, viewportHeight: 844 },
+			{ landscapeDesktop: false },
+			"compact",
+		],
+		[
+			"a tablet in landscape without the landscape choice",
+			{ ...TABLET, viewportWidth: 1180, viewportHeight: 820 },
+			{ landscapeDesktop: false },
+			"sideways",
+		],
+		[
+			"a landscape 899 × 600 window with a mouse",
+			{ viewportWidth: 899, viewportHeight: 600 },
+			{ landscapeDesktop: false },
+			"compact",
+		],
+		[
+			"a portrait 1000 × 1200 window with a mouse",
+			{ viewportWidth: 1000, viewportHeight: 1200 },
+			{ landscapeDesktop: false },
+			"compact",
+		],
+	])("%s → %s", (_name, overrides, choices, expected) => {
+		expect(layout(desktop(overrides), { ...BOTH_CHOICES, ...choices })).toBe(
+			expected,
+		);
+	});
+
+	it("gives the sideways layout the compact call, which shows no video", () => {
+		expect(formOf("desktop")).toBe<Form>("desktop");
+		expect(formOf("compact")).toBe<Form>("compact");
+		expect(formOf("sideways")).toBe<Form>("compact");
 	});
 });
 

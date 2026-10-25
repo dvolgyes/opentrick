@@ -4,7 +4,7 @@ import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { PointSystem } from "../../src/bridge/hand-points";
 import type { Call } from "../../src/bridge/rules";
-import type { Form } from "../../src/call/device-class";
+import type { Form, Layout } from "../../src/call/device-class";
 import { type Locale, type Translate, translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
 import { pageReport } from "../../src/ui/page-report";
@@ -188,7 +188,7 @@ function sideHandView(): TableView {
 
 function renderView(
 	view: TableView,
-	form: Form,
+	form: Layout,
 	style?: PlayedCardStyle,
 	t?: Translate,
 	options?: TableOptions,
@@ -213,7 +213,9 @@ function renderView(
 	const section = tableSection(handlers, style, t, options);
 	const room = document.createElement("section");
 	room.className = "room";
-	room.dataset.form = form;
+	// A phone held sideways has the desktop table, like the room (src/ui/room-view.ts).
+	room.dataset.form = form === "compact" ? "compact" : "desktop";
+	room.dataset.layout = form;
 	const stage = document.createElement("div");
 	stage.className = "stage";
 	stage.append(section.element);
@@ -2701,4 +2703,63 @@ describe("convention hint", () => {
 			}
 		},
 	);
+});
+
+describe("a phone held sideways", () => {
+	const visible = (node: Element | null | undefined): boolean =>
+		node?.checkVisibility() ?? false;
+	const callNames = (node: Element | null | undefined): string[] =>
+		[...(node?.querySelectorAll("button") ?? [])]
+			.filter((button) => button.checkVisibility())
+			.map((button) => button.getAttribute("aria-label") ?? "");
+
+	it("shows the desktop felt without video tiles, and the call buttons and the bot switches at the top of the sidebar", () => {
+		const { root, section } = renderView(
+			{ ...playView(), phase: "auction" },
+			"sideways",
+		);
+		section.setBotControls(true, ["E"]);
+		const controls = section.sidebar.firstElementChild;
+		expect(controls?.className).toBe("sideways-controls");
+		expect(callNames(controls?.querySelector(".icon-group"))).toEqual([
+			"Join call",
+			"Send mic audio",
+			"Hear others: receive audio",
+			"Send camera video",
+		]);
+		const fold =
+			controls?.querySelector<HTMLDetailsElement>(".mobile-bot-fold");
+		fold?.querySelector("summary")?.click();
+		expect(
+			[...(fold?.querySelectorAll(".mobile-player-control button") ?? [])]
+				.filter(visible)
+				.map((button) => button.textContent),
+		).toContain("👱 Switch to player");
+		expect(visible(root.querySelector(".felt"))).toBe(true);
+		expect(visible(root.querySelector(".mobile-auction"))).toBe(false);
+		expect(
+			[...root.querySelectorAll(".video-row .tile, .call-panel")].filter(
+				visible,
+			),
+		).toEqual([]);
+	});
+
+	it("moves the call buttons back to the phone top bar when the phone is held upright", () => {
+		const { root, section } = renderView(playView(), "sideways");
+		const room = root.closest<HTMLElement>(".room");
+		if (!room) throw new Error("the room is missing");
+		// The room view changes the room's layout together with the table's (src/ui/room-view.ts).
+		room.dataset.form = "compact";
+		room.dataset.layout = "compact";
+		section.setForm("compact");
+		const topbar = root.querySelector(".mobile-auction-topbar");
+		expect(callNames(topbar?.querySelector(".icon-group"))).toEqual([
+			"Join call",
+			"Send mic audio",
+			"Hear others: receive audio",
+			"Send camera video",
+		]);
+		expect(section.sidebar.querySelector(".sideways-controls")).toBe(null);
+		expect(visible(root.querySelector(".mobile-auction"))).toBe(true);
+	});
 });

@@ -28,7 +28,7 @@ function memoryStorage(): Storage {
 const CUSTOM = "anthropic/claude-sonnet-5.5";
 
 describe("player settings", () => {
-	it("uses corrected HCP, the light theme, every turn and network display, no frequent relay checks and both orientation choices when nothing is stored", () => {
+	it("uses corrected HCP, the light theme, every turn and network display, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
 			pointSystem: "hcp-corrected",
 			cardPoints: true,
@@ -39,7 +39,7 @@ describe("player settings", () => {
 			playTurnText: true,
 			networkQuality: true,
 			relayChecks: false,
-			landscapeDesktop: true,
+			landscapeDesktop: false,
 			portraitMobile: true,
 			customModel: "",
 			modelOrder: [...BOT_MODELS, CUSTOM_MODEL_SLOT],

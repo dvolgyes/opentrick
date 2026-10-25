@@ -45,7 +45,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	playTurnText: true,
 	networkQuality: true,
 	relayChecks: false,
-	landscapeDesktop: true,
+	landscapeDesktop: false,
 	portraitMobile: true,
 	customModel: "",
 	modelOrder: [...BOT_MODELS, CUSTOM_MODEL_SLOT],

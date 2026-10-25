@@ -9,8 +9,9 @@ import type { PointSystem } from "../bridge/hand-points";
 import { type BuildInfo, formatBuildDate } from "../build";
 import { CallController } from "../call/call";
 import {
-	classify,
-	type Form,
+	formOf,
+	type Layout,
+	layout,
 	readSignals,
 	watchDeviceClass,
 } from "../call/device-class";
@@ -157,7 +158,8 @@ export function showRoom(
 	const wakeLock = new WakeLockPolicy(screenWakeLock);
 
 	// The call is optional and separate from the game: it reads the table, and its actions never send a command.
-	const deviceForm = classify(readSignals(window), readSettings(deps.browser));
+	const deviceLayout = layout(readSignals(window), readSettings(deps.browser));
+	const deviceForm = formOf(deviceLayout);
 	const support = deps.call;
 	const camera = support.available
 		? cameraSetup({
@@ -1125,14 +1127,18 @@ export function showRoom(
 			form,
 		),
 	);
-	// The device class sets the layout: a desktop shows the scaled Full HD room, a phone the compact table.
-	// The page root carries the form too, so that only a desktop page becomes the fixed Full HD canvas.
-	const setRoomForm = (form: Form): void => {
+	// The device class sets the layout: a desktop shows the scaled Full HD room, a phone held upright the compact table,
+	// and a phone held sideways the desktop table at the size of its screen, without videos.
+	// The page root carries the layout too, so that only a desktop page becomes the fixed Full HD canvas.
+	const setRoomLayout = (value: Layout): void => {
+		const form = value === "compact" ? "compact" : "desktop";
 		root.dataset.form = form;
 		room.dataset.form = form;
-		table.setForm(form);
+		root.dataset.layout = value;
+		room.dataset.layout = value;
+		table.setForm(value);
 	};
-	setRoomForm(deviceForm);
+	setRoomLayout(deviceLayout);
 	const updateRoomCanvasScale = (): void => {
 		const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
 		root.style.setProperty("--room-canvas-scale", String(scale));
@@ -1159,9 +1165,9 @@ export function showRoom(
 	const deviceWatch = watchDeviceClass(
 		window,
 		() => readSettings(deps.browser),
-		(form) => {
-			setRoomForm(form);
-			call?.setForm(form);
+		(value) => {
+			setRoomLayout(value);
+			call?.setForm(formOf(value));
 		},
 	);
 	root.replaceChildren(room);
@@ -1719,6 +1725,7 @@ export function showRoom(
 		window.removeEventListener("resize", updateRoomCanvasScale);
 		root.style.removeProperty("--room-canvas-scale");
 		delete root.dataset.form;
+		delete root.dataset.layout;
 		unsubscribe();
 		unsubscribeCamera?.();
 		camera?.dispose();

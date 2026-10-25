@@ -539,6 +539,71 @@ async function expectCompactRoom(
 	}
 }
 
+/** Phone viewports held sideways; each gets the desktop table at the size of its screen. */
+const SIDEWAYS_VIEWPORTS = [
+	{ width: 844, height: 390 },
+	{ width: 800, height: 360 },
+] as const;
+
+/**
+ * A phone held sideways gets the desktop table at the size of its screen (src/call/device-class.ts `layout`): not
+ * the scaled Full HD canvas, no page scroll, no video windows, and the call buttons in the sidebar. The viewer's
+ * cards span the felt, and no hand overlaps another part of the table.
+ */
+async function expectSidewaysRoom(page: Page, viewer: SeatKey): Promise<void> {
+	const room = page.locator(".room");
+	await expect(room).toHaveAttribute("data-form", "desktop");
+	await expect(room).toHaveAttribute("data-layout", "sideways");
+	expect(
+		await page.evaluate(() => ({
+			overflow: [
+				document.documentElement.scrollWidth -
+					document.documentElement.clientWidth,
+				document.documentElement.scrollHeight -
+					document.documentElement.clientHeight,
+			],
+			transform: getComputedStyle(document.querySelector("main") as Element)
+				.transform,
+		})),
+	).toEqual({ overflow: [0, 0], transform: "none" });
+	await expect(page.locator(".video-row")).toBeHidden();
+	const sidebar = page.locator(".table-sidebar");
+	for (const name of ["Join call", ...DESKTOP_TOGGLES.slice(0, 3)])
+		await expect(
+			sidebar.getByRole("button", { name, exact: true }),
+		).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "See cameras: receive video" }),
+	).toBeHidden();
+
+	const rects = await measure(page, {
+		...Object.fromEntries(
+			SEATS.map((seat) => [`hand ${seat}`, byTestId(`hand-${seat}`)]),
+		),
+		auction: byTestId("auction"),
+		"bid box": byTestId("bid-box"),
+		trick: byTestId("trick"),
+		felt: ".felt",
+		"own cards": `${byTestId(`hand-${viewer}`)} .hand`,
+	});
+	expectInside(
+		"own hand",
+		shown(rects, `hand ${viewer}`),
+		await pageViewport(page),
+	);
+	expect(
+		shown(rects, "own cards").width / shown(rects, "felt").width,
+		"the own cards span the felt",
+	).toBeGreaterThan(0.9);
+	expectApart(rects, [
+		...SEATS.map((seat) => `hand ${seat}`),
+		"auction",
+		"bid box",
+		"trick",
+	]);
+	expect(await ranksCut(page), "ranks under the next card").toEqual([]);
+}
+
 test.beforeAll(async ({ browser, baseURL }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
 	for (const [seat, identity] of [
@@ -637,7 +702,7 @@ test("2: desktop, during play: dummy's cards and the trick keep apart from the r
 	await expectRoomCanvasFit(tab.E);
 });
 
-test("3: a phone held upright and a portrait window get the compact table, and a phone held sideways and a landscape desktop scale the Full HD room canvas", async () => {
+test("3: a phone held upright and a portrait window get the compact table, a phone held sideways gets the desktop table at its size, and a landscape desktop scales the Full HD room canvas", async () => {
 	if (!phone) throw new Error("the phone browser is not open");
 	const host = await players.W.page("./");
 	const link = await createRoom(host);
@@ -660,10 +725,13 @@ test("3: a phone held upright and a portrait window get the compact table, and a
 		await test.step(`phone ${size.width}×${size.height}`, () =>
 			expectCompactRoom(phoneTab as Page, phoneParts));
 	}
-	// A phone held sideways gets the desktop room by default (Settings, Screen orientation).
-	await phoneTab.setViewportSize({ width: 844, height: 390 });
-	await test.step("phone 844×390, landscape", () =>
-		expectRoomCanvasFit(phoneTab as Page));
+	// A phone held sideways keeps the phone's call, on the desktop table without videos, unless the settings ask for
+	// the desktop view (Settings, Screen orientation).
+	for (const size of SIDEWAYS_VIEWPORTS) {
+		await phoneTab.setViewportSize(size);
+		await test.step(`phone ${size.width}×${size.height}, landscape`, () =>
+			expectSidewaysRoom(phoneTab as Page, "N"));
+	}
 	await phoneTab.setViewportSize({ width: 390, height: 664 });
 	await expectCompactRoom(phoneTab);
 	for (const size of CANVAS_VIEWPORTS) {

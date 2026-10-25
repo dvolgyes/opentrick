@@ -5,6 +5,12 @@
  */
 export type Form = "desktop" | "compact";
 
+/**
+ * The page layout. "sideways" is a phone or tablet in landscape with the compact call: the desktop table without
+ * videos, at the size of the screen.
+ */
+export type Layout = Form | "sideways";
+
 /** On a computer, a layout viewport narrower than this many CSS pixels is compact. */
 export const COMPACT_BELOW_WIDTH = 900;
 
@@ -59,6 +65,23 @@ export function classify(
 	return "desktop";
 }
 
+/** The layout of the class: a compact phone or tablet in landscape is sideways. */
+export function layout(
+	signals: DeviceSignals,
+	choices: OrientationChoices,
+): Layout {
+	const form = classify(signals, choices);
+	const landscape = signals.viewportHeight <= signals.viewportWidth;
+	return form === "compact" && isTouchDevice(signals) && landscape
+		? "sideways"
+		: form;
+}
+
+/** The call form of a layout. */
+export function formOf(value: Layout): Form {
+	return value === "desktop" ? "desktop" : "compact";
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Browser adapter
 
@@ -111,18 +134,18 @@ export interface DeviceClassWatch {
 }
 
 /**
- * Calls `onChange` with the new class whenever a resize, rotation, pointer change or `check` moves the device across
- * the boundary. Each check reads the choices again.
+ * Calls `onChange` with the new layout whenever a resize, rotation, pointer change or `check` moves the device across
+ * a boundary. Each check reads the choices again.
  */
 export function watchDeviceClass(
 	win: DeviceWindow,
 	choices: () => OrientationChoices,
-	onChange: (form: Form) => void,
+	onChange: (value: Layout) => void,
 ): DeviceClassWatch {
 	const pointer = win.matchMedia(FINE_POINTER_QUERY);
-	let current = classify(readSignals(win), choices());
+	let current = layout(readSignals(win), choices());
 	const check = () => {
-		const next = classify(readSignals(win), choices());
+		const next = layout(readSignals(win), choices());
 		if (next === current) return;
 		current = next;
 		onChange(next);
