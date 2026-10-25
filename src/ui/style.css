@@ -1389,6 +1389,37 @@ main:has(> .room) {
 	cursor: pointer;
 }
 
+/* A call that the guide describes keeps the look of a call, with the dotted line of the system name. */
+.auction button.auction-call {
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-decoration: underline dotted;
+	cursor: pointer;
+}
+
+/* The meaning of a call, under the call; placeMeaning in table.ts sets its place and width. */
+.call-meaning {
+	position: fixed;
+	inset: auto;
+	margin: 0;
+	padding: 0.35rem 0.55rem;
+	border: 1px solid var(--line);
+	border-radius: 0.4rem;
+	background: var(--panel);
+	color: var(--fg);
+	box-shadow: 0 0.2rem 0.6rem rgb(0 0 0 / 18%);
+	font-size: 0.85rem;
+	font-weight: 400;
+	line-height: 1.3;
+	text-align: start;
+	white-space: normal;
+}
+
 .bridge-table .auction td {
 	padding: 0.2rem 0.1rem;
 	border-radius: 0.4rem;

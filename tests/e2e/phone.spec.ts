@@ -315,7 +315,10 @@ test("a phone keeps its screen on during the bidding and the play, not on the st
 
 		// West passes 1NT, so the bots declare and the board goes to play with West on lead.
 		const auction = page.getByTestId("mobile-auction");
-		await auction.getByRole("button", { name: "Pass" }).tap();
+		await auction
+			.getByTestId("bid-box")
+			.getByRole("button", { name: "Pass" })
+			.tap();
 		await auction.getByRole("button", { name: "Confirm" }).tap();
 		await expect.poll(() => phase(page), { timeout: 30_000 }).toBe("play");
 		expect(await wake()).toEqual({ requests: 2, held: 1 });

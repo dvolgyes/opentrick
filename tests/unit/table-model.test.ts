@@ -322,6 +322,7 @@ describe("auction", () => {
 			rows: [["—", "1♣", "Double", "Pass"]],
 			systems: [undefined, undefined, undefined, undefined],
 			calls: ["1C", "X", "P"],
+			meanings: [[undefined, undefined, undefined, undefined]],
 		});
 	});
 
@@ -341,6 +342,50 @@ describe("auction", () => {
 		expect(
 			view("S", null, { state, bots: new Set<Seat>(["W"]) }).auction?.systems,
 		).toEqual(["vienna", "other", undefined, "hcp"]);
+	});
+
+	it("explains each described call by its caller's system, in the cell of the call", () => {
+		const state = {
+			...tableState(bidding(createBoard(2, DEAL), "1NT P 2C P")),
+			systems: { W: "vienna" },
+		} as const;
+		const auction = view("N", null, {
+			state,
+			bots: new Set<Seat>(["E"]),
+		}).auction;
+		expect(auction?.rows).toEqual([["—", "1NT", "Pass", "2♣"], ["Pass"]]);
+		expect(auction?.meanings).toEqual([
+			[
+				undefined,
+				"15–17 HCP, balanced",
+				undefined,
+				"13+ Vienna points, Stayman, a 4-card major",
+			],
+			[undefined],
+		]);
+	});
+
+	it("explains a Vienna opening with Vienna points, and leaves an overcall and a double plain", () => {
+		const state = {
+			...tableState(bidding(BOARD, "1C 1H X")),
+			systems: { N: "vienna", E: "hcp", S: "hcp" },
+		} as const;
+		expect(view("E", null, { state }).auction?.meanings).toEqual([
+			["19–34 Vienna points, 3+ ♣", undefined, undefined],
+		]);
+	});
+
+	it("writes half points and a weak two of Four Aces", () => {
+		const state = {
+			...tableState(bidding(BOARD, "P 2S")),
+			systems: { N: "four-aces", E: "four-aces" },
+		} as const;
+		expect(view("S", null, { state }).auction?.meanings).toEqual([
+			[
+				"0–7½ Four Aces points",
+				"3½–7½ Four Aces points, weak two, a good 6-card ♠ suit",
+			],
+		]);
 	});
 });
 
@@ -494,6 +539,16 @@ describe("the viewer's language", () => {
 		expect(view("E", NORTH_OWN_TURN, hu).prompt).toBe(
 			"Várakozás: Észak játszik.",
 		);
+	});
+
+	it("explains a call in Hungarian", () => {
+		const state = {
+			...tableState(bidding(createBoard(2, DEAL), "1NT")),
+			systems: { E: "hcp" },
+		} as const;
+		expect(view("N", null, { ...hu, state }).auction?.meanings).toEqual([
+			[undefined, "15–17 HCP, kiegyensúlyozott"],
+		]);
 	});
 
 	it("names the dealer and the vulnerability of each side in Hungarian", () => {

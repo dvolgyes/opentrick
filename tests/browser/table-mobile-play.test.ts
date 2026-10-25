@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cdp, page } from "vitest/browser";
+import { cdp, page, userEvent } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { PointSystem } from "../../src/bridge/hand-points";
@@ -119,6 +119,7 @@ function playView(): TableView {
 			rows: [["1♣", "Pass", "Pass", "Pass"]],
 			systems: [],
 			calls: ["1C", "P", "P", "P"],
+			meanings: [],
 		},
 		bids: [],
 		contract: "2♣ by North",
@@ -788,6 +789,7 @@ describe("desktop auction", () => {
 				rows: [["1♣", "Pass"]],
 				systems: [],
 				calls: ["1C", "P"],
+				meanings: [],
 			},
 			bids: [],
 			contract: "",
@@ -920,6 +922,7 @@ describe("undo request off turn", () => {
 					rows: [["1♣"]],
 					systems: [],
 					calls: ["1C"],
+					meanings: [],
 				},
 				bids: [],
 				contract: "",
@@ -975,7 +978,13 @@ describe("bid box under a held press", () => {
 		phase: "auction",
 		prompt: "",
 		yourTurn: true,
-		auction: { seats: ["N", "E", "S", "W"], rows: [], systems: [], calls: [] },
+		auction: {
+			seats: ["N", "E", "S", "W"],
+			rows: [],
+			systems: [],
+			calls: [],
+			meanings: [],
+		},
 		bids: [
 			{ call: "1C", text: "1♣" },
 			{ call: "2C", text: "2♣" },
@@ -1712,18 +1721,22 @@ describe("compact play controls", () => {
 		);
 		if (!room || !row) throw new Error("declarer hand row is missing");
 		room.style.width = "442px";
+		// The root font size outlives the test's DOM, so the later tests get it back.
 		document.documentElement.style.fontSize = "17.6px";
-
-		const cards = [...row.querySelectorAll<HTMLElement>("[data-card]")];
-		expect(cards).toHaveLength(13);
-		const bounds = cards.map((item) => item.getBoundingClientRect());
-		const rowBounds = row.getBoundingClientRect();
-		expect(bounds.every((item) => item.width > 0)).toBe(true);
-		const first = bounds[0];
-		const last = bounds.at(-1);
-		if (!first || !last) throw new Error("declarer card bounds are missing");
-		expect(first.left).toBeGreaterThanOrEqual(rowBounds.left - 1);
-		expect(last.right).toBeLessThanOrEqual(rowBounds.right + 1);
+		try {
+			const cards = [...row.querySelectorAll<HTMLElement>("[data-card]")];
+			expect(cards).toHaveLength(13);
+			const bounds = cards.map((item) => item.getBoundingClientRect());
+			const rowBounds = row.getBoundingClientRect();
+			expect(bounds.every((item) => item.width > 0)).toBe(true);
+			const first = bounds[0];
+			const last = bounds.at(-1);
+			if (!first || !last) throw new Error("declarer card bounds are missing");
+			expect(first.left).toBeGreaterThanOrEqual(rowBounds.left - 1);
+			expect(last.right).toBeLessThanOrEqual(rowBounds.right + 1);
+		} finally {
+			document.documentElement.style.fontSize = "";
+		}
 	});
 
 	it("fans each suit of a visible side hand in a row, within its board column", () => {
@@ -2605,6 +2618,7 @@ describe("bidding guide", () => {
 				rows: [["1♣"]],
 				systems: ["hcp-corrected", "vienna", undefined, "other"],
 				calls: ["1C"],
+				meanings: [],
 			},
 		};
 		const { root } = renderView(view, "desktop", undefined, translator("de"), {
@@ -2663,6 +2677,116 @@ describe("bidding guide", () => {
 	});
 });
 
+describe("call meanings in the auction", () => {
+	const WEAK_TWO =
+		"3½–7½ Four-Aces-Punkte, schwache Zwei, eine gute ♠-Farbe mit 6 Karten";
+	const meaningView = (
+		meaning = "15–17 HCP, balanced",
+		last = "Double",
+		at = 1,
+	): TableView => ({
+		...playView(),
+		phase: "auction",
+		trick: undefined,
+		bids: [{ call: "P", text: "Pass" }],
+		auction: {
+			seats: ["N", "E", "S", "W"],
+			rows: [["—", "1NT", "Pass", last]],
+			systems: [undefined, "hcp", undefined, "four-aces"],
+			calls: ["1NT", "P", "X"],
+			meanings: [
+				[0, 1, 2, 3].map((index) => (index === at ? meaning : undefined)),
+			],
+		},
+	});
+	const cell = (root: HTMLElement, index: number) => {
+		const found = root.querySelectorAll<HTMLElement>(
+			"[data-testid='auction'] tbody td",
+		)[index];
+		if (!found) throw new Error(`no auction cell ${index}`);
+		return found;
+	};
+	const parts = (root: HTMLElement, index: number) => {
+		const call = cell(root, index).querySelector<HTMLButtonElement>(
+			"button.auction-call",
+		);
+		const meaning = call?.popoverTargetElement;
+		if (!call || !(meaning instanceof HTMLElement))
+			throw new Error(`no meaning in cell ${index}`);
+		return { call, meaning, open: () => meaning.matches(":popover-open") };
+	};
+
+	it("makes a described call a button with its meaning, and leaves the dash and the other calls plain", () => {
+		const { root } = renderView(meaningView(), "desktop");
+		const { call, open } = parts(root, 1);
+		expect(call.textContent).toBe("1NT");
+		expect(cell(root, 1).textContent).toBe("1NT");
+		expect(call.title).toBe("15–17 HCP, balanced");
+		expect(call.getAttribute("aria-description")).toBe("15–17 HCP, balanced");
+		expect(open()).toBe(false);
+		for (const index of [0, 2, 3])
+			expect(cell(root, index).querySelector("button")).toBeNull();
+		expect(cell(root, 3).querySelector(".call-double")?.textContent).toBe(
+			"Double",
+		);
+	});
+
+	it("opens the meaning under the call on a click, and closes it with Escape, a second click, or a click outside", async () => {
+		const { root } = renderView(meaningView(), "desktop");
+		const { call, meaning, open } = parts(root, 1);
+		await userEvent.click(call);
+		expect(open()).toBe(true);
+		expect(meaning.textContent).toBe("15–17 HCP, balanced");
+		expect(meaning.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+			call.getBoundingClientRect().bottom,
+		);
+		await userEvent.keyboard("{Escape}");
+		expect(open()).toBe(false);
+		await userEvent.click(call);
+		expect(open()).toBe(true);
+		await userEvent.click(call);
+		expect(open()).toBe(false);
+		await userEvent.click(call);
+		await userEvent.click(cell(root, 0));
+		expect(open()).toBe(false);
+	});
+
+	it("keeps the meaning open while a render does not change the auction", async () => {
+		const { root, section } = renderView(meaningView(), "desktop");
+		await userEvent.click(parts(root, 1).call);
+		section.render({ ...meaningView(), prompt: "playerS is thinking" });
+		expect(parts(root, 1).open()).toBe(true);
+	});
+
+	it("writes a German meaning inside the screen of a narrow phone, also for the last column", async () => {
+		await page.viewport(360, 800);
+		try {
+			const view = meaningView(WEAK_TWO, "2♠", 3);
+			const { root } = renderView(
+				view,
+				"compact",
+				undefined,
+				translator("de"),
+				{
+					locale: "de",
+				},
+			);
+			const { call, meaning, open } = parts(root, 3);
+			await userEvent.click(call);
+			expect(open()).toBe(true);
+			expect(meaning.textContent).toBe(WEAK_TWO);
+			const box = meaning.getBoundingClientRect();
+			expect(box.left).toBeGreaterThanOrEqual(0);
+			expect(box.right).toBeLessThanOrEqual(innerWidth);
+			expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+				innerWidth,
+			);
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+});
+
 describe("convention hint", () => {
 	// ♠AKQ32 ♥K ♦J432 ♣432: 13 HCP and five spades, so the HCP guide opens 1♠.
 	const OPENER: readonly Card[] = [
@@ -2705,7 +2829,13 @@ describe("convention hint", () => {
 			...base,
 			phase: "auction",
 			trick: undefined,
-			auction: { seats: ["N", "E", "S", "W"], rows: [], systems: [], calls },
+			auction: {
+				seats: ["N", "E", "S", "W"],
+				rows: [],
+				systems: [],
+				calls,
+				meanings: [],
+			},
 			bids: [
 				{ call: "1C", text: "1♣" },
 				{ call: "1S", text: "1♠" },

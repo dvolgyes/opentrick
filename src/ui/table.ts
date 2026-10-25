@@ -184,6 +184,26 @@ function auctionCell(text: string, t: Translate): (string | HTMLElement)[] {
 	];
 }
 
+/**
+ * Places a call's meaning under the call, inside the screen: from the call's left edge on the left half of the
+ * screen, and back from its right edge on the right half. It runs before the meaning shows, so it reads only the call.
+ */
+function placeMeaning(call: HTMLElement, meaning: HTMLElement): void {
+	const box = call.getBoundingClientRect();
+	const screen = document.documentElement.clientWidth;
+	const margin = 8;
+	const left = box.left + box.width / 2 < screen / 2;
+	meaning.style.top = `${box.bottom + 4}px`;
+	meaning.style.left = left ? `${Math.max(margin, box.left)}px` : "auto";
+	meaning.style.right = left
+		? "auto"
+		: `${Math.max(margin, screen - box.right)}px`;
+	const room = left
+		? screen - Math.max(margin, box.left) - margin
+		: Math.min(screen - margin, box.right) - margin;
+	meaning.style.maxWidth = `min(18rem, ${room}px)`;
+}
+
 /** The contract's bid, such as "3♠" or "3NTXX", with the suit in red on hearts and diamonds. */
 function contractBid(header: ContractHeader): HTMLElement {
 	const red = header.strain === "H" || header.strain === "D";
@@ -361,7 +381,14 @@ export function tableSection(
 		{ className: "panel-title" },
 		t("Bidding history"),
 	);
-	const auctionScroll = el("div", { className: "auction-scroll" }, auction);
+	// The meanings of the calls stay out of the table, so a cell's text is only its call.
+	const callMeanings = el("div", { className: "call-meanings" });
+	const auctionScroll = el(
+		"div",
+		{ className: "auction-scroll" },
+		auction,
+		callMeanings,
+	);
 	const bidHistory = el(
 		"section",
 		{ className: "history-panel", attrs: { "data-testid": "bid-history" } },
@@ -1884,15 +1911,55 @@ export function tableSection(
 		];
 	}
 
+	/**
+	 * A call that the guide describes is a button with its meaning as the title. A click shows the meaning under the
+	 * call; a second click, Escape, or a click elsewhere closes it, as the browser closes an auto popover.
+	 */
+	function auctionCallCell(
+		text: string,
+		meaning: string | undefined,
+		meanings: HTMLElement[],
+	): (string | HTMLElement)[] {
+		const content = auctionCell(text, t);
+		if (meaning === undefined) return content;
+		const shown = el(
+			"span",
+			{ className: "call-meaning", attrs: { popover: "auto" } },
+			meaning,
+		);
+		const call = el(
+			"button",
+			{
+				className: "auction-call",
+				attrs: { type: "button", title: meaning, "aria-description": meaning },
+			},
+			...content,
+		);
+		call.popoverTargetElement = shown;
+		shown.addEventListener("beforetoggle", (event) => {
+			if (event.newState === "open") placeMeaning(call, shown);
+		});
+		meanings.push(shown);
+		return [call];
+	}
+
+	let drawnAuction = "";
 	function renderAuction(view: TableView): void {
 		const grid = view.auction;
 		auction.hidden = grid === undefined;
 		if (!grid) {
+			drawnAuction = "";
 			auction.replaceChildren();
+			callMeanings.replaceChildren();
 			return;
 		}
 		const rows = grid.rows;
 		const names = new Map(view.seats.map((seat) => [seat.seat, seat.name]));
+		// A rebuild closes an open meaning, so draw only when the auction or a name changed.
+		const key = JSON.stringify([grid, [...names]]);
+		if (key === drawnAuction) return;
+		drawnAuction = key;
+		const meanings: HTMLElement[] = [];
 		auction.replaceChildren(
 			el(
 				"thead",
@@ -1914,17 +1981,26 @@ export function tableSection(
 			el(
 				"tbody",
 				{},
-				...rows.map((row) =>
+				...rows.map((row, rowIndex) =>
 					el(
 						"tr",
 						{},
 						...grid.seats.map((_, index) =>
-							el("td", {}, ...auctionCell(row[index] ?? "", t)),
+							el(
+								"td",
+								{},
+								...auctionCallCell(
+									row[index] ?? "",
+									grid.meanings[rowIndex]?.[index],
+									meanings,
+								),
+							),
 						),
 					),
 				),
 			),
 		);
+		callMeanings.replaceChildren(...meanings);
 		auctionScroll.scrollTop = auctionScroll.scrollHeight;
 	}
 

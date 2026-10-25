@@ -5,6 +5,12 @@ import {
 	type Suit,
 	suitOf,
 } from "../bridge/cards";
+import type { PointRange } from "../bridge/convention-rules";
+import {
+	type CallMeaning,
+	callMeaning,
+	type Shape,
+} from "../bridge/conventions";
 import {
 	type Action,
 	type BoardResult,
@@ -232,6 +238,11 @@ export interface AuctionView {
 	readonly systems: readonly (PointSystem | undefined)[];
 	/** The calls so far, in order, for the bidding guide. */
 	readonly calls: readonly Call[];
+	/**
+	 * In `rows` order, what each call shows by its caller's system in the viewer's language, such as "15–17 HCP,
+	 * balanced"; undefined for a dash and for a call that the guide does not describe.
+	 */
+	readonly meanings: readonly (readonly (string | undefined)[])[];
 }
 
 export interface BidView {
@@ -659,24 +670,125 @@ function scoreRows(results: readonly BoardResult[]): ScoreRow[] {
 	});
 }
 
+/** The scale of each system's points, as the meaning of a call names it. */
+const SCALE_NAMES: Readonly<Record<PointSystem, string>> = {
+	hcp: "HCP",
+	"hcp-corrected": "corrected HCP",
+	vienna: "Vienna points",
+	reith: "Reith points",
+	"four-aces": "Four Aces points",
+	other: "points",
+};
+
+/** Four Aces counts half points: 7.5 is "7½", as in its guide. */
+function pointsText(points: number): string {
+	return Number.isInteger(points) ? String(points) : `${Math.floor(points)}½`;
+}
+
+function rangeText(
+	range: PointRange,
+	system: PointSystem,
+	t: Translate,
+): string {
+	const scale = t(SCALE_NAMES[system]);
+	const min = pointsText(range.min);
+	return range.max === undefined
+		? t("{min}+ {scale}", { min, scale })
+		: t("{min}–{max} {scale}", { min, max: pointsText(range.max), scale });
+}
+
+function shapeText(shape: Shape, t: Translate): string {
+	switch (shape.kind) {
+		case "none":
+			return "";
+		case "balanced":
+			return t("balanced");
+		case "artificial":
+			return t("artificial and forcing");
+		case "cards":
+			return `${shape.min}+ ${SUIT_SYMBOLS[shape.suit]}`;
+		case "support":
+			return t("{min}+ {suit} support", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "weak-two":
+			return t("weak two, a good {length}-card {suit} suit", {
+				length: shape.length,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "preempt":
+			return t("preempt, a good {length}-card {suit} suit", {
+				length: shape.length,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "transfer":
+			return t("transfer, {min}+ {suit}", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "stayman":
+			return t("Stayman, a {min}-card major", { min: shape.min });
+		case "weak-minor":
+			return t("weak, a {min}+ card minor", { min: shape.min });
+		case "waiting":
+			return t("waiting");
+		case "good-suit":
+			return t("a good {min}+ card {suit} suit", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+	}
+}
+
+/** For example "15–17 HCP, balanced". */
+function meaningText(
+	meaning: CallMeaning,
+	system: PointSystem,
+	t: Translate,
+): string {
+	return [
+		meaning.range === undefined ? "" : rangeText(meaning.range, system, t),
+		shapeText(meaning.shape, t),
+	]
+		.filter((part) => part !== "")
+		.join(", ");
+}
+
 function auctionView(
 	dealer: Seat,
 	calls: readonly Call[],
 	systems: BridgeState["systems"],
 	bots: ReadonlySet<Seat> | undefined,
+	t: Translate,
 ): AuctionView {
+	const before = SEATS.indexOf(dealer);
+	const bySeat = seatSystems(systems, bots ?? []);
+	const meaning = (index: number): string | undefined => {
+		const system = bySeat[seatAfter(dealer, index)];
+		const found = system && callMeaning(system, calls, index);
+		return found && system && meaningText(found, system, t);
+	};
 	const cells = [
-		...Array.from({ length: SEATS.indexOf(dealer) }, () => "—"),
+		...Array.from({ length: before }, () => "—"),
 		...calls.map(callText),
 	];
+	const meanings = [
+		...Array.from({ length: before }, () => undefined),
+		...calls.map((_, index) => meaning(index)),
+	];
 	const rows: string[][] = [];
-	for (let i = 0; i < cells.length; i += 4) rows.push(cells.slice(i, i + 4));
-	const bySeat = seatSystems(systems, bots ?? []);
+	const meaningRows: (string | undefined)[][] = [];
+	for (let i = 0; i < cells.length; i += 4) {
+		rows.push(cells.slice(i, i + 4));
+		meaningRows.push(meanings.slice(i, i + 4));
+	}
 	return {
 		seats: SEATS,
 		rows,
 		systems: SEATS.map((seat) => bySeat[seat]),
 		calls,
+		meanings: meaningRows,
 	};
 }
 
@@ -1114,7 +1226,7 @@ export function tableView(input: TableViewInput): TableView {
 		details: t("Dealer: {dealer}", { dealer: t(SEAT_NAMES[view.dealer]) }),
 		vulnerability: vulnerabilityLines(view.vulnerability, t),
 		seats,
-		auction: auctionView(view.dealer, view.calls, state.systems, input.bots),
+		auction: auctionView(view.dealer, view.calls, state.systems, input.bots, t),
 		contract: contract
 			? t("{contract} by {declarer}", {
 					contract: contractText(contract),

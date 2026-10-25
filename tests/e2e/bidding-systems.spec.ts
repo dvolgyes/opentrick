@@ -1,10 +1,11 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { Player } from "./player";
-import { CONNECT_MS, createRoom, pick, type SeatKey } from "./room";
+import { CONNECT_MS, createRoom, makeCall, pick, type SeatKey } from "./room";
 
 /*
  * Each page sends its player's bidding system from Settings to the host, and every page shows it below that
- * player's name in the auction (src/ui/room-view.ts, src/ui/table.ts `renderAuction`).
+ * player's name in the auction (src/ui/room-view.ts, src/ui/table.ts `renderAuction`). A call that the guide of its
+ * caller's system describes shows its meaning on every page.
  */
 
 /** The bots always pass, so the first board stays in the auction while the test runs. */
@@ -37,7 +38,7 @@ const systemOf = (page: Page, seat: SeatKey): Locator =>
 		.filter({ hasText: `(${seat})` })
 		.locator(".auction-system");
 
-test("each player sees the others' bidding systems, and a change in Settings reaches the other pages", async ({
+test("each player sees the others' bidding systems and the meaning of their calls, and a change in Settings reaches the other pages", async ({
 	browser,
 	baseURL,
 }) => {
@@ -93,6 +94,28 @@ test("each player sees the others' bidding systems, and a change in Settings rea
 		await expect(
 			guestPage.getByTestId("guide-dialog").getByRole("heading", { level: 2 }),
 		).toHaveText("Bidding guide: Vienna points (7-5-3-1)");
+		await guestPage.keyboard.press("Escape");
+		await expect(guestPage.getByTestId("guide-dialog")).toBeHidden();
+
+		// The host's opening shows its Vienna meaning on the guest's page.
+		await makeCall(guestPage, "P");
+		await expect(hostPage.locator(".bid-box:visible button.pass")).toBeEnabled({
+			timeout: CONNECT_MS,
+		});
+		await makeCall(hostPage, "1C");
+		const meaning = "19–34 Vienna points, 3+ ♣";
+		const opening = guestPage
+			.locator(".auction:visible button.auction-call")
+			.filter({ hasText: "1♣" });
+		await expect(opening).toHaveAttribute("title", meaning, {
+			timeout: CONNECT_MS,
+		});
+		const shown = guestPage.locator(".call-meaning:popover-open");
+		await opening.click();
+		await expect(shown).toHaveText(meaning);
+		await guestPage.keyboard.press("Escape");
+		await expect(shown).toHaveCount(0);
+		expect(guest.errors).toEqual([]);
 	} finally {
 		await guest.close();
 		await host.close();

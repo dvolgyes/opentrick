@@ -644,6 +644,25 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Der Bot konnte die Modellantwort nicht verwenden. Wähle ein anderes Modell oder setze die Bots fort.",
 		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
 			"Anzeige mit fünf Dezimalstellen. Genauer Gesamtbetrag laut OpenRouter: {total} USD.",
+		"Vienna points": "Wiener Punkte",
+		"Reith points": "Reith-Punkte",
+		"Four Aces points": "Four-Aces-Punkte",
+		points: "Punkte",
+		"{min}+ {scale}": "{min}+ {scale}",
+		"{min}–{max} {scale}": "{min}–{max} {scale}",
+		balanced: "ausgeglichen",
+		"artificial and forcing": "künstlich und forcierend",
+		"{min}+ {suit} support": "Unterstützung mit {min}+ {suit}",
+		"weak two, a good {length}-card {suit} suit":
+			"schwache Zwei, eine gute {suit}-Farbe mit {length} Karten",
+		"preempt, a good {length}-card {suit} suit":
+			"Sperreröffnung, eine gute {suit}-Farbe mit {length} Karten",
+		"transfer, {min}+ {suit}": "Transfer, {min}+ {suit}",
+		"Stayman, a {min}-card major": "Stayman, eine Oberfarbe mit {min} Karten",
+		"weak, a {min}+ card minor": "schwach, eine Unterfarbe mit {min}+ Karten",
+		waiting: "Wartegebot",
+		"a good {min}+ card {suit} suit":
+			"eine gute {suit}-Farbe mit {min}+ Karten",
 	},
 	hu: {
 		Language: "Nyelv",
@@ -1258,6 +1277,24 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A bot nem tudta használni a modell válaszát. Válassz másik modellt, vagy folytasd a botokat.",
 		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
 			"Öt tizedesjegyes kijelzés. Az OpenRouter által jelentett pontos összeg: {total} USD.",
+		"Vienna points": "bécsi pont",
+		"Reith points": "Reith pont",
+		"Four Aces points": "Four Aces pont",
+		points: "pont",
+		"{min}+ {scale}": "{min}+ {scale}",
+		"{min}–{max} {scale}": "{min}–{max} {scale}",
+		balanced: "kiegyensúlyozott",
+		"artificial and forcing": "mesterséges és forszírozó",
+		"{min}+ {suit} support": "{suit} támogatás, {min}+ lap",
+		"weak two, a good {length}-card {suit} suit":
+			"gyenge kettes, jó {length} lapos {suit} szín",
+		"preempt, a good {length}-card {suit} suit":
+			"blokk, jó {length} lapos {suit} szín",
+		"transfer, {min}+ {suit}": "transzfer, {min}+ {suit}",
+		"Stayman, a {min}-card major": "Stayman, {min} lapos nemes szín",
+		"weak, a {min}+ card minor": "gyenge, {min}+ lapos alacsony szín",
+		waiting: "várakozó",
+		"a good {min}+ card {suit} suit": "jó {min}+ lapos {suit} szín",
 	},
 	no: {
 		Language: "Språk",
@@ -1865,6 +1902,24 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Boten kunne ikke bruke svaret fra modellen. Velg en annen modell eller fortsett botene.",
 		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
 			"Vist med fem desimaler. Nøyaktig total fra OpenRouter: {total} USD.",
+		"Vienna points": "Vienna-poeng",
+		"Reith points": "Reith-poeng",
+		"Four Aces points": "Four Aces-poeng",
+		points: "poeng",
+		"{min}+ {scale}": "{min}+ {scale}",
+		"{min}–{max} {scale}": "{min}–{max} {scale}",
+		balanced: "balansert",
+		"artificial and forcing": "kunstig og krav",
+		"{min}+ {suit} support": "støtte med {min}+ {suit}",
+		"weak two, a good {length}-card {suit} suit":
+			"svak to-åpning, en god {suit}-farge med {length} kort",
+		"preempt, a good {length}-card {suit} suit":
+			"sperremelding, en god {suit}-farge med {length} kort",
+		"transfer, {min}+ {suit}": "overføring, {min}+ {suit}",
+		"Stayman, a {min}-card major": "Stayman, en høyfarge med {min} kort",
+		"weak, a {min}+ card minor": "svak, en lavfarge med {min}+ kort",
+		waiting: "ventemelding",
+		"a good {min}+ card {suit} suit": "en god {suit}-farge med {min}+ kort",
 	},
 	...additionalCatalogs,
 };
