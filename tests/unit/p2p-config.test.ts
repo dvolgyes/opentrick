@@ -112,7 +112,7 @@ describe("parseNostrRelayUrls", () => {
 });
 
 describe("parseMqttBrokerUrls", () => {
-	it("gives the two default brokers when absent", () => {
+	it("gives the three default brokers of three operators when absent", () => {
 		expect(parseMqttBrokerUrls(undefined)).toEqual({
 			ok: true,
 			urls: DEFAULT_MQTT_BROKER_URLS,
@@ -120,6 +120,7 @@ describe("parseMqttBrokerUrls", () => {
 		expect(DEFAULT_MQTT_BROKER_URLS).toEqual([
 			"wss://broker.emqx.io:8084/mqtt",
 			"wss://broker.hivemq.com:8884/mqtt",
+			"wss://iot.coreflux.cloud/mqtt",
 		]);
 	});
 

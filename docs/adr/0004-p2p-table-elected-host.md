@@ -59,10 +59,14 @@ Transport:
   The Nostr and MQTT copies share the topic mapping of the core (`src/p2p/topic-mapping.ts`), which the core does not export.
   An upgrade of Trystero merges the upstream strategies into the copies by hand.
   The relays see only topic hashes that Trystero derives from the app name and the table identifier, the clients' IP addresses and encrypted session descriptions.
-- The default relays (`src/p2p/config.ts`) are the servers that passed every live check: four trackers that relayed an offer between two sockets, five Nostr relays that passed an ephemeral event between two sockets, and two MQTT brokers.
-  The two MQTT brokers (EMQX and HiveMQ) passed a message between two clients and again after a client replaced its socket (October 2026).
-  In the same check, `test.mosquitto.org` did not connect from Chrome, three other public brokers did not connect, and one needed credentials.
-  Two Chrome pages that used only the two default brokers connected in about 2 s, in 3 of 3 trials.
+- The default relays (`src/p2p/config.ts`) are the servers that passed every live check: four trackers that relayed an offer between two sockets, five Nostr relays that passed an ephemeral event between two sockets, and three MQTT brokers.
+  The owner asked for the three best free public MQTT brokers.
+  The defaults are the free public brokers of three different operators (EMQX, HiveMQ and Coreflux), so that one operator's outage leaves two brokers.
+  Each one passed a message between two mqtt.js clients in Node and answered a connect from Chrome, in 3 of 3 trials (October 2026).
+  EMQX answered in about 0.4 s, Coreflux in about 0.1 s and HiveMQ in 1 s to 5 s.
+  `broker-cn.emqx.io` and `mqtt-dashboard.com` also passed, but they belong to the same operators as two of the defaults.
+  `test.mosquitto.org`, `mqtt.eclipseprojects.io`, `public.mqtthq.com` and `broker.mqttgo.io` did not connect, and other brokers needed credentials.
+  Two Chrome pages that used only the EMQX and HiveMQ brokers connected in about 2 s, in 3 of 3 trials.
   `VITE_TRACKER_URLS`, `VITE_NOSTR_RELAY_URLS`, `VITE_MQTT_BROKER_URLS` and `VITE_STUN_URLS` replace a list, and the value `none` turns a list off, so a test can use one kind of relay only.
   A URL can be in one relay list only, and each list has at most 8 URLs.
   The mesh diagnostics record, for each relay and STUN server, whether it is open and when it last answered.

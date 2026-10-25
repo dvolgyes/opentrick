@@ -27,10 +27,14 @@ export const DEFAULT_NOSTR_RELAY_URLS: readonly string[] = [
 	"wss://offchain.pub",
 ];
 
-/** The public MQTT brokers that passed a message between two browser sockets, also after a socket replacement (ADR 0004). */
+/**
+ * The free public MQTT brokers of three operators that passed a message between two clients in Node and answered a
+ * connect in Chrome (ADR 0004).
+ */
 export const DEFAULT_MQTT_BROKER_URLS: readonly string[] = [
 	"wss://broker.emqx.io:8084/mqtt",
 	"wss://broker.hivemq.com:8884/mqtt",
+	"wss://iot.coreflux.cloud/mqtt",
 ];
 
 const MAX_RELAY_URLS = 8;
