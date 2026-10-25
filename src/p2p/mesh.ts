@@ -98,6 +98,8 @@ export interface RelayStatus {
 
 const CONNECTING = 0;
 const OPEN = 1;
+const CLOSING = 2;
+const CLOSED = 3;
 
 export interface MeshDeps {
 	readonly tableId: string;
@@ -117,8 +119,14 @@ export interface MeshDeps {
 	readonly reconnectRelay: (kind: RelayKind, url: string) => void;
 	/** Whether the page sends nothing to a relay for a time, after the relay's rate limit; without it, no relay rests. */
 	readonly relayResting?: (kind: RelayKind, url: string) => boolean;
-	/** Calls `onChange` at each network change until the returned function runs; a mesh without it does not watch. */
-	readonly watchNetwork?: (onChange: () => void) => () => void;
+	/**
+	 * Calls `onChange` at each network change, and `onShown` when the page is shown after a short time hidden, until
+	 * the returned function runs; a mesh without it does not watch.
+	 */
+	readonly watchNetwork?: (
+		onChange: () => void,
+		onShown: () => void,
+	) => () => void;
 	/** Asks one STUN server for this page's public address; a mesh without it does not check. */
 	readonly probeStun?: ProbeStun;
 	/** The frequent checks of the Nostr relays, while `on()` (a setting) is true; a mesh without them does not check. */
@@ -306,7 +314,10 @@ export class Mesh implements Send {
 				? null
 				: new RelayChecks(deps.relayChecks.check);
 		this.#unwatchNetwork =
-			deps.watchNetwork?.(() => this.#networkChanged()) ?? (() => {});
+			deps.watchNetwork?.(
+				() => this.#networkChanged(),
+				() => this.#shown(),
+			) ?? (() => {});
 	}
 
 	/** Admitted peers that still have a data channel, in join order. */
@@ -716,6 +727,29 @@ export class Mesh implements Send {
 		if (this.#left) return;
 		const now = this.#deps.clock.monotonic();
 		for (const { kind, url } of this.#configuredRelays()) {
+			this.#watchedAt.set(`${kind} ${url}`, now);
+			this.#deps.reconnectRelay(kind, url);
+		}
+		this.#rejoinNowUntil = now + NETWORK_REJOIN_MS;
+	}
+
+	/**
+	 * The page is shown again after a short time hidden. Trystero opens a closed relay socket again only after its
+	 * retry wait, up to 60 s, so each closed socket is replaced now, and a page alone joins the table room again
+	 * without the wait. A page whose timers stopped while hidden (a phone suspends a page in the background) can
+	 * have sockets that look open and deliver nothing: that counts as a network change.
+	 */
+	#shown(): void {
+		if (this.#left) return;
+		const now = this.#deps.clock.monotonic();
+		if (this.#tickAt !== null && now - this.#tickAt > LATE_TICK_MS) {
+			this.#networkChanged();
+			return;
+		}
+		const sockets = this.#deps.relaySockets();
+		for (const { kind, url } of this.#configuredRelays()) {
+			const state = sockets[kind][url]?.readyState;
+			if (state !== CLOSING && state !== CLOSED) continue;
 			this.#watchedAt.set(`${kind} ${url}`, now);
 			this.#deps.reconnectRelay(kind, url);
 		}

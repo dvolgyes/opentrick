@@ -46,7 +46,7 @@ export function trysteroMesh(
 				...(typeof window === "undefined"
 					? {}
 					: {
-							watchNetwork: (onChange: () => void) =>
+							watchNetwork: (onChange: () => void, onShown: () => void) =>
 								watchNetworkChanges(
 									{
 										window,
@@ -56,6 +56,7 @@ export function trysteroMesh(
 										wall: clock.wall,
 									},
 									onChange,
+									onShown,
 								),
 						}),
 				probeStun: stunProbe(rtcPolyfill ?? RTCPeerConnection),

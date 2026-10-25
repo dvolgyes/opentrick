@@ -74,7 +74,8 @@ export const REJOIN_MAX_MS = 60_000;
 export const NETWORK_REJOIN_MS = 60_000;
 /**
  * A page shown again after this long hidden counts as a network change (src/p2p/network-watch.ts): the device can
- * sleep or change its network in that time. A shorter switch to another tab does not replace the relay sockets.
+ * sleep or change its network in that time. A shorter switch to another tab replaces only the closed relay sockets,
+ * unless the page's timers stopped meanwhile (src/p2p/mesh.ts).
  */
 export const RESUME_HIDDEN_MS = 30_000;
 /** The browser can report one resume with several events; a resume within this time of the last one is the same. */

@@ -152,7 +152,7 @@ function statusMesh(
 	const joins: SignalingRoomConfig[] = [];
 	const reconnects: string[] = [];
 	const resting = new Set<string>();
-	const network = { change: () => {}, watching: false };
+	const network = { change: () => {}, shown: () => {}, watching: false };
 	const mesh = new Mesh(
 		{
 			tableId: TABLE,
@@ -166,8 +166,9 @@ function statusMesh(
 			relaySockets: () => ({ tracker: sockets, nostr: nostrSockets }),
 			reconnectRelay: (kind, url) => reconnects.push(`${kind} ${url}`),
 			relayResting: (kind, url) => resting.has(`${kind} ${url}`),
-			watchNetwork: (onChange) => {
+			watchNetwork: (onChange, onShown) => {
 				network.change = onChange;
+				network.shown = onShown;
 				network.watching = true;
 				return () => {
 					network.watching = false;
@@ -531,6 +532,38 @@ describe("the mesh's recovery of its relays", () => {
 		clock.now = 1_500;
 		mesh.tick();
 		expect(mesh.diagnostics().rejoins).toBe(1);
+	});
+
+	it("reconnects its closed relays at once when the page is shown again, and a page alone joins the table room again at once", () => {
+		const { mesh, sockets, nostrSockets, clock, reconnects, network } =
+			statusMesh([A, B], undefined, [N]);
+		sockets[A] = new FakeSocket();
+		const closed = new FakeSocket();
+		closed.readyState = 3;
+		sockets[B] = closed;
+		nostrSockets[N] = new FakeSocket();
+		mesh.tick();
+		clock.now = 1_000;
+		mesh.tick();
+		network.shown();
+		// Trystero opens a closed socket again only after its retry wait, up to 60 s; an open socket stays.
+		expect(reconnects).toEqual([`tracker ${B}`]);
+		mesh.tick();
+		expect(mesh.diagnostics().rejoins).toBe(1);
+	});
+
+	it("replaces each relay socket when the page is shown again after its timers stopped, as after a network change", () => {
+		const { mesh, sockets, clock, reconnects, network } = statusMesh(
+			[A],
+			undefined,
+			[N],
+		);
+		sockets[A] = new FakeSocket();
+		mesh.tick();
+		// A phone can suspend a hidden page; its sockets can look open and deliver nothing.
+		clock.now = LATE_TICK_MS + 1;
+		network.shown();
+		expect(reconnects).toEqual([`tracker ${A}`, `nostr ${N}`]);
 	});
 
 	it("stops watching the network when it leaves", async () => {
