@@ -36,7 +36,19 @@ export type RangeKey =
 	| "nt-3NT"
 	| "2c-waiting"
 	| "2c-positive"
-	| "2c-2NT";
+	| "2c-2NT"
+	| "2c-rebid-2NT"
+	| "rebid-low"
+	| "rebid-mid"
+	| "rebid-high"
+	| "rebid-2NT"
+	| "weak-2NT"
+	| "overcall-one"
+	| "overcall-two"
+	| "overcall-1NT"
+	| "takeout"
+	| "takeout-strong"
+	| "redouble";
 
 export type Ranges = Readonly<Record<RangeKey, PointRange>>;
 
@@ -68,6 +80,22 @@ const MILTON = {
 	"2c-waiting": { min: 0, max: 7 }, // "[2D]: waiting, 0–7 points"
 	"2c-positive": { min: 8 }, // "[2H] [2S] [3C] [3D]: 8 or more points"
 	"2c-2NT": { min: 8 }, // "[2NT]: 8 or more points, balanced hand"
+	// ## Opening bids, the [2C] line
+	"2c-rebid-2NT": { min: 22, max: 24 }, // "With a balanced 22–24 points, rebid [2NT]"
+	// ## Opener's rebid
+	"rebid-low": { min: 12, max: 14 }, // "12–14 points: [1NT] with a balanced hand"
+	"rebid-mid": { min: 15, max: 17 }, // "15–17 points: a jump raise"
+	"rebid-high": { min: 18, max: 21 }, // "18–21 points: a jump in a new suit"
+	"rebid-2NT": { min: 18, max: 19 }, // "[2NT] with a balanced 18–19 points"
+	// ## Responses to a weak two
+	"weak-2NT": { min: 15 }, // "[2NT]: 15 or more points, asks opener"
+	// ## Competitive bids
+	"overcall-one": { min: 8, max: 16 }, // "An overcall at the one level: 8–16 points"
+	"overcall-two": { min: 10, max: 16 }, // "At the two level: 10–16 points"
+	"overcall-1NT": { min: 15, max: 18 }, // "[1NT] overcall: 15–18 points"
+	takeout: { min: 12 }, // "[X] (takeout): 12 or more points"
+	"takeout-strong": { min: 17 }, // "or any hand with 17 or more points"
+	redouble: { min: 10 }, // "[XX] after partner's opening is doubled: 10 or more points"
 } as const satisfies Ranges;
 
 /** vienna_*.txt and reith_*.txt: both scales hold 64 points and share their ranges. */
@@ -95,6 +123,22 @@ const SIXTY_FOUR = {
 	"2c-waiting": { min: 0, max: 12 }, // "[2D]: waiting, 0–12 points"
 	"2c-positive": { min: 13 }, // "[2H] [2S] [3C] [3D]: 13 or more points"
 	"2c-2NT": { min: 13 }, // "[2NT]: 13 or more points, balanced hand"
+	// ## Opening bids, the [2C] line
+	"2c-rebid-2NT": { min: 35, max: 39 }, // "With a balanced 35–39 points, rebid [2NT]"
+	// ## Opener's rebid
+	"rebid-low": { min: 19, max: 23 }, // "19–23 points: [1NT] with a balanced hand"
+	"rebid-mid": { min: 24, max: 28 }, // "24–28 points: a jump raise"
+	"rebid-high": { min: 29, max: 34 }, // "29–34 points: a jump in a new suit"
+	"rebid-2NT": { min: 29, max: 31 }, // "[2NT] with a balanced 29–31 points"
+	// ## Responses to a weak two
+	"weak-2NT": { min: 24 }, // "[2NT]: 24 or more points, asks opener"
+	// ## Competitive bids
+	"overcall-one": { min: 13, max: 26 }, // "An overcall at the one level: 13–26 points"
+	"overcall-two": { min: 16, max: 26 }, // "At the two level: 16–26 points"
+	"overcall-1NT": { min: 24, max: 29 }, // "[1NT] overcall: 24–29 points"
+	takeout: { min: 19 }, // "[X] (takeout): 19 or more points"
+	"takeout-strong": { min: 27 }, // "or any hand with 27 or more points"
+	redouble: { min: 16 }, // "[XX] after partner's opening is doubled: 16 or more points"
 } as const satisfies Ranges;
 
 /** four_aces_*.txt: half points, 7.5 is "7½" in the guide. */
@@ -122,6 +166,22 @@ const FOUR_ACES = {
 	"2c-waiting": { min: 0, max: 4.5 }, // "[2D]: waiting, 0–4½ points"
 	"2c-positive": { min: 5 }, // "[2H] [2S] [3C] [3D]: 5 or more points"
 	"2c-2NT": { min: 5 }, // "[2NT]: 5 or more points, balanced hand"
+	// ## Opening bids, the [2C] line
+	"2c-rebid-2NT": { min: 14.5, max: 16 }, // "With a balanced 14½–16 points, rebid [2NT]"
+	// ## Opener's rebid
+	"rebid-low": { min: 8, max: 9.5 }, // "8–9½ points: [1NT] with a balanced hand"
+	"rebid-mid": { min: 10, max: 11 }, // "10–11 points: a jump raise"
+	"rebid-high": { min: 11.5, max: 14 }, // "11½–14 points: a jump in a new suit"
+	"rebid-2NT": { min: 11.5, max: 12.5 }, // "[2NT] with a balanced 11½–12½ points"
+	// ## Responses to a weak two
+	"weak-2NT": { min: 10 }, // "[2NT]: 10 or more points, asks opener"
+	// ## Competitive bids
+	"overcall-one": { min: 5, max: 10.5 }, // "An overcall at the one level: 5–10½ points"
+	"overcall-two": { min: 6.5, max: 10.5 }, // "At the two level: 6½–10½ points"
+	"overcall-1NT": { min: 10, max: 12 }, // "[1NT] overcall: 10–12 points"
+	takeout: { min: 8 }, // "[X] (takeout): 8 or more points"
+	"takeout-strong": { min: 11 }, // "or any hand with 11 or more points"
+	redouble: { min: 6.5 }, // "[XX] after partner's opening is doubled: 6½ or more points"
 } as const satisfies Ranges;
 
 export const RANGES = {
@@ -136,6 +196,12 @@ export const RANGES = {
 export interface HonourTest {
 	readonly honours: string;
 	readonly count: number;
+}
+
+/** A suit is stopped by `honour` with at least `length` cards in the suit, for example Kx. */
+export interface Stopper {
+	readonly honour: string;
+	readonly length: number;
 }
 
 /** The shape rules, the same for every system. The guide line of each is in its comment. */
@@ -168,6 +234,25 @@ export const SHAPES = {
 	weakMinor: 6,
 	/** "[2H] [2S] [3C] [3D]: ... with a good five-card suit" */
 	positive: 5,
+	/** "An overcall at the one level: ... with a good five-card suit" */
+	overcall: 5,
+	/**
+	 * "a single raise" in "## Opener's rebid": four cards in partner's suit. The guide gives no length; four cards
+	 * make an eight-card fit with partner's four-card suit.
+	 */
+	rebidSupport: 4,
+	/** "a rebid of your own suit" in "## Opener's rebid": the guide gives no length; six cards, as in Standard American. */
+	rebidSuit: 6,
+	/** "[1NT] overcall: ... with a stopper": the guide does not define a stopper; the usual A, Kx, Qxx or Jxxx. */
+	stoppers: [
+		{ honour: "A", length: 1 },
+		{ honour: "K", length: 2 },
+		{ honour: "Q", length: 3 },
+		{ honour: "J", length: 4 },
+	] as readonly Stopper[],
+	/** "[X] (takeout): ... short in the opponents' suit, with support for the other suits": at most two cards, and three. */
+	takeoutShort: 2,
+	takeoutSupport: 3,
 	/** The guides do not describe a hand with a longer suit, so it is not checked. */
 	longestChecked: 7,
 } as const;

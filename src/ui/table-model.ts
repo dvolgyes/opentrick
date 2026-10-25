@@ -697,7 +697,7 @@ function rangeText(
 		: t("{min}–{max} {scale}", { min, max: pointsText(range.max), scale });
 }
 
-function shapeText(shape: Shape, t: Translate): string {
+function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 	switch (shape.kind) {
 		case "none":
 			return "";
@@ -738,6 +738,29 @@ function shapeText(shape: Shape, t: Translate): string {
 				min: shape.min,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
+		case "no-major":
+			return t("no {min}-card major", { min: shape.min });
+		case "accept":
+			return t("completes the transfer to {suit}", {
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "relay":
+			return t("forced, any hand");
+		case "ask":
+			return t("asks opener to describe the hand");
+		case "stopper":
+			return t("balanced, a {suit} stopper", {
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "takeout":
+			return t("takeout, short in {suit}, or {strong}", {
+				suit: SUIT_SYMBOLS[shape.suit],
+				strong: rangeText(shape.strong, system, t),
+			});
+		case "blackwood":
+			return t("Blackwood, asks for aces");
+		case "aces":
+			return t("aces: {counts}", { counts: shape.counts.join("/") });
 	}
 }
 
@@ -749,7 +772,7 @@ function meaningText(
 ): string {
 	return [
 		meaning.range === undefined ? "" : rangeText(meaning.range, system, t),
-		shapeText(meaning.shape, t),
+		shapeText(meaning.shape, system, t),
 	]
 		.filter((part) => part !== "")
 		.join(", ");
@@ -764,10 +787,14 @@ function auctionView(
 ): AuctionView {
 	const before = SEATS.indexOf(dealer);
 	const bySeat = seatSystems(systems, bots ?? []);
+	// A call of a system with a guide gets its meaning, or "not in the guide"; a call of the other system gets none.
 	const meaning = (index: number): string | undefined => {
 		const system = bySeat[seatAfter(dealer, index)];
-		const found = system && callMeaning(system, calls, index);
-		return found && system && meaningText(found, system, t);
+		if (system === undefined || system === "other") return undefined;
+		const found = callMeaning(system, calls, index);
+		return found === undefined
+			? t("not in the guide")
+			: meaningText(found, system, t);
 	};
 	const cells = [
 		...Array.from({ length: before }, () => "—"),

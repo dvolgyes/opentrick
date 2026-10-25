@@ -174,7 +174,7 @@ function rangeText(range: PointRange, system: PointSystem): string {
 	return `${points} ${SCALE_NAMES[system]}`;
 }
 
-function shapeText(shape: Shape): string {
+function shapeText(shape: Shape, system: PointSystem): string {
 	switch (shape.kind) {
 		case "none":
 			return "";
@@ -200,6 +200,22 @@ function shapeText(shape: Shape): string {
 			return "waiting";
 		case "good-suit":
 			return `a good ${shape.min}+ card ${SUIT_SYMBOLS[shape.suit]} suit`;
+		case "no-major":
+			return `no ${shape.min}-card major`;
+		case "accept":
+			return `completes the transfer to ${SUIT_SYMBOLS[shape.suit]}`;
+		case "relay":
+			return "forced, any hand";
+		case "ask":
+			return "asks opener to describe the hand";
+		case "stopper":
+			return `balanced, a ${SUIT_SYMBOLS[shape.suit]} stopper`;
+		case "takeout":
+			return `takeout, short in ${SUIT_SYMBOLS[shape.suit]}, or ${rangeText(shape.strong, system)}`;
+		case "blackwood":
+			return "Blackwood, asks for aces";
+		case "aces":
+			return `aces: ${shape.counts.join("/")}`;
 	}
 }
 
@@ -207,7 +223,7 @@ function shapeText(shape: Shape): string {
 function meaningText(meaning: CallMeaning, system: PointSystem): string {
 	return [
 		meaning.range === undefined ? "" : rangeText(meaning.range, system),
-		shapeText(meaning.shape),
+		shapeText(meaning.shape, system),
 	]
 		.filter((text) => text !== "")
 		.join(", ");

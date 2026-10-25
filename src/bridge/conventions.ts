@@ -3,9 +3,13 @@
  * (`conventionCalls`), and what a call in the auction shows (`callMeaning`). Both read one meaning table, so a
  * suggested call always has the meaning that the auction shows for it. The numbers are in convention-rules.ts.
  *
- * The guides describe the opening and the first response to one of a suit, [1NT] or [2C] after the next hand
- * passed. Any other position, a hand with a suit longer than SHAPES.longestChecked, and the "other" system are not
- * described, and the functions return undefined. The module returns data; the callers write the text.
+ * The guides describe the opening, the first response to one of a suit, [1NT], [2C] or a weak two, opener's
+ * rebid, opener's answer to Stayman, a transfer and [2S], the overcalls and the takeout double of one of a suit, the
+ * redouble after partner's opening is doubled, and Blackwood. Each of them only when the other side passed, except
+ * the overcalls, the double, the redouble and the [4NT] ask. Any other position, a hand with a suit longer than
+ * SHAPES.longestChecked, and the "other" system are not described, and the functions return undefined. Where the
+ * guide describes only some hands, such as an overcall, conventionCalls returns undefined for a hand that fits no
+ * call. The module returns data; the callers write the text.
  */
 import { type Card, SUITS, type Suit, suitOf } from "./cards";
 import {
@@ -37,7 +41,27 @@ export type Shape =
 	| { readonly kind: "weak-minor"; readonly min: number }
 	| { readonly kind: "waiting" }
 	/** `min` or more cards in `suit`, with the top cards of SHAPES.goodSuit. */
-	| { readonly kind: "good-suit"; readonly suit: Suit; readonly min: number };
+	| { readonly kind: "good-suit"; readonly suit: Suit; readonly min: number }
+	/** Opener's answer to Stayman: no major with `min` cards. */
+	| { readonly kind: "no-major"; readonly min: number }
+	/** Opener completes the transfer to `suit`. */
+	| { readonly kind: "accept"; readonly suit: Suit }
+	/** Opener must bid [3C] after [2S], whatever the hand. */
+	| { readonly kind: "relay" }
+	/** Asks opener to describe the hand. */
+	| { readonly kind: "ask" }
+	/** Balanced, with a stopper of SHAPES.stoppers in the opponents' `suit`. */
+	| { readonly kind: "stopper"; readonly suit: Suit }
+	/** Short in the opponents' `suit` with support for the others, or any hand in `strong`. */
+	| {
+			readonly kind: "takeout";
+			readonly suit: Suit;
+			readonly strong: PointRange;
+	  }
+	/** [4NT] asks partner for aces. */
+	| { readonly kind: "blackwood" }
+	/** The answer to [4NT]: the number of aces is one of `counts`. */
+	| { readonly kind: "aces"; readonly counts: readonly number[] };
 
 /** What a call shows by the guide. A meaning without `range` has no point limit. */
 export interface CallMeaning {
@@ -54,7 +78,34 @@ type Position =
 	| { readonly kind: "opening" }
 	| { readonly kind: "suit"; readonly suit: Suit }
 	| { readonly kind: "1NT" }
-	| { readonly kind: "2C" };
+	| { readonly kind: "2C" }
+	| { readonly kind: "weak-two"; readonly suit: Suit }
+	/** Opener's second call after one of `opened`, a pass, and partner's `response`. */
+	| { readonly kind: "rebid"; readonly opened: Suit; readonly response: Bid }
+	| { readonly kind: "stayman-answer" }
+	| { readonly kind: "transfer-answer"; readonly suit: Suit }
+	| { readonly kind: "relay" }
+	/** Responder's call after [1NT] [P] [2S] [P] [3C] [P]. */
+	| { readonly kind: "relay-answer" }
+	| { readonly kind: "2C-rebid"; readonly response: Bid }
+	/** A call after the opponents' one of `opened`, directly or after two passes. */
+	| { readonly kind: "overcall"; readonly opened: Suit }
+	/** Responder's call after partner's one of a suit was doubled. */
+	| { readonly kind: "redouble" }
+	| { readonly kind: "aces" };
+
+/** The positions in which the guide gives every hand a call; in the others a hand can fit no call. */
+const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
+	"opening",
+	"suit",
+	"1NT",
+	"2C",
+	"stayman-answer",
+	"transfer-answer",
+	"relay",
+	"relay-answer",
+	"aces",
+]);
 
 const MAJORS: readonly Suit[] = ["S", "H"];
 const MINORS: readonly Suit[] = ["D", "C"];
@@ -79,32 +130,113 @@ function isSuit(strain: string): strain is Suit {
 	return (SUITS as readonly string[]).includes(strain);
 }
 
-/** Lower strains rank lower within a level: clubs, diamonds, hearts, spades. */
-function suitRank(suit: Suit): number {
-	return SUITS.length - SUITS.indexOf(suit);
+/** Lower strains rank lower within a level: clubs, diamonds, hearts, spades, notrump. */
+function strainRank(strain: string): number {
+	return isSuit(strain)
+		? SUITS.length - SUITS.indexOf(strain)
+		: SUITS.length + 1;
+}
+
+/** The lowest level at which `strain` can be bid over `last`, without a jump. */
+function cheapestLevel(strain: string, last: Bid): number {
+	return strainRank(strain) > strainRank(strainOf(last))
+		? levelOf(last)
+		: levelOf(last) + 1;
+}
+
+/** The suit of a one-level suit opening, else undefined. */
+function oneOfASuit(call: Call | undefined): Suit | undefined {
+	if (call === undefined || !isBid(call) || levelOf(call) !== 1)
+		return undefined;
+	const strain = strainOf(call);
+	return isSuit(strain) ? strain : undefined;
+}
+
+/** True when `calls[index]` is [4NT] and the partnership has bid a suit and no notrump before it. */
+function isBlackwood(calls: readonly Call[], index: number): boolean {
+	if (calls[index] !== "4NT") return false;
+	const ours = calls
+		.slice(0, index)
+		.filter((call, at) => at % 2 === index % 2 && isBid(call)) as Bid[];
+	return (
+		ours.some((bid) => isSuit(strainOf(bid))) &&
+		ours.every((bid) => strainOf(bid) !== "NT")
+	);
+}
+
+/** The position after partner's one of `opened`, a pass, and `response`, a new suit without a jump or [1NT]. */
+function rebidPosition(opened: Suit, response: Call): Position | undefined {
+	if (response === "1NT") return { kind: "rebid", opened, response };
+	if (!isBid(response)) return undefined;
+	const strain = strainOf(response);
+	return isSuit(strain) &&
+		strain !== opened &&
+		levelOf(response) === cheapestLevel(strain, `1${opened}`)
+		? { kind: "rebid", opened, response }
+		: undefined;
+}
+
+/** The position of opener's second call, after `opening`, a pass, partner's `response` and a pass. */
+function openerPosition(opening: Bid, response: Call): Position | undefined {
+	const opened = oneOfASuit(opening);
+	if (opened !== undefined) return rebidPosition(opened, response);
+	if (opening === "2C")
+		return isBid(response) ? { kind: "2C-rebid", response } : undefined;
+	if (opening !== "1NT") return undefined;
+	switch (response) {
+		case "2C":
+			return { kind: "stayman-answer" };
+		case "2D":
+			return { kind: "transfer-answer", suit: "H" };
+		case "2H":
+			return { kind: "transfer-answer", suit: "S" };
+		case "2S":
+			return { kind: "relay" };
+		default:
+			return undefined;
+	}
+}
+
+/** The position of the first response after partner's `opening` and a pass. */
+function responsePosition(opening: Bid): Position | undefined {
+	const opened = oneOfASuit(opening);
+	if (opened !== undefined) return { kind: "suit", suit: opened };
+	if (opening === "1NT") return { kind: "1NT" };
+	if (opening === "2C") return { kind: "2C" };
+	const strain = strainOf(opening);
+	if (levelOf(opening) === 2 && isSuit(strain))
+		return { kind: "weak-two", suit: strain };
+	return undefined;
 }
 
 /**
- * The position of the next call: an opening after passes only, or the first response after partner opened and the
- * next hand passed. Undefined for any other auction.
+ * The position of the next call, from the calls after the opening. Undefined for an auction that the guide does not
+ * describe.
  */
 function position(calls: readonly Call[]): Position | undefined {
 	if (calls.every((call) => call === "P"))
 		return calls.length < 4 ? { kind: "opening" } : undefined;
-	const opening = calls.at(-2);
-	if (
-		calls.at(-1) !== "P" ||
-		opening === undefined ||
-		!isBid(opening) ||
-		!calls.slice(0, -2).every((call) => call === "P")
-	)
-		return undefined;
-	const strain = strainOf(opening);
-	if (levelOf(opening) === 1 && isSuit(strain))
-		return { kind: "suit", suit: strain };
-	if (opening === "1NT") return { kind: "1NT" };
-	if (opening === "2C") return { kind: "2C" };
-	return undefined;
+	if (calls.at(-1) === "P" && isBlackwood(calls, calls.length - 2))
+		return { kind: "aces" };
+	const start = calls.findIndex((call) => call !== "P");
+	const opening = calls[start];
+	if (opening === undefined || !isBid(opening)) return undefined;
+	const after = calls.slice(start + 1).join(" ");
+	const opened = oneOfASuit(opening);
+	if (after === "" || after === "P P")
+		return opened === undefined ? undefined : { kind: "overcall", opened };
+	if (after === "X")
+		return opened === undefined ? undefined : { kind: "redouble" };
+	if (after === "P") return responsePosition(opening);
+	if (opening === "1NT" && after === "P 2S P 3C P")
+		return { kind: "relay-answer" };
+	const [pass, response, again, ...rest] = calls.slice(start + 1);
+	return pass === "P" &&
+		again === "P" &&
+		rest.length === 0 &&
+		response !== undefined
+		? openerPosition(opening, response)
+		: undefined;
 }
 
 function openingMeaning(ranges: Ranges, call: Call): CallMeaning | undefined {
@@ -146,11 +278,6 @@ function openingMeaning(ranges: Ranges, call: Call): CallMeaning | undefined {
 	return undefined;
 }
 
-/** The lowest level at which `suit` can be bid over one of `opened`, without a jump. */
-function cheapestLevel(suit: Suit, opened: Suit): number {
-	return suitRank(suit) > suitRank(opened) ? 1 : 2;
-}
-
 function suitResponseMeaning(
 	ranges: Ranges,
 	opened: Suit,
@@ -175,7 +302,7 @@ function suitResponseMeaning(
 					shape: { kind: "support", suit: opened, min: SHAPES.support },
 				};
 	}
-	if (level !== cheapestLevel(strain, opened)) return undefined;
+	if (level !== cheapestLevel(strain, `1${opened}`)) return undefined;
 	// The guide: a new suit at the one level from 6–9 points up; "a new suit at the two level needs 10 or more points".
 	return {
 		range: {
@@ -239,6 +366,126 @@ function twoClubsResponseMeaning(
 			};
 }
 
+function weakTwoResponseMeaning(
+	ranges: Ranges,
+	opened: Suit,
+	call: Call,
+): CallMeaning | undefined {
+	if (call === "2NT")
+		return { range: ranges["weak-2NT"], shape: { kind: "ask" } };
+	// "Raise partner's suit to make the auction harder for the opponents."
+	return call === `3${opened}` || call === `4${opened}`
+		? { shape: { kind: "support", suit: opened, min: SHAPES.support } }
+		: undefined;
+}
+
+function rebidMeaning(
+	ranges: Ranges,
+	opened: Suit,
+	response: Bid,
+	call: Call,
+): CallMeaning | undefined {
+	if (!isBid(call)) return undefined;
+	const strain = strainOf(call);
+	const oneLevel = levelOf(response) === 1;
+	if (call === "1NT" && oneLevel)
+		return { range: ranges["rebid-low"], shape: { kind: "balanced" } };
+	if (call === "2NT" && oneLevel)
+		return { range: ranges["rebid-2NT"], shape: { kind: "balanced" } };
+	if (!isSuit(strain)) return undefined;
+	const jump = levelOf(call) - cheapestLevel(strain, response);
+	const key = jump === 0 ? "rebid-low" : jump === 1 ? "rebid-mid" : undefined;
+	// "12–14 points: ... a single raise, or a rebid of your own suit. 15–17 points: a jump raise, or a jump rebid".
+	if (strain === strainOf(response))
+		return key === undefined
+			? undefined
+			: {
+					range: ranges[key],
+					shape: { kind: "support", suit: strain, min: SHAPES.rebidSupport },
+				};
+	if (strain === opened)
+		return key === undefined
+			? undefined
+			: {
+					range: ranges[key],
+					shape: { kind: "cards", suit: strain, min: SHAPES.rebidSuit },
+				};
+	// "18–21 points: a jump in a new suit".
+	return jump === 1
+		? {
+				range: ranges["rebid-high"],
+				shape: { kind: "cards", suit: strain, min: SHAPES.newSuit },
+			}
+		: undefined;
+}
+
+function staymanAnswerMeaning(call: Call): CallMeaning | undefined {
+	// "Opener answers [2D] without a four-card major, otherwise [2H] or [2S]."
+	if (call === "2D")
+		return { shape: { kind: "no-major", min: SHAPES.stayman } };
+	if (call === "2H" || call === "2S")
+		return {
+			shape: { kind: "cards", suit: call[1] as Suit, min: SHAPES.stayman },
+		};
+	return undefined;
+}
+
+function relayAnswerMeaning(
+	ranges: Ranges,
+	call: Call,
+): CallMeaning | undefined {
+	// "Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds."
+	const suit = call === "P" ? "C" : call === "3D" ? "D" : undefined;
+	return suit === undefined
+		? undefined
+		: {
+				range: ranges["nt-weak"],
+				shape: { kind: "cards", suit, min: SHAPES.weakMinor },
+			};
+}
+
+function overcallMeaning(
+	ranges: Ranges,
+	opened: Suit,
+	call: Call,
+): CallMeaning | undefined {
+	if (call === "X")
+		return {
+			range: ranges.takeout,
+			shape: {
+				kind: "takeout",
+				suit: opened,
+				strong: ranges["takeout-strong"],
+			},
+		};
+	if (call === "1NT")
+		return {
+			range: ranges["overcall-1NT"],
+			shape: { kind: "stopper", suit: opened },
+		};
+	if (!isBid(call)) return undefined;
+	const strain = strainOf(call);
+	const level = levelOf(call);
+	if (
+		!isSuit(strain) ||
+		strain === opened ||
+		level !== cheapestLevel(strain, `1${opened}`)
+	)
+		return undefined;
+	return {
+		range: ranges[level === 1 ? "overcall-one" : "overcall-two"],
+		shape: { kind: "good-suit", suit: strain, min: SHAPES.overcall },
+	};
+}
+
+/** "[4NT] (Blackwood) asks for aces: [5C] 0 or 4, [5D] 1, [5H] 2, [5S] 3." */
+const ACE_ANSWERS: Readonly<Partial<Record<Call, readonly number[]>>> = {
+	"5C": [0, 4],
+	"5D": [1],
+	"5H": [2],
+	"5S": [3],
+};
+
 function meaningAt(
 	ranges: Ranges,
 	at: Position,
@@ -253,6 +500,37 @@ function meaningAt(
 			return notrumpResponseMeaning(ranges, call);
 		case "2C":
 			return twoClubsResponseMeaning(ranges, call);
+		case "weak-two":
+			return weakTwoResponseMeaning(ranges, at.suit, call);
+		case "rebid":
+			return rebidMeaning(ranges, at.opened, at.response, call);
+		case "stayman-answer":
+			return staymanAnswerMeaning(call);
+		case "transfer-answer":
+			return call === `2${at.suit}`
+				? { shape: { kind: "accept", suit: at.suit } }
+				: undefined;
+		case "relay":
+			return call === "3C" ? { shape: { kind: "relay" } } : undefined;
+		case "relay-answer":
+			return relayAnswerMeaning(ranges, call);
+		case "2C-rebid":
+			// "With a balanced 22–24 points, rebid [2NT] after partner's answer."
+			return call === "2NT" && cheapestLevel("NT", at.response) === 2
+				? { range: ranges["2c-rebid-2NT"], shape: { kind: "balanced" } }
+				: undefined;
+		case "overcall":
+			return overcallMeaning(ranges, at.opened, call);
+		case "redouble":
+			return call === "XX"
+				? { range: ranges.redouble, shape: { kind: "none" } }
+				: undefined;
+		case "aces": {
+			const counts = ACE_ANSWERS[call];
+			return counts === undefined
+				? undefined
+				: { shape: { kind: "aces", counts } };
+		}
 	}
 }
 
@@ -266,7 +544,12 @@ export function callMeaning(
 	const call = calls[index];
 	if (ranges === undefined || call === undefined) return undefined;
 	const at = position(calls.slice(0, index));
-	return at === undefined ? undefined : meaningAt(ranges, at, call);
+	const meaning = at === undefined ? undefined : meaningAt(ranges, at, call);
+	// The [4NT] ask is a meaning only: no hand needs it, so conventionCalls never suggests it.
+	return (
+		meaning ??
+		(isBlackwood(calls, index) ? { shape: { kind: "blackwood" } } : undefined)
+	);
 }
 
 interface Hand {
@@ -294,6 +577,14 @@ function isGoodSuit(hand: Hand, suit: Suit): boolean {
 	);
 }
 
+function hasStopper(hand: Hand, suit: Suit): boolean {
+	const cards = suitCards(hand, suit);
+	return SHAPES.stoppers.some(
+		({ honour, length }) =>
+			cards.length >= length && cards.some((card) => card[1] === honour),
+	);
+}
+
 function inRange(points: number, range: PointRange | undefined): boolean {
 	return (
 		range === undefined ||
@@ -307,6 +598,10 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 		case "none":
 		case "artificial":
 		case "waiting":
+		case "accept":
+		case "relay":
+		case "ask":
+		case "blackwood":
 			return true;
 		case "balanced":
 			return isBalanced(hand);
@@ -333,6 +628,23 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			return MINORS.some((minor) => lengths[minor] >= shape.min);
 		case "good-suit":
 			return lengths[shape.suit] >= shape.min && isGoodSuit(hand, shape.suit);
+		case "no-major":
+			return MAJORS.every((major) => lengths[major] < shape.min);
+		case "stopper":
+			return isBalanced(hand) && hasStopper(hand, shape.suit);
+		case "takeout":
+			return (
+				inRange(hand.points, shape.strong) ||
+				(lengths[shape.suit] <= SHAPES.takeoutShort &&
+					SUITS.every(
+						(suit) =>
+							suit === shape.suit || lengths[suit] >= SHAPES.takeoutSupport,
+					))
+			);
+		case "aces":
+			return shape.counts.includes(
+				hand.cards.filter((card) => card[1] === "A").length,
+			);
 	}
 }
 
@@ -421,5 +733,6 @@ export function conventionCalls(
 			? [{ call, meaning }]
 			: [];
 	});
+	if (fitting.length === 0 && !EVERY_HAND.has(at.kind)) return undefined;
 	return preferred(at, hand, fitting);
 }

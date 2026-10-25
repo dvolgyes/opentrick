@@ -322,7 +322,7 @@ describe("bot decisions", () => {
 		expect(unknown).toContain("North - other system: 2♣ -> meaning unknown");
 		expect(unknown).toContain("East - unknown system: Pass -> meaning unknown");
 
-		// North opens with 30 HCP, unbalanced: only 2♣. After the first response the guide is silent.
+		// North opens with 30 HCP, unbalanced: only 2♣. After the answer the guide has only a balanced 22–24 [2NT] rebid.
 		const opening = createBoard(1, DEAL);
 		expect(
 			renderBidPrompt(

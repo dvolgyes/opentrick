@@ -689,6 +689,16 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		waiting: "Wartegebot",
 		"a good {min}+ card {suit} suit":
 			"eine gute {suit}-Farbe mit {min}+ Karten",
+		"no {min}-card major": "keine Oberfarbe mit {min} Karten",
+		"completes the transfer to {suit}": "vollzieht den Transfer nach {suit}",
+		"forced, any hand": "erzwungen, jede Hand",
+		"asks opener to describe the hand": "fragt den Eröffner nach seinem Blatt",
+		"balanced, a {suit} stopper": "ausgeglichen, Stopper in {suit}",
+		"takeout, short in {suit}, or {strong}":
+			"Informationskontra, kurz in {suit}, oder {strong}",
+		"Blackwood, asks for aces": "Blackwood, fragt nach Assen",
+		"aces: {counts}": "Asse: {counts}",
+		"not in the guide": "nicht im Reizleitfaden",
 	},
 	hu: {
 		Language: "Nyelv",
@@ -1347,6 +1357,16 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"weak, a {min}+ card minor": "gyenge, {min}+ lapos alacsony szín",
 		waiting: "várakozó",
 		"a good {min}+ card {suit} suit": "jó {min}+ lapos {suit} szín",
+		"no {min}-card major": "nincs {min} lapos nemes szín",
+		"completes the transfer to {suit}": "teljesíti a transzfert: {suit}",
+		"forced, any hand": "kötelező, bármilyen lappal",
+		"asks opener to describe the hand": "kéri, hogy a nyitó írja le a lapját",
+		"balanced, a {suit} stopper": "kiegyensúlyozott, {suit} fogással",
+		"takeout, short in {suit}, or {strong}":
+			"informatív, rövid {suit}, vagy {strong}",
+		"Blackwood, asks for aces": "Blackwood, az ászokat kérdezi",
+		"aces: {counts}": "ászok: {counts}",
+		"not in the guide": "nincs az útmutatóban",
 	},
 	no: {
 		Language: "Språk",
@@ -1998,6 +2018,16 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"weak, a {min}+ card minor": "svak, en lavfarge med {min}+ kort",
 		waiting: "ventemelding",
 		"a good {min}+ card {suit} suit": "en god {suit}-farge med {min}+ kort",
+		"no {min}-card major": "ingen høyfarge med {min} kort",
+		"completes the transfer to {suit}": "fullfører overføringen til {suit}",
+		"forced, any hand": "tvunget, alle hender",
+		"asks opener to describe the hand": "ber åpner beskrive hånden",
+		"balanced, a {suit} stopper": "balansert, hold i {suit}",
+		"takeout, short in {suit}, or {strong}":
+			"opplysende, kort i {suit}, eller {strong}",
+		"Blackwood, asks for aces": "Blackwood, spør etter ess",
+		"aces: {counts}": "ess: {counts}",
+		"not in the guide": "ikke i meldeveiledningen",
 	},
 	...additionalCatalogs,
 };

@@ -365,13 +365,18 @@ describe("auction", () => {
 		]);
 	});
 
-	it("explains a Vienna opening with Vienna points, and leaves an overcall and a double plain", () => {
+	it("explains a Vienna opening with Vienna points and an overcall, and marks a call that the guide does not describe", () => {
 		const state = {
-			...tableState(bidding(BOARD, "1C 1H X")),
-			systems: { N: "vienna", E: "hcp", S: "hcp" },
+			...tableState(bidding(BOARD, "1C 1H X P")),
+			systems: { N: "vienna", E: "hcp", S: "hcp", W: "other" },
 		} as const;
 		expect(view("E", null, { state }).auction?.meanings).toEqual([
-			["19–34 Vienna points, 3+ ♣", undefined, undefined],
+			[
+				"19–34 Vienna points, 3+ ♣",
+				"8–16 HCP, a good 5+ card ♥ suit",
+				"not in the guide",
+				undefined,
+			],
 		]);
 	});
 

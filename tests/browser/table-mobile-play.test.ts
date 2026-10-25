@@ -2893,15 +2893,16 @@ describe("convention hint", () => {
 	});
 
 	it("shows no hint where the guide does not describe the call, or with no call chosen", () => {
+		// The guide does not describe responder's call after an overcall.
 		const { root } = renderView(
-			bidView(["1H", "X"]),
+			bidView(["1H", "1S"]),
 			"desktop",
 			undefined,
 			undefined,
 			hcp,
 		);
 		expect(hint(root)).toBeUndefined();
-		pickBid(root, "1", "C");
+		pickBid(root, "2", "C");
 		expect(hint(root)).toBeUndefined();
 	});
 
