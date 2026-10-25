@@ -1112,23 +1112,36 @@ describe("turn marks and network quality from the settings", () => {
 		).toEqual(["East TO BID"]);
 	});
 
-	it("frames the desktop seat to bid only while the bid frame setting is on", () => {
-		const outline = (options: TableOptions) => {
-			const { root } = renderView(
-				acting("auction", "E", "bid"),
-				"desktop",
-				undefined,
-				undefined,
-				options,
-			);
-			const seat = root.querySelector<HTMLElement>("[data-testid='hand-E']");
-			if (!seat) throw new Error("the seat of East is missing");
-			const style = getComputedStyle(seat);
-			return style.outlineStyle === "solid" && style.outlineColor === GOLD;
-		};
-		expect(outline(marks({ playTurnFrame: false }))).toBe(true);
-		expect(outline(marks({ bidTurnFrame: false }))).toBe(false);
-	});
+	it.each<[TableView["phase"], Seat, "bid" | "play", keyof TableMarks]>([
+		["auction", "E", "bid", "bidTurnFrame"],
+		["play", "E", "play", "playTurnFrame"],
+		["play", "S", "play", "playTurnFrame"],
+	])(
+		"frames the desktop seat to act in the %s (%s) only while its frame setting is on",
+		(phase, active, action, setting) => {
+			const framed = (options: TableOptions) => {
+				const { root } = renderView(
+					acting(phase, active, action),
+					"desktop",
+					undefined,
+					undefined,
+					options,
+				);
+				return [...root.querySelectorAll<HTMLElement>(".seat")]
+					.filter((seat) => {
+						const style = getComputedStyle(seat);
+						return (
+							style.outlineStyle === "solid" && style.outlineColor === GOLD
+						);
+					})
+					.map((seat) => seat.dataset.testid);
+			};
+			const other =
+				setting === "bidTurnFrame" ? "playTurnFrame" : "bidTurnFrame";
+			expect(framed(marks({ [other]: false }))).toEqual([`hand-${active}`]);
+			expect(framed(marks({ [setting]: false }))).toEqual([]);
+		},
+	);
 
 	it.each<[TableView["phase"], Seat, "bid" | "play", string, keyof TableMarks]>(
 		[

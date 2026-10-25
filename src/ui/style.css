@@ -2015,8 +2015,8 @@ button.call-join[data-in-call="true"] {
 	min-height: 2.75rem;
 }
 
-/* The seat to call gets a gold frame, unless the settings turn it off; its pills sit in the frame corners. */
-.seat[data-bidding="true"][data-turn-frame="true"] {
+/* The seat to call or play gets a gold frame, unless the settings turn it off; its pills sit in the frame corners. */
+.seat[data-turn-frame="true"] {
 	position: relative;
 	outline: 4px solid #e8b923;
 	outline-offset: 4px;
@@ -3124,7 +3124,7 @@ main:has(> .room[data-form="compact"]) {
 	padding-top: 0;
 }
 
-.mobile-auction-hand .seat[data-bidding="true"] {
+.mobile-auction-hand .seat[data-turn-frame="true"] {
 	outline: none;
 	outline-offset: 0;
 }

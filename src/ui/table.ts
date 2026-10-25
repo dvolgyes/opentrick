@@ -1077,7 +1077,6 @@ export function tableSection(
 					"data-testid": `hand-${seat.seat}`,
 					"data-visible": String(seat.hand.visible),
 					"data-turn": String(seat.turn),
-					"data-bidding": String(seat.turnPill?.action === "bid"),
 					"data-turn-frame": String(turnFramed(seat)),
 					"data-presence": seat.presence,
 				},
