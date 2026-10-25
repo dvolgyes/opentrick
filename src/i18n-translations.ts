@@ -2236,6 +2236,14 @@ const rows: readonly TranslationRow[] = [
 		"Ongedaan gemaakt na een hostwissel",
 	],
 	[
+		"Keep this page open and in front until all four players are at the table. A phone stops a page in the background, and then the others cannot reach it.",
+		"Mantén esta página abierta y en primer plano hasta que los cuatro jugadores estén en la mesa. Un teléfono detiene una página en segundo plano, y entonces los demás no pueden alcanzarla.",
+		"Mantenha esta página aberta e em primeiro plano até que os quatro jogadores estejam à mesa. Um telemóvel para uma página em segundo plano, e então os outros não a conseguem alcançar.",
+		"Gardez cette page ouverte et au premier plan jusqu'à ce que les quatre joueurs soient à la table. Un téléphone arrête une page en arrière-plan, et les autres ne peuvent alors plus l'atteindre.",
+		"Tieni questa pagina aperta e in primo piano finché tutti e quattro i giocatori sono al tavolo. Un telefono ferma una pagina in background, e allora gli altri non possono raggiungerla.",
+		"Houd deze pagina open en op de voorgrond tot alle vier de spelers aan tafel zitten. Een telefoon stopt een pagina op de achtergrond, en dan kunnen de anderen haar niet bereiken.",
+	],
+	[
 		"Video is not available on this device.",
 		"El vídeo no está disponible en este dispositivo.",
 		"O vídeo não está disponível neste dispositivo.",
