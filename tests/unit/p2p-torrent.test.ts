@@ -10,6 +10,8 @@ class FakeTracker {
 	static readonly sockets = new Map<string, FakeTracker>();
 	readonly url: string;
 	readonly sent: Sent[] = [];
+	/** The clock time of each sent message. */
+	readonly sentAt: number[] = [];
 	readyState = 0;
 	onopen: (() => void) | null = null;
 	onmessage: ((event: { data: string }) => void) | null = null;
@@ -26,6 +28,7 @@ class FakeTracker {
 
 	send(data: string): void {
 		this.sent.push(JSON.parse(data));
+		this.sentAt.push(Date.now());
 	}
 
 	close(): void {}
@@ -76,6 +79,7 @@ function join(url: string, offersPerAnnounce?: number): Room {
 afterEach(async () => {
 	await Promise.all(joined.splice(0).map((room) => room.leave()));
 	vi.unstubAllGlobals();
+	vi.useRealTimers();
 });
 
 describe("the torrent tracker strategy", () => {
@@ -155,4 +159,51 @@ describe("the torrent tracker strategy", () => {
 			expect(() => tracker?.deliver(data), data).not.toThrow();
 		await room.leave();
 	}, 20_000);
+
+	it("announces to each tracker in its own slot: with 4 trackers, each one every 40 s and 10 s after the one before", async () => {
+		// The clock moves with real time, so the offers are made, and a test step moves it ahead.
+		vi.useFakeTimers({
+			toFake: ["setTimeout", "clearTimeout", "Date"],
+			shouldAdvanceTime: true,
+		});
+		vi.stubGlobal("WebSocket", FakeTracker);
+		const urls = [0, 1, 2, 3].map((index) => `wss://slot-${index}.test`);
+		joined.push(
+			joinRoom(
+				{
+					appId: APP_ID,
+					rtcPolyfill,
+					trackerUrls: urls,
+					nostrRelayUrls: [],
+					mqttBrokerUrls: [],
+				},
+				"slots",
+			),
+		);
+		await expect
+			.poll(() => urls.map((url) => firstOfferCount(url)), { timeout: 10_000 })
+			.toEqual([1, 1, 1, 1]);
+		// The offers expire after 120 s, and the announce that makes new ones is late by the time that they take.
+		for (let step = 0; step < 115; step++)
+			await vi.advanceTimersByTimeAsync(1_000);
+		// The first 4 announces to each tracker are the fast start of Trystero, at the same time for all trackers.
+		const steady = urls.map((url) =>
+			(FakeTracker.sockets.get(url)?.sentAt ?? []).slice(4),
+		);
+		const seconds = (ms: number) => Math.round(ms / 1_000);
+		for (const times of steady) {
+			expect(times.length).toBeGreaterThanOrEqual(2);
+			expect(
+				times
+					.slice(1)
+					.map((time, index) => seconds(time - (times[index] ?? Number.NaN))),
+			).toEqual(times.slice(1).map(() => 40));
+		}
+		// The phase of each tracker in the 40 s period, from the phase of the first tracker.
+		const first = steady.map((times) => times[0] ?? Number.NaN);
+		const phases = first.map(
+			(time) => ((seconds(time - (first[0] ?? Number.NaN)) % 40) + 40) % 40,
+		);
+		expect(phases).toEqual([0, 10, 20, 30]);
+	}, 60_000);
 });

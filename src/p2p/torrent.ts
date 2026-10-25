@@ -12,6 +12,9 @@
  *   not give its stale offers to other pages.
  * - A tracker message that is not valid JSON, or whose fields have the wrong types, is ignored. Upstream throws
  *   in the socket handler, or passes a non-string SDP on to WebRTC.
+ * - The trackers take turns (`nextSlotMs`): with n trackers, each one gets an announce every n × 10 s (10 s to
+ *   120 s), 10 s after the tracker before it. Upstream announces to all trackers at the same time, at the interval
+ *   that each tracker asks for; here that interval sets only the period of the passive announces.
  *
  * Copyright (c) 2021 Dan Motzenbecker
  *
@@ -56,6 +59,8 @@ import { type RelayClient, relaySocket } from "./relay-socket";
 
 const relayManager = createRelayManager<RelayClient>((client) => client.socket);
 const clients: Record<string, RelayClient> = {};
+/** The place of each tracker URL in the list of the page, for its announce slot. */
+const announceSlots: Record<string, AnnounceSlot> = {};
 const topicToInfoHash: Record<string, string> = {};
 const infoHashToTopic: Record<string, string> = {};
 type TopicState = {
@@ -66,6 +71,13 @@ type TopicState = {
 	startPassiveAnnouncements: () => void;
 	stopPassiveAnnouncements: () => void;
 	token: symbol;
+};
+
+/** Tracker `index` of `count` trackers; the slots of the trackers count from `originMs`. */
+type AnnounceSlot = {
+	index: number;
+	count: number;
+	originMs: number;
 };
 
 const handledSignals: Record<string, number> = {};
@@ -84,6 +96,8 @@ const requestedPeers = 3;
 const defaultAnnounceMs = 10_000;
 const dormantAnnounceMs = 120_000;
 const offerRetentionMs = 120_000;
+const announceTurnMs = 10_000;
+const minSlotWaitMs = 1_000;
 const signalDedupeWindowMs = 4_000;
 
 export type TorrentRoomConfig = JoinRoomConfig & {
@@ -277,13 +291,29 @@ type TrackerAdapter = Omit<
 	>;
 };
 
+/**
+ * The wait until the next announce slot of a tracker, at least `minSlotWaitMs`. The trackers take turns, so a peer
+ * that one tracker misses waits for the next tracker, not for a whole period.
+ */
+const nextSlotMs = (slot: AnnounceSlot, nowMs: number): number => {
+	const periodMs = Math.min(
+		Math.max(slot.count * announceTurnMs, defaultAnnounceMs),
+		offerRetentionMs,
+	);
+	const phaseMs = slot.originMs + (slot.index * periodMs) / slot.count;
+	const periods = Math.ceil((nowMs + minSlotWaitMs - phaseMs) / periodMs);
+	return Math.round(phaseMs + periods * periodMs - nowMs);
+};
+
 /** The tracker relays of the combined strategy (`signaling.ts`), one client for each URL in the page. */
 export const torrentAdapter: TrackerAdapter = {
 	init: (
 		urls: readonly string[],
 		config: TorrentRoomConfig,
-	): Promise<RelayClient>[] =>
-		urls.map((rawUrl) => {
+	): Promise<RelayClient>[] => {
+		const originMs = Date.now();
+		return urls.map((rawUrl, index) => {
+			announceSlots[rawUrl] = { index, count: urls.length, originMs };
 			const client = relayManager.register(rawUrl, () =>
 				relaySocket(
 					rawUrl,
@@ -358,7 +388,8 @@ export const torrentAdapter: TrackerAdapter = {
 			clients[rawUrl] = client;
 
 			return client.ready;
-		}),
+		});
+	},
 
 	subscribe: (client, rootTopic, _, onMessage, getOffers, context) => {
 		const states = topicStates.forRelay(client);
@@ -516,7 +547,8 @@ export const torrentAdapter: TrackerAdapter = {
 			await state.announce();
 		}
 
-		return state?.announceMs ?? defaultAnnounceMs;
+		const slot = announceSlots[client.url];
+		return slot ? nextSlotMs(slot, Date.now()) : defaultAnnounceMs;
 	},
 
 	deactivate: (client, rootTopic) => {
