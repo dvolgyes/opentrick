@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RTCPeerConnection as WeriftPeerConnection } from "werift";
 import { APP_ID } from "../../src/p2p/config";
+import { REJOIN_MAX_MS, REJOIN_MS } from "../../src/p2p/limits";
 import { joinRoom, type Room } from "../../src/p2p/signaling";
+import { nextSlotMs } from "../../src/p2p/torrent";
 
 type Sent = Record<string, unknown>;
 
@@ -160,7 +162,35 @@ describe("the torrent tracker strategy", () => {
 		await room.leave();
 	}, 20_000);
 
-	it("announces to each tracker in its own slot: with 4 trackers, each one every 40 s and 10 s after the one before", async () => {
+	it("puts no tracker slot in the 2 s before a rejoin of a page alone since it opened, so a rejoin does not drop the offers of an announce", () => {
+		// A peer that answers an offer of the left room ignores the page's next offers for 23 s (Trystero's answer
+		// timeout), so an announce just before the rejoin blocks the link that the rejoin is for.
+		const rejoins: number[] = [];
+		for (let at = 0, wait = REJOIN_MS; at + wait <= 600_000; ) {
+			at += wait;
+			rejoins.push(at);
+			wait = Math.min(REJOIN_MAX_MS, wait * 2);
+		}
+		for (const count of [1, 2, 3, 4]) {
+			const slots: number[] = [];
+			for (let index = 0; index < count; index++) {
+				const slot = { index, count, originMs: 0 };
+				// Trystero's fast start ends about 2.1 s after the join; from then on each announce waits for its slot.
+				for (let at = 2_100; at <= 600_000; ) {
+					at += nextSlotMs(slot, at);
+					slots.push(at);
+				}
+			}
+			const before = rejoins.flatMap((rejoin) =>
+				slots
+					.filter((at) => at > rejoin - 2_000 && at <= rejoin)
+					.map((at) => `slot at ${at} ms, rejoin at ${rejoin} ms`),
+			);
+			expect(before, `${count} trackers`).toEqual([]);
+		}
+	});
+
+	it("announces to each tracker in its own slot: with 4 trackers, each one every 120 s and 30 s after the one before", async () => {
 		// The clock moves with real time, so the offers are made, and a test step moves it ahead.
 		vi.useFakeTimers({
 			toFake: ["setTimeout", "clearTimeout", "Date"],
@@ -183,27 +213,29 @@ describe("the torrent tracker strategy", () => {
 		await expect
 			.poll(() => urls.map((url) => firstOfferCount(url)), { timeout: 10_000 })
 			.toEqual([1, 1, 1, 1]);
-		// The offers expire after 120 s, and the announce that makes new ones is late by the time that they take.
-		for (let step = 0; step < 115; step++)
+		for (let step = 0; step < 250; step++)
 			await vi.advanceTimersByTimeAsync(1_000);
 		// The first 4 announces to each tracker are the fast start of Trystero, at the same time for all trackers.
 		const steady = urls.map((url) =>
 			(FakeTracker.sockets.get(url)?.sentAt ?? []).slice(4),
 		);
-		const seconds = (ms: number) => Math.round(ms / 1_000);
-		for (const times of steady) {
-			expect(times.length).toBeGreaterThanOrEqual(2);
-			expect(
-				times
-					.slice(1)
-					.map((time, index) => seconds(time - (times[index] ?? Number.NaN))),
-			).toEqual(times.slice(1).map(() => 40));
-		}
-		// The phase of each tracker in the 40 s period, from the phase of the first tracker.
-		const first = steady.map((times) => times[0] ?? Number.NaN);
-		const phases = first.map(
-			(time) => ((seconds(time - (first[0] ?? Number.NaN)) % 40) + 40) % 40,
+		// The slots start 5 s after the join, after the fast start, so the first steady announce is the slot of tracker 0.
+		const reference = steady[0]?.[0] ?? Number.NaN;
+		// How late each announce is after the slot of its tracker, in seconds. The offers expire after 120 s, and the
+		// announce that makes new ones is late by the time that they take: about 6 s on the test clock.
+		const lateness = steady.map((times, index) =>
+			times.map((time) => {
+				const fromSlot = (time - reference) / 1_000 - index * 30;
+				return (((fromSlot % 120) + 180) % 120) - 60;
+			}),
 		);
-		expect(phases).toEqual([0, 10, 20, 30]);
+		// In 250 s: tracker 0 at 5 s, 125 s and 245 s; tracker 1 at 35 s and 155 s; and so on.
+		lateness.forEach((late, index) => {
+			expect(late, urls[index]).toHaveLength(index === 0 ? 3 : 2);
+			for (const seconds of late) {
+				expect(seconds, urls[index]).toBeGreaterThanOrEqual(-1);
+				expect(seconds, urls[index]).toBeLessThanOrEqual(10);
+			}
+		});
 	}, 60_000);
 });

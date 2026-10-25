@@ -47,9 +47,8 @@ export const NOBODY_MS = 10_000;
 export const CONNECTION_FAILED_MS = 20_000;
 export const MAX_PEERS = 12;
 
-// Mesh repair (src/p2p/rendezvous.ts). A page announces a room to each tracker only every 10 s × the tracker count
-// (40 s with the 4 defaults), so a missing link is repaired in a two-page room, which connects during Trystero's
-// first announces.
+// Mesh repair (src/p2p/rendezvous.ts). A page announces a room to each tracker only every 120 s, so a missing link
+// is repaired in a two-page room, which connects during Trystero's first announces.
 /** Each page sends its peer list this often, and at once when the list changes. */
 export const LINKS_MS = 5_000;
 /** A peer that a neighbour listed stays a repair target this long without a new list. */
@@ -89,8 +88,8 @@ export const RESUME_HIDDEN_MS = 30_000;
 export const RESUME_COALESCE_MS = 5_000;
 /**
  * An open tracker socket that sends nothing for this long is replaced: after a network change, a socket can look open
- * and never deliver again. A tracker answers each announce, and the page announces to each tracker at least every
- * 120 s (src/p2p/torrent.ts).
+ * and never deliver again. A tracker answers each announce, and the page announces to each tracker every 120 s
+ * (src/p2p/torrent.ts).
  */
 export const RELAY_SILENT_MS = 240_000;
 /**
