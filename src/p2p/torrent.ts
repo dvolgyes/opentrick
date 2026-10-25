@@ -12,9 +12,10 @@
  *   not give its stale offers to other pages.
  * - A tracker message that is not valid JSON, or whose fields have the wrong types, is ignored. Upstream throws
  *   in the socket handler, or passes a non-string SDP on to WebRTC.
- * - The trackers take turns (`nextSlotMs`): with n trackers, each one gets an announce every n × 10 s (10 s to
- *   120 s), 10 s after the tracker before it. Upstream announces to all trackers at the same time, at the interval
- *   that each tracker asks for; here that interval sets only the period of the passive announces.
+ * - The trackers take turns (`nextSlotMs`): each one gets an announce every 120 s, and with n trackers, 120 s / n
+ *   after the tracker before it (30 s with 4 trackers), from 5 s after the first join. Upstream announces to all
+ *   trackers at the same time, at the interval that each tracker asks for; here that interval sets only the period
+ *   of the passive announces.
  *
  * Copyright (c) 2021 Dan Motzenbecker
  *
@@ -74,7 +75,7 @@ type TopicState = {
 };
 
 /** Tracker `index` of `count` trackers; the slots of the trackers count from `originMs`. */
-type AnnounceSlot = {
+export type AnnounceSlot = {
 	index: number;
 	count: number;
 	originMs: number;
@@ -96,7 +97,13 @@ const requestedPeers = 3;
 const defaultAnnounceMs = 10_000;
 const dormantAnnounceMs = 120_000;
 const offerRetentionMs = 120_000;
-const announceTurnMs = 10_000;
+const trackerAnnounceMs = 120_000;
+/**
+ * The slots start this long after `originMs`. A page alone rejoins 10 s, 30 s, 70 s, … after it opened (REJOIN_MS in
+ * limits.ts), so without the offset the slot of tracker 1 of 4 falls at the 30 s rejoin. The rejoin then drops the
+ * offers of that announce, and a peer that answered one ignores the page's new offers for 23 s.
+ */
+const slotOffsetMs = 5_000;
 const minSlotWaitMs = 1_000;
 const signalDedupeWindowMs = 4_000;
 
@@ -295,14 +302,15 @@ type TrackerAdapter = Omit<
  * The wait until the next announce slot of a tracker, at least `minSlotWaitMs`. The trackers take turns, so a peer
  * that one tracker misses waits for the next tracker, not for a whole period.
  */
-const nextSlotMs = (slot: AnnounceSlot, nowMs: number): number => {
-	const periodMs = Math.min(
-		Math.max(slot.count * announceTurnMs, defaultAnnounceMs),
-		offerRetentionMs,
+export const nextSlotMs = (slot: AnnounceSlot, nowMs: number): number => {
+	const phaseMs =
+		slot.originMs +
+		slotOffsetMs +
+		(slot.index * trackerAnnounceMs) / slot.count;
+	const periods = Math.ceil(
+		(nowMs + minSlotWaitMs - phaseMs) / trackerAnnounceMs,
 	);
-	const phaseMs = slot.originMs + (slot.index * periodMs) / slot.count;
-	const periods = Math.ceil((nowMs + minSlotWaitMs - phaseMs) / periodMs);
-	return Math.round(phaseMs + periods * periodMs - nowMs);
+	return Math.round(phaseMs + periods * trackerAnnounceMs - nowMs);
 };
 
 /** The tracker relays of the combined strategy (`signaling.ts`), one client for each URL in the page. */

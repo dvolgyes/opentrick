@@ -10,9 +10,9 @@ import {
 /**
  * Two-page Trystero rooms that repair the table's mesh (deviation from plan §4.2, "one joinRoom per page").
  * A tracker sends each announce, with one shared offer, to a few peers, and the page repeats it to that tracker
- * only every 10 s × the tracker count (src/p2p/torrent.ts), so in a room of four pages some links stay missing for
- * minutes. Two pages that miss each other join a room that only
- * they can name, and it connects during Trystero's first announces. Trystero shares one connection per peer
+ * only every 120 s (src/p2p/torrent.ts), so in a room of four pages some links stay missing for minutes. Two
+ * pages that miss each other join a room that only they can name, and it connects during Trystero's first
+ * announces. Trystero shares one connection per peer
  * between the rooms of a page, so the table room attaches to the new connection; the pair room is left when the
  * table room has admitted the peer.
  *
