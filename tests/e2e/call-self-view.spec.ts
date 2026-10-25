@@ -236,6 +236,18 @@ test("the desktop call box: three rows outside the call, and in the call a tile 
 		await expect(page.getByTestId("video-self")).toBeHidden();
 		await expect(self.getByText("VIDEO IN PROGRESS")).toBeHidden();
 		await expect(leaveButton(page)).toBeVisible();
+		// Without the camera the own tile shows a crossed camera, and a mic that is crossed only while it is not sent.
+		const offCamera = self.locator('.call-self-off [data-medium="video"]');
+		const offMic = self.locator('.call-self-off [data-medium="audio"]');
+		await expect(offCamera).toBeVisible();
+		await expect(offCamera.locator(".icon-slash")).toHaveCount(1);
+		await expect(offMic).toBeVisible();
+		await expect(offMic.locator(".icon-slash")).toHaveCount(0);
+		expectNear((await box(offMic)).y, (await box(offCamera)).y, "mic top");
+		await toggle(page, "Send mic audio").click();
+		await expect(offMic.locator(".icon-slash")).toHaveCount(1);
+		await toggle(page, "Send mic audio").click();
+		await expect(offMic.locator(".icon-slash")).toHaveCount(0);
 		await toggle(page, "Send camera video").click();
 		await confirmCamera(page);
 		await expect.poll(() => showsLiveCamera(page)).toBe(true);

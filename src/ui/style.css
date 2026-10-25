@@ -1635,8 +1635,18 @@ main:has(> .room) {
 }
 
 .call-self-off {
+	display: flex;
+	gap: 1rem;
 	margin-bottom: var(--tile-caption-h, 1.05rem);
 	opacity: 0.7;
+}
+
+.call-self-off[hidden] {
+	display: none;
+}
+
+.call-self-off span {
+	display: flex;
 }
 
 .call-self-off .icon {

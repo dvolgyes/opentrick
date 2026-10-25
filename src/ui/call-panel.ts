@@ -198,7 +198,10 @@ export function callControls(
 		className: "call-self-off",
 		attrs: { "aria-hidden": "true" },
 	});
-	selfOff.append(icon("camera", true));
+	const selfOffCamera = el("span", { attrs: { "data-medium": "video" } });
+	selfOffCamera.append(icon("camera", true));
+	const selfOffMic = el("span", { attrs: { "data-medium": "audio" } });
+	selfOff.append(selfOffCamera, selfOffMic);
 	const self = el(
 		"div",
 		{ className: "call-self", attrs: { "data-testid": "call-self" } },
@@ -364,7 +367,10 @@ export function callControls(
 		setIcon(node, toggle.icon, !view.pressed);
 	}
 
-	/** Desktop: the own tile shows the own camera, the text that it is sent while Mirror is off, or a crossed camera. */
+	/**
+	 * Desktop: the own tile shows the own camera, the text that it is sent while Mirror is off, or a crossed camera
+	 * beside a mic that is crossed while the mic is not sent.
+	 */
 	function renderSelf(): void {
 		const picture =
 			display === undefined ? "none" : selfPicture(display, mirror);
@@ -382,6 +388,11 @@ export function callControls(
 		if (track !== undefined && selfVideo.paused) play(selfVideo);
 		selfText.hidden = picture !== "hidden";
 		selfOff.hidden = picture !== "none";
+		setIcon(
+			selfOffMic,
+			"mic",
+			!(display?.available && display.view.mic === "on"),
+		);
 		self.dataset.picture = picture;
 		mirrorButton.setAttribute("aria-pressed", String(mirror));
 		setIcon(mirrorButton, "mirror", !mirror);
