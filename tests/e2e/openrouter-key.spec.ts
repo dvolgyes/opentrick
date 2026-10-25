@@ -198,3 +198,38 @@ test("a key stored in this browser fills a new create page and runs the bots, al
 		new Set(["Bearer stored-key"]),
 	);
 });
+
+test("a key without its sk-or-v1- start, or with parts of it, gets the full start before the check and the save", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	const stored = () =>
+		page.evaluate(() => localStorage.getItem("opentrick.openrouter-api-key"));
+	const first = "0123456789abcdef".repeat(4);
+	const second = "fedcba9876543210".repeat(4);
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	await page.locator('input[name="bot-N"]').check();
+	await page.locator('input[name="openrouter-key"]').fill(`  or-v1-${first} `);
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	expect(openRouter.requests[0]).toEqual({
+		model: "openai/gpt-6-luna",
+		key: `Bearer sk-or-v1-${first}`,
+	});
+	expect(await stored()).toBe(`sk-or-v1-${first}`);
+
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	const dialog = page.getByTestId("settings-dialog");
+	await dialog
+		.getByRole("textbox", { name: "OpenRouter API key" })
+		.fill(`sk-${second}`);
+	const before = openRouter.requests.length;
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	expect(openRouter.requests[before]).toEqual({
+		model: "openai/gpt-6-luna",
+		key: `Bearer sk-or-v1-${second}`,
+	});
+	expect(await stored()).toBe(`sk-or-v1-${second}`);
+});
