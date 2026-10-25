@@ -666,6 +666,100 @@ describe("the handover to a seat closer to the link's host seat (rule 12)", () =
 	});
 });
 
+describe("the merge of two tables with diverged logs (rule 13)", () => {
+	// host=S: the order is S, W, N, E. W and N each started a table; N's has the better authority.
+	const AUTH_W2: Authority = { term: 2, tag: TAG_W, inc: 1 };
+	const AUTH_N3: Authority = { term: 3, tag: makeTag(HOLDER_N, "N"), inc: 1 };
+	const CLAIM_W: Authority = { term: 4, tag: TAG_W, inc: 2 };
+
+	function page(holder: string, seat: Seat, rev: number, pref?: Seat): Page {
+		const pos = { rev, lastAuth: AUTH_W2 };
+		return new Page({
+			...facts(holder, seating(seat, { pos, host: AUTH_W2, inc: 1 })),
+			...(pref === undefined ? {} : { pref }),
+		});
+	}
+
+	/** `pref` null: the host's link names no host seat. */
+	function hostN(rev: number, pref: Seat | null = "S"): Beat {
+		return {
+			...leaderBeat(AUTH_N3, "host", { rev, lastAuth: AUTH_N3 }),
+			...(pref === null ? {} : { pref }),
+		};
+	}
+
+	it("claims at once, without a pull, when its replica has more entries than the host's", () => {
+		const west = page(HOLDER_W, "W", 6, "S");
+		const effects = west.hear("pN", hostN(2));
+		expect(west.state.mode).toMatchObject({ kind: "claiming", auth: CLAIM_W });
+		expect(ofType(effects, "pull")).toEqual([]);
+		expect(ofType(effects, "store")).toEqual([
+			{ type: "store", auth: CLAIM_W },
+		]);
+		expect(ofType(effects, "follow")).toEqual([]);
+	});
+
+	it("at an equal number of entries, claims only from a seat closer to the link's host seat", () => {
+		const west = page(HOLDER_W, "W", 2, "S");
+		west.hear("pN", hostN(2));
+		expect(west.state.mode).toMatchObject({ kind: "claiming", auth: CLAIM_W });
+
+		const east = page(HOLDER_E, "E", 2, "S");
+		const effects = east.hear("pN", hostN(2));
+		expect(east.mode).toBe("idle");
+		expect(ofType(effects, "follow")).toEqual([
+			{ type: "follow", host: { auth: AUTH_N3, peer: "pN" } },
+		]);
+	});
+
+	it("follows the host when its replica has fewer entries", () => {
+		const west = page(HOLDER_W, "W", 1, "S");
+		const effects = west.hear("pN", hostN(2));
+		expect(west.mode).toBe("idle");
+		expect(ofType(effects, "follow")).toHaveLength(1);
+	});
+
+	it("follows the host when the links name different host seats or none", () => {
+		for (const [own, other] of [
+			["S", "N"],
+			[undefined, null],
+			["S", null],
+		] as const) {
+			const west = page(HOLDER_W, "W", 6, own);
+			west.hear("pN", hostN(2, other));
+			expect(west.mode, `${own} ${other}`).toBe("idle");
+		}
+	});
+
+	it("keeps following a host of its own line when its replica is ahead of the host's last beat", () => {
+		// The host's beat can be a beat period old, so a follower can have more entries than it shows.
+		const pos = { rev: 6, lastAuth: AUTH_N3 };
+		const east = new Page({
+			...facts(HOLDER_E, seating("E", { pos, host: AUTH_N3, inc: 1 })),
+			pref: "S",
+		});
+		east.run(VOLUNTEER_MS, [{ peer: "pN", beat: hostN(4) }]);
+		expect(east.mode).toBe("idle");
+	});
+
+	it("a host that steps down for a host with fewer entries claims in the same step and never follows it", () => {
+		const pos = { rev: 6, lastAuth: AUTH_W2 };
+		const host = new Page(
+			{
+				...facts(HOLDER_W, seating("W", { pos, host: AUTH_W2, inc: 1 })),
+				pref: "S",
+			},
+			{ creator: true },
+		);
+		const effects = host.hear("pN", hostN(2), 100);
+		expect(ofType(effects, "step-down")).toEqual([
+			{ type: "step-down", auth: AUTH_W2 },
+		]);
+		expect(host.state.mode).toMatchObject({ kind: "claiming", auth: CLAIM_W });
+		expect(ofType(effects, "follow")).toEqual([]);
+	});
+});
+
 describe("a claim (rule 9)", () => {
 	function clicked(page: Page, sources: readonly Source[]): ElectionEffect[] {
 		page.run(BUTTON_MS, sources);

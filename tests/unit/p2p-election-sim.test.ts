@@ -49,7 +49,9 @@ import { TABLE } from "./p2p-fixtures";
  * (h) a page follows only a peer that hosted that authority;
  * (i) a page sends at most CTL_PER_SECOND beats in one second, the receive rate limit; a storm ends the run;
  * (j) at the end, when the links of a group name one host seat, no eligible page linked to the host is closer
- *     clockwise to that seat than the host.
+ *     clockwise to that seat than the host;
+ * (k) an eligible page takes a diverged log from a host whose link names the same host seat only when that log has
+ *     more entries, or as many and the host's seat is closer clockwise to that seat.
  *
  * A third of the seeds have links without a host seat, a third one host seat for every browser, and a third one
  * browser whose link names another host seat.
@@ -125,6 +127,8 @@ interface Stats {
 	twoHopGroups: number;
 	/** Claims by a page that followed a host farther from the host seat of both links (rule 12). */
 	handovers: number;
+	/** Claims at a host beat whose log diverged from the page's replica (rule 13). */
+	merges: number;
 }
 
 function emptyStats(): Stats {
@@ -145,6 +149,7 @@ function emptyStats(): Stats {
 		quietOverlaps: 0,
 		twoHopGroups: 0,
 		handovers: 0,
+		merges: 0,
 	};
 }
 
@@ -308,6 +313,14 @@ function selfFacts(browser: Browser, writable: boolean): SelfFacts {
 		seating,
 		...(browser.pref === undefined ? {} : { pref: browser.pref }),
 	};
+}
+
+/** The beat's log and the replica are on one line, as the election tells it (rule 12). */
+function sameLine(pos: Position, beat: Beat): boolean {
+	return (
+		sameAuthority(pos.lastAuth, beat.pos?.lastAuth ?? null) ||
+		sameAuthority(pos.lastAuth, beat.auth ?? null)
+	);
 }
 
 /** The number of seats from `from` to `seat`, going clockwise. */
@@ -579,17 +592,46 @@ class World {
 		if (!this.#linked(from.browser, target.browser)) return;
 		this.#toPage(target, () => {
 			if (from.browser !== target.browser) target.witnessAt = this.#now;
+			const claiming = target.state.mode.kind === "claiming";
 			this.#step(target, {
 				type: "beat",
 				now: this.#now,
 				peer: from.id,
 				beat,
 			});
+			const replica = target.browser.replica;
+			if (
+				!claiming &&
+				target.state.mode.kind === "claiming" &&
+				beat.role === "host" &&
+				replica !== null &&
+				!sameLine(replica.pos, beat)
+			) {
+				this.#stats.merges++;
+			}
 			const followed = followedHost(target.state);
 			if (followed?.peer === from.id && beat.role === "host" && beat.pos) {
+				this.#checkMerge(target, from, beat.pos, beat);
 				this.#adopt(target, beat.pos);
 			}
 		});
+	}
+
+	/** (k), before the page takes the host's log. */
+	#checkMerge(page: Page, host: Page, pos: Position, beat: Beat): void {
+		const { replica, pref } = page.browser;
+		if (replica === null || pref === undefined || beat.pref !== pref) return;
+		if (!isEligible(page) || host.browser === page.browser) return;
+		if (sameLine(replica.pos, beat) || beat.auth === undefined) return;
+		const { rev } = replica.pos;
+		if (
+			rev > pos.rev ||
+			(rev === pos.rev && this.#closer(page, beat.auth.tag))
+		) {
+			this.#violate(
+				`${page.id} at ${page.browser.seat} takes the diverged log of ${host.id} with ${pos.rev} entries for its ${rev}`,
+			);
+		}
 	}
 
 	/** A follower takes the log of the host it follows (extend or replace, plan §4.5). */
