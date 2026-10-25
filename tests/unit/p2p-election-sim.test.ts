@@ -18,7 +18,7 @@ import {
 	type SelfFacts,
 	stepElection,
 } from "../../src/p2p/election";
-import { makeTag } from "../../src/p2p/keys";
+import { makeTag, tagSeat } from "../../src/p2p/keys";
 import {
 	BEAT_MS,
 	CLAIM_PULL_MS,
@@ -48,7 +48,11 @@ import { TABLE } from "./p2p-fixtures";
  * (g) a page hosts, and appends entries, only as the authority that its replica stores;
  * (h) a page follows only a peer that hosted that authority;
  * (i) a page sends at most CTL_PER_SECOND beats in one second, the receive rate limit; a storm ends the run;
+ * (j) at the end, when the links of a group name one host seat, no eligible page linked to the host is closer
+ *     clockwise to that seat than the host.
  *
+ * A third of the seeds have links without a host seat, a third one host seat for every browser, and a third one
+ * browser whose link names another host seat.
  * and every beat passes the wire validator. A violation names its seed, so the run replays.
  */
 
@@ -119,6 +123,8 @@ interface Stats {
 	quietOverlaps: number;
 	/** Groups at the end with diameter 2 that must have a host. */
 	twoHopGroups: number;
+	/** Claims by a page that followed a host farther from the host seat of both links (rule 12). */
+	handovers: number;
 }
 
 function emptyStats(): Stats {
@@ -138,6 +144,7 @@ function emptyStats(): Stats {
 		quietClaims: 0,
 		quietOverlaps: 0,
 		twoHopGroups: 0,
+		handovers: 0,
 	};
 }
 
@@ -154,6 +161,8 @@ interface Browser {
 	readonly seat: Seat | null;
 	/** False for a memory replica, which a reload loses. */
 	readonly persistent: boolean;
+	/** The host seat that the browser's link names; undefined for a link without one. */
+	readonly pref: Seat | undefined;
 	replica: Replica | null;
 	/** The open page; null while a reload is under way. */
 	page: Page | null;
@@ -294,7 +303,18 @@ function selfFacts(browser: Browser, writable: boolean): SelfFacts {
 					persistent: browser.persistent,
 					writable,
 				};
-	return { holder: browser.holder, seating };
+	return {
+		holder: browser.holder,
+		seating,
+		...(browser.pref === undefined ? {} : { pref: browser.pref }),
+	};
+}
+
+/** The number of seats from `from` to `seat`, going clockwise. */
+function clockwise(from: Seat, seat: Seat): number {
+	return (
+		(SEATS.indexOf(seat) - SEATS.indexOf(from) + SEATS.length) % SEATS.length
+	);
 }
 
 function termKey(auth: Authority): string {
@@ -372,6 +392,7 @@ class World {
 		const size = 4 + this.#int(3);
 		const seats = shuffled(SEATS, this.#random);
 		const weak = this.#random() < 0.3 ? 1 + this.#int(3) : -1;
+		const prefs = this.#prefs(size);
 		const holders = new Set<string>();
 		for (let index = 0; index < size; index++) {
 			let holder = randomHolder(this.#random);
@@ -382,6 +403,7 @@ class World {
 				holder,
 				seat: seats[index] ?? null,
 				persistent: index !== weak,
+				pref: prefs[index],
 				replica: null,
 				page: null,
 				followed: null,
@@ -544,6 +566,8 @@ class World {
 		}
 		this.#stats.claims++;
 		if (this.#quiet) this.#stats.quietClaims++;
+		if (page.followed && this.#closer(page, page.followed.tag))
+			this.#stats.handovers++;
 		this.#claimedTerms.add(key);
 		if (page.witnessAt === null || this.#now - page.witnessAt >= HOST_LOST_MS) {
 			this.#violate(`${page.id} claimed ${key} without a witness`);
@@ -995,7 +1019,43 @@ class World {
 					this.#violate(`${page.id} neither follows nor knows host ${host.id}`);
 				}
 			}
+			const pref = host.browser.pref;
+			if (pref === undefined) continue;
+			if (!group.pages.every((page) => page.browser.pref === pref)) continue;
+			for (const page of group.pages) {
+				if (!page.connected.has(host) || !isEligible(page)) continue;
+				if (this.#closer(page, auth.tag)) {
+					this.#violate(
+						`${page.id} at ${page.browser.seat} is closer to ${pref} than host ${host.id} at ${tagSeat(auth.tag)}`,
+					);
+				}
+			}
 		}
+	}
+
+	/** Whether the page's seat is closer clockwise than the seat of `tag` to the host seat of both browsers' links. */
+	#closer(page: Page, tag: string): boolean {
+		const { pref, seat } = page.browser;
+		const other = this.#browsers.find(
+			(browser) => tag === makeTag(browser.holder, browser.seat ?? "N"),
+		);
+		if (pref === undefined || seat === null || other?.pref !== pref)
+			return false;
+		return clockwise(pref, seat) < clockwise(pref, tagSeat(tag));
+	}
+
+	/** One of three: no host seat, the same host seat for all, or the same one but for one browser. */
+	#prefs(size: number): (Seat | undefined)[] {
+		const kind = this.#int(3);
+		const pref = SEATS[this.#int(SEATS.length)];
+		if (kind === 0 || pref === undefined) return Array(size).fill(undefined);
+		const prefs: (Seat | undefined)[] = Array(size).fill(pref);
+		if (kind === 2) {
+			const shift = 1 + this.#int(SEATS.length - 1);
+			prefs[this.#int(size)] =
+				SEATS[(SEATS.indexOf(pref) + shift) % SEATS.length];
+		}
+		return prefs;
 	}
 
 	#qualifies(group: Group): boolean {

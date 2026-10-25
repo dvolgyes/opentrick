@@ -333,7 +333,7 @@ function apply(
 			const enabled =
 				view.phase === "waiting-for-host" && view.button?.enabled === true;
 			return enabled
-				? startClaim(state, newAuthority(state), true, effects)
+				? startClaim(state, newAuthority(state), pullSource(state), effects)
 				: state;
 		}
 		case "pulled":
@@ -356,7 +356,7 @@ function apply(
 	}
 }
 
-/** Rules 4 and 8–10: step down, finish the claim pull, resume, or volunteer; then the periodic beat. */
+/** Rules 4 and 8–12: step down, finish the claim pull, resume, take over or volunteer; then the periodic beat. */
 function decide(
 	state: ElectionState,
 	effects: ElectionEffect[],
@@ -401,13 +401,36 @@ function considerClaim(
 		if (!state.online || state.onlineMs < RESUME_ONLINE_MS) return state;
 		const done = { ...state, resumePending: false };
 		const resume = resumeAuthority(done);
-		return resume ? startClaim(done, resume, false, effects) : done;
+		return resume ? startClaim(done, resume, null, effects) : done;
 	}
 	if (seating === null || claimBlock(state) !== null) return state;
+	const over = handover(state, seating);
+	if (over !== null) {
+		return startClaim(state, newAuthority(state), over, effects);
+	}
 	const due = VOLUNTEER_MS + STAGGER_MS * rank(state, seating);
 	return state.absentMs >= due
-		? startClaim(state, newAuthority(state), true, effects)
+		? startClaim(state, newAuthority(state), pullSource(state), effects)
 		: state;
+}
+
+/**
+ * Rule 12: the followed host's peer when this page takes over from it. The host's link names the same host seat as
+ * this page's link, this page's seat is closer clockwise to that seat, and the replica has every entry that the
+ * host's last beat shows, on the host's line: it ends with an entry of the same authority, or of the host itself.
+ * The claim pulls from the host, for the entries written after that beat.
+ */
+function handover(state: ElectionState, seating: Seating): string | null {
+	const lead = leader(state);
+	if (lead?.kind !== "direct" || lead.role !== "host") return null;
+	const beat = state.heard.get(lead.peer)?.beat;
+	if (beat?.pos === undefined || beat.auth === undefined) return null;
+	if (priorityOrder(state.self.pref, beat, seating.seat) !== false) return null;
+	const { pos } = seating;
+	const line =
+		sameAuthority(pos.lastAuth, beat.pos.lastAuth) ||
+		sameAuthority(pos.lastAuth, beat.auth);
+	return line && pos.rev >= beat.pos.rev ? lead.peer : null;
 }
 
 /** Rule 10: the stored host is this page's tag, and nothing better is known. */
@@ -434,10 +457,11 @@ function newAuthority(state: ElectionState): Authority {
 	};
 }
 
+/** `source` is the peer to pull from before the claim is stored, if any. */
 function startClaim(
 	state: ElectionState,
 	auth: Authority,
-	pull: boolean,
+	source: string | null,
 	effects: ElectionEffect[],
 ): ElectionState {
 	const claiming = sendBeat(
@@ -449,7 +473,6 @@ function startClaim(
 		},
 		effects,
 	);
-	const source = pull ? pullSource(claiming) : null;
 	if (source === null) return beginStore(claiming, effects);
 	effects.push({ type: "pull", auth, peer: source });
 	return claiming;

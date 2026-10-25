@@ -594,6 +594,78 @@ describe("the automatic volunteer (rule 8)", () => {
 	});
 });
 
+describe("the handover to a seat closer to the link's host seat (rule 12)", () => {
+	// host=S: the order is S, W, N, E.
+	const AUTH_W2: Authority = { term: 2, tag: TAG_W, inc: 1 };
+	const POS_W: Position = { rev: 4, lastAuth: AUTH_W2 };
+
+	function south(pos: Position): Page {
+		return new Page({
+			...facts(HOLDER_S, seating("S", { pos, host: AUTH_W2 })),
+			pref: "S",
+		});
+	}
+
+	function host(auth: Authority, pos: Position, pref?: Seat): Beat {
+		return {
+			...leaderBeat(auth, "host", pos),
+			...(pref === undefined ? {} : { pref }),
+		};
+	}
+
+	it("takes over at once from a host farther from the link's host seat, and pulls from it at an equal position", () => {
+		const page = south(POS_W);
+		const effects = page.hear("pW", host(AUTH_W2, POS_W, "S"));
+
+		const claim = { term: 3, tag: makeTag(HOLDER_S, "S"), inc: 1 };
+		expect(page.state.mode).toMatchObject({ kind: "claiming", auth: claim });
+		expect(ofType(effects, "pull")).toEqual([
+			{ type: "pull", auth: claim, peer: "pW" },
+		]);
+		expect(ofType(effects, "store")).toEqual([]);
+	});
+
+	it("follows the host until its replica has every entry that the host's beat shows", () => {
+		const page = south({ rev: 3, lastAuth: AUTH_W2 });
+		const effects = page.hear("pW", host(AUTH_W2, POS_W, "S"));
+		expect(page.mode).toBe("idle");
+		expect(ofType(effects, "follow")).toEqual([
+			{ type: "follow", host: { auth: AUTH_W2, peer: "pW" } },
+		]);
+
+		page.step({
+			type: "self",
+			now: page.now,
+			self: {
+				...facts(HOLDER_S, seating("S", { pos: POS_W, host: AUTH_W2 })),
+				pref: "S",
+			},
+		});
+		expect(page.mode).toBe("claiming");
+	});
+
+	it("keeps following a host closer to the link's host seat", () => {
+		const auth: Authority = { term: 2, tag: makeTag(HOLDER_S, "S"), inc: 1 };
+		const pos = { rev: 4, lastAuth: auth };
+		const page = new Page({
+			...facts(HOLDER_W, seating("W", { pos, host: auth })),
+			pref: "S",
+		});
+		page.run(VOLUNTEER_MS, [{ peer: "pS", beat: host(auth, pos, "S") }]);
+		expect(page.mode).toBe("idle");
+	});
+
+	it("keeps following a host whose link names another host seat or none", () => {
+		for (const pref of ["N", undefined] as const) {
+			const page = south(POS_W);
+			page.run(VOLUNTEER_MS, [
+				{ peer: "pW", beat: host(AUTH_W2, POS_W, pref) },
+			]);
+			expect(page.mode, String(pref)).toBe("idle");
+		}
+	});
+});
+
 describe("a claim (rule 9)", () => {
 	function clicked(page: Page, sources: readonly Source[]): ElectionEffect[] {
 		page.run(BUTTON_MS, sources);
