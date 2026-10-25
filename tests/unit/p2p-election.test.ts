@@ -79,7 +79,12 @@ function leaderBeat(
 function followerBeat(
 	holder: string,
 	seat: Seat,
-	options: { report?: Report; pos?: Position; elig?: boolean } = {},
+	options: {
+		report?: Report;
+		pos?: Position;
+		elig?: boolean;
+		pref?: Seat;
+	} = {},
 ): Beat {
 	return {
 		k: "beat",
@@ -89,6 +94,7 @@ function followerBeat(
 		pos: options.pos ?? POS,
 		elig: options.elig ?? true,
 		...options.report,
+		...(options.pref === undefined ? {} : { pref: options.pref }),
 	};
 }
 
@@ -532,6 +538,59 @@ describe("the automatic volunteer (rule 8)", () => {
 		expect(page.mode).toBe("idle");
 		page.run(TICK_MS, sources);
 		expect(page.mode).toBe("claiming");
+	});
+
+	describe("with the host seat of the link (host=S: S, W, N, E)", () => {
+		function linked(holder: string, seat: Seat): Page {
+			return new Page({ ...facts(holder, seating(seat)), pref: "S" });
+		}
+
+		function peer(holder: string, seat: Seat, pref?: Seat): Source {
+			return {
+				peer: `p${seat}`,
+				beat: followerBeat(holder, seat, {
+					report: hearsay(AUTH_1),
+					...(pref === undefined ? {} : { pref }),
+				}),
+			};
+		}
+
+		it("lets the seat closer clockwise to the link's host seat go first at an equal position, not the lower tag", () => {
+			// W has the highest tag, but it comes right after S.
+			const page = linked(HOLDER_W, "W");
+			page.run(VOLUNTEER_MS, [
+				peer(HOLDER_N, "N", "S"),
+				peer(HOLDER_E, "E", "S"),
+			]);
+			expect(page.mode).toBe("claiming");
+
+			// A holder whose stored host is not its own, so it does not resume.
+			const north = linked(HOLDER_S, "N");
+			const sources = [peer(HOLDER_W, "W", "S"), peer(HOLDER_E, "E", "S")];
+			north.run(VOLUNTEER_MS + STAGGER_MS - TICK_MS, sources);
+			expect(north.mode).toBe("idle");
+			north.run(TICK_MS, sources);
+			expect(north.mode).toBe("claiming");
+		});
+
+		it("falls back to the tag for a peer that names another host seat or none", () => {
+			for (const pref of ["N", undefined] as const) {
+				const page = linked(HOLDER_W, "W");
+				const sources = [peer(HOLDER_N, "N", pref)];
+				page.run(VOLUNTEER_MS + STAGGER_MS - TICK_MS, sources);
+				expect(page.mode, String(pref)).toBe("idle");
+				page.run(TICK_MS, sources);
+				expect(page.mode, String(pref)).toBe("claiming");
+			}
+		});
+
+		it("names the link's host seat in every beat", () => {
+			const page = linked(HOLDER_W, "W");
+			const effects = page.run(BEAT_MS);
+			const beats = ofType(effects, "beat");
+			expect(beats.length).toBeGreaterThan(0);
+			for (const { beat } of beats) expect(beat.pref).toBe("S");
+		});
 	});
 });
 
