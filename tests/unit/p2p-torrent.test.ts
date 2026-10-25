@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RTCPeerConnection as WeriftPeerConnection } from "werift";
 import { APP_ID } from "../../src/p2p/config";
-import { joinRoom, type Room } from "../../src/p2p/torrent";
+import { joinRoom, type Room } from "../../src/p2p/signaling";
 
 type Sent = Record<string, unknown>;
 
@@ -62,7 +62,8 @@ function join(url: string, offersPerAnnounce?: number): Room {
 		{
 			appId: APP_ID,
 			rtcPolyfill,
-			relayConfig: { urls: [url] },
+			trackerUrls: [url],
+			nostrRelayUrls: [],
 			...(offersPerAnnounce === undefined ? {} : { offersPerAnnounce }),
 		},
 		url,

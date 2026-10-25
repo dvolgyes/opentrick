@@ -17,8 +17,8 @@ import {
 } from "./room";
 
 /**
- * Failures around the table (plan §9): the trackers go down, the browser does not store data, the link is old,
- * of another version or damaged, and the table expires. Each test has its own browsers. The trackers and the
+ * Failures around the table (plan §9): the relays go down, the browser does not store data, the link is old,
+ * of another version or damaged, and the table expires. Each test has its own browsers. The relays and the
  * peers are the real ones.
  */
 
@@ -79,13 +79,13 @@ test.afterEach(async ({}, testInfo) => {
 	for (const player of current.splice(0)) await player.close();
 });
 
-test("a tracker outage keeps the table: messages, the deal and the auction go on; a newcomer finds the table afterwards", async () => {
+test("a relay outage keeps the table: messages, the deal and the auction go on; a newcomer finds the table afterwards", async () => {
 	test.setTimeout(180_000);
 	const seats = ["W", "N", "E", "S"] as const satisfies readonly SeatKey[];
 	const browsers = {} as Record<SeatKey, Player>;
 	const tab = {} as Record<SeatKey, Page>;
 	for (const seat of seats)
-		browsers[seat] = await openBrowser(seat, { trackerSwitch: true });
+		browsers[seat] = await openBrowser(seat, { relaySwitch: true });
 	tab.W = await browsers.W.page("./");
 	const link = await createRoom(tab.W);
 	for (const seat of ["N", "E", "S"] as const) {
@@ -122,7 +122,7 @@ test("a tracker outage keeps the table: messages, the deal and the auction go on
 			"data-at",
 			"1",
 		);
-	// Longer than a host loss (HOST_LOST_MS) and the roster coalesce: nobody counts as gone without the trackers.
+	// Longer than a host loss (HOST_LOST_MS) and the roster coalesce: nobody counts as gone without the relays.
 	await expect
 		.poll(() => Date.now() - cutAt, { timeout: HOST_LOST_MS + 15_000 })
 		.toBeGreaterThan(HOST_LOST_MS + 2_000);

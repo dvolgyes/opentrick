@@ -1,10 +1,10 @@
 import type { MeshConfig } from "./config";
-import { Mesh, type MeshHandlers, type TrackerSocket } from "./mesh";
+import { Mesh, type MeshHandlers } from "./mesh";
 import type { Clock } from "./ports";
+import { joinRoom, reconnectRelay, relaySockets, selfId } from "./signaling";
 import { stunProbe } from "./stun-probe";
-import { getRelaySockets, joinRoom, selfId } from "./torrent";
 
-/** The production mesh: the real Trystero bundle over the configured public trackers. */
+/** The production mesh: the real Trystero bundle over the configured trackers and Nostr relays. */
 export function trysteroMesh(
 	tableId: string,
 	key: string,
@@ -21,11 +21,28 @@ export function trysteroMesh(
 				rtcPolyfill,
 				joinRoom,
 				self: selfId,
-				trackerSockets: () =>
-					getRelaySockets() as Readonly<Record<string, TrackerSocket>>,
+				relaySockets,
+				reconnectRelay,
+				...(typeof window === "undefined"
+					? {}
+					: { watchNetwork: browserNetworkChanges }),
 				probeStun: stunProbe(rtcPolyfill ?? RTCPeerConnection),
 				clock,
 			},
 			handlers,
 		);
+}
+
+/**
+ * The browser's network changes: the page comes online again, or the connection type changes (Wi-Fi to mobile data
+ * and back, where the browser has the Network Information API).
+ */
+function browserNetworkChanges(onChange: () => void): () => void {
+	const connection = (navigator as { connection?: EventTarget }).connection;
+	window.addEventListener("online", onChange);
+	connection?.addEventListener("change", onChange);
+	return () => {
+		window.removeEventListener("online", onChange);
+		connection?.removeEventListener("change", onChange);
+	};
 }

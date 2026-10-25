@@ -29,6 +29,7 @@ import { newTableKey } from "../../../src/p2p/link";
 import type { Mesh, MeshDiagnostics } from "../../../src/p2p/mesh";
 import type { SubmitResult } from "../../../src/p2p/outbox";
 import type { Clock } from "../../../src/p2p/ports";
+import { joinRoom, relaySockets } from "../../../src/p2p/signaling";
 import { openIndexedDbStorage } from "../../../src/p2p/storage";
 import {
 	type ChooseResult,
@@ -37,7 +38,6 @@ import {
 	type TableView,
 	tableIdentity,
 } from "../../../src/p2p/table";
-import { getRelaySockets, joinRoom } from "../../../src/p2p/torrent";
 import { trysteroMesh } from "../../../src/p2p/trystero";
 import { frame } from "../../../src/p2p/wire";
 import type { RoomConfig, Seat } from "../../../src/protocol";
@@ -91,11 +91,15 @@ export interface Harness {
 	act(): Promise<SubmitResult | null>;
 	click(): void;
 	/**
-	 * Approximates a network change (Wi-Fi to cellular): every link closes on both sides and the tracker sockets
+	 * Approximates a network change (Wi-Fi to cellular): every link closes on both sides and the relay sockets
 	 * reconnect, while the page keeps its peer id and its state. Limits: the other pages learn of the loss at
-	 * once, where after a real change they wait for their ICE checks, and no address changes.
+	 * once, where after a real change they wait for their ICE checks, and no address changes. With `keepRelays`,
+	 * the relay sockets stay as they are, for a test that makes them half-open.
 	 */
-	dropLinks(): { readonly closed: number; readonly peersAfter: number };
+	dropLinks(options?: { readonly keepRelays?: boolean }): {
+		readonly closed: number;
+		readonly peersAfter: number;
+	};
 	/**
 	 * For `ms` milliseconds, each new WebRTC connection of this page may use only relay candidates. There is no
 	 * TURN server, so the ICE checks of those connections really fail; later connections are normal. Call it
@@ -158,8 +162,19 @@ const clock: Clock = {
 	wall: () => Date.now(),
 };
 
+/**
+ * The build's lists, unless the page URL names others: `trackers`, `nostr` and `stun`, each a list or `none`
+ * (tests/e2e/p2p-signaling.spec.ts).
+ */
 function meshConfig(): MeshConfig {
-	const read = readMeshConfig(import.meta.env);
+	const query = new URLSearchParams(location.search);
+	const read = readMeshConfig({
+		VITE_TRACKER_URLS:
+			query.get("trackers") ?? import.meta.env.VITE_TRACKER_URLS,
+		VITE_NOSTR_RELAY_URLS:
+			query.get("nostr") ?? import.meta.env.VITE_NOSTR_RELAY_URLS,
+		VITE_STUN_URLS: query.get("stun") ?? import.meta.env.VITE_STUN_URLS,
+	});
 	if (!read.ok) throw new Error(read.error);
 	return read.config;
 }
@@ -314,7 +329,7 @@ window.lbHarness = {
 	},
 	click: () => seated().click(),
 
-	dropLinks() {
+	dropLinks(options) {
 		const mesh = tableMesh;
 		if (!mesh) throw new Error("no table is open");
 		let closed = 0;
@@ -326,9 +341,10 @@ window.lbHarness = {
 			connection.dispatchEvent(new Event("iceconnectionstatechange"));
 			closed++;
 		}
-		for (const socket of Object.values(getRelaySockets())) {
-			(socket as WebSocket).close();
-		}
+		const { tracker, nostr } = relaySockets();
+		if (!options?.keepRelays)
+			for (const socket of [...Object.values(tracker), ...Object.values(nostr)])
+				socket.close();
 		return { closed, peersAfter: mesh.peers().length };
 	},
 
@@ -377,10 +393,8 @@ window.lbHarness = {
 				appId: APP_ID,
 				password: key,
 				rtcConfig: config.rtc,
-				relayConfig: {
-					urls: [...config.trackers],
-					redundancy: config.trackers.length,
-				},
+				trackerUrls: config.trackers,
+				nostrRelayUrls: config.nostrRelays,
 			},
 			tableId,
 		);

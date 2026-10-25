@@ -11,7 +11,7 @@ import type { TableView } from "../../src/p2p/table";
 import type { Seat } from "../../src/protocol";
 import type { CallView, Harness, TranscriptLine } from "./harness/main";
 import { withholdOffers } from "./network";
-import { buildTrackerUrls } from "./player";
+import { buildRelayUrls } from "./player";
 import { HARNESS_URL as HARNESS } from "./ports";
 
 /**
@@ -614,16 +614,17 @@ test("a latecomer whose first offers reach no page that answers rejoins and conn
 	const east = await newPlayer(browser);
 	await takeSeat(east.page, key, "E");
 
-	// The trackers send each offer to a few pages, and those can be pages that cannot answer: a frozen tab, or
-	// a tab that left the room but keeps its tracker sockets (the full2 seat-timeout failure). For its first
+	// The relays send each offer to a few pages, and those can be pages that cannot answer: a frozen tab, or
+	// a tab that left the room but keeps its relay sockets (the full2 seat-timeout failure). For its first
 	// 8 s, the latecomer's offers reach no page, and no offer reaches it. North and East have their link, so
-	// they do not rejoin. The trackers' announce interval is 120 s, so within the budget only the latecomer's
-	// rejoin after 10 s alone can send a new offer.
+	// they do not rejoin. The trackers' announce interval is 120 s, and a Nostr room announces at about 0, 0.2,
+	// 0.8, 2 and 7 s and then every 60 s, so within the budget only the latecomer's rejoin after 10 s alone can
+	// send a new offer.
 	const withholdMs = 8_000;
 	const budgetMs = 30_000;
 	const context = await browser.newContext();
 	contexts.push(context);
-	await withholdOffers(context, buildTrackerUrls(), withholdMs);
+	await withholdOffers(context, buildRelayUrls(), withholdMs);
 	const late = await openPage(context);
 	const opened = Date.now();
 	await openTable(late, key);

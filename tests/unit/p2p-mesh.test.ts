@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { rtcConfiguration } from "../../src/call/ice";
-import { TABLE_OFFERS } from "../../src/p2p/limits";
+import { REJOIN_MS, RELAY_SILENT_MS, TABLE_OFFERS } from "../../src/p2p/limits";
 import {
 	type JoinMeshRoom,
 	Mesh,
 	type MeshHandlers,
 	type MeshRoom,
-	type TrackerSocket,
+	type RelaySocket,
 } from "../../src/p2p/mesh";
 import { seatRendezvous } from "../../src/p2p/rendezvous";
+import type { SignalingRoomConfig } from "../../src/p2p/signaling";
 import type { ProbeStun, StunAnswer } from "../../src/p2p/stun-probe";
-import type { TorrentRoomConfig } from "../../src/p2p/torrent";
 import { TABLE } from "./p2p-fixtures";
 
 const KEY = "k".repeat(43);
@@ -43,9 +43,9 @@ const handlers: MeshHandlers = {
 /** A mesh whose `joinRoom` records the room ID and config of each join. */
 function recordingMesh(): {
 	mesh: Mesh;
-	joins: { roomId: string; config: TorrentRoomConfig }[];
+	joins: { roomId: string; config: SignalingRoomConfig }[];
 } {
-	const joins: { roomId: string; config: TorrentRoomConfig }[] = [];
+	const joins: { roomId: string; config: SignalingRoomConfig }[] = [];
 	const joinRoom: JoinMeshRoom = (config, roomId) => {
 		joins.push({ roomId, config });
 		return emptyRoom();
@@ -54,10 +54,11 @@ function recordingMesh(): {
 		{
 			tableId: TABLE,
 			key: KEY,
-			config: { trackers: ["wss://tracker.test"], rtc: {} },
+			config: { trackers: ["wss://tracker.test"], nostrRelays: [], rtc: {} },
 			joinRoom,
 			self: "0123456789AbCdEfGhIj",
-			trackerSockets: () => ({}),
+			relaySockets: () => ({ tracker: {}, nostr: {} }),
+			reconnectRelay: () => {},
 			clock: { monotonic: () => 0, wall: () => 0 },
 		},
 		handlers,
@@ -90,8 +91,8 @@ describe("the mesh's tracker offers", () => {
 	});
 });
 
-/** A tracker socket whose state and messages the test sets. */
-class FakeSocket implements TrackerSocket {
+/** A relay socket whose state and messages the test sets. */
+class FakeSocket implements RelaySocket {
 	readyState = 1;
 	readonly listeners = new Set<() => void>();
 	addEventListener(_type: "message", listener: () => void): void {
@@ -108,34 +109,50 @@ class FakeSocket implements TrackerSocket {
 const A = "wss://a.test";
 const B = "wss://b.test";
 const C = "wss://c.test";
+const N = "wss://n.test";
 
-/** A mesh over the given trackers, with sockets, a clock and a STUN probe that the test controls. */
+/**
+ * A mesh over the given trackers and Nostr relays, with sockets, a clock, a network and a STUN probe that the test
+ * controls. `reconnects` records each socket that the mesh replaces, as "kind url".
+ */
 function statusMesh(
 	trackers: readonly string[],
 	stun: { readonly urls: readonly string[]; readonly probe?: ProbeStun } = {
 		urls: [],
 	},
+	nostrRelays: readonly string[] = [],
 ) {
 	const sockets: Record<string, FakeSocket> = {};
+	const nostrSockets: Record<string, FakeSocket> = {};
 	const clock = { now: 0 };
-	const joins: TorrentRoomConfig[] = [];
+	const joins: SignalingRoomConfig[] = [];
+	const reconnects: string[] = [];
+	const network = { change: () => {}, watching: false };
 	const mesh = new Mesh(
 		{
 			tableId: TABLE,
 			key: KEY,
-			config: { trackers, rtc: rtcConfiguration(stun.urls) },
+			config: { trackers, nostrRelays, rtc: rtcConfiguration(stun.urls) },
 			joinRoom: (config) => {
 				joins.push(config);
 				return emptyRoom();
 			},
 			self: "0123456789AbCdEfGhIj",
-			trackerSockets: () => sockets,
+			relaySockets: () => ({ tracker: sockets, nostr: nostrSockets }),
+			reconnectRelay: (kind, url) => reconnects.push(`${kind} ${url}`),
+			watchNetwork: (onChange) => {
+				network.change = onChange;
+				network.watching = true;
+				return () => {
+					network.watching = false;
+				};
+			},
 			clock: { monotonic: () => clock.now, wall: () => clock.now },
 			...(stun.probe === undefined ? {} : { probeStun: stun.probe }),
 		},
 		handlers,
 	);
-	return { mesh, sockets, clock, joins };
+	return { mesh, sockets, nostrSockets, clock, joins, reconnects, network };
 }
 
 describe("the mesh's evidence that the trackers are alive", () => {
@@ -165,14 +182,15 @@ describe("the mesh's evidence that the trackers are alive", () => {
 			{
 				tableId: TABLE,
 				key: KEY,
-				config: { trackers: [A], rtc: {} },
+				config: { trackers: [A], nostrRelays: [], rtc: {} },
 				// Trystero opens its sockets during the join, and the reply can come before the first tick.
 				joinRoom: () => {
 					sockets[A] = new FakeSocket();
 					return emptyRoom();
 				},
 				self: "0123456789AbCdEfGhIj",
-				trackerSockets: () => sockets,
+				relaySockets: () => ({ tracker: sockets, nostr: {} }),
+				reconnectRelay: () => {},
 				clock: { monotonic: () => 0, wall: () => 0 },
 			},
 			handlers,
@@ -205,10 +223,128 @@ describe("the mesh's evidence that the trackers are alive", () => {
 		expect(sockets[A].listeners.size).toBe(0);
 	});
 
-	it("joins no tracker, and Trystero none of its own, when the trackers are off", () => {
+	it("joins no relay when the trackers and the Nostr relays are off", () => {
 		const { mesh, joins } = statusMesh([]);
-		expect(joins[0]?.relayConfig).toEqual({ urls: [], redundancy: 0 });
+		expect(joins[0]).toMatchObject({ trackerUrls: [], nostrRelayUrls: [] });
 		expect(mesh.diagnostics().relays).toEqual([]);
+	});
+});
+
+describe("the mesh's evidence that the Nostr relays are alive", () => {
+	it("reports the trackers, then the Nostr relays, and counts the open sockets of each kind", () => {
+		const { mesh, sockets, nostrSockets, clock, joins } = statusMesh(
+			[A],
+			undefined,
+			[N],
+		);
+		expect(joins[0]).toMatchObject({ trackerUrls: [A], nostrRelayUrls: [N] });
+		sockets[A] = new FakeSocket();
+		nostrSockets[N] = new FakeSocket();
+		mesh.tick();
+		clock.now = 1_000;
+		nostrSockets[N].message();
+		clock.now = 1_500;
+		expect(mesh.diagnostics().relays).toEqual([
+			{ kind: "tracker", url: A, open: true, heardAgoMs: undefined },
+			{ kind: "nostr", url: N, open: true, heardAgoMs: 500 },
+		]);
+		expect(mesh.diagnostics()).toMatchObject({
+			trackersOpen: 1,
+			trackers: 1,
+			nostrOpen: 1,
+			nostrRelays: 1,
+		});
+	});
+
+	it("is online with only a Nostr relay open", () => {
+		const { mesh, nostrSockets } = statusMesh([], undefined, [N]);
+		expect(mesh.online()).toBe(false);
+		nostrSockets[N] = new FakeSocket();
+		expect(mesh.online()).toBe(true);
+	});
+});
+
+describe("the mesh's recovery of its relays", () => {
+	it("replaces an open relay socket that is silent for RELAY_SILENT_MS, once for each silence", () => {
+		const { mesh, sockets, nostrSockets, clock, reconnects } = statusMesh(
+			[A],
+			undefined,
+			[N],
+		);
+		sockets[A] = new FakeSocket();
+		nostrSockets[N] = new FakeSocket();
+		mesh.tick();
+		clock.now = RELAY_SILENT_MS - 1_000;
+		sockets[A].message();
+		clock.now = RELAY_SILENT_MS;
+		mesh.tick();
+		expect(reconnects).toEqual([`nostr ${N}`]);
+		clock.now = RELAY_SILENT_MS + 1_000;
+		mesh.tick();
+		expect(reconnects).toEqual([`nostr ${N}`]);
+		clock.now = 2 * RELAY_SILENT_MS - 1_000;
+		mesh.tick();
+		expect(reconnects).toEqual([`nostr ${N}`, `tracker ${A}`]);
+	});
+
+	it("leaves a closed socket to its own retries", () => {
+		const { mesh, sockets, clock, reconnects } = statusMesh([A]);
+		const closed = new FakeSocket();
+		closed.readyState = 3;
+		sockets[A] = closed;
+		mesh.tick();
+		clock.now = 3 * RELAY_SILENT_MS;
+		mesh.tick();
+		expect(reconnects).toEqual([]);
+	});
+
+	it("replaces each relay socket when the network changes, and a page alone joins the table room again at once", () => {
+		const { mesh, sockets, clock, reconnects, network, joins } = statusMesh(
+			[A],
+			undefined,
+			[N],
+		);
+		sockets[A] = new FakeSocket();
+		mesh.tick();
+		clock.now = 2_000;
+		mesh.tick();
+		expect(mesh.diagnostics().rejoins).toBe(0);
+		network.change();
+		expect(reconnects).toEqual([`tracker ${A}`, `nostr ${N}`]);
+		mesh.tick();
+		expect(mesh.diagnostics().rejoins).toBe(1);
+		expect(joins).toHaveLength(2);
+		// Only the first rejoin after the change is at once; the next one waits REJOIN_MS again.
+		clock.now = 2_000 + REJOIN_MS - 1;
+		mesh.tick();
+		expect(mesh.diagnostics().rejoins).toBe(1);
+		clock.now = 2_000 + REJOIN_MS;
+		mesh.tick();
+		expect(mesh.diagnostics().rejoins).toBe(2);
+	});
+
+	it("waits for an open relay before the rejoin after a network change", () => {
+		const { mesh, sockets, clock, network } = statusMesh([A]);
+		const socket = new FakeSocket();
+		socket.readyState = 0;
+		sockets[A] = socket;
+		mesh.tick();
+		network.change();
+		clock.now = 1_000;
+		mesh.tick();
+		expect(mesh.diagnostics().rejoins).toBe(0);
+		socket.readyState = 1;
+		clock.now = 1_500;
+		mesh.tick();
+		expect(mesh.diagnostics().rejoins).toBe(1);
+	});
+
+	it("stops watching the network when it leaves", async () => {
+		const { mesh, network, reconnects } = statusMesh([A]);
+		expect(network.watching).toBe(true);
+		await mesh.leave();
+		expect(network.watching).toBe(false);
+		expect(reconnects).toEqual([]);
 	});
 });
 

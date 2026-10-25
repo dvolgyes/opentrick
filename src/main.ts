@@ -102,6 +102,31 @@ function configErrorText(message: string): string {
 		return t("Not a valid wss: tracker URL in VITE_TRACKER_URLS: {url}", {
 			url: badTracker[1] as string,
 		});
+	const nostrCount =
+		/^At most (\d+) Nostr relay URLs are allowed \(VITE_NOSTR_RELAY_URLS\)\.$/.exec(
+			message,
+		);
+	if (nostrCount)
+		return t(
+			"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).",
+			{ count: nostrCount[1] as string },
+		);
+	const badNostr =
+		/^Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: (.+)$/.exec(
+			message,
+		);
+	if (badNostr)
+		return t(
+			"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}",
+			{ url: badNostr[1] as string },
+		);
+	const both = /^A URL cannot be both a tracker and a Nostr relay: (.+)$/.exec(
+		message,
+	);
+	if (both)
+		return t("A URL cannot be both a tracker and a Nostr relay: {url}", {
+			url: both[1] as string,
+		});
 	const stunCount =
 		/^At most (\d+) STUN URLs are allowed \(VITE_STUN_URLS\)\.$/.exec(message);
 	if (stunCount)

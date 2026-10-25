@@ -260,6 +260,8 @@ describe("networkLines", () => {
 	const NETWORK: MeshDiagnostics = {
 		trackersOpen: 2,
 		trackers: 3,
+		nostrOpen: 4,
+		nostrRelays: 5,
 		relays: [],
 		stun: null,
 		peers: 2,
@@ -309,6 +311,7 @@ describe("networkLines", () => {
 			}),
 		).toEqual([
 			{ label: "Trackers reachable", value: "2 of 3" },
+			{ label: "Nostr relays reachable", value: "4 of 5" },
 			{ label: "Direct connections", value: "3" },
 			{ label: "Players checked", value: "East (42 ms)" },
 			{ label: "Pages not reachable directly", value: "1" },

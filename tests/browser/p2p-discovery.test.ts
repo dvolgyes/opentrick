@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { commands } from "vitest/browser";
 import type { MeshHandlers } from "../../src/p2p/mesh";
+import { relaySockets } from "../../src/p2p/signaling";
 import { stunProbe } from "../../src/p2p/stun-probe";
-import { getRelaySockets } from "../../src/p2p/torrent";
 import { trysteroMesh } from "../../src/p2p/trystero";
 
 declare module "vitest/browser" {
@@ -13,7 +13,7 @@ declare module "vitest/browser" {
 }
 
 // The discovery evidence in real Chrome: the STUN probe against a fake STUN server in Node (vite.config.ts), and the
-// real Trystero join with the trackers turned off.
+// real Trystero join with the trackers and the Nostr relays turned off.
 
 const ports: number[] = [];
 
@@ -46,8 +46,8 @@ const handlers: MeshHandlers = {
 	change: () => {},
 };
 
-describe("the mesh with trackers and STUN turned off", () => {
-	it("opens no tracker socket, not even to Trystero's own trackers", async () => {
+describe("the mesh with trackers, Nostr relays and STUN turned off", () => {
+	it("opens no relay socket, not even to Trystero's own trackers", async () => {
 		const opened: string[] = [];
 		const Native = globalThis.WebSocket;
 		globalThis.WebSocket = class extends Native {
@@ -60,12 +60,12 @@ describe("the mesh with trackers and STUN turned off", () => {
 			const mesh = trysteroMesh(
 				"discovery-off",
 				"k".repeat(43),
-				{ trackers: [], rtc: { iceServers: [] } },
+				{ trackers: [], nostrRelays: [], rtc: { iceServers: [] } },
 				{ monotonic: () => performance.now(), wall: () => Date.now() },
 			)(handlers);
 			mesh.tick();
 			expect(opened).toEqual([]);
-			expect(getRelaySockets()).toEqual({});
+			expect(relaySockets()).toEqual({ tracker: {}, nostr: {} });
 			expect(mesh.diagnostics()).toMatchObject({ relays: [], stun: [] });
 			await mesh.leave();
 		} finally {

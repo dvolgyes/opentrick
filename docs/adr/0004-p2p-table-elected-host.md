@@ -19,6 +19,8 @@ The owner set these targets:
 
 The trust model: the players do not cheat, and the link is the only key.
 The P2P handover permits public WebTorrent trackers and public STUN servers, and forbids our own server, TURN and paid relays.
+On 2026-10-25 the owner added public Nostr relays as a second discovery path.
+The owner required one connection for each pair of pages, also when both paths find the pair, and a quick recovery after a network change (Wi-Fi to mobile data and back).
 
 A discovery spike gave this evidence (its code is no longer kept):
 
@@ -41,11 +43,21 @@ Link and identity:
 
 Transport:
 
-- Trystero 0.26.0 (`@trystero-p2p/core`, pinned exactly) joins one room per table through the public WebTorrent trackers, with K as the room password.
-  The torrent strategy is a copy of `@trystero-p2p/torrent` 0.26.0 in `src/p2p/torrent.ts`, under its MIT notice.
+- Trystero 0.26.0 (`@trystero-p2p/core`, pinned exactly) joins one room per table through the public WebTorrent trackers and the public Nostr relays, with K as the room password.
+  One Trystero strategy (`src/p2p/signaling.ts`) uses both kinds of relay.
+  A strategy has one peer manager, so a pair of pages that both kinds find gets one connection; two strategies would give each pair two connections.
+  The torrent part is a copy of `@trystero-p2p/torrent` 0.26.0 in `src/p2p/torrent.ts`, under its MIT notice.
   The copy sends three offers in each announce of the table room instead of one, sends a "stopped" announce when a page leaves a room, and ignores tracker messages that are not well-formed.
-  An upgrade of Trystero merges the upstream strategy into the copy by hand.
-  The trackers see only an info hash that Trystero derives from the app name and the table identifier, the clients' IP addresses and encrypted session descriptions.
+  The Nostr part is a copy of `@trystero-p2p/nostr` 0.26.0 in `src/p2p/nostr.ts`, under its MIT notice.
+  The copy ignores relay messages that are not well-formed and signs with `@noble/secp256k1` 3.2.0 (pinned exactly).
+  It does not check the signatures of received events: each page signs with a new key, so a signature proves no identity, and the room password authenticates the offers.
+  Both copies use one socket manager (`src/p2p/relay-socket.ts`), which the mesh can tell to replace a socket.
+  An upgrade of Trystero merges the upstream strategies into the copies by hand.
+  The relays see only topic hashes that Trystero derives from the app name and the table identifier, the clients' IP addresses and encrypted session descriptions.
+- The default relays (`src/p2p/config.ts`) are the servers that passed every live check: four trackers that relayed an offer between two sockets, and five Nostr relays that passed an ephemeral event between two sockets.
+  `VITE_TRACKER_URLS`, `VITE_NOSTR_RELAY_URLS` and `VITE_STUN_URLS` replace a list, and the value `none` turns a list off, so a test can use one kind of relay only.
+  A URL cannot be in both relay lists, and each list has at most 8 URLs.
+  The mesh diagnostics record, for each relay and STUN server, whether it is open and when it last answered.
 - The pages form a full mesh of WebRTC data channels.
   Four actions carry all traffic: `opentrick-ctl` (control, 8 KiB), `opentrick-log` (log replication, 256 KiB), `opentrick-call` (call signaling, 64 KiB) and `opentrick-mesh` (peer lists for the mesh repair, 2 KiB).
   Every received message passes a validator before any use.
@@ -58,9 +70,14 @@ Transport:
   When the roster binds the other seat to a new page, the seat pair starts again without the wait, so both pages are in the room at the same time.
   No connection detail is stored.
 - Rejoin (also a deviation): a page without any link has no neighbour list and, as a visitor, no seat pair.
-  After 10 s alone with a tracker open, it leaves the table room and joins it again with the same peer identifier, which makes a new offer and repeats Trystero's first announces; the wait doubles up to 60 s.
+  After 10 s alone with a relay open, it leaves the table room and joins it again with the same peer identifier, which makes a new offer and repeats Trystero's first announces; the wait doubles up to 60 s.
   The trackers send each offer to a few pages only, and they can be pages that cannot answer: a frozen tab, or a tab that left the room but keeps its tracker sockets.
   A rejoin drops the handshakes in progress in the room that the page leaves.
+- Recovery after a network change: the mesh, not Trystero, reconnects the relays.
+  When the browser reports a network change (the `online` event, or a change of the Network Information API), the page replaces every relay socket at once, without the reconnect wait.
+  For the next 60 s, a page without links rejoins the table room as soon as a relay is open, without the 10 s wait, because its old offers carry the addresses of the old network.
+  A relay socket that looks open but sends nothing for 240 s is replaced, because after a network change a socket can stay half-open.
+  A Nostr relay answers each announcement (every 60 s), and the trackers asked for an announce every 120 s to 180 s in a live check (October 2026), so a working relay is never silent that long.
 - The ICE servers are only the configured STUN servers (`VITE_STUN_URLS`); TURN URLs are refused.
 
 State:
@@ -111,8 +128,11 @@ Call signaling:
 - There is no server and no database: the app is a static site that needs only HTTPS hosting.
   No call message is stored anywhere.
 - Every seated browser stores all four hands; a player can read them with the developer tools.
-- Peers see each other's IP addresses (WebRTC), and the trackers see the IP addresses of the clients that join.
-- A tracker outage blocks new joins; the connected pages continue.
+- Peers see each other's IP addresses (WebRTC), and the trackers and Nostr relays see the IP addresses of the clients that join.
+- An outage of all trackers and all Nostr relays blocks new joins; the connected pages continue.
+  A network that blocks one kind of relay leaves the other kind.
+- A relay can send forged Nostr events or tracker messages; they cannot connect without the room password, but they can cost a page work.
+- A tracker that asks for an announce interval above 240 s gets its socket replaced once per silent period.
 - Without TURN, a player without a direct path to the host cannot act.
 - Residual risks of the election, accepted by the owner as the default D1:
   - Two browsers cut off together, or one browser and a newcomer, can start a new term.
@@ -127,8 +147,8 @@ Call signaling:
 ## Alternatives Considered
 
 - **A hosted realtime backend for discovery only.** Proven, but it keeps a hosted dependency, its quotas and stored call messages, which the owner wanted to avoid.
-- **Nostr relays for discovery.** Also serverless for us and acceptable to the owner; not needed, because the WebTorrent trackers passed the spike.
-  It stays an option for redundancy.
+- **One Trystero room for the trackers and another for the Nostr relays.** Simple, but each strategy has its own peer manager, so a pair that both find gets two connections, which an e2e mutation check showed.
+- **The unchanged `@trystero-p2p/nostr` package.** It keeps its own sockets, which the mesh cannot replace after a network change, and it passes relay messages on without a shape check.
 - **Three private invite links and a fixed host (the handover's design).** No election, but the owner asked for one shared link and an automatic host.
 - **A majority vote for a new host.** Safer against split groups, but a table with two connected players could never continue; the owner accepted one witness (D3).
 - **Store the last connection's details and try them first after a reconnection.** Session descriptions and ICE candidates contain IP addresses, which the project does not store, and a network change makes them stale.

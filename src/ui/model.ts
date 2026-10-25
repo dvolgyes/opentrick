@@ -411,6 +411,12 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 				? `${network.trackersOpen} of ${network.trackers}`
 				: t("not started"),
 		},
+		{
+			label: t("Nostr relays reachable"),
+			value: network
+				? `${network.nostrOpen} of ${network.nostrRelays}`
+				: t("not started"),
+		},
 		{ label: t("Direct connections"), value: String(input.peers.length) },
 		{
 			label: t("Players checked"),

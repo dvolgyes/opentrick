@@ -15,6 +15,8 @@ const CLIENT = "clientN-0123456789abcd";
 const DIAGNOSTICS: MeshDiagnostics = {
 	trackersOpen: 1,
 	trackers: 1,
+	nostrOpen: 0,
+	nostrRelays: 0,
 	relays: [],
 	stun: null,
 	peers: 0,

@@ -508,6 +508,13 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Message: "Nachricht",
 		"Your call": "Dein Gebot",
 		"Trackers reachable": "Tracker erreichbar",
+		"Nostr relays reachable": "Nostr-Relays erreichbar",
+		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
+			"Es sind höchstens {count} Nostr-Relay-URLs erlaubt (VITE_NOSTR_RELAY_URLS).",
+		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
+			"Ungültige wss:-Nostr-Relay-URL in VITE_NOSTR_RELAY_URLS: {url}",
+		"A URL cannot be both a tracker and a Nostr relay: {url}":
+			"Eine URL kann nicht zugleich Tracker und Nostr-Relay sein: {url}",
 		"Openrouter rate limit - I will retry in a moment":
 			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
 		"YOUR TURN TO BID": "DU BIST MIT BIETEN DRAN",
@@ -754,6 +761,13 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"timed out": "időtúllépés",
 		"memory only: a reload loses this copy":
 			"csak memóriában: újratöltéskor ez a példány elvész",
+		"Nostr relays reachable": "Elérhető Nostr-továbbítók",
+		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
+			"Legfeljebb {count} Nostr-továbbító URL használható (VITE_NOSTR_RELAY_URLS).",
+		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
+			"Érvénytelen wss: Nostr-továbbító URL a VITE_NOSTR_RELAY_URLS értékben: {url}",
+		"A URL cannot be both a tracker and a Nostr relay: {url}":
+			"Egy URL nem lehet egyszerre tracker és Nostr-továbbító: {url}",
 		"kept by the browser": "a böngésző megtartotta",
 		"stored; the browser may clear it": "mentve; a böngésző törölheti",
 		"stored in this browser": "ebben a böngészőben mentve",
@@ -1219,6 +1233,13 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Reith: "Reith",
 		"Four Aces": "Four Aces",
 		No: "Nei",
+		"Nostr relays reachable": "Nostr-reléer nås",
+		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
+			"Du kan angi maksimalt {count} Nostr-relé-URL-er (VITE_NOSTR_RELAY_URLS).",
+		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
+			"Ugyldig wss:-Nostr-relé-URL i VITE_NOSTR_RELAY_URLS: {url}",
+		"A URL cannot be both a tracker and a Nostr relay: {url}":
+			"En URL kan ikke være både tracker og Nostr-relé: {url}",
 		"Milton/HCP (4-3-2-1)": "Milton/HCP (4-3-2-1)",
 		"Corrected Milton HCP": "Korrigert Milton-HCP",
 		"Vienna (7-5-3-1)": "Wien (7-5-3-1)",

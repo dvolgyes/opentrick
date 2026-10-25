@@ -8,7 +8,7 @@ import {
 	type Page,
 } from "@playwright/test";
 import { loadEnv } from "vite";
-import { parseTrackerUrls } from "../../src/p2p/config";
+import { parseNostrRelayUrls, parseTrackerUrls } from "../../src/p2p/config";
 import { NetworkSwitch } from "./network";
 
 type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>;
@@ -21,8 +21,8 @@ export type ContextOptions = Omit<
 
 /** Test rig options of a player. Kept across restarts. */
 export interface RigOptions {
-	/** Routes the tracker sockets through a `NetworkSwitch`, so that the test can cut them (plan §9). */
-	readonly trackerSwitch?: boolean;
+	/** Routes the tracker and Nostr relay sockets through a `NetworkSwitch`, so that the test can cut them (plan §9). */
+	readonly relaySwitch?: boolean;
 	/**
 	 * Starts a separate Chrome whose profile does not allow sites to save data, the setting a person can choose
 	 * in Chrome. Chrome then refuses localStorage, sessionStorage, IndexedDB and Web Locks.
@@ -62,12 +62,17 @@ async function blockedContext(
 	};
 }
 
-/** The tracker list of the build, read from the same files and prefix as the Vite build. */
-export function buildTrackerUrls(): readonly string[] {
-	const env = loadEnv("production", process.cwd(), ["VITE_TRACKER_"]);
-	const result = parseTrackerUrls(env.VITE_TRACKER_URLS);
-	if (!result.ok) throw new Error(result.error);
-	return result.urls;
+/** The trackers and Nostr relays of the build, read from the same files and prefixes as the Vite build. */
+export function buildRelayUrls(): readonly string[] {
+	const env = loadEnv("production", process.cwd(), [
+		"VITE_TRACKER_",
+		"VITE_NOSTR_",
+	]);
+	const trackers = parseTrackerUrls(env.VITE_TRACKER_URLS);
+	if (!trackers.ok) throw new Error(trackers.error);
+	const nostr = parseNostrRelayUrls(env.VITE_NOSTR_RELAY_URLS);
+	if (!nostr.ok) throw new Error(nostr.error);
+	return [...trackers.urls, ...nostr.urls];
 }
 
 /** How long a failure report waits for one tab; a frozen tab never answers. */
@@ -145,10 +150,10 @@ export class Player {
 		return player;
 	}
 
-	/** The tracker switch; only a player opened with `trackerSwitch` has one. */
+	/** The relay switch; only a player opened with `relaySwitch` has one. */
 	get network(): NetworkSwitch {
 		if (!this.#network)
-			throw new Error(`${this.name} has no tracker switch or is closed`);
+			throw new Error(`${this.name} has no relay switch or is closed`);
 		return this.#network;
 	}
 
@@ -217,8 +222,8 @@ export class Player {
 		this.#context = context;
 		for (const script of this.#initScripts) await context.addInitScript(script);
 		if (this.#grants.length > 0) await context.grantPermissions(this.#grants);
-		if (this.#rig.trackerSwitch)
-			this.#network = await NetworkSwitch.install(context, buildTrackerUrls());
+		if (this.#rig.relaySwitch)
+			this.#network = await NetworkSwitch.install(context, buildRelayUrls());
 	}
 
 	async #stop(): Promise<StorageState> {

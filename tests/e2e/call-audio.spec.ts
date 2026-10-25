@@ -151,13 +151,13 @@ async function reload(seat: SeatKey): Promise<void> {
 test.beforeAll(async ({ browser, baseURL }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
 	for (const seat of SEATS) {
-		// East's trackers can be cut in test 6.
+		// East's relays can be cut in test 6.
 		players[seat] = await Player.open(
 			browser,
 			baseURL,
 			`audio-${seat}`,
 			OPTIONS[seat],
-			{ trackerSwitch: seat === "E" },
+			{ relaySwitch: seat === "E" },
 		);
 		await players[seat].addInitScript(installCallProbe);
 	}
@@ -352,9 +352,9 @@ test("5: Leave stops the microphone and the connections, and the others see Not 
 	await expect(note(tab.W)).toHaveText(/Connected to East\./);
 });
 
-test("6: after East's game links and trackers are cut for longer than 10 s, the call comes back and the audio flows again", async () => {
+test("6: after East's game links and relays are cut for longer than 10 s, the call comes back and the audio flows again", async () => {
 	test.setTimeout(240_000);
-	// A network change: the data channels that carry the call messages close, and no tracker can be reached.
+	// A network change: the data channels that carry the call messages close, and no relay can be reached.
 	// The call link itself stays open, as in plan §12 R1 only the game links are cut.
 	await players.E.network.block();
 	expect(await cutGameLinks(tab.E)).toBe(3);
@@ -374,7 +374,7 @@ test("6: after East's game links and trackers are cut for longer than 10 s, the 
 		timeout: 120_000,
 	});
 	console.error(
-		`cut: the call came back ${Date.now() - cut} ms after the trackers returned`,
+		`cut: the call came back ${Date.now() - cut} ms after the relays returned`,
 	);
 	await expect(caption(tab.W, "E")).toHaveText(`${seatLabel("E")} · Mic off`);
 	await expect(caption(tab.E, "W")).toHaveText(

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+	DEFAULT_NOSTR_RELAY_URLS,
 	DEFAULT_TRACKER_URLS,
+	parseNostrRelayUrls,
 	parseTrackerUrls,
 	readMeshConfig,
 } from "../../src/p2p/config";
@@ -71,6 +73,42 @@ describe("parseTrackerUrls", () => {
 	});
 });
 
+describe("parseNostrRelayUrls", () => {
+	it("gives the five default relays when absent", () => {
+		expect(parseNostrRelayUrls(undefined)).toEqual({
+			ok: true,
+			urls: DEFAULT_NOSTR_RELAY_URLS,
+		});
+		expect(DEFAULT_NOSTR_RELAY_URLS).toEqual([
+			"wss://nos.lol",
+			"wss://relay.primal.net",
+			"wss://relay.snort.social",
+			"wss://nostr.mom",
+			"wss://offchain.pub",
+		]);
+	});
+
+	it("turns the Nostr relays off with none", () => {
+		expect(parseNostrRelayUrls("none")).toEqual({ ok: true, urls: [] });
+	});
+
+	it("names its own variable in its errors", () => {
+		expect(parseNostrRelayUrls("wss://a.example ws://b.example")).toEqual({
+			ok: false,
+			error:
+				"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: ws://b.example",
+		});
+		const urls = Array.from(
+			{ length: 9 },
+			(_, index) => `wss://r${index}.example`,
+		);
+		expect(parseNostrRelayUrls(urls.join(" "))).toEqual({
+			ok: false,
+			error: "At most 8 Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).",
+		});
+	});
+});
+
 describe("readMeshConfig", () => {
 	it("combines the tracker list with the STUN list", () => {
 		expect(
@@ -82,15 +120,49 @@ describe("readMeshConfig", () => {
 			ok: true,
 			config: {
 				trackers: ["wss://tracker.example"],
+				nostrRelays: DEFAULT_NOSTR_RELAY_URLS,
 				rtc: { iceServers: [{ urls: ["stun:stun.example:3478"] }] },
 			},
 		});
 	});
 
-	it("turns trackers and STUN off independently", () => {
+	it("turns trackers, Nostr relays and STUN off independently", () => {
 		expect(
 			readMeshConfig({ VITE_TRACKER_URLS: "none", VITE_STUN_URLS: "none" }),
-		).toEqual({ ok: true, config: { trackers: [], rtc: { iceServers: [] } } });
+		).toEqual({
+			ok: true,
+			config: {
+				trackers: [],
+				nostrRelays: DEFAULT_NOSTR_RELAY_URLS,
+				rtc: { iceServers: [] },
+			},
+		});
+		expect(
+			readMeshConfig({
+				VITE_NOSTR_RELAY_URLS: "none",
+				VITE_TRACKER_URLS: "wss://tracker.example",
+			}),
+		).toEqual({
+			ok: true,
+			config: {
+				trackers: ["wss://tracker.example"],
+				nostrRelays: [],
+				rtc: expect.anything(),
+			},
+		});
+	});
+
+	it("refuses a URL that is both a tracker and a Nostr relay", () => {
+		expect(
+			readMeshConfig({
+				VITE_TRACKER_URLS: "wss://both.example",
+				VITE_NOSTR_RELAY_URLS: "wss://both.example",
+			}),
+		).toEqual({
+			ok: false,
+			error:
+				"A URL cannot be both a tracker and a Nostr relay: wss://both.example",
+		});
 	});
 
 	it("gives the tracker error before the STUN error", () => {

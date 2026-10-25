@@ -9,20 +9,23 @@ import {
 	MAX_PEERS,
 	MAX_RECEIVE_BYTES,
 	MESH_BYTES,
+	NETWORK_REJOIN_MS,
 	REJOIN_MAX_MS,
 	REJOIN_MS,
+	RELAY_SILENT_MS,
 	TABLE_OFFERS,
 } from "./limits";
 import type { Clock, Send } from "./ports";
 import { peerRendezvous, Rendezvous } from "./rendezvous";
-import { type ProbeStun, StunChecks, type StunStatus } from "./stun-probe";
 import type {
 	DataPayload,
 	JoinError,
 	JoinRoomCallbacks,
 	MessageAction,
-	TorrentRoomConfig,
-} from "./torrent";
+	RelayKind,
+	SignalingRoomConfig,
+} from "./signaling";
+import { type ProbeStun, StunChecks, type StunStatus } from "./stun-probe";
 import {
 	type CallFrame,
 	type CtlMessage,
@@ -39,7 +42,7 @@ import {
 } from "./wire";
 
 /**
- * The page's Trystero table room (plan §4.2). Trackers only introduce the peers; every message then goes over
+ * The page's Trystero table room (plan §4.2). Relays only introduce the peers; every message then goes over
  * the WebRTC data channels. Each action caps its size before Trystero buffers a message, and each message passes
  * the wire validators before a handler sees it. Messages from peers above MAX_PEERS, or from peers that are not
  * connected, never reach a handler.
@@ -47,6 +50,10 @@ import {
  * Mesh repair: every page sends its peer list (`links`) to its peers. A page that misses a listed peer, or that
  * misses the peer of a seat the controller names (`seek`), meets it in a two-page room (`rendezvous.ts`). A page
  * without links has no list and, as a visitor, no seat, so it joins the table room again (REJOIN_MS).
+ *
+ * Relay recovery (ADR 0004): after a network change, the page replaces each relay socket and, when alone, joins the
+ * table room again as soon as a relay is open. A relay socket that is open and silent for RELAY_SILENT_MS is
+ * replaced too.
  */
 
 /** The part of a Trystero room that the mesh uses; the unit tests implement it without WebRTC. */
@@ -59,30 +66,28 @@ export interface MeshRoom {
 }
 
 export type JoinMeshRoom = (
-	config: TorrentRoomConfig,
+	config: SignalingRoomConfig,
 	roomId: string,
 	callbacks: JoinRoomCallbacks,
 ) => MeshRoom;
 
-/** A tracker socket as Trystero's `getRelaySockets` reports it. */
-export interface TrackerSocket {
+/** A relay socket as `relaySockets` of signaling.ts reports it. */
+export interface RelaySocket {
 	readonly readyState: number;
 	addEventListener(type: "message", listener: () => void): void;
 	removeEventListener(type: "message", listener: () => void): void;
 }
 
-/**
- * A signalling relay and the evidence that it is alive: its socket is open, and when it last sent a message. A
- * Nostr relay can be a later kind of the same record.
- */
+/** A signalling relay and the evidence that it is alive: its socket is open, and when it last sent a message. */
 export interface RelayStatus {
-	readonly kind: "tracker";
+	readonly kind: RelayKind;
 	readonly url: string;
 	readonly open: boolean;
 	/** Undefined until the relay sends its first message to this page. */
 	readonly heardAgoMs: number | undefined;
 }
 
+const CONNECTING = 0;
 const OPEN = 1;
 
 export interface MeshDeps {
@@ -95,8 +100,14 @@ export interface MeshDeps {
 	readonly joinRoom: JoinMeshRoom;
 	/** This page's Trystero peer id. */
 	readonly self: string;
-	/** Trystero's tracker sockets by URL. */
-	readonly trackerSockets: () => Readonly<Record<string, TrackerSocket>>;
+	/** The relay sockets of each kind by URL. */
+	readonly relaySockets: () => Readonly<
+		Record<RelayKind, Readonly<Record<string, RelaySocket>>>
+	>;
+	/** Replaces one relay's socket now. */
+	readonly reconnectRelay: (kind: RelayKind, url: string) => void;
+	/** Calls `onChange` at each network change until the returned function runs; a mesh without it does not watch. */
+	readonly watchNetwork?: (onChange: () => void) => () => void;
 	/** Asks one STUN server for this page's public address; a mesh without it does not check. */
 	readonly probeStun?: ProbeStun;
 	readonly clock: Clock;
@@ -118,7 +129,9 @@ export type DropReason = Rejection | "oversize" | "rate" | "stranger";
 export interface MeshDiagnostics {
 	readonly trackersOpen: number;
 	readonly trackers: number;
-	/** The configured trackers, in configuration order. */
+	readonly nostrOpen: number;
+	readonly nostrRelays: number;
+	/** The configured trackers, then the configured Nostr relays, in configuration order. */
 	readonly relays: readonly RelayStatus[];
 	/** The configured STUN servers; null on a page that does not check them. */
 	readonly stun: readonly StunStatus[] | null;
@@ -180,7 +193,7 @@ export class Mesh implements Send {
 	readonly self: string;
 	readonly #deps: MeshDeps;
 	readonly #handlers: MeshHandlers;
-	readonly #roomConfig: TorrentRoomConfig;
+	readonly #roomConfig: SignalingRoomConfig;
 	#table: TableRoom;
 	readonly #rendezvous: Rendezvous;
 	/** Peers that a neighbour listed and this page has no link to, until when they stay repair targets. */
@@ -190,6 +203,8 @@ export class Mesh implements Send {
 	/** Since when this page has had no links; null while it has one. */
 	#aloneSince: number | null;
 	#rejoinWait = REJOIN_MS;
+	/** Until when a page alone joins the table room again without the wait, after a network change. */
+	#rejoinNowUntil = Number.NEGATIVE_INFINITY;
 	#rejoins = 0;
 	#linksAt = Number.NEGATIVE_INFINITY;
 	readonly #admitted = new Set<string>();
@@ -208,28 +223,29 @@ export class Mesh implements Send {
 	};
 	#sendFailures = 0;
 	#left = false;
-	/** The listener on each tracker's current socket; Trystero replaces a socket when it reconnects. */
+	/** The listener on each relay's current socket, by "kind url"; a reconnect replaces the socket. */
 	readonly #listening = new Map<
 		string,
-		{ readonly socket: TrackerSocket; readonly listener: () => void }
+		{ readonly socket: RelaySocket; readonly listener: () => void }
 	>();
-	/** When each tracker last sent a message, by URL; it outlives the socket. */
+	/** When each relay last sent a message, by "kind url"; it outlives the socket. */
 	readonly #heardAt = new Map<string, number>();
+	/** Since when the mesh has listened to each relay's socket, or when it last replaced the socket. */
+	readonly #watchedAt = new Map<string, number>();
 	readonly #stun: StunChecks | null;
+	readonly #unwatchNetwork: () => void;
 
 	constructor(deps: MeshDeps, handlers: MeshHandlers) {
 		this.self = deps.self;
 		this.#deps = deps;
 		this.#handlers = handlers;
 		const { config } = deps;
-		const roomConfig: TorrentRoomConfig = {
+		const roomConfig: SignalingRoomConfig = {
 			appId: APP_ID,
 			password: deps.key,
 			rtcConfig: config.rtc,
-			relayConfig: {
-				urls: [...config.trackers],
-				redundancy: config.trackers.length,
-			},
+			trackerUrls: config.trackers,
+			nostrRelayUrls: config.nostrRelays,
 			maxReceiveBytes: MAX_RECEIVE_BYTES,
 			...(deps.rtcPolyfill ? { rtcPolyfill: deps.rtcPolyfill } : {}),
 		};
@@ -240,8 +256,8 @@ export class Mesh implements Send {
 			key: deps.key,
 			join: (roomId) => deps.joinRoom(roomConfig, roomId, {}),
 		});
-		// The join opened the sockets, and a tracker can answer before the first tick.
-		this.#listenToTrackers();
+		// The join opened the sockets, and a relay can answer before the first tick.
+		this.#listenToRelays();
 		this.#stun =
 			deps.probeStun === undefined
 				? null
@@ -249,6 +265,8 @@ export class Mesh implements Send {
 						this.#handlers.change(),
 					);
 		this.#stun?.tick(deps.clock.monotonic(), true);
+		this.#unwatchNetwork =
+			deps.watchNetwork?.(() => this.#networkChanged()) ?? (() => {});
 	}
 
 	/** Admitted peers that still have a data channel, in join order. */
@@ -264,17 +282,22 @@ export class Mesh implements Send {
 			: undefined;
 	}
 
-	/** A tracker socket is open or a peer is connected (election rule 5). */
+	/** A relay socket is open or a peer is connected (election rule 5). */
 	online(): boolean {
-		return this.#trackersOpen() > 0 || this.peers().length > 0;
+		return this.#relaysOpen() > 0 || this.peers().length > 0;
 	}
 
 	diagnostics(): MeshDiagnostics {
 		const repair = this.#rendezvous.counts();
+		const relays = this.#relays();
+		const openOf = (kind: RelayKind) =>
+			relays.filter((relay) => relay.kind === kind && relay.open).length;
 		return {
-			trackersOpen: this.#trackersOpen(),
+			trackersOpen: openOf("tracker"),
 			trackers: this.#deps.config.trackers.length,
-			relays: this.#relays(),
+			nostrOpen: openOf("nostr"),
+			nostrRelays: this.#deps.config.nostrRelays.length,
+			relays,
 			stun: this.#stun?.statuses() ?? null,
 			peers: this.peers().length,
 			wrongKey: this.#wrongKey.size,
@@ -299,11 +322,15 @@ export class Mesh implements Send {
 		this.#seats = new Map(seats);
 	}
 
-	/** Joins the table room again when alone, sends the peer list when it is due, and opens or closes the two-page rooms. */
+	/**
+	 * Replaces silent relay sockets, joins the table room again when alone, sends the peer list when it is due, and
+	 * opens or closes the two-page rooms.
+	 */
 	tick(): void {
 		if (this.#left) return;
 		const now = this.#deps.clock.monotonic();
-		this.#listenToTrackers();
+		this.#listenToRelays();
+		this.#replaceSilentRelays(now);
 		this.#rejoinWhenAlone(now);
 		this.#stun?.tick(now, this.peers().length === 0);
 		if (now - this.#linksAt >= LINKS_MS) this.#sendLinks(now);
@@ -334,6 +361,7 @@ export class Mesh implements Send {
 	leave(): Promise<void> {
 		if (this.#left) return Promise.resolve();
 		this.#left = true;
+		this.#unwatchNetwork();
 		Mesh.#detach(this.#table);
 		for (const { socket, listener } of this.#listening.values()) {
 			socket.removeEventListener("message", listener);
@@ -393,7 +421,8 @@ export class Mesh implements Send {
 	/**
 	 * A page alone for REJOIN_MS leaves and joins the table room again, which makes a new offer and repeats
 	 * Trystero's first announces; the wait doubles up to REJOIN_MAX_MS and starts again at the next link. The peer
-	 * id stays, so the trackers count the page once. A handshake in progress in the old room is lost.
+	 * id stays, so the relays count the page once. A handshake in progress in the old room is lost. Until
+	 * NETWORK_REJOIN_MS after a network change, the first rejoin does not wait.
 	 */
 	#rejoinWhenAlone(now: number): void {
 		if (this.peers().length > 0) {
@@ -402,8 +431,10 @@ export class Mesh implements Send {
 			return;
 		}
 		this.#aloneSince ??= now;
-		if (now - this.#aloneSince < this.#rejoinWait) return;
-		if (this.#trackersOpen() === 0) return;
+		const afterNetworkChange = now < this.#rejoinNowUntil;
+		if (!afterNetworkChange && now - this.#aloneSince < this.#rejoinWait)
+			return;
+		if (this.#relaysOpen() === 0) return;
 		const old = this.#table;
 		Mesh.#detach(old);
 		for (const peer of [...this.#admitted]) this.#leave(peer);
@@ -411,7 +442,10 @@ export class Mesh implements Send {
 		void old.room.leave();
 		this.#table = this.#joinTable();
 		this.#aloneSince = now;
-		this.#rejoinWait = Math.min(REJOIN_MAX_MS, this.#rejoinWait * 2);
+		if (afterNetworkChange) {
+			this.#rejoinNowUntil = Number.NEGATIVE_INFINITY;
+			this.#rejoinWait = REJOIN_MS;
+		} else this.#rejoinWait = Math.min(REJOIN_MAX_MS, this.#rejoinWait * 2);
 		this.#rejoins++;
 		this.#handlers.change();
 	}
@@ -536,45 +570,84 @@ export class Mesh implements Send {
 		return false;
 	}
 
+	/** The configured relays: the trackers, then the Nostr relays. */
+	#configuredRelays(): { readonly kind: RelayKind; readonly url: string }[] {
+		const { trackers, nostrRelays } = this.#deps.config;
+		return [
+			...trackers.map((url) => ({ kind: "tracker" as const, url })),
+			...nostrRelays.map((url) => ({ kind: "nostr" as const, url })),
+		];
+	}
+
 	/**
-	 * Listens to each tracker's current socket for the time of its messages, not their content, which Trystero
-	 * reads. A replaced socket loses its listener.
+	 * Listens to each relay's current socket for the time of its messages, not their content, which Trystero reads.
+	 * A replaced socket loses its listener.
 	 */
-	#listenToTrackers(): void {
-		const sockets = this.#deps.trackerSockets();
-		for (const url of this.#deps.config.trackers) {
-			const socket = sockets[url];
-			const current = this.#listening.get(url);
+	#listenToRelays(): void {
+		const sockets = this.#deps.relaySockets();
+		for (const { kind, url } of this.#configuredRelays()) {
+			const key = `${kind} ${url}`;
+			const socket = sockets[kind][url];
+			const current = this.#listening.get(key);
 			if (current?.socket === socket) continue;
 			current?.socket.removeEventListener("message", current.listener);
-			this.#listening.delete(url);
+			this.#listening.delete(key);
 			if (socket === undefined) continue;
 			const listener = () =>
-				this.#heardAt.set(url, this.#deps.clock.monotonic());
+				this.#heardAt.set(key, this.#deps.clock.monotonic());
 			socket.addEventListener("message", listener);
-			this.#listening.set(url, { socket, listener });
+			this.#listening.set(key, { socket, listener });
+			this.#watchedAt.set(key, this.#deps.clock.monotonic());
 		}
 	}
 
-	#relays(): RelayStatus[] {
-		if (!this.#left) this.#listenToTrackers();
+	/** A socket that is open or opening, and silent for RELAY_SILENT_MS, is replaced; a closed one retries by itself. */
+	#replaceSilentRelays(now: number): void {
+		const sockets = this.#deps.relaySockets();
+		for (const { kind, url } of this.#configuredRelays()) {
+			const key = `${kind} ${url}`;
+			const state = sockets[kind][url]?.readyState;
+			if (state !== OPEN && state !== CONNECTING) continue;
+			const since = Math.max(
+				this.#heardAt.get(key) ?? Number.NEGATIVE_INFINITY,
+				this.#watchedAt.get(key) ?? now,
+			);
+			if (now - since < RELAY_SILENT_MS) continue;
+			this.#watchedAt.set(key, now);
+			this.#deps.reconnectRelay(kind, url);
+		}
+	}
+
+	/** Replaces each relay socket, and lets a page alone join the table room again without the wait. */
+	#networkChanged(): void {
+		if (this.#left) return;
 		const now = this.#deps.clock.monotonic();
-		const sockets = this.#deps.trackerSockets();
-		return this.#deps.config.trackers.map((url) => {
-			const heardAt = this.#heardAt.get(url);
+		for (const { kind, url } of this.#configuredRelays()) {
+			this.#watchedAt.set(`${kind} ${url}`, now);
+			this.#deps.reconnectRelay(kind, url);
+		}
+		this.#rejoinNowUntil = now + NETWORK_REJOIN_MS;
+	}
+
+	#relays(): RelayStatus[] {
+		if (!this.#left) this.#listenToRelays();
+		const now = this.#deps.clock.monotonic();
+		const sockets = this.#deps.relaySockets();
+		return this.#configuredRelays().map(({ kind, url }) => {
+			const heardAt = this.#heardAt.get(`${kind} ${url}`);
 			return {
-				kind: "tracker",
+				kind,
 				url,
-				open: sockets[url]?.readyState === OPEN,
+				open: sockets[kind][url]?.readyState === OPEN,
 				heardAgoMs: heardAt === undefined ? undefined : now - heardAt,
 			};
 		});
 	}
 
-	#trackersOpen(): number {
-		const sockets = this.#deps.trackerSockets();
-		return this.#deps.config.trackers.filter(
-			(url) => sockets[url]?.readyState === OPEN,
+	#relaysOpen(): number {
+		const sockets = this.#deps.relaySockets();
+		return this.#configuredRelays().filter(
+			({ kind, url }) => sockets[kind][url]?.readyState === OPEN,
 		).length;
 	}
 

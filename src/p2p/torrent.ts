@@ -2,6 +2,10 @@
  * The torrent tracker strategy of Trystero 0.26.0, copied from @trystero-p2p/torrent (src/index.ts in its
  * source map). Merge Trystero's changes by hand on an upgrade of @trystero-p2p/core. The changes from upstream:
  *
+ * - This is an adapter of the combined strategy (`signaling.ts`), not a strategy of its own, so a page that meets
+ *   a peer through a tracker and through a Nostr relay keeps one connection to it.
+ * - `init` takes the tracker URLs; there is no default list and no redundancy count.
+ * - The sockets come from `relay-socket.ts`, which can reconnect at once (`reconnectTracker`).
  * - `offersPerAnnounce` in the room config sets the number of offers in each announce (upstream: always 1). A
  *   tracker sends each offer to one peer, so one offer reaches one other page per announce.
  * - Leaving a room sends a "stopped" announce, so the tracker removes this page from the swarm at once and does
@@ -35,28 +39,23 @@
 
 import {
 	createRelayManager,
-	createStrategy,
 	entries,
 	fromJson,
 	genId,
-	getRelays,
-	type JoinRoom,
 	type JoinRoomConfig,
 	keys,
 	libName,
-	makeSocket,
 	type OfferRecord,
-	pauseRelayReconnection,
-	resumeRelayReconnection,
 	type SocketClient,
+	type StrategyAdapter,
 	selfId,
 	sha1,
 	toJson,
 } from "@trystero-p2p/core";
+import { type RelayClient, relaySocket } from "./relay-socket";
 
-const relayManager = createRelayManager<SocketClient>(
-	(client) => client.socket,
-);
+const relayManager = createRelayManager<RelayClient>((client) => client.socket);
+const clients: Record<string, RelayClient> = {};
 const topicToInfoHash: Record<string, string> = {};
 const infoHashToTopic: Record<string, string> = {};
 type TopicState = {
@@ -86,7 +85,6 @@ const defaultAnnounceMs = 10_000;
 const dormantAnnounceMs = 120_000;
 const offerRetentionMs = 120_000;
 const signalDedupeWindowMs = 4_000;
-const defaultRedundancy = 3;
 
 export type TorrentRoomConfig = JoinRoomConfig & {
 	/** Offers in each announce, a positive integer; 1 when absent. */
@@ -266,11 +264,28 @@ const ensureOutstandingOffers = async (
 	return getRoomOutstandingOffers(rootTopic);
 };
 
-const joinRoomStrategy: JoinRoom<TorrentRoomConfig> = createStrategy({
-	init: (config) =>
-		getRelays(config, defaultRelayUrls, defaultRedundancy).map((rawUrl) => {
+type TrackerAdapter = Omit<
+	StrategyAdapter<RelayClient, TorrentRoomConfig>,
+	"init" | "deactivate"
+> & {
+	init: (
+		urls: readonly string[],
+		config: TorrentRoomConfig,
+	) => Promise<RelayClient>[];
+	deactivate: NonNullable<
+		StrategyAdapter<RelayClient, TorrentRoomConfig>["deactivate"]
+	>;
+};
+
+/** The tracker relays of the combined strategy (`signaling.ts`), one client for each URL in the page. */
+export const torrentAdapter: TrackerAdapter = {
+	init: (
+		urls: readonly string[],
+		config: TorrentRoomConfig,
+	): Promise<RelayClient>[] =>
+		urls.map((rawUrl) => {
 			const client = relayManager.register(rawUrl, () =>
-				makeSocket(
+				relaySocket(
 					rawUrl,
 					(rawData) => {
 						const data = parseTrackerMessage(rawData);
@@ -340,6 +355,7 @@ const joinRoomStrategy: JoinRoom<TorrentRoomConfig> = createStrategy({
 						),
 				),
 			);
+			clients[rawUrl] = client;
 
 			return client.ready;
 		}),
@@ -514,42 +530,11 @@ const joinRoomStrategy: JoinRoom<TorrentRoomConfig> = createStrategy({
 
 		state?.startPassiveAnnouncements();
 	},
-});
-
-export const joinRoom: JoinRoom<TorrentRoomConfig> = (
-	config,
-	roomId,
-	callbacks,
-) => {
-	const { offersPerAnnounce } = config;
-	if (
-		offersPerAnnounce !== undefined &&
-		!(Number.isInteger(offersPerAnnounce) && offersPerAnnounce > 0)
-	) {
-		throw new Error(
-			`${libName}: offersPerAnnounce must be a positive integer, not ${offersPerAnnounce}`,
-		);
-	}
-	return joinRoomStrategy(
-		{
-			...config,
-			trickleIce: config.trickleIce ?? false,
-		},
-		roomId,
-		callbacks,
-	);
 };
 
-export const getRelaySockets = relayManager.getSockets;
+/** The tracker sockets by URL, for the evidence that each tracker is alive. */
+export const getTrackerSockets = relayManager.getSockets;
 
-export { pauseRelayReconnection, resumeRelayReconnection, selfId };
-
-export const defaultRelayUrls = [
-	"open.ftorrent.com",
-	"tracker.webtorrent.dev",
-	"tracker.openwebtorrent.com",
-	"tracker.btorrent.xyz",
-	"tracker.files.fm:7073/announce",
-].map((url) => `wss://${url}`);
-
-export type * from "@trystero-p2p/core";
+/** Replaces the socket to a tracker now, after a network change or a long silence. */
+export const reconnectTracker = (url: string): void =>
+	clients[url]?.reconnect();
