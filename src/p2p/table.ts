@@ -912,9 +912,14 @@ export class TableController {
 			return { holder, seating: null, ...shared };
 		const table = log.table;
 		const row = table?.seats.find((item) => item.seat === log.seat);
+		const candidate = this.#seedCandidate;
 		return {
 			holder,
 			...shared,
+			seed:
+				candidate !== null &&
+				candidate.log.seat === log.seat &&
+				this.#seedable(candidate),
 			seating: {
 				seat: log.seat,
 				pos: log.position(),

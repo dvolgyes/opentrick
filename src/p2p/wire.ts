@@ -164,6 +164,7 @@ export interface Beat {
 	readonly pos?: Position;
 	readonly holder: string;
 	readonly seat?: Seat;
+	/** The sender can host: its stored replica binds its seat to it, or it may seed the table (election rule 14). */
 	readonly elig: boolean;
 	/** The host seat that the sender's setup link names; with the same seat, the election orders seats clockwise from it. */
 	readonly pref?: Seat;
