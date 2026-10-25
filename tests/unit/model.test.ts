@@ -22,6 +22,8 @@ import {
 	botPlays,
 	callSeats,
 	checkCreateFields,
+	connectionDetail,
+	connectionSummary,
 	DEFAULT_CREATE_FIELDS,
 	draftFor,
 	heldSeats,
@@ -325,6 +327,96 @@ describe("networkLines", () => {
 			{ label: "Ignored wrong-key attempts", value: "1" },
 			{ label: "Storage", value: "kept by the browser" },
 		]);
+	});
+
+	it("lists each tracker, Nostr relay and STUN server by host name after the counts", () => {
+		const lines = networkLines({
+			network: {
+				...NETWORK,
+				relays: [
+					{
+						kind: "tracker",
+						url: "wss://tracker.example.org/announce",
+						open: true,
+						heardAgoMs: 2600,
+					},
+					{
+						kind: "nostr",
+						url: "wss://relay.example.net",
+						open: true,
+						heardAgoMs: undefined,
+					},
+					{
+						kind: "nostr",
+						url: "wss://down.example.com/",
+						open: false,
+						heardAgoMs: 61_000,
+					},
+				],
+				stun: [
+					{ url: "stun:stun.example.org:3478", state: "answered" },
+					{ url: "stun:other.example.org", state: "no-answer" },
+					{ url: "stun:third.example.org", state: "checking" },
+				],
+			},
+			peers: [],
+			publicAddress: false,
+			persistent: true,
+			persisted: true,
+		});
+		expect(lines.slice(0, 8)).toEqual([
+			{ label: "Trackers reachable", value: "2 of 3" },
+			{ label: "Nostr relays reachable", value: "4 of 5" },
+			{
+				label: "Tracker tracker.example.org",
+				value: "open, heard 3 s ago",
+			},
+			{
+				label: "Nostr relay relay.example.net",
+				value: "open, nothing heard yet",
+			},
+			{ label: "Nostr relay down.example.com", value: "closed" },
+			{ label: "STUN stun.example.org:3478", value: "answered" },
+			{ label: "STUN other.example.org", value: "no answer" },
+			{ label: "STUN third.example.org", value: "checking" },
+		]);
+	});
+
+	it("sums up the trackers, the Nostr relays, the direct connections and the public address in one line", () => {
+		expect(
+			connectionSummary({
+				network: NETWORK,
+				peers: PEERS,
+				publicAddress: true,
+			}),
+		).toBe(
+			"Trackers reachable: 2 of 3 · Nostr relays reachable: 4 of 5 · Direct connections: 3 · Public address found: yes",
+		);
+		expect(
+			connectionSummary({ network: null, peers: [], publicAddress: false }),
+		).toBe(
+			"Trackers reachable: not started · Nostr relays reachable: not started · Direct connections: 0 · Public address found: no",
+		);
+	});
+
+	it("adds the summary to the banners that wait for a connection only", () => {
+		const input = { network: null, peers: [], publicAddress: false };
+		const detail = (shown: Parameters<typeof connectionDetail>[0]) =>
+			connectionDetail(shown, input);
+		const summary = connectionSummary(input);
+		expect(detail({ kind: "connecting" })).toBe(summary);
+		expect(
+			detail({ kind: "waiting-for-host", seconds: 3, button: undefined }),
+		).toBe(summary);
+		expect(detail({ kind: "host-unreachable" })).toBe(summary);
+		expect(detail({ kind: "nobody-here" })).toBe(summary);
+		expect(detail({ kind: "connection-failed" })).toBe(summary);
+		expect(detail({ kind: "becoming-host", self: false })).toBe(summary);
+		expect(detail({ kind: "expired" })).toBeUndefined();
+		expect(detail({ kind: "superseded", by: "tab" })).toBeUndefined();
+		expect(detail({ kind: "incompatible" })).toBeUndefined();
+		expect(detail({ kind: "full" })).toBeUndefined();
+		expect(detail(undefined)).toBeUndefined();
 	});
 
 	it("reports the storage in the words of plan §4.3", () => {
