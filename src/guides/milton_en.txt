@@ -24,6 +24,7 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - 18–21 points: a jump in a new suit, or [2NT] with a balanced 18–19 points.
 - After a single raise of your major ([1H] – [2H]) and a pass: [P] with 12–14 points; [3H] with 15–17 points is a game try and invites game; [4H] with 18–21 points.
 - If an opponent bids or doubles after the raise: [3H] with 12–17 points and six or more cards in the suit is competitive and does not invite game; [4H] with 18–21 points.
+- After a jump raise of your major ([1H] – [3H]) and a pass, partner has at least 10 points: [4H] with 15–21 points (25 or more together), otherwise [P] with 12–14 points.
 
 ## Responses to [1NT]
 - 0–7 points: [P], or a transfer with a five-card major.

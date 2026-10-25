@@ -46,6 +46,8 @@ export type RangeKey =
 	| "reraise-try"
 	| "reraise-game"
 	| "reraise-compete"
+	| "jump-raise-pass"
+	| "jump-raise-game"
 	| "weak-2NT"
 	| "overcall-one"
 	| "overcall-two"
@@ -100,6 +102,8 @@ const MILTON = {
 	"reraise-try": { min: 15, max: 17 }, // "[3H] with 15–17 points is a game try"
 	"reraise-game": { min: 18, max: 21 }, // "[4H] with 18–21 points"
 	"reraise-compete": { min: 12, max: 17 }, // "If an opponent bids or doubles after the raise: [3H] with 12–17 points"
+	"jump-raise-pass": { min: 12, max: 14 }, // "After a jump raise ... otherwise [P] with 12–14 points"
+	"jump-raise-game": { min: 15, max: 21 }, // "[4H] with 15–21 points (25 or more together)"
 	// ## Responses to a weak two
 	"weak-2NT": { min: 15 }, // "[2NT]: 15 or more points, asks opener"
 	// ## Competitive bids

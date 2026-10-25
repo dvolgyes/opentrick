@@ -31,6 +31,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - 18–21 points : un saut dans une couleur nouvelle, ou [2NT] avec une main régulière de 18–19 points.
 - Après un soutien simple de votre majeure ([1H] – [2H]) et un passe : [P] avec 12–14 points ; [3H] avec 15–17 points est un essai de manche et invite à la manche ; [4H] avec 18–21 points.
 - Si un adversaire enchérit ou contre après le soutien : [3H] avec 12–17 points et six cartes ou plus dans la couleur est compétitif et n'invite pas à la manche ; [4H] avec 18–21 points.
+- Après un soutien à saut de votre majeure ([1H] – [3H]) et un passe, le partenaire a au moins 10 points : [4H] avec 15–21 points (25 ou plus à deux), sinon [P] avec 12–14 points.
 
 ## Réponses à [1NT]
 - 0–7 points : [P], ou un transfert avec une majeure cinquième.

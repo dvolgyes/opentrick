@@ -4,7 +4,7 @@
  * suggested call always has the meaning that the auction shows for it. The numbers are in convention-rules.ts.
  *
  * The guides describe the opening, the first response to one of a suit, [1NT], [2C] or a weak two, opener's
- * rebid, opener's re-raise after a single raise of the major, opener's answer to Stayman, a transfer and [2S], the overcalls and the takeout double of one of a suit, the
+ * rebid, opener's re-raise after a single or a jump raise of the major, opener's answer to Stayman, a transfer and [2S], the overcalls and the takeout double of one of a suit, the
  * redouble after partner's opening is doubled, and Blackwood. Each of them only when the other side passed, except
  * the overcalls, the double, the redouble, the re-raise and the [4NT] ask. Any other position, a hand with a suit longer than
  * SHAPES.longestChecked, and the "other" system are not described, and the functions return undefined. Where the
@@ -102,6 +102,8 @@ type Position =
 			readonly contested: boolean;
 			readonly last: Bid;
 	  }
+	/** Opener's second call after one of the major `suit`, a pass, partner's jump raise and a pass. */
+	| { readonly kind: "jump-raise"; readonly suit: Suit }
 	| { readonly kind: "stayman-answer" }
 	| { readonly kind: "transfer-answer"; readonly suit: Suit }
 	| { readonly kind: "relay" }
@@ -282,7 +284,12 @@ function position(calls: readonly Call[]): Position | undefined {
 			? { kind: "reraise", suit: opened, contested: true, last: again }
 			: undefined;
 	}
-	return again === "P" ? openerPosition(opening, response) : undefined;
+	if (again !== "P") return undefined;
+	return opened !== undefined &&
+		MAJORS.includes(opened) &&
+		response === `3${opened}`
+		? { kind: "jump-raise", suit: opened }
+		: openerPosition(opening, response);
 }
 
 function openingMeaning(ranges: Ranges, call: Call): CallMeaning | undefined {
@@ -499,6 +506,23 @@ function reraiseMeaning(
 		: undefined;
 }
 
+function jumpRaiseMeaning(
+	ranges: Ranges,
+	suit: Suit,
+	call: Call,
+): CallMeaning | undefined {
+	// "After a jump raise of your major ([1H] – [3H]) and a pass, partner has at least 10 points: [4H] with 15–21
+	// points (25 or more together), otherwise [P] with 12–14 points."
+	if (call === "P")
+		return { range: ranges["jump-raise-pass"], shape: { kind: "none" } };
+	return call === `4${suit}`
+		? {
+				range: ranges["jump-raise-game"],
+				shape: { kind: "cards", suit, min: SHAPES.majorOpening },
+			}
+		: undefined;
+}
+
 function staymanAnswerMeaning(call: Call): CallMeaning | undefined {
 	// "Opener answers [2D] without a four-card major, otherwise [2H] or [2S]."
 	if (call === "2D")
@@ -608,6 +632,8 @@ function meaningAt(
 			return rebidMeaning(ranges, at.opened, at.response, call);
 		case "reraise":
 			return reraiseMeaning(ranges, at, call);
+		case "jump-raise":
+			return jumpRaiseMeaning(ranges, at.suit, call);
 		case "stayman-answer":
 			return staymanAnswerMeaning(call);
 		case "transfer-answer":

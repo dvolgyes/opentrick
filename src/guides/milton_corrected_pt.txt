@@ -31,6 +31,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - 18–21 pontos: um salto num naipe novo, ou [2NT] com uma mão equilibrada de 18–19 pontos.
 - Depois de um apoio simples do naipe maior de abertura ([1H] – [2H]) e um passe: [P] com 12–14 pontos; [3H] com 15–17 pontos é uma tentativa de partida e convida à partida; [4H] com 18–21 pontos.
 - Se um adversário declarar ou contrar depois do apoio: [3H] com 12–17 pontos e seis ou mais cartas no naipe é competitivo e não convida à partida; [4H] com 18–21 pontos.
+- Depois de um apoio com salto do naipe maior de abertura ([1H] – [3H]) e um passe, o parceiro tem pelo menos 10 pontos: [4H] com 15–21 pontos (25 ou mais em conjunto); caso contrário, [P] com 12–14 pontos.
 
 ## Respostas a [1NT]
 - 0–7 pontos: [P], ou uma transferência com um naipe maior quinto.

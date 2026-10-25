@@ -185,6 +185,8 @@ describe("guide calls for a hand", () => {
 		["1H P 2H X", "K4.AKJ873.K8.Q65", ["3H"]], // 16, six hearts
 		["1H P 2H 2S", "K4.AQJ73.K82.J65", ["P"]], // 14, five hearts: no other guide call fits
 		["1S P 2S 3H", "AKJ73.A4.AQ82.65", ["4S"]], // 18
+		["1H P 3H P", "K4.AQJ73.K82.J65", ["P"]], // 14: at most 26 together
+		["1H P 3H P", "K4.AKJ73.K82.J65", ["4H"]], // 15: at least 25 together
 	] as const)(
 		"continues %s with %s by %j in HCP",
 		(auction, cardsText, expected) => {
@@ -571,6 +573,19 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		["hcp", "1H P 2H 2S P", { shape: { kind: "rest" } }],
+		[
+			"hcp",
+			"1H P 3H P P",
+			{ range: { min: 12, max: 14 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp-corrected",
+			"1S P 3S P 4S",
+			{
+				range: { min: 15, max: 21 },
+				shape: { kind: "cards", suit: "S", min: 5 },
+			},
+		],
 	] as const)("reads the later call %s %s", (system, auction, expected) => {
 		const all = calls(auction);
 		expect(callMeaning(system, all, all.length - 1)).toEqual(expected);
@@ -584,6 +599,8 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H P 2H P 3NT"],
 		["hcp", "1H P 2H 2S X"],
 		["hcp", "1D P 2D P 3D"], // a minor raise is not in the guide
+		["hcp", "1H P 3H P 3NT"],
+		["hcp", "1H P 3H 3S 4H"], // after a jump raise and an opponent's call
 		["hcp", "1H P 1S 2C 2S"], // the rebid after an overcall
 		["hcp", "1H 2H"], // a cue bid
 		["hcp", "1H 2S"], // a jump overcall
@@ -735,6 +752,8 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"Opener's rebid",
 		"[3H] with {range} points and six or more cards",
 	],
+	"jump-raise-pass": ["Opener's rebid", "otherwise [P] with {range} points."],
+	"jump-raise-game": ["Opener's rebid", "[4H] with {range} points (25"],
 	"weak-2NT": ["Responses to a weak two", "- [2NT]: {range} points, asks"],
 	"overcall-one": [
 		"Competitive bids",

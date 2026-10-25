@@ -31,6 +31,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - 18–21 puntos: un salto en un palo nuevo, o [2NT] con una mano equilibrada de 18–19 puntos.
 - Tras un apoyo simple de tu mayor ([1H] – [2H]) y un paso: [P] con 12–14 puntos; [3H] con 15–17 puntos es un intento de manga e invita a manga; [4H] con 18–21 puntos.
 - Si un contrario declara o dobla tras el apoyo: [3H] con 12–17 puntos y seis o más cartas en el palo es competitivo y no invita a manga; [4H] con 18–21 puntos.
+- Tras un apoyo con salto de tu mayor ([1H] – [3H]) y un paso, tu compañero tiene al menos 10 puntos: [4H] con 15–21 puntos (25 o más entre los dos); si no, [P] con 12–14 puntos.
 
 ## Respuestas a [1NT]
 - 0–7 puntos: [P], o una transferencia con un mayor quinto.
