@@ -276,6 +276,34 @@ export function selfPicture(
 }
 
 /**
+ * The invitation of a player to the host's room call. It is due when this page sees the host go into the call,
+ * also at the first view after a join or a reload while the host is in one. Join, Don't join or a call of this
+ * page settle it until the host's next call.
+ */
+export interface CallInvite {
+	readonly hostInCall: boolean;
+	readonly due: boolean;
+}
+
+export const NO_INVITE: CallInvite = { hostInCall: false, due: false };
+
+export function nextInvite(
+	previous: CallInvite,
+	hostInCall: boolean,
+	inCall: boolean,
+): CallInvite {
+	if (!hostInCall) return NO_INVITE;
+	return {
+		hostInCall,
+		due: !inCall && (previous.due || !previous.hostInCall),
+	};
+}
+
+export function dismissInvite(invite: CallInvite): CallInvite {
+	return { ...invite, due: false };
+}
+
+/**
  * The caption of a connected seat (handover §7). A playing picture needs no video word, so the caption names
  * the audio state; without a picture it says why: this side's Video reception is off, or the seat is audio only.
  */

@@ -2786,6 +2786,22 @@ const rows: readonly TranslationRow[] = [
 		"VIDEO IN CORSO",
 		"VIDEO BEZIG",
 	],
+	[
+		"The host started a room call.",
+		"El anfitrión inició una llamada de sala.",
+		"O anfitrião iniciou uma chamada da sala.",
+		"L’hôte a lancé un appel de la salle.",
+		"L’host ha avviato una chiamata della stanza.",
+		"De host is een kameroproep begonnen.",
+	],
+	[
+		"Don't join",
+		"No unirme",
+		"Não entrar",
+		"Ne pas rejoindre",
+		"Non partecipare",
+		"Niet deelnemen",
+	],
 ];
 
 const localeIndexes = { es: 1, pt: 2, fr: 3, it: 4, nl: 5 } as const;

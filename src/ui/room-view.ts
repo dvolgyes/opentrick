@@ -210,6 +210,8 @@ export function showRoom(
 	let botSpendUsd = readBotSpend();
 	let pendingBotSeat: Seat | undefined;
 	let remoteCallPresence: Partial<Record<Seat, RemoteCallPresence>> = {};
+	/** A guest's page sees the host in the room call: the call controls invite this player. */
+	let hostInCall = false;
 	const botSeatOverrides = new Map<Seat, boolean>();
 	let botSettings = initialBotSettings;
 	let playerAutoplayPending = false;
@@ -1252,7 +1254,7 @@ export function showRoom(
 						rejoin: memory?.rejoin,
 						cameraAvailable: camera?.available,
 					};
-		table.renderCall(display, remoteCallPresence);
+		table.renderCall(display, remoteCallPresence, hostInCall);
 		audio.render(display.available ? display.view.remotes : []);
 	}
 
@@ -1497,6 +1499,11 @@ export function showRoom(
 				sendsVideo: record.prefs.send.video,
 			};
 		}
+		hostInCall =
+			!view.hosting &&
+			view.hostSeat !== null &&
+			view.hostSeat !== seat &&
+			remoteCallPresence[view.hostSeat] !== undefined;
 		// The other players see this player's bidding system below the name.
 		const ownSystem = readSettings(deps.browser).pointSystem;
 		if (

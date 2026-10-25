@@ -5,6 +5,9 @@ import {
 	type CallControlsView,
 	type CallDisplay,
 	callControlsView,
+	dismissInvite,
+	NO_INVITE,
+	nextInvite,
 	remoteCallStatus,
 	type SwitchView,
 	selfPicture,
@@ -24,6 +27,9 @@ import { play } from "./remote-audio";
  * is a tile of the own camera, as large as the other players' tiles, with the switches as its caption bar, and Leave
  * call and Mirror below it, where the other tiles have Switch to player. Mirror off shows a text in place of the
  * own camera on this page only.
+ *
+ * When a guest's page sees the host go into the room call, a dialog in the middle of the screen invites the player:
+ * the switches of the device, Join call, and Don't join, which only closes it.
  */
 
 export interface CallHandlers {
@@ -41,7 +47,10 @@ export interface CallControls {
 	readonly alert: HTMLElement;
 	/** Compact: the one row of call icons and game actions. */
 	readonly row: HTMLElement;
-	render(display: CallDisplay): void;
+	/** Both forms: the invitation to the host's room call. */
+	readonly invite: HTMLDialogElement;
+	/** `hostInCall`: this guest's page sees the host in the room call. */
+	render(display: CallDisplay, hostInCall?: boolean): void;
 }
 
 interface Toggle {
@@ -123,6 +132,7 @@ export function callControls(
 	/** Desktop: show the own camera in the own tile. Only this page; it never changes what is sent. */
 	let mirror = true;
 	let selfTrack: MediaStreamTrack | undefined;
+	let invite = NO_INVITE;
 
 	function toggleButton(toggle: Toggle): HTMLButtonElement {
 		const node = el("button", {
@@ -267,6 +277,66 @@ export function callControls(
 		),
 	);
 
+	const inviteTitle = el(
+		"h2",
+		{ attrs: { id: "call-invite-title" } },
+		`${t("Optional")} ${t("room call")}`,
+	);
+	const inviteToggles = TOGGLES.map((toggle) => toggleButton(toggle));
+	const inviteJoin = joinButton(true);
+	inviteJoin.classList.add("approval-accept");
+	inviteJoin.addEventListener("click", dismiss);
+	const inviteDialog = el(
+		"dialog",
+		{
+			className: "approval call-invite",
+			attrs: {
+				"aria-labelledby": inviteTitle.id,
+				"data-testid": "call-invite",
+			},
+		},
+		inviteTitle,
+		el(
+			"p",
+			{ className: "approval-question" },
+			t("The host started a room call."),
+		),
+		el("div", { className: "call-invite-switches" }, ...inviteToggles),
+		el(
+			"div",
+			{ className: "approval-actions" },
+			inviteJoin,
+			button(t("Don't join"), dismiss, { className: "approval-reject" }),
+		),
+	);
+	// Escape is Don't join.
+	inviteDialog.addEventListener("cancel", (event) => {
+		event.preventDefault();
+		dismiss();
+	});
+
+	function dismiss(): void {
+		invite = dismissInvite(invite);
+		renderInvite();
+	}
+
+	/** The invitation shows while it is due and this player can join; a phone sees only its audio switches. */
+	function renderInvite(): void {
+		const media = display?.available ? display.view.media : [];
+		for (const node of inviteToggles)
+			node.hidden = !media.some((medium) => medium === node.dataset.medium);
+		// Not Join's enabled state: with all switches off the invitation stays open, and its Join waits for a switch.
+		const open =
+			invite.due &&
+			display?.available === true &&
+			display.view.canJoin &&
+			last !== undefined &&
+			!last.inCall;
+		if (open && !inviteDialog.open && inviteDialog.isConnected)
+			inviteDialog.showModal();
+		else if (!open && inviteDialog.open) inviteDialog.close();
+	}
+
 	function renderJoins(): void {
 		const view = last;
 		if (view === undefined) return;
@@ -346,10 +416,11 @@ export function callControls(
 		}
 	}
 
-	function render(next: CallDisplay): void {
+	function render(next: CallDisplay, hostInCall = false): void {
 		display = next;
 		const view = callControlsView(next, t);
 		last = view;
+		invite = nextInvite(invite, hostInCall, view.inCall);
 		panel.dataset.status = next.available ? next.view.status : "unavailable";
 		panel.dataset.inCall = String(view.inCall);
 		heading.hidden = view.inCall;
@@ -366,9 +437,10 @@ export function callControls(
 		note.textContent = t(view.note);
 		renderRetries();
 		renderAlert(view.alert === undefined ? undefined : t(view.alert));
+		renderInvite();
 	}
 
-	return { panel, alert, row, render };
+	return { panel, alert, row, invite: inviteDialog, render };
 }
 
 /**

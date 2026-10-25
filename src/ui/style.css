@@ -2100,6 +2100,44 @@ button.call-join[data-in-call="true"] {
 	color: #ffffff;
 }
 
+/* The invitation to the host's room call: a modal dialog in the middle of the screen, in the look of an approval. */
+.call-invite {
+	width: min(calc(100vw - 2rem), 36rem);
+	padding: 2rem;
+	box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 25%);
+}
+
+.call-invite::backdrop {
+	background: rgb(0 0 0 / 55%);
+}
+
+.room[data-form="compact"] .call-invite {
+	padding: 1.25rem;
+}
+
+/* Join call keeps its phone icon; both answers have the same text size. */
+.call-invite .approval-actions button {
+	justify-content: center;
+	font-size: 1.1rem;
+}
+
+.call-invite-switches {
+	display: flex;
+	gap: 0.75rem;
+	margin-top: 1.25rem;
+}
+
+.call-invite-switches .call-toggle {
+	flex: 1 1 0;
+	justify-content: center;
+	min-height: 2.75rem;
+}
+
+.call-invite-switches .icon {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
 .mobile-auction .approval {
 	flex: none;
 	padding: 0.75rem;

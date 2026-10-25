@@ -61,10 +61,14 @@ export interface TableSection {
 	readonly sidebarEnd: HTMLElement;
 	render(view: TableView): void;
 	setCountdown(seconds: number | undefined): void;
-	/** The call changed: updates only the call controls and the call status of each remote seat. */
+	/**
+	 * The call changed: updates only the call controls and the call status of each remote seat. `hostInCall`: this
+	 * guest's page sees the host in the room call.
+	 */
 	renderCall(
 		display: CallDisplay,
 		presence?: Readonly<Partial<Record<Seat, RemoteCallPresence>>>,
+		hostInCall?: boolean,
 	): void;
 	setBotControls(hosting: boolean, bots: readonly Seat[], model?: string): void;
 	setPlayerAutoplay(
@@ -787,6 +791,7 @@ export function tableSection(
 		felt,
 		dock,
 		pointsDialog,
+		call.invite,
 		guide.element,
 	);
 	let desktop = false;
@@ -1291,10 +1296,11 @@ export function tableSection(
 	function renderCall(
 		display: CallDisplay,
 		presence: Readonly<Partial<Record<Seat, RemoteCallPresence>>> = {},
+		hostInCall = false,
 	): void {
 		callDisplay = display;
 		remoteCallPresence = presence;
-		call.render(display);
+		call.render(display, hostInCall);
 		renderCallStates();
 	}
 

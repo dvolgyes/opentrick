@@ -28,6 +28,11 @@ export interface RigOptions {
 	 * in Chrome. Chrome then refuses localStorage, sessionStorage, IndexedDB and Web Locks.
 	 */
 	readonly blockSiteData?: boolean;
+	/**
+	 * Keeps the invitation to the host's room call open until the test answers it. Without it, Don't join closes
+	 * the invitation before each action and assertion, so a test that does not test it can use the page below it.
+	 */
+	readonly keepCallInvite?: boolean;
 }
 
 /**
@@ -183,6 +188,12 @@ export class Player {
 		page.on("pageerror", (error) =>
 			this.errors.push(`${this.name}: ${error.message}`),
 		);
+		if (!this.#rig.keepCallInvite) {
+			const invite = page.getByTestId("call-invite");
+			await page.addLocatorHandler(invite, () =>
+				invite.getByRole("button", { name: "Don't join", exact: true }).click(),
+			);
+		}
 		await page.goto(url);
 		return page;
 	}

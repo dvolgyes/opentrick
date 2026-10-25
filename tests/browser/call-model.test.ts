@@ -5,6 +5,9 @@ import type { Seat } from "../../src/protocol";
 import {
 	type CallControlsView,
 	callControlsView,
+	dismissInvite,
+	NO_INVITE,
+	nextInvite,
 	remoteCallStatus,
 	selfPicture,
 } from "../../src/ui/call-model";
@@ -388,6 +391,65 @@ describe("the own tile of the desktop call box", () => {
 				selfPicture({ available: false, reason: "No calls here." }, mirror),
 			).toBe("none");
 		}
+	});
+});
+
+describe("the invitation to the host's room call", () => {
+	/** The invitation after each step, as [host in the call, this page in the call]. */
+	const inviteAfter = (steps: readonly (readonly [boolean, boolean])[]) =>
+		steps.reduce(
+			(invite, [hostInCall, inCall]) => nextInvite(invite, hostInCall, inCall),
+			NO_INVITE,
+		);
+
+	it("is due when the host starts a call, and also at the first view while the host is in one", () => {
+		expect(inviteAfter([[false, false]]).due).toBe(false);
+		expect(
+			inviteAfter([
+				[false, false],
+				[true, false],
+			]).due,
+		).toBe(true);
+		expect(inviteAfter([[true, false]]).due).toBe(true);
+	});
+
+	it("stays due while the host stays in the call, until this page joins", () => {
+		const steps = [
+			[true, false],
+			[true, false],
+		] as const;
+		expect(inviteAfter(steps).due).toBe(true);
+		expect(inviteAfter([...steps, [true, true]]).due).toBe(false);
+	});
+
+	it("does not come back after Don't join or after a leave while the host stays in the call", () => {
+		const dismissed = dismissInvite(inviteAfter([[true, false]]));
+		expect(dismissed.due).toBe(false);
+		expect(nextInvite(dismissed, true, false).due).toBe(false);
+		expect(
+			inviteAfter([
+				[true, false],
+				[true, true],
+				[true, false],
+			]).due,
+		).toBe(false);
+	});
+
+	it("is due again when the host leaves and starts a new call", () => {
+		const dismissed = dismissInvite(inviteAfter([[true, false]]));
+		const left = nextInvite(dismissed, false, false);
+		expect(left.due).toBe(false);
+		expect(nextInvite(left, true, false).due).toBe(true);
+	});
+
+	it("is not due when this page is already in the call when the host joins", () => {
+		expect(
+			inviteAfter([
+				[false, true],
+				[true, true],
+				[true, false],
+			]).due,
+		).toBe(false);
 	});
 });
 

@@ -171,6 +171,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Mirror: "Spiegel",
 		"Mirror my camera": "Spiegel: eigene Kamera zeigen",
 		"VIDEO IN PROGRESS": "VIDEO LÄUFT",
+		"The host started a room call.": "Der Host hat einen Raumanruf gestartet.",
+		"Don't join": "Nicht beitreten",
 		"See cameras: receive video": "Kameras ansehen: Video empfangen",
 		"Undo request is being sent.": "Die Rückgängig-Anfrage wird gesendet.",
 		"Claim request is being sent.":
@@ -724,6 +726,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Mirror: "Tükör",
 		"Mirror my camera": "Tükör: saját kamera mutatása",
 		"VIDEO IN PROGRESS": "VIDEÓADÁS FOLYAMATBAN",
+		"The host started a room call.": "A host szobahívást indított.",
+		"Don't join": "Nem csatlakozom",
 		"See cameras: receive video": "Videó fogadás",
 		"Undo request is being sent.":
 			"A visszavonási kérelem küldése folyamatban.",
@@ -1228,6 +1232,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Mirror: "Speil",
 		"Mirror my camera": "Speil: vis mitt kamera",
 		"VIDEO IN PROGRESS": "VIDEO SENDES",
+		"The host started a room call.": "Verten startet en romsamtale.",
+		"Don't join": "Ikke bli med",
 		"See cameras: receive video": "Motta video",
 		"Claim request is being sent.": "Kravet sendes.",
 		"This seat cannot be taken.": "Denne plassen kan ikke tas.",

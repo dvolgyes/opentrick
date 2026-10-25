@@ -533,10 +533,17 @@ export function withRoundTrip(text: string): RegExp {
 
 const escapeRegExp = (text: string): string =>
 	text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * A call control of the page, not of the invitation to the host's call: the invitation can open during a check, after
+ * the Player helper had no invitation to close (tests/e2e/player.ts).
+ */
+const control = (page: Page, name: string): Locator =>
+	page
+		.getByRole("button", { name, exact: true })
+		.and(page.locator(":not([data-testid=call-invite] *)"));
 export const toggle = (page: Page, name: string): Locator =>
-	page.getByRole("button", { name, exact: true });
-export const joinButton = (page: Page): Locator =>
-	page.getByRole("button", { name: "Join call", exact: true });
+	control(page, name);
+export const joinButton = (page: Page): Locator => control(page, "Join call");
 export const leaveButton = (page: Page): Locator =>
 	page.getByRole("button", { name: "Leave call", exact: true });
 export const rejoinButton = (page: Page): Locator =>
