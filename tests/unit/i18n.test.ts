@@ -1,7 +1,9 @@
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	detectLocale,
 	type Locale,
+	missingMessageKeys,
 	translatedMessageKeys,
 	translator,
 } from "../../src/i18n";
@@ -15,7 +17,34 @@ const newLocales = [
 	"nl",
 ] as const satisfies readonly Locale[];
 
+/** Each text that the source gives a translator as a string literal, such as t("Pass") or deps.t("Pass"). */
+function translatedSourceTexts(): string[] {
+	const src = new URL("../../src/", import.meta.url);
+	const texts = new Set<string>();
+	for (const file of readdirSync(src, { recursive: true, encoding: "utf8" })) {
+		if (!file.endsWith(".ts")) continue;
+		const code = readFileSync(new URL(file, src), "utf8");
+		for (const [, literal] of code.matchAll(/\bt\(\s*("(?:[^"\\]|\\.)*")/g))
+			texts.add(JSON.parse(literal ?? ""));
+	}
+	return [...texts].sort();
+}
+
 describe("localization", () => {
+	it("has a catalog key for each text that the source translates", () => {
+		const texts = translatedSourceTexts();
+		expect(texts.length).toBeGreaterThan(250);
+		const keys = new Set(translatedMessageKeys);
+		expect(texts.filter((text) => !keys.has(text))).toEqual([]);
+	});
+
+	it.each(["de", "hu", "no", ...newLocales] as const)(
+		"has every key in the %s catalog",
+		(locale) => {
+			expect(missingMessageKeys(locale)).toEqual([]);
+		},
+	);
+
 	it("detects each supported language from regional browser preferences", () => {
 		const cases = [
 			["es-MX", "es"],
@@ -98,5 +127,29 @@ describe("localization", () => {
 		][]) {
 			expect(translator(locale)("Enable autoplay (bot)")).toBe(label);
 		}
+	});
+
+	it("translates the trick panel, the call presence, the bid box and the expired game in every supported language", () => {
+		const texts = [
+			"Current trick",
+			"Trick count",
+			"In call",
+			"Your call",
+			"Bidding history",
+			"The game has expired or is no longer available",
+		];
+		for (const locale of ["de", "hu", "no", ...newLocales] as const)
+			for (const text of texts)
+				expect(translator(locale)(text), `${locale}: ${text}`).not.toBe(text);
+		// A call in the auction is a bid, not a phone call.
+		expect(newLocales.map((locale) => translator(locale)("Your call"))).toEqual(
+			[
+				"Tu voz",
+				"A sua voz",
+				"Votre enchère",
+				"La tua dichiarazione",
+				"Jouw bod",
+			],
+		);
 	});
 });

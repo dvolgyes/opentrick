@@ -1064,6 +1064,14 @@ const rows: readonly TranslationRow[] = [
 		"Niet in oproep",
 	],
 	[
+		"In call",
+		"En la llamada",
+		"Na chamada",
+		"En appel",
+		"Nella chiamata",
+		"In oproep",
+	],
+	[
 		"Not sent: {reason}",
 		"No se envió: {reason}",
 		"Não enviado: {reason}",
@@ -2426,11 +2434,11 @@ const rows: readonly TranslationRow[] = [
 	],
 	[
 		"Your call",
-		"Tu llamada",
-		"A sua chamada",
-		"Votre appel",
-		"La tua chiamata",
-		"Jouw oproep",
+		"Tu voz",
+		"A sua voz",
+		"Votre enchère",
+		"La tua dichiarazione",
+		"Jouw bod",
 	],
 	[
 		"Your claim for {count} {tricks} is waiting. {waiting}",

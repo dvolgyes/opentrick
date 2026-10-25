@@ -363,6 +363,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Anrufnachrichten unterbrochen; Verbindung wird wiederhergestellt…",
 		Waiting: "Wartend",
 		"Not in call": "Nicht im Anruf",
+		"In call": "Im Anruf",
 		Reconnecting: "Verbindung wird wiederhergestellt",
 		"Direct connection unavailable": "Direktverbindung nicht verfügbar",
 		"Audio reception off": "Audioempfang aus",
@@ -443,6 +444,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Claim all remaining tricks": "Alle verbleibenden Tricks beanspruchen",
 		"Number of tricks to claim": "Anzahl der zu beanspruchenden Tricks",
 		"Bidding history": "Gebotsverlauf",
+		"Current trick": "Aktueller Stich",
+		"Trick count": "Anzahl der Stiche",
 		"Trump suit": "Trumpffarbe",
 		"Our tricks": "Unsere Stiche",
 		"Contract needs {needed} / {remaining}": "Kontrakt: {needed} / {remaining}",
@@ -639,6 +642,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"This link is not valid. Check that you copied all of it.":
 			"Ez a hivatkozás érvénytelen. Ellenőrizd, hogy teljes egészében másoltad-e.",
 		"All seats are taken.": "Minden hely foglalt.",
+		"The game has expired or is no longer available":
+			"Ez a játék lejárt, vagy már nem érhető el.",
 		"Make me the host": "Legyek én a host",
 		"Try seat again": "Hely újrapróbálása",
 		Reload: "Újratöltés",
@@ -848,6 +853,9 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Ez a böngésző nem tudta tárolni a beállításokat.",
 		"Opponents'": "Ellenfél",
 		"Bidding history": "Licitek",
+		"Current trick": "Aktuális ütés",
+		"Trick count": "Ütések száma",
+		"Your call": "A te licited",
 		"Trump suit": "Aduszín",
 		"Our tricks": "Ütések",
 		"Contract needs {needed} / {remaining}": "Vállalás: {needed} / {remaining}",
@@ -963,6 +971,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A hívás üzenetei megszakadtak; újracsatlakozás…",
 		Waiting: "Várakozás",
 		"Not in call": "Nincs a hívásban",
+		"In call": "A hívásban",
 		Reconnecting: "Újracsatlakozás",
 		"Direct connection unavailable": "Közvetlen kapcsolat nem érhető el",
 		"Audio reception off": "Hangfogadás kikapcsolva",
@@ -1352,8 +1361,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Neste spillbrett {board} om {seconds} sekunder",
 		"Joining the call…": "Kobler til samtalen…",
 		"Your call": "Din melding",
+		"Bidding history": "Meldingsforløp",
 		Waiting: "Venter",
 		"Not in call": "Ikke i samtalen",
+		"In call": "I samtalen",
 		Reconnecting: "Kobler til igjen",
 		"Direct connection unavailable": "Direkte tilkobling er utilgjengelig",
 		"In the call; waiting for others to join.":
@@ -1602,6 +1613,13 @@ export const translatedMessageKeys = [
 		Object.values(catalogs).flatMap((catalog) => Object.keys(catalog)),
 	),
 ];
+
+/** The keys of the other catalogs that this language's catalog lacks; none for English, the source language. */
+export function missingMessageKeys(locale: Locale): readonly string[] {
+	if (locale === "en") return [];
+	const catalog = catalogs[locale];
+	return translatedMessageKeys.filter((key) => !Object.hasOwn(catalog, key));
+}
 
 export function detectLocale(
 	languages: readonly string[] | undefined,

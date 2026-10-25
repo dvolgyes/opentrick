@@ -319,7 +319,7 @@ export function tableSection(
 		};
 	const bidBox = el("div", {
 		className: "bid-box",
-		attrs: { "data-testid": "bid-box", "aria-label": "Your call" },
+		attrs: { "data-testid": "bid-box", "aria-label": t("Your call") },
 	});
 	let latestView: TableView | undefined;
 	/** The finished trick on the table, as board and position, and whether it has left the table. */
