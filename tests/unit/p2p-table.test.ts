@@ -322,6 +322,29 @@ describe("table controller seeding from the setup link", () => {
 		expect(table.view().hosting).toBe(true);
 	});
 
+	it("keeps hosting the table that it seeds while a witness lower in the order is there", async () => {
+		// host=S: the order is S, W, N, E. North is a witness: without one, the page cannot volunteer a new term on
+		// the log that it seeds, and the creator's term 1 would not have to step down. The rig's own client is clientN.
+		const holder = await deriveHolder(TABLE, "clientX-0123456789abcd");
+		const table = await rig.start("W", undefined, "S");
+		for (let beats = 0; beats < (2 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			rig.handlers?.ctl("north00000000000000", {
+				k: "beat",
+				role: "follower",
+				holder,
+				seat: "N",
+				elig: true,
+				pos: { rev: 0, lastAuth: null },
+				pref: "S",
+			});
+			await settle();
+			await rig.advance(BEAT_MS);
+		}
+
+		expect(table.view().hosting).toBe(true);
+		expect(rig.storage.commits).toBe(1);
+	});
+
 	it("does not seed while a page higher in the order is there, and seeds when it leaves", async () => {
 		const table = await rig.start("N", undefined, "S");
 		for (let beats = 0; beats < (2 * SEED_WAIT_MS) / BEAT_MS; beats++) {
