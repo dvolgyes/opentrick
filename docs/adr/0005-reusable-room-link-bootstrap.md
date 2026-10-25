@@ -1,6 +1,7 @@
 # ADR 0005: Reusable room links bootstrap an expired room
 
 Status: accepted (2026-10-20).
+The page that seeds is amended by [ADR 0007](0007-host-priority-by-link-seat.md) (2026-10-25).
 
 ## Context
 
@@ -13,8 +14,12 @@ The host needs to reopen a weekly room even when its local copy has expired or i
 
 A complete room setup in the URL allows the page to clear its local expiry tombstone when it has no local replica.
 The page shows all four seats while no host lobby is available.
-When a page selects the configured host seat, it seeds the local replica from the URL setup and starts hosting.
-It seeds only after `SEED_WAIT_MS` (30 s) online without a host, and only `SEED_WAIT_MS` after the last beat with an authority or with entries and the last host lobby (src/p2p/table.ts `#seedWhenAlone`).
+A seated page seeds the local replica from the URL setup and starts hosting.
+Until 2026-10-25, only the configured host seat seeded.
+Now any seated page of the setup link can seed, but only the page first in the order of priority from the host seat (ADR 0007, election rule 14).
+It seeds only after `SEED_WAIT_MS` (30 s) online without a host, and only `SEED_WAIT_MS` after the last host lobby and the last beat that shows the table (src/p2p/table.ts `#seedWhenAlone`).
+A beat shows the table when it comes from a host or a claimer, when its page has entries, or when it reports a host seen within `HOST_LOST_MS` (20 s).
+An older report does not show the table, because the only replica can be gone.
 So a page whose peers with the table all left does not wait for a host until a reload.
 Until then, the seat waits for a host like any other seat.
 Other pages can select seats and wait for that host.
@@ -39,7 +44,8 @@ The seed now waits as the Decision describes.
 
 A page that does not reach the other pages within `SEED_WAIT_MS` still seeds a second table.
 A page whose peers with the table were silent for `SEED_WAIT_MS` also seeds one, and those peers can come back with the table.
-The election then compares the two authorities (src/p2p/authority.ts `compareAuthority`): a higher term wins, and in term 1 the lower tag wins.
+When the links of the two hosts name the same host seat, the table with more entries survives, then the table of the seat with the higher priority (ADR 0007, election rule 13).
+Otherwise the election compares the two authorities (src/p2p/authority.ts `compareAuthority`): a higher term wins, and in term 1 the lower tag wins.
 The group that loses can lose its entries since the split, as ADR 0004 describes for split groups.
 The room key remains a bearer capability, so a player who wants to seed a second table can still do so.
 A full fix would need a host proof, for example a host-only secret in the creator's link, and a security review before code.
