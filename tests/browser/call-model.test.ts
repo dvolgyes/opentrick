@@ -6,6 +6,7 @@ import {
 	type CallControlsView,
 	callControlsView,
 	remoteCallStatus,
+	selfPicture,
 } from "../../src/ui/call-model";
 
 // The view holds real tracks from Chrome's test microphone and camera; the model only checks that a track is there.
@@ -56,6 +57,7 @@ function callView(extra: Partial<CallView> = {}): CallView {
 		requested: NOT_IN_CALL,
 		mic: "off",
 		camera: "off",
+		localVideo: undefined,
 		problem: undefined,
 		remotes: [remote("E", "unknown"), remote("S", "unknown")],
 		...extra,
@@ -357,6 +359,35 @@ describe("call controls (handover §6, §7)", () => {
 			rejoin: switches,
 		});
 		expect([joined.joinName, joined.rejoin]).toEqual(["Leave call", undefined]);
+	});
+});
+
+describe("the own tile of the desktop call box", () => {
+	const sending = (extra: Partial<CallView> = {}) =>
+		inCall({
+			requested: BOTH_WAYS,
+			camera: "on",
+			localVideo: camera(),
+			...extra,
+		});
+	const picture = (view: CallView, mirror: boolean) =>
+		selfPicture({ available: true, view }, mirror);
+
+	it("shows the own camera while it is sent, and only the text that it is sent while Mirror is off", () => {
+		expect(picture(sending(), true)).toBe("camera");
+		expect(picture(sending(), false)).toBe("hidden");
+	});
+
+	it("shows no picture outside the call, without a camera track, or while the camera is not on", () => {
+		for (const mirror of [true, false]) {
+			expect(picture(callView({ localVideo: camera() }), mirror)).toBe("none");
+			expect(picture(sending({ localVideo: undefined }), mirror)).toBe("none");
+			expect(picture(sending({ camera: "pending" }), mirror)).toBe("none");
+			expect(picture(inCall(), mirror)).toBe("none");
+			expect(
+				selfPicture({ available: false, reason: "No calls here." }, mirror),
+			).toBe("none");
+		}
 	});
 });
 

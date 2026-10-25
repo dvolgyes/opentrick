@@ -7,16 +7,23 @@ import {
 	callControlsView,
 	remoteCallStatus,
 	type SwitchView,
+	selfPicture,
 	type Way,
 } from "./call-model";
 import { button, el } from "./dom";
 import { type IconName, icon } from "./icons";
+import { play } from "./remote-audio";
 
 /**
- * The local call controls (handover §2, §6, §7): a panel at the bottom-left of the desktop table, and one icon row on
+ * The local call controls (handover §2, §6, §7): a box at the bottom-left of the desktop table, and one icon row on
  * compact devices. The switches are the choice that Join starts the call with, so Join needs no second step. The
  * stylesheet shows the copy that fits the device class, so each control has one accessible name in both forms. The
  * controls only call the handlers; the call controller owns every rule.
+ *
+ * Outside the call the desktop box has three rows: the heading, the switches as icons, and Join call. In the call it
+ * is a tile of the own camera, as large as the other players' tiles, with the switches as its caption bar, and Leave
+ * call and Mirror below it, where the other tiles have Switch to player. Mirror off shows a text in place of the
+ * own camera on this page only.
  */
 
 export interface CallHandlers {
@@ -41,9 +48,7 @@ interface Toggle {
 	readonly way: Way;
 	readonly medium: Medium;
 	readonly icon: IconName;
-	/** Short visible text on the desktop panel and in the chooser. */
-	readonly label: string;
-	/** Spells out the way and the medium; starts with the visible text. */
+	/** Spells out the way and the medium; also the tooltip, as the switch shows only its icon. */
 	readonly name: string;
 }
 
@@ -51,28 +56,24 @@ const SEND_AUDIO: Toggle = {
 	way: "send",
 	medium: "audio",
 	icon: "mic",
-	label: "Send mic",
 	name: "Send mic audio",
 };
 const RECEIVE_AUDIO: Toggle = {
 	way: "receive",
 	medium: "audio",
 	icon: "speaker",
-	label: "Hear others",
 	name: "Hear others: receive audio",
 };
 const SEND_VIDEO: Toggle = {
 	way: "send",
 	medium: "video",
 	icon: "camera",
-	label: "Send camera",
 	name: "Send camera video",
 };
 const RECEIVE_VIDEO: Toggle = {
 	way: "receive",
 	medium: "video",
-	icon: "eye",
-	label: "See cameras",
+	icon: "display",
 	name: "See cameras: receive video",
 };
 const TOGGLES = [SEND_AUDIO, RECEIVE_AUDIO, SEND_VIDEO, RECEIVE_VIDEO] as const;
@@ -83,7 +84,6 @@ const ALERT_MS = 6_000;
 interface ToggleNode {
 	readonly toggle: Toggle;
 	readonly node: HTMLButtonElement;
-	readonly withLabel: boolean;
 }
 
 /** The icon is the first child; replacing it keeps the focus on the button. */
@@ -120,8 +120,11 @@ export function callControls(
 	let display: CallDisplay | undefined;
 	let shownAlert: string | undefined;
 	let alertTimer: ReturnType<typeof setTimeout> | undefined;
+	/** Desktop: show the own camera in the own tile. Only this page; it never changes what is sent. */
+	let mirror = true;
+	let selfTrack: MediaStreamTrack | undefined;
 
-	function toggleButton(toggle: Toggle, withLabel: boolean): HTMLButtonElement {
+	function toggleButton(toggle: Toggle): HTMLButtonElement {
 		const node = el("button", {
 			className: "call-toggle",
 			attrs: {
@@ -133,7 +136,6 @@ export function callControls(
 			},
 		});
 		setIcon(node, toggle.icon, true);
-		if (withLabel) node.append(el("span", {}, t(toggle.label)));
 		node.disabled = true;
 		node.addEventListener("click", () =>
 			handlers.setSwitch(
@@ -142,7 +144,7 @@ export function callControls(
 				node.getAttribute("aria-pressed") !== "true",
 			),
 		);
-		toggles.push({ toggle, node, withLabel });
+		toggles.push({ toggle, node });
 		return node;
 	}
 
@@ -169,21 +171,66 @@ export function callControls(
 		attrs: { role: "status", "data-testid": "call-note" },
 	});
 	const retries = el("div", { className: "call-retries" });
+	const heading = el("h4", {}, `${t("Optional")} ${t("room call")}`);
+	const selfVideo = el("video", {
+		attrs: { "aria-hidden": "true", "data-testid": "video-self" },
+	});
+	selfVideo.muted = true;
+	selfVideo.playsInline = true;
+	selfVideo.autoplay = true;
+	selfVideo.hidden = true;
+	const selfText = el(
+		"span",
+		{ className: "call-self-text" },
+		t("VIDEO IN PROGRESS"),
+	);
+	const selfOff = el("span", {
+		className: "call-self-off",
+		attrs: { "aria-hidden": "true" },
+	});
+	selfOff.append(icon("camera", true));
+	const self = el(
+		"div",
+		{ className: "call-self", attrs: { "data-testid": "call-self" } },
+		selfOff,
+		selfVideo,
+		selfText,
+	);
+	self.hidden = true;
+	const mirrorButton = el(
+		"button",
+		{
+			className: "call-mirror",
+			attrs: {
+				type: "button",
+				"aria-label": t("Mirror my camera"),
+				"aria-pressed": "true",
+			},
+		},
+		icon("mirror"),
+		el("span", {}, t("Mirror")),
+	);
+	mirrorButton.hidden = true;
+	mirrorButton.addEventListener("click", () => {
+		mirror = !mirror;
+		renderSelf();
+	});
 	const panel = el(
 		"section",
 		{
 			className: "call-panel",
 			attrs: { "aria-label": t("Room call"), "data-testid": "call-panel" },
 		},
-		el("h4", {}, t("Optional"), el("br", {}), t("room call")),
-		joinButton(true),
+		heading,
+		self,
+		retries,
 		el(
 			"div",
-			{ className: "call-switches" },
-			...TOGGLES.map((toggle) => toggleButton(toggle, true)),
+			{ className: "call-switches tile-caption" },
+			...TOGGLES.map((toggle) => toggleButton(toggle)),
 		),
+		el("div", { className: "call-decoration" }, joinButton(true), mirrorButton),
 		note,
-		retries,
 	);
 
 	const alert = el("p", {
@@ -203,8 +250,8 @@ export function callControls(
 			},
 			joinButton(false),
 			// Compact devices are audio only: no camera controls.
-			toggleButton(SEND_AUDIO, false),
-			toggleButton(RECEIVE_AUDIO, false),
+			toggleButton(SEND_AUDIO),
+			toggleButton(RECEIVE_AUDIO),
 		),
 		el("span", {
 			className: "icon-separator",
@@ -235,22 +282,39 @@ export function callControls(
 	}
 
 	function renderToggle(item: ToggleNode, view: SwitchView): void {
-		const { node, toggle, withLabel } = item;
+		const { node, toggle } = item;
 		node.disabled = !view.enabled;
 		node.setAttribute("aria-pressed", String(view.pressed));
 		node.dataset.actual = view.actual;
 		const reason = view.disabledReason;
 		setTitle(
 			node,
-			reason === undefined
-				? withLabel
-					? ""
-					: t(toggle.name)
-				: withLabel
-					? t(reason)
-					: `${t(toggle.name)}. ${t(reason)}`,
+			reason === undefined ? t(toggle.name) : `${t(toggle.name)}. ${t(reason)}`,
 		);
 		setIcon(node, toggle.icon, !view.pressed);
+	}
+
+	/** Desktop: the own tile shows the own camera, the text that it is sent while Mirror is off, or a crossed camera. */
+	function renderSelf(): void {
+		const picture =
+			display === undefined ? "none" : selfPicture(display, mirror);
+		const track =
+			picture === "camera" && display?.available
+				? display.view.localVideo
+				: undefined;
+		if (selfTrack !== track) {
+			selfTrack = track;
+			selfVideo.srcObject =
+				track === undefined ? null : new MediaStream([track]);
+			selfVideo.dataset.play = "off";
+		}
+		selfVideo.hidden = track === undefined;
+		if (track !== undefined && selfVideo.paused) play(selfVideo);
+		selfText.hidden = picture !== "hidden";
+		selfOff.hidden = picture !== "none";
+		self.dataset.picture = picture;
+		mirrorButton.setAttribute("aria-pressed", String(mirror));
+		setIcon(mirrorButton, "mirror", !mirror);
 	}
 
 	/** Desktop: one Retry per seat whose direct connection failed (handover §4, §6). */
@@ -287,6 +351,11 @@ export function callControls(
 		const view = callControlsView(next, t);
 		last = view;
 		panel.dataset.status = next.available ? next.view.status : "unavailable";
+		panel.dataset.inCall = String(view.inCall);
+		heading.hidden = view.inCall;
+		self.hidden = !view.inCall;
+		mirrorButton.hidden = !view.inCall;
+		renderSelf();
 		for (const item of toggles) {
 			const state = view.switches.find(
 				(s) => s.way === item.toggle.way && s.medium === item.toggle.medium,

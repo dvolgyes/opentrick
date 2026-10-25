@@ -255,6 +255,27 @@ export function callControlsView(
 }
 
 /**
+ * What the own tile of the desktop call box shows: the own camera while it is sent, or, with Mirror off, only a
+ * text that it is sent. Mirror changes this page only; the camera goes out either way.
+ */
+export type SelfPicture = "camera" | "hidden" | "none";
+
+export function selfPicture(
+	display: CallDisplay,
+	mirror: boolean,
+): SelfPicture {
+	if (!display.available) return "none";
+	const { view } = display;
+	if (
+		!view.requested.inCall ||
+		view.camera !== "on" ||
+		view.localVideo === undefined
+	)
+		return "none";
+	return mirror ? "camera" : "hidden";
+}
+
+/**
  * The caption of a connected seat (handover §7). A playing picture needs no video word, so the caption names
  * the audio state; without a picture it says why: this side's Video reception is off, or the seat is audio only.
  */

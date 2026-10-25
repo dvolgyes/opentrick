@@ -822,14 +822,6 @@ const rows: readonly TranslationRow[] = [
 	],
 	["Go back", "Volver", "Voltar", "Retour", "Indietro", "Terug"],
 	[
-		"Hear others",
-		"Oír a los demás",
-		"Ouvir os outros",
-		"Entendre les autres",
-		"Ascolta gli altri",
-		"Anderen horen",
-	],
-	[
 		"Hear others: receive audio",
 		"Oír a los demás: recibir audio",
 		"Ouvir os outros: receber áudio",
@@ -1723,14 +1715,6 @@ const rows: readonly TranslationRow[] = [
 	["Scoring", "Puntuación", "Pontuação", "Marque", "Punteggio", "Score"],
 	["Seat", "Asiento", "Lugar", "Place", "Posto", "Plaats"],
 	[
-		"See cameras",
-		"Ver cámaras",
-		"Ver câmaras",
-		"Voir les caméras",
-		"Guarda le telecamere",
-		"Camera's bekijken",
-	],
-	[
 		"See cameras: receive video",
 		"Ver cámaras: recibir vídeo",
 		"Ver câmaras: receber vídeo",
@@ -1754,14 +1738,6 @@ const rows: readonly TranslationRow[] = [
 		"Envoyer la vidéo de la caméra",
 		"Invia video della fotocamera",
 		"Cameravideo verzenden",
-	],
-	[
-		"Send mic",
-		"Enviar micrófono",
-		"Enviar microfone",
-		"Envoyer le micro",
-		"Invia microfono",
-		"Microfoon verzenden",
 	],
 	[
 		"Send mic audio",
@@ -2792,6 +2768,23 @@ const rows: readonly TranslationRow[] = [
 		"Impossible de charger le guide des enchères.",
 		"Impossibile caricare la guida alla dichiarazione.",
 		"De biedgids kon niet worden geladen.",
+	],
+	["Mirror", "Espejo", "Espelho", "Miroir", "Specchio", "Spiegel"],
+	[
+		"Mirror my camera",
+		"Espejo: ver mi cámara",
+		"Espelho: ver a minha câmara",
+		"Miroir : voir ma caméra",
+		"Specchio: vedi la mia fotocamera",
+		"Spiegel: mijn camera bekijken",
+	],
+	[
+		"VIDEO IN PROGRESS",
+		"VÍDEO EN CURSO",
+		"VÍDEO EM CURSO",
+		"VIDÉO EN COURS",
+		"VIDEO IN CORSO",
+		"VIDEO BEZIG",
 	],
 ];
 

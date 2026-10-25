@@ -1278,6 +1278,7 @@ describe("compact play controls", () => {
 				},
 				mic: "off" as const,
 				camera: "off" as const,
+				localVideo: undefined,
 				problem: undefined,
 				remotes,
 			},

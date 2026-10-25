@@ -1578,21 +1578,113 @@ main:has(> .room) {
 	align-items: stretch;
 }
 
-/* The heading and Join call share the first row, so the panel is about as tall as the bid grid. */
+/*
+ * The call box has the shape of a video tile. Outside the call it is a white sheet with the heading and the switches,
+ * and Join call below it; in the call it is the own tile, with the switches as its caption bar, and Leave call and
+ * Mirror below it, where the other tiles have Switch to player.
+ */
 .call-panel {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	gap: 0.3rem;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
 	align-items: center;
-	padding: 0.5rem;
+	justify-content: center;
+	width: calc(var(--card-h) * 4 / 3);
+	height: var(--card-h);
 	border: 1px solid var(--line);
-	border-radius: 0.5rem;
+	border-radius: 0.4rem;
 	background: var(--panel);
+}
+
+.call-panel[data-in-call="true"] {
+	border: 0;
+	background: var(--tile-bg);
 }
 
 .call-panel h4 {
 	margin: 0;
 	font-size: 0.9rem;
+	white-space: nowrap;
+}
+
+.call-self {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	overflow: hidden;
+	border-radius: 0.4rem;
+	color: var(--felt-fg);
+}
+
+/* The own picture is mirrored, like the camera preview, so a hand moves to the side it moves to. */
+.call-self video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transform: scaleX(-1);
+}
+
+.call-self-text {
+	margin-bottom: var(--tile-caption-h, 1.05rem);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+}
+
+.call-self-off {
+	margin-bottom: var(--tile-caption-h, 1.05rem);
+	opacity: 0.7;
+}
+
+.call-self-off .icon {
+	width: 2.5rem;
+	height: 2.5rem;
+}
+
+.call-decoration {
+	position: absolute;
+	top: calc(100% + 0.15rem);
+	left: 0;
+	z-index: 2;
+	display: flex;
+	gap: 0.3rem;
+	width: 100%;
+	height: var(--tile-decoration-h, 1.3rem);
+}
+
+.call-decoration button {
+	justify-content: center;
+	min-height: 0;
+	padding: 0 0.4rem;
+}
+
+.call-decoration .call-join {
+	flex: 1;
+	font-size: 0.9rem;
+}
+
+/* Leave call names the action first; the phone icon follows. */
+.call-decoration .call-join[data-in-call="true"] {
+	flex-direction: row-reverse;
+}
+
+.call-mirror {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	border-color: var(--line);
+	background: var(--panel);
+	color: var(--fg);
+	font-size: 0.8rem;
+}
+
+.call-mirror[aria-pressed="true"] {
+	border-color: var(--accent);
+	background: var(--accent);
+	color: var(--bg);
 }
 
 .camera-setup {
@@ -1642,16 +1734,30 @@ main:has(> .room) {
 }
 
 .call-panel .note {
-	grid-column: 1 / -1;
 	margin: 0;
 	font-size: 0.8rem;
 }
 
-.call-switches {
-	display: grid;
-	grid-column: 1 / -1;
-	grid-template-columns: 1fr 1fr;
+/* Outside the call the switches are the second row of the sheet; in the call they are the caption bar of the own tile. */
+.call-switches.tile-caption {
+	display: flex;
 	gap: 0.3rem;
+	align-items: center;
+	justify-content: space-evenly;
+	height: var(--tile-caption-h, 1.05rem);
+	overflow: visible;
+	border-radius: 0 0 0.4rem 0.4rem;
+}
+
+.call-panel[data-in-call="false"] .call-switches {
+	position: static;
+	width: 100%;
+	background: none;
+}
+
+.call-switches .call-toggle {
+	height: calc(100% - 0.2rem);
+	padding: 0 0.5rem;
 }
 
 .call-toggle,
@@ -1700,9 +1806,13 @@ button.call-join[data-in-call="true"] {
 }
 
 .call-retries {
+	position: absolute;
+	top: 0.3rem;
+	right: 0.3rem;
+	left: 0.3rem;
+	z-index: 1;
 	display: flex;
 	flex-wrap: wrap;
-	grid-column: 1 / -1;
 	gap: 0.3rem;
 }
 
@@ -3335,9 +3445,30 @@ main:has(> .room[data-form="compact"]) {
 	height: 0;
 }
 
-.room[data-form="desktop"] .video-row .tile {
+/*
+ * The call box has the size of a window. Its switches make its caption bar and its Leave call row taller than a text
+ * line, so every window has the same taller caption bar and control row.
+ */
+.room[data-form="desktop"] {
+	--tile-caption-h: 1.55rem;
+	--tile-decoration-h: 1.5rem;
+}
+
+.room[data-form="desktop"] :is(.video-row .tile, .call-panel) {
 	width: calc(var(--card-h) * 4 / 3 * 1.4);
 	height: calc(var(--card-h) * 1.4);
+}
+
+.room[data-form="desktop"] .tile-caption:not(.call-switches) {
+	height: var(--tile-caption-h);
+	font-size: 0.85rem;
+	line-height: var(--tile-caption-h);
+}
+
+.room[data-form="desktop"] .tile-bot-control {
+	height: var(--tile-decoration-h);
+	padding: 0 0.3rem;
+	font-size: 0.8rem;
 }
 
 .room[data-form="desktop"] .video-left,
@@ -3362,9 +3493,10 @@ main:has(> .room[data-form="compact"]) {
 	bottom: 40px;
 }
 
+/* The mirror place of the right window: its control row hangs into the same 40px gap. */
 .room[data-form="desktop"] .call-slot {
 	left: 20px;
-	bottom: 20px;
+	bottom: 40px;
 	z-index: 1;
 }
 
