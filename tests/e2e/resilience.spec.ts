@@ -26,12 +26,12 @@ const all: Player[] = [];
 const current: Player[] = [];
 let openBrowser: (name: string, rig?: RigOptions) => Promise<Player>;
 
-/** Every table older than this is expired (24 h without activity, plan §4.7). */
-const AGED_MS = 25 * 60 * 60 * 1_000;
+/** Every table older than this is expired (8 h without activity, plan §4.7). */
+const AGED_MS = 9 * 60 * 60 * 1_000;
 
 /**
- * Moves the last activity of every table stored in this browser back by 25 h, as on a device that last played a
- * day ago. The page must be at the app's origin. The records stay valid, so the app reads them as usual.
+ * Moves the last activity of every table stored in this browser back by 9 h, as on a device that last played 9 hours
+ * ago. The page must be at the app's origin. The records stay valid, so the app reads them as usual.
  */
 async function ageStoredTables(page: Page): Promise<number> {
 	return page.evaluate(
@@ -212,7 +212,7 @@ test("a damaged key opens an empty table: nobody is there", async () => {
 	await expectSeat(creator, "W");
 });
 
-test("a table without activity for 24 h expires and stays expired", async () => {
+test("a table without activity for 8 h expires and stays expired", async () => {
 	const west = await openBrowser("west");
 	const page = await west.page("./");
 	const link = await createRoom(page);

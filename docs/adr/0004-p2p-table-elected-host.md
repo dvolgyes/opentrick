@@ -120,7 +120,8 @@ State:
   The page sends it as a command through the outbox, like a move; the host keeps it only when its version is higher than the stored one, and stores the seat holder with it.
   After a reload or a crash, a page restores only a record of its own holder, once.
   It joins the call on its own only when the browser already allows every device that the record sends; otherwise it offers "Rejoin the call".
-- A table expires 24 hours after its last activity on each device; a tombstone keeps an expired link expired for 30 days.
+- A table expires 8 hours after its last activity on each device; a tombstone keeps an expired link expired for 30 days.
+  Until 2026-10-25 the limit was 24 hours; one session at a table is shorter than 8 hours.
 
 Host election (a pure reducer, `src/p2p/election.ts`):
 

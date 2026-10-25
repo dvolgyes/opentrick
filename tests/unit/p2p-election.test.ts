@@ -594,6 +594,78 @@ describe("the automatic volunteer (rule 8)", () => {
 	});
 });
 
+describe("the handover to a seat closer to the link's host seat (rule 12)", () => {
+	// host=S: the order is S, W, N, E.
+	const AUTH_W2: Authority = { term: 2, tag: TAG_W, inc: 1 };
+	const POS_W: Position = { rev: 4, lastAuth: AUTH_W2 };
+
+	function south(pos: Position): Page {
+		return new Page({
+			...facts(HOLDER_S, seating("S", { pos, host: AUTH_W2 })),
+			pref: "S",
+		});
+	}
+
+	function host(auth: Authority, pos: Position, pref?: Seat): Beat {
+		return {
+			...leaderBeat(auth, "host", pos),
+			...(pref === undefined ? {} : { pref }),
+		};
+	}
+
+	it("takes over at once from a host farther from the link's host seat, and pulls from it at an equal position", () => {
+		const page = south(POS_W);
+		const effects = page.hear("pW", host(AUTH_W2, POS_W, "S"));
+
+		const claim = { term: 3, tag: makeTag(HOLDER_S, "S"), inc: 1 };
+		expect(page.state.mode).toMatchObject({ kind: "claiming", auth: claim });
+		expect(ofType(effects, "pull")).toEqual([
+			{ type: "pull", auth: claim, peer: "pW" },
+		]);
+		expect(ofType(effects, "store")).toEqual([]);
+	});
+
+	it("follows the host until its replica has every entry that the host's beat shows", () => {
+		const page = south({ rev: 3, lastAuth: AUTH_W2 });
+		const effects = page.hear("pW", host(AUTH_W2, POS_W, "S"));
+		expect(page.mode).toBe("idle");
+		expect(ofType(effects, "follow")).toEqual([
+			{ type: "follow", host: { auth: AUTH_W2, peer: "pW" } },
+		]);
+
+		page.step({
+			type: "self",
+			now: page.now,
+			self: {
+				...facts(HOLDER_S, seating("S", { pos: POS_W, host: AUTH_W2 })),
+				pref: "S",
+			},
+		});
+		expect(page.mode).toBe("claiming");
+	});
+
+	it("keeps following a host closer to the link's host seat", () => {
+		const auth: Authority = { term: 2, tag: makeTag(HOLDER_S, "S"), inc: 1 };
+		const pos = { rev: 4, lastAuth: auth };
+		const page = new Page({
+			...facts(HOLDER_W, seating("W", { pos, host: auth })),
+			pref: "S",
+		});
+		page.run(VOLUNTEER_MS, [{ peer: "pS", beat: host(auth, pos, "S") }]);
+		expect(page.mode).toBe("idle");
+	});
+
+	it("keeps following a host whose link names another host seat or none", () => {
+		for (const pref of ["N", undefined] as const) {
+			const page = south(POS_W);
+			page.run(VOLUNTEER_MS, [
+				{ peer: "pW", beat: host(AUTH_W2, POS_W, pref) },
+			]);
+			expect(page.mode, String(pref)).toBe("idle");
+		}
+	});
+});
+
 describe("a claim (rule 9)", () => {
 	function clicked(page: Page, sources: readonly Source[]): ElectionEffect[] {
 		page.run(BUTTON_MS, sources);
@@ -820,6 +892,22 @@ describe("beats", () => {
 		]);
 	});
 
+	it("beats at once when it hears the host, so that a peer's report of the host is at most a beat period old", () => {
+		// With a beat a period after the host's beat, the next page could hold a report two beat periods old: the
+		// host's beat would be lost for it, though no beat was lost.
+		const page = west();
+		page.run(BEAT_MS);
+		const relayed = ofType(
+			page.hear("pN", leaderBeat(AUTH_1), BEAT_MS + 500),
+			"beat",
+		);
+		expect(relayed.map(({ beat }) => beat)).toEqual([
+			expect.objectContaining({ auth: AUTH_1, seenAgoMs: 0 }),
+		]);
+		expect(ofType(page.tick(2 * BEAT_MS + 500 - 1), "beat")).toEqual([]);
+		expect(ofType(page.tick(2 * BEAT_MS + 500), "beat")).toHaveLength(1);
+	});
+
 	it("reports the age of the last direct beat from the known authority, in whole milliseconds", () => {
 		const page = west();
 		const [first] = ofType(page.run(BEAT_MS), "beat");
@@ -834,10 +922,10 @@ describe("beats", () => {
 			seenAgoMs: MAX_TERM,
 		});
 		page.hear("pN", leaderBeat(AUTH_1), BEAT_MS + 500);
-		const [later] = ofType(page.tick(2 * BEAT_MS + 0.75), "beat");
+		const [later] = ofType(page.tick(2 * BEAT_MS + 500.75), "beat");
 		expect(later?.beat).toMatchObject({
 			auth: AUTH_1,
-			seenAgoMs: BEAT_MS - 500,
+			seenAgoMs: BEAT_MS,
 		});
 	});
 
