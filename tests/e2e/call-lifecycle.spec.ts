@@ -24,6 +24,7 @@ import {
 	SEAT_NAMES,
 	SOUND,
 	setCallRelayOnly,
+	withRoundTrip,
 } from "./call-probe";
 import type { CallReceived, CallView, Harness } from "./harness/main";
 import { Player, reportNetwork } from "./player";
@@ -343,7 +344,7 @@ test("1: West, North and East join with audio; South's seat is held by a modifie
 	await expectConnected(IN_CALL);
 	for (const seat of IN_CALL)
 		await expect(caption(tab[seat], "S")).toHaveText(
-			`${seatLabel("S")} · Not in call`,
+			withRoundTrip(`${seatLabel("S")} · Not in call`),
 		);
 });
 
@@ -553,7 +554,7 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 	await south.context.close();
 	for (const seat of IN_CALL)
 		await expect(caption(tab[seat], "S")).toHaveText(
-			`${seatLabel("S")} · Not in call`,
+			withRoundTrip(`${seatLabel("S")} · Not in call`),
 			{
 				timeout: GONE_MS,
 			},
@@ -586,7 +587,7 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 	expect(await requestsFor(tab.S, "audio")).toBe(0);
 	for (const seat of IN_CALL)
 		await expect(caption(tab[seat], "S")).toHaveText(
-			`${seatLabel("S")} · Not in call`,
+			withRoundTrip(`${seatLabel("S")} · Not in call`),
 		);
 
 	await joinWith(tab.S, "Audio only");
@@ -598,7 +599,7 @@ test("5: when one player leaves, the other three pairs keep their sound", async 
 	for (const seat of IN_CALL) {
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
 		await expect(caption(tab[seat], "S")).toHaveText(
-			`${seatLabel("S")} · Not in call`,
+			withRoundTrip(`${seatLabel("S")} · Not in call`),
 		);
 	}
 	for (const seat of IN_CALL) {
@@ -624,7 +625,7 @@ test("6: leaving the room during the call ends the tracks and the links; back in
 		.toEqual({ openPeers: 0, liveTracks: 0 });
 	for (const seat of ["W", "N"] as const) {
 		await expect(caption(tab[seat], "E")).toHaveText(
-			`${seatLabel("E")} · Not in call`,
+			withRoundTrip(`${seatLabel("E")} · Not in call`),
 			{
 				timeout: GONE_MS,
 			},
@@ -649,7 +650,7 @@ test("7: a browser limited to relays gets Retry for each of its pairs, the other
 	await expect(joinButton(tab.N)).toBeVisible();
 	for (const seat of ["W", "E"] as const)
 		await expect(caption(tab[seat], "N")).toHaveText(
-			`${seatLabel("N")} · Not in call`,
+			withRoundTrip(`${seatLabel("N")} · Not in call`),
 		);
 	await setCallRelayOnly(tab.N, true);
 	await joinWith(tab.S, "Audio only");
@@ -666,10 +667,10 @@ test("7: a browser limited to relays gets Retry for each of its pairs, the other
 			`North offers Retry for ${seat}`,
 		).toBeVisible({ timeout: UNAVAILABLE_WITHIN_MS });
 		await expect(caption(tab.N, seat)).toHaveText(
-			`${seatLabel(seat)} · Direct connection unavailable`,
+			withRoundTrip(`${seatLabel(seat)} · Direct connection unavailable`),
 		);
 		await expect(caption(tab[seat], "N")).toHaveText(
-			`${seatLabel("N")} · Direct connection unavailable`,
+			withRoundTrip(`${seatLabel("N")} · Direct connection unavailable`),
 			{ timeout: UNAVAILABLE_WITHIN_MS },
 		);
 	}

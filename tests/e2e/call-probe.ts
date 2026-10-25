@@ -516,6 +516,23 @@ export async function expectNoteOffScreen(page: Page): Promise<void> {
 }
 export const caption = (page: Page, seat: SeatKey): Locator =>
 	page.getByTestId(`tile-${seat}`).locator(".tile-caption");
+
+/**
+ * A caption `text`, "label" or "label · status", with or without the round trip that the host measures for a
+ * guest and shows after the label (src/ui/table.ts). The call tests check the label and the status; the round
+ * trip changes with each measurement.
+ */
+export function withRoundTrip(text: string): RegExp {
+	const at = text.indexOf(" · ");
+	const label = at < 0 ? text : text.slice(0, at);
+	const status = at < 0 ? "" : text.slice(at);
+	return new RegExp(
+		`^${escapeRegExp(label)}(?: \\(>?\\d+\\.\\ds roundtrip\\))?${escapeRegExp(status)}$`,
+	);
+}
+
+const escapeRegExp = (text: string): string =>
+	text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export const toggle = (page: Page, name: string): Locator =>
 	page.getByRole("button", { name, exact: true });
 export const joinButton = (page: Page): Locator =>
