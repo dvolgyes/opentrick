@@ -234,7 +234,7 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 		for (const other of SEATS.filter((item) => item !== seat && item !== "W")) {
 			const quality = tab[seat].getByTestId(`round-trip-${other}`);
 			await expect(quality).toHaveText(
-				/^\(Network: (?:excellent|good|average|poor)\)$/,
+				/^\(Network: (?:excellent|good|average|poor|connection issues)\)$/,
 			);
 			await expect(quality).toHaveAttribute(
 				"title",

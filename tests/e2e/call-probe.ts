@@ -527,7 +527,7 @@ export function withRoundTrip(text: string): RegExp {
 	const label = at < 0 ? text : text.slice(0, at);
 	const status = at < 0 ? "" : text.slice(at);
 	return new RegExp(
-		`^${escapeRegExp(label)}(?: \\((?:ping|Network: (?:excellent|good|average|poor))\\))?${escapeRegExp(status)}$`,
+		`^${escapeRegExp(label)}(?: \\((?:ping|Network: (?:excellent|good|average|poor|connection issues))\\))?${escapeRegExp(status)}$`,
 	);
 }
 

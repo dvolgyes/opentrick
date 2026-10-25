@@ -483,12 +483,12 @@ describe("round trips", () => {
 		expect(measured(1234)?.title).toBe("Roundtrip: 1.23sec");
 	});
 
-	it("marks an unanswered probe as poor, and shows its lower bound with >", () => {
+	it("names an unanswered probe a connection issue, and shows its lower bound with >", () => {
 		const table = view("N", null, {
 			roundTrips: [{ seat: "S", ms: 5000, lower: true }],
 		});
 		expect(seatView(table, "S").roundTrip).toEqual({
-			text: "(Network: poor)",
+			text: "(Network: connection issues)",
 			title: "Roundtrip: >5.00sec",
 			quality: "poor",
 		});

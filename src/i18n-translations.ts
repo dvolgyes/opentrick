@@ -2334,6 +2334,14 @@ const rows: readonly TranslationRow[] = [
 		"(Netwerk: slecht)",
 	],
 	[
+		"(Network: connection issues)",
+		"(Red: problemas de conexión)",
+		"(Rede: problemas de ligação)",
+		"(Réseau : problèmes de connexion)",
+		"(Rete: problemi di connessione)",
+		"(Netwerk: verbindingsproblemen)",
+	],
+	[
 		"Roundtrip: {seconds}sec",
 		"Ida y vuelta: {seconds} s",
 		"Ida e volta: {seconds} s",

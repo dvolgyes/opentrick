@@ -161,7 +161,8 @@ export interface SeatView {
 /**
  * The network quality for the video tile, such as "(Network: good)", with the round trip as the hint. The quality
  * follows the shown hundredths: excellent up to 0.10 s, good up to 0.30 s, average up to 0.60 s, poor above it. A
- * connected player whom the host has not measured yet shows "(ping)" and has no hint.
+ * ping without an echo shows "(Network: connection issues)" in the poor colour. A connected player whom the host
+ * has not measured yet shows "(ping)" and has no hint.
  */
 export interface RoundTripView {
 	readonly text: string;
@@ -483,9 +484,13 @@ function roundTripView(
 	// The quality follows the shown hundredths, so 0.104 s shows as "0.10sec" and is excellent.
 	const hundredths = Math.round(measured.ms / 10);
 	const seconds = (hundredths / 100).toFixed(2);
-	const title = measured.lower
-		? t("Roundtrip: >{seconds}sec", { seconds })
-		: t("Roundtrip: {seconds}sec", { seconds });
+	if (measured.lower)
+		return {
+			text: t("(Network: connection issues)"),
+			title: t("Roundtrip: >{seconds}sec", { seconds }),
+			quality: "poor",
+		};
+	const title = t("Roundtrip: {seconds}sec", { seconds });
 	if (hundredths <= 10)
 		return { text: t("(Network: excellent)"), title, quality: "excellent" };
 	if (hundredths <= 30)

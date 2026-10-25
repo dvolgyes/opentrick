@@ -43,6 +43,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"(Network: good)": "(Netzwerk: gut)",
 		"(Network: average)": "(Netzwerk: mittel)",
 		"(Network: poor)": "(Netzwerk: schlecht)",
+		"(Network: connection issues)": "(Netzwerk: Verbindungsprobleme)",
 		"Roundtrip: {seconds}sec": "Umlaufzeit: {seconds} s",
 		"Roundtrip: >{seconds}sec": "Umlaufzeit: >{seconds} s",
 		"Waiting for {players} to come back":
@@ -577,6 +578,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"(Network: good)": "(Hálózat: jó)",
 		"(Network: average)": "(Hálózat: közepes)",
 		"(Network: poor)": "(Hálózat: gyenge)",
+		"(Network: connection issues)": "(Hálózat: kapcsolati problémák)",
 		"Roundtrip: {seconds}sec": "Oda-vissza: {seconds} mp",
 		"Roundtrip: >{seconds}sec": "Oda-vissza: >{seconds} mp",
 		"Waiting for {players} to come back":
@@ -1104,6 +1106,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"(Network: good)": "(Nettverk: godt)",
 		"(Network: average)": "(Nettverk: middels)",
 		"(Network: poor)": "(Nettverk: dårlig)",
+		"(Network: connection issues)": "(Nettverk: tilkoblingsproblemer)",
 		"Roundtrip: {seconds}sec": "Tur-retur: {seconds} s",
 		"Roundtrip: >{seconds}sec": "Tur-retur: >{seconds} s",
 		"Waiting for {players} to come back":
