@@ -14,7 +14,8 @@
 		"format": "biome check --write .",
 		"test": "vitest run",
 		"bot": "node --env-file-if-exists=.env --import tsx src/bot/cli.ts",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"test:e2e:live": "E2E_LIVE=1 playwright test tests/e2e/live-robots.spec.ts"
 	},
 	"dependencies": {
 		"@bridge-tools/core": "0.3.1",
