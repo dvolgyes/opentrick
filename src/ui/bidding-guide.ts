@@ -19,13 +19,13 @@ export interface GuideBlock {
 }
 
 const GUIDE_NAMES: Readonly<Record<PointSystem, string>> = {
-	// Without points the guide still needs a scale; HCP is the common one.
-	none: "milton",
 	hcp: "milton",
 	"hcp-corrected": "milton_corrected",
 	vienna: "vienna",
 	reith: "reith",
 	"four-aces": "four_aces",
+	// The guides do not describe an other system; HCP is the common scale.
+	other: "milton",
 };
 
 const GUIDE_FILES = import.meta.glob<string>("../guides/*.txt", {

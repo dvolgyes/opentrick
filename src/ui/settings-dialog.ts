@@ -23,12 +23,12 @@ import {
 } from "./settings";
 
 const POINT_SYSTEM_LABELS: Readonly<Record<PointSystem, string>> = {
-	none: "No",
 	hcp: "Milton/HCP (4-3-2-1)",
 	"hcp-corrected": "Corrected Milton HCP",
 	vienna: "Vienna (7-5-3-1)",
 	reith: "Reith (6-4-3-2-1)",
 	"four-aces": "Four Aces (3-2-1-½)",
+	other: "Other",
 };
 
 const THEME_LABELS: Readonly<Record<Theme, string>> = {
@@ -104,9 +104,13 @@ export function settingsDialog(
 	};
 	const points = radios(
 		"settings-points",
-		"Hand evaluation points",
+		"Bidding system",
 		POINT_SYSTEMS,
 		POINT_SYSTEM_LABELS,
+	);
+	const cardPoints = el("input", { attrs: { type: "checkbox" } });
+	points.element.append(
+		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),
 	);
 	const theme = radios("settings-theme", "Theme", THEMES, THEME_LABELS);
 	const flags = Object.fromEntries(
@@ -295,6 +299,7 @@ export function settingsDialog(
 		}
 		const settings: Settings = {
 			pointSystem: points.value(),
+			cardPoints: cardPoints.checked,
 			theme: theme.value(),
 			bidTurnFrame: flags.bidTurnFrame.checked,
 			playTurnFrame: flags.playTurnFrame.checked,
@@ -355,6 +360,7 @@ export function settingsDialog(
 			const settings = readSettings(deps.browser);
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
+			cardPoints.checked = settings.cardPoints;
 			theme.set(settings.theme);
 			for (const field of Object.keys(
 				FLAG_LABELS,

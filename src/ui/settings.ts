@@ -15,6 +15,8 @@ export type ModelSlot = BotModel | typeof CUSTOM_MODEL_SLOT;
  */
 export interface Settings {
 	readonly pointSystem: PointSystem;
+	/** The points of the hand next to the cards. */
+	readonly cardPoints: boolean;
 	readonly theme: Theme;
 	readonly bidTurnFrame: boolean;
 	readonly playTurnFrame: boolean;
@@ -31,6 +33,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
 	pointSystem: "hcp-corrected",
+	cardPoints: true,
 	theme: "light",
 	bidTurnFrame: true,
 	playTurnFrame: true,
@@ -119,6 +122,8 @@ export function readSettings(storage: MaybeStorage): Settings {
 	const customModel =
 		customModelProblem(storedModel) === undefined ? storedModel : "";
 	const storedOrder = read("model-order");
+	// An earlier version stored "none" for no points: no system preference, so the default system without card points.
+	const storedPoints = read("points");
 	const flags = Object.fromEntries(
 		Object.entries(FLAGS).map(([field, name]) => [
 			field,
@@ -127,9 +132,13 @@ export function readSettings(storage: MaybeStorage): Settings {
 	) as Record<keyof typeof FLAGS, boolean>;
 	return {
 		pointSystem: readChoice(
-			read("points"),
+			storedPoints,
 			POINT_SYSTEMS,
 			DEFAULT_SETTINGS.pointSystem,
+		),
+		cardPoints: readFlag(
+			read("card-points"),
+			storedPoints !== "none" && DEFAULT_SETTINGS.cardPoints,
 		),
 		theme: readChoice(read("theme"), THEMES, DEFAULT_SETTINGS.theme),
 		...flags,
@@ -145,6 +154,7 @@ export function readSettings(storage: MaybeStorage): Settings {
 export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);
+	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");
 	storage.setItem(`${PREFIX}theme`, settings.theme);
 	for (const [field, name] of Object.entries(FLAGS))
 		storage.setItem(

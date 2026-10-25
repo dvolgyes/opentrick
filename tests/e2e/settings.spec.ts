@@ -39,6 +39,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Corrected Milton HCP")).toBeChecked();
 	await expect(dialog.getByLabel("Light")).toBeChecked();
 	for (const flag of [
+		"Show the points next to the cards",
 		"Frame the player whose turn it is to bid",
 		"Frame the player whose turn it is to play",
 		"Show as text whose turn it is to bid",
@@ -60,6 +61,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByLabel("Vienna (7-5-3-1)").check();
 	await dialog.getByLabel("Dark").check();
 	await dialog.getByLabel("Frame the player whose turn it is to bid").uncheck();
+	await dialog.getByLabel("Show the points next to the cards").uncheck();
 	await dialog.getByLabel("Show the network quality").uncheck();
 	await relayChecks.check();
 	const firstModel = (await modelOrder(dialog))[0];
@@ -82,6 +84,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).toEqual([
 		"opentrick.settings.bid-turn-frame",
 		"opentrick.settings.bid-turn-text",
+		"opentrick.settings.card-points",
 		"opentrick.settings.model-order",
 		"opentrick.settings.network-quality",
 		"opentrick.settings.play-turn-frame",
@@ -97,6 +100,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Dark")).toBeChecked();
 	await expect(
+		dialog.getByLabel("Show the points next to the cards"),
+	).not.toBeChecked();
+	await expect(
 		dialog.getByLabel("Frame the player whose turn it is to bid"),
 	).not.toBeChecked();
 	await expect(
@@ -109,7 +115,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	expect(await modelOrder(dialog)).toEqual(order);
 
 	// Cancel keeps the stored choices.
-	await dialog.getByLabel("No", { exact: true }).check();
+	await dialog.getByLabel("Other", { exact: true }).check();
 	await dialog.getByRole("button", { name: "Cancel" }).click();
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();

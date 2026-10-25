@@ -254,7 +254,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Vienna: "Wien",
 		Reith: "Reith",
 		"Four Aces": "Four Aces",
-		No: "Nein",
+		Other: "Andere",
 		"Milton/HCP (4-3-2-1)": "Milton/HCP (4-3-2-1)",
 		"Corrected Milton HCP": "Korrigierte Milton-HCP",
 		"Vienna (7-5-3-1)": "Wien (7-5-3-1)",
@@ -263,7 +263,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Light: "Hell",
 		Dark: "Dunkel",
 		Theme: "Design",
-		"Hand evaluation points": "Punkte der Handbewertung",
+		"Bidding system": "Reizsystem",
+		"Show the points next to the cards": "Punkte neben den Karten zeigen",
 		"Frame the player whose turn it is to bid":
 			"Rahmen um den Spieler, der bieten muss",
 		"Frame the player whose turn it is to play":
@@ -804,7 +805,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Vienna: "Bécsi",
 		Reith: "Reith",
 		"Four Aces": "Four Aces",
-		No: "Nem",
+		Other: "Egyéb",
 		"Milton/HCP (4-3-2-1)": "Milton/HCP (4-3-2-1)",
 		"Corrected Milton HCP": "Korrigált Milton HCP",
 		"Vienna (7-5-3-1)": "Bécsi (7-5-3-1)",
@@ -813,7 +814,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Light: "Világos",
 		Dark: "Sötét",
 		Theme: "Téma",
-		"Hand evaluation points": "Kézértékelő pontok",
+		"Bidding system": "Licitrendszer",
+		"Show the points next to the cards": "Pontok mutatása a lapok mellett",
 		"Frame the player whose turn it is to bid":
 			"Keret a licitre következő játékos körül",
 		"Frame the player whose turn it is to play":
@@ -1275,7 +1277,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Vienna: "Wien",
 		Reith: "Reith",
 		"Four Aces": "Four Aces",
-		No: "Nei",
+		Other: "Annet",
 		"Milton/HCP (4-3-2-1)": "Milton/HCP (4-3-2-1)",
 		"Corrected Milton HCP": "Korrigert Milton-HCP",
 		"Vienna (7-5-3-1)": "Wien (7-5-3-1)",
@@ -1284,7 +1286,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Light: "Lys",
 		Dark: "Mørk",
 		Theme: "Tema",
-		"Hand evaluation points": "Poeng for håndvurdering",
+		"Bidding system": "Meldesystem",
+		"Show the points next to the cards": "Vis poengene ved kortene",
 		"Frame the player whose turn it is to bid":
 			"Ramme rundt spilleren som skal melde",
 		"Frame the player whose turn it is to play":

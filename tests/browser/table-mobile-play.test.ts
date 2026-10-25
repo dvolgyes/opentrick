@@ -2202,18 +2202,22 @@ describe("hand points", () => {
 		}
 	});
 
-	it("counts on the scale of the settings at each render, and shows no points without a scale", () => {
+	it("counts on the scale of the settings at each render, counts HCP for an other system, and shows no points when the card points are off", () => {
 		let scale: PointSystem = "vienna";
+		let shown = true;
 		const { root, section } = renderView(
 			pointsView(),
 			"desktop",
 			undefined,
 			undefined,
-			{ pointSystem: () => scale },
+			{ pointSystem: () => scale, cardPoints: () => shown },
 		);
 		expect(pill(root)?.textContent).toBe("Vienna: 21");
 		expect(pill(root)?.title).toBe("A=7, K=5, Q=3, J=1: 21");
-		scale = "none";
+		scale = "other";
+		section.render(pointsView());
+		expect(pill(root)?.textContent).toMatch(/^HCP: \d+$/);
+		shown = false;
 		section.render(pointsView());
 		expect(pill(root)).toBeNull();
 	});

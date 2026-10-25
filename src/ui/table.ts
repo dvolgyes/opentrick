@@ -80,6 +80,8 @@ export interface TableSection {
 export interface TableOptions {
 	/** The scale of the points pill and the bidding guide; the table reads it at each render. */
 	readonly pointSystem?: () => PointSystem;
+	/** The points pill shows only while this is true; the table reads it at each render. */
+	readonly cardPoints?: () => boolean;
 	/** The language of the bidding guide. */
 	readonly locale?: Locale;
 }
@@ -228,7 +230,9 @@ export function tableSection(
 ): TableSection {
 	const pointSystem =
 		options.pointSystem ?? (() => DEFAULT_SETTINGS.pointSystem);
+	const cardPoints = options.cardPoints ?? (() => DEFAULT_SETTINGS.cardPoints);
 	let shownPointSystem = pointSystem();
+	let shownCardPoints = cardPoints();
 	const guide = guideDialog(t, options.locale ?? "en");
 	// The points pill opens this dialog with the calculation, for a screen where no hint shows.
 	const pointsTitle = el("h3", {
@@ -911,9 +915,8 @@ export function tableSection(
 	/** The points of a hand on the chosen scale; its hint and its dialog give the calculation, one line each. */
 	function pointsPill(cards: readonly Card[] | undefined): HTMLElement[] {
 		const system = shownPointSystem;
-		if (cards === undefined || system === "none") return [];
+		if (cards === undefined || !shownCardPoints) return [];
 		const points = countHandPoints(system, cards);
-		if (points === undefined) return [];
 		const text = formatHandPoints(system, points, t);
 		const lines = explainHandPoints(system, cards, t);
 		return [
@@ -1953,6 +1956,7 @@ export function tableSection(
 	function render(view: TableView): void {
 		latestView = view;
 		shownPointSystem = pointSystem();
+		shownCardPoints = cardPoints();
 		element.dataset.phase = view.phase;
 		element.dataset.board = String(view.board);
 		element.dataset.at = String(view.at);

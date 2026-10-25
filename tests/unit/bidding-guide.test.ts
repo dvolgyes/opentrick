@@ -67,14 +67,14 @@ describe("bidding guide text", () => {
 		expect(await loadGuide("hcp", "xx" as Locale)).toBeUndefined();
 	});
 
-	it("names one guide for each scale; no points shows the HCP guide", () => {
+	it("names one guide for each scale; an other system shows the HCP guide", () => {
 		expect(POINT_SYSTEMS.map(guideName)).toEqual([
-			"milton",
 			"milton",
 			"milton_corrected",
 			"vienna",
 			"reith",
 			"four_aces",
+			"milton",
 		]);
 	});
 });

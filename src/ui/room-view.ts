@@ -851,6 +851,7 @@ export function showRoom(
 		deps.t,
 		{
 			pointSystem: () => readSettings(deps.browser).pointSystem,
+			cardPoints: () => readSettings(deps.browser).cardPoints,
 			locale: deps.locale,
 		},
 	);

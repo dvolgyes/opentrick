@@ -30,6 +30,7 @@ describe("player settings", () => {
 	it("uses corrected HCP, the light theme, every turn and network display and no frequent relay checks when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
 			pointSystem: "hcp-corrected",
+			cardPoints: true,
 			theme: "light",
 			bidTurnFrame: true,
 			playTurnFrame: true,
@@ -47,6 +48,7 @@ describe("player settings", () => {
 		const storage = memoryStorage();
 		const settings = {
 			pointSystem: "vienna",
+			cardPoints: false,
 			theme: "auto",
 			bidTurnFrame: false,
 			playTurnFrame: true,
@@ -85,6 +87,17 @@ describe("player settings", () => {
 				CUSTOM_MODEL_SLOT,
 			],
 		});
+	});
+
+	it("reads the earlier choice of no points as the default bidding system without card points", () => {
+		const storage = memoryStorage();
+		storage.setItem("opentrick.settings.points", "none");
+		expect(readSettings(storage)).toMatchObject({
+			pointSystem: "hcp-corrected",
+			cardPoints: false,
+		});
+		storage.setItem("opentrick.settings.card-points", "1");
+		expect(readSettings(storage).cardPoints).toBe(true);
 	});
 
 	it("throws when the browser cannot store settings", () => {

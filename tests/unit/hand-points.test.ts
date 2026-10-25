@@ -51,18 +51,27 @@ describe("hand evaluation points", () => {
 		});
 	});
 
-	it("counts nothing when the player selects no points", () => {
-		expect(countHandPoints("none", HAND)).toBeUndefined();
+	it("counts an other bidding system with the 4-3-2-1 scale, without a correction", () => {
+		expect(countHandPoints("other", HAND)).toEqual(
+			countHandPoints("hcp", HAND),
+		);
+		expect(
+			formatHandPoints(
+				"other",
+				{ total: 11, raw: 11, correction: 0 },
+				englishTranslator,
+			),
+		).toBe("HCP: 11");
 	});
 
-	it("offers exactly the documented scales, with no points first", () => {
+	it("offers exactly the documented scales, with an other system last", () => {
 		expect(POINT_SYSTEMS).toEqual([
-			"none",
 			"hcp",
 			"hcp-corrected",
 			"vienna",
 			"reith",
 			"four-aces",
+			"other",
 		]);
 	});
 });
@@ -249,10 +258,6 @@ describe("hand points breakdown", () => {
 			"+1 doubleton ♦ (5422)",
 			"+1 doubleton ♣ (5422)",
 		]);
-	});
-
-	it("shows nothing when the player selects no points", () => {
-		expect(explainHandPoints("none", HAND, t)).toEqual([]);
 	});
 
 	it("translates the reasons", () => {
