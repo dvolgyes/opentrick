@@ -14,6 +14,9 @@ export interface Send {
 export interface Clock {
 	/** Milliseconds for in-page timers (`performance.now()`). */
 	monotonic(): number;
-	/** `Date.now()`; used only for `lastActivityAt`, expiry, and the time of a player's report. */
+	/**
+	 * `Date.now()`; used only for `lastActivityAt`, expiry, the time of a player's report, and how long a page was
+	 * hidden (it counts the time that the device sleeps).
+	 */
 	wall(): number;
 }

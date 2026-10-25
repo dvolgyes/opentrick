@@ -75,6 +75,7 @@ Transport:
   A rejoin drops the handshakes in progress in the room that the page leaves.
 - Recovery after a network change: the mesh, not Trystero, reconnects the relays.
   When the browser reports a network change (the `online` event, or a change of the Network Information API), the page replaces every relay socket at once, without the reconnect wait.
+  A resumed page counts as a network change too: a page shown again after 30 s or more hidden, a page restored from the back-forward cache, or a page resumed after a freeze, because a phone can sleep or change its network in that time.
   For the next 60 s, a page without links rejoins the table room as soon as a relay is open, without the 10 s wait, because its old offers carry the addresses of the old network.
   A relay socket that looks open but sends nothing for too long is replaced, because after a network change a socket can stay half-open.
   The limit is 90 s for a Nostr relay, which answers each announcement (every 60 s), and 240 s for a tracker, which asked for an announce every 120 s to 180 s in a live check (October 2026).

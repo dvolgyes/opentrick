@@ -203,37 +203,48 @@ test.describe("signaling through trackers and Nostr relays together", () => {
 			).toEqual([1, 1, 1]);
 	});
 
-	test("after a network change, a page with half-open relay sockets connects again at once", async ({
-		browser,
-	}) => {
-		const tracker = new RelayHub("tracker", TRACKERS);
-		const nostr = new RelayHub("nostr", NOSTR_RELAYS);
-		const { host, guest } = await connectedPair(browser, { tracker, nostr });
-		// The guest's network changes: its links fail, and its relay sockets look open but pass nothing.
-		tracker.silence(guest.label);
-		nostr.silence(guest.label);
-		await guest.page.evaluate(() =>
-			(window.lbHarness as Harness).dropLinks({ keepRelays: true }),
-		);
-		// Without the network event, the guest stays alone past its first rejoin (REJOIN_MS): it announces only
-		// on the dead sockets.
-		await guest.page.waitForTimeout(12_000);
-		expect(await peers(guest.page)).toBe(0);
-		const changedAt = Date.now();
-		await guest.page.evaluate(() => window.dispatchEvent(new Event("online")));
-		await expect
-			.poll(async () => [await peers(guest.page), await links(guest.page)], {
-				timeout: CONNECT_MS,
-			})
-			.toEqual([1, 1]);
-		// New sockets replaced the dead ones at once, not after the reconnect wait.
-		for (const hub of [tracker, nostr]) {
-			const opened = hub.lastOpened(guest.label) ?? 0;
-			expect(opened, hub.kind).toBeGreaterThanOrEqual(changedAt);
-			expect(opened - changedAt, hub.kind).toBeLessThan(1_000);
-		}
-		expect(await peers(host.page)).toBe(1);
-		// The count keeps a link that closed: the dropped link and its replacement, nothing more.
-		expect(await everConnected(guest.page)).toBe(2);
-	});
+	const changes = [
+		{
+			name: "a network change",
+			signal: () => window.dispatchEvent(new Event("online")),
+		},
+		{
+			name: "a resume after a freeze",
+			signal: () => document.dispatchEvent(new Event("resume")),
+		},
+	];
+	for (const change of changes)
+		test(`after ${change.name}, a page with half-open relay sockets connects again at once`, async ({
+			browser,
+		}) => {
+			const tracker = new RelayHub("tracker", TRACKERS);
+			const nostr = new RelayHub("nostr", NOSTR_RELAYS);
+			const { host, guest } = await connectedPair(browser, { tracker, nostr });
+			// The guest's network changes: its links fail, and its relay sockets look open but pass nothing.
+			tracker.silence(guest.label);
+			nostr.silence(guest.label);
+			await guest.page.evaluate(() =>
+				(window.lbHarness as Harness).dropLinks({ keepRelays: true }),
+			);
+			// Without the network event, the guest stays alone past its first rejoin (REJOIN_MS): it announces only
+			// on the dead sockets.
+			await guest.page.waitForTimeout(12_000);
+			expect(await peers(guest.page)).toBe(0);
+			const changedAt = Date.now();
+			await guest.page.evaluate(change.signal);
+			await expect
+				.poll(async () => [await peers(guest.page), await links(guest.page)], {
+					timeout: CONNECT_MS,
+				})
+				.toEqual([1, 1]);
+			// New sockets replaced the dead ones at once, not after the reconnect wait.
+			for (const hub of [tracker, nostr]) {
+				const opened = hub.lastOpened(guest.label) ?? 0;
+				expect(opened, hub.kind).toBeGreaterThanOrEqual(changedAt);
+				expect(opened - changedAt, hub.kind).toBeLessThan(1_000);
+			}
+			expect(await peers(host.page)).toBe(1);
+			// The count keeps a link that closed: the dropped link and its replacement, nothing more.
+			expect(await everConnected(guest.page)).toBe(2);
+		});
 });

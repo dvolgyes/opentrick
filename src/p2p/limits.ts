@@ -65,6 +65,13 @@ export const REJOIN_MAX_MS = 60_000;
  */
 export const NETWORK_REJOIN_MS = 60_000;
 /**
+ * A page shown again after this long hidden counts as a network change (src/p2p/network-watch.ts): the device can
+ * sleep or change its network in that time. A shorter switch to another tab does not replace the relay sockets.
+ */
+export const RESUME_HIDDEN_MS = 30_000;
+/** The browser can report one resume with several events; a resume within this time of the last one is the same. */
+export const RESUME_COALESCE_MS = 5_000;
+/**
  * An open tracker socket that sends nothing for this long is replaced: after a network change, a socket can look open
  * and never deliver again. The trackers asked for an announce every 120 s to 180 s in a live check (October 2026).
  */
