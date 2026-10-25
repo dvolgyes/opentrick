@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { rtcConfiguration } from "../../src/call/ice";
 import {
+	LATE_TICK_MS,
 	NOSTR_SILENT_MS,
 	REJOIN_MS,
 	RELAY_CHECK_ANSWER_MS,
 	RELAY_CHECK_MS,
 	RELAY_SILENT_MS,
+	SILENT_LINK_MS,
 	TABLE_OFFERS,
 } from "../../src/p2p/limits";
 import {
@@ -17,7 +19,11 @@ import {
 } from "../../src/p2p/mesh";
 import type { RelayCheckAnswer } from "../../src/p2p/relay-check";
 import { seatRendezvous } from "../../src/p2p/rendezvous";
-import type { SignalingRoomConfig } from "../../src/p2p/signaling";
+import type {
+	DataPayload,
+	MessageAction,
+	SignalingRoomConfig,
+} from "../../src/p2p/signaling";
 import type { ProbeStun, StunAnswer } from "../../src/p2p/stun-probe";
 import { TABLE } from "./p2p-fixtures";
 
@@ -566,5 +572,155 @@ describe("the mesh's STUN checks", () => {
 	it("reports no STUN result on a page that does not check", () => {
 		const { mesh } = statusMesh([A], { urls: ["stun:a.test"] });
 		expect(mesh.diagnostics().stun).toBeNull();
+	});
+});
+
+/** A peer connection that records the close and the events that the mesh dispatches on it. */
+class FakeLink {
+	closed = false;
+	readonly events: string[] = [];
+	close(): void {
+		this.closed = true;
+	}
+	dispatchEvent(event: Event): boolean {
+		this.events.push(event.type);
+		return true;
+	}
+}
+
+/** A table room whose peers, and the messages that they send, the test controls. */
+class LinkRoom implements MeshRoom {
+	readonly links: Record<string, FakeLink> = {};
+	readonly #actions: MessageAction<DataPayload>[] = [];
+	onPeerJoin: ((peerId: string) => void) | null = null;
+	onPeerLeave: ((peerId: string) => void) | null = null;
+	makeAction(): MessageAction<DataPayload> {
+		const action: MessageAction<DataPayload> = {
+			send: async () => {},
+			onMessage: null,
+			onReceiveProgress: null,
+			onReceive: null,
+		};
+		this.#actions.push(action);
+		return action;
+	}
+	getPeers(): Record<string, RTCPeerConnection> {
+		return this.links as unknown as Record<string, RTCPeerConnection>;
+	}
+	async leave(): Promise<void> {}
+	connect(peer: string): void {
+		this.links[peer] = new FakeLink();
+		this.onPeerJoin?.(peer);
+	}
+	/** The start of a message from the peer on the action with this index (ctl, log, call, mesh). */
+	receive(peer: string, index: number): void {
+		void this.#actions[index]?.onReceive?.({
+			peerId: peer,
+			byteLength: 10,
+			kind: "message",
+			signal: new AbortController().signal,
+		});
+	}
+}
+
+const P = "PPPPPPPPPPPPPPPPPPPP";
+const Q = "QQQQQQQQQQQQQQQQQQQQ";
+
+/** A mesh in one LinkRoom; `silent.on` turns the close of silent links on, and `left` records each leave. */
+function linkMesh(on = true) {
+	const room = new LinkRoom();
+	const clock = { now: 0 };
+	const silent = { on };
+	const left: string[] = [];
+	const mesh = new Mesh(
+		{
+			tableId: TABLE,
+			key: KEY,
+			config: { trackers: [A], nostrRelays: [], rtc: {} },
+			joinRoom: () => room,
+			self: "0123456789AbCdEfGhIj",
+			relaySockets: () => ({ tracker: {}, nostr: {} }),
+			reconnectRelay: () => {},
+			silentLinks: () => silent.on,
+			clock: { monotonic: () => clock.now, wall: () => 1_000_000 + clock.now },
+		},
+		{ ...handlers, leave: (peer) => left.push(peer) },
+	);
+	/** Ticks every 500 ms, as the table does, until `to`. */
+	const advance = (to: number) => {
+		while (clock.now < to) {
+			clock.now = Math.min(to, clock.now + 500);
+			mesh.tick();
+		}
+	};
+	return { mesh, room, clock, silent, left, advance };
+}
+
+describe("the mesh's close of a silent link", () => {
+	it("closes a link that sent nothing for SILENT_LINK_MS, and keeps a link that sent any message", () => {
+		const { mesh, room, left, advance } = linkMesh();
+		room.connect(P);
+		room.connect(Q);
+		advance(5_000);
+		room.receive(Q, 0);
+		advance(10_000);
+		room.receive(Q, 1);
+		advance(14_000);
+		room.receive(Q, 2);
+		advance(SILENT_LINK_MS - 500);
+		expect(left).toEqual([]);
+		expect(room.links[P]?.closed).toBe(false);
+		advance(SILENT_LINK_MS);
+		// Trystero sees the close only at a connection state change, which a local close does not fire.
+		expect(room.links[P]).toMatchObject({
+			closed: true,
+			events: ["connectionstatechange"],
+		});
+		expect(left).toEqual([P]);
+		expect(mesh.peers()).toEqual([Q]);
+		expect(mesh.diagnostics().silentCloses).toEqual([
+			{ peer: P, at: 1_000_000 + SILENT_LINK_MS, silentMs: SILENT_LINK_MS },
+		]);
+		room.receive(Q, 3);
+		advance(2 * SILENT_LINK_MS - 500);
+		expect(room.links[Q]?.closed).toBe(false);
+		advance(2 * SILENT_LINK_MS);
+		expect(left).toEqual([P, Q]);
+	});
+
+	it("keeps every link while the setting is off, and closes a silent one when it is turned on", () => {
+		const { mesh, room, silent, left, advance } = linkMesh(false);
+		room.connect(P);
+		advance(4 * SILENT_LINK_MS);
+		expect(left).toEqual([]);
+		expect(room.links[P]?.closed).toBe(false);
+		expect(mesh.diagnostics().silentCloses).toEqual([]);
+		silent.on = true;
+		advance(4 * SILENT_LINK_MS + 500);
+		expect(left).toEqual([P]);
+	});
+
+	it("keeps every link after a tick as late as LATE_TICK_MS, because this page was paused, not its peers", () => {
+		const { mesh, room, clock, left, advance } = linkMesh();
+		room.connect(P);
+		advance(1_000);
+		clock.now = 1_000 + LATE_TICK_MS + 1;
+		mesh.tick();
+		advance(clock.now + SILENT_LINK_MS - 500);
+		expect(left).toEqual([]);
+		advance(clock.now + 500);
+		expect(left).toEqual([P]);
+	});
+
+	it("ignores a message from a peer that it did not admit", () => {
+		const { mesh, room, left, advance } = linkMesh();
+		room.connect(P);
+		advance(SILENT_LINK_MS);
+		expect(left).toEqual([P]);
+		// The closed peer's late message neither admits it again nor counts as a link.
+		room.receive(P, 0);
+		advance(2 * SILENT_LINK_MS);
+		expect(left).toEqual([P]);
+		expect(mesh.diagnostics().silentCloses).toHaveLength(1);
 	});
 });

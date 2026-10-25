@@ -16,7 +16,10 @@ import { stunProbe } from "./stun-probe";
 export interface TrysteroMeshOptions {
 	/** A Node-compatible WebRTC implementation; browsers use their global constructor. */
 	readonly rtcPolyfill?: typeof RTCPeerConnection;
-	/** Whether the frequent relay checks are on (a setting), asked at each tick; without it they are off. */
+	/**
+	 * Whether the frequent relay checks, and the close of silent links on a visible and online page, are on (a
+	 * setting), asked at each tick; without it they are off.
+	 */
 	readonly relayChecks?: () => boolean;
 }
 
@@ -63,6 +66,15 @@ export function trysteroMesh(
 								on: relayChecks,
 								check: (url: string) => checkRelay(url, RELAY_CHECK_ANSWER_MS),
 							},
+						}),
+				...(relayChecks === undefined || typeof document === "undefined"
+					? {}
+					: {
+							// A hidden or offline page can miss messages that its peers sent.
+							silentLinks: () =>
+								relayChecks() &&
+								document.visibilityState === "visible" &&
+								navigator.onLine,
 						}),
 				clock,
 			},

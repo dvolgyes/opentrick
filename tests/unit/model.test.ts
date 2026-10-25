@@ -283,6 +283,7 @@ describe("networkLines", () => {
 		pairTimeouts: 3,
 		unattached: 1,
 		rejoins: 4,
+		silentCloses: [],
 	};
 	const PEERS: PeerView[] = [
 		{

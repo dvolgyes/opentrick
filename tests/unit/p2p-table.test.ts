@@ -38,6 +38,7 @@ const DIAGNOSTICS: MeshDiagnostics = {
 	pairTimeouts: 0,
 	unattached: 0,
 	rejoins: 0,
+	silentCloses: [],
 };
 
 let restoreDigest: () => void;

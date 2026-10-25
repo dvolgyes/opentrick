@@ -3,17 +3,20 @@ import {
 	CALL_BYTES,
 	CTL_BYTES,
 	CTL_PER_SECOND,
+	LATE_TICK_MS,
 	LINK_TARGET_MS,
 	LINKS_MS,
 	LOG_BYTES,
 	MAX_PEERS,
 	MAX_RECEIVE_BYTES,
+	MAX_SILENT_CLOSES,
 	MESH_BYTES,
 	NETWORK_REJOIN_MS,
 	NOSTR_SILENT_MS,
 	REJOIN_MAX_MS,
 	REJOIN_MS,
 	RELAY_SILENT_MS,
+	SILENT_LINK_MS,
 	TABLE_OFFERS,
 } from "./limits";
 import type { Clock, Send } from "./ports";
@@ -56,6 +59,10 @@ import {
  * Relay recovery (ADR 0004): after a network change, the page replaces each relay socket and, when alone, joins the
  * table room again as soon as a relay is open. A relay socket that is open and silent for its kind's limit
  * (RELAY_SILENT_MS for a tracker, NOSTR_SILENT_MS for a Nostr relay) is replaced too.
+ *
+ * Silent links (ADR 0004): any message from a peer shows that its link works, and every page sends its peer list
+ * each LINKS_MS. While `silentLinks()` is true, the page closes only the link of a peer that sent nothing for
+ * SILENT_LINK_MS. Both pages then see the peer leave, and the repair above connects them again.
  */
 
 /** The part of a Trystero room that the mesh uses; the unit tests implement it without WebRTC. */
@@ -119,6 +126,11 @@ export interface MeshDeps {
 		readonly on: () => boolean;
 		readonly check: CheckRelay;
 	};
+	/**
+	 * Whether the page closes a link that sent nothing for SILENT_LINK_MS, asked at each tick; a mesh without it keeps
+	 * every link.
+	 */
+	readonly silentLinks?: () => boolean;
 	readonly clock: Clock;
 }
 
@@ -166,6 +178,16 @@ export interface MeshDiagnostics {
 	readonly unattached: number;
 	/** Times this page joined the table room again because it had no links. */
 	readonly rejoins: number;
+	/** The latest MAX_SILENT_CLOSES links that this page closed because they sent nothing, oldest first. */
+	readonly silentCloses: readonly SilentClose[];
+}
+
+/** A link that the page closed after SILENT_LINK_MS or more without a message. */
+export interface SilentClose {
+	readonly peer: string;
+	/** `Date.now()` of the close. */
+	readonly at: number;
+	readonly silentMs: number;
 }
 
 const ACTIONS = {
@@ -216,6 +238,10 @@ export class Mesh implements Send {
 	#rejoinNowUntil = Number.NEGATIVE_INFINITY;
 	#rejoins = 0;
 	#linksAt = Number.NEGATIVE_INFINITY;
+	/** When each admitted peer last sent a message, or was admitted. */
+	readonly #linkHeardAt = new Map<string, number>();
+	readonly #silentCloses: SilentClose[] = [];
+	#tickAt: number | null = null;
 	readonly #admitted = new Set<string>();
 	readonly #refused = new Set<string>();
 	readonly #wrongKey = new Set<string>();
@@ -325,6 +351,7 @@ export class Mesh implements Send {
 			pairTimeouts: repair.timeouts,
 			unattached: repair.unattached,
 			rejoins: this.#rejoins,
+			silentCloses: [...this.#silentCloses],
 		};
 	}
 
@@ -337,12 +364,13 @@ export class Mesh implements Send {
 	}
 
 	/**
-	 * Replaces silent relay sockets, joins the table room again when alone, sends the peer list when it is due, and
-	 * opens or closes the two-page rooms.
+	 * Replaces silent relay sockets, closes silent links, joins the table room again when alone, sends the peer list
+	 * when it is due, and opens or closes the two-page rooms.
 	 */
 	tick(): void {
 		if (this.#left) return;
 		const now = this.#deps.clock.monotonic();
+		this.#closeSilentLinks(now);
 		this.#listenToRelays();
 		this.#replaceSilentRelays(now);
 		this.#rejoinWhenAlone(now);
@@ -464,6 +492,40 @@ export class Mesh implements Send {
 		this.#handlers.change();
 	}
 
+	/**
+	 * Closes the link of each peer that sent nothing for SILENT_LINK_MS, while `silentLinks()` is true. A tick
+	 * LATE_TICK_MS late means that this page was paused, not its peers, so their silence counts again from now.
+	 */
+	#closeSilentLinks(now: number): void {
+		const late = this.#tickAt !== null && now - this.#tickAt > LATE_TICK_MS;
+		this.#tickAt = now;
+		if (late) {
+			for (const peer of this.#linkHeardAt.keys())
+				this.#linkHeardAt.set(peer, now);
+			return;
+		}
+		if (this.#deps.silentLinks?.() !== true) return;
+		const connections = this.#table.room.getPeers();
+		for (const [peer, heardAt] of [...this.#linkHeardAt]) {
+			const silentMs = now - heardAt;
+			if (silentMs < SILENT_LINK_MS) continue;
+			const connection = connections[peer];
+			if (connection) {
+				connection.close();
+				// A local close fires no state change, and Trystero closes the peer only at one.
+				connection.dispatchEvent(new Event("connectionstatechange"));
+			}
+			this.#silentCloses.push({
+				peer,
+				at: this.#deps.clock.wall(),
+				silentMs,
+			});
+			if (this.#silentCloses.length > MAX_SILENT_CLOSES)
+				this.#silentCloses.shift();
+			this.#leave(peer);
+		}
+	}
+
 	#action<M>(
 		room: MeshRoom,
 		namespace: string,
@@ -476,6 +538,7 @@ export class Mesh implements Send {
 		// Runs before Trystero buffers the message; a refused message never takes memory.
 		action.onReceive = ({ peerId, byteLength }) => {
 			if (!this.#admitted.has(peerId)) return this.#drop("stranger");
+			this.#linkHeardAt.set(peerId, this.#deps.clock.monotonic());
 			if (byteLength > cap) return this.#drop("oversize");
 			return true;
 		};
@@ -512,6 +575,7 @@ export class Mesh implements Send {
 			return;
 		}
 		this.#admitted.add(peer);
+		this.#linkHeardAt.set(peer, this.#deps.clock.monotonic());
 		this.#unreachable.delete(peer);
 		this.#targets.delete(peer);
 		this.#handlers.join(peer);
@@ -522,6 +586,7 @@ export class Mesh implements Send {
 	#leave(peer: string): void {
 		this.#refused.delete(peer);
 		this.#windows.delete(peer);
+		this.#linkHeardAt.delete(peer);
 		if (!this.#admitted.delete(peer)) return;
 		this.#handlers.leave(peer);
 		this.#handlers.change();

@@ -47,6 +47,14 @@ export const MAX_PEERS = 12;
 export const LINKS_MS = 5_000;
 /** A peer that a neighbour listed stays a repair target this long without a new list. */
 export const LINK_TARGET_MS = 30_000;
+/**
+ * With the frequent connection checks (a setting), a visible and online page closes a link that sent nothing this
+ * long (src/p2p/mesh.ts). Every page sends its peer list at least each LINKS_MS, so a working link is never silent
+ * this long.
+ */
+export const SILENT_LINK_MS = 15_000;
+/** The debug export keeps this many of the latest silent-link closes. */
+export const MAX_SILENT_CLOSES = 16;
 export const MAX_PAIR_ROOMS = 4;
 export const PAIR_TIMEOUT_MS = 30_000;
 export const PAIR_RETRY_MS = 30_000;

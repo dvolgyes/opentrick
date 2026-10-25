@@ -86,6 +86,12 @@ Transport:
   A relay that refuses a check (CLOSED) is not checked again while the page is open, and a relay that rests the page gets no check.
   Trackers get no check: the tracker protocol has no request that does not announce the page.
   In a live check (October 2026), the five default Nostr relays answered the check in 32–115 ms.
+- Silent links (the same setting, owner decision, October 2026): any message from a peer shows that its link works, and every page sends its peer list to each peer every 5 s.
+  A visible and online page closes the link of a peer that sent nothing for 15 s, and only that link.
+  Both pages then see the peer leave, and the link repair connects them again; the dropped page also counts as away for the presence rule until then.
+  After a tick 5 s late, the silence counts again from that tick, because this page was paused, not its peers.
+  The debug export lists the latest 16 closes (`network.silentCloses`: the peer, the time, how long it was silent).
+  With the setting off, only WebRTC and Trystero close a link (about 5 s after ICE reports it down), and a peer that stays connected but silent is offline after 20 s without a beat.
 - The ICE servers are only the configured STUN servers (`VITE_STUN_URLS`); TURN URLs are refused.
 
 State:
