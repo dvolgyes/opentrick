@@ -1,0 +1,422 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import type { Card } from "../../src/bridge/cards";
+import { SUITS } from "../../src/bridge/cards";
+import {
+	type PointRange,
+	RANGES,
+	type RangeKey,
+	type RuleSystem,
+} from "../../src/bridge/convention-rules";
+import { callMeaning, conventionCalls } from "../../src/bridge/conventions";
+import { dealCards, randomBelowFrom } from "../../src/bridge/deal";
+import { countHandPoints } from "../../src/bridge/hand-points";
+import type { Call } from "../../src/bridge/rules";
+import { SEATS } from "../../src/protocol";
+import { guideName } from "../../src/ui/bidding-guide";
+
+/** A hand as "spades.hearts.diamonds.clubs", for example "AQ4.KJ5.Q862.K73"; "-" is a void. */
+function hand(text: string): Card[] {
+	const suits = text.split(".");
+	if (suits.length !== 4) throw new Error(`a hand needs four suits: ${text}`);
+	const result = SUITS.flatMap((suit, index) =>
+		[...(suits[index] === "-" ? "" : (suits[index] ?? ""))].map(
+			(rank) => `${suit}${rank}` as Card,
+		),
+	);
+	if (result.length !== 13) throw new Error(`a hand needs 13 cards: ${text}`);
+	return result;
+}
+
+function calls(text: string): Call[] {
+	return text === "" ? [] : (text.split(" ") as Call[]);
+}
+
+function suggested(
+	system: Parameters<typeof conventionCalls>[0],
+	cardsText: string,
+	auction: string,
+): Call[] | undefined {
+	return conventionCalls(system, hand(cardsText), calls(auction))?.map(
+		({ call }) => call,
+	);
+}
+
+/** A small seeded generator, so that a failure can be repeated. */
+function seeded(seed: number): () => number {
+	let state = seed >>> 0;
+	return () => {
+		state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+		return state;
+	};
+}
+
+const RULE_SYSTEMS: readonly RuleSystem[] = [
+	"hcp",
+	"hcp-corrected",
+	"vienna",
+	"reith",
+	"four-aces",
+];
+
+describe("guide calls for a hand", () => {
+	it.each([
+		["AQ4.KJ5.Q862.K73", ["1NT"]], // 15, balanced
+		["K4.AQJ73.K82.K65", ["1NT"]], // 16, 5332 with five hearts
+		["AQ872.KJ965.4.K3", ["1S"]], // 13, two five-card suits: the higher
+		["K53.A4.KQ62.J872", ["1D"]], // 13, 4–4 in the minors
+		["AJ53.K42.Q73.K62", ["1C"]], // 13, 3–3 in the minors
+		["AQ872.4.5.KQJ862", ["1C"]], // 12, the longest suit
+		["AQ4.AKJ5.KQ2.Q73", ["2NT"]], // 21, balanced
+		["AK4.AKJ5.KQ2.QJ3", ["2C"]], // 23, balanced
+		["AKQ.AKJ5.KQ2.QJ3", ["3NT"]], // 25, balanced
+		["AKQJ862.AK4.AK.4", ["2C"]], // 24, not balanced
+		["84.KQT973.J52.63", ["P", "2H"]], // 6, weak two
+		["8642.KQT973.J5.3", ["P"]], // 6, a four-card side major
+		["AQJ8642.73.J52.4", ["P", "3S"]], // 8, preempt
+		["84.QT9873.KJ2.63", ["P"]], // 6, the suit is not good enough for a weak two
+		["8642.Q73.J52.643", ["P"]], // 3
+	])("opens %s with %j in HCP", (cardsText, expected) => {
+		expect(suggested("hcp", cardsText, "")).toEqual(expected);
+	});
+
+	it("opens in the fourth seat as in the first", () => {
+		expect(suggested("hcp", "AQ4.KJ5.Q862.K73", "P P P")).toEqual(["1NT"]);
+	});
+
+	it("counts the points of the bidder's own system", () => {
+		// 17 HCP, 29 Vienna, 26 Reith and 12½ Four Aces points.
+		const cardsText = "AJ4.A54.A54.A543";
+		expect(suggested("hcp", cardsText, "")).toEqual(["1NT"]);
+		expect(suggested("hcp-corrected", cardsText, "")).toEqual(["1NT"]);
+		expect(suggested("vienna", cardsText, "")).toEqual(["1C"]);
+		expect(suggested("reith", cardsText, "")).toEqual(["1NT"]);
+		expect(suggested("four-aces", cardsText, "")).toEqual(["1C"]);
+	});
+
+	it.each([
+		["1H P", "K84.Q73.J652.Q64", ["2H"]], // 8, three hearts: raise
+		["1H P", "KJ84.73.Q652.J64", ["1S", "1NT"]], // 7, a new suit at the one level
+		["1S P", "84.KJ73.Q652.J64", ["1NT"]], // 7, no new suit at the one level
+		["1H P", "K84.Q73.86.AJ652", ["2C", "3H"]], // 10, invitational
+		["1H P", "AQ84.73.K65.KJ62", ["1S", "2C"]], // 13, game forcing
+		["1H P", "8642.73.J652.Q64", ["P"]], // 3
+		["1NT P", "84.QT973.J52.632", ["P", "2D"]], // 3, five hearts
+		["1NT P", "KJ84.A73.Q65.643", ["2C", "3NT"]], // 10, four spades
+		["1NT P", "84.73.QT9873.J52", ["P", "2S"]], // 3, six diamonds
+		["1NT P", "K84.Q73.A652.643", ["2NT"]], // 9
+		["1NT P", "KJ842.Q973.A5.64", ["2C", "2H", "3NT"]], // 10, five spades and four hearts
+		["2C P", "8642.K73.J52.643", ["2D"]], // 4
+		["2C P", "84.KQJ73.A52.643", ["2H", "2NT"]], // 10, a good five-card suit, balanced
+		["2C P", "K842.Q73.A52.J64", ["2NT"]], // 10, balanced
+	])("answers %s with %s by %j in HCP", (auction, cardsText, expected) => {
+		expect(suggested("hcp", cardsText, auction)).toEqual(expected);
+	});
+
+	it.each([
+		["other", "", "AQ4.KJ5.Q862.K73"],
+		["hcp", "", "KQT98732.4.J52.6"], // an eight-card suit
+		["hcp", "1H X", "K84.Q73.J652.Q64"],
+		["hcp", "1H 1S", "K84.Q73.J652.Q64"],
+		["hcp", "1H", "K84.Q73.J652.Q64"], // an overcall
+		["hcp", "P 1H", "K84.Q73.J652.Q64"],
+		["hcp", "1H P 1S P", "K84.Q73.J652.Q64"], // after the first response
+		["hcp", "2H P", "K84.Q73.J652.Q64"],
+		["hcp", "3S P", "K84.Q73.J652.Q64"],
+		["hcp", "2NT P", "K84.Q73.J652.Q64"],
+		["hcp", "3NT P", "K84.Q73.J652.Q64"],
+		["hcp", "2C P", "86542.K732.A5.Q6"], // 9, no good suit and not balanced
+	] as const)(
+		"has no guide call for %s after %j with %s",
+		(system, auction, cardsText) => {
+			expect(suggested(system, cardsText, auction)).toBeUndefined();
+		},
+	);
+});
+
+describe("guide meaning of a call", () => {
+	it.each([
+		[
+			"hcp",
+			"1NT",
+			{ range: { min: 15, max: 17 }, shape: { kind: "balanced" } },
+		],
+		[
+			"vienna",
+			"P 1C",
+			{
+				range: { min: 19, max: 34 },
+				shape: { kind: "cards", suit: "C", min: 3 },
+			},
+		],
+		[
+			"hcp",
+			"1S",
+			{
+				range: { min: 12, max: 21 },
+				shape: { kind: "cards", suit: "S", min: 5 },
+			},
+		],
+		["hcp", "2C", { range: { min: 22 }, shape: { kind: "artificial" } }],
+		[
+			"hcp",
+			"2H",
+			{
+				range: { min: 5, max: 11 },
+				shape: { kind: "weak-two", suit: "H", length: 6 },
+			},
+		],
+		[
+			"four-aces",
+			"3D",
+			{
+				range: { min: 3.5, max: 7 },
+				shape: { kind: "preempt", suit: "D", length: 7 },
+			},
+		],
+		["reith", "P", { range: { min: 0, max: 18 }, shape: { kind: "none" } }],
+		["hcp", "1H P P", { range: { min: 0, max: 5 }, shape: { kind: "none" } }],
+		[
+			"hcp",
+			"1H P 2H",
+			{
+				range: { min: 6, max: 9 },
+				shape: { kind: "support", suit: "H", min: 3 },
+			},
+		],
+		[
+			"hcp",
+			"1H P 3H",
+			{
+				range: { min: 10, max: 12 },
+				shape: { kind: "support", suit: "H", min: 3 },
+			},
+		],
+		[
+			"reith",
+			"1H P 1S",
+			{ range: { min: 10 }, shape: { kind: "cards", suit: "S", min: 4 } },
+		],
+		[
+			"hcp",
+			"1H P 2C",
+			{ range: { min: 10 }, shape: { kind: "cards", suit: "C", min: 4 } },
+		],
+		["hcp", "1H P 1NT", { range: { min: 6, max: 9 }, shape: { kind: "none" } }],
+		["hcp", "1NT P P", { range: { min: 0, max: 7 }, shape: { kind: "none" } }],
+		[
+			"hcp",
+			"1NT P 2C",
+			{ range: { min: 8 }, shape: { kind: "stayman", min: 4 } },
+		],
+		["vienna", "1NT P 2D", { shape: { kind: "transfer", suit: "H", min: 5 } }],
+		["hcp", "1NT P 2H", { shape: { kind: "transfer", suit: "S", min: 5 } }],
+		[
+			"hcp",
+			"1NT P 2S",
+			{ range: { min: 0, max: 7 }, shape: { kind: "weak-minor", min: 6 } },
+		],
+		[
+			"hcp",
+			"1NT P 2NT",
+			{ range: { min: 8, max: 9 }, shape: { kind: "none" } },
+		],
+		[
+			"vienna",
+			"1NT P 3NT",
+			{ range: { min: 16, max: 25 }, shape: { kind: "none" } },
+		],
+		[
+			"four-aces",
+			"2C P 2D",
+			{ range: { min: 0, max: 4.5 }, shape: { kind: "waiting" } },
+		],
+		[
+			"hcp",
+			"2C P 3C",
+			{ range: { min: 8 }, shape: { kind: "good-suit", suit: "C", min: 5 } },
+		],
+		["hcp", "2C P 2NT", { range: { min: 8 }, shape: { kind: "balanced" } }],
+	] as const)("reads %s %s", (system, auction, expected) => {
+		const all = calls(auction);
+		expect(callMeaning(system, all, all.length - 1)).toEqual(expected);
+	});
+
+	it.each([
+		["other", "1NT"],
+		["hcp", "1H 2C"], // an overcall
+		["hcp", "1H X 2H"],
+		["hcp", "1H P 1S P"],
+		["hcp", "1H P 1S P 2S"],
+		["hcp", "1H P 4H"], // a jump to game
+		["hcp", "1H P 3C"], // a jump in a new suit
+		["hcp", "1C P 2C"], // a minor raise
+		["hcp", "2C P P"],
+		["hcp", "2H P 2NT"],
+		["hcp", "4S"],
+	] as const)(
+		"has no guide meaning for the last call of %s %s",
+		(system, auction) => {
+			const all = calls(auction);
+			expect(callMeaning(system, all, all.length - 1)).toBeUndefined();
+		},
+	);
+
+	it("reads an earlier call of the auction by its index", () => {
+		expect(callMeaning("hcp", calls("1NT P 2C P"), 0)?.range).toEqual({
+			min: 15,
+			max: 17,
+		});
+	});
+});
+
+describe("guide calls and meanings agree", () => {
+	it("gives each suggested call the meaning of that call, and the hand is in its range", () => {
+		const auctions = [
+			"",
+			"P",
+			"P P P",
+			"1C P",
+			"1H P",
+			"1S P",
+			"1NT P",
+			"2C P",
+		];
+		let checked = 0;
+		for (let game = 0; game < 60; game += 1) {
+			const deal = dealCards(randomBelowFrom(seeded(game + 1)));
+			for (const seat of SEATS)
+				for (const system of RULE_SYSTEMS)
+					for (const auction of auctions) {
+						const before = calls(auction);
+						const guide = conventionCalls(system, deal[seat], before);
+						for (const { call, meaning } of guide ?? []) {
+							checked += 1;
+							expect(
+								callMeaning(system, [...before, call], before.length),
+							).toEqual(meaning);
+							const points = countHandPoints(system, deal[seat]).total;
+							expect(points).toBeGreaterThanOrEqual(meaning.range?.min ?? 0);
+							expect(points).toBeLessThanOrEqual(
+								meaning.range?.max ?? Infinity,
+							);
+						}
+						if (auction === "" || auction.startsWith("P"))
+							expect(
+								guide !== undefined ||
+									Math.max(
+										...SUITS.map(
+											(suit) =>
+												deal[seat].filter((card) => card[0] === suit).length,
+										),
+									) >= 8,
+								`${system} ${seat} ${game}: every opening hand has a guide call`,
+							).toBe(true);
+					}
+		}
+		expect(checked).toBeGreaterThan(1000);
+	});
+});
+
+/** "15–17" or "22 or more", with half points as "½", as the English guides write a range. */
+function rangeText({ min, max }: PointRange): string {
+	const number = (value: number) =>
+		Number.isInteger(value) ? `${value}` : `${Math.floor(value)}½`;
+	return max === undefined
+		? `${number(min)} or more`
+		: `${number(min)}–${number(max)}`;
+}
+
+/** The section and the start of the guide line that states each range; {range} is the range text. */
+const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
+	"open-pass": ["Opening bids", "- {range} points: [P]"],
+	"open-weak-two": ["Opening bids", "- {range} points: weak two"],
+	"open-preempt": ["Opening bids", "- {range} points: preempt"],
+	"open-suit": ["Opening bids", "- {range} points: [1C] [1D] [1H] [1S]"],
+	"open-1NT": ["Opening bids", "- {range} points: [1NT]"],
+	"open-2NT": ["Opening bids", "- {range} points: [2NT]"],
+	"open-2C": ["Opening bids", "- {range} points: [2C]"],
+	"open-3NT": ["Opening bids", "- {range} points: [3NT]"],
+	"suit-pass": ["Responses to one of a suit", "- {range} points: [P]"],
+	"suit-low": ["Responses to one of a suit", "- {range} points: raise"],
+	"suit-invite": [
+		"Responses to one of a suit",
+		"- {range} points: invitational",
+	],
+	"suit-force": [
+		"Responses to one of a suit",
+		"- {range} points: game forcing",
+	],
+	"nt-weak": ["Responses to [1NT]", "- {range} points: [P], or a transfer"],
+	"nt-stayman": ["Responses to [1NT]", "- [2C] (Stayman): {range} points"],
+	"nt-2NT": ["Responses to [1NT]", "- [2NT]: {range} points"],
+	"nt-3NT": ["Responses to [1NT]", "- [3NT]: {range} points"],
+	"2c-waiting": ["Responses to [2C]", "- [2D]: waiting, {range} points"],
+	"2c-positive": ["Responses to [2C]", "- [2H] [2S] [3C] [3D]: {range} points"],
+	"2c-2NT": ["Responses to [2C]", "- [2NT]: {range} points"],
+};
+
+function guideText(system: RuleSystem, locale: string): string {
+	return readFileSync(
+		new URL(
+			`../../src/guides/${guideName(system)}_${locale}.txt`,
+			import.meta.url,
+		),
+		"utf8",
+	);
+}
+
+function sectionLines(text: string, section: string): string[] {
+	const lines = text.split("\n");
+	const start = lines.indexOf(`## ${section}`);
+	if (start < 0) throw new Error(`no section "## ${section}"`);
+	const end = lines.findIndex(
+		(line, index) => index > start && line.startsWith("## "),
+	);
+	return lines.slice(start + 1, end < 0 ? undefined : end);
+}
+
+describe("convention rules agree with the guides", () => {
+	it.each(RULE_SYSTEMS)(
+		"states each %s range in its English guide line",
+		(system) => {
+			const text = guideText(system, "en");
+			for (const [key, range] of Object.entries(RANGES[system]) as [
+				RangeKey,
+				PointRange,
+			][]) {
+				const [section, line] = GUIDE_LINES[key];
+				const expected = line.replace("{range}", rangeText(range));
+				expect(
+					sectionLines(text, section).some((candidate) =>
+						candidate.startsWith(expected),
+					),
+					`${key} in convention-rules.ts does not match src/guides/${guideName(system)}_en.txt: no line "${expected}" in "## ${section}"`,
+				).toBe(true);
+			}
+			// A new suit at the two level has the invitational minimum.
+			expect(
+				sectionLines(text, "Responses to one of a suit").join("\n"),
+			).toContain(
+				`A new suit at the two level needs ${rangeText({ min: RANGES[system]["suit-invite"].min })} points.`,
+			);
+		},
+	);
+
+	it.each(
+		RULE_SYSTEMS.flatMap((system) =>
+			["de", "hu", "no", "es", "pt", "fr", "it", "nl"].map(
+				(locale) => [system, locale] as const,
+			),
+		),
+	)(
+		"gives the %s guide in %s the same numbers as the English guide",
+		(system, locale) => {
+			const numbers = (text: string) => (text.match(/\d+½?|½/g) ?? []).sort();
+			expect(
+				numbers(guideText(system, locale)),
+				`src/guides/${guideName(system)}_${locale}.txt has other numbers than ${guideName(system)}_en.txt`,
+			).toEqual(numbers(guideText(system, "en")));
+		},
+	);
+});
