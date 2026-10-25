@@ -53,11 +53,13 @@ export interface SettingsDialog {
 
 /**
  * The player's own settings, kept in this browser. Save checks a new OpenRouter key, or a custom model, with one
- * request before it stores anything; a failed check keeps the dialog open with the reason.
+ * request before it stores anything; a failed check keeps the dialog open with the reason. A new language reloads the
+ * page; any other change calls `saved`, so the page can show it.
  */
 export function settingsDialog(
 	deps: AppDeps,
 	reload: () => void,
+	saved: () => void = () => {},
 ): SettingsDialog {
 	const { t } = deps;
 	const element = el("dialog", {
@@ -309,6 +311,7 @@ export function settingsDialog(
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
 		if (languageChanged) reload();
+		else saved();
 	}
 
 	return {

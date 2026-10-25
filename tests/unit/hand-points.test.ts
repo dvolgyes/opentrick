@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Card } from "../../src/bridge/cards";
 import {
 	countHandPoints,
+	explainHandPoints,
 	formatHandPoints,
 	POINT_SYSTEMS,
 } from "../../src/bridge/hand-points";
@@ -199,5 +200,68 @@ describe("hand points text", () => {
 				translator("de"),
 			),
 		).toBe("korrigierte HCP: 16 (13 +3)");
+	});
+});
+
+describe("hand points breakdown", () => {
+	const t = englishTranslator;
+
+	it.each([
+		["hcp", "A=4, K=3, Q=2, J=1: 11"],
+		["vienna", "A=7, K=5, Q=3, J=1: 17"],
+		["reith", "A=6, K=4, Q=3, J=2, 10=1: 19"],
+		["four-aces", "A=3, K=2, Q=1, J=0.5: 7"],
+	] as const)("shows the %s scale and the count", (system, line) => {
+		expect(explainHandPoints(system, HAND, t)).toEqual([line]);
+	});
+
+	it("shows each correction of corrected HCP on its own line", () => {
+		// ♠AKQ32 ♥K ♦J432 ♣432: 5431.
+		expect(
+			explainHandPoints("hcp-corrected", hand("AKQ32", "K", "J432", "432"), t),
+		).toEqual([
+			"A=4, K=3, Q=2, J=1: 13",
+			"+1 good suit ♠AKQ32",
+			"-1 singleton honour ♥K",
+			"+2 singleton ♥ (5431)",
+		]);
+	});
+
+	it("names unsupported doubletons, 4333, the four aces and a void", () => {
+		expect(
+			explainHandPoints("hcp-corrected", hand("A432", "AJ", "A432", "A32"), t),
+		).toEqual([
+			"A=4, K=3, Q=2, J=1: 17",
+			"-1 unsupported honours ♥AJ",
+			"+1 all four aces",
+		]);
+		expect(
+			explainHandPoints("hcp-corrected", hand("K432", "K32", "K32", "K32"), t),
+		).toEqual(["A=4, K=3, Q=2, J=1: 12", "-1 4333 shape"]);
+		expect(
+			explainHandPoints("hcp-corrected", hand("A8765", "KT432", "432", "-"), t),
+		).toEqual(["A=4, K=3, Q=2, J=1: 7", "+3 void ♣ (5530)"]);
+		expect(
+			explainHandPoints("hcp-corrected", hand("KJT98", "K432", "32", "32"), t),
+		).toEqual([
+			"A=4, K=3, Q=2, J=1: 7",
+			"+1 good suit ♠KJ1098",
+			"+1 doubleton ♦ (5422)",
+			"+1 doubleton ♣ (5422)",
+		]);
+	});
+
+	it("shows nothing when the player selects no points", () => {
+		expect(explainHandPoints("none", HAND, t)).toEqual([]);
+	});
+
+	it("translates the reasons", () => {
+		expect(
+			explainHandPoints(
+				"hcp-corrected",
+				hand("K432", "K32", "K32", "K32"),
+				translator("de"),
+			),
+		).toEqual(["A=4, K=3, Q=2, J=1: 12", "-1 4333-Verteilung"]);
 	});
 });

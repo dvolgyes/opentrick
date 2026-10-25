@@ -33,12 +33,7 @@ import {
 	seatAfter,
 } from "../protocol";
 
-import {
-	miltonPoints,
-	playSuitOrder,
-	type TrickNeed,
-	trickNeed,
-} from "./hand-layout";
+import { playSuitOrder, type TrickNeed, trickNeed } from "./hand-layout";
 import { ownCommands, type RosterRow } from "./model";
 
 /** Pure view model of the bridge table: the DOM layer only renders what these functions return. */
@@ -156,8 +151,8 @@ export interface SeatView {
 	readonly connecting: boolean;
 	/** The pill on the seat whose call or card is next; it is the viewer's when the viewer acts for that seat. */
 	readonly turnPill: TurnPill | undefined;
-	/** Milton Work points of a hand the viewer can see during the auction, or of every hand once the board is over. */
-	readonly points: number | undefined;
+	/** The cards to count the points of: a hand the viewer can see during the auction, or every hand once the board is over. */
+	readonly pointCards: readonly Card[] | undefined;
 	/** The host's last round trip to this seat's player; undefined while the host has not measured one. */
 	readonly roundTrip: RoundTripView | undefined;
 }
@@ -460,7 +455,7 @@ function lobbySeats(input: TableViewInput, t: Translate): SeatView[] {
 			presence,
 			connecting,
 			turnPill: undefined,
-			points: undefined,
+			pointCards: undefined,
 			roundTrip: roundTripView(input, owner, t),
 		};
 	});
@@ -984,10 +979,10 @@ export function tableView(input: TableViewInput): TableView {
 							yours: view.actor === seat,
 						}
 					: undefined,
-			points:
+			pointCards:
 				(view.phase === "auction" || view.phase === "complete") &&
 				view.hands[owner].visible
-					? miltonPoints(view.hands[owner].cards)
+					? view.hands[owner].cards
 					: undefined,
 			roundTrip: roundTripView(input, owner, t),
 		};

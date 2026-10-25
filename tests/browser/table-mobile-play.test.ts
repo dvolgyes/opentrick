@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cdp, page } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
+import type { PointSystem } from "../../src/bridge/hand-points";
 import type { Form } from "../../src/call/device-class";
 import { type Locale, type Translate, translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
@@ -9,6 +10,7 @@ import { pageReport } from "../../src/ui/page-report";
 import {
 	type PlayedCardStyle,
 	type TableHandlers,
+	type TableOptions,
 	tableSection,
 } from "../../src/ui/table";
 import type { SeatView, TableView } from "../../src/ui/table-model";
@@ -53,7 +55,7 @@ function seat(
 		presence: "online",
 		connecting: false,
 		turnPill: seatName === "N" ? { action: "play", yours: true } : undefined,
-		points: undefined,
+		pointCards: undefined,
 		roundTrip: undefined,
 		...options,
 	};
@@ -180,6 +182,7 @@ function renderView(
 	form: Form,
 	style?: PlayedCardStyle,
 	t?: Translate,
+	options?: TableOptions,
 ) {
 	const handlers: TableHandlers = {
 		exit: vi.fn(),
@@ -198,7 +201,7 @@ function renderView(
 			retry: vi.fn(),
 		},
 	};
-	const section = tableSection(handlers, style, t);
+	const section = tableSection(handlers, style, t, options);
 	const room = document.createElement("section");
 	room.className = "room";
 	room.dataset.form = form;
@@ -1884,7 +1887,8 @@ describe("approval of an undo or a claim", () => {
 	it.each(CASES)(
 		"asks about %s in a large dialog in the middle of a desktop felt",
 		async (_, view, accept, reject, vote, id) => {
-			await resizeTo(1280, 800);
+			// The screen is taller than the felt, so the middle of the felt is not the middle of the screen.
+			await resizeTo(1280, 900);
 			const { root, handlers } = renderView(view(), "desktop");
 			const panel = approval(root);
 			expect(panel.checkVisibility()).toBe(true);
@@ -2043,5 +2047,228 @@ describe("approval of an undo or a claim", () => {
 		expect(board?.nextElementSibling).toBe(approval(root));
 		expect(approval(root).nextElementSibling).toBe(notice);
 		expect(getComputedStyle(notice).position).not.toBe("fixed");
+	});
+});
+
+describe("hand points", () => {
+	// ♠AKQ32 ♥K ♦J432 ♣432: 13 HCP, a good spade suit, a singleton king, and a singleton in a 5431 hand.
+	const HAND: readonly Card[] = [
+		"SA",
+		"SK",
+		"SQ",
+		"S3",
+		"S2",
+		"HK",
+		"DJ",
+		"D4",
+		"D3",
+		"D2",
+		"C4",
+		"C3",
+		"C2",
+	];
+	const LINES = [
+		"A=4, K=3, Q=2, J=1: 13",
+		"+1 good suit ♠AKQ32",
+		"-1 singleton honour ♥K",
+		"+2 singleton ♥ (5431)",
+	];
+	const pointsView = (): TableView => {
+		const base = playView();
+		return {
+			...base,
+			phase: "auction",
+			trick: undefined,
+			seats: base.seats.map((player) =>
+				player.position === "bottom" ? { ...player, pointCards: HAND } : player,
+			),
+		};
+	};
+	const pill = (root: HTMLElement) =>
+		root.querySelector<HTMLButtonElement>(".hcp-pill");
+	const dialog = (root: HTMLElement) =>
+		root.querySelector<HTMLDialogElement>(".points-dialog");
+
+	it.each(["desktop", "compact"] as const)(
+		"hints the calculation of the points, one line each, and a click shows the same in a dialog with only OK (%s)",
+		(form) => {
+			const { root } = renderView(pointsView(), form);
+			const shownPill = pill(root);
+			expect(shownPill?.textContent).toBe("corrected HCP: 15 (13 +2)");
+			expect(shownPill?.title).toBe(LINES.join("\n"));
+			expect(shownPill?.getBoundingClientRect().width).toBeGreaterThan(0);
+			if (form === "compact")
+				expect(shownPill?.closest(".mobile-auction-hand")).not.toBeNull();
+			shownPill?.click();
+			const points = dialog(root);
+			expect(points?.open).toBe(true);
+			expect(points?.querySelector("h3")?.textContent).toBe(
+				"corrected HCP: 15 (13 +2)",
+			);
+			expect(
+				[...(points?.querySelectorAll("li") ?? [])].map(
+					(line) => line.textContent,
+				),
+			).toEqual(LINES);
+			const buttons = [...(points?.querySelectorAll("button") ?? [])];
+			expect(buttons.map((ok) => ok.textContent)).toEqual(["OK"]);
+			buttons[0]?.click();
+			expect(points?.open).toBe(false);
+		},
+	);
+
+	it("on a narrow phone, the points pill is whole and covers no name or role of the own hand", async () => {
+		await page.viewport(360, 800);
+		try {
+			const { root } = renderView(pointsView(), "compact");
+			const shownPill = pill(root);
+			const area = root.querySelector(".mobile-auction-hand");
+			if (!shownPill || !area) throw new Error("the pill is missing");
+			const box = shownPill.getBoundingClientRect();
+			const inside = area.getBoundingClientRect();
+			expect(box.left).toBeGreaterThanOrEqual(inside.left);
+			expect(box.right).toBeLessThanOrEqual(inside.right);
+			expect(shownPill.scrollWidth).toBeLessThanOrEqual(shownPill.clientWidth);
+			const chips = [
+				...(area.querySelectorAll<HTMLElement>(".seat-label > *") ?? []),
+			];
+			expect(chips.length).toBeGreaterThan(1);
+			for (const chip of chips) {
+				const other = chip.getBoundingClientRect();
+				const overlaps =
+					box.left < other.right &&
+					other.left < box.right &&
+					box.top < other.bottom &&
+					other.top < box.bottom;
+				expect(overlaps, chip.textContent ?? "").toBe(false);
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
+	it("counts on the scale of the settings at each render, and shows no points without a scale", () => {
+		let scale: PointSystem = "vienna";
+		const { root, section } = renderView(
+			pointsView(),
+			"desktop",
+			undefined,
+			undefined,
+			{ pointSystem: () => scale },
+		);
+		expect(pill(root)?.textContent).toBe("Vienna: 21");
+		expect(pill(root)?.title).toBe("A=7, K=5, Q=3, J=1: 21");
+		scale = "none";
+		section.render(pointsView());
+		expect(pill(root)).toBeNull();
+	});
+
+	it("shows the dialog in the language of the table", () => {
+		const { root } = renderView(
+			pointsView(),
+			"desktop",
+			undefined,
+			translator("de"),
+			{ locale: "de" },
+		);
+		pill(root)?.click();
+		expect(dialog(root)?.querySelector("li:last-child")?.textContent).toBe(
+			"+2 Single ♥ (5431)",
+		);
+		expect(dialog(root)?.querySelector("button")?.textContent).toBe("OK");
+	});
+});
+
+describe("bidding guide", () => {
+	const auction = (): TableView => ({
+		...playView(),
+		phase: "auction",
+		trick: undefined,
+		bids: [
+			{ call: "1C", text: "1♣" },
+			{ call: "P", text: "Pass" },
+		],
+	});
+	const guide = (root: HTMLElement) =>
+		root.querySelector<HTMLDialogElement>(".guide-dialog");
+	const content = (root: HTMLElement) =>
+		root.querySelector<HTMLElement>(".guide-content");
+	const loaded = (root: HTMLElement) =>
+		expect.poll(() => content(root)?.querySelector("h2")?.textContent);
+
+	it.each(["desktop", "compact"] as const)(
+		"puts a Guide row above the levels of the bid box (%s)",
+		(form) => {
+			const { root } = renderView(auction(), form);
+			const rows = [...(root.querySelector(".bid-box")?.children ?? [])].map(
+				(row) => row.className,
+			);
+			expect(rows.slice(0, 3)).toEqual([
+				"bid-guide",
+				"bid-levels",
+				"bid-calls",
+			]);
+			expect(root.querySelector(".bid-guide button")?.textContent).toBe(
+				"Guide",
+			);
+		},
+	);
+
+	it("opens the guide of the scale with coloured bids, and Close stays below the scrolling text", async () => {
+		const { root } = renderView(auction(), "compact", undefined, undefined, {
+			pointSystem: () => "reith",
+		});
+		root.querySelector<HTMLButtonElement>(".bid-guide button")?.click();
+		expect(guide(root)?.open).toBe(true);
+		await loaded(root).toBe("Bidding guide: Reith points (6-4-3-2-1)");
+		const text = content(root);
+		if (!text) throw new Error("the guide has no content");
+		const color = (selector: string) => {
+			const bid = text.querySelector<HTMLElement>(selector);
+			if (!bid) throw new Error(`no ${selector} in the guide`);
+			return [bid.textContent, getComputedStyle(bid).color];
+		};
+		expect(color(".guide-bid.strain-NT")).toEqual(["1NT", "rgb(31, 122, 70)"]);
+		expect(color(".guide-bid.strain-H")).toEqual(["1♥", "rgb(192, 38, 45)"]);
+		expect(color(".guide-bid.strain-S")?.[1]).not.toBe("rgb(192, 38, 45)");
+		expect(color(".guide-bid.call-double")?.[0]).toBe("double(X)");
+		expect(color(".guide-bid.call-redouble")?.[0]).toBe("redouble(XX)");
+		expect(text.textContent).not.toContain("[");
+		const close = root.querySelector<HTMLButtonElement>(".guide-close");
+		if (!close) throw new Error("the guide has no Close button");
+		expect(close.textContent).toBe("Close");
+		expect(getComputedStyle(close).backgroundColor).toBe("rgb(192, 38, 45)");
+		expect(text.scrollHeight).toBeGreaterThan(text.clientHeight + 100);
+		const before = close.getBoundingClientRect();
+		text.scrollTop = text.scrollHeight;
+		await new Promise(requestAnimationFrame);
+		expect(text.scrollTop).toBeGreaterThan(100);
+		const after = close.getBoundingClientRect();
+		expect(after.top).toBe(before.top);
+		expect(after.bottom).toBeLessThanOrEqual(innerHeight);
+		expect(after.top).toBeGreaterThanOrEqual(
+			text.getBoundingClientRect().bottom,
+		);
+		close.click();
+		expect(guide(root)?.open).toBe(false);
+	});
+
+	it("shows the guide and its calls in the language of the table", async () => {
+		const { root } = renderView(
+			auction(),
+			"desktop",
+			undefined,
+			translator("de"),
+			{ locale: "de" },
+		);
+		root.querySelector<HTMLButtonElement>(".bid-guide button")?.click();
+		await loaded(root).toBe("Reizleitfaden: korrigierte Milton HCP");
+		expect(
+			content(root)?.querySelector(".guide-bid.call-double")?.textContent,
+		).toBe("Kontra(X)");
+		expect(
+			content(root)?.querySelector(".guide-bid.call-redouble")?.textContent,
+		).toBe("Rekontra(XX)");
+		expect(root.querySelector(".guide-close")?.textContent).toBe("Schließen");
 	});
 });

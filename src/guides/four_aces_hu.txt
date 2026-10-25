@@ -1,0 +1,52 @@
+# Licitálási útmutató: Four Aces pontok (3-2-1-½)
+Számolj így: A=3, K=2, Q=1, J=½. A pakliban 26 pont van.
+Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ, a Standard Americanhez hasonlót. A pontsávok a 0.65-tel (26 / 40) szorzott és fél pontra kerekített 4-3-2-1 sávok, ezért közelítőek.
+
+## Nyitások
+- 0–7½ pont: [P], vagy gyenge kettes, vagy blokk.
+- [1C] [1D] [1H] [1S]: 8–14 pont. Legalább öt lappal a színben [1H] vagy [1S] a nyitásod. Ötlapos nemes szín nélkül a hosszabb alacsony színedet nyisd: legalább négy káróval [1D], egyébként [1C].
+- [1NT]: 10–11 pont, kiegyensúlyozott kéz.
+- [2C]: legalább 14½ pont, bármilyen elosztás. Mesterséges és forszírozó.
+- [2D] [2H] [2S]: gyenge kettes, 3½–7½ pont jó hatlapos színnel.
+- [2NT]: 13–14 pont, kiegyensúlyozott kéz.
+- [3C] [3D] [3H] [3S]: blokk, nyitóerő alatti kéz jó hétlapos színnel.
+
+## Válaszok egyes színnyitásra
+- 0–3½ pont: [P].
+- 4–6 pont: legalább három lappal emeld egy szinttel a partnered nemes színét ([1H] – [2H]). Egyébként legalább négy lappal licitálj új színt egyes szinten, vagy [1NT] a válaszod.
+- 6½–8 pont: invitáló. Legalább három lappal ugrással emeld a partnered nemes színét ([1S] – [3S]), vagy licitálj új színt. Kettes szinten az új színhez legalább 6½ pont kell.
+- Legalább 8½ pont: manche-ig forszírozó. Licitálj új színt, és licitálj tovább a manche-ig ([3NT], [4H], [4S]).
+
+## A nyitó második licitje
+- 8–9½ pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
+- 10–11 pont: ugrásos emelés, vagy a saját színed ismétlése ugrással.
+- 11½–14 pont: ugrás új színben, vagy kiegyensúlyozott 11½–12½ ponttal [2NT].
+
+## Válaszok az [1NT] nyitásra
+- 0–4½ pont: [P], vagy ötlapos nemes színnel transzfer.
+- [2C] (Stayman): legalább 5 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D] választ ad, egyébként [2H] vagy [2S].
+- [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek). A nyitó a következő színt licitálja.
+- [2NT]: 5–6 pont, invitáló.
+- [3NT]: 6½–10 pont, lezáró.
+
+## Válaszok a [2C] nyitásra
+- [2D]: várakozó, 0–4½ pont.
+- [2H] [2S] [3C] [3D]: legalább 5 pont jó ötlapos színnel.
+- [2NT]: legalább 5 pont, kiegyensúlyozott kéz.
+
+## Válaszok gyenge kettes nyitásra
+- Emeld a partnered színét, hogy megnehezítsd az ellenfelek licitálását.
+- [2NT]: legalább 10 pont, a nyitótól a keze leírását kéri.
+
+## Versenylicitek
+- Közbelicit egyes szinten: 5–10½ pont jó ötlapos színnel. Kettes szinten: 6½–10½ pont.
+- [1NT] közbelicit: 10–12 pont, kiegyensúlyozott, fogással az ellenfelek színében.
+- [X] (informatív): legalább 8 pont, rövidség az ellenfelek színében, támogatás a többi színben; vagy bármilyen kéz legalább 11 ponttal.
+- [XX], ha a partnered nyitását megkontrázták: legalább 6½ pont.
+
+## A pár céljai
+- 16 pont: [3NT], [4H] vagy [4S] manche.
+- 19 pont: [5C] vagy [5D] manche.
+- 21½ pont: kisszlem.
+- 24 pont: nagyszlem.
+- [4NT] (Blackwood) az ászokat kérdezi: [5C] 0 vagy 4, [5D] 1, [5H] 2, [5S] 3.

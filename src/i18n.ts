@@ -534,6 +534,23 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Asked {count} pages to reload.":
 			"{count} Seiten zum Neuladen aufgefordert.",
 		"no report": "kein Bericht",
+		"singleton honour {cards}": "Single-Honneur {cards}",
+		"unsupported honours {cards}": "ungestützte Honneurs {cards}",
+		"good suit {cards}": "gute Farbe {cards}",
+		"4333 shape": "4333-Verteilung",
+		"all four aces": "alle vier Asse",
+		"void {suit} ({shape})": "Chicane {suit} ({shape})",
+		"singleton {suit} ({shape})": "Single {suit} ({shape})",
+		"doubleton {suit} ({shape})": "Doubleton {suit} ({shape})",
+		Guide: "Anleitung",
+		"Bidding guide": "Reizleitfaden",
+		Close: "Schließen",
+		OK: "OK",
+		double: "Kontra",
+		redouble: "Rekontra",
+		pass: "Passe",
+		"The bidding guide could not be loaded.":
+			"Die Reizanleitung konnte nicht geladen werden.",
 	},
 	hu: {
 		Language: "Nyelv",
@@ -744,6 +761,13 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Nobody is at this table right now. Keep this page open":
 			"Most senki sincs az asztalnál. Hagyd nyitva ezt az oldalt.",
 		"Trackers reachable": "Elérhető trackerek",
+		"Nostr relays reachable": "Elérhető Nostr-továbbítók",
+		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
+			"Legfeljebb {count} Nostr-továbbító URL használható (VITE_NOSTR_RELAY_URLS).",
+		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
+			"Érvénytelen wss: Nostr-továbbító URL a VITE_NOSTR_RELAY_URLS értékben: {url}",
+		"A URL cannot be both a tracker and a Nostr relay: {url}":
+			"Egy URL nem lehet egyszerre tracker és Nostr-továbbító: {url}",
 		"Direct connections": "Közvetlen kapcsolatok",
 		"Players checked": "Ellenőrzött játékosok",
 		"Pages not reachable directly": "Közvetlenül nem elérhető oldalak",
@@ -761,13 +785,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"timed out": "időtúllépés",
 		"memory only: a reload loses this copy":
 			"csak memóriában: újratöltéskor ez a példány elvész",
-		"Nostr relays reachable": "Elérhető Nostr-továbbítók",
-		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
-			"Legfeljebb {count} Nostr-továbbító URL használható (VITE_NOSTR_RELAY_URLS).",
-		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
-			"Érvénytelen wss: Nostr-továbbító URL a VITE_NOSTR_RELAY_URLS értékben: {url}",
-		"A URL cannot be both a tracker and a Nostr relay: {url}":
-			"Egy URL nem lehet egyszerre tracker és Nostr-továbbító: {url}",
 		"kept by the browser": "a böngésző megtartotta",
 		"stored; the browser may clear it": "mentve; a böngésző törölheti",
 		"stored in this browser": "ebben a böngészőben mentve",
@@ -1035,6 +1052,23 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A hibakeresési exportot nem sikerült másolni. Engedélyezd a vágólap elérését, és próbáld újra.",
 		"Asked {count} pages to reload.": "{count} oldal újratöltése kérve.",
 		"no report": "nincs jelentés",
+		"singleton honour {cards}": "szingli figura {cards}",
+		"unsupported honours {cards}": "támasz nélküli figurák {cards}",
+		"good suit {cards}": "jó szín {cards}",
+		"4333 shape": "4333 elosztás",
+		"all four aces": "mind a négy ász",
+		"void {suit} ({shape})": "{suit} színhiány ({shape})",
+		"singleton {suit} ({shape})": "szingli {suit} ({shape})",
+		"doubleton {suit} ({shape})": "kétlapos {suit} ({shape})",
+		Guide: "Útmutató",
+		"Bidding guide": "Licitálási útmutató",
+		Close: "Bezárás",
+		OK: "OK",
+		double: "kontra",
+		redouble: "rekontra",
+		pass: "passz",
+		"The bidding guide could not be loaded.":
+			"A licitálási útmutatót nem sikerült betölteni.",
 	},
 	no: {
 		Language: "Språk",
@@ -1199,6 +1233,13 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"A new host is taking over…": "En ny vert tar over…",
 		"Waiting for the host ({seconds} s)": "Venter på verten ({seconds} s)",
 		"Trackers reachable": "Sporingstjenester nås",
+		"Nostr relays reachable": "Nostr-reléer nås",
+		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
+			"Du kan angi maksimalt {count} Nostr-relé-URL-er (VITE_NOSTR_RELAY_URLS).",
+		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
+			"Ugyldig wss:-Nostr-relé-URL i VITE_NOSTR_RELAY_URLS: {url}",
+		"A URL cannot be both a tracker and a Nostr relay: {url}":
+			"En URL kan ikke være både tracker og Nostr-relé: {url}",
 		"Direct connections": "Direkte tilkoblinger",
 		"Players checked": "Spillere kontrollert",
 		"Pages not reachable directly": "Sider som ikke kan nås direkte",
@@ -1233,13 +1274,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Reith: "Reith",
 		"Four Aces": "Four Aces",
 		No: "Nei",
-		"Nostr relays reachable": "Nostr-reléer nås",
-		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
-			"Du kan angi maksimalt {count} Nostr-relé-URL-er (VITE_NOSTR_RELAY_URLS).",
-		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
-			"Ugyldig wss:-Nostr-relé-URL i VITE_NOSTR_RELAY_URLS: {url}",
-		"A URL cannot be both a tracker and a Nostr relay: {url}":
-			"En URL kan ikke være både tracker og Nostr-relé: {url}",
 		"Milton/HCP (4-3-2-1)": "Milton/HCP (4-3-2-1)",
 		"Corrected Milton HCP": "Korrigert Milton-HCP",
 		"Vienna (7-5-3-1)": "Wien (7-5-3-1)",
@@ -1533,6 +1567,23 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Kunne ikke kopiere feilsøkingseksporten. Tillat tilgang til utklippstavlen og prøv igjen.",
 		"Asked {count} pages to reload.": "Ba {count} sider laste inn på nytt.",
 		"no report": "ingen rapport",
+		"singleton honour {cards}": "singleton honnør {cards}",
+		"unsupported honours {cards}": "ustøttede honnører {cards}",
+		"good suit {cards}": "god farge {cards}",
+		"4333 shape": "4333-fordeling",
+		"all four aces": "alle fire ess",
+		"void {suit} ({shape})": "renons {suit} ({shape})",
+		"singleton {suit} ({shape})": "singleton {suit} ({shape})",
+		"doubleton {suit} ({shape})": "doubleton {suit} ({shape})",
+		Guide: "Veiledning",
+		"Bidding guide": "Meldeveiledning",
+		Close: "Lukk",
+		OK: "OK",
+		double: "dobling",
+		redouble: "redobling",
+		pass: "pass",
+		"The bidding guide could not be loaded.":
+			"Meldeveiledningen kunne ikke lastes inn.",
 	},
 	...additionalCatalogs,
 };

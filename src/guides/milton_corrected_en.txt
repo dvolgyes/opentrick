@@ -1,0 +1,59 @@
+# Bidding guide: corrected Milton HCP
+Count A=4, K=3, Q=2, J=1, then add the corrections:
+- −1 for a singleton K, Q or J.
+- −1 for the doubletons AJ, KQ, KJ and QJ, and for a jack with one lower card.
+- −1 for a 4333 shape.
+- +1 for all four aces.
+- +1 for each suit of five or more cards with three of A K Q J 10.
+- In the shapes 4441, 5440, 5422, 5431, 5521 and 5530: +1 for a doubleton, +2 for a singleton, +3 for a void.
+The corrections already include the distribution, so do not add length points. The point ranges are the same as for plain HCP.
+This guide uses a natural five-card-major method, similar to Standard American.
+
+## Opening bids
+- 0–11 points: [P], or a weak two or a preempt.
+- [1C] [1D] [1H] [1S]: 12–21 points. Open [1H] or [1S] with five or more cards in the suit. Without a five-card major, open the longer minor: [1D] with four or more diamonds, otherwise [1C].
+- [1NT]: 15–17 points, balanced hand.
+- [2C]: 22 or more points, any shape. Artificial and forcing.
+- [2D] [2H] [2S]: weak two, 5–11 points with a good six-card suit.
+- [2NT]: 20–21 points, balanced hand.
+- [3C] [3D] [3H] [3S]: preempt, less than an opening hand with a good seven-card suit.
+
+## Responses to one of a suit
+- 0–5 points: [P].
+- 6–9 points: raise partner's major one level ([1H] – [2H]) with three or more cards. Otherwise bid a new suit at the one level with four or more cards, or [1NT].
+- 10–12 points: invitational. Jump raise partner's major ([1S] – [3S]) with three or more cards, or bid a new suit. A new suit at the two level needs 10 or more points.
+- 13 or more points: game forcing. Bid a new suit, and continue until game ([3NT], [4H], [4S]).
+
+## Opener's rebid
+- 12–14 points: [1NT] with a balanced hand, a single raise, or a rebid of your own suit.
+- 15–17 points: a jump raise, or a jump rebid of your own suit.
+- 18–21 points: a jump in a new suit, or [2NT] with a balanced 18–19 points.
+
+## Responses to [1NT]
+- 0–7 points: [P], or a transfer with a five-card major.
+- [2C] (Stayman): 8 or more points with a four-card major. Opener answers [2D] without a four-card major, otherwise [2H] or [2S].
+- [2D] shows five or more hearts, [2H] shows five or more spades (transfers). Opener bids the next suit.
+- [2NT]: 8–9 points, invitational.
+- [3NT]: 10–15 points, to play.
+
+## Responses to [2C]
+- [2D]: waiting, 0–7 points.
+- [2H] [2S] [3C] [3D]: 8 or more points with a good five-card suit.
+- [2NT]: 8 or more points, balanced hand.
+
+## Responses to a weak two
+- Raise partner's suit to make the auction harder for the opponents.
+- [2NT]: 15 or more points, asks opener to describe the hand.
+
+## Competitive bids
+- An overcall at the one level: 8–16 points with a good five-card suit. At the two level: 10–16 points.
+- [1NT] overcall: 15–18 points, balanced, with a stopper in the opponents' suit.
+- [X] (takeout): 12 or more points, short in the opponents' suit, with support for the other suits; or any hand with 17 or more points.
+- [XX] after partner's opening is doubled: 10 or more points.
+
+## Targets for the partnership
+- 25 points: game in [3NT], [4H] or [4S].
+- 29 points: game in [5C] or [5D].
+- 33 points: small slam.
+- 37 points: grand slam.
+- [4NT] (Blackwood) asks for aces: [5C] 0 or 4, [5D] 1, [5H] 2, [5S] 3.

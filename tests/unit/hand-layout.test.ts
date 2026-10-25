@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Contract } from "../../src/bridge/rules";
-import {
-	miltonPoints,
-	playSuitOrder,
-	sideOf,
-	trickNeed,
-} from "../../src/ui/hand-layout";
+import { playSuitOrder, sideOf, trickNeed } from "../../src/ui/hand-layout";
 
 const contract = (
 	level: Contract["level"],
@@ -43,13 +38,6 @@ describe("playSuitOrder", () => {
 
 	it("keeps the screen rule for dummy at the top", () => {
 		expect(playSuitOrder("C", "top", true)).toEqual(["C", "S", "H", "D"]);
-	});
-});
-
-describe("miltonPoints", () => {
-	it("counts A 4, K 3, Q 2, J 1 and nothing else (the auction example: K♠ J♠ = 4)", () => {
-		expect(miltonPoints(["SK", "SJ", "S8", "S4", "S2"])).toBe(4);
-		expect(miltonPoints(["SA", "HQ", "DJ", "CT", "C2"])).toBe(7);
 	});
 });
 

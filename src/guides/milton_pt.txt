@@ -1,0 +1,52 @@
+# Guia de leilão: Milton HCP (4-3-2-1)
+Contar A=4, K=3, Q=2, J=1. O baralho tem 40 pontos.
+Este guia usa um método natural com maiores quintos, semelhante ao Standard American.
+
+## Aberturas
+- 0–11 pontos: [P], ou um dois fraco ou uma barragem.
+- [1C] [1D] [1H] [1S]: 12–21 pontos. Abrir [1H] ou [1S] com cinco ou mais cartas no naipe. Sem naipe maior quinto, abrir o naipe menor mais longo: [1D] com quatro ou mais ouros, caso contrário [1C].
+- [1NT]: 15–17 pontos, mão equilibrada.
+- [2C]: 22 ou mais pontos, qualquer distribuição. Artificial e forcing.
+- [2D] [2H] [2S]: dois fraco, 5–11 pontos com um bom naipe sexto.
+- [2NT]: 20–21 pontos, mão equilibrada.
+- [3C] [3D] [3H] [3S]: barragem, menos do que uma mão de abertura, com um bom naipe sétimo.
+
+## Respostas à abertura de um num naipe
+- 0–5 pontos: [P].
+- 6–9 pontos: apoiar o naipe maior do parceiro subindo um nível ([1H] – [2H]) com três ou mais cartas. Caso contrário, declarar um naipe novo ao nível de um com quatro ou mais cartas, ou [1NT].
+- 10–12 pontos: convidativo. Apoiar com salto o naipe maior do parceiro ([1S] – [3S]) com três ou mais cartas, ou declarar um naipe novo. Um naipe novo ao nível de dois exige 10 ou mais pontos.
+- 13 ou mais pontos: forcing de partida. Declarar um naipe novo e continuar até à partida ([3NT], [4H], [4S]).
+
+## Redeclaração do abridor
+- 12–14 pontos: [1NT] com uma mão equilibrada, um apoio simples ou a repetição do próprio naipe.
+- 15–17 pontos: um apoio com salto ou a repetição do próprio naipe com salto.
+- 18–21 pontos: um salto num naipe novo, ou [2NT] com uma mão equilibrada de 18–19 pontos.
+
+## Respostas a [1NT]
+- 0–7 pontos: [P], ou uma transferência com um naipe maior quinto.
+- [2C] (Stayman): 8 ou mais pontos com um naipe maior quarto. O abridor responde [2D] sem naipe maior quarto; caso contrário, [2H] ou [2S].
+- [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências). O abridor declara o naipe seguinte.
+- [2NT]: 8–9 pontos, convidativo.
+- [3NT]: 10–15 pontos, para jogar.
+
+## Respostas a [2C]
+- [2D]: resposta de espera, 0–7 pontos.
+- [2H] [2S] [3C] [3D]: 8 ou mais pontos com um bom naipe quinto.
+- [2NT]: 8 ou mais pontos, mão equilibrada.
+
+## Respostas a um dois fraco
+- Apoiar o naipe do parceiro para dificultar o leilão aos adversários.
+- [2NT]: 15 ou mais pontos, pede ao abridor que descreva a mão.
+
+## Leilão competitivo
+- Uma intervenção ao nível de um: 8–16 pontos com um bom naipe quinto. Ao nível de dois: 10–16 pontos.
+- [1NT] em intervenção: 15–18 pontos, mão equilibrada, com paragem no naipe dos adversários.
+- [X] (informativo): 12 ou mais pontos, curto no naipe dos adversários, com apoio para os outros naipes; ou qualquer mão com 17 ou mais pontos.
+- [XX] após um contra sobre a abertura do parceiro: 10 ou mais pontos.
+
+## Objetivos da parceria
+- 25 pontos: partida em [3NT], [4H] ou [4S].
+- 29 pontos: partida em [5C] ou [5D].
+- 33 pontos: pequeno slam.
+- 37 pontos: grande slam.
+- [4NT] (Blackwood) pede ases: [5C] 0 ou 4, [5D] 1, [5H] 2, [5S] 3.

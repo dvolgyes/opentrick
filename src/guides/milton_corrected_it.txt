@@ -1,0 +1,59 @@
+# Guida alla dichiarazione: Milton HCP corretto
+Conta A=4, K=3, Q=2, J=1, poi aggiungi le correzioni:
+- −1 per un K, Q o J secco.
+- −1 per i doubleton AJ, KQ, KJ e QJ, e per un fante con una sola carta più bassa.
+- −1 per una distribuzione 4333.
+- +1 per tutti e quattro gli assi.
+- +1 per ogni colore di cinque o più carte con tre tra A K Q J 10.
+- Nelle distribuzioni 4441, 5440, 5422, 5431, 5521 e 5530: +1 per un doubleton, +2 per un singolo, +3 per una chicane.
+Le correzioni includono già la distribuzione, quindi non aggiungere punti di lunghezza. Gli intervalli di punti sono gli stessi dei semplici HCP.
+Questa guida usa un sistema naturale a quinta nobile, simile allo Standard American.
+
+## Aperture
+- 0–11 punti: [P], oppure un due debole o uno sbarramento.
+- [1C] [1D] [1H] [1S]: 12–21 punti. Apri [1H] o [1S] con cinque o più carte nel colore. Senza un nobile quinto, apri nel minore più lungo: [1D] con quattro o più quadri, altrimenti [1C].
+- [1NT]: 15–17 punti, mano bilanciata.
+- [2C]: 22 o più punti, qualsiasi distribuzione. Artificiale e forzante.
+- [2D] [2H] [2S]: due debole, 5–11 punti con un buon colore sesto.
+- [2NT]: 20–21 punti, mano bilanciata.
+- [3C] [3D] [3H] [3S]: sbarramento, meno di una mano d'apertura con un buon colore settimo.
+
+## Risposte all'apertura di uno a colore
+- 0–5 punti: [P].
+- 6–9 punti: appoggia di un livello il nobile del compagno ([1H] – [2H]) con tre o più carte. Altrimenti dichiara un nuovo colore a livello di uno con quattro o più carte, oppure [1NT].
+- 10–12 punti: invitante. Appoggia a salto il nobile del compagno ([1S] – [3S]) con tre o più carte, oppure dichiara un nuovo colore. Un nuovo colore a livello di due richiede 10 o più punti.
+- 13 o più punti: forzante a manche. Dichiara un nuovo colore e prosegui fino alla manche ([3NT], [4H], [4S]).
+
+## Ridichiarazione dell'apertore
+- 12–14 punti: [1NT] con una mano bilanciata, un appoggio semplice, oppure la ripetizione del tuo colore.
+- 15–17 punti: un appoggio a salto, oppure la ripetizione a salto del tuo colore.
+- 18–21 punti: un salto in un nuovo colore, oppure [2NT] con una bilanciata di 18–19 punti.
+
+## Risposte a [1NT]
+- 0–7 punti: [P], oppure un transfer con un nobile quinto.
+- [2C] (Stayman): 8 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, altrimenti [2H] o [2S].
+- [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer). L'apertore dichiara il colore successivo.
+- [2NT]: 8–9 punti, invitante.
+- [3NT]: 10–15 punti, conclusivo.
+
+## Risposte a [2C]
+- [2D]: d'attesa, 0–7 punti.
+- [2H] [2S] [3C] [3D]: 8 o più punti con un buon colore quinto.
+- [2NT]: 8 o più punti, mano bilanciata.
+
+## Risposte al due debole
+- Appoggia il colore del compagno per rendere la licita più difficile agli avversari.
+- [2NT]: 15 o più punti, chiede all'apertore di descrivere la mano.
+
+## Dichiarazioni competitive
+- Un intervento a livello di uno: 8–16 punti con un buon colore quinto. A livello di due: 10–16 punti.
+- Intervento a [1NT]: 15–18 punti, bilanciata, con fermo nel colore avversario.
+- [X] (informativo): 12 o più punti, corto nel colore avversario, con appoggio per gli altri colori; oppure qualsiasi mano con 17 o più punti.
+- [XX] dopo il contro sull'apertura del compagno: 10 o più punti.
+
+## Obiettivi della coppia
+- 25 punti: manche a [3NT], [4H] o [4S].
+- 29 punti: manche a [5C] o [5D].
+- 33 punti: piccolo slam.
+- 37 punti: grande slam.
+- [4NT] (Blackwood) chiede gli assi: [5C] 0 o 4, [5D] 1, [5H] 2, [5S] 3.

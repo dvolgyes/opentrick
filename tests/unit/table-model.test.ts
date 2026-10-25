@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type Board, createBoard, scoreBoard } from "../../src/bridge/engine";
+import { countHandPoints } from "../../src/bridge/hand-points";
 import {
 	actionPayload,
 	type BridgeState,
@@ -793,11 +794,12 @@ describe("dealing and scores", () => {
 		});
 		expect(shownCards(seatView(table, "W").hand)).toHaveLength(13);
 		expect(
-			(["N", "E", "S", "W"] as const).map(
-				(seat) => seatView(table, seat).points,
-			),
+			(["N", "E", "S", "W"] as const).map((seat) => {
+				const cards = seatView(table, seat).pointCards;
+				return cards && countHandPoints("hcp", cards)?.raw;
+			}),
 		).toEqual([30, 9, 1, 0]);
-		expect(seatView(view("S", playing(board, "S7")), "S").points).toBe(
+		expect(seatView(view("S", playing(board, "S7")), "S").pointCards).toBe(
 			undefined,
 		);
 	});

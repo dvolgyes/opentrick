@@ -1,11 +1,18 @@
-import { SUIT_SYMBOLS, suitOf } from "../bridge/cards";
+import { type Card, SUIT_SYMBOLS, suitOf } from "../bridge/cards";
 import type { Action } from "../bridge/engine";
+import {
+	countHandPoints,
+	explainHandPoints,
+	formatHandPoints,
+	type PointSystem,
+} from "../bridge/hand-points";
 import type { Call } from "../bridge/rules";
 import type { Form } from "../call/device-class";
-import { englishTranslator, type Translate } from "../i18n";
+import { englishTranslator, type Locale, type Translate } from "../i18n";
 import { SEAT_NAMES, type Seat } from "../protocol";
 import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?url";
 import cardBackRed from "./assets/bridge-call-card-back-red.svg?url";
+import { guideDialog } from "./bidding-guide";
 import {
 	type CallDisplay,
 	type RemoteCallPresence,
@@ -16,6 +23,7 @@ import { button, el, placeChildren } from "./dom";
 import { icon } from "./icons";
 import { play } from "./remote-audio";
 import { robotArtwork } from "./robot-artwork";
+import { DEFAULT_SETTINGS } from "./settings";
 import type {
 	CardView,
 	ContractHeader,
@@ -67,6 +75,13 @@ export interface TableSection {
 	): void;
 	/** The device form changed: the desktop moves the band beside the statistics in the sidebar. */
 	setForm(form: Form): void;
+}
+
+export interface TableOptions {
+	/** The scale of the points pill and the bidding guide; the table reads it at each render. */
+	readonly pointSystem?: () => PointSystem;
+	/** The language of the bidding guide. */
+	readonly locale?: Locale;
 }
 
 export type PlayedCardStyle =
@@ -196,7 +211,31 @@ export function tableSection(
 	handlers: TableHandlers,
 	playedCardStyle: PlayedCardStyle = PLAYED_CARD_STYLE,
 	t: Translate = englishTranslator,
+	options: TableOptions = {},
 ): TableSection {
+	const pointSystem =
+		options.pointSystem ?? (() => DEFAULT_SETTINGS.pointSystem);
+	let shownPointSystem = pointSystem();
+	const guide = guideDialog(t, options.locale ?? "en");
+	// The points pill opens this dialog with the calculation, for a screen where no hint shows.
+	const pointsTitle = el("h3", {
+		className: "points-title",
+		attrs: { id: "points-title" },
+	});
+	const pointsLines = el("ul", { className: "points-lines" });
+	const pointsDialog: HTMLDialogElement = el(
+		"dialog",
+		{
+			className: "points-dialog",
+			attrs: {
+				"aria-labelledby": "points-title",
+				"data-testid": "points-dialog",
+			},
+		},
+		pointsTitle,
+		pointsLines,
+		button(t("OK"), () => pointsDialog.close(), { className: "points-ok" }),
+	);
 	const heading = el("h3", {});
 	const details = el("p", { className: "note" });
 	const prompt = el("p", {
@@ -707,6 +746,8 @@ export function tableSection(
 		mobileAuction,
 		felt,
 		dock,
+		pointsDialog,
+		guide.element,
 	);
 	let desktop = false;
 	let phase: TableView["phase"] = "waiting";
@@ -854,6 +895,32 @@ export function tableSection(
 		);
 	}
 
+	/** The points of a hand on the chosen scale; its hint and its dialog give the calculation, one line each. */
+	function pointsPill(cards: readonly Card[] | undefined): HTMLElement[] {
+		const system = shownPointSystem;
+		if (cards === undefined || system === "none") return [];
+		const points = countHandPoints(system, cards);
+		if (points === undefined) return [];
+		const text = formatHandPoints(system, points, t);
+		const lines = explainHandPoints(system, cards, t);
+		return [
+			button(
+				text,
+				() => {
+					pointsTitle.textContent = text;
+					pointsLines.replaceChildren(
+						...lines.map((line) => el("li", {}, line)),
+					);
+					if (!pointsDialog.open) pointsDialog.showModal();
+				},
+				{
+					className: "hcp-pill",
+					attrs: { title: lines.join("\n"), "aria-haspopup": "dialog" },
+				},
+			),
+		];
+	}
+
 	function seatElement(
 		seat: SeatView,
 		callState: HTMLElement | undefined,
@@ -929,11 +996,8 @@ export function tableSection(
 			seat.hand.suits.some((row) => row.trump && row.cards.length > 0)
 				? [el("span", { className: "trump-label" }, t("Trump suit"))]
 				: [];
-		// The HCP pill shows on the viewer's own hand in the auction and on every hand once the board is over.
-		const pills =
-			seat.points === undefined
-				? []
-				: [el("span", { className: "hcp-pill" }, `${seat.points} HCP`)];
+		// The points pill shows on the viewer's own hand in the auction and on every hand once the board is over.
+		const pills = pointsPill(seat.pointCards);
 		// The turn pill marks the seat to call or play. A top or bottom seat shows it next to the trump label; a side
 		// seat shows it flat above the name.
 		const turnPill = seat.turnPill
@@ -1397,7 +1461,16 @@ export function tableSection(
 		// The approval dialog asks the question.
 		const status = el("span", { className: "undo-message" }, view.undo.message);
 		status.hidden = view.undo.message === "" || view.undo.canVote;
+		const guideRow = el(
+			"div",
+			{ className: "bid-guide" },
+			button(t("Guide"), () => guide.open(shownPointSystem), {
+				className: "guide-open",
+				attrs: { "aria-haspopup": "dialog" },
+			}),
+		);
 		bidBox.replaceChildren(
+			guideRow,
 			levels,
 			calls,
 			el("div", { className: "bid-actions" }, confirm, undo, cancel, status),
@@ -1863,6 +1936,7 @@ export function tableSection(
 
 	function render(view: TableView): void {
 		latestView = view;
+		shownPointSystem = pointSystem();
 		element.dataset.phase = view.phase;
 		element.dataset.board = String(view.board);
 		element.dataset.at = String(view.at);

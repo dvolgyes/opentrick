@@ -1,0 +1,52 @@
+# Meldeguide: Reith-poeng (6-4-3-2-1)
+Tell A=6, K=4, Q=3, J=2, 10=1. Kortstokken inneholder 64 poeng.
+Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Standard American. Poengintervallene er 4-3-2-1-intervallene multiplisert med 1.6 (64 / 40) og avrundet, så de er omtrentlige.
+
+## Åpningsmeldinger
+- 0–18 poeng: [P], eller en svak to-åpning eller en sperremelding.
+- [1C] [1D] [1H] [1S]: 19–34 poeng. Åpne [1H] eller [1S] med fem eller flere kort i fargen. Uten femkorts høyfarge åpner du i den lengste lavfargen: [1D] med fire eller flere ruter, ellers [1C].
+- [1NT]: 24–28 poeng, balansert hånd.
+- [2C]: 35 eller flere poeng, vilkårlig fordeling. Kunstig og krav.
+- [2D] [2H] [2S]: svak to-åpning, 8–18 poeng med god sekskortsfarge.
+- [2NT]: 32–34 poeng, balansert hånd.
+- [3C] [3D] [3H] [3S]: sperremelding, svakere enn en åpningshånd, med god sjukortsfarge.
+
+## Svar på åpning med én i farge
+- 0–9 poeng: [P].
+- 10–15 poeng: støtt makkers høyfarge ett trinn ([1H] – [2H]) med tre eller flere kort. Ellers melder du en ny farge på ett-trinnet med fire eller flere kort, eller [1NT].
+- 16–20 poeng: invitasjon. Gi hoppstøtte i makkers høyfarge ([1S] – [3S]) med tre eller flere kort, eller meld en ny farge. En ny farge på to-trinnet krever 16 eller flere poeng.
+- 21 eller flere poeng: utgangskrav. Meld en ny farge, og fortsett til dere når utgang ([3NT], [4H], [4S]).
+
+## Åpners gjenmelding
+- 19–23 poeng: [1NT] med balansert hånd, enkel støtte, eller gjenmelding av egen farge.
+- 24–28 poeng: hoppstøtte, eller gjenmelding av egen farge med hopp.
+- 29–34 poeng: hopp i en ny farge, eller [2NT] med balansert hånd og 29–31 poeng.
+
+## Svar på [1NT]
+- 0–12 poeng: [P], eller overføring med femkorts høyfarge.
+- [2C] (Stayman): 13 eller flere poeng med firekorts høyfarge. Åpner svarer [2D] uten firekorts høyfarge, ellers [2H] eller [2S].
+- [2D] viser fem eller flere hjerter, [2H] viser fem eller flere spar (overføringer). Åpner melder neste farge.
+- [2NT]: 13–15 poeng, invitasjon.
+- [3NT]: 16–25 poeng, sluttmelding.
+
+## Svar på [2C]
+- [2D]: ventemelding, 0–12 poeng.
+- [2H] [2S] [3C] [3D]: 13 eller flere poeng med god femkortsfarge.
+- [2NT]: 13 eller flere poeng, balansert hånd.
+
+## Svar på svak to-åpning
+- Støtt makkers farge for å gjøre meldingsforløpet vanskeligere for motstanderne.
+- [2NT]: 24 eller flere poeng, ber åpner beskrive hånden.
+
+## Konkurransemeldinger
+- Innmelding på ett-trinnet: 13–26 poeng med god femkortsfarge. På to-trinnet: 16–26 poeng.
+- [1NT] som innmelding: 24–29 poeng, balansert, med hold i motstandernes farge.
+- [X] (opplysende): 19 eller flere poeng, kort i motstandernes farge, med støtte i de andre fargene; eller en hvilken som helst hånd med 27 eller flere poeng.
+- [XX] etter at makkers åpning er doblet: 16 eller flere poeng.
+
+## Poengmål for paret
+- 40 poeng: utgang i [3NT], [4H] eller [4S].
+- 46 poeng: utgang i [5C] eller [5D].
+- 53 poeng: lilleslem.
+- 59 poeng: storeslem.
+- [4NT] (Blackwood) spør etter ess: [5C] 0 eller 4, [5D] 1, [5H] 2, [5S] 3.

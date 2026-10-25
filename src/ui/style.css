@@ -1119,6 +1119,83 @@ main:has(> .room) {
 	min-width: 10rem;
 }
 
+/* The calculation of the points: one line each, and only OK. */
+.points-dialog {
+	width: min(24rem, calc(100vw - 2rem));
+}
+
+.points-title {
+	margin: 0 0 0.5rem;
+}
+
+.points-lines {
+	margin: 0 0 1rem;
+	padding: 0;
+	list-style: none;
+}
+
+/* The guide text scrolls; the red Close button stays below it, inside the screen. */
+.guide-dialog {
+	box-sizing: border-box;
+	width: min(40rem, calc(100vw - 2rem));
+	max-height: calc(100dvh - 2rem);
+	padding: 0;
+}
+
+.guide-dialog[open] {
+	display: flex;
+	flex-direction: column;
+}
+
+.guide-content {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 0.5rem 1.2rem;
+}
+
+.guide-content h2 {
+	margin-top: 0.5rem;
+}
+
+.guide-content h3 {
+	margin: 1rem 0 0.3rem;
+	font-size: 1rem;
+}
+
+.guide-content ul {
+	margin: 0.3rem 0;
+	padding-left: 1.2rem;
+}
+
+.guide-close {
+	flex: none;
+	margin: 0.6rem 1.2rem 1rem;
+	border-color: var(--red-suit);
+	background: var(--red-suit);
+	color: #ffffff;
+	font-weight: 700;
+}
+
+.guide-bid {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.guide-bid.strain-H,
+.guide-bid.strain-D,
+.guide-bid.call-redouble {
+	color: var(--red-suit);
+}
+
+.guide-bid.strain-NT {
+	color: var(--call-green);
+}
+
+.guide-bid.call-double {
+	color: var(--call-orange);
+}
+
 .settings-order-title {
 	margin: 0.4rem 0 0;
 }
@@ -1657,6 +1734,12 @@ button.call-join[data-in-call="true"] {
 	grid-column: 1 / -1;
 }
 
+/* The Guide button is the first row of the bid box, above the levels. */
+.bid-guide {
+	display: grid;
+}
+
+.bid-guide button,
 .bid-levels button,
 .bid-calls button,
 .bid-actions button {
@@ -1907,11 +1990,13 @@ button.call-join[data-in-call="true"] {
 	white-space: nowrap;
 }
 
+/* The points pill is a button: its hint gives the calculation, and a tap opens it in a dialog. */
 .hcp-pill {
 	position: absolute;
 	top: 0.35rem;
 	left: 0.5rem;
 	z-index: 1;
+	border: 0;
 	background: #e8b923;
 	color: #1b1b1b;
 }
@@ -2959,6 +3044,7 @@ main:has(> .room[data-form="compact"]) {
 	gap: 0.2rem;
 }
 
+.mobile-auction-controls .bid-guide button,
 .mobile-auction-controls .bid-levels button,
 .mobile-auction-controls .bid-calls button,
 .mobile-auction-controls .bid-actions button {
@@ -2996,9 +3082,36 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-auction-hand .seat-tags,
-.mobile-auction-hand .hcp-pill,
 .mobile-auction-hand .trump-label {
 	display: none;
+}
+
+/* On a phone the points pill sits at the right end of the name line, above the cards; when the line is full, it moves
+   to a line of its own above the names. */
+.mobile-auction-hand .seat {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	column-gap: 0.25rem;
+}
+
+.mobile-auction-hand .seat > * {
+	flex-basis: 100%;
+	order: 1;
+}
+
+.mobile-auction-hand .seat > .seat-label {
+	flex: 0 1 auto;
+	order: 0;
+	min-width: 0;
+}
+
+.mobile-auction-hand .hcp-pill {
+	position: static;
+	flex: none;
+	order: 0;
+	margin-bottom: 0.15rem;
+	margin-left: auto;
 }
 
 .mobile-auction-hand .hand-row {

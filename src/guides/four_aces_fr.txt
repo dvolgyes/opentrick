@@ -1,0 +1,52 @@
+# Guide des enchères : points Four Aces (3-2-1-½)
+Comptez A=3, K=2, Q=1, J=½. Le jeu contient 26 points.
+Ce guide utilise un système naturel à majeure cinquième, proche du Standard American. Les fourchettes de points sont celles du 4-3-2-1 multipliées par 0.65 (26 / 40) et arrondies au demi-point ; elles sont donc approximatives.
+
+## Ouvertures
+- 0–7½ points : [P], ou un deux faible ou un barrage.
+- [1C] [1D] [1H] [1S] : 8–14 points. Ouvrez de [1H] ou de [1S] avec cinq cartes ou plus dans la couleur. Sans majeure cinquième, ouvrez de la mineure la plus longue : [1D] avec quatre carreaux ou plus, sinon [1C].
+- [1NT] : 10–11 points, main régulière.
+- [2C] : 14½ points ou plus, toute distribution. Artificiel et forcing.
+- [2D] [2H] [2S] : deux faible, 3½–7½ points avec une bonne couleur sixième.
+- [2NT] : 13–14 points, main régulière.
+- [3C] [3D] [3H] [3S] : barrage, moins qu'une main d'ouverture avec une bonne couleur septième.
+
+## Réponses à l'ouverture d'un à la couleur
+- 0–3½ points : [P].
+- 4–6 points : soutenez la majeure du partenaire d'un niveau ([1H] – [2H]) avec trois cartes ou plus. Sinon, nommez une couleur nouvelle au niveau de un avec quatre cartes ou plus, ou dites [1NT].
+- 6½–8 points : invitant. Soutenez à saut la majeure du partenaire ([1S] – [3S]) avec trois cartes ou plus, ou nommez une couleur nouvelle. Une couleur nouvelle au niveau de deux demande 6½ points ou plus.
+- 8½ points ou plus : forcing de manche. Nommez une couleur nouvelle et continuez jusqu'à la manche ([3NT], [4H], [4S]).
+
+## Redemande de l'ouvreur
+- 8–9½ points : [1NT] avec une main régulière, un soutien simple ou la répétition de votre couleur.
+- 10–11 points : un soutien à saut ou une répétition à saut de votre couleur.
+- 11½–14 points : un saut dans une couleur nouvelle, ou [2NT] avec une main régulière de 11½–12½ points.
+
+## Réponses à [1NT]
+- 0–4½ points : [P], ou un transfert avec une majeure cinquième.
+- [2C] (Stayman) : 5 points ou plus avec une majeure quatrième. L'ouvreur répond [2D] sans majeure quatrième, sinon [2H] ou [2S].
+- [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts). L'ouvreur nomme la couleur suivante.
+- [2NT] : 5–6 points, invitant.
+- [3NT] : 6½–10 points, pour jouer.
+
+## Réponses à [2C]
+- [2D] : réponse d'attente, 0–4½ points.
+- [2H] [2S] [3C] [3D] : 5 points ou plus avec une bonne couleur cinquième.
+- [2NT] : 5 points ou plus, main régulière.
+
+## Réponses à un deux faible
+- Soutenez la couleur du partenaire pour compliquer les enchères des adversaires.
+- [2NT] : 10 points ou plus, demande à l'ouvreur de décrire sa main.
+
+## Enchères de compétition
+- Une intervention au niveau de un : 5–10½ points avec une bonne couleur cinquième. Au niveau de deux : 6½–10½ points.
+- Intervention à [1NT] : 10–12 points, main régulière, avec un arrêt dans la couleur adverse.
+- [X] (contre d'appel) : 8 points ou plus, court dans la couleur adverse, avec du soutien dans les autres couleurs ; ou toute main de 11 points ou plus.
+- [XX] quand l'ouverture du partenaire est contrée : 6½ points ou plus.
+
+## Objectifs de la ligne
+- 16 points : manche à [3NT], [4H] ou [4S].
+- 19 points : manche à [5C] ou [5D].
+- 21½ points : petit chelem.
+- 24 points : grand chelem.
+- [4NT] (Blackwood) demande les as : [5C] 0 ou 4, [5D] 1, [5H] 2, [5S] 3.

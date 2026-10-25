@@ -1,0 +1,59 @@
+# Biedgids: gecorrigeerde Milton HCP
+Tel A=4, K=3, Q=2, J=1 en tel daarna de correcties erbij:
+- −1 voor een singleton K, Q of J.
+- −1 voor de doubletons AJ, KQ, KJ en QJ, en voor een boer met één lagere kaart.
+- −1 voor een 4333-verdeling.
+- +1 voor alle vier azen.
+- +1 voor elke kleur van vijf of meer kaarten met drie van A K Q J 10.
+- Bij de verdelingen 4441, 5440, 5422, 5431, 5521 en 5530: +1 voor een doubleton, +2 voor een singleton, +3 voor een renonce.
+De correcties houden al rekening met de verdeling, dus tel geen lengtepunten op. De puntenbereiken zijn dezelfde als bij gewone HCP.
+Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkbaar met Standard American.
+
+## Openingsbiedingen
+- 0–11 punten: [P], of een zwakke twee of een preëmptief bod.
+- [1C] [1D] [1H] [1S]: 12–21 punten. Open [1H] of [1S] met vijf of meer kaarten in de kleur. Zonder vijfkaart hoge kleur open je de langste lage kleur: [1D] met vier of meer ruiten, anders [1C].
+- [1NT]: 15–17 punten, evenwichtige hand.
+- [2C]: 22 of meer punten, elke verdeling. Kunstmatig en forcing.
+- [2D] [2H] [2S]: zwakke twee, 5–11 punten met een goede zeskaart.
+- [2NT]: 20–21 punten, evenwichtige hand.
+- [3C] [3D] [3H] [3S]: preëmptief, minder dan een openingshand met een goede zevenkaart.
+
+## Antwoorden op een opening van één in een kleur
+- 0–5 punten: [P].
+- 6–9 punten: verhoog de hoge kleur van je partner met één niveau ([1H] – [2H]) met drie of meer kaarten. Bied anders een nieuwe kleur op het één-niveau met vier of meer kaarten, of [1NT].
+- 10–12 punten: uitnodigend. Geef een sprongverhoging in de hoge kleur van je partner ([1S] – [3S]) met drie of meer kaarten, of bied een nieuwe kleur. Voor een nieuwe kleur op het twee-niveau heb je 10 of meer punten nodig.
+- 13 of meer punten: mancheforcing. Bied een nieuwe kleur en blijf bieden tot de manche ([3NT], [4H], [4S]).
+
+## Herbod van de openaar
+- 12–14 punten: [1NT] met een evenwichtige hand, een enkele verhoging, of een herhaling van je eigen kleur.
+- 15–17 punten: een sprongverhoging, of een sprong in je eigen kleur.
+- 18–21 punten: een sprong in een nieuwe kleur, of [2NT] met een evenwichtige hand van 18–19 punten.
+
+## Antwoorden op [1NT]
+- 0–7 punten: [P], of een transfer met een vijfkaart hoge kleur.
+- [2C] (Stayman): 8 of meer punten met een vierkaart hoge kleur. De openaar antwoordt [2D] zonder vierkaart hoge kleur, anders [2H] of [2S].
+- [2D] belooft vijf of meer harten, [2H] belooft vijf of meer schoppen (transfers). De openaar biedt de volgende kleur.
+- [2NT]: 8–9 punten, uitnodigend.
+- [3NT]: 10–15 punten, afsluitend.
+
+## Antwoorden op [2C]
+- [2D]: afwachtend, 0–7 punten.
+- [2H] [2S] [3C] [3D]: 8 of meer punten met een goede vijfkaart.
+- [2NT]: 8 of meer punten, evenwichtige hand.
+
+## Antwoorden op een zwakke twee
+- Verhoog de kleur van je partner om het bieden moeilijker te maken voor de tegenstanders.
+- [2NT]: 15 of meer punten, vraagt de openaar om de hand te beschrijven.
+
+## Competitieve biedingen
+- Een volgbod op het één-niveau: 8–16 punten met een goede vijfkaart. Op het twee-niveau: 10–16 punten.
+- [1NT] als volgbod: 15–18 punten, evenwichtig, met een stopper in de kleur van de tegenstanders.
+- [X] (informatief): 12 of meer punten, kort in de kleur van de tegenstanders, met steun voor de andere kleuren; of elke hand met 17 of meer punten.
+- [XX] nadat de opening van je partner gedoubleerd is: 10 of meer punten.
+
+## Richtwaarden voor het paar
+- 25 punten: manche in [3NT], [4H] of [4S].
+- 29 punten: manche in [5C] of [5D].
+- 33 punten: klein slem.
+- 37 punten: groot slem.
+- [4NT] (Blackwood) vraagt naar azen: [5C] 0 of 4, [5D] 1, [5H] 2, [5S] 3.

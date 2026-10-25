@@ -1,0 +1,52 @@
+# Guía de subasta: puntos Four Aces (3-2-1-½)
+Cuenta A=3, K=2, Q=1, J=½. La baraja contiene 26 puntos.
+Esta guía usa un sistema natural de mayores quintos, similar al Standard Americano. Los rangos de puntos son los rangos 4-3-2-1 multiplicados por 0.65 (26 / 40) y redondeados a medios puntos, así que son aproximados.
+
+## Aperturas
+- 0–7½ puntos: [P], o un dos débil o un barrage.
+- [1C] [1D] [1H] [1S]: 8–14 puntos. Abre [1H] o [1S] con cinco o más cartas en el palo. Sin mayor quinto, abre el menor más largo: [1D] con cuatro o más diamantes; si no, [1C].
+- [1NT]: 10–11 puntos, mano equilibrada.
+- [2C]: 14½ o más puntos, cualquier distribución. Artificial y forzante.
+- [2D] [2H] [2S]: dos débil, 3½–7½ puntos con un buen palo de seis cartas.
+- [2NT]: 13–14 puntos, mano equilibrada.
+- [3C] [3D] [3H] [3S]: barrage, menos que una mano de apertura, con un buen palo de siete cartas.
+
+## Respuestas a uno a palo
+- 0–3½ puntos: [P].
+- 4–6 puntos: apoya el mayor de tu compañero un nivel ([1H] – [2H]) con tres o más cartas. Si no, declara un palo nuevo a nivel de uno con cuatro o más cartas, o [1NT].
+- 6½–8 puntos: invitativo. Apoya con salto el mayor de tu compañero ([1S] – [3S]) con tres o más cartas, o declara un palo nuevo. Un palo nuevo a nivel de dos requiere 6½ o más puntos.
+- 8½ o más puntos: forzante a manga. Declara un palo nuevo y sigue hasta la manga ([3NT], [4H], [4S]).
+
+## Redeclaración del abridor
+- 8–9½ puntos: [1NT] con mano equilibrada, un apoyo simple o la repetición de tu propio palo.
+- 10–11 puntos: un apoyo con salto, o la repetición de tu propio palo con salto.
+- 11½–14 puntos: un salto en un palo nuevo, o [2NT] con una mano equilibrada de 11½–12½ puntos.
+
+## Respuestas a [1NT]
+- 0–4½ puntos: [P], o una transferencia con un mayor quinto.
+- [2C] (Stayman): 5 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto; si no, [2H] o [2S].
+- [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias). El abridor declara el palo siguiente.
+- [2NT]: 5–6 puntos, invitativo.
+- [3NT]: 6½–10 puntos, para jugar.
+
+## Respuestas a [2C]
+- [2D]: de espera, 0–4½ puntos.
+- [2H] [2S] [3C] [3D]: 5 o más puntos con un buen palo de cinco cartas.
+- [2NT]: 5 o más puntos, mano equilibrada.
+
+## Respuestas a un dos débil
+- Apoya el palo de tu compañero para dificultar la subasta a los contrarios.
+- [2NT]: 10 o más puntos, pide al abridor que describa su mano.
+
+## Subasta competitiva
+- Una intervención a nivel de uno: 5–10½ puntos con un buen palo de cinco cartas. A nivel de dos: 6½–10½ puntos.
+- Intervención de [1NT]: 10–12 puntos, equilibrada, con parada en el palo de los contrarios.
+- [X] (informativo): 8 o más puntos, corto en el palo de los contrarios, con apoyo para los otros palos; o cualquier mano con 11 o más puntos.
+- [XX] después de que doblen la apertura de tu compañero: 6½ o más puntos.
+
+## Objetivos de la pareja
+- 16 puntos: manga en [3NT], [4H] o [4S].
+- 19 puntos: manga en [5C] o [5D].
+- 21½ puntos: pequeño slam.
+- 24 puntos: gran slam.
+- [4NT] (Blackwood) pide ases: [5C] 0 o 4, [5D] 1, [5H] 2, [5S] 3.

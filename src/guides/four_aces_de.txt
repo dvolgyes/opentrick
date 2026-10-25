@@ -1,0 +1,52 @@
+# Reizleitfaden: Four-Aces-Punkte (3-2-1-½)
+Zähle A=3, K=2, Q=1, J=½. Das Kartenspiel enthält 26 Punkte.
+Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnlich wie Standard American. Die Punktbereiche sind die 4-3-2-1-Bereiche, multipliziert mit 0.65 (26 / 40) und auf halbe Punkte gerundet, sie sind also Näherungswerte.
+
+## Eröffnungen
+- 0–7½ Punkte: [P], oder eine schwache Zwei oder eine Sperreröffnung.
+- [1C] [1D] [1H] [1S]: 8–14 Punkte. Eröffne [1H] oder [1S] mit fünf oder mehr Karten in der Farbe. Ohne Fünferoberfarbe eröffnest du die längere Unterfarbe: [1D] mit vier oder mehr Karo, sonst [1C].
+- [1NT]: 10–11 Punkte, ausgeglichene Hand.
+- [2C]: 14½ oder mehr Punkte, beliebige Verteilung. Künstlich und forcierend.
+- [2D] [2H] [2S]: schwache Zwei, 3½–7½ Punkte mit einer guten Sechserfarbe.
+- [2NT]: 13–14 Punkte, ausgeglichene Hand.
+- [3C] [3D] [3H] [3S]: Sperreröffnung, weniger als eine Eröffnungshand, mit einer guten Siebenerfarbe.
+
+## Antworten auf eine Eröffnung in Farbe auf Einerstufe
+- 0–3½ Punkte: [P].
+- 4–6 Punkte: Hebe die Oberfarbe deines Partners um eine Stufe ([1H] – [2H]) mit drei oder mehr Karten. Sonst reizt du eine neue Farbe auf Einerstufe mit vier oder mehr Karten, oder [1NT].
+- 6½–8 Punkte: einladend. Hebe die Oberfarbe deines Partners mit Sprung ([1S] – [3S]) mit drei oder mehr Karten, oder reize eine neue Farbe. Eine neue Farbe auf Zweierstufe braucht 6½ oder mehr Punkte.
+- 8½ oder mehr Punkte: partieforcierend. Reize eine neue Farbe und reize weiter bis zur Partie ([3NT], [4H], [4S]).
+
+## Wiedergebot des Eröffners
+- 8–9½ Punkte: [1NT] mit ausgeglichener Hand, eine einfache Hebung oder die Wiederholung deiner eigenen Farbe.
+- 10–11 Punkte: eine Sprunghebung oder eine Sprungwiederholung deiner eigenen Farbe.
+- 11½–14 Punkte: ein Sprung in eine neue Farbe, oder [2NT] mit ausgeglichenen 11½–12½ Punkten.
+
+## Antworten auf [1NT]
+- 0–4½ Punkte: [P], oder ein Transfer mit einer Fünferoberfarbe.
+- [2C] (Stayman): 5 oder mehr Punkte mit einer Viereroberfarbe. Der Eröffner antwortet [2D] ohne Viereroberfarbe, sonst [2H] oder [2S].
+- [2D] zeigt fünf oder mehr Coeur, [2H] zeigt fünf oder mehr Pik (Transfers). Der Eröffner reizt die nächste Farbe.
+- [2NT]: 5–6 Punkte, einladend.
+- [3NT]: 6½–10 Punkte, Schlussgebot.
+
+## Antworten auf [2C]
+- [2D]: Wartegebot, 0–4½ Punkte.
+- [2H] [2S] [3C] [3D]: 5 oder mehr Punkte mit einer guten Fünferfarbe.
+- [2NT]: 5 oder mehr Punkte, ausgeglichene Hand.
+
+## Antworten auf eine schwache Zwei
+- Hebe die Farbe deines Partners, um den Gegnern die Reizung zu erschweren.
+- [2NT]: 10 oder mehr Punkte, fordert den Eröffner auf, seine Hand zu beschreiben.
+
+## Kompetitive Reizung
+- Eine Gegenreizung auf Einerstufe: 5–10½ Punkte mit einer guten Fünferfarbe. Auf Zweierstufe: 6½–10½ Punkte.
+- [1NT] als Gegenreizung: 10–12 Punkte, ausgeglichen, mit einem Stopper in der Farbe der Gegner.
+- [X] (Informationskontra): 8 oder mehr Punkte, kurz in der Farbe der Gegner, mit Unterstützung für die anderen Farben; oder jede Hand mit 11 oder mehr Punkten.
+- [XX], nachdem die Eröffnung deines Partners kontriert wurde: 6½ oder mehr Punkte.
+
+## Ziele für die Partnerschaft
+- 16 Punkte: Partie in [3NT], [4H] oder [4S].
+- 19 Punkte: Partie in [5C] oder [5D].
+- 21½ Punkte: Kleinschlemm.
+- 24 Punkte: Großschlemm.
+- [4NT] (Blackwood) fragt nach Assen: [5C] 0 oder 4, [5D] 1, [5H] 2, [5S] 3.

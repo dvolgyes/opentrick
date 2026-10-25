@@ -1,0 +1,59 @@
+# Guía de subasta: Milton HCP corregido
+Cuenta A=4, K=3, Q=2, J=1 y después suma las correcciones:
+- −1 por un K, Q o J semifallo.
+- −1 por los doubletons AJ, KQ, KJ y QJ, y por una J con una carta más baja.
+- −1 por una distribución 4333.
+- +1 por los cuatro ases.
+- +1 por cada palo de cinco o más cartas con tres de A K Q J 10.
+- En las distribuciones 4441, 5440, 5422, 5431, 5521 y 5530: +1 por un doubleton, +2 por un semifallo, +3 por un fallo.
+Las correcciones ya incluyen la distribución, así que no sumes puntos de longitud. Los rangos de puntos son los mismos que con los HCP sin corregir.
+Esta guía usa un sistema natural de mayores quintos, similar al Standard Americano.
+
+## Aperturas
+- 0–11 puntos: [P], o un dos débil o un barrage.
+- [1C] [1D] [1H] [1S]: 12–21 puntos. Abre [1H] o [1S] con cinco o más cartas en el palo. Sin mayor quinto, abre el menor más largo: [1D] con cuatro o más diamantes; si no, [1C].
+- [1NT]: 15–17 puntos, mano equilibrada.
+- [2C]: 22 o más puntos, cualquier distribución. Artificial y forzante.
+- [2D] [2H] [2S]: dos débil, 5–11 puntos con un buen palo de seis cartas.
+- [2NT]: 20–21 puntos, mano equilibrada.
+- [3C] [3D] [3H] [3S]: barrage, menos que una mano de apertura, con un buen palo de siete cartas.
+
+## Respuestas a uno a palo
+- 0–5 puntos: [P].
+- 6–9 puntos: apoya el mayor de tu compañero un nivel ([1H] – [2H]) con tres o más cartas. Si no, declara un palo nuevo a nivel de uno con cuatro o más cartas, o [1NT].
+- 10–12 puntos: invitativo. Apoya con salto el mayor de tu compañero ([1S] – [3S]) con tres o más cartas, o declara un palo nuevo. Un palo nuevo a nivel de dos requiere 10 o más puntos.
+- 13 o más puntos: forzante a manga. Declara un palo nuevo y sigue hasta la manga ([3NT], [4H], [4S]).
+
+## Redeclaración del abridor
+- 12–14 puntos: [1NT] con mano equilibrada, un apoyo simple o la repetición de tu propio palo.
+- 15–17 puntos: un apoyo con salto, o la repetición de tu propio palo con salto.
+- 18–21 puntos: un salto en un palo nuevo, o [2NT] con una mano equilibrada de 18–19 puntos.
+
+## Respuestas a [1NT]
+- 0–7 puntos: [P], o una transferencia con un mayor quinto.
+- [2C] (Stayman): 8 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto; si no, [2H] o [2S].
+- [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias). El abridor declara el palo siguiente.
+- [2NT]: 8–9 puntos, invitativo.
+- [3NT]: 10–15 puntos, para jugar.
+
+## Respuestas a [2C]
+- [2D]: de espera, 0–7 puntos.
+- [2H] [2S] [3C] [3D]: 8 o más puntos con un buen palo de cinco cartas.
+- [2NT]: 8 o más puntos, mano equilibrada.
+
+## Respuestas a un dos débil
+- Apoya el palo de tu compañero para dificultar la subasta a los contrarios.
+- [2NT]: 15 o más puntos, pide al abridor que describa su mano.
+
+## Subasta competitiva
+- Una intervención a nivel de uno: 8–16 puntos con un buen palo de cinco cartas. A nivel de dos: 10–16 puntos.
+- Intervención de [1NT]: 15–18 puntos, equilibrada, con parada en el palo de los contrarios.
+- [X] (informativo): 12 o más puntos, corto en el palo de los contrarios, con apoyo para los otros palos; o cualquier mano con 17 o más puntos.
+- [XX] después de que doblen la apertura de tu compañero: 10 o más puntos.
+
+## Objetivos de la pareja
+- 25 puntos: manga en [3NT], [4H] o [4S].
+- 29 puntos: manga en [5C] o [5D].
+- 33 puntos: pequeño slam.
+- 37 puntos: gran slam.
+- [4NT] (Blackwood) pide ases: [5C] 0 o 4, [5D] 1, [5H] 2, [5S] 3.

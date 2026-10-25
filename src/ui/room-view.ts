@@ -82,6 +82,7 @@ import { networkPanel } from "./network";
 import { pageReport, type TableFacts } from "./page-report";
 import { pageTitle } from "./page-title";
 import { remoteAudio } from "./remote-audio";
+import { readSettings } from "./settings";
 import { settingsDialog } from "./settings-dialog";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
@@ -940,6 +941,10 @@ export function showRoom(
 		},
 		undefined,
 		deps.t,
+		{
+			pointSystem: () => readSettings(deps.browser).pointSystem,
+			locale: deps.locale,
+		},
 	);
 
 	form.addEventListener("submit", (event) => {
@@ -1048,7 +1053,7 @@ export function showRoom(
 		debug,
 		reloadPlayers,
 	);
-	const settings = settingsDialog(deps, handlers.reload);
+	const settings = settingsDialog(deps, handlers.reload, render);
 	const openSettings = button(deps.t("Settings"), () => settings.open(), {
 		className: "settings-button",
 	});

@@ -381,12 +381,15 @@ test("5: the board is played out; the result and the duplicate score agree in ev
 		// The finished board shows the whole deal, and nothing can be played.
 		for (const other of SEATS)
 			await expect(cards(hand(page, other))).toHaveCount(13);
-		// Every hand shows its HCP; together they hold 40.
+		// Every hand shows its corrected HCP, "corrected HCP: 15 (13 +2)"; the HCP before the correction add up to 40.
 		const pills = await page.locator(".hcp-pill").allInnerTexts();
 		expect(pills).toHaveLength(4);
-		expect(
-			pills.reduce((sum, pill) => sum + Number.parseInt(pill, 10), 0),
-		).toBe(40);
+		const hcp = pills.map((pill) => {
+			const match = /^corrected HCP: (\d+)(?: \((\d+) [+-]\d+\))?$/.exec(pill);
+			if (!match) throw new Error(`not a points pill: ${pill}`);
+			return Number(match[2] ?? match[1]);
+		});
+		expect(hcp.reduce((sum, points) => sum + points, 0)).toBe(40);
 		await expect(playable(page)).toHaveCount(0);
 		await expect(page.getByTestId("scoring-countdown")).toContainText(
 			"Next board 2 in",

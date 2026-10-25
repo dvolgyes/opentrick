@@ -1,4 +1,4 @@
-import { type Card, rankOf, type Suit } from "../bridge/cards";
+import type { Suit } from "../bridge/cards";
 import type { Contract, Strain } from "../bridge/rules";
 import type { Seat } from "../protocol";
 
@@ -12,14 +12,6 @@ export type Edge = "bottom" | "left" | "top" | "right";
 
 /** The base order of every hand, from left to right; in play the trump suit moves in front of it or to its end. */
 const SUIT_ORDER: readonly Suit[] = ["S", "H", "D", "C"];
-
-/** Milton Work points: the only values the auction screen counts. */
-const MILTON_POINTS: Readonly<Partial<Record<string, number>>> = {
-	A: 4,
-	K: 3,
-	Q: 2,
-	J: 1,
-};
 
 /** The partnership of a seat: North-South or East-West. */
 export function sideOf(seat: Seat): "NS" | "EW" {
@@ -42,14 +34,6 @@ export function playSuitOrder(
 	const others = SUIT_ORDER.filter((suit) => suit !== strain);
 	const last = dummy ? edge === "left" : edge === "right";
 	return last ? [...others, strain] : [strain, ...others];
-}
-
-/** The Milton Work points of a set of cards: A 4, K 3, Q 2, J 1. */
-export function miltonPoints(cards: readonly Card[]): number {
-	return cards.reduce(
-		(sum, card) => sum + (MILTON_POINTS[rankOf(card)] ?? 0),
-		0,
-	);
 }
 
 /** The state of the target: still open, secured by the declaring side, or defeated. */

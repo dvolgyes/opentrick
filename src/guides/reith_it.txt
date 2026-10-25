@@ -1,0 +1,52 @@
+# Guida alla dichiarazione: punti Reith (6-4-3-2-1)
+Conta A=6, K=4, Q=3, J=2, 10=1. Il mazzo contiene 64 punti.
+Questa guida usa un sistema naturale a quinta nobile, simile allo Standard American. Gli intervalli di punti sono quelli della scala 4-3-2-1 moltiplicati per 1.6 (64 / 40) e arrotondati, quindi sono approssimativi.
+
+## Aperture
+- 0–18 punti: [P], oppure un due debole o uno sbarramento.
+- [1C] [1D] [1H] [1S]: 19–34 punti. Apri [1H] o [1S] con cinque o più carte nel colore. Senza un nobile quinto, apri nel minore più lungo: [1D] con quattro o più quadri, altrimenti [1C].
+- [1NT]: 24–28 punti, mano bilanciata.
+- [2C]: 35 o più punti, qualsiasi distribuzione. Artificiale e forzante.
+- [2D] [2H] [2S]: due debole, 8–18 punti con un buon colore sesto.
+- [2NT]: 32–34 punti, mano bilanciata.
+- [3C] [3D] [3H] [3S]: sbarramento, meno di una mano d'apertura con un buon colore settimo.
+
+## Risposte all'apertura di uno a colore
+- 0–9 punti: [P].
+- 10–15 punti: appoggia di un livello il nobile del compagno ([1H] – [2H]) con tre o più carte. Altrimenti dichiara un nuovo colore a livello di uno con quattro o più carte, oppure [1NT].
+- 16–20 punti: invitante. Appoggia a salto il nobile del compagno ([1S] – [3S]) con tre o più carte, oppure dichiara un nuovo colore. Un nuovo colore a livello di due richiede 16 o più punti.
+- 21 o più punti: forzante a manche. Dichiara un nuovo colore e prosegui fino alla manche ([3NT], [4H], [4S]).
+
+## Ridichiarazione dell'apertore
+- 19–23 punti: [1NT] con una mano bilanciata, un appoggio semplice, oppure la ripetizione del tuo colore.
+- 24–28 punti: un appoggio a salto, oppure la ripetizione a salto del tuo colore.
+- 29–34 punti: un salto in un nuovo colore, oppure [2NT] con una bilanciata di 29–31 punti.
+
+## Risposte a [1NT]
+- 0–12 punti: [P], oppure un transfer con un nobile quinto.
+- [2C] (Stayman): 13 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, altrimenti [2H] o [2S].
+- [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer). L'apertore dichiara il colore successivo.
+- [2NT]: 13–15 punti, invitante.
+- [3NT]: 16–25 punti, conclusivo.
+
+## Risposte a [2C]
+- [2D]: d'attesa, 0–12 punti.
+- [2H] [2S] [3C] [3D]: 13 o più punti con un buon colore quinto.
+- [2NT]: 13 o più punti, mano bilanciata.
+
+## Risposte al due debole
+- Appoggia il colore del compagno per rendere la licita più difficile agli avversari.
+- [2NT]: 24 o più punti, chiede all'apertore di descrivere la mano.
+
+## Dichiarazioni competitive
+- Un intervento a livello di uno: 13–26 punti con un buon colore quinto. A livello di due: 16–26 punti.
+- Intervento a [1NT]: 24–29 punti, bilanciata, con fermo nel colore avversario.
+- [X] (informativo): 19 o più punti, corto nel colore avversario, con appoggio per gli altri colori; oppure qualsiasi mano con 27 o più punti.
+- [XX] dopo il contro sull'apertura del compagno: 16 o più punti.
+
+## Obiettivi della coppia
+- 40 punti: manche a [3NT], [4H] o [4S].
+- 46 punti: manche a [5C] o [5D].
+- 53 punti: piccolo slam.
+- 59 punti: grande slam.
+- [4NT] (Blackwood) chiede gli assi: [5C] 0 o 4, [5D] 1, [5H] 2, [5S] 3.

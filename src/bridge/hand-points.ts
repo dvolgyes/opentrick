@@ -3,7 +3,9 @@ import {
 	type Card,
 	type Rank,
 	rankOf,
+	SUIT_SYMBOLS,
 	SUITS,
+	type Suit,
 	sortCards,
 	suitOf,
 } from "./cards";
@@ -70,40 +72,84 @@ const DISTRIBUTION_SHAPES: ReadonlySet<string> = new Set([
 
 /** The opener's distribution points of a short suit, by its length. Dummy's values need a known trump fit. */
 const SHORTNESS_POINTS: readonly number[] = [3, 2, 1];
+const SHORTNESS_NAMES: readonly string[] = [
+	"void {suit} ({shape})",
+	"singleton {suit} ({shape})",
+	"doubleton {suit} ({shape})",
+];
 
-/** The honour value of one suit's ranks, highest first, for its length. */
-function suitCorrection(ranks: readonly Rank[]): number {
+/** One correction of corrected HCP, with the message that explains it. */
+interface Adjustment {
+	readonly points: number;
+	readonly reason: string;
+	readonly values?: Readonly<Record<string, string>>;
+}
+
+/** The ranks as the cards show them: T is 10. */
+function ranksText(ranks: readonly Rank[]): string {
+	return ranks.map((rank) => (rank === "T" ? "10" : rank)).join("");
+}
+
+/** The honour correction of one suit's ranks, highest first, for its length. */
+function suitAdjustment(suit: Suit, ranks: readonly Rank[]): Adjustment[] {
 	const [first, second] = ranks;
+	const cards = `${SUIT_SYMBOLS[suit]}${ranksText(ranks)}`;
 	if (ranks.length === 1)
-		return first === "K" || first === "Q" || first === "J" ? -1 : 0;
+		return first === "K" || first === "Q" || first === "J"
+			? [{ points: -1, reason: "singleton honour {cards}", values: { cards } }]
+			: [];
 	if (ranks.length === 2)
-		return first === "J" || WEAK_DOUBLETONS.has(`${first}${second}`) ? -1 : 0;
+		return first === "J" || WEAK_DOUBLETONS.has(`${first}${second}`)
+			? [
+					{
+						points: -1,
+						reason: "unsupported honours {cards}",
+						values: { cards },
+					},
+				]
+			: [];
 	const honours = ranks.filter((rank) => GOOD_SUIT_HONOURS.has(rank)).length;
-	return ranks.length >= 5 && honours >= 3 ? 1 : 0;
+	return ranks.length >= 5 && honours >= 3
+		? [{ points: 1, reason: "good suit {cards}", values: { cards } }]
+		: [];
 }
 
 /**
  * The corrections of corrected HCP for a dealt hand of 13 cards: unsupported honours, a 4333 shape, all four aces, good
  * long suits, and the distribution points of unbalanced hands.
  */
-function hcpCorrection(cards: readonly Card[]): number {
-	const suits = SUITS.map((suit) =>
-		sortCards(cards.filter((card) => suitOf(card) === suit)).map(rankOf),
+function hcpAdjustments(cards: readonly Card[]): Adjustment[] {
+	const suits = SUITS.map(
+		(suit) =>
+			[
+				suit,
+				sortCards(cards.filter((card) => suitOf(card) === suit)).map(rankOf),
+			] as const,
 	);
-	const honours = suits.reduce((sum, ranks) => sum + suitCorrection(ranks), 0);
 	const shape = suits
-		.map((ranks) => ranks.length)
+		.map(([, ranks]) => ranks.length)
 		.sort((a, b) => b - a)
 		.join("");
-	const aces = suits.every((ranks) => ranks.includes("A")) ? 1 : 0;
-	const flat = shape === "4333" ? -1 : 0;
-	const distribution = DISTRIBUTION_SHAPES.has(shape)
-		? suits.reduce(
-				(sum, ranks) => sum + (SHORTNESS_POINTS[ranks.length] ?? 0),
-				0,
-			)
-		: 0;
-	return honours + aces + flat + distribution;
+	const honours = suits.flatMap(([suit, ranks]) => suitAdjustment(suit, ranks));
+	const flat: Adjustment[] =
+		shape === "4333" ? [{ points: -1, reason: "4333 shape" }] : [];
+	const aces: Adjustment[] = suits.every(([, ranks]) => ranks.includes("A"))
+		? [{ points: 1, reason: "all four aces" }]
+		: [];
+	const distribution: Adjustment[] = DISTRIBUTION_SHAPES.has(shape)
+		? suits.flatMap(([suit, ranks]) => {
+				const points = SHORTNESS_POINTS[ranks.length];
+				const reason = SHORTNESS_NAMES[ranks.length];
+				return points === undefined || reason === undefined
+					? []
+					: [{ points, reason, values: { suit: SUIT_SYMBOLS[suit], shape } }];
+			})
+		: [];
+	return [...honours, ...flat, ...aces, ...distribution];
+}
+
+function rawPoints(scale: HonourScale, cards: readonly Card[]): number {
+	return cards.reduce((sum, card) => sum + (scale[rankOf(card)] ?? 0), 0);
 }
 
 /** The points of a hand on a scale; undefined for "none". */
@@ -112,13 +158,36 @@ export function countHandPoints(
 	cards: readonly Card[],
 ): HandPoints | undefined {
 	if (system === "none") return undefined;
-	const scale = SCALES[system];
-	const raw = cards.reduce(
-		(sum, card) => sum + (scale[card[1] as Rank] ?? 0),
-		0,
-	);
-	const correction = system === "hcp-corrected" ? hcpCorrection(cards) : 0;
+	const raw = rawPoints(SCALES[system], cards);
+	const correction =
+		system === "hcp-corrected"
+			? hcpAdjustments(cards).reduce((sum, { points }) => sum + points, 0)
+			: 0;
 	return { total: raw + correction, raw, correction };
+}
+
+/**
+ * How the points of a hand add up, one line each: the scale with the honour count, for example "A=4, K=3, Q=2, J=1: 13",
+ * then each correction, for example "-1 singleton honour ♥K". Empty for "none".
+ */
+export function explainHandPoints(
+	system: PointSystem,
+	cards: readonly Card[],
+	t: Translate,
+): readonly string[] {
+	if (system === "none") return [];
+	const scale = SCALES[system];
+	const values = Object.entries(scale)
+		.map(([rank, points]) => `${rank === "T" ? "10" : rank}=${points}`)
+		.join(", ");
+	const adjustments = system === "hcp-corrected" ? hcpAdjustments(cards) : [];
+	return [
+		`${values}: ${rawPoints(scale, cards)}`,
+		...adjustments.map(
+			({ points, reason, values }) =>
+				`${points > 0 ? "+" : "-"}${Math.abs(points)} ${t(reason, values)}`,
+		),
+	];
 }
 
 /** "{name}: {total}", and " ({raw} {±correction})" only when the correction is not 0. */
