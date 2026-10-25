@@ -901,14 +901,17 @@ export class TableController {
 	#facts(): SelfFacts {
 		const { holder } = this.#deps.identity;
 		const hostEligible = this.#deps.hostEligible !== false;
+		const pref = this.#deps.bootstrap?.host;
+		const shared =
+			pref === undefined ? { hostEligible } : { hostEligible, pref };
 		const log = this.#replication?.log ?? null;
 		if (!log || this.#lock?.seat !== log.seat)
-			return { holder, seating: null, hostEligible };
+			return { holder, seating: null, ...shared };
 		const table = log.table;
 		const row = table?.seats.find((item) => item.seat === log.seat);
 		return {
 			holder,
-			hostEligible,
+			...shared,
 			seating: {
 				seat: log.seat,
 				pos: log.position(),

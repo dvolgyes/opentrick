@@ -1,4 +1,4 @@
-import type { Seat } from "../protocol";
+import { SEATS, type Seat } from "../protocol";
 import {
 	type Authority,
 	compareAuthority,
@@ -52,6 +52,8 @@ export interface SelfFacts {
 	readonly seating: Seating | null;
 	/** An automated client that cannot deal a board sets this to false. */
 	readonly hostEligible?: boolean;
+	/** The host seat that this page's setup link names (`host=`), if any. */
+	readonly pref?: Seat;
 }
 
 interface Heard {
@@ -557,7 +559,10 @@ function claimBlock(state: ElectionState): HostBlock | null {
 	return "witness";
 }
 
-/** Rule 8: the eligible peers with a better position, or an equal position and a lower tag, go first. */
+/**
+ * Rule 8: the eligible peers with a better position go first. At an equal position, a peer whose link names the same
+ * host seat goes first when its seat is closer clockwise to that seat; otherwise the lower tag goes first.
+ */
 function rank(state: ElectionState, seating: Seating): number {
 	const tag = makeTag(state.self.holder, seating.seat);
 	const ahead = new Set<string>();
@@ -567,11 +572,36 @@ function rank(state: ElectionState, seating: Seating): number {
 		}
 		const other = makeTag(beat.holder, beat.seat);
 		const order = comparePosition(beat.pos, seating.pos);
-		if (other !== tag && (order > 0 || (order === 0 && other < tag))) {
+		if (other === tag) continue;
+		const closer = priorityOrder(state.self.pref, beat, seating.seat);
+		if (order > 0 || (order === 0 && (closer ?? other < tag) === true)) {
 			ahead.add(other);
 		}
 	}
 	return ahead.size;
+}
+
+/**
+ * Whether the peer's seat is closer clockwise than `seat` to the host seat of the setup link, or null when the two
+ * links do not name the same host seat, or the seats are the same distance from it.
+ */
+function priorityOrder(
+	pref: Seat | undefined,
+	beat: Beat,
+	seat: Seat,
+): boolean | null {
+	if (pref === undefined || beat.pref !== pref || beat.seat === undefined)
+		return null;
+	const other = clockwise(pref, beat.seat);
+	const own = clockwise(pref, seat);
+	return other === own ? null : other < own;
+}
+
+/** The number of seats from `from` to `seat`, going clockwise (N, E, S, W). */
+function clockwise(from: Seat, seat: Seat): number {
+	return (
+		(SEATS.indexOf(seat) - SEATS.indexOf(from) + SEATS.length) % SEATS.length
+	);
 }
 
 /** The peer with the best position, if it is strictly better than this replica's (rule 9). */
@@ -609,6 +639,7 @@ function beatOf(state: ElectionState): Beat {
 			holder,
 			seat: seating.seat,
 			elig: true,
+			...prefOf(state.self),
 		};
 	}
 	const report =
@@ -622,7 +653,14 @@ function beatOf(state: ElectionState): Beat {
 							: Math.min(MAX_TERM, Math.floor(state.now - state.knownSeenAt)),
 				};
 	if (seating === null) {
-		return { k: "beat", role: "visitor", holder, elig: false, ...report };
+		return {
+			k: "beat",
+			role: "visitor",
+			holder,
+			elig: false,
+			...report,
+			...prefOf(state.self),
+		};
 	}
 	return {
 		k: "beat",
@@ -632,7 +670,12 @@ function beatOf(state: ElectionState): Beat {
 		pos: seating.pos,
 		elig: isEligible(state.self),
 		...report,
+		...prefOf(state.self),
 	};
+}
+
+function prefOf(self: SelfFacts): { pref?: Seat } {
+	return self.pref === undefined ? {} : { pref: self.pref };
 }
 
 function isEligible(self: SelfFacts): boolean {

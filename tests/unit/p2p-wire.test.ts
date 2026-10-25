@@ -148,6 +148,11 @@ const CTL: Case[] = [
 		{ k: "beat", role: "visitor", holder: HOLDER_E, elig: false },
 		["role", "holder", "elig"],
 	],
+	[
+		"beat (with the link's host seat)",
+		{ k: "beat", role: "visitor", holder: HOLDER_E, elig: false, pref: "S" },
+		["role", "holder", "elig"],
+	],
 	["ping", { k: "ping", n: "abcdefgh12" }, ["n"]],
 	["echo", { k: "echo", n: "abcdefgh12" }, ["n"]],
 	[
@@ -562,6 +567,7 @@ describe("message rules", () => {
 		["a visitor with a seat", { ...visitorBeat, seat: "S" }],
 		["an eligible visitor", { ...visitorBeat, elig: true }],
 		["a null optional field", { ...visitorBeat, seat: null }],
+		["a link host seat that is no seat", { ...visitorBeat, pref: "X" }],
 	])("beat rejects %s", (_label, message) => {
 		malformed(parseCtl, message);
 	});

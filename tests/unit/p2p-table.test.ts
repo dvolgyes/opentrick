@@ -6,6 +6,7 @@ import { deriveHolder, makeTag } from "../../src/p2p/keys";
 import { BEAT_MS, SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
 import type { MeshDiagnostics, MeshHandlers } from "../../src/p2p/mesh";
 import { TableController, type TableMesh } from "../../src/p2p/table";
+import type { CtlMessage } from "../../src/p2p/wire";
 import type { Seat } from "../../src/protocol";
 import type { HoldOptions, SeatLocks } from "../../src/session";
 import { settle, syncDigest, TestStorage, VirtualClock } from "./fake-mesh";
@@ -84,6 +85,8 @@ class Rig {
 	left = 0;
 	controller: TableController | null = null;
 	handlers: MeshHandlers | null = null;
+	/** Every control message that the page sent. */
+	readonly sentCtl: CtlMessage[] = [];
 	#tick: () => void = () => {};
 
 	/** Moves the clock by `ms`, one controller tick at a time. */
@@ -95,10 +98,14 @@ class Rig {
 		}
 	}
 
-	/** `seat` is the URL seat (null: none); `remembered` is the seat that this browser reopens without one. */
+	/**
+	 * `seat` is the URL seat (null: none); `remembered` is the seat that this browser reopens without one; `host` is
+	 * the setup link's host seat, by default the seat that the page opens.
+	 */
 	async start(
 		seat: Seat | null | undefined,
 		remembered?: Seat,
+		host: Seat = seat ?? remembered ?? "N",
 	): Promise<TableController> {
 		const holder = await deriveHolder(TABLE, CLIENT);
 		const mesh: TableMesh = {
@@ -107,7 +114,9 @@ class Rig {
 			connection: () => undefined,
 			online: () => true,
 			diagnostics: () => DIAGNOSTICS,
-			ctl: () => {},
+			ctl: (_peer, message) => {
+				this.sentCtl.push(message);
+			},
 			log: () => {},
 			call: () => {},
 			leave: async () => {
@@ -142,7 +151,7 @@ class Rig {
 			nonce: randomNonce,
 			creator: true,
 			preferredSeat: seat,
-			bootstrap: { config: CONFIG, host: seat ?? remembered ?? "N" },
+			bootstrap: { config: CONFIG, host },
 		});
 		this.controller = controller;
 		await controller.start();
@@ -167,6 +176,16 @@ describe("table controller seat from the URL", () => {
 		const table = await rig.start(null, "N");
 		expect(table.view().seat).toBeNull();
 		expect(rig.locks.held.size).toBe(0);
+	});
+});
+
+describe("table controller beats", () => {
+	it("names the setup link's host seat in each beat, also before the page has a table", async () => {
+		await rig.start("W", undefined, "S");
+		await rig.advance(BEAT_MS);
+		const beats = rig.sentCtl.filter((message) => message.k === "beat");
+		expect(beats.length).toBeGreaterThan(0);
+		for (const beat of beats) expect(beat).toMatchObject({ pref: "S" });
 	});
 });
 
