@@ -7,9 +7,11 @@ import type { Form } from "../../src/call/device-class";
 import { type Locale, type Translate, translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
 import { pageReport } from "../../src/ui/page-report";
+import { DEFAULT_SETTINGS } from "../../src/ui/settings";
 import {
 	type PlayedCardStyle,
 	type TableHandlers,
+	type TableMarks,
 	type TableOptions,
 	tableSection,
 } from "../../src/ui/table";
@@ -1062,6 +1064,127 @@ describe("mobile turn frame", () => {
 			}
 		},
 	);
+});
+
+describe("turn marks and network quality from the settings", () => {
+	const GOLD = "rgb(232, 185, 35)";
+	const marks = (changed: Partial<TableMarks>): TableOptions => ({
+		marks: () => ({ ...DEFAULT_SETTINGS, ...changed }),
+	});
+	const acting = (
+		phase: TableView["phase"],
+		active: Seat,
+		action: "bid" | "play",
+	): TableView => {
+		const base = playView();
+		return {
+			...base,
+			phase,
+			seats: base.seats.map((player) => ({
+				...player,
+				turn: player.seat === active,
+				turnPill:
+					player.seat === active
+						? { action, yours: player.seat === "N" }
+						: undefined,
+			})),
+		};
+	};
+	const pills = (root: HTMLElement) =>
+		[...root.querySelectorAll(".turn-pill")].map((pill) => pill.textContent);
+
+	it("shows the turn text only for the actions whose text setting is on", () => {
+		const bid = acting("auction", "E", "bid");
+		const play = acting("play", "E", "play");
+		const options = marks({ bidTurnText: false });
+		expect(
+			pills(renderView(bid, "desktop", undefined, undefined, options).root),
+		).toEqual([]);
+		expect(
+			pills(renderView(play, "desktop", undefined, undefined, options).root),
+		).toEqual(["East TO PLAY"]);
+		const noPlay = marks({ playTurnText: false });
+		expect(
+			pills(renderView(play, "desktop", undefined, undefined, noPlay).root),
+		).toEqual([]);
+		expect(
+			pills(renderView(bid, "desktop", undefined, undefined, noPlay).root),
+		).toEqual(["East TO BID"]);
+	});
+
+	it("frames the desktop seat to bid only while the bid frame setting is on", () => {
+		const outline = (options: TableOptions) => {
+			const { root } = renderView(
+				acting("auction", "E", "bid"),
+				"desktop",
+				undefined,
+				undefined,
+				options,
+			);
+			const seat = root.querySelector<HTMLElement>("[data-testid='hand-E']");
+			if (!seat) throw new Error("the seat of East is missing");
+			const style = getComputedStyle(seat);
+			return style.outlineStyle === "solid" && style.outlineColor === GOLD;
+		};
+		expect(outline(marks({ playTurnFrame: false }))).toBe(true);
+		expect(outline(marks({ bidTurnFrame: false }))).toBe(false);
+	});
+
+	it.each<[TableView["phase"], Seat, "bid" | "play", string, keyof TableMarks]>(
+		[
+			["auction", "N", "bid", "mobile-auction-hand", "bidTurnFrame"],
+			["play", "S", "play", "mobile-board-top", "playTurnFrame"],
+			["play", "W", "play", "mobile-board-right", "playTurnFrame"],
+		],
+	)(
+		"frames the phone hand to act in the %s (%s) only while its frame setting is on",
+		(phase, active, action, area, setting) => {
+			const framed = (options: TableOptions) => {
+				const { root } = renderView(
+					acting(phase, active, action),
+					"compact",
+					undefined,
+					undefined,
+					options,
+				);
+				const hand = root.querySelector<HTMLElement>(
+					`.mobile-auction-board .${area} .hand`,
+				);
+				if (!hand) throw new Error(`the hand of ${active} is missing`);
+				const style = getComputedStyle(hand);
+				const overlay = getComputedStyle(hand, "::after");
+				return (
+					(style.outlineStyle === "solid" && style.outlineColor === GOLD) ||
+					(overlay.content !== "none" && overlay.borderTopColor === GOLD)
+				);
+			};
+			const other =
+				setting === "bidTurnFrame" ? "playTurnFrame" : "bidTurnFrame";
+			expect(framed(marks({ [other]: false }))).toBe(true);
+			expect(framed(marks({ [setting]: false }))).toBe(false);
+		},
+	);
+
+	it("shows no network quality on the video tiles while its setting is off", () => {
+		const base = playView();
+		const view: TableView = {
+			...base,
+			seats: base.seats.map((player) => ({
+				...player,
+				roundTrip: { text: "(ping)", quality: "pending" },
+			})),
+		};
+		const shown = (options: TableOptions) =>
+			renderView(
+				view,
+				"desktop",
+				undefined,
+				undefined,
+				options,
+			).root.querySelector("[data-testid='tile-E'] .tile-caption")?.textContent;
+		expect(shown(marks({}))).toBe("E - playerE (ping)");
+		expect(shown(marks({ networkQuality: false }))).toBe("E - playerE");
+	});
 });
 
 describe("compact play controls", () => {

@@ -136,3 +136,44 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 		await host.close();
 	}
 });
+
+test("the stored settings turn off the bid turn text and frame, and keep the play turn text", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const host = await Player.open(browser, baseURL, "host", {
+		viewport: { width: 1920, height: 1080 },
+	});
+	try {
+		const page = await host.page("./");
+		await mockBots(page);
+		await page.evaluate(() => {
+			localStorage.setItem("opentrick.settings.bid-turn-text", "0");
+			localStorage.setItem("opentrick.settings.bid-turn-frame", "0");
+		});
+		for (const seat of ["N", "E", "S"])
+			await page.locator(`input[name="bot-${seat}"]`).check();
+		await page.locator('input[name="openrouter-key"]').fill("test-key");
+		await createRoom(page);
+		const table = page.getByTestId("table");
+		const own = page.getByTestId("hand-W");
+		await expect(own).toHaveAttribute("data-turn", "true", {
+			timeout: CONNECT_MS,
+		});
+		await expect(table).toHaveAttribute("data-phase", "auction");
+		await expect(page.getByTestId("turn-pill")).toHaveCount(0);
+		await expect(own).toHaveAttribute("data-turn-frame", "false");
+		expect(
+			await own.evaluate((node) => getComputedStyle(node).outlineStyle),
+		).toBe("none");
+
+		await makeCall(page, "1C");
+		await expect(
+			page.getByTestId("hand-E").getByTestId("turn-pill"),
+		).toHaveText("YOUR TURN TO PLAY", { timeout: CONNECT_MS });
+		expect(host.errors).toEqual([]);
+	} finally {
+		await host.close();
+	}
+});

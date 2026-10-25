@@ -23,7 +23,7 @@ import { button, el, placeChildren } from "./dom";
 import { icon } from "./icons";
 import { play } from "./remote-audio";
 import { robotArtwork } from "./robot-artwork";
-import { DEFAULT_SETTINGS } from "./settings";
+import { DEFAULT_SETTINGS, type Settings } from "./settings";
 import type {
 	CardView,
 	ContractHeader,
@@ -84,7 +84,18 @@ export interface TableOptions {
 	readonly cardPoints?: () => boolean;
 	/** The language of the bidding guide. */
 	readonly locale?: Locale;
+	/** The turn frames, the turn texts and the network quality to show; the table reads it at each render. */
+	readonly marks?: () => TableMarks;
 }
+
+export type TableMarks = Pick<
+	Settings,
+	| "bidTurnFrame"
+	| "playTurnFrame"
+	| "bidTurnText"
+	| "playTurnText"
+	| "networkQuality"
+>;
 
 export type PlayedCardStyle =
 	| "classic-large"
@@ -244,6 +255,8 @@ export function tableSection(
 	let shownPointSystem = pointSystem();
 	let shownCardPoints = cardPoints();
 	const guide = guideDialog(t, options.locale ?? "en");
+	const marks = options.marks ?? (() => DEFAULT_SETTINGS);
+	let shownMarks = marks();
 	// The points pill opens this dialog with the calculation, for a screen where no hint shows.
 	const pointsTitle = el("h3", {
 		className: "points-title",
@@ -947,6 +960,16 @@ export function tableSection(
 		];
 	}
 
+	/** The gold frame marks the seat to act, while the settings frame the turns of this phase. */
+	function turnFramed(seat: SeatView): boolean {
+		return (
+			seat.turn &&
+			(latestView?.phase === "auction"
+				? shownMarks.bidTurnFrame
+				: shownMarks.playTurnFrame)
+		);
+	}
+
 	function seatElement(
 		seat: SeatView,
 		callState: HTMLElement | undefined,
@@ -1025,16 +1048,20 @@ export function tableSection(
 		// The points pill shows on the viewer's own hand in the auction and on every hand once the board is over.
 		const pills = pointsPill(seat.pointCards);
 		// The turn pill marks the seat to call or play. A top or bottom seat shows it next to the trump label; a side
-		// seat shows it flat above the name.
-		const turnPill = seat.turnPill
-			? [
-					el(
-						"span",
-						{ className: "turn-pill", attrs: { "data-testid": "turn-pill" } },
-						turnPillText(seat.turnPill, seat.seat, t),
-					),
-				]
-			: [];
+		// seat shows it flat above the name. The settings can turn it off for the auction or for the play.
+		const turnPill =
+			seat.turnPill &&
+			(seat.turnPill.action === "bid"
+				? shownMarks.bidTurnText
+				: shownMarks.playTurnText)
+				? [
+						el(
+							"span",
+							{ className: "turn-pill", attrs: { "data-testid": "turn-pill" } },
+							turnPillText(seat.turnPill, seat.seat, t),
+						),
+					]
+				: [];
 		const side = seat.position === "left" || seat.position === "right";
 		const tags = el(
 			"div",
@@ -1051,6 +1078,7 @@ export function tableSection(
 					"data-visible": String(seat.hand.visible),
 					"data-turn": String(seat.turn),
 					"data-bidding": String(seat.turnPill?.action === "bid"),
+					"data-turn-frame": String(turnFramed(seat)),
 					"data-presence": seat.presence,
 				},
 			},
@@ -1218,7 +1246,9 @@ export function tableSection(
 			spot.callPresence.title =
 				presence !== undefined && showPresence ? t("In call") : "";
 			const label = seatLabels.get(seat) ?? SEAT_NAMES[seat];
-			const roundTrip = seatRoundTrips.get(seat);
+			const roundTrip = shownMarks.networkQuality
+				? seatRoundTrips.get(seat)
+				: undefined;
 			const shown = `${label}|${roundTrip?.text ?? ""}|${roundTrip?.title ?? ""}|${roundTrip?.quality ?? ""}|${
 				status?.text === undefined
 					? ""
@@ -1986,6 +2016,7 @@ export function tableSection(
 		latestView = view;
 		shownPointSystem = pointSystem();
 		shownCardPoints = cardPoints();
+		shownMarks = marks();
 		element.dataset.phase = view.phase;
 		element.dataset.board = String(view.board);
 		element.dataset.at = String(view.at);
@@ -2029,7 +2060,10 @@ export function tableSection(
 									"span",
 									{
 										className: "mobile-board-name",
-										attrs: { "data-turn": String(player.turn) },
+										attrs: {
+											"data-turn": String(player.turn),
+											"data-turn-frame": String(turnFramed(player)),
+										},
 									},
 									player.label,
 								),
