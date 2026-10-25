@@ -6,47 +6,15 @@ import { deriveHolder, makeTag } from "../../src/p2p/keys";
 import { BEAT_MS, SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
 import { LINK_VERSION } from "../../src/p2p/link";
 import { creationCommit, LocalLog } from "../../src/p2p/log";
-import type { MeshDiagnostics, MeshHandlers } from "../../src/p2p/mesh";
+import type { MeshHandlers } from "../../src/p2p/mesh";
 import { TableController, type TableMesh } from "../../src/p2p/table";
 import type { CtlMessage, Roster } from "../../src/p2p/wire";
 import { SEATS, type Seat } from "../../src/protocol";
 import type { HoldOptions, SeatLocks } from "../../src/session";
 import { settle, syncDigest, TestStorage, VirtualClock } from "./fake-mesh";
-import { CONFIG, TABLE } from "./p2p-fixtures";
+import { CONFIG, DIAGNOSTICS, TABLE } from "./p2p-fixtures";
 
 const CLIENT = "clientN-0123456789abcd";
-
-const DIAGNOSTICS: MeshDiagnostics = {
-	trackersOpen: 1,
-	trackers: 1,
-	nostrOpen: 0,
-	nostrRelays: 0,
-	mqttOpen: 0,
-	mqttBrokers: 0,
-	relays: [],
-	stun: null,
-	webRtc: null,
-	peers: 0,
-	wrongKey: 0,
-	unreachable: 0,
-	refused: 0,
-	incompatible: 0,
-	dropped: {
-		malformed: 0,
-		incompatible: 0,
-		foreign: 0,
-		oversize: 0,
-		rate: 0,
-		stranger: 0,
-	},
-	sendFailures: 0,
-	pairRooms: 0,
-	repaired: 0,
-	pairTimeouts: 0,
-	unattached: 0,
-	rejoins: 0,
-	silentCloses: [],
-};
 
 let restoreDigest: () => void;
 beforeEach(() => {

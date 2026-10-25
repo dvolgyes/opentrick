@@ -1,4 +1,5 @@
 import type { Authority } from "../../src/p2p/authority";
+import type { MeshDiagnostics } from "../../src/p2p/mesh";
 import type { OutboxRecord, TableRecord } from "../../src/p2p/records";
 import type { Entry } from "../../src/p2p/wire";
 import { type RoomConfig, SEATS, type Seat } from "../../src/protocol";
@@ -15,6 +16,39 @@ export const AUTH_2: Authority = { term: 2, tag: `${HOLDER_E}.E`, inc: 1 };
 export const CONFIG: RoomConfig = {
 	names: { N: "player1", E: "player3", S: "player2", W: "player4" },
 	scoring: "duplicate",
+};
+
+/** The diagnostics of a mesh with one open tracker and no peers. */
+export const DIAGNOSTICS: MeshDiagnostics = {
+	trackersOpen: 1,
+	trackers: 1,
+	nostrOpen: 0,
+	nostrRelays: 0,
+	mqttOpen: 0,
+	mqttBrokers: 0,
+	relays: [],
+	stun: null,
+	webRtc: null,
+	peers: 0,
+	wrongKey: 0,
+	unreachable: 0,
+	refused: 0,
+	incompatible: 0,
+	dropped: {
+		malformed: 0,
+		incompatible: 0,
+		foreign: 0,
+		oversize: 0,
+		rate: 0,
+		stranger: 0,
+	},
+	sendFailures: 0,
+	pairRooms: 0,
+	repaired: 0,
+	pairTimeouts: 0,
+	unattached: 0,
+	rejoins: 0,
+	silentCloses: [],
 };
 
 export function commandId(n: number): string {
