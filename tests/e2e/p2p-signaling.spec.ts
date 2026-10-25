@@ -41,21 +41,34 @@ test.afterEach(async ({}) => {
 });
 
 /**
- * Counts the page's RTCPeerConnections: `lbLinks` those in the "connected" state now, `lbEverConnected` those that
- * reached it at any time, also when they closed later. Trystero reads the global constructor for each connection,
- * so the subclass sees every one of them. Most connections never connect: Trystero makes offers before it knows a
- * peer.
+ * Counts the page's links to other pages: `lbLinks` the RTCPeerConnections in the "connected" state now,
+ * `lbEverConnected` those that reached it at any time, also when they closed later. Trystero reads the global
+ * constructor for each connection, so the subclass sees every one of them. Most connections never connect: Trystero
+ * makes offers before it knows a peer. The WebRTC check of the page (src/p2p/webrtc-check.ts) connects two
+ * connections of the page to each other; a connection whose remote certificate fingerprint is the local one of
+ * another connection of the page is not a link.
  */
 function countLinks(): void {
 	const native = window.RTCPeerConnection;
 	const made: RTCPeerConnection[] = [];
-	const connected = new Set<RTCPeerConnection>();
+	const links = new Set<RTCPeerConnection>();
+	const fingerprint = (description: RTCSessionDescription | null) =>
+		/^a=fingerprint:(.+)$/m.exec(description?.sdp ?? "")?.[1];
 	window.RTCPeerConnection = class extends native {
 		constructor(configuration?: RTCConfiguration) {
 			super(configuration);
 			made.push(this);
 			this.addEventListener("connectionstatechange", () => {
-				if (this.connectionState === "connected") connected.add(this);
+				if (this.connectionState !== "connected") return;
+				const remote = fingerprint(this.remoteDescription);
+				if (
+					remote === undefined ||
+					!made.some(
+						(other) =>
+							other !== this && fingerprint(other.localDescription) === remote,
+					)
+				)
+					links.add(this);
 			});
 		}
 	};
@@ -64,8 +77,8 @@ function countLinks(): void {
 		lbEverConnected: () => number;
 	};
 	counters.lbLinks = () =>
-		made.filter((link) => link.connectionState === "connected").length;
-	counters.lbEverConnected = () => connected.size;
+		[...links].filter((link) => link.connectionState === "connected").length;
+	counters.lbEverConnected = () => links.size;
 }
 
 async function newPlayer(
