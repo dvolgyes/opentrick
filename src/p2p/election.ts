@@ -247,6 +247,21 @@ export function followedHost(state: ElectionState): Followed | null {
 		: null;
 }
 
+/**
+ * Rule 14: of the seated pages that have no table, the one whose seat is first clockwise from the link's host seat
+ * seeds the table. A page whose link names no host seat never seeds, and a peer counts only while its beats come
+ * and only when it can host and its link names the same host seat.
+ */
+export function seedsFirst(state: ElectionState): boolean {
+	const { seating, pref } = state.self;
+	if (seating === null || pref === undefined) return false;
+	for (const { beat } of state.heard.values()) {
+		if (beat.elig && priorityOrder(pref, beat, seating.seat) === true)
+			return false;
+	}
+	return true;
+}
+
 export function electionView(state: ElectionState): ElectionView {
 	const { mode } = state;
 	if (mode.kind === "superseded") return { phase: "superseded" };

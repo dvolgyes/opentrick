@@ -299,6 +299,44 @@ describe("table controller seeding from the setup link", () => {
 		expect(rig.storage.commits).toBe(0);
 	});
 
+	/** A beat of West's page, which has no table either; its link names S as the host seat. */
+	async function westBeat(): Promise<void> {
+		const holder = await deriveHolder(TABLE, "clientW-0123456789abcd");
+		rig.handlers?.ctl("west000000000000000", {
+			k: "beat",
+			role: "follower",
+			holder,
+			seat: "W",
+			elig: true,
+			pos: { rev: 0, lastAuth: null },
+			pref: "S",
+		});
+		await settle();
+	}
+
+	it("seeds from another seat than the link's host seat when no page higher in the order is there (rule 14)", async () => {
+		// host=S: the order is S, W, N, E.
+		const table = await rig.start("N", undefined, "S");
+		await rig.advance(SEED_WAIT_MS + 2 * TICK_MS);
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("does not seed while a page higher in the order is there, and seeds when it leaves", async () => {
+		const table = await rig.start("N", undefined, "S");
+		for (let beats = 0; beats < (2 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			await westBeat();
+			await rig.advance(BEAT_MS);
+		}
+		expect(table.view().hosting).toBe(false);
+		expect(rig.storage.commits).toBe(0);
+
+		rig.handlers?.leave("west000000000000000");
+		await settle();
+		await rig.advance(2 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
+	});
+
 	it("seeds the host seat SEED_WAIT_MS after the last beat that showed the table", async () => {
 		const table = await rig.start("N");
 		await rig.advance(5_000);

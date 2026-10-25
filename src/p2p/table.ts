@@ -26,6 +26,7 @@ import {
 	followedHost,
 	initElection,
 	type SelfFacts,
+	seedsFirst,
 	stepElection,
 } from "./election";
 import { cleanup, isIdle } from "./expiry";
@@ -316,7 +317,7 @@ export class TableController {
 	#heldElsewhere: ReadonlySet<Seat> = new Set();
 	#querying = false;
 	#bootstrapAllowed = false;
-	/** The setup's host seat, open without a table, until the page seeds it after SEED_WAIT_MS alone. */
+	/** A seat of the setup link, open without a table, until the page seeds it after SEED_WAIT_MS without a host. */
 	#seedCandidate: Seated | null = null;
 	/** When a beat or a lobby last showed that the table exists; no seed until SEED_WAIT_MS after it. */
 	#tableSeenAt: number | null = null;
@@ -507,19 +508,20 @@ export class TableController {
 		}
 	}
 
-	/** The open seat is the setup's host seat, and this page has no table of its own. */
+	/** The page opened a setup link, and this seat has no table of its own. */
 	#seedable(seated: Seated): boolean {
 		return (
 			this.#bootstrapAllowed &&
-			this.#deps.bootstrap?.host === seated.log.seat &&
+			this.#deps.bootstrap !== undefined &&
 			seated.log.table === null
 		);
 	}
 
 	/**
-	 * Seeds the setup's host seat after SEED_WAIT_MS online without a host (ADR 0005). Until then the seat waits for
-	 * a host like any other seat: a beat or a lobby that shows the table holds the seed back until SEED_WAIT_MS after
-	 * the last one, so a page whose peers with the table all left does not wait for ever.
+	 * Seeds the open seat after SEED_WAIT_MS online without a host (ADR 0005). Until then the seat waits for a host:
+	 * a beat or a lobby that shows the table holds the seed back until SEED_WAIT_MS after the last one, so a page whose
+	 * peers with the table all left does not wait for ever. A page higher in the order of the link's host seat seeds
+	 * first (election rule 14).
 	 */
 	#seedWhenAlone(): void {
 		const candidate = this.#seedCandidate;
@@ -528,7 +530,9 @@ export class TableController {
 			this.#seedCandidate = null;
 			return;
 		}
-		if ((this.#election?.absentMs ?? 0) < SEED_WAIT_MS) return;
+		const election = this.#election;
+		if (!election || election.absentMs < SEED_WAIT_MS) return;
+		if (!seedsFirst(election)) return;
 		const seen = this.#tableSeenAt;
 		if (seen !== null && this.#now() - seen < SEED_WAIT_MS) return;
 		this.#seedCandidate = null;

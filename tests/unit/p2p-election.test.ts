@@ -10,6 +10,7 @@ import {
 	initElection,
 	type Seating,
 	type SelfFacts,
+	seedsFirst,
 	stepElection,
 } from "../../src/p2p/election";
 import { makeTag } from "../../src/p2p/keys";
@@ -757,6 +758,65 @@ describe("the merge of two tables with diverged logs (rule 13)", () => {
 		]);
 		expect(host.state.mode).toMatchObject({ kind: "claiming", auth: CLAIM_W });
 		expect(ofType(effects, "follow")).toEqual([]);
+	});
+});
+
+describe("the seed of a table that nobody has (rule 14)", () => {
+	// host=S: the order is S, W, N, E. None of the pages has a table.
+	const EMPTY: Position = { rev: 0, lastAuth: null };
+
+	function empty(holder: string, seat: Seat, pref?: Seat): Page {
+		return new Page({
+			...facts(holder, seating(seat, { pos: EMPTY, host: null })),
+			...(pref === undefined ? {} : { pref }),
+		});
+	}
+
+	function peer(holder: string, seat: Seat, pref?: Seat, elig = true) {
+		return followerBeat(holder, seat, {
+			pos: EMPTY,
+			elig,
+			...(pref === undefined ? {} : { pref }),
+		});
+	}
+
+	it("seeds from the seat highest in the order of the pages that it hears", () => {
+		const west = empty(HOLDER_W, "W", "S");
+		west.hear("pN", peer(HOLDER_N, "N", "S"));
+		west.hear("pE", peer(HOLDER_E, "E", "S"));
+		expect(seedsFirst(west.state)).toBe(true);
+
+		const north = empty(HOLDER_N, "N", "S");
+		north.hear("pW", peer(HOLDER_W, "W", "S"));
+		expect(seedsFirst(north.state)).toBe(false);
+	});
+
+	it("seeds again when the higher seat is not heard for HOST_LOST_MS", () => {
+		const north = empty(HOLDER_N, "N", "S");
+		north.hear("pW", peer(HOLDER_W, "W", "S"));
+		north.run(HOST_LOST_MS - TICK_MS);
+		expect(seedsFirst(north.state)).toBe(false);
+		north.run(TICK_MS);
+		expect(seedsFirst(north.state)).toBe(true);
+	});
+
+	it("does not wait for a page that cannot host or whose link names another host seat or none", () => {
+		for (const [pref, elig] of [
+			["S", false],
+			["N", true],
+			[undefined, true],
+		] as const) {
+			const north = empty(HOLDER_N, "N", "S");
+			north.hear("pW", peer(HOLDER_W, "W", pref, elig));
+			expect(seedsFirst(north.state), `${pref} ${elig}`).toBe(true);
+		}
+	});
+
+	it("never seeds without a seat or without a host seat in its link", () => {
+		expect(
+			seedsFirst(new Page({ ...facts(VISITOR, null), pref: "S" }).state),
+		).toBe(false);
+		expect(seedsFirst(empty(HOLDER_S, "S").state)).toBe(false);
 	});
 });
 
