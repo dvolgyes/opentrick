@@ -94,23 +94,62 @@ function countLinks(): void {
 	counters.lbEverConnected = () => links.size;
 }
 
+/** Servers that do not work, in front of the hub of a kind in its list. */
+type BadServers = Readonly<Record<keyof Relays, readonly string[]>>;
+
+const NO_BAD_SERVERS: BadServers = { tracker: [], nostr: [], mqtt: [] };
+
+/**
+ * For each kind: a name that does not exist (RFC 6761), an address that does not answer (RFC 5737), a port that
+ * refuses the connection, a web server that refuses the WebSocket upgrade, and a socket that opens and sends
+ * nothing.
+ */
+const BAD_SERVERS: BadServers = Object.fromEntries(
+	(["tracker", "nostr", "mqtt"] as const).map((kind) => [
+		kind,
+		[
+			`wss://no-such-${kind}.invalid/`,
+			`wss://192.0.2.1:8443/${kind}`,
+			`wss://127.0.0.1:9/${kind}`,
+			`wss://google.com/opentrick-${kind}`,
+			`wss://silent-${kind}.hub.test/`,
+		],
+	]),
+) as unknown as BadServers;
+
+/** The bad servers of the kinds that have a hub. */
+function badServersOf(relays: Relays): BadServers {
+	return {
+		tracker: relays.tracker ? BAD_SERVERS.tracker : [],
+		nostr: relays.nostr ? BAD_SERVERS.nostr : [],
+		mqtt: relays.mqtt ? BAD_SERVERS.mqtt : [],
+	};
+}
+
 async function newPlayer(
 	browser: Browser,
 	label: string,
 	relays: Relays,
+	bad: BadServers = NO_BAD_SERVERS,
 ): Promise<Player> {
 	const context = await browser.newContext();
 	contexts.push(context);
 	await context.addInitScript(countLinks);
+	// The silent sockets: Playwright opens a routed socket for the page and passes nothing to or from it.
+	await context.routeWebSocket(/^wss:\/\/silent-[a-z]+\.hub\.test\//, () => {});
 	await relays.tracker?.install(context, label);
 	await relays.nostr?.install(context, label);
 	await relays.mqtt?.install(context, label);
 	const page = await context.newPage();
 	page.on("pageerror", (error) => pageErrors.push(error.message));
+	const list = (kind: keyof Relays): string => {
+		const urls = [...bad[kind], ...(relays[kind]?.urls ?? [])];
+		return urls.length > 0 ? urls.join(",") : "none";
+	};
 	const query = new URLSearchParams({
-		trackers: relays.tracker ? relays.tracker.urls.join(",") : "none",
-		nostr: relays.nostr ? relays.nostr.urls.join(",") : "none",
-		mqtt: relays.mqtt ? relays.mqtt.urls.join(",") : "none",
+		trackers: list("tracker"),
+		nostr: list("nostr"),
+		mqtt: list("mqtt"),
 		stun: "none",
 	});
 	await page.goto(`${HARNESS}?${query}`);
@@ -140,9 +179,10 @@ function peers(page: Page): Promise<number> {
 async function connectedPair(
 	browser: Browser,
 	relays: Relays,
+	bad: BadServers = NO_BAD_SERVERS,
 ): Promise<{ readonly host: Player; readonly guest: Player }> {
-	const host = await newPlayer(browser, "host", relays);
-	const guest = await newPlayer(browser, "guest", relays);
+	const host = await newPlayer(browser, "host", relays, bad);
+	const guest = await newPlayer(browser, "guest", relays, bad);
 	const { key } = await host.page.evaluate(() =>
 		(window.lbHarness as Harness).createTable("N"),
 	);
@@ -282,4 +322,102 @@ test.describe("signaling through trackers, Nostr relays and MQTT brokers togethe
 			// The count keeps a link that closed: the dropped link and its replacement, nothing more.
 			expect(await everConnected(guest.page)).toBe(2);
 		});
+});
+
+test.describe("signaling with servers that do not work in each list", () => {
+	// Each list has five servers that do not work (BAD_SERVERS) before the one hub. Only the hub and the silent socket
+	// are open; the pages connect through the hub as fast as with the hub alone.
+	const cases: readonly {
+		name: string;
+		relays: () => Relays;
+		open: number[];
+	}[] = [
+		{
+			name: "trackers only",
+			relays: () => ({ ...NONE, tracker: allHubs().tracker }),
+			open: [2, 6, 0, 0, 0, 0],
+		},
+		{
+			name: "Nostr relays only",
+			relays: () => ({ ...NONE, nostr: allHubs().nostr }),
+			open: [0, 0, 2, 6, 0, 0],
+		},
+		{
+			name: "MQTT brokers only",
+			relays: () => ({ ...NONE, mqtt: allHubs().mqtt }),
+			open: [0, 0, 0, 0, 2, 6],
+		},
+		{ name: "all three kinds", relays: allHubs, open: [2, 6, 2, 6, 2, 6] },
+	];
+	for (const item of cases)
+		test(`${item.name}: the pages connect through the one working server`, async ({
+			browser,
+		}) => {
+			const relays = item.relays();
+			const startedAt = Date.now();
+			const { host, guest } = await connectedPair(
+				browser,
+				relays,
+				badServersOf(relays),
+			);
+			expect(Date.now() - startedAt).toBeLessThan(15_000);
+			for (const player of [host, guest]) {
+				for (const hub of Object.values(relays))
+					if (hub)
+						expect(hub.received(player.label), hub.kind).toBeGreaterThan(0);
+				expect(await relayCounts(player.page)).toEqual(item.open);
+			}
+		});
+
+	test("all three kinds: after a minute of failing servers, a latecomer connects and the pair keeps its link", async ({
+		browser,
+	}) => {
+		test.setTimeout(150_000);
+		const hubs = allHubs();
+		const host = await newPlayer(browser, "host", hubs, BAD_SERVERS);
+		const guest = await newPlayer(browser, "guest", hubs, BAD_SERVERS);
+		const { key } = await host.page.evaluate(() =>
+			(window.lbHarness as Harness).createTable("N"),
+		);
+		await guest.page.evaluate(
+			(link) => (window.lbHarness as Harness).openTable(link),
+			key,
+		);
+		await expect.poll(() => peers(guest.page), { timeout: CONNECT_MS }).toBe(1);
+		// Past the connect timeout of mqtt.js (30 s), which closes the silent broker socket, and past several retries
+		// of the other servers.
+		await host.page.waitForTimeout(50_000);
+		const late = await newPlayer(browser, "late", hubs, BAD_SERVERS);
+		await late.page.evaluate(
+			(link) => (window.lbHarness as Harness).openTable(link),
+			key,
+		);
+		for (const player of [host, guest, late])
+			await expect
+				.poll(
+					async () => [await peers(player.page), await links(player.page)],
+					{
+						message: `${player.label} sees the other two`,
+						timeout: CONNECT_MS,
+					},
+				)
+				.toEqual([2, 2]);
+		expect(await everConnected(guest.page)).toBe(2);
+	});
+
+	test("control: with only the servers that do not work, the pages do not connect", async ({
+		browser,
+	}) => {
+		const host = await newPlayer(browser, "host", NONE, BAD_SERVERS);
+		const guest = await newPlayer(browser, "guest", NONE, BAD_SERVERS);
+		const { key } = await host.page.evaluate(() =>
+			(window.lbHarness as Harness).createTable("N"),
+		);
+		await guest.page.evaluate(
+			(link) => (window.lbHarness as Harness).openTable(link),
+			key,
+		);
+		await guest.page.waitForTimeout(15_000);
+		expect([await peers(host.page), await peers(guest.page)]).toEqual([0, 0]);
+	});
 });
