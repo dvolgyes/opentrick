@@ -1997,6 +1997,17 @@ button.call-join[data-in-call="true"] {
 	min-height: 2.8rem;
 }
 
+/* A second, small line in Confirm; it fits in the height of the button, so the bid box does not grow. */
+.bid-actions .convention-hint {
+	display: block;
+	overflow: hidden;
+	font-size: 0.7rem;
+	font-weight: 600;
+	line-height: 1.1;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .mobile-auction {
 	display: none;
 }

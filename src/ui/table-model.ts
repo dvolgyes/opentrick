@@ -196,6 +196,8 @@ export interface AuctionView {
 	readonly rows: readonly (readonly string[])[];
 	/** The bidding system of each seat, in `seats` order; undefined when the seat's player has sent none. */
 	readonly systems: readonly (PointSystem | undefined)[];
+	/** The calls so far, in order, for the bidding guide. */
+	readonly calls: readonly Call[];
 }
 
 export interface BidView {
@@ -626,6 +628,7 @@ function auctionView(
 		seats: SEATS,
 		rows,
 		systems: SEATS.map((seat) => bySeat[seat]),
+		calls,
 	};
 }
 

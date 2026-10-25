@@ -2802,6 +2802,22 @@ const rows: readonly TranslationRow[] = [
 		"Non partecipare",
 		"Niet deelnemen",
 	],
+	[
+		"(Convention: {calls})",
+		"(Convención: {calls})",
+		"(Convenção: {calls})",
+		"(Convention : {calls})",
+		"(Convenzione: {calls})",
+		"(Conventie: {calls})",
+	],
+	[
+		"(Unconventional)",
+		"(No convencional)",
+		"(Não convencional)",
+		"(Non conventionnel)",
+		"(Non convenzionale)",
+		"(Onconventioneel)",
+	],
 ];
 
 const localeIndexes = { es: 1, pt: 2, fr: 3, it: 4, nl: 5 } as const;

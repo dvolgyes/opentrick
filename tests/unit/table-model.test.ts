@@ -292,6 +292,7 @@ describe("auction", () => {
 			seats: ["N", "E", "S", "W"],
 			rows: [["—", "1♣", "Double", "Pass"]],
 			systems: [undefined, undefined, undefined, undefined],
+			calls: ["1C", "X", "P"],
 		});
 	});
 

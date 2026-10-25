@@ -1,4 +1,5 @@
 import { type Card, SUIT_SYMBOLS, suitOf } from "../bridge/cards";
+import { conventionCalls } from "../bridge/conventions";
 import type { Action } from "../bridge/engine";
 import {
 	countHandPoints,
@@ -240,6 +241,33 @@ function cardBackFor(board: number): string {
 
 function handDirection(position: Position): "row" | "column" {
 	return position === "left" || position === "right" ? "column" : "row";
+}
+
+/** The guide calls are listed up to this many in the hint, so that Confirm stays one short line. */
+const HINT_CALLS = 3;
+
+/**
+ * The hint on Confirm when the chosen call is not one that the guide of `system` gives the viewer's hand: the guide
+ * calls, or "Unconventional" when the guide gives none. Undefined when the guide does not describe the position.
+ */
+function conventionHint(
+	system: PointSystem,
+	view: TableView,
+	chosen: Call | undefined,
+	t: Translate,
+): string | undefined {
+	const cards = view.seats.find((seat) => seat.turnPill?.yours)?.pointCards;
+	if (chosen === undefined || cards === undefined || view.auction === undefined)
+		return undefined;
+	const guide = conventionCalls(system, cards, view.auction.calls);
+	if (guide === undefined || guide.some(({ call }) => call === chosen))
+		return undefined;
+	if (guide.length === 0) return t("(Unconventional)");
+	const calls = guide
+		.slice(0, HINT_CALLS)
+		.map(({ call }) => view.bids.find((bid) => bid.call === call)?.text ?? call)
+		.join(", ");
+	return t("(Convention: {calls})", { calls });
 }
 
 /**
@@ -1420,6 +1448,7 @@ export function tableSection(
 			view.undo,
 			pick,
 			compact,
+			shownPointSystem,
 		]);
 		if (key === drawnBidBox) return;
 		drawnBidBox = key;
@@ -1494,6 +1523,9 @@ export function tableSection(
 			},
 			{ className: "confirm", attrs: { "data-call": chosen ?? "" } },
 		);
+		const hint = conventionHint(shownPointSystem, view, chosen, t);
+		if (hint !== undefined)
+			confirm.append(" ", el("span", { className: "convention-hint" }, hint));
 		confirm.disabled = chosen === undefined || !legal.has(chosen);
 		const undo = button(
 			t("Undo"),

@@ -125,13 +125,19 @@ describe("guide calls for a hand", () => {
 		["hcp", "3S P", "K84.Q73.J652.Q64"],
 		["hcp", "2NT P", "K84.Q73.J652.Q64"],
 		["hcp", "3NT P", "K84.Q73.J652.Q64"],
-		["hcp", "2C P", "86542.K732.A5.Q6"], // 9, no good suit and not balanced
 	] as const)(
-		"has no guide call for %s after %j with %s",
+		"does not describe %s after %j with %s",
 		(system, auction, cardsText) => {
 			expect(suggested(system, cardsText, auction)).toBeUndefined();
 		},
 	);
+
+	it.each([
+		["2C P", "86542.K732.A5.Q6"], // 9, no good suit and not balanced
+		["1H P", "AQ4.K732.KJ5.Q62"], // 15, four hearts but no other four-card suit
+	])("describes %s but gives no call for %s", (auction, cardsText) => {
+		expect(suggested("hcp", cardsText, auction)).toEqual([]);
+	});
 });
 
 describe("guide meaning of a call", () => {
@@ -303,7 +309,7 @@ describe("guide calls and meanings agree", () => {
 						}
 						if (auction === "" || auction.startsWith("P"))
 							expect(
-								guide !== undefined ||
+								(guide !== undefined && guide.length > 0) ||
 									Math.max(
 										...SUITS.map(
 											(suit) =>

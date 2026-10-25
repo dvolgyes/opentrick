@@ -389,8 +389,8 @@ function preferred(
 }
 
 /**
- * The calls that the guide of `system` gives `cards`, the bidder's 13 cards, after `calls`, in bid-box order. Undefined
- * when the guide does not describe the position or the hand, or when no call fits.
+ * The calls that the guide of `system` gives `cards`, the bidder's 13 cards, after `calls`, in bid-box order. Empty when
+ * the guide describes the position and the hand but no call fits; undefined when it does not describe them.
  */
 export function conventionCalls(
 	system: PointSystem,
@@ -421,6 +421,5 @@ export function conventionCalls(
 			? [{ call, meaning }]
 			: [];
 	});
-	const result = preferred(at, hand, fitting);
-	return result.length > 0 ? result : undefined;
+	return preferred(at, hand, fitting);
 }

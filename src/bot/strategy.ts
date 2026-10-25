@@ -263,7 +263,7 @@ function guideCalls(
 	seat: Seat,
 ): { call: string; meaning: string }[] | null {
 	const calls = conventionCalls(BOT_SYSTEM, board.deal[seat], board.calls);
-	return calls === undefined
+	return calls === undefined || calls.length === 0
 		? null
 		: calls.map((guide) => ({
 				call: callLabel(guide.call),

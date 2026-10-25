@@ -3,6 +3,7 @@ import { cdp, page } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { PointSystem } from "../../src/bridge/hand-points";
+import type { Call } from "../../src/bridge/rules";
 import type { Form } from "../../src/call/device-class";
 import { type Locale, type Translate, translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
@@ -87,6 +88,7 @@ function playView(): TableView {
 			seats: ["N", "E", "S", "W"],
 			rows: [["1♣", "Pass", "Pass", "Pass"]],
 			systems: [],
+			calls: ["1C", "P", "P", "P"],
 		},
 		bids: [],
 		contract: "2♣ by North",
@@ -753,6 +755,7 @@ describe("desktop auction", () => {
 				seats: ["N", "E", "S", "W"],
 				rows: [["1♣", "Pass"]],
 				systems: [],
+				calls: ["1C", "P"],
 			},
 			bids: [],
 			contract: "",
@@ -820,7 +823,12 @@ describe("undo request off turn", () => {
 				phase: "auction",
 				prompt: "",
 				yourTurn: false,
-				auction: { seats: ["N", "E", "S", "W"], rows: [["1♣"]], systems: [] },
+				auction: {
+					seats: ["N", "E", "S", "W"],
+					rows: [["1♣"]],
+					systems: [],
+					calls: ["1C"],
+				},
 				bids: [],
 				contract: "",
 				header: undefined,
@@ -875,7 +883,7 @@ describe("bid box under a held press", () => {
 		phase: "auction",
 		prompt: "",
 		yourTurn: true,
-		auction: { seats: ["N", "E", "S", "W"], rows: [], systems: [] },
+		auction: { seats: ["N", "E", "S", "W"], rows: [], systems: [], calls: [] },
 		bids: [
 			{ call: "1C", text: "1♣" },
 			{ call: "2C", text: "2♣" },
@@ -2464,6 +2472,7 @@ describe("bidding guide", () => {
 				seats: ["N", "E", "S", "W"],
 				rows: [["1♣"]],
 				systems: ["hcp-corrected", "vienna", undefined, "other"],
+				calls: ["1C"],
 			},
 		};
 		const { root } = renderView(view, "desktop", undefined, translator("de"), {
@@ -2520,4 +2529,172 @@ describe("bidding guide", () => {
 		).toBe("Rekontra(XX)");
 		expect(root.querySelector(".guide-close")?.textContent).toBe("Schließen");
 	});
+});
+
+describe("convention hint", () => {
+	// ♠AKQ32 ♥K ♦J432 ♣432: 13 HCP and five spades, so the HCP guide opens 1♠.
+	const OPENER: readonly Card[] = [
+		"SA",
+		"SK",
+		"SQ",
+		"S3",
+		"S2",
+		"HK",
+		"DJ",
+		"D4",
+		"D3",
+		"D2",
+		"C4",
+		"C3",
+		"C2",
+	];
+	// ♠86542 ♥K732 ♦A5 ♣Q6: 9 HCP, no good suit and not balanced, so the guide has no answer to 2♣.
+	const RESPONDER: readonly Card[] = [
+		"S8",
+		"S6",
+		"S5",
+		"S4",
+		"S2",
+		"HK",
+		"H7",
+		"H3",
+		"H2",
+		"DA",
+		"D5",
+		"CQ",
+		"C6",
+	];
+	const bidView = (
+		calls: readonly Call[],
+		cards: readonly Card[] = OPENER,
+	): TableView => {
+		const base = playView();
+		return {
+			...base,
+			phase: "auction",
+			trick: undefined,
+			auction: { seats: ["N", "E", "S", "W"], rows: [], systems: [], calls },
+			bids: [
+				{ call: "1C", text: "1♣" },
+				{ call: "1S", text: "1♠" },
+				{ call: "2D", text: "2♦" },
+				{ call: "P", text: "Pass" },
+			],
+			seats: base.seats.map((player) =>
+				player.position === "bottom"
+					? {
+							...player,
+							turnPill: { action: "bid", yours: true },
+							pointCards: cards,
+						}
+					: player,
+			),
+		};
+	};
+	const hcp = { pointSystem: (): PointSystem => "hcp" };
+	const pickBid = (root: HTMLElement, level: string, strain: string) => {
+		[...root.querySelectorAll<HTMLButtonElement>(".bid-levels button")]
+			.find((button) => button.textContent === level)
+			?.click();
+		root
+			.querySelector<HTMLButtonElement>(`.bid-calls .strain-${strain}`)
+			?.click();
+	};
+	const confirm = (root: HTMLElement) =>
+		root.querySelector<HTMLButtonElement>(".bid-actions .confirm");
+	const hint = (root: HTMLElement) =>
+		confirm(root)?.querySelector(".convention-hint")?.textContent;
+
+	it.each(["desktop", "compact"] as const)(
+		"names the guide call on Confirm when the chosen call differs, and nothing for the guide call (%s)",
+		(form) => {
+			const { root } = renderView(bidView([]), form, undefined, undefined, hcp);
+			pickBid(root, "1", "C");
+			expect(hint(root)).toBe("(Convention: 1♠)");
+			expect(confirm(root)?.dataset.call).toBe("1C");
+			pickBid(root, "1", "S");
+			expect(hint(root)).toBeUndefined();
+			expect(confirm(root)?.textContent).toBe("Confirm 1♠");
+		},
+	);
+
+	it("shows Unconventional when the guide describes the position but gives the hand no call", () => {
+		const { root } = renderView(
+			bidView(["2C", "P"], RESPONDER),
+			"desktop",
+			undefined,
+			undefined,
+			hcp,
+		);
+		pickBid(root, "2", "D");
+		expect(hint(root)).toBe("(Unconventional)");
+	});
+
+	it("shows no hint where the guide does not describe the call, or with no call chosen", () => {
+		const { root } = renderView(
+			bidView(["1H", "X"]),
+			"desktop",
+			undefined,
+			undefined,
+			hcp,
+		);
+		expect(hint(root)).toBeUndefined();
+		pickBid(root, "1", "C");
+		expect(hint(root)).toBeUndefined();
+	});
+
+	it("reads the hand with the viewer's point system, in the viewer's language", () => {
+		const { root } = renderView(
+			bidView([]),
+			"desktop",
+			undefined,
+			translator("de"),
+			{ locale: "de", pointSystem: () => "other" },
+		);
+		pickBid(root, "1", "C");
+		expect(hint(root)).toBeUndefined();
+		const german = renderView(
+			bidView([]),
+			"desktop",
+			undefined,
+			translator("de"),
+			{
+				locale: "de",
+				...hcp,
+			},
+		).root;
+		pickBid(german, "1", "C");
+		expect(hint(german)).toBe("(Konvention: 1♠)");
+	});
+
+	it.each([
+		["compact", 414, 896],
+		["desktop", 1280, 800],
+	] as const)(
+		"keeps the height of Confirm with the hint (%s, %i×%i)",
+		async (form, width, height) => {
+			await page.viewport(width, height);
+			try {
+				const { root } = renderView(
+					bidView([]),
+					form,
+					undefined,
+					undefined,
+					hcp,
+				);
+				pickBid(root, "1", "S");
+				const plain = confirm(root)?.getBoundingClientRect().height ?? 0;
+				pickBid(root, "1", "C");
+				const hinted = confirm(root)?.getBoundingClientRect();
+				expect(hint(root)).toBe("(Convention: 1♠)");
+				expect(hinted?.height).toBeCloseTo(plain, 0);
+				const text = confirm(root)?.querySelector(".convention-hint");
+				expect(text?.getBoundingClientRect().right).toBeLessThanOrEqual(
+					hinted?.right ?? 0,
+				);
+			} finally {
+				await page.viewport(414, 896);
+			}
+		},
+	);
 });
