@@ -31,6 +31,7 @@ import type {
 	SignalingRoomConfig,
 } from "./signaling";
 import { type ProbeStun, StunChecks, type StunStatus } from "./stun-probe";
+import type { CheckWebRtc, WebRtcReport } from "./webrtc-check";
 import {
 	type CallFrame,
 	type CtlMessage,
@@ -129,6 +130,11 @@ export interface MeshDeps {
 	) => () => void;
 	/** Asks one STUN server for this page's public address; a mesh without it does not check. */
 	readonly probeStun?: ProbeStun;
+	/**
+	 * Checks this browser's WebRTC inside the page, at the start and after each network change; a mesh without it does
+	 * not check.
+	 */
+	readonly checkWebRtc?: CheckWebRtc;
 	/** The frequent checks of the Nostr relays, while `on()` (a setting) is true; a mesh without them does not check. */
 	readonly relayChecks?: {
 		readonly on: () => boolean;
@@ -164,6 +170,8 @@ export interface MeshDiagnostics {
 	readonly relays: readonly RelayStatus[];
 	/** The configured STUN servers; null on a page that does not check them. */
 	readonly stun: readonly StunStatus[] | null;
+	/** The newest WebRTC check inside the page; null before its first result, or on a page that does not check. */
+	readonly webRtc: WebRtcReport | null;
 	/** Admitted peers with a data channel. */
 	readonly peers: number;
 	/** Pages with another key that tried to connect: strangers at the tracker, or a damaged link. */
@@ -265,6 +273,9 @@ export class Mesh implements Send {
 		stranger: 0,
 	};
 	#sendFailures = 0;
+	#webRtc: WebRtcReport | null = null;
+	/** Counts the WebRTC checks, so that an older check that ends later does not replace a newer result. */
+	#webRtcChecks = 0;
 	#left = false;
 	/** The listener on each relay's current socket, by "kind url"; a reconnect replaces the socket. */
 	readonly #listening = new Map<
@@ -309,6 +320,7 @@ export class Mesh implements Send {
 						this.#handlers.change(),
 					);
 		this.#stun?.tick(deps.clock.monotonic(), true);
+		this.#checkWebRtc();
 		this.#relayChecks =
 			deps.relayChecks === undefined
 				? null
@@ -350,6 +362,7 @@ export class Mesh implements Send {
 			nostrRelays: this.#deps.config.nostrRelays.length,
 			relays,
 			stun: this.#stun?.statuses() ?? null,
+			webRtc: this.#webRtc,
 			peers: this.peers().length,
 			wrongKey: this.#wrongKey.size,
 			unreachable: this.#unreachable.size,
@@ -731,6 +744,19 @@ export class Mesh implements Send {
 			this.#deps.reconnectRelay(kind, url);
 		}
 		this.#rejoinNowUntil = now + NETWORK_REJOIN_MS;
+		// The new network can give other candidates, or none.
+		this.#checkWebRtc();
+	}
+
+	#checkWebRtc(): void {
+		const check = this.#deps.checkWebRtc;
+		if (check === undefined) return;
+		const count = ++this.#webRtcChecks;
+		void check().then((report) => {
+			if (this.#left || count !== this.#webRtcChecks) return;
+			this.#webRtc = report;
+			this.#handlers.change();
+		});
 	}
 
 	/**

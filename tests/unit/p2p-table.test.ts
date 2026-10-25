@@ -19,6 +19,7 @@ const DIAGNOSTICS: MeshDiagnostics = {
 	nostrRelays: 0,
 	relays: [],
 	stun: null,
+	webRtc: null,
 	peers: 0,
 	wrongKey: 0,
 	unreachable: 0,

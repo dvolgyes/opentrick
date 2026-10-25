@@ -41,7 +41,7 @@ function isIPadDesktopMode(signals: DeviceSignals): boolean {
 }
 
 /** A phone or tablet: a mobile signal, or no fine pointer. */
-function isTouchDevice(signals: DeviceSignals): boolean {
+export function isTouchDevice(signals: DeviceSignals): boolean {
 	return (
 		signals.uaMobile === true ||
 		isIPadDesktopMode(signals) ||
