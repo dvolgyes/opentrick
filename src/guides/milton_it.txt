@@ -22,6 +22,8 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - 12–14 punti: [1NT] con una mano bilanciata, un appoggio semplice, oppure la ripetizione del tuo colore.
 - 15–17 punti: un appoggio a salto, oppure la ripetizione a salto del tuo colore.
 - 18–21 punti: un salto in un nuovo colore, oppure [2NT] con una bilanciata di 18–19 punti.
+- Dopo un appoggio semplice del tuo nobile ([1H] – [2H]) e un passo: [P] con 12–14 punti; [3H] con 15–17 punti è un tentativo di manche e invita a manche; [4H] con 18–21 punti.
+- Se un avversario dichiara o contra dopo l'appoggio: [3H] con 12–17 punti e sei o più carte nel colore è competitivo e non invita a manche; [4H] con 18–21 punti.
 
 ## Risposte a [1NT]
 - 0–7 punti: [P], oppure un transfer con un nobile quinto.

@@ -29,6 +29,8 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - 12–14 poeng: [1NT] med balansert hånd, enkel støtte, eller gjenmelding av egen farge.
 - 15–17 poeng: hoppstøtte, eller gjenmelding av egen farge med hopp.
 - 18–21 poeng: hopp i en ny farge, eller [2NT] med balansert hånd og 18–19 poeng.
+- Etter enkel støtte i høyfargen din ([1H] – [2H]) og pass: [P] med 12–14 poeng; [3H] med 15–17 poeng er et utgangsforsøk og inviterer til utgang; [4H] med 18–21 poeng.
+- Hvis en motspiller melder eller dobler etter støtten: [3H] med 12–17 poeng og seks eller flere kort i fargen er en konkurransemelding og inviterer ikke til utgang; [4H] med 18–21 poeng.
 
 ## Svar på [1NT]
 - 0–7 poeng: [P], eller overføring med femkorts høyfarge.

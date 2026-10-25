@@ -3425,6 +3425,22 @@ const rows: readonly TranslationRow[] = [
 		"zwak, een lage kleur van {min}+ kaarten",
 	],
 	[
+		"game try, invites game, {min}+ {suit}",
+		"intento de manga, invita a manga, {min}+ {suit}",
+		"tentativa de partida, convida à partida, {min}+ {suit}",
+		"essai de manche, invite à la manche, {min}+ {suit}",
+		"tentativo di manche, invita a manche, {min}+ {suit}",
+		"manchepoging, nodigt uit tot de manche, {min}+ {suit}",
+	],
+	[
+		"competitive, no game invitation, {min}+ {suit}",
+		"competitivo, no invita a manga, {min}+ {suit}",
+		"competitivo, não convida à partida, {min}+ {suit}",
+		"compétitif, n'invite pas à la manche, {min}+ {suit}",
+		"competitivo, non invita a manche, {min}+ {suit}",
+		"competitief, geen manche-uitnodiging, {min}+ {suit}",
+	],
+	[
 		"waiting",
 		"de espera",
 		"resposta de espera",

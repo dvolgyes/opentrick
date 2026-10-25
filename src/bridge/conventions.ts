@@ -4,9 +4,9 @@
  * suggested call always has the meaning that the auction shows for it. The numbers are in convention-rules.ts.
  *
  * The guides describe the opening, the first response to one of a suit, [1NT], [2C] or a weak two, opener's
- * rebid, opener's answer to Stayman, a transfer and [2S], the overcalls and the takeout double of one of a suit, the
+ * rebid, opener's re-raise after a single raise of the major, opener's answer to Stayman, a transfer and [2S], the overcalls and the takeout double of one of a suit, the
  * redouble after partner's opening is doubled, and Blackwood. Each of them only when the other side passed, except
- * the overcalls, the double, the redouble and the [4NT] ask. Any other position, a hand with a suit longer than
+ * the overcalls, the double, the redouble, the re-raise and the [4NT] ask. Any other position, a hand with a suit longer than
  * SHAPES.longestChecked, and the "other" system are not described, and the functions return undefined. Where the
  * guide describes only some hands, such as an overcall, conventionCalls returns undefined for a hand that fits no
  * call. The module returns data; the callers write the text.
@@ -33,6 +33,10 @@ export type Shape =
 	| { readonly kind: "support"; readonly suit: Suit; readonly min: number }
 	| { readonly kind: "weak-two"; readonly suit: Suit; readonly length: number }
 	| { readonly kind: "preempt"; readonly suit: Suit; readonly length: number }
+	/** Opener's re-raise of the major after a pass: invites game, with `min` or more cards in `suit`. */
+	| { readonly kind: "game-try"; readonly suit: Suit; readonly min: number }
+	/** Opener's re-raise of the major after an opponent's call: `min` or more cards in `suit`, no game invitation. */
+	| { readonly kind: "competitive"; readonly suit: Suit; readonly min: number }
 	/** `min` or more cards in `suit`, the suit above the bid. */
 	| { readonly kind: "transfer"; readonly suit: Suit; readonly min: number }
 	/** A major with exactly `min` cards. */
@@ -88,6 +92,16 @@ type Position =
 	| { readonly kind: "weak-two"; readonly suit: Suit }
 	/** Opener's second call after one of `opened`, a pass, and partner's `response`. */
 	| { readonly kind: "rebid"; readonly opened: Suit; readonly response: Bid }
+	/**
+	 * Opener's second call after one of the major `suit`, a pass, and partner's single raise. `contested` when an
+	 * opponent called after the raise; `last` is the last bid before opener.
+	 */
+	| {
+			readonly kind: "reraise";
+			readonly suit: Suit;
+			readonly contested: boolean;
+			readonly last: Bid;
+	  }
 	| { readonly kind: "stayman-answer" }
 	| { readonly kind: "transfer-answer"; readonly suit: Suit }
 	| { readonly kind: "relay" }
@@ -242,12 +256,33 @@ function position(calls: readonly Call[]): Position | undefined {
 	if (opening === "1NT" && after === "P 2S P 3C P")
 		return { kind: "relay-answer" };
 	const [pass, response, again, ...rest] = calls.slice(start + 1);
-	return pass === "P" &&
-		again === "P" &&
-		rest.length === 0 &&
-		response !== undefined
-		? openerPosition(opening, response)
-		: undefined;
+	if (
+		pass !== "P" ||
+		response === undefined ||
+		again === undefined ||
+		rest.length !== 0
+	)
+		return undefined;
+	if (
+		opened !== undefined &&
+		MAJORS.includes(opened) &&
+		isBid(response) &&
+		response === `2${opened}`
+	) {
+		if (again === "P")
+			return {
+				kind: "reraise",
+				suit: opened,
+				contested: false,
+				last: response,
+			};
+		if (again === "X")
+			return { kind: "reraise", suit: opened, contested: true, last: response };
+		return isBid(again)
+			? { kind: "reraise", suit: opened, contested: true, last: again }
+			: undefined;
+	}
+	return again === "P" ? openerPosition(opening, response) : undefined;
 }
 
 function openingMeaning(ranges: Ranges, call: Call): CallMeaning | undefined {
@@ -430,6 +465,40 @@ function rebidMeaning(
 		: undefined;
 }
 
+function reraiseMeaning(
+	ranges: Ranges,
+	at: Extract<Position, { kind: "reraise" }>,
+	call: Call,
+): CallMeaning | undefined {
+	// "After a single raise of your major ([1H] – [2H]) and a pass: [P] with 12–14 points; [3H] with 15–17 points is a
+	// game try and invites game; [4H] with 18–21 points." After an opponent's call, [3H] is competitive.
+	if (call === "P")
+		return at.contested
+			? undefined
+			: { range: ranges["reraise-pass"], shape: { kind: "none" } };
+	const level = cheapestLevel(at.suit, at.last);
+	if (call === `3${at.suit}` && level === 3)
+		return at.contested
+			? {
+					range: ranges["reraise-compete"],
+					shape: {
+						kind: "competitive",
+						suit: at.suit,
+						min: SHAPES.competitiveReraise,
+					},
+				}
+			: {
+					range: ranges["reraise-try"],
+					shape: { kind: "game-try", suit: at.suit, min: SHAPES.majorOpening },
+				};
+	return call === `4${at.suit}` && level <= 4
+		? {
+				range: ranges["reraise-game"],
+				shape: { kind: "cards", suit: at.suit, min: SHAPES.majorOpening },
+			}
+		: undefined;
+}
+
 function staymanAnswerMeaning(call: Call): CallMeaning | undefined {
 	// "Opener answers [2D] without a four-card major, otherwise [2H] or [2S]."
 	if (call === "2D")
@@ -499,7 +568,8 @@ export const ACE_ANSWERS: Readonly<Partial<Record<Call, readonly number[]>>> = {
 
 /**
  * Whether the guide gives a pass to the hands that fit no other call in `at`: after the opponents' opening, after
- * partner's opening is doubled, after partner's weak two, and opener's rebid after [1NT]. The other positions
+ * partner's opening is doubled, after partner's weak two, opener's rebid after [1NT], and opener's re-raise after an
+ * opponent's call. The other positions
  * force a call, or give a pass its own meaning.
  */
 function passesTheRest(at: Position): boolean {
@@ -510,6 +580,8 @@ function passesTheRest(at: Position): boolean {
 			return true;
 		case "rebid":
 			return at.response === "1NT";
+		case "reraise":
+			return at.contested;
 		default:
 			return false;
 	}
@@ -534,6 +606,8 @@ function meaningAt(
 			return weakTwoResponseMeaning(ranges, at.suit, call);
 		case "rebid":
 			return rebidMeaning(ranges, at.opened, at.response, call);
+		case "reraise":
+			return reraiseMeaning(ranges, at, call);
 		case "stayman-answer":
 			return staymanAnswerMeaning(call);
 		case "transfer-answer":
@@ -647,6 +721,8 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 		case "cards":
 		case "support":
 		case "transfer":
+		case "game-try":
+		case "competitive":
 			return lengths[shape.suit] >= shape.min;
 		case "weak-two":
 			return (

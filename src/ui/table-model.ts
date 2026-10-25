@@ -733,6 +733,16 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 			return t("Stayman, a {min}-card major", { min: shape.min });
 		case "weak-minor":
 			return t("weak, a {min}+ card minor", { min: shape.min });
+		case "game-try":
+			return t("game try, invites game, {min}+ {suit}", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "competitive":
+			return t("competitive, no game invitation, {min}+ {suit}", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
 		case "waiting":
 			return t("waiting");
 		case "rest":

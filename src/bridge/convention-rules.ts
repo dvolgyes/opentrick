@@ -42,6 +42,10 @@ export type RangeKey =
 	| "rebid-mid"
 	| "rebid-high"
 	| "rebid-2NT"
+	| "reraise-pass"
+	| "reraise-try"
+	| "reraise-game"
+	| "reraise-compete"
 	| "weak-2NT"
 	| "overcall-one"
 	| "overcall-two"
@@ -92,6 +96,10 @@ const MILTON = {
 	"rebid-mid": { min: 15, max: 17 }, // "15–17 points: a jump raise"
 	"rebid-high": { min: 18, max: 21 }, // "18–21 points: a jump in a new suit"
 	"rebid-2NT": { min: 18, max: 19 }, // "[2NT] with a balanced 18–19 points"
+	"reraise-pass": { min: 12, max: 14 }, // "After a single raise of your major ... [P] with 12–14 points"
+	"reraise-try": { min: 15, max: 17 }, // "[3H] with 15–17 points is a game try"
+	"reraise-game": { min: 18, max: 21 }, // "[4H] with 18–21 points"
+	"reraise-compete": { min: 12, max: 17 }, // "If an opponent bids or doubles after the raise: [3H] with 12–17 points"
 	// ## Responses to a weak two
 	"weak-2NT": { min: 15 }, // "[2NT]: 15 or more points, asks opener"
 	// ## Competitive bids
@@ -162,6 +170,8 @@ export const SHAPES = {
 	rebidSupport: 4,
 	/** "a rebid of your own suit" in "## Opener's rebid": the guide gives no length; six cards, as in Standard American. */
 	rebidSuit: 6,
+	/** "If an opponent bids or doubles after the raise: [3H] ... with six or more cards": one more than the opening. */
+	competitiveReraise: 6,
 	/** "[1NT] overcall: ... with a stopper": the guide does not define a stopper; the usual A, Kx, Qxx or Jxxx. */
 	stoppers: [
 		{ honour: "A", length: 1 },

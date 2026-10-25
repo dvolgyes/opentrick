@@ -134,7 +134,7 @@ describe("guide calls for a hand", () => {
 		["hcp", "", "KQT98732.4.J52.6"], // an eight-card suit
 		["hcp", "1H 1S", "K84.Q73.J652.Q64"],
 		["hcp", "1H P 1S 2C", "K84.Q73.J652.Q64"], // the rebid after an overcall
-		["hcp", "1H P 2H P", "K84.Q73.J652.Q64"], // the rebid after a raise
+		["hcp", "1D P 2D P", "K84.Q73.J652.Q64"], // the rebid after a minor raise
 		["hcp", "1H P 1S P 2C P", "K84.Q73.J652.Q64"], // responder's second call
 		["hcp", "1H P 1S P", "A4.KQJ73.K82.Q65"], // 15, balanced: no rebid fits
 		["hcp", "1H P 1S P", "A2.KQ952.K3.Q432"], // 14, not balanced, after a forcing new suit
@@ -178,6 +178,13 @@ describe("guide calls for a hand", () => {
 		["1H P 1NT P", "A2.KQ952.K3.Q432", ["P"]], // 14, not balanced, five hearts
 		["1H P 3H P 4NT P", "AQ4.KJ5.Q862.K73", ["5D"]], // one ace
 		["1H P 3H P 4NT P", "KQ4.KJ5.Q862.K73", ["5C"]], // no ace
+		["1H P 2H P", "K4.AQJ73.K82.J65", ["P"]], // 14
+		["1H P 2H P", "K4.AKJ73.K82.J65", ["3H"]], // 15: a game try
+		["1H P 2H P", "A4.AKJ73.AQ82.65", ["4H"]], // 18
+		["1H P 2H 2S", "K4.AQJ873.K8.J65", ["3H"]], // 14, six hearts: competitive
+		["1H P 2H X", "K4.AKJ873.K8.Q65", ["3H"]], // 16, six hearts
+		["1H P 2H 2S", "K4.AQJ73.K82.J65", ["P"]], // 14, five hearts: no other guide call fits
+		["1S P 2S 3H", "AKJ73.A4.AQ82.65", ["4S"]], // 18
 	] as const)(
 		"continues %s with %s by %j in HCP",
 		(auction, cardsText, expected) => {
@@ -518,6 +525,52 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H P 3H P 4NT P 5C", { shape: { kind: "aces", counts: [0, 4] } }],
 		["hcp", "1H P 3H P 4NT P 5D", { shape: { kind: "aces", counts: [1] } }],
 		["hcp", "1H P 3H P 4NT P 5S", { shape: { kind: "aces", counts: [3] } }],
+		[
+			"hcp",
+			"1H P 2H P P",
+			{ range: { min: 12, max: 14 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1H P 2H P 3H",
+			{
+				range: { min: 15, max: 17 },
+				shape: { kind: "game-try", suit: "H", min: 5 },
+			},
+		],
+		[
+			"hcp-corrected",
+			"1S P 2S P 4S",
+			{
+				range: { min: 18, max: 21 },
+				shape: { kind: "cards", suit: "S", min: 5 },
+			},
+		],
+		[
+			"hcp",
+			"1H P 2H 2S 3H",
+			{
+				range: { min: 12, max: 17 },
+				shape: { kind: "competitive", suit: "H", min: 6 },
+			},
+		],
+		[
+			"hcp",
+			"1S P 2S X 3S",
+			{
+				range: { min: 12, max: 17 },
+				shape: { kind: "competitive", suit: "S", min: 6 },
+			},
+		],
+		[
+			"hcp",
+			"1H P 2H 3S 4H",
+			{
+				range: { min: 18, max: 21 },
+				shape: { kind: "cards", suit: "H", min: 5 },
+			},
+		],
+		["hcp", "1H P 2H 2S P", { shape: { kind: "rest" } }],
 	] as const)("reads the later call %s %s", (system, auction, expected) => {
 		const all = calls(auction);
 		expect(callMeaning(system, all, all.length - 1)).toEqual(expected);
@@ -527,7 +580,10 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H P 1S P P"],
 		["hcp", "1H P 1S P 2C"], // a new suit without a jump
 		["hcp", "1H P 1S P 4S"],
-		["hcp", "1H P 2H P 3H"], // the rebid after a raise
+		["hcp", "1H P 2H P 2S"], // a new-suit game try
+		["hcp", "1H P 2H P 3NT"],
+		["hcp", "1H P 2H 2S X"],
+		["hcp", "1D P 2D P 3D"], // a minor raise is not in the guide
 		["hcp", "1H P 1S 2C 2S"], // the rebid after an overcall
 		["hcp", "1H 2H"], // a cue bid
 		["hcp", "1H 2S"], // a jump overcall
@@ -672,6 +728,13 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"rebid-mid": ["Opener's rebid", "- {range} points: a jump raise"],
 	"rebid-high": ["Opener's rebid", "- {range} points: a jump in a new suit"],
 	"rebid-2NT": ["Opener's rebid", "[2NT] with a balanced {range} points."],
+	"reraise-pass": ["Opener's rebid", "[P] with {range} points;"],
+	"reraise-try": ["Opener's rebid", "[3H] with {range} points is a game try"],
+	"reraise-game": ["Opener's rebid", "[4H] with {range} points."],
+	"reraise-compete": [
+		"Opener's rebid",
+		"[3H] with {range} points and six or more cards",
+	],
 	"weak-2NT": ["Responses to a weak two", "- [2NT]: {range} points, asks"],
 	"overcall-one": [
 		"Competitive bids",

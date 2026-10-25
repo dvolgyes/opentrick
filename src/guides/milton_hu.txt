@@ -22,6 +22,8 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - 12–14 pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
 - 15–17 pont: ugrásos emelés, vagy a saját színed ismétlése ugrással.
 - 18–21 pont: ugrás új színben, vagy kiegyensúlyozott 18–19 ponttal [2NT].
+- A nemes színed egyszerű emelése ([1H] – [2H]) és egy passz után: 12–14 ponttal [P]; 15–17 ponttal a [3H] manche-kísérlet, manche-ra invitál; 18–21 ponttal [4H].
+- Ha az emelés után egy ellenfél licitál vagy kontrát mond: 12–17 ponttal és legalább hat lappal a színben a [3H] kompetitív licit, nem invitál manche-ra; 18–21 ponttal [4H].
 
 ## Válaszok az [1NT] nyitásra
 - 0–7 pont: [P], vagy ötlapos nemes színnel transzfer.

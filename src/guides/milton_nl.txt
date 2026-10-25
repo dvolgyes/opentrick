@@ -22,6 +22,8 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - 12–14 punten: [1NT] met een evenwichtige hand, een enkele verhoging, of een herhaling van je eigen kleur.
 - 15–17 punten: een sprongverhoging, of een sprong in je eigen kleur.
 - 18–21 punten: een sprong in een nieuwe kleur, of [2NT] met een evenwichtige hand van 18–19 punten.
+- Na een enkele verhoging van je hoge kleur ([1H] – [2H]) en een pas: [P] met 12–14 punten; [3H] met 15–17 punten is een manchepoging en nodigt uit tot de manche; [4H] met 18–21 punten.
+- Als een tegenstander na de verhoging biedt of doubleert: [3H] met 12–17 punten en zes of meer kaarten in de kleur is competitief en nodigt niet uit tot de manche; [4H] met 18–21 punten.
 
 ## Antwoorden op [1NT]
 - 0–7 punten: [P], of een transfer met een vijfkaart hoge kleur.

@@ -390,6 +390,20 @@ describe("auction", () => {
 		]);
 	});
 
+	it("explains opener's re-raise as a game try, and after an opponent's call as competitive", () => {
+		const state = (auction: string) =>
+			({
+				...tableState(bidding(BOARD, auction)),
+				systems: { N: "hcp-corrected", E: "hcp", S: "hcp", W: "hcp" },
+			}) as const;
+		expect(
+			view("E", null, { state: state("1H P 2H P 3H") }).auction?.meanings[1],
+		).toEqual(["15–17 corrected HCP, game try, invites game, 5+ ♥"]);
+		expect(
+			view("E", null, { state: state("1H P 2H 2S 3H") }).auction?.meanings[1],
+		).toEqual(["12–17 corrected HCP, competitive, no game invitation, 6+ ♥"]);
+	});
+
 	it("explains Blackwood with the slam targets of the caller's system", () => {
 		const state = {
 			...tableState(bidding(BOARD, "1H P 3H P 4NT")),

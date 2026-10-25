@@ -686,6 +686,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"transfer, {min}+ {suit}": "Transfer, {min}+ {suit}",
 		"Stayman, a {min}-card major": "Stayman, eine Oberfarbe mit {min} Karten",
 		"weak, a {min}+ card minor": "schwach, eine Unterfarbe mit {min}+ Karten",
+		"game try, invites game, {min}+ {suit}":
+			"Partieversuch, lädt zur Partie ein, {min}+ {suit}",
+		"competitive, no game invitation, {min}+ {suit}":
+			"kompetitiv, keine Partieeinladung, {min}+ {suit}",
 		waiting: "Wartegebot",
 		"no other guide call fits":
 			"kein anderes Gebot aus dem Reizleitfaden passt",
@@ -1360,6 +1364,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"transfer, {min}+ {suit}": "transzfer, {min}+ {suit}",
 		"Stayman, a {min}-card major": "Stayman, {min} lapos nemes szín",
 		"weak, a {min}+ card minor": "gyenge, {min}+ lapos alacsony szín",
+		"game try, invites game, {min}+ {suit}":
+			"manche-kísérlet, manche-ra invitál, {min}+ {suit}",
+		"competitive, no game invitation, {min}+ {suit}":
+			"kompetitív, nem invitál manche-ra, {min}+ {suit}",
 		waiting: "várakozó",
 		"no other guide call fits": "az útmutatóban nincs más illő licit",
 		"a good {min}+ card {suit} suit": "jó {min}+ lapos {suit} szín",
@@ -2025,6 +2033,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"transfer, {min}+ {suit}": "overføring, {min}+ {suit}",
 		"Stayman, a {min}-card major": "Stayman, en høyfarge med {min} kort",
 		"weak, a {min}+ card minor": "svak, en lavfarge med {min}+ kort",
+		"game try, invites game, {min}+ {suit}":
+			"utgangsforsøk, inviterer til utgang, {min}+ {suit}",
+		"competitive, no game invitation, {min}+ {suit}":
+			"konkurransemelding, ingen utgangsinvitasjon, {min}+ {suit}",
 		waiting: "ventemelding",
 		"no other guide call fits":
 			"ingen annen melding i meldeveiledningen passer",

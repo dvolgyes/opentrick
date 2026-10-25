@@ -29,6 +29,8 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - 12–14 Punkte: [1NT] mit ausgeglichener Hand, eine einfache Hebung oder die Wiederholung deiner eigenen Farbe.
 - 15–17 Punkte: eine Sprunghebung oder eine Sprungwiederholung deiner eigenen Farbe.
 - 18–21 Punkte: ein Sprung in eine neue Farbe, oder [2NT] mit ausgeglichenen 18–19 Punkten.
+- Nach einer einfachen Hebung deiner Oberfarbe ([1H] – [2H]) und einem Passe: [P] mit 12–14 Punkten; [3H] mit 15–17 Punkten ist ein Partieversuch und lädt zur Partie ein; [4H] mit 18–21 Punkten.
+- Wenn ein Gegner nach der Hebung reizt oder kontriert: [3H] mit 12–17 Punkten und sechs oder mehr Karten in der Farbe ist kompetitiv und lädt nicht zur Partie ein; [4H] mit 18–21 Punkten.
 
 ## Antworten auf [1NT]
 - 0–7 Punkte: [P], oder ein Transfer mit einer Fünferoberfarbe.
