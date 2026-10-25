@@ -154,14 +154,6 @@ const rows: readonly TranslationRow[] = [
 		"Claim accepteren",
 	],
 	[
-		"After a server error, the bot tries the next model in this order.",
-		"Tras un error del servidor, el bot prueba el siguiente modelo de esta lista.",
-		"Após um erro do servidor, o bot tenta o modelo seguinte desta lista.",
-		"Après une erreur du serveur, le bot essaie le modèle suivant dans cette liste.",
-		"Dopo un errore del server, il bot prova il modello successivo nell'elenco.",
-		"Na een serverfout probeert de bot het volgende model in deze lijst.",
-	],
-	[
 		"All players connected",
 		"Todos los jugadores conectados",
 		"Todos os jogadores ligados",
@@ -435,14 +427,6 @@ const rows: readonly TranslationRow[] = [
 		"Chicago (plus tard)",
 		"Chicago (in seguito)",
 		"Chicago (later)",
-	],
-	[
-		"Choose bot model",
-		"Elegir modelo del bot",
-		"Escolher modelo do bot",
-		"Choisir le modèle du bot",
-		"Scegli il modello del bot",
-		"Botmodel kiezen",
 	],
 	[
 		"Choose how many of the {count} remaining tricks you claim.",
@@ -954,7 +938,6 @@ const rows: readonly TranslationRow[] = [
 		"Microfono spento",
 		"Microfoon uit",
 	],
-	["Model", "Modelo", "Modelo", "Modèle", "Modello", "Model"],
 	[
 		"Model priority: the first model is primary; after a server error, the bot tries the next model.",
 		"Prioridad de modelos: el primero es el principal; tras un error del servidor, el bot prueba el siguiente.",
@@ -1689,14 +1672,6 @@ const rows: readonly TranslationRow[] = [
 		"{count} botplaats(en) uitgevoerd met {model}.",
 	],
 	["S", "S", "S", "S", "S", "Z"],
-	[
-		"Save key",
-		"Guardar clave",
-		"Guardar chave",
-		"Enregistrer la clé",
-		"Salva chiave",
-		"Sleutel opslaan",
-	],
 	["Scoring", "Puntuación", "Pontuação", "Marque", "Punteggio", "Score"],
 	["Seat", "Asiento", "Lugar", "Place", "Posto", "Plaats"],
 	[
@@ -1757,22 +1732,6 @@ const rows: readonly TranslationRow[] = [
 		"Stuur deze link naar de drie andere spelers. Iedereen opent de link en neemt een plaats in.",
 	],
 	["Sending", "Enviando", "A enviar", "Envoi", "Invio", "Verzenden"],
-	[
-		"Set API key",
-		"Configurar clave API",
-		"Definir chave API",
-		"Définir la clé API",
-		"Imposta chiave API",
-		"API-sleutel instellen",
-	],
-	[
-		"Set OpenRouter API key",
-		"Configurar clave API de OpenRouter",
-		"Definir chave API OpenRouter",
-		"Définir la clé API OpenRouter",
-		"Imposta chiave API OpenRouter",
-		"OpenRouter-API-sleutel instellen",
-	],
 	[
 		"Set an OpenRouter API key before switching a seat to a bot.",
 		"Configura una clave API de OpenRouter antes de cambiar un asiento a bot.",
@@ -2224,14 +2183,6 @@ const rows: readonly TranslationRow[] = [
 		"Annulé après un changement d'hôte",
 		"Annullato dopo il cambio di host",
 		"Ongedaan gemaakt na een hostwissel",
-	],
-	[
-		"Use model",
-		"Usar modelo",
-		"Usar modelo",
-		"Utiliser le modèle",
-		"Usa modello",
-		"Model gebruiken",
 	],
 	[
 		"Video is not available on this device.",

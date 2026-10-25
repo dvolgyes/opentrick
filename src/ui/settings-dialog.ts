@@ -51,15 +51,22 @@ export interface SettingsDialog {
 	open(): void;
 }
 
+/** What a Save changed that a running table must apply. */
+export interface SavedSettings {
+	/** The model that accepted a new OpenRouter key or custom model; undefined when Save checked nothing. */
+	readonly checkedModel: string | undefined;
+	readonly modelOrderChanged: boolean;
+}
+
 /**
  * The player's own settings, kept in this browser. Save checks a new OpenRouter key, or a custom model, with one
  * request before it stores anything; a failed check keeps the dialog open with the reason. A new language reloads the
- * page; any other change calls `saved`, so the page can show it.
+ * page; any other change calls `saved`, so the page can apply it.
  */
 export function settingsDialog(
 	deps: AppDeps,
 	reload: () => void,
-	saved: () => void = () => {},
+	saved: (change: SavedSettings) => void = () => {},
 ): SettingsDialog {
 	const { t } = deps;
 	const element = el("dialog", {
@@ -279,6 +286,7 @@ export function settingsDialog(
 			modelOrder: resolveModelOrder(order, model),
 		};
 		const changed = key !== storedKey || model !== stored.customModel;
+		let checkedModel: string | undefined;
 		if (key !== "" && changed) {
 			// A custom model must answer with this key; without one, the first model checks the key.
 			const checked = model !== "" ? model : effectiveModelOrder(settings)[0];
@@ -299,6 +307,7 @@ export function settingsDialog(
 				);
 				return;
 			}
+			checkedModel = checked;
 		}
 		try {
 			writeHostApiKey(deps.browser, key);
@@ -311,7 +320,13 @@ export function settingsDialog(
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
 		if (languageChanged) reload();
-		else saved();
+		else
+			saved({
+				checkedModel,
+				modelOrderChanged:
+					effectiveModelOrder(settings).join(",") !==
+					effectiveModelOrder(stored).join(","),
+			});
 	}
 
 	return {

@@ -1048,6 +1048,13 @@ main:has(> .room) {
 	justify-content: flex-start;
 }
 
+/* During a phone's auction and play the top bar holds Share URL, Reload and Exit, so the controls below do not repeat them. */
+[data-form="compact"]:has(
+	.bridge-table:is([data-phase="auction"], [data-phase="play"])
+) :is(.sidebar-copy-link, .sidebar-reload, .sidebar-exit) {
+	display: none;
+}
+
 .room-bot-controls {
 	justify-content: space-between;
 }

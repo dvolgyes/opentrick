@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockOpenRouter } from "./openrouter-mock";
+import { makeCall } from "./room";
 
 /*
  * Saving an OpenRouter key sends one bot bid to the first model in the priority list, so the player sees at once
@@ -50,7 +51,7 @@ test("Create without a key and without bot seats sends no request to OpenRouter"
 	expect(openRouter.requests).toEqual([]);
 });
 
-test("Save key at the table checks the key, keeps the dialog open on a failure, and closes it when the key works", async ({
+test("Settings at the table checks a new key, keeps the dialog open on a failure, and gives the working key to the bots", async ({
 	page,
 }) => {
 	const openRouter = await mockOpenRouter(page);
@@ -58,13 +59,20 @@ test("Save key at the table checks the key, keeps the dialog open on a failure, 
 	await page.locator('input[name="name-W"]').fill("host west");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
+	// Settings holds the key and the model order, so the side panel has no separate buttons for them.
+	await expect(
+		page.getByRole("button", { name: "Set API key", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Model", exact: true }),
+	).toHaveCount(0);
 
-	const dialog = page.getByTestId("api-key-dialog");
+	const dialog = page.getByTestId("settings-dialog");
 	const field = dialog.getByRole("textbox", { name: "OpenRouter API key" });
 	openRouter.status = 402;
-	await page.getByRole("button", { name: "Set API key" }).click();
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await field.fill("empty-account-key");
-	await dialog.getByRole("button", { name: "Save key" }).click();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toContainText("insufficient balance (402)");
 	await expect(dialog).toBeVisible();
 	expect(openRouter.requests).toEqual([
@@ -73,7 +81,7 @@ test("Save key at the table checks the key, keeps the dialog open on a failure, 
 
 	openRouter.status = 200;
 	await field.fill("good-key");
-	await dialog.getByRole("button", { name: "Save key" }).click();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
 	await expect(page.getByTestId("bot-status")).toContainText(
 		"The OpenRouter key works with inception/mercury-3.",
@@ -89,6 +97,75 @@ test("Save key at the table checks the key, keeps the dialog open on a failure, 
 	).toBe("good-key");
 });
 
+test("a model order saved in Settings at the table goes to the running bots and to the table link", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	for (const seat of ["N", "E", "S"])
+		await page.locator(`input[name="bot-${seat}"]`).check();
+	await page.locator('input[name="openrouter-key"]').fill("good-key");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("table")).toHaveAttribute(
+		"data-phase",
+		"auction",
+	);
+
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	const dialog = page.getByTestId("settings-dialog");
+	await dialog
+		.getByRole("button", { name: "Move openai/gpt-6-luna · Responses up" })
+		.click();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	expect(
+		new URL(page.url()).searchParams.get("bot_models")?.split(",").slice(0, 2),
+	).toEqual(["openai/gpt-6-luna", "inception/mercury-3"]);
+
+	// The next bot call after the host's bid asks the new first model.
+	await expect(
+		page
+			.getByTestId("bid-box")
+			.getByRole("button", { name: "Level 1", exact: true }),
+	).toBeEnabled();
+	const before = openRouter.requests.length;
+	await makeCall(page, "1C");
+	await expect
+		.poll(() => openRouter.requests.slice(before).map(({ model }) => model))
+		.toContain("openai/gpt-6-luna");
+	expect(
+		openRouter.requests.slice(before).map(({ model }) => model),
+	).not.toContain("inception/mercury-3");
+});
+
+test("a seat switched to a bot without a key opens Settings, and the seat becomes a bot after the key works", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	const north = page.getByTestId("tile-N");
+	await north.getByRole("button", { name: /Switch to bot$/ }).click();
+	const dialog = page.getByTestId("settings-dialog");
+	await expect(dialog).toBeVisible();
+	await expect(page.getByTestId("bot-status")).toContainText(
+		"Set an OpenRouter API key before switching a seat to a bot.",
+	);
+	await dialog
+		.getByRole("textbox", { name: "OpenRouter API key" })
+		.fill("good-key");
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	await expect(
+		north.getByRole("button", { name: /Switch to player$/ }),
+	).toBeVisible();
+	expect(openRouter.requests).toEqual([
+		{ model: "inception/mercury-3", key: "Bearer good-key" },
+	]);
+});
 test("a key stored in this browser fills a new create page and runs the bots, also after a reload", async ({
 	page,
 }) => {

@@ -1,14 +1,9 @@
-import {
-	normalizeHostApiKey,
-	readHostApiKey,
-	writeHostApiKey,
-} from "../bot/host-key";
+import { readHostApiKey } from "../bot/host-key";
 import {
 	configuredBotSeats,
 	HostBotRunner,
 	type HostBotSettings,
 } from "../bot/host-runner";
-import { checkOpenRouterKey } from "../bot/key-check";
 import { type Board, boardStatus } from "../bridge/engine";
 import { type BuildInfo, formatBuildDate } from "../build";
 import { CallController } from "../call/call";
@@ -40,6 +35,7 @@ import {
 	botModelLabel,
 	botModelOrder,
 	DEFAULT_BOT_SETUP,
+	isBotModel,
 	type JsonObject,
 	type RoomConfig,
 	SEATS,
@@ -77,13 +73,12 @@ import {
 	TEXT,
 	type TranscriptLine,
 } from "./model";
-import { modelPriorityControl } from "./model-priority";
 import { networkPanel } from "./network";
 import { pageReport, type TableFacts } from "./page-report";
 import { pageTitle } from "./page-title";
 import { remoteAudio } from "./remote-audio";
-import { readSettings } from "./settings";
-import { settingsDialog } from "./settings-dialog";
+import { effectiveModelOrder, readSettings } from "./settings";
+import { type SavedSettings, settingsDialog } from "./settings-dialog";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
 import type { TurnSound } from "./turn-sound";
@@ -354,27 +349,6 @@ export function showRoom(
 		attrs: { "data-testid": "retry-seat" },
 	});
 	const createNew = button(deps.t("Create new game"), handlers.createNew);
-	const botKey = el("input", {
-		attrs: {
-			type: "password",
-			autocomplete: "new-password",
-			"aria-label": deps.t("OpenRouter API key"),
-		},
-	});
-	botKey.addEventListener("input", () => {
-		botKey.value = normalizeHostApiKey(botKey.value);
-	});
-	const modelPriority = modelPriorityControl(
-		botModelOrder(
-			botSettings ??
-				settingsFor(
-					controller.view().table?.config ?? fallbackConfig,
-					readHostApiKey(deps.browser),
-					modelOrderFromUrl(),
-				),
-		),
-		deps.t,
-	);
 	const botStatus = el("p", {
 		className: "bot-status",
 		attrs: { role: "status", "data-testid": "bot-status" },
@@ -404,123 +378,57 @@ export function showRoom(
 			rateLimitTimer = undefined;
 		}, 1000);
 	};
-	const keyDialog = el("dialog", {
-		attrs: {
-			"aria-labelledby": "api-key-title",
-			"data-testid": "api-key-dialog",
-		},
-	});
-	const keyCheckStatus = el("p", { attrs: { role: "status" } });
-	keyDialog.addEventListener("close", () => {
-		keyCheckStatus.textContent = "";
-	});
-	const saveKey = button(deps.t("Save key"), () => void saveAndCheckKey());
-	const modelDialog = el("dialog", {
-		attrs: {
-			"aria-labelledby": "bot-model-title",
-			"data-testid": "bot-model-dialog",
-		},
-	});
-	modelDialog.append(
-		el("h2", { attrs: { id: "bot-model-title" } }, deps.t("Choose bot model")),
-		el(
-			"p",
-			{},
-			deps.t(
-				"After a server error, the bot tries the next model in this order.",
-			),
-		),
-		modelPriority.element,
-		button(deps.t("Use model"), () => {
-			const modelOrder = modelPriority.value();
-			const current =
-				botSettings ??
-				settingsFor(
-					controller.view().table?.config ?? fallbackConfig,
-					readHostApiKey(deps.browser),
-					modelOrderFromUrl(),
-				);
-			botSettings = {
-				...current,
-				modelOrder,
-				model: modelOrder[0] as BotModel,
-				fallbackModel: modelOrder[1] as BotModel,
-			};
-			rememberBotModels(modelOrder);
-			botRunner?.updateSettings(botSettings);
-			botStatus.textContent = runningBotStatus();
-			modelDialog.close();
-			render();
-		}),
-		button(deps.t("Cancel"), () => modelDialog.close()),
-	);
-	keyDialog.append(
-		el(
-			"h2",
-			{ attrs: { id: "api-key-title" } },
-			deps.t("Set OpenRouter API key"),
-		),
-		el("label", {}, `${deps.t("OpenRouter API key")} `, botKey),
-		keyCheckStatus,
-		saveKey,
-		button(deps.t("Cancel"), () => keyDialog.close()),
-	);
+	const settings = settingsDialog(deps, handlers.reload, applySettings);
 
-	/** Stores the key, then checks it with the first model; a failed check keeps the dialog open with the reason. */
-	async function saveAndCheckKey(): Promise<void> {
-		const normalizedApiKey = normalizeHostApiKey(botKey.value);
-		botKey.value = normalizedApiKey;
-		try {
-			writeHostApiKey(deps.browser, normalizedApiKey);
-		} catch {
-			botStatus.textContent = deps.t(
-				"This browser could not store the OpenRouter API key.",
+	/**
+	 * Settings stored a checked key and the model order in this browser; the bots use them at once. A newly checked key
+	 * resumes the bots that a low balance paused, and switches the seat that waited for a key.
+	 */
+	function applySettings({
+		checkedModel,
+		modelOrderChanged,
+	}: SavedSettings): void {
+		const apiKey = readHostApiKey(deps.browser);
+		const current =
+			botSettings ??
+			settingsFor(
+				controller.view().table?.config ?? fallbackConfig,
+				apiKey,
+				modelOrderFromUrl(),
 			);
-			return;
-		}
-		botSettings = settingsFor(
-			controller.view().table?.config ?? fallbackConfig,
-			normalizedApiKey,
-			botSettings?.modelOrder ?? modelOrderFromUrl(),
-		);
-		botRunner?.updateApiKey(normalizedApiKey);
-		const model = botSettings.modelOrder[0] as BotModel;
-		if (normalizedApiKey !== "") {
-			saveKey.disabled = true;
-			keyCheckStatus.textContent = deps.t(
-				"Checking the OpenRouter key with {model}…",
-				{ model },
-			);
-			const result = await checkOpenRouterKey(normalizedApiKey, model);
-			if (disposed) return;
-			saveKey.disabled = false;
-			if (!result.ok) {
-				const failure = deps.t(
-					"The OpenRouter key check with {model} failed: {reason}",
-					{ model, reason: result.reason },
-				);
-				// The player can close the dialog while the check runs.
-				if (keyDialog.open) keyCheckStatus.textContent = failure;
-				else botStatus.textContent = failure;
-				return;
+		// The table link and the bot setup name only the built-in models, so the bots do not use a custom model yet.
+		const modelOrder = modelOrderChanged
+			? effectiveModelOrder(readSettings(deps.browser)).filter(isBotModel)
+			: current.modelOrder;
+		botSettings = {
+			...current,
+			apiKey,
+			modelOrder,
+			model: modelOrder[0] as BotModel,
+			fallbackModel: modelOrder[1] as BotModel,
+		};
+		if (modelOrderChanged) rememberBotModels(modelOrder);
+		if (modelOrderChanged || apiKey !== current.apiKey)
+			botRunner?.updateSettings(botSettings);
+		if (checkedModel !== undefined) {
+			botStatus.textContent = deps.t("The OpenRouter key works with {model}.", {
+				model: checkedModel,
+			});
+			if (botBalancePaused) {
+				botBalancePaused = false;
+				setBotsPaused(false);
+				botRunner?.resume();
 			}
-		}
-		keyCheckStatus.textContent = "";
-		if (botBalancePaused) {
-			botBalancePaused = false;
-			setBotsPaused(false);
-			botRunner?.resume();
-		}
-		keyDialog.close();
-		botStatus.textContent =
-			normalizedApiKey === ""
-				? ""
-				: deps.t("The OpenRouter key works with {model}.", { model });
-		if (pendingBotSeat !== undefined) {
-			const target = pendingBotSeat;
-			pendingBotSeat = undefined;
-			manageBotSeat(target, true);
-		} else if (!botRunner) void startHostBots();
+			if (pendingBotSeat !== undefined) {
+				const target = pendingBotSeat;
+				pendingBotSeat = undefined;
+				manageBotSeat(target, true);
+			} else if (!botRunner) void startHostBots();
+		} else if (apiKey === "" && current.apiKey !== "")
+			botStatus.textContent = "";
+		else if (modelOrderChanged && botRunner)
+			botStatus.textContent = runningBotStatus();
+		render();
 	}
 	const banner = el(
 		"div",
@@ -614,7 +522,7 @@ export function showRoom(
 			botStatus.textContent = deps.t(
 				"Set an OpenRouter API key before switching a seat to a bot.",
 			);
-			if (!keyDialog.open) keyDialog.showModal();
+			settings.open();
 			return;
 		}
 		void controller.setBotSeat(targetSeat, enabled).then((ok) => {
@@ -1001,7 +909,10 @@ export function showRoom(
 				// Clipboard failure stays silent, and does not signal success.
 			}
 		},
-		{ attrs: { "data-testid": "copy-board-url" } },
+		{
+			className: "sidebar-copy-link",
+			attrs: { "data-testid": "copy-board-url" },
+		},
 	);
 	if (autoCopy)
 		void autoCopy.then(
@@ -1053,23 +964,8 @@ export function showRoom(
 		debug,
 		reloadPlayers,
 	);
-	const settings = settingsDialog(deps, handlers.reload, render);
 	const openSettings = button(deps.t("Settings"), () => settings.open(), {
 		className: "settings-button",
-	});
-	const setApiKey = button(deps.t("Set API key"), () => {
-		botKey.value = readHostApiKey(deps.browser);
-		if (!keyDialog.open) keyDialog.showModal();
-	});
-	const chooseModel = button(deps.t("Model"), () => {
-		const config = controller.view().table?.config ?? fallbackConfig;
-		botSettings ??= settingsFor(
-			config,
-			readHostApiKey(deps.browser),
-			modelOrderFromUrl(),
-		);
-		modelPriority.setValue(botSettings.modelOrder);
-		if (!modelDialog.open) modelDialog.showModal();
 	});
 	const reset = button(
 		deps.t("Reset"),
@@ -1131,14 +1027,10 @@ export function showRoom(
 			"div",
 			{ className: "room-control-row room-bot-controls" },
 			openSettings,
-			setApiKey,
-			chooseModel,
 			pauseBots,
 			resumeBots,
 			botSpendCounter,
 		),
-		keyDialog,
-		modelDialog,
 	);
 	const resetStatus = el("p", { className: "note", attrs: { role: "status" } });
 	const resetApprove = button(deps.t("Approve reset"), () => {
@@ -1254,7 +1146,6 @@ export function showRoom(
 		call?.setForm(form);
 	});
 	root.replaceChildren(room);
-	root.append(keyDialog);
 	root.append(settings.element);
 	root.append(rateLimitReminder);
 	if (camera) root.append(camera.element);
@@ -1485,8 +1376,6 @@ export function showRoom(
 		debugRow.hidden = !view.hosting;
 		debugStatus.hidden = !view.hosting;
 		if (view.hosting) showPlayerBuilds(view.roster?.bots ?? []);
-		setApiKey.hidden = !view.hosting;
-		chooseModel.hidden = !view.hosting;
 		pauseBots.hidden =
 			!view.hosting || activeBots.length === 0 || botsPaused || !botRunner;
 		resumeBots.hidden =

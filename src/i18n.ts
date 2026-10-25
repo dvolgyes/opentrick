@@ -473,13 +473,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Opponents'": "Gegner",
 		"Pause bots": "Bots pausieren",
 		"Resume bots": "Bots fortsetzen",
-		"Choose bot model": "Bot-Modell wählen",
-		"Use model": "Modell verwenden",
-		"After a server error, the bot tries the next model in this order.":
-			"Nach einem Serverfehler versucht der Bot das nächste Modell in dieser Reihenfolge.",
-		"Set API key": "API-Schlüssel setzen",
-		"Set OpenRouter API key": "OpenRouter-API-Schlüssel setzen",
-		"Save key": "Schlüssel speichern",
 		"All players connected": "Alle Spieler verbunden",
 		"Set an OpenRouter API key before switching a seat to a bot.":
 			"Setze einen OpenRouter-API-Schlüssel, bevor du einen Platz in einen Bot umwandelst.",
@@ -502,7 +495,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Create game": "Spiel erstellen",
 		Exit: "Beenden",
 		Reset: "Zurücksetzen",
-		Model: "Modell",
 		"Copy table link": "Tischlink kopieren",
 		"OpenRouter spending total": "OpenRouter-Ausgaben gesamt",
 		Message: "Nachricht",
@@ -636,13 +628,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Reload: "Újratöltés",
 		Network: "Hálózat",
 		"Copy link": "Hivatkozás másolása",
-		"Set API key": "API-kulcs beállítása",
-		"Set OpenRouter API key": "OpenRouter API-kulcs beállítása",
-		"Save key": "Kulcs mentése",
-		"Choose bot model": "Botmodell kiválasztása",
-		"Use model": "Modell használata",
-		"After a server error, the bot tries the next model in this order.":
-			"Szerverhiba után a bot ebben a sorrendben próbálja a következő modellt.",
 		"Pause bots": "Botok felfüggesztése",
 		"Resume bots": "Botok folytatása",
 		Reset: "Nullázás",
@@ -918,7 +903,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Reject reset": "Visszaállítás elutasítása",
 		"Cancel reset": "Visszaállítás megszakítása",
 		"Copy table link": "Asztal hivatkozásának másolása",
-		Model: "Modell",
 		"This browser does not allow storing data, so it cannot create a table.":
 			"Ez a böngésző nem engedélyezi az adattárolást, ezért nem tud asztalt létrehozni.",
 		"This tab was superseded": "Ezt a lapot felváltotta egy másik",
@@ -1137,11 +1121,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Reload: "Last inn på nytt",
 		Network: "Nettverk",
 		"Copy link": "Kopier lenke",
-		"Set API key": "Angi API-nøkkel",
-		"Set OpenRouter API key": "Angi OpenRouter API-nøkkel",
-		"Save key": "Lagre nøkkel",
-		"Choose bot model": "Velg botmodell",
-		"Use model": "Bruk modell",
 		"Pause bots": "Sett botene på pause",
 		"Resume bots": "Fortsett med botene",
 		Reset: "Nullstill",
@@ -1327,7 +1306,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Reject reset": "Avslå nullstilling",
 		"Cancel reset": "Avbryt nullstilling",
 		"Copy table link": "Kopier bordlenken",
-		Model: "Modell",
 		"This tab was superseded": "Denne fanen ble erstattet",
 		Send: "Send",
 		"{seat}: enter a name.": "{seat}: skriv inn et navn.",
@@ -1385,8 +1363,6 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Venter på at {players} godkjenner nullstillingen.",
 		"last played card": "sist spilte kort",
 		"last bid": "siste melding",
-		"After a server error, the bot tries the next model in this order.":
-			"Etter en serverfeil prøver boten neste modell i denne rekkefølgen.",
 		"The bot request failed. Check the model and resume bots.":
 			"Botforespørselen mislyktes. Kontroller modellen og start botene igjen.",
 		"Another tab changed the table at the same time. Reload the page.":

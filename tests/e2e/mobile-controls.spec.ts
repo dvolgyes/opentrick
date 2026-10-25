@@ -5,7 +5,7 @@ import { Player } from "./player";
  * A phone shows the compact table (src/ui/room-view.ts sets the form from the device class); phone.spec.ts plays a
  * board on it, and layout.spec.ts checks it at several phone sizes. This test checks the host bot controls on a phone.
  */
-test("on a phone the host pauses the bots and changes the API key", async ({
+test("on a phone the host pauses the bots, finds each top-bar button once, and changes the API key in Settings", async ({
 	browser,
 	baseURL,
 }) => {
@@ -83,16 +83,39 @@ test("on a phone the host pauses the bots and changes the API key", async ({
 		await expect(
 			page.getByRole("button", { name: "Resume bots" }),
 		).toBeVisible();
+		// The phone keeps the seat switches in a closed group below the board.
+		await page.getByText("Optional automated players").click();
 		await expect(
 			page.getByRole("button", { name: /Switch to player$/ }).first(),
 		).toBeVisible();
-		await page.getByRole("button", { name: "Set API key" }).click();
-		await expect(page.getByTestId("api-key-dialog")).toBeVisible();
-		await page
-			.getByTestId("api-key-dialog")
-			.getByLabel("OpenRouter API key")
+		// During the auction the top bar holds the only Reload, Exit and Share URL; Settings holds the key and the models.
+		for (const [name, count] of [
+			["Reload", 1],
+			["Exit", 1],
+			["Share URL", 1],
+			["Copy link", 0],
+			["Set API key", 0],
+			["Model", 0],
+		] as const)
+			await expect(
+				page.getByRole("button", { name, exact: true }),
+				name,
+			).toHaveCount(count);
+		await expect(
+			page
+				.locator(".mobile-auction-topbar")
+				.getByRole("button", { name: "Reload", exact: true }),
+		).toBeVisible();
+		await page.getByRole("button", { name: "Settings", exact: true }).click();
+		const settings = page.getByTestId("settings-dialog");
+		await settings
+			.getByRole("textbox", { name: "OpenRouter API key" })
 			.fill("updated-test-key");
-		await page.getByRole("button", { name: "Save key" }).click();
+		await settings.getByRole("button", { name: "Save settings" }).click();
+		await expect(settings).toBeHidden();
+		await expect(page.getByTestId("bot-status")).toContainText(
+			"The OpenRouter key works with",
+		);
 		expect(
 			await page.evaluate(() =>
 				localStorage.getItem("opentrick.openrouter-api-key"),

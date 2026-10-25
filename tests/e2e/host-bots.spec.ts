@@ -135,9 +135,11 @@ test("the create page stores the OpenRouter key also when no seat is a bot", asy
 			localStorage.getItem("opentrick.openrouter-api-key"),
 		),
 	).toBe("later-key");
-	await page.getByRole("button", { name: "Set API key" }).click();
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await expect(
-		page.getByRole("textbox", { name: "OpenRouter API key" }),
+		page
+			.getByTestId("settings-dialog")
+			.getByRole("textbox", { name: "OpenRouter API key" }),
 	).toHaveValue("later-key");
 });
 
@@ -292,12 +294,15 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		await expect(hostPage.getByTestId("call-presence-N")).toBeHidden();
 		await expect(eastPage.getByTestId("call-presence-N")).toBeVisible();
 
-		await hostPage.getByRole("button", { name: "Set API key" }).click();
 		await hostPage
-			.getByTestId("api-key-dialog")
+			.getByRole("button", { name: "Settings", exact: true })
+			.click();
+		await hostPage
+			.getByTestId("settings-dialog")
 			.getByRole("textbox", { name: "OpenRouter API key" })
 			.fill("test-key");
-		await hostPage.getByRole("button", { name: "Save key" }).click();
+		await hostPage.getByRole("button", { name: "Save settings" }).click();
+		await expect(hostPage.getByTestId("settings-dialog")).toBeHidden();
 		await hostPage
 			.getByTestId("tile-N")
 			.getByRole("button", { name: /Switch to bot$/ })
@@ -539,12 +544,15 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 			"auction",
 			{ timeout: CONNECT_MS },
 		);
-		await hostPage.getByRole("button", { name: "Set API key" }).click();
 		await hostPage
-			.getByTestId("api-key-dialog")
+			.getByRole("button", { name: "Settings", exact: true })
+			.click();
+		await hostPage
+			.getByTestId("settings-dialog")
 			.getByRole("textbox", { name: "OpenRouter API key" })
 			.fill("test-key");
-		await hostPage.getByRole("button", { name: "Save key" }).click();
+		await hostPage.getByRole("button", { name: "Save settings" }).click();
+		await expect(hostPage.getByTestId("settings-dialog")).toBeHidden();
 		await host.grantPermissions(["microphone"]);
 		await north.grantPermissions(["microphone"]);
 		for (const page of [hostPage, northPage])
