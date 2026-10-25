@@ -1613,8 +1613,11 @@ export function showRoom(
 		// The lobby uses the table layout, so it looks like the game; only the sidebar is hidden while waiting.
 		root.dataset.screen = "table";
 		root.dataset.waiting = String(tableModel.phase === "waiting");
+		// The lobby too: a host whose phone sleeps cannot answer the players who open the link.
 		wakeLock.update(
-			tableModel.phase === "auction" || tableModel.phase === "play",
+			tableModel.phase === "waiting" ||
+				tableModel.phase === "auction" ||
+				tableModel.phase === "play",
 		);
 		const tableKey = JSON.stringify(
 			tableModel.scoring
