@@ -82,12 +82,26 @@ export function parseRoomSetup(search: string): RoomSetup | undefined {
 	};
 }
 
-/** Reads an explicit seat choice from a room URL. Invalid or repeated values are ignored. */
-export function parseSelectedPlayer(search: string): Seat | undefined {
+/** The selected_player value of a shared link: the page takes no seat by itself, not even a remembered one. */
+const NO_SELECTED_PLAYER = "none";
+
+/**
+ * Reads an explicit seat choice from a room URL: a seat, or null for "none". Invalid or repeated values are
+ * ignored.
+ */
+export function parseSelectedPlayer(search: string): Seat | null | undefined {
 	const params = new URLSearchParams(search);
 	const values = params.getAll(SELECTED_PLAYER_PARAM);
-	if (values.length !== 1 || !isSeat(values[0])) return undefined;
-	return values[0];
+	if (values.length !== 1) return undefined;
+	if (values[0] === NO_SELECTED_PLAYER) return null;
+	return isSeat(values[0]) ? values[0] : undefined;
+}
+
+/** The query of a link to share: the room values of `search`, with no seat selected. */
+export function sharedQuery(search: string): string {
+	const params = new URLSearchParams(search);
+	params.set(SELECTED_PLAYER_PARAM, NO_SELECTED_PLAYER);
+	return params.toString();
 }
 
 /** Adds the selected seat to the current query while preserving other room or bookmark values. */

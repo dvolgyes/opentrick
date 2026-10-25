@@ -180,8 +180,8 @@ export interface TableDeps {
 	readonly hostEligible?: boolean;
 	/** This page load created the table: it hosts term 1 at once. */
 	readonly creator?: boolean;
-	/** An explicit seat from the room URL takes priority over remembered seats. */
-	readonly preferredSeat?: Seat;
+	/** An explicit seat from the room URL takes priority over remembered seats; null opens no seat at all. */
+	readonly preferredSeat?: Seat | null;
 	/** Valid setup values from the shared URL can initialize a missing local room. */
 	readonly bootstrap?: { readonly config: RoomConfig; readonly host: Seat };
 }
@@ -430,9 +430,12 @@ export class TableController {
 		}
 		this.#heldElsewhere = await locks.heldElsewhere(this.#tableId);
 		const tabSeat = memory.tabSeat(this.#tableId);
+		const { preferredSeat } = this.#deps;
 		const wanted =
-			this.#deps.preferredSeat ??
-			memory.seatToReopen(this.#tableId, this.#deps.creator === true);
+			preferredSeat === null
+				? undefined
+				: (preferredSeat ??
+					memory.seatToReopen(this.#tableId, this.#deps.creator === true));
 		let seated: Seated | null = null;
 		let seededHost = false;
 		if (wanted !== undefined && wanted === tabSeat) {

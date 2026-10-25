@@ -48,7 +48,7 @@ import {
 	botSeatsQuery,
 	parseAutoplaySeats,
 	parseBookmark,
-	SELECTED_PLAYER_PARAM,
+	sharedQuery,
 } from "./bookmark";
 import { CallMemory } from "./call-memory";
 import type { CallDisplay, RemoteCallPresence } from "./call-model";
@@ -102,7 +102,7 @@ const STATE_TEXT: Readonly<Record<RosterRow["state"], string>> = {
 
 function roomShareLink(pageUrl: string, key: string): string {
 	const page = new URL(pageUrl);
-	page.searchParams.delete(SELECTED_PLAYER_PARAM);
+	page.search = sharedQuery(page.search);
 	return tableLink(page.toString(), key);
 }
 

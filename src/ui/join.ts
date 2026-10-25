@@ -44,7 +44,8 @@ function message(...children: (Node | string)[]): HTMLElement {
 
 /**
  * A table link. Runs one table controller at a time: the lobby while this page holds no seat, and the room
- * screen while it holds one. `creator` is true only for the page load that has just created the table.
+ * screen while it holds one. `creator` is true only for the page load that has just created the table. A null
+ * `seatHint` (selected_player=none) takes no seat by itself: the person picks one in the lobby.
  */
 export function showTable(
 	root: HTMLElement,
@@ -52,7 +53,7 @@ export function showTable(
 	key: string,
 	creator: boolean,
 	navigation: Navigation,
-	seatHint?: Seat,
+	seatHint?: Seat | null,
 	bootstrap?: RoomSetup,
 	autoCopy?: Promise<string>,
 	hostBots?: HostBotSettings,
@@ -312,7 +313,7 @@ export function showTable(
 
 	/** A start link seats its host directly. A seat that another device holds leaves the lobby with a notice. */
 	const claimHint = async (table: TableController): Promise<void> => {
-		if (seatHint === undefined) return;
+		if (seatHint === undefined || seatHint === null) return;
 		const view = table.view();
 		if (view.seat !== null) return;
 		const result = await table.choose(seatHint);

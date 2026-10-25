@@ -80,7 +80,11 @@ class Rig {
 	left = 0;
 	controller: TableController | null = null;
 
-	async start(seat: Seat): Promise<TableController> {
+	/** `seat` is the URL seat (null: none); `remembered` is the seat that this browser reopens without one. */
+	async start(
+		seat: Seat | null | undefined,
+		remembered?: Seat,
+	): Promise<TableController> {
 		const holder = await deriveHolder(TABLE, CLIENT);
 		const mesh: TableMesh = {
 			self: "self0000000000000000",
@@ -103,7 +107,7 @@ class Rig {
 			locks: this.locks,
 			memory: {
 				tabSeat: () => undefined,
-				seatToReopen: () => undefined,
+				seatToReopen: () => remembered,
 				remember: () => {},
 				forget: () => {},
 			},
@@ -115,7 +119,7 @@ class Rig {
 			nonce: randomNonce,
 			creator: true,
 			preferredSeat: seat,
-			bootstrap: { config: CONFIG, host: seat },
+			bootstrap: { config: CONFIG, host: seat ?? remembered ?? "N" },
 		});
 		this.controller = controller;
 		await controller.start();
@@ -129,6 +133,19 @@ beforeEach(() => {
 	rig = new Rig();
 });
 afterEach(() => rig.controller?.stop());
+
+describe("table controller seat from the URL", () => {
+	it("reopens the remembered seat when the URL names no seat", async () => {
+		const table = await rig.start(undefined, "N");
+		expect(table.view().seat).toBe("N");
+	});
+
+	it("opens no seat, not even the remembered one, when the URL says none", async () => {
+		const table = await rig.start(null, "N");
+		expect(table.view().seat).toBeNull();
+		expect(rig.locks.held.size).toBe(0);
+	});
+});
 
 describe("table controller seat lock", () => {
 	it("hosts the seat whose lock it holds", async () => {

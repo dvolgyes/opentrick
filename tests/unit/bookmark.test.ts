@@ -5,6 +5,8 @@ import {
 	parseAutoplaySeats,
 	parseBookmark,
 	parseRoomSetup,
+	parseSelectedPlayer,
+	sharedQuery,
 } from "../../src/ui/bookmark";
 
 describe("parseBookmark", () => {
@@ -109,5 +111,28 @@ describe("bookmarkQuery", () => {
 			names,
 			host: "S",
 		});
+	});
+});
+
+describe("the selected_player parameter", () => {
+	it("reads a seat, none as null, and anything else as no choice", () => {
+		expect(parseSelectedPlayer("selected_player=W")).toBe("W");
+		expect(parseSelectedPlayer("selected_player=none")).toBeNull();
+		for (const search of [
+			"",
+			"selected_player=",
+			"selected_player=X",
+			"selected_player=w",
+			"selected_player=none&selected_player=W",
+		])
+			expect(parseSelectedPlayer(search), search).toBeUndefined();
+	});
+
+	it("is none in a shared query, which keeps every other value", () => {
+		expect(sharedQuery("north=a&host=west&selected_player=W&bot_seats=N")).toBe(
+			"north=a&host=west&selected_player=none&bot_seats=N",
+		);
+		expect(sharedQuery("north=a")).toBe("north=a&selected_player=none");
+		expect(parseSelectedPlayer(sharedQuery("selected_player=E"))).toBeNull();
 	});
 });

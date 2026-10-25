@@ -5,6 +5,7 @@ import {
 	parseRoomSetup,
 	parseSelectedPlayer,
 	selectedPlayerQuery,
+	sharedQuery,
 } from "./bookmark";
 import { showCreate } from "./create";
 import type { AppDeps, Dispose, Navigation } from "./deps";
@@ -54,7 +55,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 						// Keep setup data and the selected seat in the address; replaceState fires no hashchange.
 						const query = bookmarkQuery(config.names, seat, config.botSetup);
 						const sharedUrl = new URL(deps.pageUrl());
-						sharedUrl.search = query;
+						sharedUrl.search = sharedQuery(query);
 						sharedUrl.hash = tableFragment(key);
 						const autoCopy = copyToClipboard(sharedUrl.toString());
 						history.replaceState(

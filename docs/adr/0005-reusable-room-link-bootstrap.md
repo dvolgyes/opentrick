@@ -6,7 +6,7 @@ Status: accepted (2026-10-20).
 
 ADR 0004 stores table state in each player's browser and expires an idle table after 24 hours.
 The room URL already carries the four player names, the host seat, and the room key.
-The player-specific URL carries `selected_player`, while the shared URL omits it.
+The player-specific URL carries `selected_player` with the player's seat, while the shared URL carries `selected_player=none`.
 The host needs to reopen a weekly room even when its local copy has expired or is missing.
 
 ## Decision
@@ -15,7 +15,9 @@ A complete room setup in the URL allows the page to clear its local expiry tombs
 The page shows all four seats while no host lobby is available.
 When a page selects the configured host seat, it seeds the local replica from the URL setup and starts hosting.
 Other pages can select seats and wait for that host.
-The table link omits `selected_player`; a player's own URL keeps it for reload.
+The table link carries `selected_player=none`; a player's own URL keeps the player's seat for reload.
+With `none`, a page takes no seat by itself: it does not reopen a seat that the browser remembers, and it does not take the last free seat.
+Without `selected_player`, a page reopens the remembered seat of this browser.
 
 ## Consequences
 
