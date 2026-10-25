@@ -45,9 +45,9 @@ const ENGLISH_FRAGMENTS = [
 	)
 	.map((fragment) => ({ fragment, pattern: wordPattern(fragment) }));
 
-/** Common English words that no Hungarian text of the page uses. */
+/** Common English words, and the English side names, that no Hungarian text of the page uses. */
 const ENGLISH_WORDS =
-	/(?<![\p{L}\p{N}])(the|to|your|you|for|and|of|with|from|waiting|turn|play|bid|call|level|pass|confirm|clubs|diamonds|hearts|spades|trump|double|redouble|asking|attempt|seconds|retrying|tricks|dealer|vulnerable|board|by)(?![\p{L}\p{N}])/iu;
+	/(?<![\p{L}\p{N}])(the|to|your|you|for|and|of|with|from|waiting|turn|play|bid|call|level|pass|confirm|clubs|diamonds|hearts|spades|trump|double|redouble|asking|attempt|seconds|retrying|tricks|dealer|vulnerable|board|by|auction|n-s|e-w)(?![\p{L}\p{N}])/iu;
 
 /** The visible texts of the page, and the labels and titles of its visible elements. */
 async function shownTexts(page: Page): Promise<string[]> {

@@ -252,7 +252,11 @@ describe("table layout", () => {
 		const table = view("E", BOARD);
 		expect(table.phase).toBe("auction");
 		expect(table.heading).toBe("AUCTION");
-		expect(table.details).toBe("Dealer: North · Vulnerable: Not vulnerable");
+		expect(table.details).toBe("Dealer: North");
+		expect(table.vulnerability).toEqual([
+			{ text: "N-S not vulnerable", vulnerable: false },
+			{ text: "E-W not vulnerable", vulnerable: false },
+		]);
 		const own = seatView(table, "E");
 		expect(own.tags).toEqual([]);
 		expect(own.position).toBe("bottom");
@@ -288,7 +292,11 @@ describe("auction", () => {
 	it("lines up the calls under their seats, starting at the dealer", () => {
 		const board2 = bidding(createBoard(2, DEAL), "1C X P");
 		const table = view("N", board2);
-		expect(table.details).toBe("Dealer: East · Vulnerable: North-South");
+		expect(table.details).toBe("Dealer: East");
+		expect(table.vulnerability).toEqual([
+			{ text: "N-S vulnerable", vulnerable: true },
+			{ text: "E-W not vulnerable", vulnerable: false },
+		]);
 		expect(table.auction).toEqual({
 			seats: ["N", "E", "S", "W"],
 			rows: [["—", "1♣", "Double", "Pass"]],
@@ -466,6 +474,21 @@ describe("the viewer's language", () => {
 		expect(view("E", NORTH_OWN_TURN, hu).prompt).toBe(
 			"Várakozás: Észak játszik.",
 		);
+	});
+
+	it("names the dealer and the vulnerability of each side in Hungarian", () => {
+		const board3 = view("N", createBoard(3, DEAL), hu);
+		expect(board3.heading).toBe("LICITÁLÁS");
+		expect(board3.details).toBe("Osztó: Dél");
+		expect(board3.vulnerability).toEqual([
+			{ text: "É-D mansban", vulnerable: false },
+			{ text: "K-Ny bellben", vulnerable: true },
+		]);
+		expect(
+			view("N", createBoard(4, DEAL), hu).vulnerability.map(
+				(line) => line.text,
+			),
+		).toEqual(["É-D bellben", "K-Ny bellben"]);
 	});
 
 	it("writes the own turn to play, and the absent seats, in Hungarian", () => {

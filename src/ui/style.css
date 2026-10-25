@@ -344,6 +344,49 @@ main:has(> .room) {
 	font-size: 1.05rem;
 }
 
+/* The heading and, right of it, two lines with the vulnerability of each side, together as tall as the heading. */
+.table-status-head {
+	display: flex;
+	gap: 0.6rem;
+	align-items: center;
+}
+
+.table-status-head h3 {
+	font-size: 1.5rem;
+	line-height: 1.2;
+}
+
+.table-vulnerability {
+	display: flex;
+	flex-direction: column;
+	font-size: 0.75rem;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.table-vulnerability [data-vulnerable="true"] {
+	color: var(--red-suit);
+	font-weight: 700;
+}
+
+/* In the sidebar, the dealer and the prompt go below the heading in every language. */
+.table-sidebar .table-status-head {
+	flex-basis: 100%;
+}
+
+/* The narrow sidebar of a phone held sideways fits the heading and both lines in its width. */
+.room[data-layout="sideways"] .table-status-head {
+	gap: 0.3rem;
+}
+
+.room[data-layout="sideways"] .table-status-head h3 {
+	font-size: 1.3rem;
+}
+
+.room[data-layout="sideways"] .table-vulnerability {
+	line-height: 1.05;
+}
+
 .table-prompt {
 	font-weight: 600;
 }
@@ -2706,6 +2749,12 @@ main:has(> .room[data-form="compact"]) {
 
 [data-form="compact"] .table-status h3 {
 	font-size: 0.9rem;
+}
+
+/* A phone shows the board status only between boards; its two vulnerability lines sit side by side. */
+[data-form="compact"] .table-vulnerability {
+	flex-direction: row;
+	gap: 0.6rem;
 }
 
 [data-form="compact"] .table-status .note {

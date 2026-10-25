@@ -67,12 +67,24 @@ export function contractText(contract: Contract): string {
 	return `${contract.level}${strainText(contract.strain)}${contract.doubling}`;
 }
 
-const VULNERABILITY_TEXT: Readonly<Record<Vulnerability, string>> = {
-	none: "Not vulnerable",
-	NS: "North-South",
-	EW: "East-West",
-	both: "Both vulnerable",
-};
+/** One line for each side, North-South first: for example "N-S vulnerable", then "E-W not vulnerable". */
+function vulnerabilityLines(
+	vulnerability: Vulnerability,
+	t: Translate,
+): readonly VulnerabilityLine[] {
+	const ns = vulnerability === "NS" || vulnerability === "both";
+	const ew = vulnerability === "EW" || vulnerability === "both";
+	return [
+		{
+			text: ns ? t("N-S vulnerable") : t("N-S not vulnerable"),
+			vulnerable: ns,
+		},
+		{
+			text: ew ? t("E-W vulnerable") : t("E-W not vulnerable"),
+			vulnerable: ew,
+		},
+	];
+}
 
 /** "=", "+1" or "-2" against the contract; empty for a passed-out board. */
 export function outcomeText(result: BoardResult): string {
@@ -310,6 +322,12 @@ export interface ContractHeader {
 	readonly name: string;
 }
 
+/** The vulnerability of one side, as a line of text. */
+export interface VulnerabilityLine {
+	readonly text: string;
+	readonly vulnerable: boolean;
+}
+
 export interface TableView {
 	readonly phase:
 		| "loading"
@@ -324,7 +342,10 @@ export interface TableView {
 	readonly at: number;
 	/** For example "Board 3", empty before the first deal. */
 	readonly heading: string;
+	/** For example "Dealer: North". */
 	readonly details: string;
+	/** The vulnerability of North-South, then of East-West; empty before the first deal. */
+	readonly vulnerability: readonly VulnerabilityLine[];
 	readonly prompt: string;
 	/** "Waiting for … to come back" while a dealt board waits for the absent seat to act (plan §12 R4); empty otherwise. */
 	readonly waiting: string;
@@ -390,6 +411,7 @@ const EMPTY: Omit<TableView, "phase" | "prompt"> = {
 	at: 0,
 	heading: "",
 	details: "",
+	vulnerability: [],
 	waiting: "",
 	yourTurn: false,
 	seats: [],
@@ -1081,10 +1103,8 @@ export function tableView(input: TableViewInput): TableView {
 		board: board.number,
 		at: board.calls.length + board.cards.length,
 		heading: t("Board {number}", { number: board.number }),
-		details: t("Dealer: {dealer} · Vulnerable: {vulnerable}", {
-			dealer: t(SEAT_NAMES[view.dealer]),
-			vulnerable: t(VULNERABILITY_TEXT[view.vulnerability]),
-		}),
+		details: t("Dealer: {dealer}", { dealer: t(SEAT_NAMES[view.dealer]) }),
+		vulnerability: vulnerabilityLines(view.vulnerability, t),
 		seats,
 		auction: auctionView(view.dealer, view.calls, state.systems, input.bots),
 		contract: contract
@@ -1173,7 +1193,7 @@ export function tableView(input: TableViewInput): TableView {
 			...common,
 			phase: "auction",
 			yourTurn: canAct && actionWait === undefined && turn === seat,
-			heading: "AUCTION",
+			heading: t("AUCTION"),
 			bids,
 			prompt: actionWait ?? t("{seat} to bid", { seat: t(SEAT_NAMES[turn]) }),
 			waiting: actionWait ?? "",

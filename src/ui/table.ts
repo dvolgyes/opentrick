@@ -317,6 +317,17 @@ export function tableSection(
 		button(t("OK"), () => pointsDialog.close(), { className: "points-ok" }),
 	);
 	const heading = el("h3", {});
+	// The vulnerability of each side, one line each, right of the heading.
+	const vulnerability = el("div", {
+		className: "table-vulnerability",
+		attrs: { "data-testid": "vulnerability" },
+	});
+	const statusHead = el(
+		"div",
+		{ className: "table-status-head" },
+		heading,
+		vulnerability,
+	);
 	const details = el("p", { className: "note" });
 	const prompt = el("p", {
 		className: "table-prompt",
@@ -815,7 +826,7 @@ export function tableSection(
 	const status = el(
 		"div",
 		{ className: "table-status" },
-		heading,
+		statusHead,
 		details,
 		prompt,
 		contract,
@@ -845,6 +856,7 @@ export function tableSection(
 		const beside = desktop && phase !== "waiting";
 		const hideDetails = beside && phase !== "auction";
 		heading.hidden = hideDetails;
+		vulnerability.hidden = hideDetails;
 		details.hidden = hideDetails;
 		prompt.hidden = hideDetails;
 		if (beside) {
@@ -1996,8 +2008,8 @@ export function tableSection(
 				{ className: "mobile-round-number" },
 				`${t("Round")} ${view.board}`,
 			),
-			record("ew", "E-W"),
-			record("ns", "N-S"),
+			record("ew", t("E-W")),
+			record("ns", t("N-S")),
 		);
 	}
 
@@ -2029,8 +2041,8 @@ export function tableSection(
 					"tr",
 					{},
 					el("th", {}, ""),
-					el("th", { className: "num" }, "E-W"),
-					el("th", { className: "num" }, "N-S"),
+					el("th", { className: "num" }, t("E-W")),
+					el("th", { className: "num" }, t("N-S")),
 				),
 			),
 			el(
@@ -2072,6 +2084,15 @@ export function tableSection(
 		element.dataset.board = String(view.board);
 		element.dataset.at = String(view.at);
 		heading.textContent = t(view.heading || "Bridge table");
+		vulnerability.replaceChildren(
+			...view.vulnerability.map((line) =>
+				el(
+					"span",
+					{ attrs: { "data-vulnerable": String(line.vulnerable) } },
+					line.text,
+				),
+			),
+		);
 		details.textContent = t(view.details);
 		prompt.textContent = view.prompt;
 		felt.hidden = view.seats.length === 0;

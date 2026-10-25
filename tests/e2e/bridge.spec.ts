@@ -214,10 +214,11 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 		await expect(table(page)).toHaveAttribute("data-phase", "auction");
 		// The desktop auction shows the board status in the sidebar beside the table (src/ui/table.ts placeStatus).
 		await expect(
-			page.getByText("Dealer: North · Vulnerable: Not vulnerable", {
-				exact: true,
-			}),
+			page.getByText("Dealer: North", { exact: true }),
 		).toBeVisible();
+		await expect(page.getByTestId("vulnerability")).toHaveText(
+			"N-S not vulnerableE-W not vulnerable",
+		);
 		await expect(page.getByTestId("deal")).toBeHidden();
 		for (const other of SEATS)
 			await expect(hand(page, other)).toHaveAttribute(
@@ -410,12 +411,14 @@ test("5: the board is played out; the result and the duplicate score agree in ev
 
 test("6: board 2 is dealt automatically, East deals, and all four pass: passed out, no score", async () => {
 	await expectAt(2, 0);
-	for (const seat of SEATS)
+	for (const seat of SEATS) {
 		await expect(
-			tab[seat].getByText("Dealer: East · Vulnerable: North-South", {
-				exact: true,
-			}),
+			tab[seat].getByText("Dealer: East", { exact: true }),
 		).toBeVisible();
+		await expect(tab[seat].getByTestId("vulnerability")).toHaveText(
+			"N-S vulnerableE-W not vulnerable",
+		);
+	}
 	expect(await call(2, 0, "P")).toBe("E");
 	await expectAt(2, 1);
 	// North sits before the dealer and could not call, so a dash; the calls still to come stay empty.

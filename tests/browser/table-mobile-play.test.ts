@@ -74,7 +74,11 @@ function playView(): TableView {
 		board: 1,
 		at: 5,
 		heading: "Board 1",
-		details: "Dealer: North · Vulnerable: None",
+		details: "Dealer: North",
+		vulnerability: [
+			{ text: "N-S not vulnerable", vulnerable: false },
+			{ text: "E-W not vulnerable", vulnerable: false },
+		],
 		prompt: "Your turn to play from dummy.",
 		waiting: "",
 		yourTurn: true,
@@ -789,6 +793,48 @@ describe("desktop auction", () => {
 		expect(hit?.closest("button")).toBe(target);
 		(hit as HTMLElement).click();
 	}
+
+	it.each<Layout>(["desktop", "sideways"])(
+		"shows the vulnerability of each side in two lines right of the heading, together as tall as the heading (%s)",
+		(layout) => {
+			const { section } = renderView(
+				{
+					...undoOpenView({}),
+					heading: "AUCTION",
+					vulnerability: [
+						{ text: "N-S vulnerable", vulnerable: true },
+						{ text: "E-W not vulnerable", vulnerable: false },
+					],
+				},
+				layout,
+			);
+			const heading = section.sidebar.querySelector("h3");
+			const lines = [
+				...section.sidebar.querySelectorAll<HTMLElement>(
+					"[data-testid='vulnerability'] > *",
+				),
+			];
+			expect(heading?.textContent).toBe("AUCTION");
+			expect(lines.map((line) => line.textContent)).toEqual([
+				"N-S vulnerable",
+				"E-W not vulnerable",
+			]);
+			expect(lines.map((line) => line.dataset.vulnerable)).toEqual([
+				"true",
+				"false",
+			]);
+			const head = (heading as HTMLElement).getBoundingClientRect();
+			const [first, second] = lines.map((line) => {
+				expect(line.checkVisibility()).toBe(true);
+				return line.getBoundingClientRect();
+			});
+			if (!first || !second) throw new Error("two lines expected");
+			expect(first.left).toBeGreaterThanOrEqual(head.right);
+			expect(second.top).toBeGreaterThanOrEqual(first.bottom - 0.5);
+			expect(Math.abs(first.top - head.top)).toBeLessThanOrEqual(2);
+			expect(Math.abs(second.bottom - head.bottom)).toBeLessThanOrEqual(2);
+		},
+	);
 
 	it("lets the requester cancel an open undo while no call is legal", () => {
 		const { root, handlers } = renderView(
@@ -1907,7 +1953,7 @@ describe("mobile top bar and round status", () => {
 			undefined,
 			translator("de"),
 		);
-		expect(records(root)).toEqual(["E-W: +2 (1250P)", "N-S: -2 (1000P)"]);
+		expect(records(root)).toEqual(["O-W: +2 (1250P)", "N-S: -2 (1000P)"]);
 	});
 
 	it("puts Reload beside Exit, and each button calls its own handler", () => {
