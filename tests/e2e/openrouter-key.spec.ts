@@ -22,7 +22,7 @@ test("Create checks the key with the first model, and a rejected key keeps the p
 	await expect(page.getByTestId("create")).toBeEnabled();
 	await expect(page.getByTestId("room-controls")).toHaveCount(0);
 	expect(openRouter.requests).toEqual([
-		{ model: "inception/mercury-3", key: "Bearer bad-key" },
+		{ model: "openai/gpt-6-luna", key: "Bearer bad-key" },
 	]);
 	expect(
 		await page.evaluate(() =>
@@ -35,7 +35,7 @@ test("Create checks the key with the first model, and a rejected key keeps the p
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	expect(openRouter.requests.at(-1)).toEqual({
-		model: "inception/mercury-3",
+		model: "openai/gpt-6-luna",
 		key: "Bearer good-key",
 	});
 });
@@ -76,7 +76,7 @@ test("Settings at the table checks a new key, keeps the dialog open on a failure
 	await expect(dialog).toContainText("insufficient balance (402)");
 	await expect(dialog).toBeVisible();
 	expect(openRouter.requests).toEqual([
-		{ model: "inception/mercury-3", key: "Bearer empty-account-key" },
+		{ model: "openai/gpt-6-luna", key: "Bearer empty-account-key" },
 	]);
 
 	openRouter.status = 200;
@@ -84,10 +84,10 @@ test("Settings at the table checks a new key, keeps the dialog open on a failure
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
 	await expect(page.getByTestId("bot-status")).toContainText(
-		"The OpenRouter key works with inception/mercury-3.",
+		"The OpenRouter key works with openai/gpt-6-luna.",
 	);
 	expect(openRouter.requests.at(-1)).toEqual({
-		model: "inception/mercury-3",
+		model: "openai/gpt-6-luna",
 		key: "Bearer good-key",
 	});
 	expect(
@@ -115,13 +115,13 @@ test("a model order saved in Settings at the table goes to the running bots and 
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	const dialog = page.getByTestId("settings-dialog");
 	await dialog
-		.getByRole("button", { name: "Move openai/gpt-6-luna · Responses up" })
+		.getByRole("button", { name: "Move inception/mercury-3 · Responses up" })
 		.click();
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
 	expect(
 		new URL(page.url()).searchParams.get("bot_models")?.split(",").slice(0, 2),
-	).toEqual(["openai/gpt-6-luna", "inception/mercury-3"]);
+	).toEqual(["inception/mercury-3", "openai/gpt-6-luna"]);
 
 	// The next bot call after the host's bid asks the new first model.
 	await expect(
@@ -133,10 +133,10 @@ test("a model order saved in Settings at the table goes to the running bots and 
 	await makeCall(page, "1C");
 	await expect
 		.poll(() => openRouter.requests.slice(before).map(({ model }) => model))
-		.toContain("openai/gpt-6-luna");
+		.toContain("inception/mercury-3");
 	expect(
 		openRouter.requests.slice(before).map(({ model }) => model),
-	).not.toContain("inception/mercury-3");
+	).not.toContain("openai/gpt-6-luna");
 });
 
 test("a seat switched to a bot without a key opens Settings, and the seat becomes a bot after the key works", async ({
@@ -163,7 +163,7 @@ test("a seat switched to a bot without a key opens Settings, and the seat become
 		north.getByRole("button", { name: /Switch to player$/ }),
 	).toBeVisible();
 	expect(openRouter.requests).toEqual([
-		{ model: "inception/mercury-3", key: "Bearer good-key" },
+		{ model: "openai/gpt-6-luna", key: "Bearer good-key" },
 	]);
 });
 test("a key stored in this browser fills a new create page and runs the bots, also after a reload", async ({

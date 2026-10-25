@@ -29,8 +29,8 @@ export const DECISION_BOT_MODELS = [
 ] as const;
 
 export const BOT_MODELS = [
-	"inception/mercury-3",
 	"openai/gpt-6-luna",
+	"inception/mercury-3",
 	...DECISION_BOT_MODELS,
 	"~openai/gpt-sol-latest",
 ] as const;
@@ -91,8 +91,8 @@ export interface BotSetup {
 
 export const DEFAULT_BOT_SETUP: BotSetup = {
 	seats: [],
-	model: "inception/mercury-3",
-	fallbackModel: "openai/gpt-6-luna",
+	model: "openai/gpt-6-luna",
+	fallbackModel: "inception/mercury-3",
 	retries: 5,
 	retryDelayMs: 3000,
 };

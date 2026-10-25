@@ -7,7 +7,7 @@ test.describe.configure({ mode: "serial" });
 
 const BOOKMARK_QUERY = "east=zsdh&west=dvolgyes&host=east";
 const TABLE_LINK =
-	/^http:\/\/localhost:\d+\/\?north=player1&east=zsdh&south=player2&west=dvolgyes&host=east&bot_seats=&bot_model=inception%2Fmercury-3&bot_fallback=openai%2Fgpt-6-luna&bot_retries=5&bot_delay_ms=3000&bot_models=inception%2Fmercury-3%2Copenai%2Fgpt-6-luna%2C%7Eperplexity%2Fpplx-decider-latest%2Copenai%2Fgpt-6-luna-decisions%2Cinception%2Fmercury-decide%2Ctypesafe%2Fjev-1\.14%2C%7Eopenai%2Fgpt-sol-latest#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
+	/^http:\/\/localhost:\d+\/\?north=player1&east=zsdh&south=player2&west=dvolgyes&host=east&bot_seats=&bot_model=openai%2Fgpt-6-luna&bot_fallback=inception%2Fmercury-3&bot_retries=5&bot_delay_ms=3000&bot_models=openai%2Fgpt-6-luna%2Cinception%2Fmercury-3%2C%7Eperplexity%2Fpplx-decider-latest%2Copenai%2Fgpt-6-luna-decisions%2Cinception%2Fmercury-decide%2Ctypesafe%2Fjev-1\.14%2C%7Eopenai%2Fgpt-sol-latest#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
 
 const players: Player[] = [];
 let owner: Player;
@@ -50,7 +50,7 @@ test("create opens the game and selects the host seat in the page URL", async ()
 	await page.getByTestId("create").click();
 	await expect(page).toHaveTitle("Bridge: zsdh (E)");
 	await expect(page).toHaveURL(
-		/\?north=player1&east=zsdh&south=player2&west=dvolgyes&host=east&bot_seats=&bot_model=inception%2Fmercury-3&bot_fallback=openai%2Fgpt-6-luna&bot_retries=5&bot_delay_ms=3000&bot_models=inception%2Fmercury-3%2Copenai%2Fgpt-6-luna%2C%7Eperplexity%2Fpplx-decider-latest%2Copenai%2Fgpt-6-luna-decisions%2Cinception%2Fmercury-decide%2Ctypesafe%2Fjev-1\.14%2C%7Eopenai%2Fgpt-sol-latest&selected_player=E#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/,
+		/\?north=player1&east=zsdh&south=player2&west=dvolgyes&host=east&bot_seats=&bot_model=openai%2Fgpt-6-luna&bot_fallback=inception%2Fmercury-3&bot_retries=5&bot_delay_ms=3000&bot_models=openai%2Fgpt-6-luna%2Cinception%2Fmercury-3%2C%7Eperplexity%2Fpplx-decider-latest%2Copenai%2Fgpt-6-luna-decisions%2Cinception%2Fmercury-decide%2Ctypesafe%2Fjev-1\.14%2C%7Eopenai%2Fgpt-sol-latest&selected_player=E#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/,
 	);
 	await expect(page.getByRole("textbox", { name: "Table link" })).toHaveCount(
 		0,

@@ -28,8 +28,8 @@ import type { Call, Contract } from "../bridge/rules";
 import { BOT_SYSTEM } from "../game/bridge";
 import { SEAT_NAMES, type Seat, seatAfter } from "../protocol";
 
-export const BOT_MODEL = "inception/mercury-3";
-export const BOT_FALLBACK_MODEL = "openai/gpt-6-luna";
+export const BOT_MODEL = "openai/gpt-6-luna";
+export const BOT_FALLBACK_MODEL = "inception/mercury-3";
 
 export type ReasoningEffort = "low" | "medium" | "none";
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { BOT_MODELS } from "../../src/protocol";
+import { BOT_MODEL } from "../../src/bot/strategy";
+import { BOT_MODELS, DEFAULT_BOT_SETUP } from "../../src/protocol";
 import {
 	CUSTOM_MODEL_SLOT,
 	customModelProblem,
@@ -170,5 +171,17 @@ describe("model order", () => {
 			}),
 		).toEqual([BOT_MODELS[1], CUSTOM, ...rotated.slice(1)]);
 		expect(effectiveModelOrder(DEFAULT_SETTINGS)).toEqual([...BOT_MODELS]);
+	});
+});
+
+describe("the default bot model", () => {
+	it("is Luna, with Mercury as the fallback, in the settings and in a new room", () => {
+		expect(effectiveModelOrder(DEFAULT_SETTINGS).slice(0, 2)).toEqual([
+			"openai/gpt-6-luna",
+			"inception/mercury-3",
+		]);
+		expect(DEFAULT_BOT_SETUP.model).toBe("openai/gpt-6-luna");
+		expect(DEFAULT_BOT_SETUP.fallbackModel).toBe("inception/mercury-3");
+		expect(BOT_MODEL).toBe("openai/gpt-6-luna");
 	});
 });

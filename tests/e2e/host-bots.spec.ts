@@ -64,8 +64,8 @@ test("host bots play two consecutive boards from auction through the final trick
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	const roomUrl = new URL(page.url());
 	expect(roomUrl.searchParams.get("bot_seats")).toBe("N,E,S,W");
-	expect(roomUrl.searchParams.get("bot_model")).toBe("inception/mercury-3");
-	expect(roomUrl.searchParams.get("bot_fallback")).toBe("openai/gpt-6-luna");
+	expect(roomUrl.searchParams.get("bot_model")).toBe("openai/gpt-6-luna");
+	expect(roomUrl.searchParams.get("bot_fallback")).toBe("inception/mercury-3");
 	expect(roomUrl.searchParams.get("bot_retries")).toBe("5");
 	expect(roomUrl.searchParams.get("bot_delay_ms")).toBe("3000");
 	expect(roomUrl.search).not.toMatch(/api.?key|test-key/i);
