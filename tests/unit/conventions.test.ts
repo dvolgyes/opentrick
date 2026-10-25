@@ -194,7 +194,9 @@ describe("a hand against the meaning of one call", () => {
 		// 8, two spades: the overcall needs a good five-card suit. The guide gives this hand no call over [1H].
 		["hcp-corrected", "Q2.KJ92.Q874.432", "1H", "1S", false],
 		["hcp", "KQJ74.92.Q87.432", "1H", "1S", true], // 8, a good five-card suit
-		["hcp", "Q2.KJ92.Q874.432", "1H", "P", undefined], // the guide gives no pass over an opening
+		["hcp", "Q2.KJ92.Q874.432", "1H", "7NT", false], // the guide has no 7NT over an opening
+		["hcp", "Q2.KJ92.Q874.432", "1H", "P", true], // a pass is the call of a hand that fits no guide call
+		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "7NT", undefined], // the guide does not describe the position
 		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "2C", undefined], // the guide does not describe the position
 		["hcp", "Q2.KJ92.Q874.432", "1H P 3H P", "4NT", true], // the ask fits any hand
 		["other", "Q2.KJ92.Q874.432", "1H", "1S", undefined],

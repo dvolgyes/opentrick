@@ -726,8 +726,10 @@ function handOf(system: PointSystem, cards: readonly Card[]): Hand | undefined {
 }
 
 /**
- * Whether `cards` fit what `call` shows by the guide of `system` after `calls`. Undefined when the guide gives the call
- * no meaning there. Unlike conventionCalls, this also judges a call in a position where the guide gives some hands no call.
+ * Whether `cards` fit what `call` shows by the guide of `system` after `calls`. In a position that the guide describes, a
+ * call without a meaning does not fit, but a pass does: it is the call of a hand to which the guide gives no call.
+ * Undefined when the guide does not describe the position. Unlike conventionCalls, this also judges a call in a
+ * position where the guide gives some hands no call.
  */
 export function fitsCall(
 	system: PointSystem,
@@ -737,7 +739,11 @@ export function fitsCall(
 ): boolean | undefined {
 	const meaning = callMeaning(system, [...calls, call], calls.length);
 	const hand = handOf(system, cards);
-	if (meaning === undefined || hand === undefined) return undefined;
+	if (hand === undefined) return undefined;
+	if (meaning === undefined)
+		return rules(system) === undefined || position(calls) === undefined
+			? undefined
+			: call === "P";
 	return inRange(hand.points, meaning.range) && fitsShape(hand, meaning.shape);
 }
 

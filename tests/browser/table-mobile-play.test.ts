@@ -2842,6 +2842,7 @@ describe("convention hint", () => {
 				{ call: "2C", text: "2♣" },
 				{ call: "2D", text: "2♦" },
 				{ call: "4NT", text: "4NT" },
+				{ call: "7NT", text: "7NT" },
 				{ call: "P", text: "Pass" },
 			],
 			seats: base.seats.map((player) =>
@@ -2942,35 +2943,46 @@ describe("convention hint", () => {
 		},
 	);
 
-	it("marks an overcall that the hand does not fit, though the guide gives the hand no call", () => {
-		// ♠Q2 ♥KJ92 ♦Q874 ♣432: 8 points, but [1S] over [1H] shows a good five-card suit.
-		const { root } = renderView(
-			bidView(
-				["1H"],
-				[
-					"SQ",
-					"S2",
-					"HK",
-					"HJ",
-					"H9",
-					"H2",
-					"DQ",
-					"D8",
-					"D7",
-					"D4",
-					"C4",
-					"C3",
-					"C2",
-				],
-			),
-			"desktop",
-			undefined,
-			undefined,
-			{ pointSystem: (): PointSystem => "hcp-corrected" },
-		);
-		pickBid(root, "1", "S");
-		expect(hint(root)).toBe("(Unconventional)");
-	});
+	// ♠Q2 ♥KJ92 ♦Q874 ♣432: 8 points. [1S] over [1H] shows a good five-card suit, the guide has no [7NT] there, and
+	// a pass is the call of a hand to which the guide gives no call.
+	it.each([
+		["1", "S", "(Unconventional)"],
+		["7", "NT", "(Unconventional)"],
+		[undefined, "P", undefined],
+	])(
+		"judges %s%s over [1H] where the guide gives the hand no call",
+		(level, strain, expected) => {
+			const { root } = renderView(
+				bidView(
+					["1H"],
+					[
+						"SQ",
+						"S2",
+						"HK",
+						"HJ",
+						"H9",
+						"H2",
+						"DQ",
+						"D8",
+						"D7",
+						"D4",
+						"C4",
+						"C3",
+						"C2",
+					],
+				),
+				"desktop",
+				undefined,
+				undefined,
+				{ pointSystem: (): PointSystem => "hcp-corrected" },
+			);
+			if (level === undefined)
+				root.querySelector<HTMLButtonElement>(".bid-calls .pass")?.click();
+			else pickBid(root, level, strain);
+			expect(confirm(root)?.dataset.call).toBe(`${level ?? ""}${strain}`);
+			expect(hint(root)).toBe(expected);
+		},
+	);
 
 	it("reads the hand with the viewer's point system, in the viewer's language", () => {
 		const { root } = renderView(
