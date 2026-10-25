@@ -94,12 +94,22 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Gib einen OpenRouter-API-Schlüssel ein, um Bots in diesem Browser zu verwenden.",
 		"This browser could not store the OpenRouter API key.":
 			"Dieser Browser konnte den OpenRouter-API-Schlüssel nicht speichern.",
-		"Checking the OpenRouter key with {model}…":
-			"Prüfe den OpenRouter-Schlüssel mit {model}…",
-		"The OpenRouter key works with {model}.":
-			"Der OpenRouter-Schlüssel funktioniert mit {model}.",
-		"The OpenRouter key check failed with each model: {reasons}":
-			"Die Prüfung des OpenRouter-Schlüssels ist mit jedem Modell fehlgeschlagen: {reasons}",
+		"Checking the OpenRouter key and balance…":
+			"Prüfe den OpenRouter-Schlüssel und das Guthaben…",
+		"The OpenRouter key works. Balance: {balance}.":
+			"Der OpenRouter-Schlüssel funktioniert. Guthaben: {balance}.",
+		"The OpenRouter key works. OpenRouter did not report the balance.":
+			"Der OpenRouter-Schlüssel funktioniert. OpenRouter hat das Guthaben nicht gemeldet.",
+		"OpenRouter rejected the API key (401).":
+			"OpenRouter hat den API-Schlüssel abgelehnt (401).",
+		"OpenRouter returned HTTP {status} for the key check.":
+			"OpenRouter hat bei der Schlüsselprüfung HTTP {status} zurückgegeben.",
+		"The browser could not reach OpenRouter.":
+			"Der Browser konnte OpenRouter nicht erreichen.",
+		"The OpenRouter key check timed out.":
+			"Die Prüfung des OpenRouter-Schlüssels hat zu lange gedauert.",
+		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
+			"Das OpenRouter-Guthaben beträgt {balance}. Ein Schlüssel braucht mehr als {minimum}.",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Gib die vier Spielernamen ein und wähle deinen Platz. Dein Browser hostet zuerst; alle am Tisch können übernehmen.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -730,12 +740,22 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Adj meg egy OpenRouter API-kulcsot a botok futtatásához ebben a böngészőben.",
 		"This browser could not store the OpenRouter API key.":
 			"A böngésző nem tudta eltárolni az OpenRouter API-kulcsot.",
-		"Checking the OpenRouter key with {model}…":
-			"Az OpenRouter-kulcs ellenőrzése ezzel: {model}…",
-		"The OpenRouter key works with {model}.":
-			"Az OpenRouter-kulcs működik ezzel: {model}.",
-		"The OpenRouter key check failed with each model: {reasons}":
-			"Az OpenRouter-kulcs ellenőrzése egyik modellel sem sikerült: {reasons}",
+		"Checking the OpenRouter key and balance…":
+			"Az OpenRouter-kulcs és az egyenleg ellenőrzése…",
+		"The OpenRouter key works. Balance: {balance}.":
+			"Az OpenRouter-kulcs működik. Egyenleg: {balance}.",
+		"The OpenRouter key works. OpenRouter did not report the balance.":
+			"Az OpenRouter-kulcs működik. Az OpenRouter nem közölte az egyenleget.",
+		"OpenRouter rejected the API key (401).":
+			"Az OpenRouter elutasította az API-kulcsot (401).",
+		"OpenRouter returned HTTP {status} for the key check.":
+			"Az OpenRouter HTTP {status} választ adott a kulcs ellenőrzésére.",
+		"The browser could not reach OpenRouter.":
+			"A böngésző nem érte el az OpenRoutert.",
+		"The OpenRouter key check timed out.":
+			"Az OpenRouter-kulcs ellenőrzése túllépte az időkorlátot.",
+		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
+			"Az OpenRouter-egyenleg {balance}. Egy kulcshoz több mint {minimum} kell.",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Add meg a négy játékos nevét, majd válassz helyet. A böngésződ lesz először a host; bárki átveheti az asztalnál.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -1758,12 +1778,22 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Nettleseren kunne ikke lagre bordet.",
 		"This browser could not store the OpenRouter API key.":
 			"Nettleseren kunne ikke lagre OpenRouter API-nøkkelen.",
-		"Checking the OpenRouter key with {model}…":
-			"Kontrollerer OpenRouter-nøkkelen med {model}…",
-		"The OpenRouter key works with {model}.":
-			"OpenRouter-nøkkelen virker med {model}.",
-		"The OpenRouter key check failed with each model: {reasons}":
-			"Kontrollen av OpenRouter-nøkkelen mislyktes med alle modellene: {reasons}",
+		"Checking the OpenRouter key and balance…":
+			"Kontrollerer OpenRouter-nøkkelen og saldoen…",
+		"The OpenRouter key works. Balance: {balance}.":
+			"OpenRouter-nøkkelen virker. Saldo: {balance}.",
+		"The OpenRouter key works. OpenRouter did not report the balance.":
+			"OpenRouter-nøkkelen virker. OpenRouter oppga ikke saldoen.",
+		"OpenRouter rejected the API key (401).":
+			"OpenRouter avviste API-nøkkelen (401).",
+		"OpenRouter returned HTTP {status} for the key check.":
+			"OpenRouter svarte HTTP {status} på nøkkelkontrollen.",
+		"The browser could not reach OpenRouter.":
+			"Nettleseren nådde ikke OpenRouter.",
+		"The OpenRouter key check timed out.":
+			"Kontrollen av OpenRouter-nøkkelen tok for lang tid.",
+		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
+			"OpenRouter-saldoen er {balance}. En nøkkel trenger mer enn {minimum}.",
 		"This browser does not store data ({problem}). You can play, but you cannot become the host, and a reload loses this copy of the table.":
 			"Nettleseren lagrer ikke data ({problem}). Du kan spille, men ikke bli vert. Hvis du laster inn siden på nytt, går denne bordkopien tapt.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":

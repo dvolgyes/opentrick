@@ -1,5 +1,4 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { BOT_MODELS } from "../../src/protocol";
 import { mockOpenRouter } from "./openrouter-mock";
 import { Player } from "./player";
 
@@ -131,7 +130,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
 });
 
-test("a custom model needs a key and a working check, then goes first in the model order", async ({
+test("a custom model needs a key that OpenRouter accepts, then goes first in the model order", async ({
 	page,
 }) => {
 	const openRouter = await mockOpenRouter(page);
@@ -154,19 +153,16 @@ test("a custom model needs a key and a working check, then goes first in the mod
 	);
 	expect(openRouter.requests).toEqual([]);
 
-	openRouter.status = 404;
+	openRouter.keyStatus = 401;
 	await key.fill("good-key");
 	await save.click();
 	await expect(dialog.getByRole("status")).toContainText(
-		`The OpenRouter key check failed with each model: ${CUSTOM}: OpenRouter could not find this model (404).`,
+		"OpenRouter rejected the API key (401).",
 	);
 	await expect(dialog).toBeVisible();
-	// The custom model first, then each built-in model.
-	expect(openRouter.requests[0]).toEqual({
-		model: CUSTOM,
-		key: "Bearer good-key",
-	});
-	expect(openRouter.requests).toHaveLength(1 + BOT_MODELS.length);
+	// The key check reads the balance; it asks no model, also not the custom one.
+	expect(openRouter.keyChecks).toEqual(["Bearer good-key"]);
+	expect(openRouter.requests).toEqual([]);
 	expect(
 		await page.evaluate(() => [
 			localStorage.getItem("opentrick.settings.custom-model"),
@@ -174,13 +170,11 @@ test("a custom model needs a key and a working check, then goes first in the mod
 		]),
 	).toEqual([null, null]);
 
-	openRouter.status = 200;
+	openRouter.keyStatus = 200;
 	await save.click();
 	await expect(dialog).toBeHidden();
-	expect(openRouter.requests.at(-1)).toEqual({
-		model: CUSTOM,
-		key: "Bearer good-key",
-	});
+	expect(openRouter.keyChecks).toEqual(["Bearer good-key", "Bearer good-key"]);
+	expect(openRouter.requests).toEqual([]);
 	expect(
 		await page.evaluate(() => [
 			localStorage.getItem("opentrick.settings.custom-model"),

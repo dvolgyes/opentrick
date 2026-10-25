@@ -4,17 +4,12 @@ import {
 	writeHostApiKey,
 } from "../bot/host-key";
 import type { HostBotSettings } from "../bot/host-runner";
-import {
-	checkKeyInModelOrder,
-	checkOpenRouterKey,
-	keyCheckFailureText,
-} from "../bot/key-check";
+import { checkOpenRouterKey } from "../bot/openrouter-balance";
 import { bridgeModule } from "../game/bridge";
 import { newCommandId } from "../ids";
 import { newTableKey } from "../p2p/link";
 import { CANNOT_STORE, createTable, tableIdentity } from "../p2p/table";
 import {
-	type BotModel,
 	botModelOrder,
 	DEFAULT_BOT_SETUP,
 	parseBotSetup,
@@ -263,35 +258,24 @@ export function showCreate(
 		}
 		void checkKeyThenCreate(
 			normalizedApiKey,
-			botModelOrder(botSetup),
 			config,
 			check.seat,
 			hostBotSettings,
 		);
 	});
 
-	/** A key that no model of the order accepts keeps the player on this page, with the reason of each model. */
+	/** A key that OpenRouter rejects, or whose balance is too low, keeps the player on this page with the reason. */
 	async function checkKeyThenCreate(
 		key: string,
-		models: readonly BotModel[],
 		config: RoomConfig,
 		seat: Seat,
 		hostBotSettings?: HostBotSettings,
 	): Promise<void> {
-		const result = await checkKeyInModelOrder(
-			models,
-			(model) => {
-				submit.textContent = deps.t(
-					"Checking the OpenRouter key with {model}…",
-					{ model },
-				);
-				return checkOpenRouterKey(key, model as BotModel);
-			},
-			() => disposed,
-		);
+		submit.textContent = deps.t("Checking the OpenRouter key and balance…");
+		const result = await checkOpenRouterKey(key);
 		if (disposed) return;
 		if (!result.ok) {
-			showErrors([keyCheckFailureText(result.failures, deps.t)]);
+			showErrors([deps.t(result.message.text, result.message.values)]);
 			submit.disabled = false;
 			submit.textContent = deps.t("Create game");
 			return;

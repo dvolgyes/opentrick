@@ -77,11 +77,11 @@ Bot play can cost money because AI model requests may be billed; the table displ
 You bring your own [OpenRouter API key](https://openrouter.ai/).
 Enter the key in the create screen, also when no seat is a bot yet, or in the table's bot controls before enabling a substitute.
 The key is stored in the host browser and is not included in the shared room link.
-When you save a key, the browser sends one test bid request to the first model in the model order.
-If this request fails for any reason, the browser sends the request to the next model, until one model answers or no model is left.
-The key is saved when one model answers.
-If every model fails, the create screen does not create the table, and the table's key dialog stays open; both show the reason for each model.
-These test requests can cost a small amount, which the table's cost display does not include.
+When you save a key, the browser reads the key and its balance from OpenRouter, without a model request, so the check costs nothing.
+The balance is the credits of the account less their usage, and not more than the remaining limit of the key.
+The key is saved when OpenRouter accepts it and its balance is more than $0.10.
+If OpenRouter accepts the key but reports no balance, the key is saved, and the bots find out at their first request.
+Otherwise, the create screen does not create the table, and the Settings dialog stays open; both show the reason.
 If the current host has no usable key, bot play is unavailable until a host with a key takes over or the key is set.
 You can choose the model order and retry settings when creating the room.
 

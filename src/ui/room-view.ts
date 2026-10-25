@@ -4,6 +4,7 @@ import {
 	HostBotRunner,
 	type HostBotSettings,
 } from "../bot/host-runner";
+import { formatUsd } from "../bot/openrouter-balance";
 import { type Board, boardStatus } from "../bridge/engine";
 import type { PointSystem } from "../bridge/hand-points";
 import { type BuildInfo, formatBuildDate } from "../build";
@@ -398,7 +399,7 @@ export function showRoom(
 	 * resumes the bots that a low balance paused, and switches the seat that waited for a key.
 	 */
 	function applySettings({
-		checkedModel,
+		checkedKey,
 		modelOrderChanged,
 	}: SavedSettings): void {
 		const apiKey = readHostApiKey(deps.browser);
@@ -423,10 +424,15 @@ export function showRoom(
 		if (modelOrderChanged) rememberBotModels(modelOrder);
 		if (modelOrderChanged || apiKey !== current.apiKey)
 			botRunner?.updateSettings(botSettings);
-		if (checkedModel !== undefined) {
-			botStatus.textContent = deps.t("The OpenRouter key works with {model}.", {
-				model: checkedModel,
-			});
+		if (checkedKey !== undefined) {
+			botStatus.textContent =
+				checkedKey.balanceUsd === undefined
+					? deps.t(
+							"The OpenRouter key works. OpenRouter did not report the balance.",
+						)
+					: deps.t("The OpenRouter key works. Balance: {balance}.", {
+							balance: formatUsd(checkedKey.balanceUsd),
+						});
 			if (botBalancePaused) {
 				botBalancePaused = false;
 				setBotsPaused(false);

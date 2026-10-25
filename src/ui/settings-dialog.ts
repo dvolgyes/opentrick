@@ -3,13 +3,9 @@ import {
 	readHostApiKey,
 	writeHostApiKey,
 } from "../bot/host-key";
-import {
-	checkKeyInModelOrder,
-	checkOpenRouterKey,
-	keyCheckFailureText,
-} from "../bot/key-check";
+import { checkOpenRouterKey } from "../bot/openrouter-balance";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
-import { type BotModel, botModelLabel } from "../protocol";
+import { botModelLabel } from "../protocol";
 import type { AppDeps } from "./deps";
 import { button, el } from "./dom";
 import { languageSelect, saveLanguage } from "./language-control";
@@ -60,16 +56,21 @@ export interface SettingsDialog {
 	open(): void;
 }
 
+/** A new OpenRouter key that the check accepted, with its balance in USD (undefined: OpenRouter reported none). */
+export interface CheckedKey {
+	readonly balanceUsd: number | undefined;
+}
+
 /** What a Save changed that a running table must apply. */
 export interface SavedSettings {
-	/** The model that accepted a new OpenRouter key or custom model; undefined when Save checked nothing. */
-	readonly checkedModel: string | undefined;
+	/** Undefined when Save checked no key. */
+	readonly checkedKey: CheckedKey | undefined;
 	readonly modelOrderChanged: boolean;
 }
 
 /**
- * The player's own settings, kept in this browser. Save checks a new OpenRouter key, or a custom model, with one
- * request before it stores anything; a failed check keeps the dialog open with the reason. A new language reloads the
+ * The player's own settings, kept in this browser. Save checks a new OpenRouter key and its balance before it stores
+ * anything; a failed check keeps the dialog open with the reason. A new language reloads the
  * page; any other change calls `saved`, so the page can apply it.
  */
 export function settingsDialog(
@@ -342,29 +343,18 @@ export function settingsDialog(
 			customModel: model,
 			modelOrder: resolveModelOrder(order, model),
 		};
-		const changed = key !== storedKey || model !== stored.customModel;
-		let checkedModel: string | undefined;
-		if (key !== "" && changed) {
-			// The models in the order of the list, a custom model in its place; the first one that answers checks the key.
+		let checkedKey: CheckedKey | undefined;
+		if (key !== "" && key !== storedKey) {
 			save.disabled = true;
-			const result = await checkKeyInModelOrder(
-				effectiveModelOrder(settings),
-				(checked) => {
-					status.textContent = t("Checking the OpenRouter key with {model}…", {
-						model: checked,
-					});
-					// The request sends the model id as text; BotModel only names the built-in models.
-					return checkOpenRouterKey(key, checked as BotModel);
-				},
-				() => attempt !== current,
-			);
+			status.textContent = t("Checking the OpenRouter key and balance…");
+			const result = await checkOpenRouterKey(key);
 			if (attempt !== current) return;
 			save.disabled = false;
 			if (!result.ok) {
-				status.textContent = keyCheckFailureText(result.failures, t);
+				status.textContent = t(result.message.text, result.message.values);
 				return;
 			}
-			checkedModel = result.model;
+			checkedKey = { balanceUsd: result.balanceUsd };
 		}
 		try {
 			writeHostApiKey(deps.browser, key);
@@ -379,7 +369,7 @@ export function settingsDialog(
 		if (languageChanged) reload();
 		else
 			saved({
-				checkedModel,
+				checkedKey,
 				modelOrderChanged:
 					effectiveModelOrder(settings).join(",") !==
 					effectiveModelOrder(stored).join(","),

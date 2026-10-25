@@ -1,9 +1,11 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { mockOpenRouterKey } from "./openrouter-mock";
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, makeCall } from "./room";
 
 /** The bots pass every call and play a random legal card. */
 async function mockBots(page: Page): Promise<void> {
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		const headers = {
 			"access-control-allow-origin": "*",
