@@ -1276,12 +1276,23 @@ main:has(> .room) {
 	gap: 0.4rem;
 }
 
-.bot-spend-counter {
+/* In a narrow row, the balance goes below the cost. */
+.bot-money {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	column-gap: 0.4rem;
+	min-width: 0;
 	margin-right: auto;
 	margin-left: auto;
+}
+
+/* In a narrow row, an amount also goes below its label. */
+.bot-spend-counter,
+.bot-balance {
 	font-variant-numeric: tabular-nums;
 	font-weight: 700;
-	white-space: nowrap;
+	text-align: center;
 }
 
 .mobile-bot-controls {

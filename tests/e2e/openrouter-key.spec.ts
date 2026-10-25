@@ -111,7 +111,7 @@ test("Settings at the table checks a new key, keeps the dialog open on a failure
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
 	await expect(page.getByTestId("bot-status")).toContainText(
-		"The OpenRouter key works. Balance: $2.50.",
+		"The OpenRouter key works. Balance: $2.5.",
 	);
 	expect(openRouter.keyChecks.at(-1)).toBe("Bearer good-key");
 	expect(openRouter.requests).toEqual([]);
@@ -228,7 +228,8 @@ test("a key stored in this browser fills a new create page and runs the bots, al
 	}
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
-	expect(openRouter.keyChecks).toEqual(["Bearer stored-key"]);
+	// The check at create, then the balance read at the start of each board.
+	expect(openRouter.keyChecks[0]).toBe("Bearer stored-key");
 	await expect.poll(() => openRouter.requests.length).toBeGreaterThan(0);
 	await page.getByRole("button", { name: "Pause bots" }).click();
 	await page.reload();
@@ -240,6 +241,7 @@ test("a key stored in this browser fills a new create page and runs the bots, al
 	expect(new Set(openRouter.requests.map((request) => request.key))).toEqual(
 		new Set(["Bearer stored-key"]),
 	);
+	expect(new Set(openRouter.keyChecks)).toEqual(new Set(["Bearer stored-key"]));
 });
 
 test("a key without its sk-or-v1- start, or with parts of it, gets the full start before the check and the save", async ({
@@ -300,4 +302,34 @@ test("the key is shown as typed, not masked, on the create page and in Settings"
 	for (const [name, value] of SHOWN_KEY_FIELD)
 		await expect(settings).toHaveAttribute(name, value);
 	await expect(settings).toHaveValue(key);
+});
+
+test("the table shows the cost and the balance, and reads the balance again at the start of each board", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	for (const seat of ["N", "E", "S"])
+		await page.locator(`input[name="bot-${seat}"]`).check();
+	await page.locator('input[name="openrouter-key"]').fill("good-key");
+	await page.getByTestId("create").click();
+	const table = page.getByTestId("table");
+	await expect(table).toHaveAttribute("data-board", "1");
+	await expect(page.getByTestId("bot-spend")).toHaveText(
+		/^Cost: \$\d+\.\d{4}$/,
+	);
+	await expect(page.getByTestId("bot-balance")).toHaveText("Balance: $10.0");
+	// The check at create, and the read at the start of board 1.
+	expect(openRouter.keyChecks).toEqual(["Bearer good-key", "Bearer good-key"]);
+
+	// The bots pass, so the host's pass ends board 1 and board 2 starts.
+	openRouter.balance = { limitRemaining: 7.42, credits: 10, usage: 0 };
+	await expect(
+		page.getByTestId("bid-box").getByRole("button", { name: "Pass" }),
+	).toBeEnabled({ timeout: 30_000 });
+	await makeCall(page, "P");
+	await expect(table).toHaveAttribute("data-board", "2", { timeout: 30_000 });
+	await expect(page.getByTestId("bot-balance")).toHaveText("Balance: $7.4");
+	expect(openRouter.keyChecks).toHaveLength(3);
 });

@@ -116,7 +116,7 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await settings.getByRole("button", { name: "Save settings" }).click();
 		await expect(settings).toBeHidden();
 		await expect(page.getByTestId("bot-status")).toContainText(
-			"The OpenRouter key works. Balance: $10.00.",
+			"The OpenRouter key works. Balance: $10.0.",
 		);
 		expect(
 			await page.evaluate(() =>

@@ -98,6 +98,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Prüfe den OpenRouter-Schlüssel und das Guthaben…",
 		"The OpenRouter key works. Balance: {balance}.":
 			"Der OpenRouter-Schlüssel funktioniert. Guthaben: {balance}.",
+		"Cost: {cost}": "Kosten: {cost}",
+		"Balance: {balance}": "Guthaben: {balance}",
 		"The OpenRouter key works. OpenRouter did not report the balance.":
 			"Der OpenRouter-Schlüssel funktioniert. OpenRouter hat das Guthaben nicht gemeldet.",
 		"OpenRouter rejected the API key (401).":
@@ -665,8 +667,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Das gewählte Modell hat eine unbrauchbare Entscheidung geliefert: {detail}. Wähle ein anderes Modell oder setze die Bots fort.",
 		"The bot could not use the model response. Choose another model or resume bots.":
 			"Der Bot konnte die Modellantwort nicht verwenden. Wähle ein anderes Modell oder setze die Bots fort.",
-		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Anzeige mit fünf Dezimalstellen. Genauer Gesamtbetrag laut OpenRouter: {total} USD.",
+		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Anzeige mit vier Dezimalstellen. Genauer Gesamtbetrag laut OpenRouter: {total} USD.",
 	},
 	hu: {
 		Language: "Nyelv",
@@ -744,6 +746,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Az OpenRouter-kulcs és az egyenleg ellenőrzése…",
 		"The OpenRouter key works. Balance: {balance}.":
 			"Az OpenRouter-kulcs működik. Egyenleg: {balance}.",
+		"Cost: {cost}": "Költség: {cost}",
+		"Balance: {balance}": "Egyenleg: {balance}",
 		"The OpenRouter key works. OpenRouter did not report the balance.":
 			"Az OpenRouter-kulcs működik. Az OpenRouter nem közölte az egyenleget.",
 		"OpenRouter rejected the API key (401).":
@@ -1302,8 +1306,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A választott modell használhatatlan döntést adott: {detail}. Válassz másik modellt, vagy folytasd a botokat.",
 		"The bot could not use the model response. Choose another model or resume bots.":
 			"A bot nem tudta használni a modell válaszát. Válassz másik modellt, vagy folytasd a botokat.",
-		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Öt tizedesjegyes kijelzés. Az OpenRouter által jelentett pontos összeg: {total} USD.",
+		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Négy tizedesjegyes kijelzés. Az OpenRouter által jelentett pontos összeg: {total} USD.",
 	},
 	no: {
 		Language: "Språk",
@@ -1782,6 +1786,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Kontrollerer OpenRouter-nøkkelen og saldoen…",
 		"The OpenRouter key works. Balance: {balance}.":
 			"OpenRouter-nøkkelen virker. Saldo: {balance}.",
+		"Cost: {cost}": "Kostnad: {cost}",
+		"Balance: {balance}": "Saldo: {balance}",
 		"The OpenRouter key works. OpenRouter did not report the balance.":
 			"OpenRouter-nøkkelen virker. OpenRouter oppga ikke saldoen.",
 		"OpenRouter rejected the API key (401).":
@@ -1932,8 +1938,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Den valgte modellen ga en ubrukelig avgjørelse: {detail}. Velg en annen modell eller fortsett botene.",
 		"The bot could not use the model response. Choose another model or resume bots.":
 			"Boten kunne ikke bruke svaret fra modellen. Velg en annen modell eller fortsett botene.",
-		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Vist med fem desimaler. Nøyaktig total fra OpenRouter: {total} USD.",
+		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Vist med fire desimaler. Nøyaktig total fra OpenRouter: {total} USD.",
 	},
 	...additionalCatalogs,
 };

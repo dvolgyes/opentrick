@@ -3224,12 +3224,12 @@ const rows: readonly TranslationRow[] = [
 		"De bot kon het antwoord van het model niet gebruiken. Kies een ander model of hervat de bots.",
 	],
 	[
-		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.",
-		"Se muestran cinco decimales. Total exacto informado por OpenRouter: {total} USD.",
-		"Apresentação com cinco casas decimais. Total exato indicado pelo OpenRouter: {total} USD.",
-		"Affichage à cinq décimales. Total exact indiqué par OpenRouter : {total} USD.",
-		"Visualizzazione a cinque decimali. Totale esatto indicato da OpenRouter: {total} USD.",
-		"Weergave met vijf decimalen. Exact totaal volgens OpenRouter: {total} USD.",
+		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.",
+		"Se muestran cuatro decimales. Total exacto informado por OpenRouter: {total} USD.",
+		"Apresentação com quatro casas decimais. Total exato indicado pelo OpenRouter: {total} USD.",
+		"Affichage à quatre décimales. Total exact indiqué par OpenRouter : {total} USD.",
+		"Visualizzazione a quattro decimali. Totale esatto indicato da OpenRouter: {total} USD.",
+		"Weergave met vier decimalen. Exact totaal volgens OpenRouter: {total} USD.",
 	],
 	[
 		"Checking the OpenRouter key and balance…",
@@ -3294,6 +3294,22 @@ const rows: readonly TranslationRow[] = [
 		"Le solde OpenRouter est de {balance}. Une clé nécessite plus de {minimum}.",
 		"Il saldo OpenRouter è {balance}. Una chiave richiede più di {minimum}.",
 		"Het OpenRouter-saldo is {balance}. Een sleutel heeft meer dan {minimum} nodig.",
+	],
+	[
+		"Cost: {cost}",
+		"Coste: {cost}",
+		"Custo: {cost}",
+		"Coût : {cost}",
+		"Costo: {cost}",
+		"Kosten: {cost}",
+	],
+	[
+		"Balance: {balance}",
+		"Saldo: {balance}",
+		"Saldo: {balance}",
+		"Solde : {balance}",
+		"Saldo: {balance}",
+		"Saldo: {balance}",
 	],
 ];
 

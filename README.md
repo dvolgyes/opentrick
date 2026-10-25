@@ -74,6 +74,7 @@ The player keeps their seat and stays in the room call while the bot handles bri
 
 OpenRouter is a service that provides access to AI models from many providers through one API.
 Bot play can cost money because AI model requests may be billed; the table displays the accumulated OpenRouter cost as you play.
+Next to the cost, the host's table shows the OpenRouter balance, which it reads again at the start of each board that bots play.
 You bring your own [OpenRouter API key](https://openrouter.ai/).
 Enter the key in the create screen, also when no seat is a bot yet, or in the table's bot controls before enabling a substitute.
 The key is stored in the host browser and is not included in the shared room link.
