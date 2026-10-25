@@ -17,7 +17,8 @@ import { type JsonObject, SEATS, type Seat } from "../../src/protocol";
 import { bidding, call, DEAL } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
-// Plan §12 R4: a game action needs every player at the table; dummy may be away while the cards are played.
+// Plan §12 R4: the first deal needs every player at the table. After it, a call or a card needs only its sender,
+// the seat to act, so the others play on while a player who is not to act is away.
 // A command that waits for a player is marked `waiting`, so the host keeps it for a resend (R3).
 
 const module = createBridgeModule(randomBelowFrom(() => 7));
@@ -100,50 +101,40 @@ describe("the presence rule for game actions", () => {
 		);
 	});
 
-	it("does not deal the next board while the last board's dummy is away", () => {
+	it("deals the next board while a player is away", () => {
 		const done = finished(contract());
-		expect(send(done, "N", dealPayload(ROOM_ID, 2), without("S"))).toEqual({
-			ok: false,
-			reason: "Waiting for South to come back",
-			waiting: true,
-		});
-		expect(send(done, "N", dealPayload(ROOM_ID, 2), SEATS).ok).toBe(true);
+		expect(send(done, "N", dealPayload(ROOM_ID, 2), without("S")).ok).toBe(
+			true,
+		);
 	});
 
-	it("accepts a call only when all four players are present", () => {
+	it("accepts a call from the seat to bid while the other three are away", () => {
 		const board = createBoard(1, DEAL);
 		const payload = actionPayload(ROOM_ID, board, call("1H"));
-		expect(send(stateWith(board), "N", payload, without("E"))).toEqual({
-			ok: false,
-			reason: "Waiting for East to come back",
-			waiting: true,
-		});
-		expect(send(stateWith(board), "N", payload, SEATS).ok).toBe(true);
+		expect(send(stateWith(board), "N", payload, ["N"]).ok).toBe(true);
 	});
 
-	it("plays a card while dummy is away", () => {
+	it("plays a card while the other players are away, also from dummy", () => {
 		const board = contract();
 		const [lead] = legalActions(board, "E");
 		if (!lead) throw new Error("no lead");
-		const result = send(
+		const led = send(
 			stateWith(board),
 			"E",
 			actionPayload(ROOM_ID, board, lead),
-			without("S"),
+			["E"],
 		);
-		expect(result.ok).toBe(true);
+		if (!led.ok) throw new Error(led.reason);
+		const next = led.state.board as unknown as Board;
+		expect(boardStatus(next).actor).toBe("N");
+		const [fromDummy] = legalActions(next, "N");
+		if (!fromDummy) throw new Error("no card in dummy");
+		expect(
+			send(led.state, "N", actionPayload(ROOM_ID, next, fromDummy), ["N"]).ok,
+		).toBe(true);
 	});
 
-	it("names every absent player who is not dummy, in seat order", () => {
-		const board = contract();
-		const [lead] = legalActions(board, "E");
-		if (!lead) throw new Error("no lead");
-		const payload = actionPayload(ROOM_ID, board, lead);
-		expect(send(stateWith(board), "E", payload, ["E", "S"])).toEqual({
-			ok: false,
-			reason: "Waiting for North and West to come back",
-			waiting: true,
-		});
+	it("names every absent player for the first deal, in seat order", () => {
 		expect(send(stateWith(null), "N", dealPayload(ROOM_ID, 1), ["N"])).toEqual({
 			ok: false,
 			reason: "Waiting for East, South and West to come back",

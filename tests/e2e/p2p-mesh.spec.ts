@@ -642,7 +642,7 @@ test("a latecomer whose first offers reach no page that answers rejoins and conn
 	);
 });
 
-test("game actions wait for every player, except dummy during the play (R4)", async ({
+test("game actions wait only for the seat to act; a player who comes back gets what it missed (R4)", async ({
 	browser,
 }) => {
 	test.setTimeout(300_000);
@@ -658,29 +658,20 @@ test("game actions wait for every player, except dummy during the play (R4)", as
 	await players.N.page.waitForTimeout(HOST_LOST_MS + 2_000);
 	await expectCommands(pages, 1);
 
-	// West leaves. North dealt board 1, so North opens the auction; the call waits for West.
+	// West leaves. North dealt board 1, so North, East and South bid before West, and their calls land.
 	await crash(players.W);
 	await expectGone(players.N.page, "W");
-	expect(await act(players.N.page)).toEqual({ ok: true });
-	await expect
-		.poll(
-			async () =>
-				(await view(players.N.page))?.outbox.map((item) => item.waiting),
-			{ timeout: CONNECT_MS },
-		)
-		.toEqual(["Waiting for West to come back"]);
-	expect(await commands(players.N.page)).toBe(1);
+	const others = pagesOf(players, ["N", "E", "S"]);
+	await actInTurn(players.N.page, others, 1);
+	await actInTurn(players.E.page, others, 2);
+	await actInTurn(players.S.page, others, 3);
+	for (const page of others) expect((await view(page))?.outbox).toEqual([]);
 
-	// West returns, and the stored call lands without a new click.
+	// West returns, gets the three calls that it missed, and bids: North declares, South is dummy, and East leads.
 	await reopen(players.W, key, "W");
 	await expectSeated(players.W.page, "W", "N");
 	const all = pagesOf(players, SEATS);
-	await expectCommands(all, 2);
-	expect((await view(players.N.page))?.outbox).toEqual([]);
-
-	// Three passes: North declares, South is dummy, and East leads.
-	await actInTurn(players.E.page, all, 2);
-	await actInTurn(players.S.page, all, 3);
+	await expectCommands(all, 4);
 	await actInTurn(players.W.page, all, 4);
 
 	// Dummy leaves, and the play goes on: East leads, and North plays from dummy.

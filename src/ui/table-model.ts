@@ -305,7 +305,7 @@ export interface TableView {
 	readonly heading: string;
 	readonly details: string;
 	readonly prompt: string;
-	/** "Waiting for … to come back" while a dealt board waits for absent players (plan §12 R4); empty otherwise. */
+	/** "Waiting for … to come back" while a dealt board waits for the absent seat to act (plan §12 R4); empty otherwise. */
 	readonly waiting: string;
 	/** This player can act now. */
 	readonly yourTurn: boolean;
@@ -881,9 +881,10 @@ export function tableView(input: TableViewInput): TableView {
 		input.outbox,
 		t,
 	);
-	// The host refuses a deal or a call unless all four seats are present (plan §12 R4).
+	// The host refuses the first deal unless all four seats are present; later, only the seat to act must be
+	// (plan §12 R4).
 	const allPresent = [...input.present];
-	const dealWait = waitingText(SEATS, allPresent);
+	const dealWait = board ? undefined : waitingText(SEATS, allPresent);
 	const nextBoard = (): NextBoard => {
 		const next = current + 1;
 		return {
@@ -949,14 +950,15 @@ export function tableView(input: TableViewInput): TableView {
 					) as typeof rawCompletedView.hands,
 				}
 			: rawCompletedView;
-	// During play, declarer plays dummy's cards, so dummy may be away.
+	// Only the seat to act must be present. During play, declarer plays dummy's cards, so dummy may be away.
+	const toAct =
+		view.phase === "auction"
+			? view.turn
+			: view.phase === "play"
+				? view.actor
+				: undefined;
 	const actionWait =
-		view.phase === "play"
-			? waitingText(
-					SEATS.filter((owner) => owner !== view.dummy),
-					allPresent,
-				)
-			: dealWait;
+		toAct === undefined ? undefined : waitingText([toAct], allPresent);
 	const legal = canAct && actionWait === undefined ? view.legal : [];
 	const playable = new Set(
 		legal.flatMap((action: Action) =>
@@ -1124,8 +1126,8 @@ export function tableView(input: TableViewInput): TableView {
 		return {
 			...common,
 			phase: "complete",
-			prompt: dealWait ?? "",
-			waiting: dealWait ?? "",
+			prompt: "",
+			waiting: "",
 			scoring: {
 				contract: contract ?? undefined,
 				compactOutcome: contract ? (viewerWon ? "WON" : "LOST") : "PASSED OUT",

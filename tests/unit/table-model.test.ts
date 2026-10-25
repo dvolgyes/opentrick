@@ -407,45 +407,43 @@ describe("presence (plan §12 R4)", () => {
 		expect(table.prompt).toBe("Waiting for North and West to come back");
 	});
 
-	it("waits for every seat during the auction", () => {
-		const north = view("N", BOARD, { present: without("S") });
-		expect(north.bids).toEqual([]);
-		expect(north.prompt).toBe("Waiting for South to come back");
+	it("lets the seat to bid bid while the others are away, and waits only while that seat is away", () => {
+		const north = view("N", BOARD, { present: new Set<Seat>(["N"]) });
+		expect(north.bids).not.toEqual([]);
+		expect(north.prompt).toBe("North to bid");
+		const east = view("E", BOARD, { present: without("N") });
+		expect(east.prompt).toBe("Waiting for North to come back");
 	});
 
-	it("lets declarer play while dummy is away, but not while a defender is away", () => {
-		const dummyAway = view("N", LED, { present: without("S") });
-		expect(dummyAway.prompt).toBe("Your turn: play a card from dummy.");
-		expect(playableCards(seatView(dummyAway, "S").hand)).toEqual([
-			"S4",
-			"S3",
-			"S2",
-		]);
-		const defenderAway = view("N", LED, { present: without("W") });
-		expect(defenderAway.prompt).toBe("Waiting for West to come back");
-		expect(playableCards(seatView(defenderAway, "S").hand)).toEqual([]);
+	it("lets declarer play from dummy while dummy and a defender are away", () => {
+		const away = view("N", LED, { present: without("S", "W") });
+		expect(away.prompt).toBe("Your turn: play a card from dummy.");
+		expect(playableCards(seatView(away, "S").hand)).toEqual(["S4", "S3", "S2"]);
+		const declarerAway = view("E", LED, { present: without("N") });
+		expect(declarerAway.prompt).toBe("Waiting for North to come back");
 	});
 
-	it("waits for dummy before the next deal", () => {
+	it("deals the next board while dummy is away", () => {
 		const done = playing(
 			bidding(BOARD, "1S P P P"),
 			"S7 S2 H3 SA SK S6 S3 H2 SQ S5 S4 D2 SJ HJ H4 D3 ST HT H5 D4 S9 H9 H6 D5 S8 H8 D6 C2 HA H7 D7 C3 HK DT D8 C4 HQ DJ D9 C5 DA DQ CT C6 DK CK CJ C7 CA CQ C9 C8",
 		);
 		const table = view("N", done, { present: without("S") });
-		expect(table.nextBoard?.ready).toBe(false);
-		expect(table.prompt).toBe("Waiting for South to come back");
-		expect(table.waiting).toBe("Waiting for South to come back");
+		expect(table.nextBoard?.ready).toBe(true);
+		expect(table.prompt).toBe("");
+		expect(table.waiting).toBe("");
 	});
 
-	it("names the absent players for the waiting overlay only while a board waits for them", () => {
+	it("names the absent seat to act for the waiting overlay, and nobody else", () => {
 		expect(view("E", null, { present: without("N") }).waiting).toBe("");
-		expect(view("N", BOARD, { present: without("S") }).waiting).toBe(
-			"Waiting for South to come back",
+		expect(view("N", BOARD, { present: without("S") }).waiting).toBe("");
+		expect(view("E", BOARD, { present: without("N") }).waiting).toBe(
+			"Waiting for North to come back",
 		);
 		expect(view("N", BOARD).waiting).toBe("");
-		expect(view("N", LED, { present: without("S") }).waiting).toBe("");
-		expect(view("N", LED, { present: without("W") }).waiting).toBe(
-			"Waiting for West to come back",
+		expect(view("N", LED, { present: without("S", "W") }).waiting).toBe("");
+		expect(view("W", LED, { present: without("N") }).waiting).toBe(
+			"Waiting for North to come back",
 		);
 	});
 });

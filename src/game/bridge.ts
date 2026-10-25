@@ -54,10 +54,10 @@ import type { ApplyContext, ApplyResult, GameModule } from "./module";
  * held the card (dummy when declarer plays from dummy), `{kind: "media", seat, version}` and
  * `{kind: "system", seat, system}`.
  *
- * A deal or a call needs all four players present (`ApplyContext.present`); a card needs all but dummy,
- * because declarer plays dummy's cards. A chat message, a call status or a bidding system needs nobody. The rules
- * come first, so an action that the rules reject keeps its own reason; an action that only waits for a player is
- * marked `waiting`.
+ * The first deal needs all four players present (`ApplyContext.present`). A later deal, a call or a card needs
+ * nobody else: only the seat to act sends a call or a card, so the game stops only while that seat is away. A chat
+ * message, a call status or a bidding system needs nobody. The rules come first, so an action that the rules reject
+ * keeps its own reason; an action that only waits for a player is marked `waiting`.
  */
 
 export type BridgeState = {
@@ -608,7 +608,7 @@ function applyDeal(
 	)
 		return reject(`board ${current.number} is not over`);
 	if (requested !== next) return reject(`the next board is board ${next}`);
-	const waiting = absence(SEATS, present);
+	const waiting = current ? undefined : absence(SEATS, present);
 	if (waiting) return waiting;
 	const board = createBoard(next, dealCards(randomBelow));
 	return accept(
@@ -636,12 +636,9 @@ function applyTableAction(
 		return reject(
 			payload.type === "call" ? "not a valid call" : "not a valid card",
 		);
-	const { turn: hand, dummy } = boardStatus(board);
+	const { turn: hand } = boardStatus(board);
 	const applied = applyAction(board, context.seat, action);
 	if (!applied.ok) return reject(applied.reason);
-	const needed = SEATS.filter((seat) => seat !== dummy);
-	const waiting = absence(needed, context.present);
-	if (waiting) return waiting;
 	const next = applied.board;
 	const result = scoreBoard(next);
 	const event =

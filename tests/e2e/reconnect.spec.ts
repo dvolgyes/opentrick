@@ -224,7 +224,7 @@ test("2: a follower that crashes, or reloads, gets the messages it missed, each 
 	await expectTranscripts();
 });
 
-test("3: the host crashes mid-auction; a player clicks Make me the host; the old host reopens, follows, and the auction goes on", async () => {
+test("3: the host crashes mid-auction; a player clicks Make me the host; the auction goes on until West is to bid; the old host reopens, follows, and bids", async () => {
 	test.setTimeout(180_000);
 	expect(await call(1, 0, "1C")).toBe("N");
 	await expectAt(1, 1);
@@ -234,25 +234,22 @@ test("3: the host crashes mid-auction; a player clicks Make me the host; the old
 	await expect(become).toBeEnabled({ timeout: BUTTON_LATEST_MS });
 	await become.click();
 	expect(await commonHost()).toBe("E");
-	// The new host keeps the board, but the auction waits for West (R4).
-	await expectAt(1, 1);
-	for (const seat of openSeats())
+	// The new host keeps the board, and East and South bid while West is away (R4).
+	expect(await call(1, 1, "P")).toBe("E");
+	expect(await call(1, 2, "P")).toBe("S");
+	// West is to bid, so the auction waits for West, and no open tab asks its player to act.
+	await expectAt(1, 3);
+	for (const seat of openSeats()) {
 		await expect(prompt(tab[seat])).toHaveText(
 			"Waiting for West to come back",
 			{ timeout: CONNECT_MS },
 		);
-	// The bid box keeps its buttons; no call can be chosen or confirmed while the auction waits.
-	await expect(
-		tab.E.getByTestId("bid-box").locator(
-			".bid-levels button:enabled, .bid-calls button:enabled, button.confirm:enabled",
-		),
-	).toHaveCount(0);
+		expect(await tab[seat].title()).not.toMatch(/^TURN - /);
+	}
 
 	await reopen("W");
 	expect(await commonHost()).toBe("E");
 	await expect(tab.W.getByTestId("banner")).toBeHidden({ timeout: CONNECT_MS });
-	expect(await call(1, 1, "P")).toBe("E");
-	expect(await call(1, 2, "P")).toBe("S");
 	expect(await call(1, 3, "P")).toBe("W");
 	await expectAt(1, 4);
 	for (const seat of SEATS) {
@@ -261,7 +258,7 @@ test("3: the host crashes mid-auction; a player clicks Make me the host; the old
 	}
 });
 
-test("4: dummy crashes during the play: declarer plays on; the next board waits for dummy and deals when dummy returns (R4)", async () => {
+test("4: dummy crashes during the play: declarer plays on; the next board is dealt and its auction waits for dummy; dummy returns with everything it missed (R4)", async () => {
 	test.setTimeout(300_000);
 	await crash(DUMMY);
 	for (let at = 4; at < 56; at += 1) {
@@ -279,24 +276,26 @@ test("4: dummy crashes during the play: declarer plays on; the next board waits 
 		await expect(scoringLine(tab[seat])).toHaveText(
 			seat === "N" ? declarers : defendersLine(declarers),
 		);
+	}
+	const sheet = await tab.W.getByTestId("scores").innerText();
+	// After the 10 s countdown, the host deals board 2 without a click while South is away. East deals board 2
+	// and opens; South is next, so the auction waits for South.
+	expect(await call(2, 0, "1D")).toBe("E");
+	await expectAt(2, 1);
+	for (const seat of openSeats())
 		await expect(prompt(tab[seat])).toHaveText(
 			"Waiting for South to come back",
+			{ timeout: CONNECT_MS },
 		);
-	}
-	// The 10 s countdown after the board runs out, and board 2 is not dealt while South is away.
-	await expect(tab.W.getByTestId("scoring-countdown")).toBeHidden({
-		timeout: CONNECT_MS,
-	});
-	await tab.W.waitForTimeout(5_000);
-	await expectAt(1, 56);
-	const sheet = await tab.W.getByTestId("scores").innerText();
 
-	// When South is back, the host deals board 2 without a click.
+	// South comes back to the score sheet and the call that it missed, and bids.
 	await reopen(DUMMY);
-	await expectAt(2, 0);
+	await expectAt(2, 1);
 	await expect(tab.S.getByTestId("scores")).toHaveText(sheet, {
 		useInnerText: true,
 	});
+	expect(await call(2, 1, "P")).toBe("S");
+	await expectAt(2, 2);
 	for (const seat of SEATS)
 		await expect(table(tab[seat])).toHaveAttribute("data-phase", "auction");
 });
@@ -322,7 +321,7 @@ test("5: three players crash while one stays; its message waits; after they reop
 		type: "host after the reopen",
 		description: await commonHost(),
 	});
-	await expectAt(2, 0);
+	await expectAt(2, 2);
 	for (const seat of SEATS)
 		await expect(table(tab[seat])).toHaveAttribute("data-phase", "auction");
 });
@@ -347,9 +346,9 @@ test("6: a frozen player shows offline, and after the thaw it has everything it 
 			tab[seat].getByTestId("roster").locator('li[data-state="online"]'),
 		).toHaveCount(4, { timeout: CONNECT_MS });
 	await expect(tab[frozen].getByTestId("banner")).toBeHidden();
-	// Board 2: East deals and calls first; the thawed tab sees the call.
-	expect(await call(2, 0, "1D")).toBe("E");
-	await expectAt(2, 1);
+	// Board 2: East and South have bid, so West bids next; the thawed tab sees the call.
+	expect(await call(2, 2, "P")).toBe("W");
+	await expectAt(2, 3);
 });
 
 test("no uncaught errors", () => {

@@ -34,7 +34,7 @@ Two exceptions concern other services:
 | `seat-timeout` | 3 | A frozen player and a frozen host show offline, their seats free after the timeout, and the thawed tabs are superseded |
 | `election` | 8 | The button at 10 s and the witness rule; a lone seat volunteers when a witness comes after 30 s; the automatic volunteer; two clicks in the same millisecond give one host; a reloading host resumes; a thawed old host steps down; a sibling tab cannot take the host's active seat |
 | `resilience` | 6 | A tracker outage; a browser that blocks site data; a link of another version; a damaged key; expiry after 24 h |
-| `reconnect` | 7 | Plan §12 R1 and R4 through the UI: crash and reload of a follower, a host crash mid-auction, dummy away during the play and a next board that waits for dummy, three players away while one stays, a frozen player |
+| `reconnect` | 7 | Plan §12 R1 and R4 through the UI: crash and reload of a follower, a host crash mid-auction with an auction that goes on until the absent seat is to bid, dummy away during the play and a next board whose auction waits for dummy, three players away while one stays, a frozen player |
 | `bridge` | 7 | The six bridge flows; forced actions come from a modified tab |
 | `call-audio` | 15 | Joining, the switches, Leave, cut links, the keyboard, reloads, four seats at once, a seat that stops hearing, a late microphone, rapid toggles, a vanished tab |
 | `call-video` | 9 | The desktop and phone choosers, the camera preview, the tile states, a blocked camera and Cancel in its preview, video only where both sides agree, See cameras off, a phone next to camera senders, a desktop that becomes compact, the phone leaves |
