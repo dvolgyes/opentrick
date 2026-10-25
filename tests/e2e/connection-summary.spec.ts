@@ -29,12 +29,18 @@ test("a page without a host shows the tracker, relay and connection counts in th
 		});
 		await expect(page.getByTestId("table-status")).not.toBeEmpty();
 		await expect(page.getByTestId("connection-summary")).toHaveText(SUMMARY);
+		// The seat page opens its Network panel, so each tracker and relay line shows without a click.
+		await expect(page.getByTestId("network")).toHaveAttribute("open", "");
+		await expect(
+			page.getByTestId("network").getByText("Trackers reachable"),
+		).toBeVisible();
 
 		await pick(page, "N");
 		await expect(page.getByTestId("banner")).toBeVisible({
 			timeout: CONNECT_MS,
 		});
 		await expect(page.getByTestId("banner-detail")).toHaveText(SUMMARY);
+		await expect(page.getByTestId("network")).not.toHaveAttribute("open");
 		expect(guest.errors).toEqual([]);
 	} finally {
 		await host.close();

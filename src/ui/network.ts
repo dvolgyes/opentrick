@@ -7,8 +7,11 @@ export interface NetworkPanel {
 	render(lines: readonly NetworkLine[]): void;
 }
 
-/** A closed "Network" section; it keeps its open state while its lines update. */
-export function networkPanel(t: Translate = englishTranslator): NetworkPanel {
+/** A "Network" section, closed unless `open`; it keeps its open state while its lines update. */
+export function networkPanel(
+	t: Translate = englishTranslator,
+	open = false,
+): NetworkPanel {
 	const list = el("dl", {});
 	const element = el(
 		"details",
@@ -16,6 +19,7 @@ export function networkPanel(t: Translate = englishTranslator): NetworkPanel {
 		el("summary", {}, t("Network")),
 		list,
 	);
+	element.open = open;
 	return {
 		element,
 		render(lines) {

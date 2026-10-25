@@ -85,7 +85,8 @@ export function showTable(
 		className: "status",
 		attrs: { "data-testid": "connection-summary" },
 	});
-	const network = networkPanel(deps.t);
+	// Open on the seat page, where a page that cannot find the host shows why.
+	const network = networkPanel(deps.t, true);
 
 	const leaveRoom = (): void => {
 		room?.();
