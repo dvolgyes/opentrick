@@ -3,7 +3,7 @@ import { chatModule, chatPayload } from "../../src/game/chat";
 import { newCommandId } from "../../src/ids";
 import { randomNonce } from "../../src/p2p/checks";
 import { deriveHolder, makeTag } from "../../src/p2p/keys";
-import { SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
+import { BEAT_MS, SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
 import type { MeshDiagnostics, MeshHandlers } from "../../src/p2p/mesh";
 import { TableController, type TableMesh } from "../../src/p2p/table";
 import type { Seat } from "../../src/protocol";
@@ -267,15 +267,32 @@ describe("table controller seeding from the setup link", () => {
 		expect(table.view().hosting).toBe(true);
 	});
 
-	it("seeds no table once a beat shows that the table exists", async () => {
+	it("seeds no table while beats show that the table exists", async () => {
 		const table = await rig.start("N");
 		await rig.advance(5_000);
-		await eastBeat();
-
-		await rig.advance(3 * SEED_WAIT_MS);
+		for (let beats = 0; beats < (3 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			await eastBeat();
+			await rig.advance(BEAT_MS);
+		}
 
 		expect(table.view().seat).toBe("N");
 		expect(table.view().hosting).toBe(false);
 		expect(rig.storage.commits).toBe(0);
+	});
+
+	it("seeds the host seat SEED_WAIT_MS after the last beat that showed the table", async () => {
+		const table = await rig.start("N");
+		await rig.advance(5_000);
+		await eastBeat();
+		rig.handlers?.leave("east000000000000000");
+		await settle();
+
+		await rig.advance(SEED_WAIT_MS - 2 * TICK_MS);
+		expect(table.view().hosting).toBe(false);
+		expect(rig.storage.commits).toBe(0);
+
+		await rig.advance(4 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
 	});
 });

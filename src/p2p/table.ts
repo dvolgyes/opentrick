@@ -318,6 +318,8 @@ export class TableController {
 	#bootstrapAllowed = false;
 	/** The setup's host seat, open without a table, until the page seeds it after SEED_WAIT_MS alone. */
 	#seedCandidate: Seated | null = null;
+	/** When a beat or a lobby last showed that the table exists; no seed until SEED_WAIT_MS after it. */
+	#tableSeenAt: number | null = null;
 	#busy = false;
 	#started = false;
 	#stopped = false;
@@ -505,7 +507,7 @@ export class TableController {
 		}
 	}
 
-	/** The open seat is the setup's host seat, and nothing has shown this page a table yet. */
+	/** The open seat is the setup's host seat, and this page has no table of its own. */
 	#seedable(seated: Seated): boolean {
 		return (
 			this.#bootstrapAllowed &&
@@ -516,7 +518,8 @@ export class TableController {
 
 	/**
 	 * Seeds the setup's host seat after SEED_WAIT_MS online without a host (ADR 0005). Until then the seat waits for
-	 * a host like any other seat: a beat or a lobby that shows the table ends the right to seed.
+	 * a host like any other seat: a beat or a lobby that shows the table holds the seed back until SEED_WAIT_MS after
+	 * the last one, so a page whose peers with the table all left does not wait for ever.
 	 */
 	#seedWhenAlone(): void {
 		const candidate = this.#seedCandidate;
@@ -526,6 +529,8 @@ export class TableController {
 			return;
 		}
 		if ((this.#election?.absentMs ?? 0) < SEED_WAIT_MS) return;
+		const seen = this.#tableSeenAt;
+		if (seen !== null && this.#now() - seen < SEED_WAIT_MS) return;
 		this.#seedCandidate = null;
 		this.#busy = true;
 		void this.#seedHost(candidate, candidate.log.seat)
@@ -972,8 +977,8 @@ export class TableController {
 				this.#followerStatus(event.status);
 				break;
 			case "lobby":
-				// A host answered, so the room exists: a seat comes from that host, and the setup link seeds nothing.
-				this.#bootstrapAllowed = false;
+				// A host answered, so the room exists: a seat comes from that host, and the setup link seeds nothing yet.
+				this.#tableSeenAt = this.#now();
 				break;
 			case "seat-result":
 				if (event.result.ok) this.#seatError = null;
@@ -1106,9 +1111,9 @@ export class TableController {
 		switch (message.k) {
 			case "beat":
 				// A beat with an authority or with entries comes from a page that has the table: the setup link seeds
-				// nothing.
+				// nothing yet.
 				if (message.auth !== undefined || (message.pos?.rev ?? 0) > 0)
-					this.#bootstrapAllowed = false;
+					this.#tableSeenAt = this.#now();
 				// The host engine also gets the beat: it is how the host knows that a quiet player is present.
 				this.#step({ type: "beat", now: this.#now(), peer, beat: message });
 				break;

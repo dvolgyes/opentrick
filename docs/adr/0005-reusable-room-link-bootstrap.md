@@ -14,7 +14,8 @@ The host needs to reopen a weekly room even when its local copy has expired or i
 A complete room setup in the URL allows the page to clear its local expiry tombstone when it has no local replica.
 The page shows all four seats while no host lobby is available.
 When a page selects the configured host seat, it seeds the local replica from the URL setup and starts hosting.
-It seeds only after `SEED_WAIT_MS` (30 s) online without a host, and only while no beat with an authority or with entries and no host lobby has reached it (src/p2p/table.ts `#seedWhenAlone`).
+It seeds only after `SEED_WAIT_MS` (30 s) online without a host, and only `SEED_WAIT_MS` after the last beat with an authority or with entries and the last host lobby (src/p2p/table.ts `#seedWhenAlone`).
+So a page whose peers with the table all left does not wait for a host until a reload.
 Until then, the seat waits for a host like any other seat.
 Other pages can select seats and wait for that host.
 The table link carries `selected_player=none`; a player's own URL keeps the player's seat for reload.
@@ -37,6 +38,7 @@ In a reproduction (tests/e2e/host-seat-new-browser.spec.ts), the other three pag
 The seed now waits as the Decision describes.
 
 A page that does not reach the other pages within `SEED_WAIT_MS` still seeds a second table.
+A page whose peers with the table were silent for `SEED_WAIT_MS` also seeds one, and those peers can come back with the table.
 The election then compares the two authorities (src/p2p/authority.ts `compareAuthority`): a higher term wins, and in term 1 the lower tag wins.
 The group that loses can lose its entries since the split, as ADR 0004 describes for split groups.
 The room key remains a bearer capability, so a player who wants to seed a second table can still do so.
