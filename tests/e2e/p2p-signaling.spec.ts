@@ -10,13 +10,14 @@ import { HARNESS_URL as HARNESS } from "./ports";
 import { RelayHub } from "./relay-hub";
 
 /**
- * Discovery through each kind of signaling server (ADR 0004): trackers only, Nostr relays only, and both in one
- * strategy, with fake servers in the test process (tests/e2e/relay-hub.ts). The WebRTC links are real Chrome links
+ * Discovery through each kind of signaling server (ADR 0004): trackers only, Nostr relays only, MQTT brokers only,
+ * and all three in one strategy, with fake servers in the test process (tests/e2e/relay-hub.ts). The WebRTC links are real Chrome links
  * without STUN, so the pages of one machine connect by their host addresses. Each player is one browser context.
  */
 
 const TRACKERS = ["wss://tracker.hub.test"];
 const NOSTR_RELAYS = ["wss://nostr.hub.test"];
+const MQTT_BROKERS = ["wss://mqtt.hub.test/mqtt"];
 const CONNECT_MS = 30_000;
 
 interface Player {
@@ -28,6 +29,18 @@ interface Player {
 interface Relays {
 	readonly tracker: RelayHub | null;
 	readonly nostr: RelayHub | null;
+	readonly mqtt: RelayHub | null;
+}
+
+const NONE = { tracker: null, nostr: null, mqtt: null } as const;
+
+/** One hub of each kind. */
+function allHubs(): { tracker: RelayHub; nostr: RelayHub; mqtt: RelayHub } {
+	return {
+		tracker: new RelayHub("tracker", TRACKERS),
+		nostr: new RelayHub("nostr", NOSTR_RELAYS),
+		mqtt: new RelayHub("mqtt", MQTT_BROKERS),
+	};
 }
 
 const contexts: BrowserContext[] = [];
@@ -91,11 +104,13 @@ async function newPlayer(
 	await context.addInitScript(countLinks);
 	await relays.tracker?.install(context, label);
 	await relays.nostr?.install(context, label);
+	await relays.mqtt?.install(context, label);
 	const page = await context.newPage();
 	page.on("pageerror", (error) => pageErrors.push(error.message));
 	const query = new URLSearchParams({
 		trackers: relays.tracker ? relays.tracker.urls.join(",") : "none",
 		nostr: relays.nostr ? relays.nostr.urls.join(",") : "none",
+		mqtt: relays.mqtt ? relays.mqtt.urls.join(",") : "none",
 		stun: "none",
 	});
 	await page.goto(`${HARNESS}?${query}`);
@@ -145,7 +160,10 @@ async function connectedPair(
 	return { host, guest };
 }
 
-/** The relay counts that each page shows: [trackers open, trackers, Nostr relays open, Nostr relays]. */
+/**
+ * The relay counts that each page shows: [trackers open, trackers, Nostr relays open, Nostr relays, MQTT brokers
+ * open, MQTT brokers].
+ */
 function relayCounts(page: Page): Promise<number[]> {
 	return page.evaluate(() => {
 		const network = (window.lbHarness as Harness).view()?.network;
@@ -155,6 +173,8 @@ function relayCounts(page: Page): Promise<number[]> {
 					network.trackers,
 					network.nostrOpen,
 					network.nostrRelays,
+					network.mqttOpen,
+					network.mqttBrokers,
 				]
 			: [];
 	});
@@ -165,13 +185,10 @@ test.describe("signaling through one kind of server", () => {
 		browser,
 	}) => {
 		const tracker = new RelayHub("tracker", TRACKERS);
-		const { host, guest } = await connectedPair(browser, {
-			tracker,
-			nostr: null,
-		});
+		const { host, guest } = await connectedPair(browser, { ...NONE, tracker });
 		for (const player of [host, guest]) {
 			expect(tracker.received(player.label)).toBeGreaterThan(0);
-			expect(await relayCounts(player.page)).toEqual([1, 1, 0, 0]);
+			expect(await relayCounts(player.page)).toEqual([1, 1, 0, 0, 0, 0]);
 		}
 	});
 
@@ -179,30 +196,37 @@ test.describe("signaling through one kind of server", () => {
 		browser,
 	}) => {
 		const nostr = new RelayHub("nostr", NOSTR_RELAYS);
-		const { host, guest } = await connectedPair(browser, {
-			tracker: null,
-			nostr,
-		});
+		const { host, guest } = await connectedPair(browser, { ...NONE, nostr });
 		for (const player of [host, guest]) {
 			expect(nostr.received(player.label)).toBeGreaterThan(0);
-			expect(await relayCounts(player.page)).toEqual([0, 0, 1, 1]);
+			expect(await relayCounts(player.page)).toEqual([0, 0, 1, 1, 0, 0]);
+		}
+	});
+
+	test("MQTT brokers only: the pages connect, and no tracker or Nostr relay is used", async ({
+		browser,
+	}) => {
+		const mqtt = new RelayHub("mqtt", MQTT_BROKERS);
+		const { host, guest } = await connectedPair(browser, { ...NONE, mqtt });
+		for (const player of [host, guest]) {
+			expect(mqtt.received(player.label)).toBeGreaterThan(0);
+			expect(await relayCounts(player.page)).toEqual([0, 0, 0, 0, 1, 1]);
 		}
 	});
 });
 
-test.describe("signaling through trackers and Nostr relays together", () => {
+test.describe("signaling through trackers, Nostr relays and MQTT brokers together", () => {
 	test("each pair of pages keeps exactly one connection", async ({
 		browser,
 	}) => {
-		const tracker = new RelayHub("tracker", TRACKERS);
-		const nostr = new RelayHub("nostr", NOSTR_RELAYS);
-		const { host, guest } = await connectedPair(browser, { tracker, nostr });
+		const hubs = allHubs();
+		const { host, guest } = await connectedPair(browser, hubs);
 		for (const player of [host, guest]) {
-			expect(tracker.received(player.label)).toBeGreaterThan(0);
-			expect(nostr.received(player.label)).toBeGreaterThan(0);
-			expect(await relayCounts(player.page)).toEqual([1, 1, 1, 1]);
+			for (const hub of Object.values(hubs))
+				expect(hub.received(player.label), hub.kind).toBeGreaterThan(0);
+			expect(await relayCounts(player.page)).toEqual([1, 1, 1, 1, 1, 1]);
 		}
-		// Both kinds go on announcing: in the first 10 s each relay announces at about 0, 0.2, 0.8, 2 and 7 s. A
+		// All kinds go on announcing: in the first 10 s each relay announces at about 0, 0.2, 0.8, 2 and 7 s. A
 		// second link from any of these announces counts, also when the page closed it again.
 		await host.page.waitForTimeout(10_000);
 		for (const player of [host, guest])
@@ -230,12 +254,10 @@ test.describe("signaling through trackers and Nostr relays together", () => {
 		test(`after ${change.name}, a page with half-open relay sockets connects again at once`, async ({
 			browser,
 		}) => {
-			const tracker = new RelayHub("tracker", TRACKERS);
-			const nostr = new RelayHub("nostr", NOSTR_RELAYS);
-			const { host, guest } = await connectedPair(browser, { tracker, nostr });
+			const hubs = allHubs();
+			const { host, guest } = await connectedPair(browser, hubs);
 			// The guest's network changes: its links fail, and its relay sockets look open but pass nothing.
-			tracker.silence(guest.label);
-			nostr.silence(guest.label);
+			for (const hub of Object.values(hubs)) hub.silence(guest.label);
 			await guest.page.evaluate(() =>
 				(window.lbHarness as Harness).dropLinks({ keepRelays: true }),
 			);
@@ -251,7 +273,7 @@ test.describe("signaling through trackers and Nostr relays together", () => {
 				})
 				.toEqual([1, 1]);
 			// New sockets replaced the dead ones at once, not after the reconnect wait.
-			for (const hub of [tracker, nostr]) {
+			for (const hub of Object.values(hubs)) {
 				const opened = hub.lastOpened(guest.label) ?? 0;
 				expect(opened, hub.kind).toBeGreaterThanOrEqual(changedAt);
 				expect(opened - changedAt, hub.kind).toBeLessThan(1_000);

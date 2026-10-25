@@ -128,6 +128,33 @@ function configErrorText(message: string): string {
 		return t("A URL cannot be both a tracker and a Nostr relay: {url}", {
 			url: both[1] as string,
 		});
+	const mqttCount =
+		/^At most (\d+) MQTT broker URLs are allowed \(VITE_MQTT_BROKER_URLS\)\.$/.exec(
+			message,
+		);
+	if (mqttCount)
+		return t(
+			"At most {count} MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).",
+			{ count: mqttCount[1] as string },
+		);
+	const badMqtt =
+		/^Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: (.+)$/.exec(
+			message,
+		);
+	if (badMqtt)
+		return t(
+			"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: {url}",
+			{ url: badMqtt[1] as string },
+		);
+	const mqttShared =
+		/^A URL cannot be both an MQTT broker and a tracker or Nostr relay: (.+)$/.exec(
+			message,
+		);
+	if (mqttShared)
+		return t(
+			"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}",
+			{ url: mqttShared[1] as string },
+		);
 	const stunCount =
 		/^At most (\d+) STUN URLs are allowed \(VITE_STUN_URLS\)\.$/.exec(message);
 	if (stunCount)

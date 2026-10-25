@@ -163,7 +163,7 @@ const clock: Clock = {
 };
 
 /**
- * The build's lists, unless the page URL names others: `trackers`, `nostr` and `stun`, each a list or `none`
+ * The build's lists, unless the page URL names others: `trackers`, `nostr`, `mqtt` and `stun`, each a list or `none`
  * (tests/e2e/p2p-signaling.spec.ts).
  */
 function meshConfig(): MeshConfig {
@@ -173,6 +173,8 @@ function meshConfig(): MeshConfig {
 			query.get("trackers") ?? import.meta.env.VITE_TRACKER_URLS,
 		VITE_NOSTR_RELAY_URLS:
 			query.get("nostr") ?? import.meta.env.VITE_NOSTR_RELAY_URLS,
+		VITE_MQTT_BROKER_URLS:
+			query.get("mqtt") ?? import.meta.env.VITE_MQTT_BROKER_URLS,
 		VITE_STUN_URLS: query.get("stun") ?? import.meta.env.VITE_STUN_URLS,
 	});
 	if (!read.ok) throw new Error(read.error);
@@ -341,10 +343,9 @@ window.lbHarness = {
 			connection.dispatchEvent(new Event("iceconnectionstatechange"));
 			closed++;
 		}
-		const { tracker, nostr } = relaySockets();
 		if (!options?.keepRelays)
-			for (const socket of [...Object.values(tracker), ...Object.values(nostr)])
-				socket.close();
+			for (const sockets of Object.values(relaySockets()))
+				for (const socket of Object.values(sockets)) socket.close();
 		return { closed, peersAfter: mesh.peers().length };
 	},
 
@@ -395,6 +396,7 @@ window.lbHarness = {
 				rtcConfig: config.rtc,
 				trackerUrls: config.trackers,
 				nostrRelayUrls: config.nostrRelays,
+				mqttBrokerUrls: config.mqttBrokers,
 			},
 			tableId,
 		);

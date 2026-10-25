@@ -8,7 +8,11 @@ import {
 	type Page,
 } from "@playwright/test";
 import { loadEnv } from "vite";
-import { parseNostrRelayUrls, parseTrackerUrls } from "../../src/p2p/config";
+import {
+	parseMqttBrokerUrls,
+	parseNostrRelayUrls,
+	parseTrackerUrls,
+} from "../../src/p2p/config";
 import { NetworkSwitch } from "./network";
 
 type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>;
@@ -67,17 +71,20 @@ async function blockedContext(
 	};
 }
 
-/** The trackers and Nostr relays of the build, read from the same files and prefixes as the Vite build. */
+/** The trackers, Nostr relays and MQTT brokers of the build, read from the same files and prefixes as the Vite build. */
 export function buildRelayUrls(): readonly string[] {
 	const env = loadEnv("production", process.cwd(), [
 		"VITE_TRACKER_",
 		"VITE_NOSTR_",
+		"VITE_MQTT_",
 	]);
 	const trackers = parseTrackerUrls(env.VITE_TRACKER_URLS);
 	if (!trackers.ok) throw new Error(trackers.error);
 	const nostr = parseNostrRelayUrls(env.VITE_NOSTR_RELAY_URLS);
 	if (!nostr.ok) throw new Error(nostr.error);
-	return [...trackers.urls, ...nostr.urls];
+	const mqtt = parseMqttBrokerUrls(env.VITE_MQTT_BROKER_URLS);
+	if (!mqtt.ok) throw new Error(mqtt.error);
+	return [...trackers.urls, ...nostr.urls, ...mqtt.urls];
 }
 
 /** How long a failure report waits for one tab; a frozen tab never answers. */

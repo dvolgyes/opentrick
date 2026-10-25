@@ -235,6 +235,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"after connecting": "nach dem Verbinden",
 		"Tracker {host}": "Tracker {host}",
 		"Nostr relay {host}": "Nostr-Relay {host}",
+		"MQTT broker {host}": "MQTT-Broker {host}",
 		"STUN {host}": "STUN {host}",
 		closed: "geschlossen",
 		"heard {seconds} s ago": "vor {seconds} s gehört",
@@ -543,12 +544,19 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Your call": "Dein Gebot",
 		"Trackers reachable": "Tracker erreichbar",
 		"Nostr relays reachable": "Nostr-Relays erreichbar",
+		"MQTT brokers reachable": "MQTT-Broker erreichbar",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Es sind höchstens {count} Nostr-Relay-URLs erlaubt (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
 			"Ungültige wss:-Nostr-Relay-URL in VITE_NOSTR_RELAY_URLS: {url}",
 		"A URL cannot be both a tracker and a Nostr relay: {url}":
 			"Eine URL kann nicht zugleich Tracker und Nostr-Relay sein: {url}",
+		"At most {count} MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).":
+			"Es sind höchstens {count} MQTT-Broker-URLs erlaubt (VITE_MQTT_BROKER_URLS).",
+		"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: {url}":
+			"Ungültige wss:-MQTT-Broker-URL in VITE_MQTT_BROKER_URLS: {url}",
+		"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}":
+			"Eine URL kann nicht zugleich MQTT-Broker und Tracker oder Nostr-Relay sein: {url}",
 		"Openrouter rate limit - I will retry in a moment":
 			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
 		"YOUR TURN TO BID": "DU BIST MIT BIETEN DRAN",
@@ -865,12 +873,19 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Most senki sincs az asztalnál. Hagyd nyitva ezt az oldalt.",
 		"Trackers reachable": "Elérhető trackerek",
 		"Nostr relays reachable": "Elérhető Nostr-továbbítók",
+		"MQTT brokers reachable": "Elérhető MQTT-brókerek",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Legfeljebb {count} Nostr-továbbító URL használható (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
 			"Érvénytelen wss: Nostr-továbbító URL a VITE_NOSTR_RELAY_URLS értékben: {url}",
 		"A URL cannot be both a tracker and a Nostr relay: {url}":
 			"Egy URL nem lehet egyszerre tracker és Nostr-továbbító: {url}",
+		"At most {count} MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).":
+			"Legfeljebb {count} MQTT-bróker URL használható (VITE_MQTT_BROKER_URLS).",
+		"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: {url}":
+			"Érvénytelen wss: MQTT-bróker URL a VITE_MQTT_BROKER_URLS értékben: {url}",
+		"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}":
+			"Egy URL nem lehet egyszerre MQTT-bróker és tracker vagy Nostr-továbbító: {url}",
 		"Direct connections": "Közvetlen kapcsolatok",
 		"Players checked": "Ellenőrzött játékosok",
 		"Pages not reachable directly": "Közvetlenül nem elérhető oldalak",
@@ -885,6 +900,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"after connecting": "kapcsolódás után",
 		"Tracker {host}": "Tracker: {host}",
 		"Nostr relay {host}": "Nostr-továbbító: {host}",
+		"MQTT broker {host}": "MQTT-bróker: {host}",
 		"STUN {host}": "STUN: {host}",
 		closed: "zárva",
 		"heard {seconds} s ago": "{seconds} mp-e jelzett",
@@ -1438,12 +1454,19 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Waiting for the host ({seconds} s)": "Venter på verten ({seconds} s)",
 		"Trackers reachable": "Sporingstjenester nås",
 		"Nostr relays reachable": "Nostr-reléer nås",
+		"MQTT brokers reachable": "MQTT-meglere nås",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Du kan angi maksimalt {count} Nostr-relé-URL-er (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
 			"Ugyldig wss:-Nostr-relé-URL i VITE_NOSTR_RELAY_URLS: {url}",
 		"A URL cannot be both a tracker and a Nostr relay: {url}":
 			"En URL kan ikke være både tracker og Nostr-relé: {url}",
+		"At most {count} MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).":
+			"Du kan angi maksimalt {count} MQTT-megler-URL-er (VITE_MQTT_BROKER_URLS).",
+		"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: {url}":
+			"Ugyldig wss:-MQTT-megler-URL i VITE_MQTT_BROKER_URLS: {url}",
+		"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}":
+			"En URL kan ikke være både MQTT-megler og tracker eller Nostr-relé: {url}",
 		"Direct connections": "Direkte tilkoblinger",
 		"Players checked": "Spillere kontrollert",
 		"Pages not reachable directly": "Sider som ikke kan nås direkte",
@@ -1458,6 +1481,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"after connecting": "etter tilkobling",
 		"Tracker {host}": "Sporingstjeneste {host}",
 		"Nostr relay {host}": "Nostr-relé {host}",
+		"MQTT broker {host}": "MQTT-megler {host}",
 		"STUN {host}": "STUN {host}",
 		closed: "lukket",
 		"heard {seconds} s ago": "hørt for {seconds} s siden",

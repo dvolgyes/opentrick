@@ -264,6 +264,8 @@ describe("networkLines", () => {
 		trackers: 3,
 		nostrOpen: 4,
 		nostrRelays: 5,
+		mqttOpen: 6,
+		mqttBrokers: 7,
 		relays: [],
 		stun: null,
 		webRtc: null,
@@ -316,6 +318,7 @@ describe("networkLines", () => {
 		).toEqual([
 			{ label: "Trackers reachable", value: "2 of 3" },
 			{ label: "Nostr relays reachable", value: "4 of 5" },
+			{ label: "MQTT brokers reachable", value: "6 of 7" },
 			{ label: "Data channel inside this page", value: "checking" },
 			{ label: "Local candidates", value: "checking" },
 			{ label: "Direct connections", value: "3" },
@@ -332,7 +335,7 @@ describe("networkLines", () => {
 		]);
 	});
 
-	it("lists each tracker, Nostr relay and STUN server by host name after the counts", () => {
+	it("lists each tracker, Nostr relay, MQTT broker and STUN server by host name after the counts", () => {
 		const lines = networkLines({
 			network: {
 				...NETWORK,
@@ -355,6 +358,12 @@ describe("networkLines", () => {
 						open: false,
 						heardAgoMs: 61_000,
 					},
+					{
+						kind: "mqtt",
+						url: "wss://broker.example.com:8084/mqtt",
+						open: true,
+						heardAgoMs: 1200,
+					},
 				],
 				stun: [
 					{ url: "stun:stun.example.org:3478", state: "answered" },
@@ -367,9 +376,10 @@ describe("networkLines", () => {
 			persistent: true,
 			persisted: true,
 		});
-		expect(lines.slice(0, 8)).toEqual([
+		expect(lines.slice(0, 10)).toEqual([
 			{ label: "Trackers reachable", value: "2 of 3" },
 			{ label: "Nostr relays reachable", value: "4 of 5" },
+			{ label: "MQTT brokers reachable", value: "6 of 7" },
 			{
 				label: "Tracker tracker.example.org",
 				value: "open, heard 3 s ago",
@@ -379,13 +389,17 @@ describe("networkLines", () => {
 				value: "open, nothing heard yet",
 			},
 			{ label: "Nostr relay down.example.com", value: "closed" },
+			{
+				label: "MQTT broker broker.example.com:8084",
+				value: "open, heard 1 s ago",
+			},
 			{ label: "STUN stun.example.org:3478", value: "answered" },
 			{ label: "STUN other.example.org", value: "no answer" },
 			{ label: "STUN third.example.org", value: "checking" },
 		]);
 	});
 
-	it("sums up the trackers, the Nostr relays, the direct connections and the public address in one line", () => {
+	it("sums up the trackers, the Nostr relays, the MQTT brokers, the direct connections and the public address in one line", () => {
 		expect(
 			connectionSummary({
 				network: NETWORK,
@@ -393,12 +407,12 @@ describe("networkLines", () => {
 				publicAddress: true,
 			}),
 		).toBe(
-			"Trackers reachable: 2 of 3 · Nostr relays reachable: 4 of 5 · Direct connections: 3 · Public address found: yes",
+			"Trackers reachable: 2 of 3 · Nostr relays reachable: 4 of 5 · MQTT brokers reachable: 6 of 7 · Direct connections: 3 · Public address found: yes",
 		);
 		expect(
 			connectionSummary({ network: null, peers: [], publicAddress: false }),
 		).toBe(
-			"Trackers reachable: not started · Nostr relays reachable: not started · Direct connections: 0 · Public address found: no",
+			"Trackers reachable: not started · Nostr relays reachable: not started · MQTT brokers reachable: not started · Direct connections: 0 · Public address found: no",
 		);
 	});
 

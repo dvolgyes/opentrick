@@ -60,12 +60,17 @@ describe("the mesh with trackers, Nostr relays and STUN turned off", () => {
 			const mesh = trysteroMesh(
 				"discovery-off",
 				"k".repeat(43),
-				{ trackers: [], nostrRelays: [], rtc: { iceServers: [] } },
+				{
+					trackers: [],
+					nostrRelays: [],
+					mqttBrokers: [],
+					rtc: { iceServers: [] },
+				},
 				{ monotonic: () => performance.now(), wall: () => Date.now() },
 			)(handlers);
 			mesh.tick();
 			expect(opened).toEqual([]);
-			expect(relaySockets()).toEqual({ tracker: {}, nostr: {} });
+			expect(relaySockets()).toEqual({ tracker: {}, nostr: {}, mqtt: {} });
 			expect(mesh.diagnostics()).toMatchObject({ relays: [], stun: [] });
 			await mesh.leave();
 		} finally {

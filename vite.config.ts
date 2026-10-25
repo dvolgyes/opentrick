@@ -4,8 +4,14 @@ import { playwright } from "@vitest/browser-playwright";
 import { configDefaults, defineConfig } from "vitest/config";
 import type { BrowserCommandContext } from "vitest/node";
 
-// Only the public tracker, Nostr relay and STUN lists may carry these prefixes, because Vite inlines them into the bundle.
-const ENV_PREFIXES = ["VITE_TRACKER_", "VITE_NOSTR_", "VITE_STUN_"];
+// Only the public tracker, Nostr relay, MQTT broker and STUN lists may carry these prefixes, because Vite inlines them
+// into the bundle.
+const ENV_PREFIXES = [
+	"VITE_TRACKER_",
+	"VITE_NOSTR_",
+	"VITE_MQTT_",
+	"VITE_STUN_",
+];
 
 // Chrome cannot turn its touch emulation off again, so this file runs in a browser of its own.
 const TOUCH = "tests/browser/call-device-class.test.ts";

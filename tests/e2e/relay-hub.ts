@@ -1,13 +1,15 @@
 import type { BrowserContext, WebSocketRoute } from "@playwright/test";
+import { generate, type Packet, parser } from "mqtt-packet";
 
 /**
- * Fake signaling servers in the test process: a WebTorrent tracker and a Nostr relay that pass messages only between
+ * Fake signaling servers in the test process: a WebTorrent tracker, a Nostr relay and an MQTT broker that pass
+ * messages only between
  * the browser contexts of one test. Pages reach them through `context.routeWebSocket`, so no message leaves the
  * machine and a test can select which kind of relay a page uses. Each hub keeps only what its protocol needs to
  * route a message; it never reads a session description.
  */
 
-type Kind = "tracker" | "nostr";
+type Kind = "tracker" | "nostr" | "mqtt";
 
 interface Socket {
 	readonly label: string;
@@ -36,6 +38,8 @@ export class RelayHub {
 	readonly #swarms = new Map<string, Map<string, Socket>>();
 	/** Nostr: the subscriptions of each socket, by subscription ID. */
 	readonly #subscriptions = new Map<Socket, Map<string, Subscription>>();
+	/** MQTT: the topics that each socket subscribed to. */
+	readonly #topics = new Map<Socket, Set<string>>();
 	readonly #received = new Map<string, number>();
 
 	constructor(kind: Kind, urls: readonly string[]) {
@@ -77,6 +81,10 @@ export class RelayHub {
 		};
 		this.#sockets.push(socket);
 		// Without connectToServer, the page's socket is open at once and no message leaves the test process.
+		if (this.kind === "mqtt") {
+			this.#acceptMqtt(socket);
+			return;
+		}
 		route.onMessage((message) => {
 			if (socket.dead || typeof message !== "string") return;
 			const data = parse(message);
@@ -86,6 +94,55 @@ export class RelayHub {
 			else this.#nostr(socket, data);
 		});
 		route.onClose(() => this.#subscriptions.delete(socket));
+	}
+
+	/**
+	 * MQTT 3.1.1 at QoS 0: CONNECT, SUBSCRIBE, UNSUBSCRIBE and PINGREQ are answered, and each PUBLISH passes to each
+	 * socket that subscribed to its topic, also to the sender, as a public broker does.
+	 */
+	#acceptMqtt(socket: Socket): void {
+		const topics = new Set<string>();
+		this.#topics.set(socket, topics);
+		const read = parser({ protocolVersion: 4 });
+		read.on("packet", (packet: Packet) => {
+			this.#received.set(socket.label, this.received(socket.label) + 1);
+			if (packet.cmd === "connect")
+				sendMqtt(socket, {
+					cmd: "connack",
+					returnCode: 0,
+					sessionPresent: false,
+				});
+			else if (packet.cmd === "pingreq") sendMqtt(socket, { cmd: "pingresp" });
+			else if (packet.cmd === "subscribe") {
+				for (const { topic } of packet.subscriptions) topics.add(topic);
+				sendMqtt(socket, {
+					cmd: "suback",
+					messageId: packet.messageId,
+					granted: packet.subscriptions.map(() => 0),
+				});
+			} else if (packet.cmd === "unsubscribe") {
+				for (const topic of packet.unsubscriptions) topics.delete(topic);
+				sendMqtt(socket, {
+					cmd: "unsuback",
+					messageId: packet.messageId,
+					granted: [],
+				});
+			} else if (packet.cmd === "publish")
+				for (const [target, subscribed] of this.#topics)
+					if (subscribed.has(packet.topic))
+						sendMqtt(target, {
+							cmd: "publish",
+							topic: packet.topic,
+							payload: packet.payload,
+							qos: 0,
+							retain: false,
+							dup: false,
+						});
+		});
+		socket.route.onMessage((message) => {
+			if (!socket.dead && typeof message !== "string") read.parse(message);
+		});
+		socket.route.onClose(() => this.#topics.delete(socket));
 	}
 
 	/** The WebTorrent announce: register the peer, reply, and pass each offer to another peer, each answer to its peer. */
@@ -169,6 +226,10 @@ export class RelayHub {
 
 function send(socket: Socket, data: unknown): void {
 	if (!socket.dead) socket.route.send(JSON.stringify(data));
+}
+
+function sendMqtt(socket: Socket, packet: Packet): void {
+	if (!socket.dead) socket.route.send(generate(packet));
 }
 
 function parse(text: string): unknown {

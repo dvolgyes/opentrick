@@ -398,8 +398,8 @@ export interface NetworkLine {
 
 /**
  * Counts, yes-or-no facts, the kinds of this page's local candidates (type, protocol and address family) and the
- * host names of the configured trackers, Nostr relays and STUN servers only: never an address, a candidate or a
- * session description.
+ * host names of the configured trackers, Nostr relays, MQTT brokers and STUN servers only: never an address, a
+ * candidate or a session description.
  */
 export function networkLines(input: NetworkInput): NetworkLine[] {
 	const { network } = input;
@@ -411,10 +411,11 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 				`${SEAT_NAMES[peer.seat]} (${Math.round(peer.check.rttMs)} ms)`,
 			);
 	}
-	const [trackers, nostr, direct, publicAddress] = summaryLines(input, t);
+	const [trackers, nostr, mqtt, direct, publicAddress] = summaryLines(input, t);
 	return [
 		trackers,
 		nostr,
+		mqtt,
 		...(network?.relays ?? []).map((relay) => relayLine(relay, t)),
 		...(network?.stun ?? []).map((stun) => ({
 			label: t("STUN {host}", { host: serverName(stun.url) }),
@@ -480,7 +481,7 @@ export function connectionDetail(
 function summaryLines(
 	input: SummaryInput,
 	t: Translate,
-): readonly [NetworkLine, NetworkLine, NetworkLine, NetworkLine] {
+): readonly [NetworkLine, NetworkLine, NetworkLine, NetworkLine, NetworkLine] {
 	const { network } = input;
 	return [
 		{
@@ -493,6 +494,12 @@ function summaryLines(
 			label: t("Nostr relays reachable"),
 			value: network
 				? `${network.nostrOpen} of ${network.nostrRelays}`
+				: t("not started"),
+		},
+		{
+			label: t("MQTT brokers reachable"),
+			value: network
+				? `${network.mqttOpen} of ${network.mqttBrokers}`
 				: t("not started"),
 		},
 		{ label: t("Direct connections"), value: String(input.peers.length) },
@@ -559,10 +566,11 @@ function relayLine(relay: RelayStatus, t: Translate): NetworkLine {
 					seconds: Math.round(relay.heardAgoMs / 1000),
 				});
 	return {
-		label:
-			relay.kind === "tracker"
-				? t("Tracker {host}", { host })
-				: t("Nostr relay {host}", { host }),
+		label: {
+			tracker: t("Tracker {host}", { host }),
+			nostr: t("Nostr relay {host}", { host }),
+			mqtt: t("MQTT broker {host}", { host }),
+		}[relay.kind],
 		value: relay.open ? `${t("open")}, ${heard}` : t("closed"),
 	};
 }

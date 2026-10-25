@@ -8,7 +8,7 @@ The game handles bidding, trick play, duplicate scoring, undo requests, and clai
 **Source:** [github.com/dvolgyes/opentrick](https://github.com/dvolgyes/opentrick)
 
 The game is a static site with no game server or database.
-Players connect through public WebTorrent trackers, then exchange game data directly over WebRTC.
+Players find each other through public WebTorrent trackers, Nostr relays and MQTT brokers, then exchange game data directly over WebRTC.
 One browser coordinates the table at a time; every seated browser stores a copy so another can take over if needed.
 The table key is in the link fragment and is not sent to the web server.
 

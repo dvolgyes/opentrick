@@ -19,8 +19,9 @@ The owner set these targets:
 
 The trust model: the players do not cheat, and the link is the only key.
 The P2P handover permits public WebTorrent trackers and public STUN servers, and forbids our own server, TURN and paid relays.
-On 2026-10-25 the owner added public Nostr relays as a second discovery path.
-The owner required one connection for each pair of pages, also when both paths find the pair, and a quick recovery after a network change (Wi-Fi to mobile data and back).
+On 2026-10-25 the owner added public Nostr relays as a second discovery path, and later on the same day public MQTT brokers as a third.
+For MQTT, the owner chose the mqtt.js client, because a client that many projects use was more important than the size of the bundle or the number of dependencies.
+The owner required one connection for each pair of pages, also when more than one path finds the pair, and a quick recovery after a network change (Wi-Fi to mobile data and back).
 
 A discovery spike gave this evidence (its code is no longer kept):
 
@@ -43,20 +44,27 @@ Link and identity:
 
 Transport:
 
-- Trystero 0.26.0 (`@trystero-p2p/core`, pinned exactly) joins one room per table through the public WebTorrent trackers and the public Nostr relays, with K as the room password.
-  One Trystero strategy (`src/p2p/signaling.ts`) uses both kinds of relay.
-  A strategy has one peer manager, so a pair of pages that both kinds find gets one connection; two strategies would give each pair two connections.
+- Trystero 0.26.0 (`@trystero-p2p/core`, pinned exactly) joins one room per table through the public WebTorrent trackers, the public Nostr relays and the public MQTT brokers, with K as the room password.
+  One Trystero strategy (`src/p2p/signaling.ts`) uses all three kinds of relay.
+  A strategy has one peer manager, so a pair of pages that more than one kind finds gets one connection; a strategy for each kind would give each pair one connection for each kind.
   The torrent part is a copy of `@trystero-p2p/torrent` 0.26.0 in `src/p2p/torrent.ts`, under its MIT notice.
   The copy sends three offers in each announce of the table room instead of one, sends a "stopped" announce when a page leaves a room, and ignores tracker messages that are not well-formed.
   The Nostr part is a copy of `@trystero-p2p/nostr` 0.26.0 in `src/p2p/nostr.ts`, under its MIT notice.
   The copy ignores relay messages that are not well-formed and signs with `@noble/secp256k1` 3.2.0 (pinned exactly).
   It does not check the signatures of received events: each page signs with a new key, so a signature proves no identity, and the room password authenticates the offers.
   Both copies use one socket manager (`src/p2p/relay-socket.ts`), which the mesh can tell to replace a socket.
+  The MQTT part is a copy of `@trystero-p2p/mqtt` 0.26.0 in `src/p2p/mqtt.ts`, under its MIT notice, over mqtt.js 5.16.0 (pinned exactly).
+  The client uses MQTT 3.1.1 at QoS 0 over the browser's WebSocket, also in Node (the bot), with a random client identifier and no credentials, and it keeps no session on the broker.
+  The copy waits a random time below a period that doubles from 3.3 s to 60 s before it connects again, as the socket manager does, and the mesh can tell it to replace a socket.
+  The Nostr and MQTT copies share the topic mapping of the core (`src/p2p/topic-mapping.ts`), which the core does not export.
   An upgrade of Trystero merges the upstream strategies into the copies by hand.
   The relays see only topic hashes that Trystero derives from the app name and the table identifier, the clients' IP addresses and encrypted session descriptions.
-- The default relays (`src/p2p/config.ts`) are the servers that passed every live check: four trackers that relayed an offer between two sockets, and five Nostr relays that passed an ephemeral event between two sockets.
-  `VITE_TRACKER_URLS`, `VITE_NOSTR_RELAY_URLS` and `VITE_STUN_URLS` replace a list, and the value `none` turns a list off, so a test can use one kind of relay only.
-  A URL cannot be in both relay lists, and each list has at most 8 URLs.
+- The default relays (`src/p2p/config.ts`) are the servers that passed every live check: four trackers that relayed an offer between two sockets, five Nostr relays that passed an ephemeral event between two sockets, and two MQTT brokers.
+  The two MQTT brokers (EMQX and HiveMQ) passed a message between two clients and again after a client replaced its socket (October 2026).
+  In the same check, `test.mosquitto.org` did not connect from Chrome, three other public brokers did not connect, and one needed credentials.
+  Two Chrome pages that used only the two default brokers connected in about 2 s, in 3 of 3 trials.
+  `VITE_TRACKER_URLS`, `VITE_NOSTR_RELAY_URLS`, `VITE_MQTT_BROKER_URLS` and `VITE_STUN_URLS` replace a list, and the value `none` turns a list off, so a test can use one kind of relay only.
+  A URL can be in one relay list only, and each list has at most 8 URLs.
   The mesh diagnostics record, for each relay and STUN server, whether it is open and when it last answered.
 - The pages form a full mesh of WebRTC data channels.
   Four actions carry all traffic: `opentrick-ctl` (control, 8 KiB), `opentrick-log` (log replication, 256 KiB), `opentrick-call` (call signaling, 64 KiB) and `opentrick-mesh` (peer lists for the mesh repair, 2 KiB).
@@ -79,12 +87,15 @@ Transport:
   For the next 60 s, a page without links rejoins the table room as soon as a relay is open, without the 10 s wait, because its old offers carry the addresses of the old network.
   A relay socket that looks open but sends nothing for too long is replaced, because after a network change a socket can stay half-open.
   The limit is 90 s for a Nostr relay, which answers each announcement (every 60 s), and 240 s for a tracker, which asked for an announce every 120 s to 180 s in a live check (October 2026).
+  The limit is 90 s for an MQTT broker too, which sends each announcement of the page back to it.
+  mqtt.js also pings a broker that sent no answer for 30 s and closes the socket after 45 s without an answer, so a dead MQTT socket is usually replaced before that limit.
   A Nostr relay that rate-limits the page gets no announcement for a time, so its silence counts only from the end of that rest.
 - Frequent relay checks (a setting, off by default, for an unstable network): every page, host or guest, checks each open Nostr relay that sent nothing for 30 s.
   The check asks for one event with a random ID, which cannot exist, so a live relay answers at once with EOSE; the page then closes the subscription.
   A relay that does not answer in 10 s, and sends nothing else in that time, gets a new socket, so a dead socket is found after about 40 s instead of 90 s.
   A relay that refuses a check (CLOSED) is not checked again while the page is open, and a relay that rests the page gets no check.
   Trackers get no check: the tracker protocol has no request that does not announce the page.
+  MQTT brokers get no check, because the keepalive pings of mqtt.js already find a dead socket.
   In a live check (October 2026), the five default Nostr relays answered the check in 32–115 ms.
 - Silent links (the same setting, owner decision, October 2026): any message from a peer shows that its link works, and every page sends its peer list to each peer every 5 s.
   A visible and online page closes the link of a peer that sent nothing for 15 s, and only that link.
@@ -144,10 +155,11 @@ Call signaling:
 - There is no server and no database: the app is a static site that needs only HTTPS hosting.
   No call message is stored anywhere.
 - Every seated browser stores all four hands; a player can read them with the developer tools.
-- Peers see each other's IP addresses (WebRTC), and the trackers and Nostr relays see the IP addresses of the clients that join.
-- An outage of all trackers and all Nostr relays blocks new joins; the connected pages continue.
-  A network that blocks one kind of relay leaves the other kind.
-- A relay can send forged Nostr events or tracker messages; they cannot connect without the room password, but they can cost a page work.
+- Peers see each other's IP addresses (WebRTC), and the trackers, Nostr relays and MQTT brokers see the IP addresses of the clients that join.
+- An outage of all trackers, all Nostr relays and all MQTT brokers blocks new joins; the connected pages continue.
+  A network that blocks one or two kinds of relay leaves the other kinds.
+- A relay can send forged Nostr events, MQTT messages or tracker messages; they cannot connect without the room password, but they can cost a page work.
+- The browser bundle of mqtt.js (`dist/mqtt.esm.js`, with its own Buffer and stream code) adds about 100 KiB (gzip) to the main chunk of the page, from 188 KiB to 290 KiB (October 2026).
 - A tracker that asks for an announce interval above 240 s gets its socket replaced once per silent period.
 - With the frequent relay checks on, a page sends at most one extra request and one CLOSE to each Nostr relay per 30 s of silence; a relay that applies a stricter rate limit can refuse them, and the page then stops the checks of that relay.
 - Without TURN, a player without a direct path to the host cannot act.
@@ -164,8 +176,10 @@ Call signaling:
 ## Alternatives Considered
 
 - **A hosted realtime backend for discovery only.** Proven, but it keeps a hosted dependency, its quotas and stored call messages, which the owner wanted to avoid.
-- **One Trystero room for the trackers and another for the Nostr relays.** Simple, but each strategy has its own peer manager, so a pair that both find gets two connections, which an e2e mutation check showed.
+- **One Trystero room for each kind of relay.** Simple, but each strategy has its own peer manager, so a pair that more than one kind finds gets one connection for each kind, which an e2e mutation check showed.
 - **The unchanged `@trystero-p2p/nostr` package.** It keeps its own sockets, which the mesh cannot replace after a network change, and it passes relay messages on without a shape check.
+- **The unchanged `@trystero-p2p/mqtt` package.** It is a strategy of its own, so it gives each pair a second connection, and it connects again after a fixed second, also when a broker refuses the page.
+- **An MQTT 3.1.1 client of our own over the WebSocket.** The page needs only a few packet types, and the bundle would be smaller, but the owner preferred mqtt.js, which many projects use.
 - **Three private invite links and a fixed host (the handover's design).** No election, but the owner asked for one shared link and an automatic host.
 - **A majority vote for a new host.** Safer against split groups, but a table with two connected players could never continue; the owner accepted one witness (D3).
 - **Store the last connection's details and try them first after a reconnection.** Session descriptions and ICE candidates contain IP addresses, which the project does not store, and a network change makes them stale.

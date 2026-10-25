@@ -135,6 +135,7 @@ function join(
 			rtcPolyfill,
 			trackerUrls: urls.trackers ?? [],
 			nostrRelayUrls: urls.nostr ?? [],
+			mqttBrokerUrls: [],
 			...(offersPerAnnounce === undefined ? {} : { offersPerAnnounce }),
 		},
 		roomId,
