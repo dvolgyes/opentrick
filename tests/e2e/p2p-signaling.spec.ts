@@ -41,20 +41,31 @@ test.afterEach(async ({}) => {
 });
 
 /**
- * Counts the page's RTCPeerConnections in the "connected" state. Trystero reads the global constructor for each
- * connection, so the subclass sees every one of them.
+ * Counts the page's RTCPeerConnections: `lbLinks` those in the "connected" state now, `lbEverConnected` those that
+ * reached it at any time, also when they closed later. Trystero reads the global constructor for each connection,
+ * so the subclass sees every one of them. Most connections never connect: Trystero makes offers before it knows a
+ * peer.
  */
 function countLinks(): void {
 	const native = window.RTCPeerConnection;
 	const made: RTCPeerConnection[] = [];
+	const connected = new Set<RTCPeerConnection>();
 	window.RTCPeerConnection = class extends native {
 		constructor(configuration?: RTCConfiguration) {
 			super(configuration);
 			made.push(this);
+			this.addEventListener("connectionstatechange", () => {
+				if (this.connectionState === "connected") connected.add(this);
+			});
 		}
 	};
-	(window as unknown as { lbLinks: () => number }).lbLinks = () =>
+	const counters = window as unknown as {
+		lbLinks: () => number;
+		lbEverConnected: () => number;
+	};
+	counters.lbLinks = () =>
 		made.filter((link) => link.connectionState === "connected").length;
+	counters.lbEverConnected = () => connected.size;
 }
 
 async function newPlayer(
@@ -82,6 +93,12 @@ async function newPlayer(
 function links(page: Page): Promise<number> {
 	return page.evaluate(() =>
 		(window as unknown as { lbLinks: () => number }).lbLinks(),
+	);
+}
+
+function everConnected(page: Page): Promise<number> {
+	return page.evaluate(() =>
+		(window as unknown as { lbEverConnected: () => number }).lbEverConnected(),
 	);
 }
 
@@ -172,12 +189,18 @@ test.describe("signaling through trackers and Nostr relays together", () => {
 			expect(nostr.received(player.label)).toBeGreaterThan(0);
 			expect(await relayCounts(player.page)).toEqual([1, 1, 1, 1]);
 		}
-		// Both kinds go on announcing; a second link would appear in this time.
-		await host.page.waitForTimeout(5_000);
+		// Both kinds go on announcing: in the first 10 s each relay announces at about 0, 0.2, 0.8, 2 and 7 s. A
+		// second link from any of these announces counts, also when the page closed it again.
+		await host.page.waitForTimeout(10_000);
 		for (const player of [host, guest])
-			expect([await peers(player.page), await links(player.page)]).toEqual([
-				1, 1,
-			]);
+			expect(
+				[
+					await peers(player.page),
+					await links(player.page),
+					await everConnected(player.page),
+				],
+				player.label,
+			).toEqual([1, 1, 1]);
 	});
 
 	test("after a network change, a page with half-open relay sockets connects again at once", async ({
@@ -210,5 +233,7 @@ test.describe("signaling through trackers and Nostr relays together", () => {
 			expect(opened - changedAt, hub.kind).toBeLessThan(1_000);
 		}
 		expect(await peers(host.page)).toBe(1);
+		// The count keeps a link that closed: the dropped link and its replacement, nothing more.
+		expect(await everConnected(guest.page)).toBe(2);
 	});
 });
