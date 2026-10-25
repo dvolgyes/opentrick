@@ -347,7 +347,7 @@ describe("auction", () => {
 	it("explains each described call by its caller's system, in the cell of the call", () => {
 		const state = {
 			...tableState(bidding(createBoard(2, DEAL), "1NT P 2C P")),
-			systems: { W: "vienna" },
+			systems: { W: "hcp-corrected" },
 		} as const;
 		const auction = view("N", null, {
 			state,
@@ -359,20 +359,20 @@ describe("auction", () => {
 				undefined,
 				"15–17 HCP, balanced",
 				undefined,
-				"13+ Vienna points, Stayman, a 4-card major",
+				"8+ corrected HCP, Stayman, a 4-card major",
 			],
 			[undefined],
 		]);
 	});
 
-	it("explains a Vienna opening with Vienna points and an overcall, and marks a call that the guide does not describe", () => {
+	it("explains an overcall, marks a call that the guide does not describe, and gives no meaning to a scale with only a guide", () => {
 		const state = {
 			...tableState(bidding(BOARD, "1C 1H X P")),
 			systems: { N: "vienna", E: "hcp", S: "hcp", W: "other" },
 		} as const;
 		expect(view("E", null, { state }).auction?.meanings).toEqual([
 			[
-				"19–34 Vienna points, 3+ ♣",
+				undefined,
 				"8–16 HCP, a good 5+ card ♥ suit",
 				"not in the guide",
 				undefined,
@@ -393,25 +393,25 @@ describe("auction", () => {
 	it("explains Blackwood with the slam targets of the caller's system", () => {
 		const state = {
 			...tableState(bidding(BOARD, "1H P 3H P 4NT")),
-			systems: { N: "vienna", E: "hcp", S: "vienna", W: "hcp" },
+			systems: { N: "hcp-corrected", E: "hcp", S: "hcp-corrected", W: "hcp" },
 		} as const;
 		expect(view("E", null, { state }).auction?.meanings[1]).toEqual([
-			"Blackwood, asks for aces: a small slam needs about 53+ Vienna points together, a grand slam about 59+ Vienna points",
+			"Blackwood, asks for aces: a small slam needs about 33+ corrected HCP together, a grand slam about 37+ corrected HCP",
 		]);
 	});
 
-	it("writes half points and a weak two of Four Aces", () => {
-		const state = {
-			...tableState(bidding(BOARD, "P 2S")),
-			systems: { N: "four-aces", E: "four-aces" },
-		} as const;
-		expect(view("S", null, { state }).auction?.meanings).toEqual([
-			[
-				"0–7½ Four Aces points",
-				"3½–7½ Four Aces points, weak two, a good 6-card ♠ suit",
-			],
-		]);
-	});
+	it.each(["vienna", "reith", "four-aces"] as const)(
+		"gives no meanings to the calls of the %s scale, which has only its guide",
+		(system) => {
+			const state = {
+				...tableState(bidding(BOARD, "P 2S P 4NT")),
+				systems: { N: system, E: system, S: system, W: system },
+			} as const;
+			expect(view("S", null, { state }).auction?.meanings).toEqual([
+				[undefined, undefined, undefined, undefined],
+			]);
+		},
+	);
 });
 
 describe("play", () => {

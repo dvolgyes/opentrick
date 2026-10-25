@@ -15,6 +15,7 @@ import {
 	type CallMeaning,
 	callMeaning,
 	conventionCalls,
+	hasRules,
 	type Shape,
 } from "../bridge/conventions";
 import {
@@ -269,8 +270,8 @@ function auctionMeaningsText(
 	return auctionMeanings(board, systems)
 		.map(({ seat, call, system, meaning }) => {
 			const caller = SEAT_NAMES[seat];
-			if (system === null || system === "other")
-				return `${caller} - ${system === null ? "unknown system" : SYSTEM_NAMES.other}: ${call} -> meaning unknown`;
+			if (system === null || !hasRules(system))
+				return `${caller} - ${system === null ? "unknown system" : SYSTEM_NAMES[system]}: ${call} -> meaning unknown`;
 			return `${caller} - ${SYSTEM_NAMES[system]}: ${call} -> ${meaning ?? "not described by the guide"}`;
 		})
 		.join("\n");

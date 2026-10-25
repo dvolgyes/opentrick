@@ -10,6 +10,7 @@ import {
 	ACE_ANSWERS,
 	type CallMeaning,
 	callMeaning,
+	hasRules,
 	type Shape,
 } from "../bridge/conventions";
 import {
@@ -817,10 +818,10 @@ function auctionView(
 ): AuctionView {
 	const before = SEATS.indexOf(dealer);
 	const bySeat = seatSystems(systems, bots ?? []);
-	// A call of a system with a guide gets its meaning, or "not in the guide"; a call of the other system gets none.
+	// A call of a system with rules gets its meaning, or "not in the guide"; a call of the other systems gets none.
 	const meaning = (index: number): string | undefined => {
 		const system = bySeat[seatAfter(dealer, index)];
-		if (system === undefined || system === "other") return undefined;
+		if (system === undefined || !hasRules(system)) return undefined;
 		const found = callMeaning(system, calls, index);
 		return found === undefined
 			? t("not in the guide")

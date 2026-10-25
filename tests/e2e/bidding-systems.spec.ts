@@ -40,7 +40,7 @@ const systemOf = (page: Page, seat: SeatKey): Locator =>
 		.filter({ hasText: `(${seat})` })
 		.locator(".auction-system");
 
-test("each player sees the others' bidding systems and the meaning of their calls, and a change in Settings reaches the other pages", async ({
+test("each player sees the others' bidding systems, the Vienna calls get only the guide, and a change in Settings reaches the other pages", async ({
 	browser,
 	baseURL,
 }) => {
@@ -99,24 +99,20 @@ test("each player sees the others' bidding systems and the meaning of their call
 		await guestPage.keyboard.press("Escape");
 		await expect(guestPage.getByTestId("guide-dialog")).toBeHidden();
 
-		// The host's opening shows its Vienna meaning on the guest's page.
+		// Vienna has only its guide: the host's opening has no meaning on the guest's page.
 		await makeCall(guestPage, "P");
 		await expect(hostPage.locator(".bid-box:visible button.pass")).toBeEnabled({
 			timeout: CONNECT_MS,
 		});
 		await makeCall(hostPage, "1C");
-		const meaning = "19–34 Vienna points, 3+ ♣";
-		const opening = guestPage
-			.locator(".auction:visible button.auction-call")
-			.filter({ hasText: "1♣" });
-		await expect(opening).toHaveAttribute("title", meaning, {
-			timeout: CONNECT_MS,
-		});
-		const shown = guestPage.locator(".call-meaning:popover-open");
-		await opening.click();
-		await expect(shown).toHaveText(meaning);
-		await guestPage.keyboard.press("Escape");
-		await expect(shown).toHaveCount(0);
+		const auction = guestPage.locator(".auction:visible");
+		await expect(auction.locator("td").filter({ hasText: "1♣" })).toHaveCount(
+			1,
+			{ timeout: CONNECT_MS },
+		);
+		await expect(
+			auction.locator("button.auction-call").filter({ hasText: "1♣" }),
+		).toHaveCount(0);
 		expect(guest.errors).toEqual([]);
 	} finally {
 		await guest.close();

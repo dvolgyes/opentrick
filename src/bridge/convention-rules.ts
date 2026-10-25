@@ -6,7 +6,7 @@ import type { PointSystem } from "./hand-points";
  *
  * To change a rule:
  * 1. Change the number here.
- * 2. Change the same line in the guide of each language, src/guides/{guide}_{en,de,hu,no,es,pt,fr,it,nl}.txt.
+ * 2. Change the same line in the guide of each language, src/guides/{milton,milton_corrected}_{en,de,hu,no,es,pt,fr,it,nl}.txt.
  * 3. Run the unit tests. tests/unit/conventions.test.ts fails when a number here and its guide line disagree.
  *
  * Each comment names the guide section and line. A range without `max` has no upper limit ("22 or more points").
@@ -54,8 +54,11 @@ export type RangeKey =
 
 export type Ranges = Readonly<Record<RangeKey, PointRange>>;
 
-/** The systems that a guide describes; "other" has no rules. */
-export type RuleSystem = Exclude<PointSystem, "other">;
+/**
+ * The systems with rules: the Milton scale and its corrected count, which bid the same way. Vienna, Reith and Four
+ * Aces have only their guide text, and "other" has no guide.
+ */
+export type RuleSystem = Extract<PointSystem, "hcp" | "hcp-corrected">;
 
 /** milton_*.txt and milton_corrected_*.txt: the corrected points use the plain HCP ranges. */
 const MILTON = {
@@ -103,104 +106,9 @@ const MILTON = {
 	"slam-grand": { min: 37 }, // "37 points: grand slam."
 } as const satisfies Ranges;
 
-/** vienna_*.txt and reith_*.txt: both scales hold 64 points and share their ranges. */
-const SIXTY_FOUR = {
-	// ## Opening bids
-	"open-pass": { min: 0, max: 18 }, // "0–18 points: [P]"
-	"open-weak-two": { min: 8, max: 18 }, // "8–18 points: weak two"
-	"open-preempt": { min: 8, max: 17 }, // "8–17 points: preempt"
-	"open-suit": { min: 19, max: 34 }, // "19–34 points: [1C] [1D] [1H] [1S]"
-	"open-1NT": { min: 24, max: 28 }, // "24–28 points: [1NT]"
-	"open-2NT": { min: 32, max: 34 }, // "32–34 points: [2NT]"
-	"open-2C": { min: 35 }, // "35 or more points: [2C]"
-	"open-3NT": { min: 40, max: 44 }, // "40–44 points: [3NT]"
-	// ## Responses to one of a suit
-	"suit-pass": { min: 0, max: 9 }, // "0–9 points: [P]"
-	"suit-low": { min: 10, max: 15 }, // "10–15 points: raise partner's major"
-	"suit-invite": { min: 16, max: 20 }, // "16–20 points: invitational"
-	"suit-force": { min: 21 }, // "21 or more points: game forcing"
-	// ## Responses to [1NT]
-	"nt-weak": { min: 0, max: 12 }, // "0–12 points: [P], or a transfer"
-	"nt-stayman": { min: 13 }, // "[2C] (Stayman): 13 or more points"
-	"nt-2NT": { min: 13, max: 15 }, // "[2NT]: 13–15 points, invitational"
-	"nt-3NT": { min: 16, max: 25 }, // "[3NT]: 16–25 points, to play"
-	// ## Responses to [2C]
-	"2c-waiting": { min: 0, max: 12 }, // "[2D]: waiting, 0–12 points"
-	"2c-positive": { min: 13 }, // "[2H] [2S] [3C] [3D]: 13 or more points"
-	"2c-2NT": { min: 13 }, // "[2NT]: 13 or more points, balanced hand"
-	// ## Opening bids, the [2C] line
-	"2c-rebid-2NT": { min: 35, max: 39 }, // "With a balanced 35–39 points, rebid [2NT]"
-	// ## Opener's rebid
-	"rebid-low": { min: 19, max: 23 }, // "19–23 points: [1NT] with a balanced hand"
-	"rebid-mid": { min: 24, max: 28 }, // "24–28 points: a jump raise"
-	"rebid-high": { min: 29, max: 34 }, // "29–34 points: a jump in a new suit"
-	"rebid-2NT": { min: 29, max: 31 }, // "[2NT] with a balanced 29–31 points"
-	// ## Responses to a weak two
-	"weak-2NT": { min: 24 }, // "[2NT]: 24 or more points, asks opener"
-	// ## Competitive bids
-	"overcall-one": { min: 13, max: 26 }, // "An overcall at the one level: 13–26 points"
-	"overcall-two": { min: 16, max: 26 }, // "At the two level: 16–26 points"
-	"overcall-1NT": { min: 24, max: 29 }, // "[1NT] overcall: 24–29 points"
-	takeout: { min: 19 }, // "[X] (takeout): 19 or more points"
-	"takeout-strong": { min: 27 }, // "or any hand with 27 or more points"
-	redouble: { min: 16 }, // "[XX] after partner's opening is doubled: 16 or more points"
-	// ## Targets for the partnership; the [4NT] ask states them
-	"slam-small": { min: 53 }, // "53 points: small slam."
-	"slam-grand": { min: 59 }, // "59 points: grand slam."
-} as const satisfies Ranges;
-
-/** four_aces_*.txt: half points, 7.5 is "7½" in the guide. */
-const FOUR_ACES = {
-	// ## Opening bids
-	"open-pass": { min: 0, max: 7.5 }, // "0–7½ points: [P]"
-	"open-weak-two": { min: 3.5, max: 7.5 }, // "3½–7½ points: weak two"
-	"open-preempt": { min: 3.5, max: 7 }, // "3½–7 points: preempt"
-	"open-suit": { min: 8, max: 14 }, // "8–14 points: [1C] [1D] [1H] [1S]"
-	"open-1NT": { min: 10, max: 11 }, // "10–11 points: [1NT]"
-	"open-2NT": { min: 13, max: 14 }, // "13–14 points: [2NT]"
-	"open-2C": { min: 14.5 }, // "14½ or more points: [2C]"
-	"open-3NT": { min: 16.5, max: 18 }, // "16½–18 points: [3NT]"
-	// ## Responses to one of a suit
-	"suit-pass": { min: 0, max: 3.5 }, // "0–3½ points: [P]"
-	"suit-low": { min: 4, max: 6 }, // "4–6 points: raise partner's major"
-	"suit-invite": { min: 6.5, max: 8 }, // "6½–8 points: invitational"
-	"suit-force": { min: 8.5 }, // "8½ or more points: game forcing"
-	// ## Responses to [1NT]
-	"nt-weak": { min: 0, max: 4.5 }, // "0–4½ points: [P], or a transfer"
-	"nt-stayman": { min: 5 }, // "[2C] (Stayman): 5 or more points"
-	"nt-2NT": { min: 5, max: 6 }, // "[2NT]: 5–6 points, invitational"
-	"nt-3NT": { min: 6.5, max: 10 }, // "[3NT]: 6½–10 points, to play"
-	// ## Responses to [2C]
-	"2c-waiting": { min: 0, max: 4.5 }, // "[2D]: waiting, 0–4½ points"
-	"2c-positive": { min: 5 }, // "[2H] [2S] [3C] [3D]: 5 or more points"
-	"2c-2NT": { min: 5 }, // "[2NT]: 5 or more points, balanced hand"
-	// ## Opening bids, the [2C] line
-	"2c-rebid-2NT": { min: 14.5, max: 16 }, // "With a balanced 14½–16 points, rebid [2NT]"
-	// ## Opener's rebid
-	"rebid-low": { min: 8, max: 9.5 }, // "8–9½ points: [1NT] with a balanced hand"
-	"rebid-mid": { min: 10, max: 11 }, // "10–11 points: a jump raise"
-	"rebid-high": { min: 11.5, max: 14 }, // "11½–14 points: a jump in a new suit"
-	"rebid-2NT": { min: 11.5, max: 12.5 }, // "[2NT] with a balanced 11½–12½ points"
-	// ## Responses to a weak two
-	"weak-2NT": { min: 10 }, // "[2NT]: 10 or more points, asks opener"
-	// ## Competitive bids
-	"overcall-one": { min: 5, max: 10.5 }, // "An overcall at the one level: 5–10½ points"
-	"overcall-two": { min: 6.5, max: 10.5 }, // "At the two level: 6½–10½ points"
-	"overcall-1NT": { min: 10, max: 12 }, // "[1NT] overcall: 10–12 points"
-	takeout: { min: 8 }, // "[X] (takeout): 8 or more points"
-	"takeout-strong": { min: 11 }, // "or any hand with 11 or more points"
-	redouble: { min: 6.5 }, // "[XX] after partner's opening is doubled: 6½ or more points"
-	// ## Targets for the partnership; the [4NT] ask states them
-	"slam-small": { min: 21.5 }, // "21½ points: small slam."
-	"slam-grand": { min: 24 }, // "24 points: grand slam."
-} as const satisfies Ranges;
-
 export const RANGES = {
 	hcp: MILTON,
 	"hcp-corrected": MILTON,
-	vienna: SIXTY_FOUR,
-	reith: SIXTY_FOUR,
-	"four-aces": FOUR_ACES,
 } as const satisfies Readonly<Record<RuleSystem, Ranges>>;
 
 /** A suit is good with at least `count` of the `honours`, for example two of A K Q. */

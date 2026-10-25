@@ -2984,6 +2984,45 @@ describe("convention hint", () => {
 		},
 	);
 
+	it.each(["vienna", "reith", "four-aces"] as const)(
+		"gives no hint on the %s scale, which has only its guide",
+		(system) => {
+			const { root } = renderView(
+				// The hand of the test above, where corrected HCP gives "(Convention: Pass)".
+				bidView(
+					["1H"],
+					[
+						"SQ",
+						"S2",
+						"HK",
+						"HJ",
+						"H9",
+						"H2",
+						"DQ",
+						"D8",
+						"D7",
+						"D4",
+						"C4",
+						"C3",
+						"C2",
+					],
+				),
+				"desktop",
+				undefined,
+				undefined,
+				{ pointSystem: (): PointSystem => system },
+			);
+			for (const [level, strain] of [
+				["1", "S"],
+				["7", "NT"],
+			] as const) {
+				pickBid(root, level, strain);
+				expect(confirm(root)?.dataset.call).toBe(`${level}${strain}`);
+				expect(hint(root)).toBeUndefined();
+			}
+		},
+	);
+
 	it("reads the hand with the viewer's point system, in the viewer's language", () => {
 		const { root } = renderView(
 			bidView([]),

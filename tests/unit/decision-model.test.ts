@@ -101,17 +101,26 @@ describe("OpenRouter decision models", () => {
 	it("gives each earlier call the meaning of its caller's system, and the bot's own guide calls", () => {
 		const board = bidding(createBoard(1, DEAL), "2C P");
 		const state = decisionState(board, "S", "call", NODE_PROMPT_TEMPLATES, {
-			N: "vienna",
+			N: "hcp-corrected",
 			E: "hcp",
 		});
 		expect(state.auction).toEqual([
 			{
 				seat: "N",
 				call: "2♣",
-				system: "vienna",
-				meaning: "35+ Vienna points, artificial and forcing",
+				system: "hcp-corrected",
+				meaning: "22+ corrected HCP, artificial and forcing",
 			},
 			{ seat: "E", call: "Pass", system: "hcp", meaning: null },
+		]);
+		// A scale with only a guide gives no meanings.
+		expect(
+			decisionState(board, "S", "call", NODE_PROMPT_TEMPLATES, {
+				N: "vienna",
+			}).auction,
+		).toEqual([
+			{ seat: "N", call: "2♣", system: "vienna", meaning: null },
+			{ seat: "E", call: "Pass", system: null, meaning: null },
 		]);
 		expect(state.guide_system).toBe("hcp");
 		expect(state.guide_calls).toEqual([

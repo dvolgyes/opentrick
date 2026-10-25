@@ -14,7 +14,10 @@ import {
 	fitsCall,
 } from "../../src/bridge/conventions";
 import { dealCards, randomBelowFrom } from "../../src/bridge/deal";
-import { countHandPoints } from "../../src/bridge/hand-points";
+import {
+	countHandPoints,
+	type PointSystem,
+} from "../../src/bridge/hand-points";
 import type { Call } from "../../src/bridge/rules";
 import { SEATS } from "../../src/protocol";
 import { guideName } from "../../src/ui/bidding-guide";
@@ -55,13 +58,10 @@ function seeded(seed: number): () => number {
 	};
 }
 
-const RULE_SYSTEMS: readonly RuleSystem[] = [
-	"hcp",
-	"hcp-corrected",
-	"vienna",
-	"reith",
-	"four-aces",
-];
+const RULE_SYSTEMS: readonly RuleSystem[] = ["hcp", "hcp-corrected"];
+
+/** The scales that have a guide but no rules: only their guide text. */
+const GUIDE_ONLY: readonly PointSystem[] = ["vienna", "reith", "four-aces"];
 
 describe("guide calls for a hand", () => {
 	it.each([
@@ -89,14 +89,26 @@ describe("guide calls for a hand", () => {
 	});
 
 	it("counts the points of the bidder's own system", () => {
-		// 17 HCP, 29 Vienna, 26 Reith and 12½ Four Aces points.
-		const cardsText = "AJ4.A54.A54.A543";
+		// 15 HCP, and 14 corrected HCP for the 4333 shape.
+		const cardsText = "AQ4.KJ5.Q86.K732";
 		expect(suggested("hcp", cardsText, "")).toEqual(["1NT"]);
-		expect(suggested("hcp-corrected", cardsText, "")).toEqual(["1NT"]);
-		expect(suggested("vienna", cardsText, "")).toEqual(["1C"]);
-		expect(suggested("reith", cardsText, "")).toEqual(["1NT"]);
-		expect(suggested("four-aces", cardsText, "")).toEqual(["1C"]);
+		expect(suggested("hcp-corrected", cardsText, "")).toEqual(["1C"]);
 	});
+
+	it.each(GUIDE_ONLY)(
+		"gives no calls, no meanings and no hand check on the %s scale, which has only its guide",
+		(system) => {
+			const cards = hand("AQ4.KJ5.Q862.K73");
+			expect(conventionCalls(system, cards, [])).toBeUndefined();
+			expect(conventionCalls(system, cards, calls("1H P"))).toBeUndefined();
+			expect(fitsCall(system, cards, [], "1NT")).toBeUndefined();
+			expect(fitsCall(system, cards, [], "7NT")).toBeUndefined();
+			for (const auction of ["1NT", "P 1C", "1H P 3H P 4NT"]) {
+				const all = calls(auction);
+				expect(callMeaning(system, all, all.length - 1)).toBeUndefined();
+			}
+		},
+	);
 
 	it.each([
 		["1H P", "K84.Q73.J652.Q64", ["2H"]], // 8, three hearts: raise
@@ -226,10 +238,10 @@ describe("guide meaning of a call", () => {
 			{ range: { min: 15, max: 17 }, shape: { kind: "balanced" } },
 		],
 		[
-			"vienna",
+			"hcp-corrected",
 			"P 1C",
 			{
-				range: { min: 19, max: 34 },
+				range: { min: 12, max: 21 },
 				shape: { kind: "cards", suit: "C", min: 3 },
 			},
 		],
@@ -251,14 +263,18 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		[
-			"four-aces",
+			"hcp-corrected",
 			"3D",
 			{
-				range: { min: 3.5, max: 7 },
+				range: { min: 5, max: 10 },
 				shape: { kind: "preempt", suit: "D", length: 7 },
 			},
 		],
-		["reith", "P", { range: { min: 0, max: 18 }, shape: { kind: "none" } }],
+		[
+			"hcp-corrected",
+			"P",
+			{ range: { min: 0, max: 11 }, shape: { kind: "none" } },
+		],
 		["hcp", "1H P P", { range: { min: 0, max: 5 }, shape: { kind: "none" } }],
 		[
 			"hcp",
@@ -277,9 +293,9 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		[
-			"reith",
+			"hcp-corrected",
 			"1H P 1S",
-			{ range: { min: 10 }, shape: { kind: "cards", suit: "S", min: 4 } },
+			{ range: { min: 6 }, shape: { kind: "cards", suit: "S", min: 4 } },
 		],
 		[
 			"hcp",
@@ -293,7 +309,11 @@ describe("guide meaning of a call", () => {
 			"1NT P 2C",
 			{ range: { min: 8 }, shape: { kind: "stayman", min: 4 } },
 		],
-		["vienna", "1NT P 2D", { shape: { kind: "transfer", suit: "H", min: 5 } }],
+		[
+			"hcp-corrected",
+			"1NT P 2D",
+			{ shape: { kind: "transfer", suit: "H", min: 5 } },
+		],
 		["hcp", "1NT P 2H", { shape: { kind: "transfer", suit: "S", min: 5 } }],
 		[
 			"hcp",
@@ -306,14 +326,14 @@ describe("guide meaning of a call", () => {
 			{ range: { min: 8, max: 9 }, shape: { kind: "none" } },
 		],
 		[
-			"vienna",
+			"hcp-corrected",
 			"1NT P 3NT",
-			{ range: { min: 16, max: 25 }, shape: { kind: "none" } },
+			{ range: { min: 10, max: 15 }, shape: { kind: "none" } },
 		],
 		[
-			"four-aces",
+			"hcp-corrected",
 			"2C P 2D",
-			{ range: { min: 0, max: 4.5 }, shape: { kind: "waiting" } },
+			{ range: { min: 0, max: 7 }, shape: { kind: "waiting" } },
 		],
 		[
 			"hcp",
@@ -403,10 +423,10 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		[
-			"vienna",
+			"hcp-corrected",
 			"1H P 1NT P 2H",
 			{
-				range: { min: 19, max: 23 },
+				range: { min: 12, max: 14 },
 				shape: { kind: "cards", suit: "H", min: 6 },
 			},
 		],
@@ -432,9 +452,9 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		[
-			"four-aces",
+			"hcp-corrected",
 			"2C P 2D P 2NT",
-			{ range: { min: 14.5, max: 16 }, shape: { kind: "balanced" } },
+			{ range: { min: 22, max: 24 }, shape: { kind: "balanced" } },
 		],
 		["hcp", "2H P 3H", { shape: { kind: "support", suit: "H", min: 3 } }],
 		["hcp", "2S P 4S", { shape: { kind: "support", suit: "S", min: 3 } }],
@@ -456,10 +476,10 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		[
-			"reith",
+			"hcp-corrected",
 			"1H P P 2D",
 			{
-				range: { min: 16, max: 26 },
+				range: { min: 10, max: 16 },
 				shape: { kind: "good-suit", suit: "D", min: 5 },
 			},
 		],
@@ -477,11 +497,11 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		[
-			"four-aces",
+			"hcp-corrected",
 			"1D P P X",
 			{
-				range: { min: 8 },
-				shape: { kind: "takeout", suit: "D", strong: { min: 11 } },
+				range: { min: 12 },
+				shape: { kind: "takeout", suit: "D", strong: { min: 17 } },
 			},
 		],
 		["hcp", "1H X XX", { range: { min: 10 }, shape: { kind: "none" } }],
@@ -491,16 +511,9 @@ describe("guide meaning of a call", () => {
 			{ shape: { kind: "blackwood", small: { min: 33 }, grand: { min: 37 } } },
 		],
 		[
-			"vienna",
+			"hcp-corrected",
 			"1H 1S 3H P 4NT",
-			{ shape: { kind: "blackwood", small: { min: 53 }, grand: { min: 59 } } },
-		],
-		[
-			"four-aces",
-			"1H P 3H P 4NT",
-			{
-				shape: { kind: "blackwood", small: { min: 21.5 }, grand: { min: 24 } },
-			},
+			{ shape: { kind: "blackwood", small: { min: 33 }, grand: { min: 37 } } },
 		],
 		["hcp", "1H P 3H P 4NT P 5C", { shape: { kind: "aces", counts: [0, 4] } }],
 		["hcp", "1H P 3H P 4NT P 5D", { shape: { kind: "aces", counts: [1] } }],
@@ -676,7 +689,7 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"slam-grand": ["Targets for the partnership", "- {min} points: grand slam."],
 };
 
-function guideText(system: RuleSystem, locale: string): string {
+function guideText(system: PointSystem, locale: string): string {
 	return readFileSync(
 		new URL(
 			`../../src/guides/${guideName(system)}_${locale}.txt`,
@@ -726,7 +739,7 @@ describe("convention rules agree with the guides", () => {
 	);
 
 	it.each(
-		RULE_SYSTEMS.flatMap((system) =>
+		[...RULE_SYSTEMS, ...GUIDE_ONLY].flatMap((system) =>
 			["de", "hu", "no", "es", "pt", "fr", "it", "nl"].map(
 				(locale) => [system, locale] as const,
 			),

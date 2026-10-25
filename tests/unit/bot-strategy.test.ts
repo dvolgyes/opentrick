@@ -305,13 +305,13 @@ describe("bot decisions", () => {
 		const board = bidding(createBoard(1, DEAL), "2C P");
 		const legal = legalActions(board, "S");
 		const prompt = renderBidPrompt(board, "S", legal, NODE_PROMPT_TEMPLATES, {
-			N: "vienna",
+			N: "hcp-corrected",
 			E: "hcp",
 		});
 		expect(prompt).toContain("### WHAT THE CALLS MEAN");
 		expect(prompt).toContain(
 			[
-				"North - Vienna bidding: 2♣ -> 35+ Vienna points, artificial and forcing",
+				"North - corrected HCP bidding: 2♣ -> 22+ corrected HCP, artificial and forcing",
 				"East - HCP bidding: Pass -> not described by the guide",
 				"Your bids according to HCP likely could be 2♦ (0–7 HCP, waiting).",
 			].join("\n"),
@@ -320,6 +320,12 @@ describe("bot decisions", () => {
 			N: "other",
 		});
 		expect(unknown).toContain("North - other system: 2♣ -> meaning unknown");
+		// A scale with only a guide gives no meanings.
+		expect(
+			renderBidPrompt(board, "S", legal, NODE_PROMPT_TEMPLATES, {
+				N: "vienna",
+			}),
+		).toContain("North - Vienna bidding: 2♣ -> meaning unknown");
 		expect(unknown).toContain("East - unknown system: Pass -> meaning unknown");
 
 		// North opens with 30 HCP, unbalanced: only 2♣. After the answer the guide has only a balanced 22–24 [2NT] rebid.

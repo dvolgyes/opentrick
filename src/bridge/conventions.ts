@@ -116,8 +116,13 @@ const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
 const MAJORS: readonly Suit[] = ["S", "H"];
 const MINORS: readonly Suit[] = ["D", "C"];
 
+/** Whether `system` has rules for its calls; the other systems have only their guide text, or no guide. */
+export function hasRules(system: PointSystem): system is RuleSystem {
+	return Object.hasOwn(RANGES, system);
+}
+
 function rules(system: PointSystem): Ranges | undefined {
-	return system === "other" ? undefined : RANGES[system satisfies RuleSystem];
+	return hasRules(system) ? RANGES[system] : undefined;
 }
 
 function isBid(call: Call): call is Bid {
