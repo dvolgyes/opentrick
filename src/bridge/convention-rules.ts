@@ -48,7 +48,9 @@ export type RangeKey =
 	| "overcall-1NT"
 	| "takeout"
 	| "takeout-strong"
-	| "redouble";
+	| "redouble"
+	| "slam-small"
+	| "slam-grand";
 
 export type Ranges = Readonly<Record<RangeKey, PointRange>>;
 
@@ -96,6 +98,9 @@ const MILTON = {
 	takeout: { min: 12 }, // "[X] (takeout): 12 or more points"
 	"takeout-strong": { min: 17 }, // "or any hand with 17 or more points"
 	redouble: { min: 10 }, // "[XX] after partner's opening is doubled: 10 or more points"
+	// ## Targets for the partnership; the [4NT] ask states them
+	"slam-small": { min: 33 }, // "33 points: small slam."
+	"slam-grand": { min: 37 }, // "37 points: grand slam."
 } as const satisfies Ranges;
 
 /** vienna_*.txt and reith_*.txt: both scales hold 64 points and share their ranges. */
@@ -139,6 +144,9 @@ const SIXTY_FOUR = {
 	takeout: { min: 19 }, // "[X] (takeout): 19 or more points"
 	"takeout-strong": { min: 27 }, // "or any hand with 27 or more points"
 	redouble: { min: 16 }, // "[XX] after partner's opening is doubled: 16 or more points"
+	// ## Targets for the partnership; the [4NT] ask states them
+	"slam-small": { min: 53 }, // "53 points: small slam."
+	"slam-grand": { min: 59 }, // "59 points: grand slam."
 } as const satisfies Ranges;
 
 /** four_aces_*.txt: half points, 7.5 is "7½" in the guide. */
@@ -182,6 +190,9 @@ const FOUR_ACES = {
 	takeout: { min: 8 }, // "[X] (takeout): 8 or more points"
 	"takeout-strong": { min: 11 }, // "or any hand with 11 or more points"
 	redouble: { min: 6.5 }, // "[XX] after partner's opening is doubled: 6½ or more points"
+	// ## Targets for the partnership; the [4NT] ask states them
+	"slam-small": { min: 21.5 }, // "21½ points: small slam."
+	"slam-grand": { min: 24 }, // "24 points: grand slam."
 } as const satisfies Ranges;
 
 export const RANGES = {

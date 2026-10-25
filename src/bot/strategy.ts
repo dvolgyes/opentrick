@@ -213,7 +213,7 @@ function shapeText(shape: Shape, system: PointSystem): string {
 		case "takeout":
 			return `takeout, short in ${SUIT_SYMBOLS[shape.suit]}, or ${rangeText(shape.strong, system)}`;
 		case "blackwood":
-			return "Blackwood, asks for aces";
+			return `Blackwood, asks for aces: a small slam needs about ${rangeText(shape.small, system)} together, a grand slam about ${rangeText(shape.grand, system)}`;
 		case "aces":
 			return `aces: ${shape.counts.join("/")}`;
 	}

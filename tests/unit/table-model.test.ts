@@ -380,6 +380,16 @@ describe("auction", () => {
 		]);
 	});
 
+	it("explains Blackwood with the slam targets of the caller's system", () => {
+		const state = {
+			...tableState(bidding(BOARD, "1H P 3H P 4NT")),
+			systems: { N: "vienna", E: "hcp", S: "vienna", W: "hcp" },
+		} as const;
+		expect(view("E", null, { state }).auction?.meanings[1]).toEqual([
+			"Blackwood, asks for aces: a small slam needs about 53+ Vienna points together, a grand slam about 59+ Vienna points",
+		]);
+	});
+
 	it("writes half points and a weak two of Four Aces", () => {
 		const state = {
 			...tableState(bidding(BOARD, "P 2S")),

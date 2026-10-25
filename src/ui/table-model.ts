@@ -758,14 +758,20 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				strong: rangeText(shape.strong, system, t),
 			});
 		case "blackwood":
-			return t("Blackwood, asks for aces");
+			return t(
+				"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}",
+				{
+					small: rangeText(shape.small, system, t),
+					grand: rangeText(shape.grand, system, t),
+				},
+			);
 		case "aces":
 			return t("aces: {counts}", { counts: shape.counts.join("/") });
 	}
 }
 
 /** For example "15–17 HCP, balanced". */
-function meaningText(
+export function meaningText(
 	meaning: CallMeaning,
 	system: PointSystem,
 	t: Translate,

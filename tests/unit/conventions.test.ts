@@ -167,7 +167,7 @@ describe("guide calls for a hand", () => {
 
 	it("does not suggest the [4NT] ask, which only has a meaning", () => {
 		expect(callMeaning("hcp", calls("2H P 4NT"), 2)).toEqual({
-			shape: { kind: "blackwood" },
+			shape: { kind: "blackwood", small: { min: 33 }, grand: { min: 37 } },
 		});
 		// 17, three hearts
 		expect(suggested("hcp", "AK4.Q73.AJ52.K64", "2H P")).toEqual([
@@ -452,8 +452,23 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		["hcp", "1H X XX", { range: { min: 10 }, shape: { kind: "none" } }],
-		["hcp", "1H P 3H P 4NT", { shape: { kind: "blackwood" } }],
-		["hcp", "1H 1S 3H P 4NT", { shape: { kind: "blackwood" } }],
+		[
+			"hcp",
+			"1H P 3H P 4NT",
+			{ shape: { kind: "blackwood", small: { min: 33 }, grand: { min: 37 } } },
+		],
+		[
+			"vienna",
+			"1H 1S 3H P 4NT",
+			{ shape: { kind: "blackwood", small: { min: 53 }, grand: { min: 59 } } },
+		],
+		[
+			"four-aces",
+			"1H P 3H P 4NT",
+			{
+				shape: { kind: "blackwood", small: { min: 21.5 }, grand: { min: 24 } },
+			},
+		],
 		["hcp", "1H P 3H P 4NT P 5C", { shape: { kind: "aces", counts: [0, 4] } }],
 		["hcp", "1H P 3H P 4NT P 5D", { shape: { kind: "aces", counts: [1] } }],
 		["hcp", "1H P 3H P 4NT P 5S", { shape: { kind: "aces", counts: [3] } }],
@@ -561,15 +576,20 @@ describe("guide calls and meanings agree", () => {
 });
 
 /** "15–17" or "22 or more", with half points as "½", as the English guides write a range. */
-function rangeText({ min, max }: PointRange): string {
-	const number = (value: number) =>
-		Number.isInteger(value) ? `${value}` : `${Math.floor(value)}½`;
-	return max === undefined
-		? `${number(min)} or more`
-		: `${number(min)}–${number(max)}`;
+function pointsNumber(value: number): string {
+	return Number.isInteger(value) ? `${value}` : `${Math.floor(value)}½`;
 }
 
-/** The section and the part of the guide line that states each range; {range} is the range text. */
+function rangeText({ min, max }: PointRange): string {
+	return max === undefined
+		? `${pointsNumber(min)} or more`
+		: `${pointsNumber(min)}–${pointsNumber(max)}`;
+}
+
+/**
+ * The section and the part of the guide line that states each range; {range} is the range text, {min} only its
+ * minimum.
+ */
 const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"open-pass": ["Opening bids", "- {range} points: [P]"],
 	"open-weak-two": ["Opening bids", "- {range} points: weak two"],
@@ -620,6 +640,8 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"Competitive bids",
 		"- [XX] after partner's opening is doubled: {range} points.",
 	],
+	"slam-small": ["Targets for the partnership", "- {min} points: small slam."],
+	"slam-grand": ["Targets for the partnership", "- {min} points: grand slam."],
 };
 
 function guideText(system: RuleSystem, locale: string): string {
@@ -652,7 +674,9 @@ describe("convention rules agree with the guides", () => {
 				PointRange,
 			][]) {
 				const [section, line] = GUIDE_LINES[key];
-				const expected = line.replace("{range}", rangeText(range));
+				const expected = line
+					.replace("{range}", rangeText(range))
+					.replace("{min}", pointsNumber(range.min));
 				expect(
 					sectionLines(text, section).some((candidate) =>
 						candidate.includes(expected),

@@ -1,5 +1,5 @@
 import { type Card, SUIT_SYMBOLS, suitOf } from "../bridge/cards";
-import { conventionCalls } from "../bridge/conventions";
+import { callMeaning, conventionCalls } from "../bridge/conventions";
 import type { Action } from "../bridge/engine";
 import {
 	countHandPoints,
@@ -37,6 +37,7 @@ import type {
 	TrickView,
 	TurnPill,
 } from "./table-model";
+import { meaningText } from "./table-model";
 
 export interface TableHandlers {
 	exit(): void;
@@ -276,7 +277,8 @@ const HINT_CALLS = 3;
 
 /**
  * The hint on Confirm when the chosen call is not one that the guide of `system` gives the viewer's hand: the guide
- * calls, or "Unconventional" when the guide gives none. Undefined when the guide does not describe the position.
+ * calls, or "Unconventional" when the guide gives none. Undefined when the guide does not describe the position. The
+ * [4NT] ask fits any hand, so its hint is its meaning and not a verdict.
  */
 function conventionHint(
 	system: PointSystem,
@@ -287,7 +289,11 @@ function conventionHint(
 	const cards = view.seats.find((seat) => seat.turnPill?.yours)?.pointCards;
 	if (chosen === undefined || cards === undefined || view.auction === undefined)
 		return undefined;
-	const guide = conventionCalls(system, cards, view.auction.calls);
+	const before = view.auction.calls;
+	const meaning = callMeaning(system, [...before, chosen], before.length);
+	if (meaning?.shape.kind === "blackwood")
+		return `(${meaningText(meaning, system, t)})`;
+	const guide = conventionCalls(system, cards, before);
 	if (guide === undefined || guide.some(({ call }) => call === chosen))
 		return undefined;
 	if (guide.length === 0) return t("(Unconventional)");

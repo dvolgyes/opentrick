@@ -58,8 +58,12 @@ export type Shape =
 			readonly suit: Suit;
 			readonly strong: PointRange;
 	  }
-	/** [4NT] asks partner for aces. */
-	| { readonly kind: "blackwood" }
+	/** [4NT] asks partner for aces, for a small slam with `small` points together or a grand slam with `grand`. */
+	| {
+			readonly kind: "blackwood";
+			readonly small: PointRange;
+			readonly grand: PointRange;
+	  }
 	/** The answer to [4NT]: the number of aces is one of `counts`. */
 	| { readonly kind: "aces"; readonly counts: readonly number[] };
 
@@ -548,7 +552,15 @@ export function callMeaning(
 	// The [4NT] ask is a meaning only: no hand needs it, so conventionCalls never suggests it.
 	return (
 		meaning ??
-		(isBlackwood(calls, index) ? { shape: { kind: "blackwood" } } : undefined)
+		(isBlackwood(calls, index)
+			? {
+					shape: {
+						kind: "blackwood",
+						small: ranges["slam-small"],
+						grand: ranges["slam-grand"],
+					},
+				}
+			: undefined)
 	);
 }
 

@@ -2839,7 +2839,9 @@ describe("convention hint", () => {
 			bids: [
 				{ call: "1C", text: "1♣" },
 				{ call: "1S", text: "1♠" },
+				{ call: "2C", text: "2♣" },
 				{ call: "2D", text: "2♦" },
+				{ call: "4NT", text: "4NT" },
 				{ call: "P", text: "Pass" },
 			],
 			seats: base.seats.map((player) =>
@@ -2904,6 +2906,21 @@ describe("convention hint", () => {
 		expect(hint(root)).toBeUndefined();
 		pickBid(root, "2", "C");
 		expect(hint(root)).toBeUndefined();
+	});
+
+	it("gives the meaning of the [4NT] ask and no verdict, with any hand", () => {
+		// The guide gives this hand [2NT], [3H] or [4H] after partner's weak two, but [4NT] fits any hand.
+		const { root } = renderView(
+			bidView(["2H", "P"]),
+			"desktop",
+			undefined,
+			undefined,
+			hcp,
+		);
+		pickBid(root, "4", "NT");
+		expect(hint(root)).toBe(
+			"(Blackwood, asks for aces: a small slam needs about 33+ HCP together, a grand slam about 37+ HCP)",
+		);
 	});
 
 	it("reads the hand with the viewer's point system, in the viewer's language", () => {

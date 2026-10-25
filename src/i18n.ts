@@ -696,7 +696,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"balanced, a {suit} stopper": "ausgeglichen, Stopper in {suit}",
 		"takeout, short in {suit}, or {strong}":
 			"Informationskontra, kurz in {suit}, oder {strong}",
-		"Blackwood, asks for aces": "Blackwood, fragt nach Assen",
+		"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}":
+			"Blackwood, fragt nach Assen: ein Kleinschlemm braucht zusammen etwa {small}, ein Großschlemm etwa {grand}",
 		"aces: {counts}": "Asse: {counts}",
 		"not in the guide": "nicht im Reizleitfaden",
 	},
@@ -1364,7 +1365,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"balanced, a {suit} stopper": "kiegyensúlyozott, {suit} fogással",
 		"takeout, short in {suit}, or {strong}":
 			"informatív, rövid {suit}, vagy {strong}",
-		"Blackwood, asks for aces": "Blackwood, az ászokat kérdezi",
+		"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}":
+			"Blackwood, az ászokat kérdezi: kisszlemhez együtt kb. {small} kell, nagyszlemhez kb. {grand}",
 		"aces: {counts}": "ászok: {counts}",
 		"not in the guide": "nincs az útmutatóban",
 	},
@@ -2025,7 +2027,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"balanced, a {suit} stopper": "balansert, hold i {suit}",
 		"takeout, short in {suit}, or {strong}":
 			"opplysende, kort i {suit}, eller {strong}",
-		"Blackwood, asks for aces": "Blackwood, spør etter ess",
+		"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}":
+			"Blackwood, spør etter ess: lilleslem krever omtrent {small} til sammen, storeslem omtrent {grand}",
 		"aces: {counts}": "ess: {counts}",
 		"not in the guide": "ikke i meldeveiledningen",
 	},

@@ -3489,12 +3489,12 @@ const rows: readonly TranslationRow[] = [
 		"informatief, kort in {suit}, of {strong}",
 	],
 	[
-		"Blackwood, asks for aces",
-		"Blackwood, pide ases",
-		"Blackwood, pede ases",
-		"Blackwood, demande les as",
-		"Blackwood, chiede gli assi",
-		"Blackwood, vraagt naar azen",
+		"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}",
+		"Blackwood, pide ases: un pequeño slam necesita unos {small} entre los dos, un gran slam unos {grand}",
+		"Blackwood, pede ases: um pequeno slam precisa de cerca de {small} juntos, um grande slam cerca de {grand}",
+		"Blackwood, demande les as : un petit chelem demande environ {small} ensemble, un grand chelem environ {grand}",
+		"Blackwood, chiede gli assi: un piccolo slam richiede circa {small} insieme, un grande slam circa {grand}",
+		"Blackwood, vraagt naar azen: een klein slem vraagt samen ongeveer {small}, een groot slem ongeveer {grand}",
 	],
 	[
 		"aces: {counts}",
