@@ -230,8 +230,6 @@ function translateHostReason(text: string, t: Translate): string {
 	return t("Waiting for {players} to come back", { players });
 }
 
-/** Left and right hands are vertical stacks; the top and bottom hands are horizontal fans. */
-/** The card back of a board: red on odd boards and before the first deal, blue on even boards. */
 function turnPillText(pill: TurnPill, seat: Seat, t: Translate): string {
 	const name = t(SEAT_NAMES[seat]);
 	if (pill.action === "bid")
@@ -243,10 +241,12 @@ function turnPillText(pill: TurnPill, seat: Seat, t: Translate): string {
 		: t("{seat} TO PLAY", { seat: name });
 }
 
+/** The card back of a board: red on odd boards and before the first deal, blue on even boards. */
 function cardBackFor(board: number): string {
 	return board >= 2 && board % 2 === 0 ? cardBackBlue : cardBackRed;
 }
 
+/** Left and right hands are vertical stacks; the top and bottom hands are horizontal fans. */
 function handDirection(position: Position): "row" | "column" {
 	return position === "left" || position === "right" ? "column" : "row";
 }
