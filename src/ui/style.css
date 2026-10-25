@@ -19,9 +19,10 @@
 	--call-orange: #c75b00;
 	--tile-bg: #2f5f47;
 	--tile-caption-bg: #1d3a2c;
-	/* Round-trip figures on the dark tile caption. */
-	--round-trip-good: #7ee08a;
-	--round-trip-fair: #ffb347;
+	/* Network quality on the dark tile caption. */
+	--round-trip-excellent: #7ee08a;
+	--round-trip-good: #d4e157;
+	--round-trip-average: #ffb347;
 	--round-trip-poor: #ff8a80;
 	color-scheme: light;
 }
@@ -1009,12 +1010,16 @@ main:has(> .room) {
 	white-space: nowrap;
 }
 
+.round-trip[data-quality="excellent"] {
+	color: var(--round-trip-excellent);
+}
+
 .round-trip[data-quality="good"] {
 	color: var(--round-trip-good);
 }
 
-.round-trip[data-quality="fair"] {
-	color: var(--round-trip-fair);
+.round-trip[data-quality="average"] {
+	color: var(--round-trip-average);
 }
 
 .round-trip[data-quality="poor"] {

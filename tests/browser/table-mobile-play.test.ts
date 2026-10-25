@@ -13,7 +13,11 @@ import {
 	type TableOptions,
 	tableSection,
 } from "../../src/ui/table";
-import type { SeatView, TableView } from "../../src/ui/table-model";
+import type {
+	RoundTripView,
+	SeatView,
+	TableView,
+} from "../../src/ui/table-model";
 
 const card = (value: Card) => ({
 	card: value,
@@ -1593,41 +1597,75 @@ describe("round trip on the video tile", () => {
 	const rgb = (element: Element | null) =>
 		element === null ? "" : getComputedStyle(element).color;
 
-	it("shows each player's round trip beside the name, in the colour of its quality", () => {
+	const withRoundTrips = (
+		roundTrips: Partial<Record<Seat, RoundTripView>>,
+	): HTMLElement => {
 		const view = playView();
-		const roundTrips = {
-			E: { text: "(0.1s roundtrip)", quality: "good" },
-			S: { text: "(0.4s roundtrip)", quality: "fair" },
-			W: { text: "(>5.0s roundtrip)", quality: "poor" },
-		} as const;
-		const { root } = renderView(
+		return renderView(
 			{
 				...view,
-				seats: view.seats.map((player) =>
-					player.seat === "N"
-						? player
-						: { ...player, roundTrip: roundTrips[player.seat] },
-				),
+				seats: view.seats.map((player) => ({
+					...player,
+					roundTrip: roundTrips[player.seat],
+				})),
 			},
 			"desktop",
+		).root;
+	};
+	const caption = (root: HTMLElement, seat: Seat) =>
+		root.querySelector<HTMLElement>(
+			`[data-testid='tile-${seat}'] .tile-caption`,
 		);
-		const caption = (seat: Seat) =>
-			root.querySelector<HTMLElement>(
-				`[data-testid='tile-${seat}'] .tile-caption`,
-			);
-		expect(caption("E")?.textContent).toBe("E - playerE (0.1s roundtrip)");
-		expect(caption("W")?.textContent).toBe("W - playerW (>5.0s roundtrip)");
+	const badge = (root: HTMLElement, seat: Seat) =>
+		root.querySelector<HTMLElement>(`[data-testid='round-trip-${seat}']`);
+
+	it("shows each player's network quality beside the name, in its colour, with the round trip as the hint", () => {
+		const excellent = {
+			text: "(Network: excellent)",
+			title: "Roundtrip: 0.05sec",
+			quality: "excellent",
+		} as const;
+		const root = withRoundTrips({
+			E: {
+				text: "(Network: good)",
+				title: "Roundtrip: 0.20sec",
+				quality: "good",
+			},
+			S: {
+				text: "(Network: average)",
+				title: "Roundtrip: 0.40sec",
+				quality: "average",
+			},
+			W: {
+				text: "(Network: poor)",
+				title: "Roundtrip: >5.00sec",
+				quality: "poor",
+			},
+		});
+		expect(caption(root, "E")?.textContent).toBe("E - playerE (Network: good)");
+		expect(badge(root, "W")?.title).toBe("Roundtrip: >5.00sec");
 		const colours = (["E", "S", "W"] as const).map((seat) =>
-			rgb(root.querySelector(`[data-testid='round-trip-${seat}']`)),
+			rgb(badge(root, seat)),
 		);
+		colours.unshift(rgb(badge(withRoundTrips({ E: excellent }), "E")));
 		expect(colours).toEqual([
 			"rgb(126, 224, 138)",
+			"rgb(212, 225, 87)",
 			"rgb(255, 179, 71)",
 			"rgb(255, 138, 128)",
 		]);
 	});
 
-	it("shows no round trip before the host measured one", () => {
+	it("shows (ping) in the caption colour and with no hint before the host measured the player", () => {
+		const root = withRoundTrips({
+			E: { text: "(ping)", quality: "pending" },
+		});
+		expect(caption(root, "E")?.textContent).toBe("E - playerE (ping)");
+		expect(badge(root, "E")?.hasAttribute("title")).toBe(false);
+		expect(rgb(badge(root, "E"))).toBe(rgb(caption(root, "E")));
+	});
+
+	it("shows nothing for a seat that the host does not measure", () => {
 		const { root } = renderView(playView(), "desktop");
 		expect(
 			root.querySelector("[data-testid='tile-E'] .tile-caption")?.textContent,

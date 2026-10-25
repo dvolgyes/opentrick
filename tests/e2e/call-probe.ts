@@ -518,16 +518,16 @@ export const caption = (page: Page, seat: SeatKey): Locator =>
 	page.getByTestId(`tile-${seat}`).locator(".tile-caption");
 
 /**
- * A caption `text`, "label" or "label · status", with or without the round trip that the host measures for a
- * guest and shows after the label (src/ui/table.ts). The call tests check the label and the status; the round
- * trip changes with each measurement.
+ * A caption `text`, "label" or "label · status", with or without the network quality that the host measures for
+ * a guest and shows after the label (src/ui/table.ts). The call tests check the label and the status; the quality
+ * changes with each measurement.
  */
 export function withRoundTrip(text: string): RegExp {
 	const at = text.indexOf(" · ");
 	const label = at < 0 ? text : text.slice(0, at);
 	const status = at < 0 ? "" : text.slice(at);
 	return new RegExp(
-		`^${escapeRegExp(label)}(?: \\(>?\\d+\\.\\ds roundtrip\\))?${escapeRegExp(status)}$`,
+		`^${escapeRegExp(label)}(?: \\((?:ping|Network: (?:excellent|good|average|poor))\\))?${escapeRegExp(status)}$`,
 	);
 }
 

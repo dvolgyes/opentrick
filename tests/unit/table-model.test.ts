@@ -439,86 +439,67 @@ describe("presence (plan §12 R4)", () => {
 });
 
 describe("round trips", () => {
-	it("shows the round trip in seconds with one decimal, colored by the shown value", () => {
-		const table = view("N", BOARD, {
-			roundTrips: [
-				{ seat: "E", ms: 149 },
-				{ seat: "S", ms: 150 },
-				{ seat: "W", ms: 1049 },
-			],
+	const measured = (ms: number) =>
+		seatView(view("N", BOARD, { roundTrips: [{ seat: "E", ms }] }), "E")
+			.roundTrip;
+
+	it("names the network quality from the round trip shown in the hint, with two decimals", () => {
+		expect(measured(100)).toEqual({
+			text: "(Network: excellent)",
+			title: "Roundtrip: 0.10sec",
+			quality: "excellent",
 		});
-		expect(seatView(table, "E").roundTrip).toEqual({
-			text: "(0.1s roundtrip)",
+		// The quality follows the shown hundredths, so 0.104 s shows as "0.10sec" and is still excellent.
+		expect(measured(104)?.quality).toBe("excellent");
+		expect(measured(105)).toEqual({
+			text: "(Network: good)",
+			title: "Roundtrip: 0.11sec",
 			quality: "good",
 		});
-		expect(seatView(table, "S").roundTrip).toEqual({
-			text: "(0.2s roundtrip)",
-			quality: "fair",
+		expect(measured(300)?.quality).toBe("good");
+		expect(measured(305)).toEqual({
+			text: "(Network: average)",
+			title: "Roundtrip: 0.31sec",
+			quality: "average",
 		});
-		expect(seatView(table, "W").roundTrip).toEqual({
-			text: "(1.0s roundtrip)",
-			quality: "fair",
+		expect(measured(600)?.quality).toBe("average");
+		expect(measured(605)).toEqual({
+			text: "(Network: poor)",
+			title: "Roundtrip: 0.61sec",
+			quality: "poor",
 		});
-		expect(seatView(table, "N").roundTrip).toBeUndefined();
+		expect(measured(1234)?.title).toBe("Roundtrip: 1.23sec");
 	});
 
-	it("marks a slow or unanswered probe as poor, and shows a lower bound with >", () => {
+	it("marks an unanswered probe as poor, and shows its lower bound with >", () => {
 		const table = view("N", null, {
-			roundTrips: [
-				{ seat: "E", ms: 1050 },
-				{ seat: "S", ms: 5000, lower: true },
-			],
-		});
-		expect(seatView(table, "E").roundTrip).toEqual({
-			text: "(1.1s roundtrip)",
-			quality: "poor",
+			roundTrips: [{ seat: "S", ms: 5000, lower: true }],
 		});
 		expect(seatView(table, "S").roundTrip).toEqual({
-			text: "(>5.0s roundtrip)",
+			text: "(Network: poor)",
+			title: "Roundtrip: >5.00sec",
 			quality: "poor",
 		});
 	});
-});
 
-describe("round trips", () => {
-	it("shows the round trip in seconds with one decimal, colored by the shown value", () => {
-		const table = view("N", BOARD, {
-			roundTrips: [
-				{ seat: "E", ms: 149 },
-				{ seat: "S", ms: 150 },
-				{ seat: "W", ms: 1049 },
-			],
-		});
-		expect(seatView(table, "E").roundTrip).toEqual({
-			text: "(0.1s roundtrip)",
-			quality: "good",
-		});
-		expect(seatView(table, "S").roundTrip).toEqual({
-			text: "(0.2s roundtrip)",
-			quality: "fair",
-		});
-		expect(seatView(table, "W").roundTrip).toEqual({
-			text: "(1.0s roundtrip)",
-			quality: "fair",
-		});
-		expect(seatView(table, "N").roundTrip).toBeUndefined();
-	});
-
-	it("marks a slow or unanswered probe as poor, and shows a lower bound with >", () => {
-		const table = view("N", null, {
-			roundTrips: [
-				{ seat: "E", ms: 1050 },
-				{ seat: "S", ms: 5000, lower: true },
-			],
-		});
-		expect(seatView(table, "E").roundTrip).toEqual({
-			text: "(1.1s roundtrip)",
-			quality: "poor",
-		});
-		expect(seatView(table, "S").roundTrip).toEqual({
-			text: "(>5.0s roundtrip)",
-			quality: "poor",
-		});
+	it("shows (ping) for a connected player whom the host has not measured yet", () => {
+		const absentWest = new Set<Seat>(["N", "E", "S"]);
+		for (const board of [null, BOARD]) {
+			const table = view("E", board, {
+				present: absentWest,
+				bots: new Set<Seat>(["S"]),
+				roundTrips: [{ seat: "E", ms: 40 }],
+			});
+			expect(seatView(table, "E").roundTrip?.quality).toBe("excellent");
+			// The host (North) has no round trip, a bot is not measured, and West is not connected to the host.
+			expect(seatView(table, "N").roundTrip).toBeUndefined();
+			expect(seatView(table, "S").roundTrip).toBeUndefined();
+			expect(seatView(table, "W").roundTrip).toBeUndefined();
+			expect(seatView(view("E", board), "W").roundTrip).toEqual({
+				text: "(ping)",
+				quality: "pending",
+			});
+		}
 	});
 });
 

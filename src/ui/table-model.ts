@@ -153,17 +153,19 @@ export interface SeatView {
 	readonly turnPill: TurnPill | undefined;
 	/** The cards to count the points of: a hand the viewer can see during the auction, or every hand once the board is over. */
 	readonly pointCards: readonly Card[] | undefined;
-	/** The host's last round trip to this seat's player; undefined while the host has not measured one. */
+	/** The network quality from the host's last round trip to this seat's player; undefined for a seat the host does not measure. */
 	readonly roundTrip: RoundTripView | undefined;
 }
 
 /**
- * A round trip for the video tile, such as "(0.2s roundtrip)". The quality follows the shown value: good below
- * 0.2 s, fair up to 1.0 s, poor above it.
+ * The network quality for the video tile, such as "(Network: good)", with the round trip as the hint. The quality
+ * follows the shown hundredths: excellent up to 0.10 s, good up to 0.30 s, average up to 0.60 s, poor above it. A
+ * connected player whom the host has not measured yet shows "(ping)" and has no hint.
  */
 export interface RoundTripView {
 	readonly text: string;
-	readonly quality: "good" | "fair" | "poor";
+	readonly title?: string;
+	readonly quality: "excellent" | "good" | "average" | "poor" | "pending";
 }
 
 export interface PlayedCard {
@@ -467,16 +469,27 @@ function roundTripView(
 	t: Translate,
 ): RoundTripView | undefined {
 	const measured = input.roundTrips?.find((row) => row.seat === owner);
-	if (measured === undefined) return undefined;
-	// The colour follows the shown tenths, so 0.15 s shows as "0.2s" and is not green.
-	const tenths = Math.round(measured.ms / 100);
-	const seconds = (tenths / 10).toFixed(1);
-	return {
-		text: measured.lower
-			? t("(>{seconds}s roundtrip)", { seconds })
-			: t("({seconds}s roundtrip)", { seconds }),
-		quality: tenths < 2 ? "good" : tenths <= 10 ? "fair" : "poor",
-	};
+	if (measured === undefined) {
+		// The host measures every other connected player, but not itself or its bots.
+		const measurable =
+			owner !== input.hostSeat &&
+			input.present.has(owner) &&
+			!(input.bots?.has(owner) ?? false);
+		return measurable ? { text: t("(ping)"), quality: "pending" } : undefined;
+	}
+	// The quality follows the shown hundredths, so 0.104 s shows as "0.10sec" and is excellent.
+	const hundredths = Math.round(measured.ms / 10);
+	const seconds = (hundredths / 100).toFixed(2);
+	const title = measured.lower
+		? t("Roundtrip: >{seconds}sec", { seconds })
+		: t("Roundtrip: {seconds}sec", { seconds });
+	if (hundredths <= 10)
+		return { text: t("(Network: excellent)"), title, quality: "excellent" };
+	if (hundredths <= 30)
+		return { text: t("(Network: good)"), title, quality: "good" };
+	if (hundredths <= 60)
+		return { text: t("(Network: average)"), title, quality: "average" };
+	return { text: t("(Network: poor)"), title, quality: "poor" };
 }
 
 function payloadBoard(payload: unknown): number {

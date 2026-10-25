@@ -1206,7 +1206,7 @@ export function tableSection(
 				presence !== undefined && showPresence ? t("In call") : "";
 			const label = seatLabels.get(seat) ?? SEAT_NAMES[seat];
 			const roundTrip = seatRoundTrips.get(seat);
-			const shown = `${label}|${roundTrip?.text ?? ""}|${roundTrip?.quality ?? ""}|${
+			const shown = `${label}|${roundTrip?.text ?? ""}|${roundTrip?.title ?? ""}|${roundTrip?.quality ?? ""}|${
 				status?.text === undefined
 					? ""
 					: `${status.text}|${status.connected}|${status.retry}`
@@ -1226,6 +1226,9 @@ export function tableSection(
 									attrs: {
 										"data-quality": roundTrip.quality,
 										"data-testid": `round-trip-${seat}`,
+										...(roundTrip.title === undefined
+											? {}
+											: { title: roundTrip.title }),
 									},
 								},
 								roundTrip.text,

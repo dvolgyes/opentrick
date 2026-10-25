@@ -231,10 +231,16 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 	expect(new Set(dealt).size).toBe(52);
 	// The host (West) measures the round trip to each guest and reports it to every page; its own seat has none.
 	for (const seat of SEATS) {
-		for (const other of SEATS.filter((item) => item !== seat && item !== "W"))
-			await expect(tab[seat].getByTestId(`round-trip-${other}`)).toHaveText(
-				/^\(\d+\.\ds roundtrip\)$/,
+		for (const other of SEATS.filter((item) => item !== seat && item !== "W")) {
+			const quality = tab[seat].getByTestId(`round-trip-${other}`);
+			await expect(quality).toHaveText(
+				/^\(Network: (?:excellent|good|average|poor)\)$/,
 			);
+			await expect(quality).toHaveAttribute(
+				"title",
+				/^Roundtrip: >?\d+\.\d\dsec$/,
+			);
+		}
 		await expect(tab[seat].getByTestId("round-trip-W")).toHaveCount(0);
 	}
 });
