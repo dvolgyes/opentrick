@@ -45,3 +45,50 @@ test("Copy link copies selected_player=none, and the creator's browser opens tha
 		await host.close();
 	}
 });
+
+/** Replaces the Web Share API with a fake that records what the page shares. */
+function installShareProbe(): void {
+	const shared: ShareData[] = [];
+	(window as unknown as { sharedData: ShareData[] }).sharedData = shared;
+	Object.defineProperty(navigator, "share", {
+		configurable: true,
+		value: async (data: ShareData) => {
+			shared.push(data);
+		},
+	});
+}
+
+test("on a phone the link button opens the device's share sheet with the selected_player=none link", async ({
+	browser,
+	baseURL,
+}) => {
+	test.setTimeout(120_000);
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const host = await Player.open(browser, baseURL, "share-phone", {
+		viewport: { width: 390, height: 844 },
+		isMobile: true,
+		hasTouch: true,
+	});
+	try {
+		await host.grantPermissions(["clipboard-read", "clipboard-write"]);
+		await host.addInitScript(installShareProbe);
+		const page = await host.page("./");
+		const own = new URL(await createRoom(page));
+		await page.evaluate(() => navigator.clipboard.writeText(""));
+		await page.getByRole("button", { name: "Share URL", exact: true }).click();
+		const sharedData = () =>
+			page.evaluate(
+				() => (window as unknown as { sharedData: ShareData[] }).sharedData,
+			);
+		await expect.poll(async () => (await sharedData()).length).toBe(1);
+		const [data] = await sharedData();
+		const shared = new URL(data?.url ?? "");
+		expect(shared.searchParams.getAll("selected_player")).toEqual(["none"]);
+		shared.searchParams.delete("selected_player");
+		expect(shared.toString()).toBe(own.toString());
+		expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("");
+		expect(host.errors).toEqual([]);
+	} finally {
+		await host.close();
+	}
+});

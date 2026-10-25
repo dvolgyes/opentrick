@@ -10,6 +10,7 @@ import { type BuildInfo, formatBuildDate } from "../build";
 import { CallController } from "../call/call";
 import {
 	formOf,
+	isTouchDevice,
 	type Layout,
 	layout,
 	readSignals,
@@ -928,11 +929,25 @@ export function showRoom(
 			}
 		}),
 	);
+	// A phone or tablet opens its share sheet, where the person picks the app that sends the link; a computer copies it.
+	const nativeShare =
+		navigator.share !== undefined && isTouchDevice(readSignals(window));
 	const copyRoomLink = button(
-		deps.t("Copy link"),
+		deps.t(nativeShare ? "Share URL" : "Copy link"),
 		async () => {
+			const link = roomShareLink(deps.pageUrl(), key);
+			if (nativeShare) {
+				// The share starts before the first await, while the browser still counts the tap as the person's.
+				// A share that the person cancels is done too; a refused one copies the link instead.
+				const done = await navigator.share({ url: link }).then(
+					() => true,
+					(error: unknown) =>
+						error instanceof DOMException && error.name === "AbortError",
+				);
+				if (done) return;
+			}
 			try {
-				await navigator.clipboard.writeText(roomShareLink(deps.pageUrl(), key));
+				await navigator.clipboard.writeText(link);
 				turnAlert.beep();
 			} catch {
 				// Clipboard failure stays silent, and does not signal success.
