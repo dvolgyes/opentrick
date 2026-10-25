@@ -17,11 +17,13 @@ export interface NetworkEventSources {
  * connection type changes (Wi-Fi to mobile data and back), or the page resumes. A page resumes when it is shown
  * after RESUME_HIDDEN_MS or more hidden, when the browser restores it from the back-forward cache, or after a freeze;
  * a phone can sleep or change its network in that time, and the relay sockets can be dead. One resume can send
- * several of these events, so a resume within RESUME_COALESCE_MS of the last one is not reported again.
+ * several of these events, so a resume within RESUME_COALESCE_MS of the last one is not reported again. A page
+ * shown after a shorter time hidden calls `onShown` instead.
  */
 export function watchNetworkChanges(
 	sources: NetworkEventSources,
 	onChange: () => void,
+	onShown: () => void = () => {},
 ): () => void {
 	const { window, document, connection, wall } = sources;
 	let hiddenAt: number | undefined =
@@ -40,7 +42,9 @@ export function watchNetworkChanges(
 		}
 		const since = hiddenAt;
 		hiddenAt = undefined;
-		if (since !== undefined && wall() - since >= RESUME_HIDDEN_MS) resumed();
+		if (since === undefined) return;
+		if (wall() - since >= RESUME_HIDDEN_MS) resumed();
+		else onShown();
 	};
 	const onPageShow = (event: Event) => {
 		if ((event as PageTransitionEvent).persisted) resumed();

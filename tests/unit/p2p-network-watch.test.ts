@@ -10,10 +10,11 @@ function fakePage(withConnection = true) {
 	});
 	const connection = withConnection ? new EventTarget() : undefined;
 	const clock = { now: 1_000_000 };
-	const calls = { changes: 0 };
+	const calls = { changes: 0, shows: 0 };
 	const stop = watchNetworkChanges(
 		{ window, document, connection, wall: () => clock.now },
 		() => calls.changes++,
+		() => calls.shows++,
 	);
 	const setVisibility = (state: DocumentVisibilityState) => {
 		document.visibilityState = state;
@@ -62,6 +63,15 @@ describe("the page's network changes", () => {
 		expect(page.calls.changes).toBe(1);
 	});
 
+	it("reports a shorter hide as a show, not as a network change", () => {
+		const page = fakePage();
+		page.hideFor(1_000);
+		expect(page.calls).toEqual({ changes: 0, shows: 1 });
+		page.clock.now += RESUME_COALESCE_MS;
+		page.hideFor(RESUME_HIDDEN_MS);
+		expect(page.calls).toEqual({ changes: 1, shows: 1 });
+	});
+
 	it("reports a page that the browser restores from its back-forward cache, not a new page load", () => {
 		const page = fakePage();
 		page.pageshow(false);
@@ -100,6 +110,7 @@ describe("the page's network changes", () => {
 		page.hideFor(RESUME_HIDDEN_MS);
 		page.pageshow(true);
 		page.document.dispatchEvent(new Event("resume"));
-		expect(page.calls.changes).toBe(0);
+		page.hideFor(1_000);
+		expect(page.calls).toEqual({ changes: 0, shows: 0 });
 	});
 });

@@ -41,6 +41,8 @@ export const TEXT = {
 	sendHint: "Stored; sent when a host is connected",
 	becomeHost: "Make me the host",
 	undone: "Undone after a host change",
+	keepOpen:
+		"Keep this page open and in front until all four players are at the table. A phone stops a page in the background, and then the others cannot reach it.",
 } as const;
 
 // ---------------------------------------------------------------------------------------------------------------

@@ -460,6 +460,11 @@ export function showRoom(
 		className: "note",
 		attrs: { role: "status", "data-testid": "action-note" },
 	});
+	const keepOpen = el(
+		"p",
+		{ className: "note keep-open", attrs: { "data-testid": "keep-open" } },
+		deps.t(TEXT.keepOpen),
+	);
 	const roster = el("ul", {
 		className: "roster",
 		attrs: { "data-testid": "roster" },
@@ -1111,6 +1116,7 @@ export function showRoom(
 			{ className: "stage" },
 			you,
 			banner,
+			keepOpen,
 			actionNote,
 			...storageNotices,
 			table.element,
@@ -1476,7 +1482,9 @@ export function showRoom(
 		if (config === undefined) {
 			root.dataset.screen = "table";
 			root.dataset.waiting = "true";
-			wakeLock.update(false);
+			// A page that sleeps while it connects stops, and the host cannot reach it.
+			wakeLock.update(true);
+			keepOpen.hidden = false;
 			you.hidden = false;
 			you.textContent = deps.t(TEXT.connecting);
 			send.textContent = deps.t(TEXT.send);
@@ -1672,11 +1680,13 @@ export function showRoom(
 		// The lobby uses the table layout, so it looks like the game; only the sidebar is hidden while waiting.
 		root.dataset.screen = "table";
 		root.dataset.waiting = String(tableModel.phase === "waiting");
-		// The lobby too: a host whose phone sleeps cannot answer the players who open the link.
+		const waiting =
+			tableModel.phase === "loading" || tableModel.phase === "waiting";
+		keepOpen.hidden = !waiting;
+		// The lobby too: a host whose phone sleeps cannot answer the players who open the link, and a page that waits
+		// for the host's table stops when it sleeps.
 		wakeLock.update(
-			tableModel.phase === "waiting" ||
-				tableModel.phase === "auction" ||
-				tableModel.phase === "play",
+			waiting || tableModel.phase === "auction" || tableModel.phase === "play",
 		);
 		const tableKey = JSON.stringify(
 			tableModel.scoring

@@ -27,6 +27,7 @@ import { networkPanel } from "./network";
 import { pageTitle } from "./page-title";
 import { showRoom } from "./room-view";
 import { turnSound } from "./turn-sound";
+import { screenWakeLock, WakeLockPolicy } from "./wake-lock";
 
 /** A room in one of these states stays on the screen, read-only, after its seat is gone. */
 const KEEP_ROOM: ReadonlySet<TableStatus> = new Set([
@@ -85,8 +86,15 @@ export function showTable(
 		className: "status",
 		attrs: { "data-testid": "connection-summary" },
 	});
+	const keepOpen = el(
+		"p",
+		{ className: "note", attrs: { "data-testid": "keep-open" } },
+		deps.t(TEXT.keepOpen),
+	);
 	// Open on the seat page, where a page that cannot find the host shows why.
 	const network = networkPanel(deps.t, true);
+	// A phone that sleeps on the seat page stops the page, and the host cannot reach it. The room holds its own lock.
+	const wakeLock = new WakeLockPolicy(screenWakeLock);
 
 	const leaveRoom = (): void => {
 		room?.();
@@ -176,6 +184,7 @@ export function showTable(
 			if (view.seat === roomSeat || KEEP_ROOM.has(view.status)) return;
 			leaveRoom();
 		}
+		wakeLock.update(view.seat === null);
 		if (view.seat !== null) {
 			navigation.rememberSeat(view.seat);
 			document.title = pageTitle(deps.t, {
@@ -287,7 +296,7 @@ export function showTable(
 				const parts: (Node | string)[] = [];
 				if (screen.choices !== undefined)
 					parts.push(el("h1", {}, deps.t("Choose your seat")));
-				parts.push(status, summary);
+				parts.push(status, summary, keepOpen);
 				if (deps.storageProblem !== undefined)
 					parts.push(
 						el(
@@ -323,7 +332,9 @@ export function showTable(
 
 	// The election restarts its absence clock when the page comes back (plan §4.4 rule 5).
 	const onVisible = (): void => {
-		if (document.visibilityState === "visible") controller?.wake();
+		if (document.visibilityState !== "visible") return;
+		wakeLock.pageShown();
+		controller?.wake();
 	};
 	const onWake = (): void => controller?.wake();
 	document.addEventListener("visibilitychange", onVisible);
@@ -344,6 +355,7 @@ export function showTable(
 
 	return () => {
 		disposed = true;
+		wakeLock.update(false);
 		document.title = pageTitle(deps.t);
 		document.removeEventListener("visibilitychange", onVisible);
 		window.removeEventListener("online", onWake);
