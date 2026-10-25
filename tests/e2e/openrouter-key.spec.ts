@@ -1,13 +1,19 @@
 import { expect, test } from "@playwright/test";
+import { BOT_MODELS } from "../../src/protocol";
 import { mockOpenRouter } from "./openrouter-mock";
 import { makeCall } from "./room";
 
 /*
- * Saving an OpenRouter key sends one bot bid to the first model in the priority list, so the player sees at once
- * whether the key and the model work (src/bot/key-check.ts). The mock answers with the HTTP status that the test sets.
+ * Saving an OpenRouter key sends one bot bid to the models in the priority list, one after the other, until one
+ * answers, so the player sees at once whether the key works (src/bot/key-check.ts). The mock answers with the HTTP
+ * status that the test sets.
  */
 
-test("Create checks the key with the first model, and a rejected key keeps the player on the create page", async ({
+/** The default model order: each built-in model once, in the order of BOT_MODELS. */
+const EACH_MODEL = (key: string) =>
+	BOT_MODELS.map((model) => ({ model, key: `Bearer ${key}` }));
+
+test("Create checks the key with each model in order, and a key that no model accepts keeps the player on the create page", async ({
 	page,
 }) => {
 	const openRouter = await mockOpenRouter(page);
@@ -17,13 +23,11 @@ test("Create checks the key with the first model, and a rejected key keeps the p
 	await page.locator('input[name="openrouter-key"]').fill("bad-key");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("errors")).toContainText(
-		"OpenRouter rejected the API key (401)",
+		"The OpenRouter key check failed with each model: openai/gpt-6-luna: OpenRouter rejected the API key (401). inception/mercury-3: OpenRouter rejected the API key (401).",
 	);
 	await expect(page.getByTestId("create")).toBeEnabled();
 	await expect(page.getByTestId("room-controls")).toHaveCount(0);
-	expect(openRouter.requests).toEqual([
-		{ model: "openai/gpt-6-luna", key: "Bearer bad-key" },
-	]);
+	expect(openRouter.requests).toEqual(EACH_MODEL("bad-key"));
 	expect(
 		await page.evaluate(() =>
 			localStorage.getItem("opentrick.openrouter-api-key"),
@@ -39,6 +43,25 @@ test("Create checks the key with the first model, and a rejected key keeps the p
 		key: "Bearer good-key",
 	});
 });
+
+for (const status of [404, 429, 500])
+	test(`Create goes on to the second model when the first fails with ${status}, and the table starts with the key`, async ({
+		page,
+	}) => {
+		const openRouter = await mockOpenRouter(page);
+		openRouter.modelStatus["openai/gpt-6-luna"] = status;
+		await page.goto("/");
+		await page.locator('input[name="name-W"]').fill("host west");
+		await page.locator('input[name="openrouter-key"]').fill("good-key");
+		await page.getByTestId("create").click();
+		await expect(page.getByTestId("room-controls")).toBeVisible();
+		expect(openRouter.requests).toEqual(EACH_MODEL("good-key").slice(0, 2));
+		expect(
+			await page.evaluate(() =>
+				localStorage.getItem("opentrick.openrouter-api-key"),
+			),
+		).toBe("good-key");
+	});
 
 test("Create without a key and without bot seats sends no request to OpenRouter", async ({
 	page,
@@ -73,11 +96,16 @@ test("Settings at the table checks a new key, keeps the dialog open on a failure
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await field.fill("empty-account-key");
 	await dialog.getByRole("button", { name: "Save settings" }).click();
-	await expect(dialog).toContainText("insufficient balance (402)");
+	await expect(dialog).toContainText(
+		"The OpenRouter key check failed with each model: openai/gpt-6-luna: The OpenRouter account has insufficient balance (402).",
+	);
 	await expect(dialog).toBeVisible();
-	expect(openRouter.requests).toEqual([
-		{ model: "openai/gpt-6-luna", key: "Bearer empty-account-key" },
-	]);
+	expect(openRouter.requests).toEqual(EACH_MODEL("empty-account-key"));
+	expect(
+		await page.evaluate(() =>
+			localStorage.getItem("opentrick.openrouter-api-key"),
+		),
+	).toBeNull();
 
 	openRouter.status = 200;
 	await field.fill("good-key");
@@ -90,6 +118,36 @@ test("Settings at the table checks a new key, keeps the dialog open on a failure
 		model: "openai/gpt-6-luna",
 		key: "Bearer good-key",
 	});
+	expect(
+		await page.evaluate(() =>
+			localStorage.getItem("opentrick.openrouter-api-key"),
+		),
+	).toBe("good-key");
+});
+
+test("Settings at the table goes on to the next models when the first ones fail, and stores the key that one of them accepts", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+
+	openRouter.modelStatus["openai/gpt-6-luna"] = 403;
+	openRouter.modelStatus["inception/mercury-3"] = 503;
+	const dialog = page.getByTestId("settings-dialog");
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	await dialog
+		.getByRole("textbox", { name: "OpenRouter API key" })
+		.fill("good-key");
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	const third = BOT_MODELS[2];
+	await expect(page.getByTestId("bot-status")).toContainText(
+		`The OpenRouter key works with ${third}.`,
+	);
+	expect(openRouter.requests).toEqual(EACH_MODEL("good-key").slice(0, 3));
 	expect(
 		await page.evaluate(() =>
 			localStorage.getItem("opentrick.openrouter-api-key"),

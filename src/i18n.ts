@@ -98,8 +98,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Prüfe den OpenRouter-Schlüssel mit {model}…",
 		"The OpenRouter key works with {model}.":
 			"Der OpenRouter-Schlüssel funktioniert mit {model}.",
-		"The OpenRouter key check with {model} failed: {reason}":
-			"Die Prüfung des OpenRouter-Schlüssels mit {model} ist fehlgeschlagen: {reason}",
+		"The OpenRouter key check failed with each model: {reasons}":
+			"Die Prüfung des OpenRouter-Schlüssels ist mit jedem Modell fehlgeschlagen: {reasons}",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Gib die vier Spielernamen ein und wähle deinen Platz. Dein Browser hostet zuerst; alle am Tisch können übernehmen.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -734,8 +734,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Az OpenRouter-kulcs ellenőrzése ezzel: {model}…",
 		"The OpenRouter key works with {model}.":
 			"Az OpenRouter-kulcs működik ezzel: {model}.",
-		"The OpenRouter key check with {model} failed: {reason}":
-			"Az OpenRouter-kulcs ellenőrzése nem sikerült ezzel: {model}. Ok: {reason}",
+		"The OpenRouter key check failed with each model: {reasons}":
+			"Az OpenRouter-kulcs ellenőrzése egyik modellel sem sikerült: {reasons}",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Add meg a négy játékos nevét, majd válassz helyet. A böngésződ lesz először a host; bárki átveheti az asztalnál.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -1762,8 +1762,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Kontrollerer OpenRouter-nøkkelen med {model}…",
 		"The OpenRouter key works with {model}.":
 			"OpenRouter-nøkkelen virker med {model}.",
-		"The OpenRouter key check with {model} failed: {reason}":
-			"Kontrollen av OpenRouter-nøkkelen med {model} mislyktes: {reason}",
+		"The OpenRouter key check failed with each model: {reasons}":
+			"Kontrollen av OpenRouter-nøkkelen mislyktes med alle modellene: {reasons}",
 		"This browser does not store data ({problem}). You can play, but you cannot become the host, and a reload loses this copy of the table.":
 			"Nettleseren lagrer ikke data ({problem}). Du kan spille, men ikke bli vert. Hvis du laster inn siden på nytt, går denne bordkopien tapt.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":

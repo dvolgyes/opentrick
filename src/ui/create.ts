@@ -4,7 +4,11 @@ import {
 	writeHostApiKey,
 } from "../bot/host-key";
 import type { HostBotSettings } from "../bot/host-runner";
-import { checkOpenRouterKey } from "../bot/key-check";
+import {
+	checkKeyInModelOrder,
+	checkOpenRouterKey,
+	keyCheckFailureText,
+} from "../bot/key-check";
 import { bridgeModule } from "../game/bridge";
 import { newCommandId } from "../ids";
 import { newTableKey } from "../p2p/link";
@@ -259,33 +263,35 @@ export function showCreate(
 		}
 		void checkKeyThenCreate(
 			normalizedApiKey,
-			botModelOrder(botSetup)[0] as BotModel,
+			botModelOrder(botSetup),
 			config,
 			check.seat,
 			hostBotSettings,
 		);
 	});
 
-	/** A key that fails the check keeps the player on this page, with the reason. */
+	/** A key that no model of the order accepts keeps the player on this page, with the reason of each model. */
 	async function checkKeyThenCreate(
 		key: string,
-		model: BotModel,
+		models: readonly BotModel[],
 		config: RoomConfig,
 		seat: Seat,
 		hostBotSettings?: HostBotSettings,
 	): Promise<void> {
-		submit.textContent = deps.t("Checking the OpenRouter key with {model}…", {
-			model,
-		});
-		const result = await checkOpenRouterKey(key, model);
+		const result = await checkKeyInModelOrder(
+			models,
+			(model) => {
+				submit.textContent = deps.t(
+					"Checking the OpenRouter key with {model}…",
+					{ model },
+				);
+				return checkOpenRouterKey(key, model as BotModel);
+			},
+			() => disposed,
+		);
 		if (disposed) return;
 		if (!result.ok) {
-			showErrors([
-				deps.t("The OpenRouter key check with {model} failed: {reason}", {
-					model,
-					reason: result.reason,
-				}),
-			]);
+			showErrors([keyCheckFailureText(result.failures, deps.t)]);
 			submit.disabled = false;
 			submit.textContent = deps.t("Create game");
 			return;

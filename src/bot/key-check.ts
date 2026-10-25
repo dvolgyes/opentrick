@@ -1,5 +1,6 @@
 import { dealCards } from "../bridge/deal";
 import { createBoard, legalActions } from "../bridge/engine";
+import type { Translate } from "../i18n";
 import type { BotModel } from "../protocol";
 import {
 	BrowserOpenRouterStrategy,
@@ -11,6 +12,50 @@ import { decisionState, renderBidPrompt } from "./strategy";
 export type KeyCheck =
 	| { readonly ok: true }
 	| { readonly ok: false; readonly reason: string };
+
+export type ModelOrderCheck =
+	| { readonly ok: true; readonly model: string }
+	| {
+			readonly ok: false;
+			readonly failures: readonly {
+				readonly model: string;
+				readonly reason: string;
+			}[];
+	  };
+
+/**
+ * Checks the key with each model of the order until one works: any failure, also a rejected key, goes on to the
+ * next model, because OpenRouter can refuse one model and accept another. Each model is asked once. `stopped` ends
+ * the check before the next model, for a page that closed.
+ */
+export async function checkKeyInModelOrder(
+	models: readonly string[],
+	check: (model: string) => Promise<KeyCheck>,
+	stopped: () => boolean = () => false,
+): Promise<ModelOrderCheck> {
+	if (models.length === 0)
+		throw new Error("the model order has no model to check");
+	const failures: { model: string; reason: string }[] = [];
+	for (const model of new Set(models)) {
+		if (stopped()) break;
+		const result = await check(model);
+		if (result.ok) return { ok: true, model };
+		failures.push({ model, reason: result.reason });
+	}
+	return { ok: false, failures };
+}
+
+/** The reason of each model that failed, in the order of the check. */
+export function keyCheckFailureText(
+	failures: Extract<ModelOrderCheck, { ok: false }>["failures"],
+	t: Translate,
+): string {
+	return t("The OpenRouter key check failed with each model: {reasons}", {
+		reasons: failures
+			.map(({ model, reason }) => `${model}: ${reason}`)
+			.join(" "),
+	});
+}
 
 function failureReason(error: unknown): string {
 	if (error instanceof OpenRouterRequestError) {

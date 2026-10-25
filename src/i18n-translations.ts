@@ -2066,12 +2066,12 @@ const rows: readonly TranslationRow[] = [
 		"De OpenRouter-sleutel werkt met {model}.",
 	],
 	[
-		"The OpenRouter key check with {model} failed: {reason}",
-		"La comprobación de la clave de OpenRouter con {model} falló: {reason}",
-		"A verificação da chave OpenRouter com {model} falhou: {reason}",
-		"La vérification de la clé OpenRouter avec {model} a échoué : {reason}",
-		"La verifica della chiave OpenRouter con {model} non è riuscita: {reason}",
-		"De controle van de OpenRouter-sleutel met {model} is mislukt: {reason}",
+		"The OpenRouter key check failed with each model: {reasons}",
+		"La comprobación de la clave de OpenRouter falló con todos los modelos: {reasons}",
+		"A verificação da chave OpenRouter falhou com todos os modelos: {reasons}",
+		"La vérification de la clé OpenRouter a échoué avec chaque modèle : {reasons}",
+		"La verifica della chiave OpenRouter non è riuscita con nessun modello: {reasons}",
+		"De controle van de OpenRouter-sleutel is met elk model mislukt: {reasons}",
 	],
 	[
 		"This browser does not allow storing data, so it cannot create a table.",

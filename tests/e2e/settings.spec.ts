@@ -1,10 +1,12 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { BOT_MODELS } from "../../src/protocol";
 import { mockOpenRouter } from "./openrouter-mock";
 import { Player } from "./player";
 
 /*
  * Settings opens a dialog of the player's own choices, kept in this browser's local storage under the opentrick
- * prefix (src/ui/settings.ts). A new key or a custom model must pass one OpenRouter request before Save stores it.
+ * prefix (src/ui/settings.ts). A new key or a custom model must pass an OpenRouter request to one model of the model
+ * order before Save stores it.
  */
 const CUSTOM = "vendor/custom-model";
 
@@ -156,12 +158,15 @@ test("a custom model needs a key and a working check, then goes first in the mod
 	await key.fill("good-key");
 	await save.click();
 	await expect(dialog.getByRole("status")).toContainText(
-		`The OpenRouter key check with ${CUSTOM} failed: OpenRouter could not find this model (404).`,
+		`The OpenRouter key check failed with each model: ${CUSTOM}: OpenRouter could not find this model (404).`,
 	);
 	await expect(dialog).toBeVisible();
-	expect(openRouter.requests).toEqual([
-		{ model: CUSTOM, key: "Bearer good-key" },
-	]);
+	// The custom model first, then each built-in model.
+	expect(openRouter.requests[0]).toEqual({
+		model: CUSTOM,
+		key: "Bearer good-key",
+	});
+	expect(openRouter.requests).toHaveLength(1 + BOT_MODELS.length);
 	expect(
 		await page.evaluate(() => [
 			localStorage.getItem("opentrick.settings.custom-model"),

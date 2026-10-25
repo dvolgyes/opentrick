@@ -78,8 +78,10 @@ You bring your own [OpenRouter API key](https://openrouter.ai/).
 Enter the key in the create screen, also when no seat is a bot yet, or in the table's bot controls before enabling a substitute.
 The key is stored in the host browser and is not included in the shared room link.
 When you save a key, the browser sends one test bid request to the first model in the model order.
-If this request fails, the create screen does not create the table, and the table's key dialog stays open; both show the reason.
-This test request can cost a small amount, which the table's cost display does not include.
+If this request fails for any reason, the browser sends the request to the next model, until one model answers or no model is left.
+The key is saved when one model answers.
+If every model fails, the create screen does not create the table, and the table's key dialog stays open; both show the reason for each model.
+These test requests can cost a small amount, which the table's cost display does not include.
 If the current host has no usable key, bot play is unavailable until a host with a key takes over or the key is set.
 You can choose the model order and retry settings when creating the room.
 

@@ -3,7 +3,11 @@ import {
 	readHostApiKey,
 	writeHostApiKey,
 } from "../bot/host-key";
-import { checkOpenRouterKey } from "../bot/key-check";
+import {
+	checkKeyInModelOrder,
+	checkOpenRouterKey,
+	keyCheckFailureText,
+} from "../bot/key-check";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import { type BotModel, botModelLabel } from "../protocol";
 import type { AppDeps } from "./deps";
@@ -341,26 +345,26 @@ export function settingsDialog(
 		const changed = key !== storedKey || model !== stored.customModel;
 		let checkedModel: string | undefined;
 		if (key !== "" && changed) {
-			// A custom model must answer with this key; without one, the first model checks the key.
-			const checked = model !== "" ? model : effectiveModelOrder(settings)[0];
-			if (checked === undefined)
-				throw new Error("the model order has no model to check");
+			// The models in the order of the list, a custom model in its place; the first one that answers checks the key.
 			save.disabled = true;
-			status.textContent = t("Checking the OpenRouter key with {model}…", {
-				model: checked,
-			});
-			// The request sends the model id as text; BotModel only names the built-in models.
-			const result = await checkOpenRouterKey(key, checked as BotModel);
+			const result = await checkKeyInModelOrder(
+				effectiveModelOrder(settings),
+				(checked) => {
+					status.textContent = t("Checking the OpenRouter key with {model}…", {
+						model: checked,
+					});
+					// The request sends the model id as text; BotModel only names the built-in models.
+					return checkOpenRouterKey(key, checked as BotModel);
+				},
+				() => attempt !== current,
+			);
 			if (attempt !== current) return;
 			save.disabled = false;
 			if (!result.ok) {
-				status.textContent = t(
-					"The OpenRouter key check with {model} failed: {reason}",
-					{ model: checked, reason: result.reason },
-				);
+				status.textContent = keyCheckFailureText(result.failures, t);
 				return;
 			}
-			checkedModel = checked;
+			checkedModel = result.model;
 		}
 		try {
 			writeHostApiKey(deps.browser, key);
