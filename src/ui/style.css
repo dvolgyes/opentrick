@@ -158,6 +158,11 @@ td label {
 	display: none;
 }
 
+.banner .detail {
+	flex-basis: 100%;
+	font-size: 0.8rem;
+}
+
 .copy-field {
 	display: flex;
 	flex-wrap: wrap;

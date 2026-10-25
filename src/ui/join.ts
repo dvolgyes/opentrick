@@ -15,6 +15,7 @@ import type { AppDeps, Dispose, Navigation } from "./deps";
 import { button, el } from "./dom";
 import {
 	chooseText,
+	connectionSummary,
 	type LobbyScreen,
 	lobbyScreen,
 	networkLines,
@@ -79,6 +80,10 @@ export function showTable(
 
 	const status = el("p", {
 		attrs: { role: "status", "data-testid": "table-status" },
+	});
+	const summary = el("p", {
+		className: "status",
+		attrs: { "data-testid": "connection-summary" },
 	});
 	const network = networkPanel(deps.t);
 
@@ -235,7 +240,20 @@ export function showTable(
 				t: deps.t,
 			}),
 		);
-		if (screen.kind === "lobby") status.textContent = screen.status ?? "";
+		if (screen.kind === "lobby") {
+			status.textContent = screen.status ?? "";
+			// The lobby has a status only while it waits for a connection.
+			summary.hidden = screen.status === undefined;
+			summary.textContent =
+				screen.status === undefined
+					? ""
+					: connectionSummary({
+							network: view.network,
+							peers: view.peers,
+							publicAddress: view.publicAddress,
+							t: deps.t,
+						});
+		}
 		const problem =
 			notice ??
 			(view.seatError === null ? undefined : seatText(view.seatError, deps.t));
@@ -268,7 +286,7 @@ export function showTable(
 				const parts: (Node | string)[] = [];
 				if (screen.choices !== undefined)
 					parts.push(el("h1", {}, deps.t("Choose your seat")));
-				parts.push(status);
+				parts.push(status, summary);
 				if (deps.storageProblem !== undefined)
 					parts.push(
 						el(

@@ -63,6 +63,7 @@ import {
 	bannerText,
 	botPlays,
 	callSeats,
+	connectionDetail,
 	draftFor,
 	heldSeats,
 	networkLines,
@@ -71,6 +72,7 @@ import {
 	type RosterRow,
 	releaseText,
 	roomView,
+	type SummaryInput,
 	storageNotice,
 	submitText,
 	TEXT,
@@ -351,6 +353,10 @@ export function showRoom(
 		attrs: { "data-testid": "become-host" },
 	});
 	const bannerHint = el("span", { className: "note" });
+	const bannerDetail = el("span", {
+		className: "note detail",
+		attrs: { "data-testid": "banner-detail" },
+	});
 	const retrySeat = button(deps.t("Try seat again"), handlers.retrySeat, {
 		attrs: { "data-testid": "retry-seat" },
 	});
@@ -448,6 +454,7 @@ export function showRoom(
 		bannerHint,
 		retrySeat,
 		createNew,
+		bannerDetail,
 	);
 	const actionNote = el("p", {
 		className: "note",
@@ -1275,7 +1282,13 @@ export function showRoom(
 		audio.render(display.available ? display.view.remotes : []);
 	}
 
-	function renderBanner(shown: Banner | undefined): void {
+	function renderBanner(
+		shown: Banner | undefined,
+		summary: SummaryInput,
+	): void {
+		const detail = connectionDetail(shown, summary);
+		bannerDetail.hidden = detail === undefined;
+		bannerDetail.textContent = detail ?? "";
 		banner.hidden = shown === undefined;
 		banner.dataset.kind = shown?.kind ?? "";
 		bannerLine.textContent =
@@ -1430,7 +1443,12 @@ export function showRoom(
 			botHoldsSeat = botAlone;
 			if (!botAlone) memory?.seatReturned();
 		}
-		renderBanner(bannerFor(view));
+		renderBanner(bannerFor(view), {
+			network: view.network,
+			peers: view.peers,
+			publicAddress: view.publicAddress,
+			t: deps.t,
+		});
 		actionNote.textContent = actionError ?? "";
 		actionNote.hidden = actionError === undefined;
 		allConnected.hidden = !view.allConnected;

@@ -2,9 +2,10 @@ import { isChatCommand, isChatEvent } from "../game/bridge";
 import { parseChatEvent } from "../game/chat";
 import { englishTranslator as english, type Translate } from "../i18n";
 import type { ElectionView, HostBlock } from "../p2p/election";
-import type { MeshDiagnostics } from "../p2p/mesh";
+import type { MeshDiagnostics, RelayStatus } from "../p2p/mesh";
 import type { OutboxItem, SubmitResult } from "../p2p/outbox";
 import type { StorageCode } from "../p2p/storage";
+import type { StunStatus } from "../p2p/stun-probe";
 import type {
 	ChooseResult,
 	CommandFailure,
@@ -393,7 +394,10 @@ export interface NetworkLine {
 	readonly value: string;
 }
 
-/** Counts and yes-or-no facts only: never an address, a candidate or a session description. */
+/**
+ * Counts, yes-or-no facts and the host names of the configured trackers, Nostr relays and STUN servers only: never
+ * a peer's address, a candidate or a session description.
+ */
 export function networkLines(input: NetworkInput): NetworkLine[] {
 	const { network } = input;
 	const t = input.t ?? english;
@@ -404,20 +408,16 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 				`${SEAT_NAMES[peer.seat]} (${Math.round(peer.check.rttMs)} ms)`,
 			);
 	}
+	const [trackers, nostr, direct, publicAddress] = summaryLines(input, t);
 	return [
-		{
-			label: t("Trackers reachable"),
-			value: network
-				? `${network.trackersOpen} of ${network.trackers}`
-				: t("not started"),
-		},
-		{
-			label: t("Nostr relays reachable"),
-			value: network
-				? `${network.nostrOpen} of ${network.nostrRelays}`
-				: t("not started"),
-		},
-		{ label: t("Direct connections"), value: String(input.peers.length) },
+		trackers,
+		nostr,
+		...(network?.relays ?? []).map((relay) => relayLine(relay, t)),
+		...(network?.stun ?? []).map((stun) => ({
+			label: t("STUN {host}", { host: serverName(stun.url) }),
+			value: t(STUN_STATE[stun.state]),
+		})),
+		direct,
 		{
 			label: t("Players checked"),
 			value: checked.length === 0 ? t("none") : checked.join(", "),
@@ -434,16 +434,99 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 			label: t("Rejoins with no links"),
 			value: String(network?.rejoins ?? 0),
 		},
-		{
-			label: t("Public address found"),
-			value: input.publicAddress ? t("yes") : t("no"),
-		},
+		publicAddress,
 		{
 			label: t("Ignored wrong-key attempts"),
 			value: String(network?.wrongKey ?? 0),
 		},
 		{ label: t("Storage"), value: storageLine(input, t) },
 	];
+}
+
+export type SummaryInput = Pick<
+	NetworkInput,
+	"network" | "peers" | "publicAddress" | "t"
+>;
+
+/** One line for a page that waits for a host: how far its signalling and its direct connections got. */
+export function connectionSummary(input: SummaryInput): string {
+	return summaryLines(input, input.t ?? english)
+		.map((line) => `${line.label}: ${line.value}`)
+		.join(" · ");
+}
+
+/** The summary under a banner that waits for a connection; undefined under the other banners. */
+export function connectionDetail(
+	banner: Banner | undefined,
+	input: SummaryInput,
+): string | undefined {
+	switch (banner?.kind) {
+		case "connecting":
+		case "waiting-for-host":
+		case "host-unreachable":
+		case "nobody-here":
+		case "connection-failed":
+		case "becoming-host":
+			return connectionSummary(input);
+		default:
+			return undefined;
+	}
+}
+
+function summaryLines(
+	input: SummaryInput,
+	t: Translate,
+): readonly [NetworkLine, NetworkLine, NetworkLine, NetworkLine] {
+	const { network } = input;
+	return [
+		{
+			label: t("Trackers reachable"),
+			value: network
+				? `${network.trackersOpen} of ${network.trackers}`
+				: t("not started"),
+		},
+		{
+			label: t("Nostr relays reachable"),
+			value: network
+				? `${network.nostrOpen} of ${network.nostrRelays}`
+				: t("not started"),
+		},
+		{ label: t("Direct connections"), value: String(input.peers.length) },
+		{
+			label: t("Public address found"),
+			value: input.publicAddress ? t("yes") : t("no"),
+		},
+	];
+}
+
+const STUN_STATE: Readonly<Record<StunStatus["state"], string>> = {
+	checking: "checking",
+	answered: "answered",
+	"no-answer": "no answer",
+};
+
+function relayLine(relay: RelayStatus, t: Translate): NetworkLine {
+	const host = serverName(relay.url);
+	const heard =
+		relay.heardAgoMs === undefined
+			? t("nothing heard yet")
+			: t("heard {seconds} s ago", {
+					seconds: Math.round(relay.heardAgoMs / 1000),
+				});
+	return {
+		label:
+			relay.kind === "tracker"
+				? t("Tracker {host}", { host })
+				: t("Nostr relay {host}", { host }),
+		value: relay.open ? `${t("open")}, ${heard}` : t("closed"),
+	};
+}
+
+/** The host of a `wss:` URL, or the host and port after the scheme of a `stun:` URL. */
+function serverName(url: string): string {
+	if (!URL.canParse(url)) return url;
+	const parsed = new URL(url);
+	return parsed.host !== "" ? parsed.host : parsed.pathname;
 }
 
 function repairLine(network: MeshDiagnostics, t: Translate): string {
