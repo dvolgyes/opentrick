@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { type Locale, translatedMessageKeys, translator } from "../../src/i18n";
+import { mockOpenRouterKey } from "./openrouter-mock";
 
 // The host plays West in Hungarian against three host bots, on a desktop and on a phone. At each stage of a board,
 // every visible text and label must be Hungarian: no English catalog text, and no common English word.
@@ -111,6 +112,7 @@ async function englishOn(page: Page, stage: string): Promise<string[]> {
 
 /** The first call of a board is 1NT; every later bot call is a pass, and every bot card is its first legal card. */
 async function mockBots(page: Page): Promise<void> {
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		if (route.request().method() === "OPTIONS") {
 			await route.fulfill({

@@ -64,6 +64,7 @@ function join(url: string, offersPerAnnounce?: number): Room {
 			rtcPolyfill,
 			trackerUrls: [url],
 			nostrRelayUrls: [],
+			mqttBrokerUrls: [],
 			...(offersPerAnnounce === undefined ? {} : { offersPerAnnounce }),
 		},
 		url,

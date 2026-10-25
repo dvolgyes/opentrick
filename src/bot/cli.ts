@@ -220,9 +220,8 @@ async function run(options: Options): Promise<void> {
 		finish(error);
 	};
 	const onSignal = (): void => {
-		void stop().finally(() => {
-			process.exitCode = 130;
-		});
+		process.exitCode = 130;
+		void stop();
 	};
 	process.once("SIGINT", onSignal);
 	process.once("SIGTERM", onSignal);
@@ -499,3 +498,5 @@ try {
 	);
 	process.exitCode = 1;
 }
+// Trystero keeps the relay sockets after the room is left, and they alone would keep the process alive.
+process.exit();

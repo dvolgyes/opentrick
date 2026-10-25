@@ -1,7 +1,7 @@
 /*
- * The Nostr strategy of Trystero 0.26.0, copied from @trystero-p2p/nostr (dist/index.mjs) together with the topic
- * mapping of @trystero-p2p/core (src/topic-strategy.ts and `shouldActivatePassiveRoom` of src/signal-handler.ts).
- * Merge Trystero's changes by hand on an upgrade of @trystero-p2p/core. The changes from upstream:
+ * The Nostr strategy of Trystero 0.26.0, copied from @trystero-p2p/nostr (dist/index.mjs), with the topic mapping of
+ * @trystero-p2p/core in `topic-mapping.ts`. Merge Trystero's changes by hand on an upgrade of @trystero-p2p/core. The
+ * changes from upstream:
  *
  * - This is an adapter of the combined strategy (`signaling.ts`), not a strategy of its own, so a page that meets
  *   a peer through a tracker and through a Nostr relay keeps one connection to it.
@@ -44,16 +44,16 @@ import {
 	hashWith,
 	type JoinRoomConfig,
 	libName,
-	type StrategyAdapter,
-	type StrategyContext,
 	type StrategyMessage,
-	selfId,
 	strToNum,
+	type TopicPublishContext,
+	type TopicSubscriptionContext,
 	toHex,
 	toJson,
 } from "@trystero-p2p/core";
 import type { RelayCheckAnswer } from "./relay-check";
 import { type RelayClient, relaySocket } from "./relay-socket";
+import { type RelayAdapter, topicMapping } from "./topic-mapping";
 
 const relayManager = createRelayManager<RelayClient>((client) => client.socket);
 const clients: Record<string, RelayClient> = {};
@@ -472,15 +472,11 @@ const handleRelayMessage = (
 	}
 };
 
-type TopicContext = {
-	kind: "announce" | "signal";
-};
-
 const subscribeTopic = (
 	client: RelayClient,
 	topic: string,
-	onMessage: (topic: string, msg: string) => void | Promise<void>,
-	kind: "root" | "self",
+	onMessage: (topic: string, msg: StrategyMessage) => void | Promise<void>,
+	{ kind }: TopicSubscriptionContext,
 ): (() => void) | Promise<() => void> => {
 	const handler: TopicHandler = (topic, data) => void onMessage(topic, data);
 	batchAdd(client, topic, handler);
@@ -496,9 +492,10 @@ const subscribeTopic = (
 const publishTopic = (
 	client: RelayClient,
 	topic: string,
-	payload: string,
-	{ kind }: TopicContext,
+	msg: StrategyMessage,
+	{ kind }: TopicPublishContext,
 ): Promise<AnnounceResult | undefined> => {
+	const payload = typeof msg === "string" ? msg : toJson(msg);
 	if (kind === "announce")
 		announcementMessages.forRelay(client)[topic] = payload;
 	return publishMessage(client, topic, payload, kind === "announce");
@@ -508,62 +505,8 @@ const unpublishTopic = (client: RelayClient, topic: string): void => {
 	delete announcementMessages.forRelay(client)[topic];
 };
 
-/** Whether a message on a passive room's topic should wake the room: an announcement of another active page. */
-const shouldActivatePassiveRoom = (msg: StrategyMessage): boolean => {
-	let payload: unknown = msg;
-	if (typeof msg === "string") {
-		try {
-			payload = JSON.parse(msg);
-		} catch {
-			return false;
-		}
-	}
-	if (!isRecord(payload)) return false;
-	const hasInvalidSignalField =
-		["offer", "answer", "candidate"].some(
-			(key) =>
-				key in payload &&
-				(typeof payload[key] !== "string" || payload[key] === ""),
-		) ||
-		("peer" in payload && typeof msg === "string");
-	if (hasInvalidSignalField) return false;
-	const text = (key: string): string | undefined =>
-		typeof payload[key] === "string" && payload[key] !== ""
-			? payload[key]
-			: undefined;
-	const peerId = text("peerId");
-	return Boolean(
-		peerId &&
-			peerId !== selfId &&
-			payload.passive !== true &&
-			!text("answer") &&
-			!text("candidate"),
-	);
-};
-
-type NostrAdapter = Omit<
-	StrategyAdapter<RelayClient, JoinRoomConfig>,
-	"init" | "deactivate"
-> & {
-	init: (
-		urls: readonly string[],
-		config: JoinRoomConfig,
-	) => Promise<RelayClient>[];
-	deactivate: NonNullable<
-		StrategyAdapter<RelayClient, JoinRoomConfig>["deactivate"]
-	>;
-};
-
-const requireContext = (
-	context: StrategyContext<JoinRoomConfig> | undefined,
-): StrategyContext<JoinRoomConfig> => {
-	if (!context)
-		throw new Error(`${libName}: topic strategy missing room context`);
-	return context;
-};
-
 /** The Nostr relays of the combined strategy (`signaling.ts`), one client for each URL in the page. */
-export const nostrAdapter: NostrAdapter = {
+export const nostrAdapter: RelayAdapter<RelayClient> = {
 	init: (urls, config) =>
 		urls.map((url) => {
 			const client = relayManager.register(url, () =>
@@ -577,71 +520,7 @@ export const nostrAdapter: NostrAdapter = {
 			return client.ready;
 		}),
 
-	subscribe: async (client, rootTopic, selfTopic, onMessage, _, rawContext) => {
-		const context = requireContext(rawContext);
-		const signalPeer = (peerTopic: string, signal: string) =>
-			void publishTopic(client, peerTopic, signal, { kind: "signal" });
-		let selfCleanup: (() => void) | null = null;
-		let selfCleanupDone = false;
-		let selfSubscriptionP: Promise<void> | null = null;
-		let didCleanup = false;
-		const cleanupSelf = (cleanup: () => void) => {
-			if (selfCleanupDone) return;
-			selfCleanupDone = true;
-			cleanup();
-		};
-		const ensureSelfSubscription = () => {
-			selfSubscriptionP ??= Promise.resolve(
-				subscribeTopic(
-					client,
-					selfTopic,
-					(topic, msg) => {
-						if (!didCleanup) void onMessage(topic, msg, signalPeer);
-					},
-					"self",
-				),
-			).then((cleanup) => {
-				selfCleanup = cleanup;
-				if (didCleanup) cleanupSelf(cleanup);
-			});
-			return selfSubscriptionP;
-		};
-		if (!context.isPassive) await ensureSelfSubscription();
-		const rootCleanup = await subscribeTopic(
-			client,
-			rootTopic,
-			async (topic, msg) => {
-				if (didCleanup) return;
-				if (context.isPassive && shouldActivatePassiveRoom(msg))
-					await ensureSelfSubscription();
-				if (!didCleanup) await onMessage(topic, msg, signalPeer);
-			},
-			"root",
-		);
-		return () => {
-			didCleanup = true;
-			if (selfCleanup) cleanupSelf(selfCleanup);
-			rootCleanup();
-		};
-	},
-
-	announce: async (client, rootTopic, _, extraPayload) => {
-		const result = await publishTopic(
-			client,
-			rootTopic,
-			toJson({ peerId: selfId, ...extraPayload }),
-			{ kind: "announce" },
-		);
-		return typeof result === "number" ||
-			(result !== undefined && "stopAnnouncing" in result)
-			? result
-			: {
-					nextAnnounceMs: result?.nextAnnounceMs ?? steadyAnnounceIntervalMs,
-					reannounceOnDisconnect: result?.reannounceOnDisconnect ?? true,
-				};
-	},
-
-	deactivate: (client, rootTopic) => unpublishTopic(client, rootTopic),
+	...topicMapping({ subscribeTopic, publishTopic, unpublishTopic }),
 };
 
 /** The Nostr relay sockets by URL, for the evidence that each relay is alive. */

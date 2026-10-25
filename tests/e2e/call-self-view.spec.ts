@@ -7,6 +7,7 @@ import {
 	leaveButton,
 	toggle,
 } from "./call-probe";
+import { mockOpenRouterKey } from "./openrouter-mock";
 import { Player } from "./player";
 import { CONNECT_MS, createRoom } from "./room";
 
@@ -27,6 +28,7 @@ const SWITCHES = [
 
 /** The bots always pass, so the board stays in the auction. */
 async function passingBots(page: Page): Promise<void> {
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", (route) =>
 		route.fulfill({
 			status: 200,

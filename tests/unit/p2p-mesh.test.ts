@@ -69,10 +69,15 @@ function recordingMesh(): {
 		{
 			tableId: TABLE,
 			key: KEY,
-			config: { trackers: ["wss://tracker.test"], nostrRelays: [], rtc: {} },
+			config: {
+				trackers: ["wss://tracker.test"],
+				nostrRelays: [],
+				mqttBrokers: [],
+				rtc: {},
+			},
 			joinRoom,
 			self: "0123456789AbCdEfGhIj",
-			relaySockets: () => ({ tracker: {}, nostr: {} }),
+			relaySockets: () => ({ tracker: {}, nostr: {}, mqtt: {} }),
 			reconnectRelay: () => {},
 			clock: { monotonic: () => 0, wall: () => 0 },
 		},
@@ -162,13 +167,22 @@ function statusMesh(
 		{
 			tableId: TABLE,
 			key: KEY,
-			config: { trackers, nostrRelays, rtc: rtcConfiguration(stun.urls) },
+			config: {
+				trackers,
+				nostrRelays,
+				mqttBrokers: [],
+				rtc: rtcConfiguration(stun.urls),
+			},
 			joinRoom: (config) => {
 				joins.push(config);
 				return emptyRoom();
 			},
 			self: "0123456789AbCdEfGhIj",
-			relaySockets: () => ({ tracker: sockets, nostr: nostrSockets }),
+			relaySockets: () => ({
+				tracker: sockets,
+				nostr: nostrSockets,
+				mqtt: {},
+			}),
 			reconnectRelay: (kind, url) => reconnects.push(`${kind} ${url}`),
 			relayResting: (kind, url) => resting.has(`${kind} ${url}`),
 			watchNetwork: (onChange, onShown) => {
@@ -237,14 +251,14 @@ describe("the mesh's evidence that the trackers are alive", () => {
 			{
 				tableId: TABLE,
 				key: KEY,
-				config: { trackers: [A], nostrRelays: [], rtc: {} },
+				config: { trackers: [A], nostrRelays: [], mqttBrokers: [], rtc: {} },
 				// Trystero opens its sockets during the join, and the reply can come before the first tick.
 				joinRoom: () => {
 					sockets[A] = new FakeSocket();
 					return emptyRoom();
 				},
 				self: "0123456789AbCdEfGhIj",
-				relaySockets: () => ({ tracker: sockets, nostr: {} }),
+				relaySockets: () => ({ tracker: sockets, nostr: {}, mqtt: {} }),
 				reconnectRelay: () => {},
 				clock: { monotonic: () => 0, wall: () => 0 },
 			},
@@ -727,10 +741,10 @@ function linkMesh(on = true) {
 		{
 			tableId: TABLE,
 			key: KEY,
-			config: { trackers: [A], nostrRelays: [], rtc: {} },
+			config: { trackers: [A], nostrRelays: [], mqttBrokers: [], rtc: {} },
 			joinRoom: () => room,
 			self: "0123456789AbCdEfGhIj",
-			relaySockets: () => ({ tracker: {}, nostr: {} }),
+			relaySockets: () => ({ tracker: {}, nostr: {}, mqtt: {} }),
 			reconnectRelay: () => {},
 			silentLinks: () => silent.on,
 			clock: { monotonic: () => clock.now, wall: () => 1_000_000 + clock.now },

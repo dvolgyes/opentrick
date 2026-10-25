@@ -1,43 +1,68 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { mockOpenRouter } from "./openrouter-mock";
 import { makeCall } from "./room";
 
 /*
- * Saving an OpenRouter key sends one bot bid to the first model in the priority list, so the player sees at once
- * whether the key and the model work (src/bot/key-check.ts). The mock answers with the HTTP status that the test sets.
+ * Saving an OpenRouter key reads the key and its balance from OpenRouter, without a model request, so the player sees
+ * at once whether the key works (src/bot/openrouter-balance.ts). A key is accepted when its balance is above $0.10,
+ * or when OpenRouter reports no amount. The mock answers with the HTTP status and the amounts that the test sets.
  */
 
-test("Create checks the key with the first model, and a rejected key keeps the player on the create page", async ({
+const storedKey = (page: Page) =>
+	page.evaluate(() => localStorage.getItem("opentrick.openrouter-api-key"));
+
+test("Create checks the key with OpenRouter, and a rejected key keeps the player on the create page", async ({
 	page,
 }) => {
 	const openRouter = await mockOpenRouter(page);
-	openRouter.status = 401;
+	openRouter.keyStatus = 401;
 	await page.goto("/");
 	await page.locator('input[name="name-W"]').fill("host west");
 	await page.locator('input[name="openrouter-key"]').fill("bad-key");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("errors")).toContainText(
-		"OpenRouter rejected the API key (401)",
+		"OpenRouter rejected the API key (401).",
 	);
 	await expect(page.getByTestId("create")).toBeEnabled();
 	await expect(page.getByTestId("room-controls")).toHaveCount(0);
-	expect(openRouter.requests).toEqual([
-		{ model: "openai/gpt-6-luna", key: "Bearer bad-key" },
-	]);
-	expect(
-		await page.evaluate(() =>
-			localStorage.getItem("opentrick.openrouter-api-key"),
-		),
-	).toBe("bad-key");
+	expect(openRouter.keyChecks).toEqual(["Bearer bad-key"]);
+	expect(openRouter.requests).toEqual([]);
+	expect(await storedKey(page)).toBe("bad-key");
 
-	openRouter.status = 200;
+	openRouter.keyStatus = 503;
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("errors")).toContainText(
+		"OpenRouter returned HTTP 503 for the key check.",
+	);
+
+	openRouter.keyStatus = 200;
 	await page.locator('input[name="openrouter-key"]').fill("good-key");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
-	expect(openRouter.requests.at(-1)).toEqual({
-		model: "openai/gpt-6-luna",
-		key: "Bearer good-key",
-	});
+	expect(openRouter.keyChecks.at(-1)).toBe("Bearer good-key");
+	expect(openRouter.requests).toEqual([]);
+});
+
+test("Create refuses a key whose balance is $0.10 or less, and accepts one above $0.10", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	openRouter.balance = { limitRemaining: 0.1, credits: 10, usage: 0 };
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	await page.locator('input[name="openrouter-key"]').fill("poor-key");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("errors")).toContainText(
+		"The OpenRouter balance is $0.10. A key needs more than $0.10.",
+	);
+	await expect(page.getByTestId("room-controls")).toHaveCount(0);
+
+	openRouter.balance = { limitRemaining: null, credits: 1, usage: 0.85 };
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	expect(openRouter.keyChecks).toEqual(["Bearer poor-key", "Bearer poor-key"]);
+	expect(openRouter.requests).toEqual([]);
+	expect(await storedKey(page)).toBe("poor-key");
 });
 
 test("Create without a key and without bot seats sends no request to OpenRouter", async ({
@@ -48,6 +73,7 @@ test("Create without a key and without bot seats sends no request to OpenRouter"
 	await page.locator('input[name="name-W"]').fill("host west");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
+	expect(openRouter.keyChecks).toEqual([]);
 	expect(openRouter.requests).toEqual([]);
 });
 
@@ -69,32 +95,51 @@ test("Settings at the table checks a new key, keeps the dialog open on a failure
 
 	const dialog = page.getByTestId("settings-dialog");
 	const field = dialog.getByRole("textbox", { name: "OpenRouter API key" });
-	openRouter.status = 402;
+	openRouter.balance = { limitRemaining: null, credits: 5, usage: 4.95 };
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
 	await field.fill("empty-account-key");
 	await dialog.getByRole("button", { name: "Save settings" }).click();
-	await expect(dialog).toContainText("insufficient balance (402)");
+	await expect(dialog).toContainText(
+		"The OpenRouter balance is $0.05. A key needs more than $0.10.",
+	);
 	await expect(dialog).toBeVisible();
-	expect(openRouter.requests).toEqual([
-		{ model: "openai/gpt-6-luna", key: "Bearer empty-account-key" },
-	]);
+	expect(openRouter.keyChecks).toEqual(["Bearer empty-account-key"]);
+	expect(await storedKey(page)).toBeNull();
 
-	openRouter.status = 200;
+	openRouter.balance = { limitRemaining: 2.5, credits: 10, usage: 0 };
 	await field.fill("good-key");
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
 	await expect(page.getByTestId("bot-status")).toContainText(
-		"The OpenRouter key works with openai/gpt-6-luna.",
+		"The OpenRouter key works. Balance: $2.5.",
 	);
-	expect(openRouter.requests.at(-1)).toEqual({
-		model: "openai/gpt-6-luna",
-		key: "Bearer good-key",
-	});
-	expect(
-		await page.evaluate(() =>
-			localStorage.getItem("opentrick.openrouter-api-key"),
-		),
-	).toBe("good-key");
+	expect(openRouter.keyChecks.at(-1)).toBe("Bearer good-key");
+	expect(openRouter.requests).toEqual([]);
+	expect(await storedKey(page)).toBe("good-key");
+});
+
+test("Settings at the table accepts a key whose balance OpenRouter does not report", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+
+	openRouter.balance = { limitRemaining: null, credits: 0, usage: 0 };
+	openRouter.creditsStatus = 403;
+	const dialog = page.getByTestId("settings-dialog");
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	await dialog
+		.getByRole("textbox", { name: "OpenRouter API key" })
+		.fill("good-key");
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByTestId("bot-status")).toContainText(
+		"The OpenRouter key works. OpenRouter did not report the balance.",
+	);
+	expect(await storedKey(page)).toBe("good-key");
 });
 
 test("a model order saved in Settings at the table goes to the running bots and to the table link", async ({
@@ -162,9 +207,7 @@ test("a seat switched to a bot without a key opens Settings, and the seat become
 	await expect(
 		north.getByRole("button", { name: /Switch to player$/ }),
 	).toBeVisible();
-	expect(openRouter.requests).toEqual([
-		{ model: "openai/gpt-6-luna", key: "Bearer good-key" },
-	]);
+	expect(openRouter.keyChecks).toEqual(["Bearer good-key"]);
 });
 test("a key stored in this browser fills a new create page and runs the bots, also after a reload", async ({
 	page,
@@ -185,8 +228,9 @@ test("a key stored in this browser fills a new create page and runs the bots, al
 	}
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
-	// The key check, then at least one bot call.
-	await expect.poll(() => openRouter.requests.length).toBeGreaterThan(1);
+	// The check at create, then the balance read at the start of each board.
+	expect(openRouter.keyChecks[0]).toBe("Bearer stored-key");
+	await expect.poll(() => openRouter.requests.length).toBeGreaterThan(0);
 	await page.getByRole("button", { name: "Pause bots" }).click();
 	await page.reload();
 	const beforeResume = openRouter.requests.length;
@@ -197,6 +241,7 @@ test("a key stored in this browser fills a new create page and runs the bots, al
 	expect(new Set(openRouter.requests.map((request) => request.key))).toEqual(
 		new Set(["Bearer stored-key"]),
 	);
+	expect(new Set(openRouter.keyChecks)).toEqual(new Set(["Bearer stored-key"]));
 });
 
 test("a key without its sk-or-v1- start, or with parts of it, gets the full start before the check and the save", async ({
@@ -213,10 +258,7 @@ test("a key without its sk-or-v1- start, or with parts of it, gets the full star
 	await page.locator('input[name="openrouter-key"]').fill(`  or-v1-${first} `);
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
-	expect(openRouter.requests[0]).toEqual({
-		model: "openai/gpt-6-luna",
-		key: `Bearer sk-or-v1-${first}`,
-	});
+	expect(openRouter.keyChecks[0]).toBe(`Bearer sk-or-v1-${first}`);
 	expect(await stored()).toBe(`sk-or-v1-${first}`);
 
 	await page.getByRole("button", { name: "Settings", exact: true }).click();
@@ -224,13 +266,9 @@ test("a key without its sk-or-v1- start, or with parts of it, gets the full star
 	await dialog
 		.getByRole("textbox", { name: "OpenRouter API key" })
 		.fill(`sk-${second}`);
-	const before = openRouter.requests.length;
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
-	expect(openRouter.requests[before]).toEqual({
-		model: "openai/gpt-6-luna",
-		key: `Bearer sk-or-v1-${second}`,
-	});
+	expect(openRouter.keyChecks.at(-1)).toBe(`Bearer sk-or-v1-${second}`);
 	expect(await stored()).toBe(`sk-or-v1-${second}`);
 });
 
@@ -264,4 +302,34 @@ test("the key is shown as typed, not masked, on the create page and in Settings"
 	for (const [name, value] of SHOWN_KEY_FIELD)
 		await expect(settings).toHaveAttribute(name, value);
 	await expect(settings).toHaveValue(key);
+});
+
+test("the table shows the cost and the balance, and reads the balance again at the start of each board", async ({
+	page,
+}) => {
+	const openRouter = await mockOpenRouter(page);
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("host west");
+	for (const seat of ["N", "E", "S"])
+		await page.locator(`input[name="bot-${seat}"]`).check();
+	await page.locator('input[name="openrouter-key"]').fill("good-key");
+	await page.getByTestId("create").click();
+	const table = page.getByTestId("table");
+	await expect(table).toHaveAttribute("data-board", "1");
+	await expect(page.getByTestId("bot-spend")).toHaveText(
+		/^Cost: \$\d+\.\d{4}$/,
+	);
+	await expect(page.getByTestId("bot-balance")).toHaveText("Balance: $10.0");
+	// The check at create, and the read at the start of board 1.
+	expect(openRouter.keyChecks).toEqual(["Bearer good-key", "Bearer good-key"]);
+
+	// The bots pass, so the host's pass ends board 1 and board 2 starts.
+	openRouter.balance = { limitRemaining: 7.42, credits: 10, usage: 0 };
+	await expect(
+		page.getByTestId("bid-box").getByRole("button", { name: "Pass" }),
+	).toBeEnabled({ timeout: 30_000 });
+	await makeCall(page, "P");
+	await expect(table).toHaveAttribute("data-board", "2", { timeout: 30_000 });
+	await expect(page.getByTestId("bot-balance")).toHaveText("Balance: $7.4");
+	expect(openRouter.keyChecks).toHaveLength(3);
 });

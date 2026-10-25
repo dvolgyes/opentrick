@@ -91,6 +91,11 @@ export const RELAY_SILENT_MS = 240_000;
  */
 export const NOSTR_SILENT_MS = 90_000;
 /**
+ * An open MQTT broker socket that sends nothing for this long is replaced. The page pings an idle broker every 30 s
+ * (src/p2p/mqtt.ts), and the broker sends each announcement of the page back to it, every 60 s.
+ */
+export const MQTT_SILENT_MS = 90_000;
+/**
  * With the frequent relay checks on (Settings), a Nostr relay that sends nothing for this long gets a check
  * (src/p2p/relay-check.ts), and a relay that does not answer in RELAY_CHECK_ANSWER_MS is replaced.
  */

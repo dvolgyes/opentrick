@@ -2,8 +2,9 @@ import { parseStunUrls, rtcConfiguration } from "../call/ice";
 
 /**
  * Mesh settings from the build environment (plan §4.2): the tracker list from `VITE_TRACKER_URLS`, the Nostr relay
- * list from `VITE_NOSTR_RELAY_URLS` and the STUN list from `VITE_STUN_URLS`. The page never falls back to
- * Trystero's own defaults, so a configuration value alone decides which outside services see the page.
+ * list from `VITE_NOSTR_RELAY_URLS`, the MQTT broker list from `VITE_MQTT_BROKER_URLS` and the STUN list from
+ * `VITE_STUN_URLS`. The page never falls back to Trystero's own defaults, so a configuration value alone decides
+ * which outside services see the page.
  */
 
 /** Unversioned, so pages of different versions meet and report the mismatch. */
@@ -26,11 +27,22 @@ export const DEFAULT_NOSTR_RELAY_URLS: readonly string[] = [
 	"wss://offchain.pub",
 ];
 
+/**
+ * The free public MQTT brokers of three operators that passed a message between two clients in Node and answered a
+ * connect in Chrome (ADR 0004).
+ */
+export const DEFAULT_MQTT_BROKER_URLS: readonly string[] = [
+	"wss://broker.emqx.io:8084/mqtt",
+	"wss://broker.hivemq.com:8884/mqtt",
+	"wss://iot.coreflux.cloud/mqtt",
+];
+
 const MAX_RELAY_URLS = 8;
 
 export interface MeshConfig {
 	readonly trackers: readonly string[];
 	readonly nostrRelays: readonly string[];
+	readonly mqttBrokers: readonly string[];
 	readonly rtc: RTCConfiguration;
 }
 
@@ -102,6 +114,15 @@ export function parseNostrRelayUrls(value: string | undefined): UrlsResult {
 	);
 }
 
+export function parseMqttBrokerUrls(value: string | undefined): UrlsResult {
+	return parseRelayUrls(
+		value,
+		DEFAULT_MQTT_BROKER_URLS,
+		"MQTT broker",
+		"VITE_MQTT_BROKER_URLS",
+	);
+}
+
 export function readMeshConfig(env: Env): MeshConfigResult {
 	const trackers = parseTrackerUrls(env.VITE_TRACKER_URLS);
 	if (!trackers.ok) return trackers;
@@ -115,6 +136,17 @@ export function readMeshConfig(env: Env): MeshConfigResult {
 			error: `A URL cannot be both a tracker and a Nostr relay: ${both}`,
 		};
 	}
+	const mqtt = parseMqttBrokerUrls(env.VITE_MQTT_BROKER_URLS);
+	if (!mqtt.ok) return mqtt;
+	const shared = mqtt.urls.find(
+		(url) => trackers.urls.includes(url) || nostr.urls.includes(url),
+	);
+	if (shared !== undefined) {
+		return {
+			ok: false,
+			error: `A URL cannot be both an MQTT broker and a tracker or Nostr relay: ${shared}`,
+		};
+	}
 	const stun = parseStunUrls(env.VITE_STUN_URLS);
 	if (!stun.ok) return stun;
 	return {
@@ -122,6 +154,7 @@ export function readMeshConfig(env: Env): MeshConfigResult {
 		config: {
 			trackers: trackers.urls,
 			nostrRelays: nostr.urls,
+			mqttBrokers: mqtt.urls,
 			rtc: rtcConfiguration(stun.urls),
 		},
 	};

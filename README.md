@@ -8,7 +8,7 @@ The game handles bidding, trick play, duplicate scoring, undo requests, and clai
 **Source:** [github.com/dvolgyes/opentrick](https://github.com/dvolgyes/opentrick)
 
 The game is a static site with no game server or database.
-Players connect through public WebTorrent trackers, then exchange game data directly over WebRTC.
+Players find each other through public WebTorrent trackers, Nostr relays and MQTT brokers, then exchange game data directly over WebRTC.
 One browser coordinates the table at a time; every seated browser stores a copy so another can take over if needed.
 The table key is in the link fragment and is not sent to the web server.
 
@@ -74,12 +74,15 @@ The player keeps their seat and stays in the room call while the bot handles bri
 
 OpenRouter is a service that provides access to AI models from many providers through one API.
 Bot play can cost money because AI model requests may be billed; the table displays the accumulated OpenRouter cost as you play.
+Next to the cost, the host's table shows the OpenRouter balance, which it reads again at the start of each board that bots play.
 You bring your own [OpenRouter API key](https://openrouter.ai/).
 Enter the key in the create screen, also when no seat is a bot yet, or in the table's bot controls before enabling a substitute.
 The key is stored in the host browser and is not included in the shared room link.
-When you save a key, the browser sends one test bid request to the first model in the model order.
-If this request fails, the create screen does not create the table, and the table's key dialog stays open; both show the reason.
-This test request can cost a small amount, which the table's cost display does not include.
+When you save a key, the browser reads the key and its balance from OpenRouter, without a model request, so the check costs nothing.
+The balance is the credits of the account less their usage, and not more than the remaining limit of the key.
+The key is saved when OpenRouter accepts it and its balance is more than $0.10.
+If OpenRouter accepts the key but reports no balance, the key is saved, and the bots find out at their first request.
+Otherwise, the create screen does not create the table, and the Settings dialog stays open; both show the reason.
 If the current host has no usable key, bot play is unavailable until a host with a key takes over or the key is set.
 You can choose the model order and retry settings when creating the room.
 

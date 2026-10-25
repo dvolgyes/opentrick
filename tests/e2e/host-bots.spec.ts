@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { mockOpenRouterKey } from "./openrouter-mock";
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
@@ -8,6 +9,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	page,
 }) => {
 	let requests = 0;
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		if (route.request().method() === "OPTIONS") {
 			await route.fulfill({
@@ -104,7 +106,8 @@ test("host bots play two consecutive boards from auction through the final trick
 test("the create page stores the OpenRouter key also when no seat is a bot", async ({
 	page,
 }) => {
-	// Create checks the key with one bot bid (openrouter-key.spec.ts); this mock passes the check.
+	// Create checks the key and its balance (openrouter-key.spec.ts); this mock passes the check.
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", (route) =>
 		route.fulfill({
 			status: 200,
@@ -160,6 +163,7 @@ test("a bot bids when the site is served below a path, as on GitHub Pages", asyn
 		await route.fulfill({ response: await route.fetch({ url: url.href }) });
 	});
 	let requests = 0;
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		if (route.request().method() === "OPTIONS") {
 			await route.fulfill({
@@ -215,6 +219,7 @@ test("switching the current bidder to a bot starts it immediately", async ({
 	const south = await Player.open(browser, baseURL, "south");
 	try {
 		const hostPage = await host.page("./");
+		await mockOpenRouterKey(hostPage);
 		await hostPage.route(
 			"https://openrouter.ai/api/v1/responses",
 			async (route) => {
@@ -413,6 +418,7 @@ test("switching the current bidder to a bot starts it immediately", async ({
 
 test("the bots approve the host's claim", async ({ page }) => {
 	// North opens 1NT and every other bot call is a pass; each bot card is its first legal card.
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		if (route.request().method() === "OPTIONS") {
 			await route.fulfill({
@@ -485,6 +491,7 @@ test("the bots approve the host's claim", async ({ page }) => {
 
 /** The bots of `page` answer with the first legal call or card. */
 async function firstChoiceBots(page: Page): Promise<void> {
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		if (route.request().method() === "OPTIONS") {
 			await route.fulfill({

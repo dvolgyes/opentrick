@@ -2,8 +2,10 @@ import {
 	createStrategy,
 	type JoinRoom,
 	libName,
+	type StrategyAdapter,
 	selfId,
 } from "@trystero-p2p/core";
+import { getMqttSockets, mqttAdapter, reconnectMqttBroker } from "./mqtt";
 import {
 	checkNostrRelay,
 	getNostrSockets,
@@ -11,7 +13,6 @@ import {
 	nostrRelayResting,
 	reconnectNostrRelay,
 } from "./nostr";
-import type { RelayClient } from "./relay-socket";
 import {
 	getTrackerSockets,
 	reconnectTracker,
@@ -20,33 +21,59 @@ import {
 } from "./torrent";
 
 /**
- * The signaling of the mesh: the WebTorrent trackers and the Nostr relays in one Trystero strategy (ADR 0004).
+ * The signaling of the mesh: the WebTorrent trackers, the Nostr relays and the MQTT brokers in one Trystero strategy
+ * (ADR 0004).
  *
  * One strategy has one peer manager, so a page keeps one connection to each peer, also when it meets the peer
- * through a tracker and through a Nostr relay. Two strategies, one for each kind, would each connect the pair.
+ * through two kinds of relay. A strategy for each kind would connect the pair once for each kind.
  *
  * The strategy reads the relay URLs of the first room that a page joins, and again after the page has left all
  * rooms; the mesh joins all its rooms with one config.
  */
 
-export type RelayKind = "tracker" | "nostr";
+export type RelayKind = "tracker" | "nostr" | "mqtt";
 
 export type SignalingRoomConfig = TorrentRoomConfig & {
 	readonly trackerUrls: readonly string[];
 	readonly nostrRelayUrls: readonly string[];
+	readonly mqttBrokerUrls: readonly string[];
 };
 
-type Relay =
-	| { readonly kind: "tracker"; readonly client: RelayClient }
-	| { readonly kind: "nostr"; readonly client: RelayClient };
+/** The calls of the strategy that take a relay. */
+type RelayCalls<TClient> = Pick<
+	StrategyAdapter<TClient, SignalingRoomConfig>,
+	"subscribe" | "announce"
+> & {
+	deactivate: NonNullable<
+		StrategyAdapter<TClient, SignalingRoomConfig>["deactivate"]
+	>;
+};
 
-/** One tagged relay for each client, so the strategy sees the same relay object in each room. */
-const relays = new WeakMap<RelayClient, Relay>();
+type WithoutRelay<F> = F extends (relay: never, ...rest: infer A) => infer R
+	? (...rest: A) => R
+	: never;
 
-const tagged = (kind: RelayKind, client: RelayClient): Relay => {
+/** A relay with its client bound to the calls of its kind, so the strategy routes each call to that kind. */
+type Relay = {
+	readonly [K in keyof RelayCalls<unknown>]: WithoutRelay<
+		RelayCalls<unknown>[K]
+	>;
+};
+
+/** One relay for each client, so the strategy sees the same relay object in each room. */
+const relays = new WeakMap<object, Relay>();
+
+const bound = <TClient extends object>(
+	adapter: RelayCalls<TClient>,
+	client: TClient,
+): Relay => {
 	const known = relays.get(client);
 	if (known !== undefined) return known;
-	const relay = { kind, client };
+	const relay: Relay = {
+		subscribe: (...rest) => adapter.subscribe(client, ...rest),
+		announce: (...rest) => adapter.announce(client, ...rest),
+		deactivate: (...rest) => adapter.deactivate(client, ...rest),
+	};
 	relays.set(client, relay);
 	return relay;
 };
@@ -55,53 +82,21 @@ const joinRoomStrategy: JoinRoom<SignalingRoomConfig> = createStrategy({
 	init: (config: SignalingRoomConfig) => [
 		...torrentAdapter
 			.init(config.trackerUrls, config)
-			.map((ready) => ready.then((client) => tagged("tracker", client))),
+			.map((ready) => ready.then((client) => bound(torrentAdapter, client))),
 		...nostrAdapter
 			.init(config.nostrRelayUrls, config)
-			.map((ready) => ready.then((client) => tagged("nostr", client))),
+			.map((ready) => ready.then((client) => bound(nostrAdapter, client))),
+		...mqttAdapter
+			.init(config.mqttBrokerUrls, config)
+			.map((ready) => ready.then((client) => bound(mqttAdapter, client))),
 	],
-	subscribe: (relay, rootTopic, selfTopic, onMessage, getOffers, context) =>
-		relay.kind === "tracker"
-			? torrentAdapter.subscribe(
-					relay.client,
-					rootTopic,
-					selfTopic,
-					onMessage,
-					getOffers,
-					context,
-				)
-			: nostrAdapter.subscribe(
-					relay.client,
-					rootTopic,
-					selfTopic,
-					onMessage,
-					getOffers,
-					context,
-				),
-	announce: (relay, rootTopic, selfTopic, extraPayload, context) =>
-		relay.kind === "tracker"
-			? torrentAdapter.announce(
-					relay.client,
-					rootTopic,
-					selfTopic,
-					extraPayload,
-					context,
-				)
-			: nostrAdapter.announce(
-					relay.client,
-					rootTopic,
-					selfTopic,
-					extraPayload,
-					context,
-				),
-	deactivate: (relay, rootTopic, selfTopic, context) =>
-		relay.kind === "tracker"
-			? torrentAdapter.deactivate(relay.client, rootTopic, selfTopic, context)
-			: nostrAdapter.deactivate(relay.client, rootTopic, selfTopic, context),
+	subscribe: (relay, ...rest) => relay.subscribe(...rest),
+	announce: (relay, ...rest) => relay.announce(...rest),
+	deactivate: (relay, ...rest) => relay.deactivate(...rest),
 });
 
 /**
- * Joins a room over the configured trackers and Nostr relays. The mesh, not Trystero, reconnects the relays after a
+ * Joins a room over the configured trackers, Nostr relays and MQTT brokers. The mesh, not Trystero, reconnects the relays after a
  * network change (`reconnectRelay`).
  */
 export const joinRoom: JoinRoom<SignalingRoomConfig> = (
@@ -136,11 +131,16 @@ export const relaySockets = (): Record<
 > => ({
 	tracker: getTrackerSockets(),
 	nostr: getNostrSockets(),
+	mqtt: getMqttSockets(),
 });
 
 /** Replaces the socket to one relay now; a URL that the page never opened is ignored. */
 export const reconnectRelay = (kind: RelayKind, url: string): void =>
-	kind === "tracker" ? reconnectTracker(url) : reconnectNostrRelay(url);
+	({
+		tracker: reconnectTracker,
+		nostr: reconnectNostrRelay,
+		mqtt: reconnectMqttBroker,
+	})[kind](url);
 
 /** Whether the page sends nothing to a relay for a time, after its rate limit; only a Nostr relay rests. */
 export const relayResting = (kind: RelayKind, url: string): boolean =>

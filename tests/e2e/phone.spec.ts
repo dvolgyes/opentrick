@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { mockOpenRouterKey } from "./openrouter-mock";
 
 // A phone gets the compact table. The host plays West from the phone against three host bots, whose model this file mocks.
 const PHONES = [
@@ -15,6 +16,7 @@ const SUIT_BUTTONS = {
 
 /** The first call of a board is 1NT; every later bot call is a pass, and every bot card is its first legal card. */
 async function mockBots(page: Page): Promise<void> {
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		if (route.request().method() === "OPTIONS") {
 			await route.fulfill({

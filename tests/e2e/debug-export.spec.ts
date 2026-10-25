@@ -1,9 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
+import { mockOpenRouterKey } from "./openrouter-mock";
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
 /** The bots always pass, so the first board stays in the auction while the test runs. */
 async function passingBots(page: Page): Promise<void> {
+	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", (route) =>
 		route.fulfill({
 			status: 200,

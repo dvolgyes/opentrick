@@ -4,6 +4,7 @@ import {
 	HostBotRunner,
 	type HostBotSettings,
 } from "../bot/host-runner";
+import { readOpenRouterBalance } from "../bot/openrouter-balance";
 import { type Board, boardStatus } from "../bridge/engine";
 import type { PointSystem } from "../bridge/hand-points";
 import { type BuildInfo, formatBuildDate } from "../build";
@@ -213,6 +214,9 @@ export function showRoom(
 	let botBalancePaused = false;
 	let rateLimitTimer: number | undefined;
 	let botSpendUsd = readBotSpend();
+	/** The board whose start read the OpenRouter balance last, and whether a read is running. */
+	let balanceBoard: number | undefined;
+	let balanceReading = false;
 	let pendingBotSeat: Seat | undefined;
 	let remoteCallPresence: Partial<Record<Seat, RemoteCallPresence>> = {};
 	/** A guest's page sees the host in the room call: the call controls invite this player. */
@@ -374,6 +378,11 @@ export function showRoom(
 		},
 	});
 	updateBotSpendCounter();
+	const botBalance = el("span", {
+		className: "bot-balance",
+		attrs: { "data-testid": "bot-balance" },
+	});
+	botBalance.hidden = true;
 	const rateLimitReminder = el(
 		"div",
 		{
@@ -398,7 +407,7 @@ export function showRoom(
 	 * resumes the bots that a low balance paused, and switches the seat that waited for a key.
 	 */
 	function applySettings({
-		checkedModel,
+		checkedKey,
 		modelOrderChanged,
 	}: SavedSettings): void {
 		const apiKey = readHostApiKey(deps.browser);
@@ -423,10 +432,18 @@ export function showRoom(
 		if (modelOrderChanged) rememberBotModels(modelOrder);
 		if (modelOrderChanged || apiKey !== current.apiKey)
 			botRunner?.updateSettings(botSettings);
-		if (checkedModel !== undefined) {
-			botStatus.textContent = deps.t("The OpenRouter key works with {model}.", {
-				model: checkedModel,
-			});
+		if (checkedKey !== undefined) {
+			// The check read the balance of this board, so the board start does not read it again.
+			balanceBoard = shownBoard?.number;
+			showBotBalance(checkedKey.balanceUsd);
+			botStatus.textContent =
+				checkedKey.balanceUsd === undefined
+					? deps.t(
+							"The OpenRouter key works. OpenRouter did not report the balance.",
+						)
+					: deps.t("The OpenRouter key works. Balance: {balance}.", {
+							balance: `$${checkedKey.balanceUsd.toFixed(1)}`,
+						});
 			if (botBalancePaused) {
 				botBalancePaused = false;
 				setBotsPaused(false);
@@ -599,11 +616,36 @@ export function showRoom(
 	}
 
 	function updateBotSpendCounter(): void {
-		botSpendCounter.textContent = `$${botSpendUsd.toFixed(5)}`;
+		botSpendCounter.textContent = deps.t("Cost: {cost}", {
+			cost: `$${botSpendUsd.toFixed(4)}`,
+		});
 		botSpendCounter.title = deps.t(
-			"Five-decimal display. Exact total reported by OpenRouter: {total} USD.",
+			"Four-decimal display. Exact total reported by OpenRouter: {total} USD.",
 			{ total: `$${botSpendUsd.toFixed(10)}` },
 		);
+	}
+
+	function showBotBalance(balanceUsd: number | undefined): void {
+		if (balanceUsd === undefined) return;
+		botBalance.textContent = deps.t("Balance: {balance}", {
+			balance: `$${balanceUsd.toFixed(1)}`,
+		});
+		botBalance.hidden = false;
+	}
+
+	/**
+	 * The host reads the OpenRouter balance once at the start of each board that bots play. A failed read keeps the
+	 * last balance; the bots report a key or balance error at their next request.
+	 */
+	function readBotBalanceAtBoardStart(boardNumber: number): void {
+		const apiKey = readHostApiKey(deps.browser);
+		if (balanceReading || balanceBoard === boardNumber || !apiKey) return;
+		balanceBoard = boardNumber;
+		balanceReading = true;
+		void readOpenRouterBalance(apiKey).then((result) => {
+			balanceReading = false;
+			if (!disposed && result.ok) showBotBalance(result.balanceUsd);
+		});
 	}
 
 	function recordBotSpend(cost: number): void {
@@ -1073,7 +1115,7 @@ export function showRoom(
 			openSettings,
 			pauseBots,
 			resumeBots,
-			botSpendCounter,
+			el("span", { className: "bot-money" }, botSpendCounter, botBalance),
 		),
 	);
 	const resetStatus = el("p", { className: "note", attrs: { role: "status" } });
@@ -1575,6 +1617,8 @@ export function showRoom(
 		}
 		renderCall();
 		shownBoard = state?.board ?? null;
+		if (view.hosting && activeBots.length > 0 && shownBoard)
+			readBotBalanceAtBoardStart(shownBoard.number);
 		const pendingReset = state?.reset ?? null;
 		resetRequestId = pendingReset?.id;
 		reset.disabled = terminal || pendingReset !== null;

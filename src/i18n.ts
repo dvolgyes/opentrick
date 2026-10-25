@@ -94,12 +94,24 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Gib einen OpenRouter-API-Schlüssel ein, um Bots in diesem Browser zu verwenden.",
 		"This browser could not store the OpenRouter API key.":
 			"Dieser Browser konnte den OpenRouter-API-Schlüssel nicht speichern.",
-		"Checking the OpenRouter key with {model}…":
-			"Prüfe den OpenRouter-Schlüssel mit {model}…",
-		"The OpenRouter key works with {model}.":
-			"Der OpenRouter-Schlüssel funktioniert mit {model}.",
-		"The OpenRouter key check with {model} failed: {reason}":
-			"Die Prüfung des OpenRouter-Schlüssels mit {model} ist fehlgeschlagen: {reason}",
+		"Checking the OpenRouter key and balance…":
+			"Prüfe den OpenRouter-Schlüssel und das Guthaben…",
+		"The OpenRouter key works. Balance: {balance}.":
+			"Der OpenRouter-Schlüssel funktioniert. Guthaben: {balance}.",
+		"Cost: {cost}": "Kosten: {cost}",
+		"Balance: {balance}": "Guthaben: {balance}",
+		"The OpenRouter key works. OpenRouter did not report the balance.":
+			"Der OpenRouter-Schlüssel funktioniert. OpenRouter hat das Guthaben nicht gemeldet.",
+		"OpenRouter rejected the API key (401).":
+			"OpenRouter hat den API-Schlüssel abgelehnt (401).",
+		"OpenRouter returned HTTP {status} for the key check.":
+			"OpenRouter hat bei der Schlüsselprüfung HTTP {status} zurückgegeben.",
+		"The browser could not reach OpenRouter.":
+			"Der Browser konnte OpenRouter nicht erreichen.",
+		"The OpenRouter key check timed out.":
+			"Die Prüfung des OpenRouter-Schlüssels hat zu lange gedauert.",
+		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
+			"Das OpenRouter-Guthaben beträgt {balance}. Ein Schlüssel braucht mehr als {minimum}.",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Gib die vier Spielernamen ein und wähle deinen Platz. Dein Browser hostet zuerst; alle am Tisch können übernehmen.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -235,6 +247,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"after connecting": "nach dem Verbinden",
 		"Tracker {host}": "Tracker {host}",
 		"Nostr relay {host}": "Nostr-Relay {host}",
+		"MQTT broker {host}": "MQTT-Broker {host}",
 		"STUN {host}": "STUN {host}",
 		closed: "geschlossen",
 		"heard {seconds} s ago": "vor {seconds} s gehört",
@@ -543,12 +556,19 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Your call": "Dein Gebot",
 		"Trackers reachable": "Tracker erreichbar",
 		"Nostr relays reachable": "Nostr-Relays erreichbar",
+		"MQTT brokers reachable": "MQTT-Broker erreichbar",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Es sind höchstens {count} Nostr-Relay-URLs erlaubt (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
 			"Ungültige wss:-Nostr-Relay-URL in VITE_NOSTR_RELAY_URLS: {url}",
 		"A URL cannot be both a tracker and a Nostr relay: {url}":
 			"Eine URL kann nicht zugleich Tracker und Nostr-Relay sein: {url}",
+		"At most {count} MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).":
+			"Es sind höchstens {count} MQTT-Broker-URLs erlaubt (VITE_MQTT_BROKER_URLS).",
+		"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: {url}":
+			"Ungültige wss:-MQTT-Broker-URL in VITE_MQTT_BROKER_URLS: {url}",
+		"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}":
+			"Eine URL kann nicht zugleich MQTT-Broker und Tracker oder Nostr-Relay sein: {url}",
 		"Openrouter rate limit - I will retry in a moment":
 			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
 		"YOUR TURN TO BID": "DU BIST MIT BIETEN DRAN",
@@ -647,8 +667,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Das gewählte Modell hat eine unbrauchbare Entscheidung geliefert: {detail}. Wähle ein anderes Modell oder setze die Bots fort.",
 		"The bot could not use the model response. Choose another model or resume bots.":
 			"Der Bot konnte die Modellantwort nicht verwenden. Wähle ein anderes Modell oder setze die Bots fort.",
-		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Anzeige mit fünf Dezimalstellen. Genauer Gesamtbetrag laut OpenRouter: {total} USD.",
+		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Anzeige mit vier Dezimalstellen. Genauer Gesamtbetrag laut OpenRouter: {total} USD.",
 		"Vienna points": "Wiener Punkte",
 		"Reith points": "Reith-Punkte",
 		"Four Aces points": "Four-Aces-Punkte",
@@ -741,12 +761,24 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Adj meg egy OpenRouter API-kulcsot a botok futtatásához ebben a böngészőben.",
 		"This browser could not store the OpenRouter API key.":
 			"A böngésző nem tudta eltárolni az OpenRouter API-kulcsot.",
-		"Checking the OpenRouter key with {model}…":
-			"Az OpenRouter-kulcs ellenőrzése ezzel: {model}…",
-		"The OpenRouter key works with {model}.":
-			"Az OpenRouter-kulcs működik ezzel: {model}.",
-		"The OpenRouter key check with {model} failed: {reason}":
-			"Az OpenRouter-kulcs ellenőrzése nem sikerült ezzel: {model}. Ok: {reason}",
+		"Checking the OpenRouter key and balance…":
+			"Az OpenRouter-kulcs és az egyenleg ellenőrzése…",
+		"The OpenRouter key works. Balance: {balance}.":
+			"Az OpenRouter-kulcs működik. Egyenleg: {balance}.",
+		"Cost: {cost}": "Költség: {cost}",
+		"Balance: {balance}": "Egyenleg: {balance}",
+		"The OpenRouter key works. OpenRouter did not report the balance.":
+			"Az OpenRouter-kulcs működik. Az OpenRouter nem közölte az egyenleget.",
+		"OpenRouter rejected the API key (401).":
+			"Az OpenRouter elutasította az API-kulcsot (401).",
+		"OpenRouter returned HTTP {status} for the key check.":
+			"Az OpenRouter HTTP {status} választ adott a kulcs ellenőrzésére.",
+		"The browser could not reach OpenRouter.":
+			"A böngésző nem érte el az OpenRoutert.",
+		"The OpenRouter key check timed out.":
+			"Az OpenRouter-kulcs ellenőrzése túllépte az időkorlátot.",
+		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
+			"Az OpenRouter-egyenleg {balance}. Egy kulcshoz több mint {minimum} kell.",
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Add meg a négy játékos nevét, majd válassz helyet. A böngésződ lesz először a host; bárki átveheti az asztalnál.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -884,12 +916,19 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Most senki sincs az asztalnál. Hagyd nyitva ezt az oldalt.",
 		"Trackers reachable": "Elérhető trackerek",
 		"Nostr relays reachable": "Elérhető Nostr-továbbítók",
+		"MQTT brokers reachable": "Elérhető MQTT-brókerek",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Legfeljebb {count} Nostr-továbbító URL használható (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
 			"Érvénytelen wss: Nostr-továbbító URL a VITE_NOSTR_RELAY_URLS értékben: {url}",
 		"A URL cannot be both a tracker and a Nostr relay: {url}":
 			"Egy URL nem lehet egyszerre tracker és Nostr-továbbító: {url}",
+		"At most {count} MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).":
+			"Legfeljebb {count} MQTT-bróker URL használható (VITE_MQTT_BROKER_URLS).",
+		"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: {url}":
+			"Érvénytelen wss: MQTT-bróker URL a VITE_MQTT_BROKER_URLS értékben: {url}",
+		"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}":
+			"Egy URL nem lehet egyszerre MQTT-bróker és tracker vagy Nostr-továbbító: {url}",
 		"Direct connections": "Közvetlen kapcsolatok",
 		"Players checked": "Ellenőrzött játékosok",
 		"Pages not reachable directly": "Közvetlenül nem elérhető oldalak",
@@ -904,6 +943,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"after connecting": "kapcsolódás után",
 		"Tracker {host}": "Tracker: {host}",
 		"Nostr relay {host}": "Nostr-továbbító: {host}",
+		"MQTT broker {host}": "MQTT-bróker: {host}",
 		"STUN {host}": "STUN: {host}",
 		closed: "zárva",
 		"heard {seconds} s ago": "{seconds} mp-e jelzett",
@@ -1285,8 +1325,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A választott modell használhatatlan döntést adott: {detail}. Válassz másik modellt, vagy folytasd a botokat.",
 		"The bot could not use the model response. Choose another model or resume bots.":
 			"A bot nem tudta használni a modell válaszát. Válassz másik modellt, vagy folytasd a botokat.",
-		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Öt tizedesjegyes kijelzés. Az OpenRouter által jelentett pontos összeg: {total} USD.",
+		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Négy tizedesjegyes kijelzés. Az OpenRouter által jelentett pontos összeg: {total} USD.",
 		"Vienna points": "bécsi pont",
 		"Reith points": "Reith pont",
 		"Four Aces points": "Four Aces pont",
@@ -1475,12 +1515,19 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Waiting for the host ({seconds} s)": "Venter på verten ({seconds} s)",
 		"Trackers reachable": "Sporingstjenester nås",
 		"Nostr relays reachable": "Nostr-reléer nås",
+		"MQTT brokers reachable": "MQTT-meglere nås",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Du kan angi maksimalt {count} Nostr-relé-URL-er (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
 			"Ugyldig wss:-Nostr-relé-URL i VITE_NOSTR_RELAY_URLS: {url}",
 		"A URL cannot be both a tracker and a Nostr relay: {url}":
 			"En URL kan ikke være både tracker og Nostr-relé: {url}",
+		"At most {count} MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).":
+			"Du kan angi maksimalt {count} MQTT-megler-URL-er (VITE_MQTT_BROKER_URLS).",
+		"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: {url}":
+			"Ugyldig wss:-MQTT-megler-URL i VITE_MQTT_BROKER_URLS: {url}",
+		"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}":
+			"En URL kan ikke være både MQTT-megler og tracker eller Nostr-relé: {url}",
 		"Direct connections": "Direkte tilkoblinger",
 		"Players checked": "Spillere kontrollert",
 		"Pages not reachable directly": "Sider som ikke kan nås direkte",
@@ -1495,6 +1542,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"after connecting": "etter tilkobling",
 		"Tracker {host}": "Sporingstjeneste {host}",
 		"Nostr relay {host}": "Nostr-relé {host}",
+		"MQTT broker {host}": "MQTT-megler {host}",
 		"STUN {host}": "STUN {host}",
 		closed: "lukket",
 		"heard {seconds} s ago": "hørt for {seconds} s siden",
@@ -1771,12 +1819,24 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Nettleseren kunne ikke lagre bordet.",
 		"This browser could not store the OpenRouter API key.":
 			"Nettleseren kunne ikke lagre OpenRouter API-nøkkelen.",
-		"Checking the OpenRouter key with {model}…":
-			"Kontrollerer OpenRouter-nøkkelen med {model}…",
-		"The OpenRouter key works with {model}.":
-			"OpenRouter-nøkkelen virker med {model}.",
-		"The OpenRouter key check with {model} failed: {reason}":
-			"Kontrollen av OpenRouter-nøkkelen med {model} mislyktes: {reason}",
+		"Checking the OpenRouter key and balance…":
+			"Kontrollerer OpenRouter-nøkkelen og saldoen…",
+		"The OpenRouter key works. Balance: {balance}.":
+			"OpenRouter-nøkkelen virker. Saldo: {balance}.",
+		"Cost: {cost}": "Kostnad: {cost}",
+		"Balance: {balance}": "Saldo: {balance}",
+		"The OpenRouter key works. OpenRouter did not report the balance.":
+			"OpenRouter-nøkkelen virker. OpenRouter oppga ikke saldoen.",
+		"OpenRouter rejected the API key (401).":
+			"OpenRouter avviste API-nøkkelen (401).",
+		"OpenRouter returned HTTP {status} for the key check.":
+			"OpenRouter svarte HTTP {status} på nøkkelkontrollen.",
+		"The browser could not reach OpenRouter.":
+			"Nettleseren nådde ikke OpenRouter.",
+		"The OpenRouter key check timed out.":
+			"Kontrollen av OpenRouter-nøkkelen tok for lang tid.",
+		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
+			"OpenRouter-saldoen er {balance}. En nøkkel trenger mer enn {minimum}.",
 		"This browser does not store data ({problem}). You can play, but you cannot become the host, and a reload loses this copy of the table.":
 			"Nettleseren lagrer ikke data ({problem}). Du kan spille, men ikke bli vert. Hvis du laster inn siden på nytt, går denne bordkopien tapt.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -1915,8 +1975,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Den valgte modellen ga en ubrukelig avgjørelse: {detail}. Velg en annen modell eller fortsett botene.",
 		"The bot could not use the model response. Choose another model or resume bots.":
 			"Boten kunne ikke bruke svaret fra modellen. Velg en annen modell eller fortsett botene.",
-		"Five-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Vist med fem desimaler. Nøyaktig total fra OpenRouter: {total} USD.",
+		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
+			"Vist med fire desimaler. Nøyaktig total fra OpenRouter: {total} USD.",
 		"Vienna points": "Vienna-poeng",
 		"Reith points": "Reith-poeng",
 		"Four Aces points": "Four Aces-poeng",

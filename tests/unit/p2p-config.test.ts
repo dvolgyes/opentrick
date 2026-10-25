@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+	DEFAULT_MQTT_BROKER_URLS,
 	DEFAULT_NOSTR_RELAY_URLS,
 	DEFAULT_TRACKER_URLS,
+	parseMqttBrokerUrls,
 	parseNostrRelayUrls,
 	parseTrackerUrls,
 	readMeshConfig,
@@ -109,6 +111,49 @@ describe("parseNostrRelayUrls", () => {
 	});
 });
 
+describe("parseMqttBrokerUrls", () => {
+	it("gives the three default brokers of three operators when absent", () => {
+		expect(parseMqttBrokerUrls(undefined)).toEqual({
+			ok: true,
+			urls: DEFAULT_MQTT_BROKER_URLS,
+		});
+		expect(DEFAULT_MQTT_BROKER_URLS).toEqual([
+			"wss://broker.emqx.io:8084/mqtt",
+			"wss://broker.hivemq.com:8884/mqtt",
+			"wss://iot.coreflux.cloud/mqtt",
+		]);
+	});
+
+	it("turns the MQTT brokers off with none", () => {
+		expect(parseMqttBrokerUrls("none")).toEqual({ ok: true, urls: [] });
+	});
+
+	it("names its own variable in its errors", () => {
+		expect(
+			parseMqttBrokerUrls("wss://a.example/mqtt ws://b.example/mqtt"),
+		).toEqual({
+			ok: false,
+			error:
+				"Not a valid wss: MQTT broker URL in VITE_MQTT_BROKER_URLS: ws://b.example/mqtt",
+		});
+		const urls = Array.from(
+			{ length: 9 },
+			(_, index) => `wss://m${index}.example/mqtt`,
+		);
+		expect(parseMqttBrokerUrls(urls.join(" "))).toEqual({
+			ok: false,
+			error: "At most 8 MQTT broker URLs are allowed (VITE_MQTT_BROKER_URLS).",
+		});
+	});
+
+	it("refuses credentials in the URL, so no broker account is used", () => {
+		const result = parseMqttBrokerUrls(
+			"wss://public:public@broker.example/mqtt",
+		);
+		expect(!result.ok && result.error).toContain("VITE_MQTT_BROKER_URLS");
+	});
+});
+
 describe("readMeshConfig", () => {
 	it("combines the tracker list with the STUN list", () => {
 		expect(
@@ -121,6 +166,7 @@ describe("readMeshConfig", () => {
 			config: {
 				trackers: ["wss://tracker.example"],
 				nostrRelays: DEFAULT_NOSTR_RELAY_URLS,
+				mqttBrokers: DEFAULT_MQTT_BROKER_URLS,
 				rtc: { iceServers: [{ urls: ["stun:stun.example:3478"] }] },
 			},
 		});
@@ -134,6 +180,7 @@ describe("readMeshConfig", () => {
 			config: {
 				trackers: [],
 				nostrRelays: DEFAULT_NOSTR_RELAY_URLS,
+				mqttBrokers: DEFAULT_MQTT_BROKER_URLS,
 				rtc: { iceServers: [] },
 			},
 		});
@@ -147,9 +194,49 @@ describe("readMeshConfig", () => {
 			config: {
 				trackers: ["wss://tracker.example"],
 				nostrRelays: [],
+				mqttBrokers: DEFAULT_MQTT_BROKER_URLS,
 				rtc: expect.anything(),
 			},
 		});
+		expect(
+			readMeshConfig({
+				VITE_MQTT_BROKER_URLS: "none",
+				VITE_NOSTR_RELAY_URLS: "none",
+				VITE_TRACKER_URLS: "none",
+			}),
+		).toEqual({
+			ok: true,
+			config: {
+				trackers: [],
+				nostrRelays: [],
+				mqttBrokers: [],
+				rtc: expect.anything(),
+			},
+		});
+	});
+
+	it.each([
+		["a tracker", "VITE_TRACKER_URLS"],
+		["a Nostr relay", "VITE_NOSTR_RELAY_URLS"],
+	])("refuses a URL that is both an MQTT broker and %s", (_name, variable) => {
+		expect(
+			readMeshConfig({
+				[variable]: "wss://both.example/mqtt",
+				VITE_MQTT_BROKER_URLS: "wss://both.example/mqtt",
+			}),
+		).toEqual({
+			ok: false,
+			error:
+				"A URL cannot be both an MQTT broker and a tracker or Nostr relay: wss://both.example/mqtt",
+		});
+	});
+
+	it("gives the MQTT broker error before the STUN error", () => {
+		const result = readMeshConfig({
+			VITE_MQTT_BROKER_URLS: "mqtt://broker.example",
+			VITE_STUN_URLS: "turn:relay.example",
+		});
+		expect(!result.ok && result.error).toContain("VITE_MQTT_BROKER_URLS");
 	});
 
 	it("refuses a URL that is both a tracker and a Nostr relay", () => {

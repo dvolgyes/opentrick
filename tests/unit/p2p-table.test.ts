@@ -17,6 +17,8 @@ const DIAGNOSTICS: MeshDiagnostics = {
 	trackers: 1,
 	nostrOpen: 0,
 	nostrRelays: 0,
+	mqttOpen: 0,
+	mqttBrokers: 0,
 	relays: [],
 	stun: null,
 	webRtc: null,

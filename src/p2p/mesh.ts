@@ -11,6 +11,7 @@ import {
 	MAX_RECEIVE_BYTES,
 	MAX_SILENT_CLOSES,
 	MESH_BYTES,
+	MQTT_SILENT_MS,
 	NETWORK_REJOIN_MS,
 	NOSTR_SILENT_MS,
 	REJOIN_MAX_MS,
@@ -59,7 +60,8 @@ import {
  *
  * Relay recovery (ADR 0004): after a network change, the page replaces each relay socket and, when alone, joins the
  * table room again as soon as a relay is open. A relay socket that is open and silent for its kind's limit
- * (RELAY_SILENT_MS for a tracker, NOSTR_SILENT_MS for a Nostr relay) is replaced too.
+ * (RELAY_SILENT_MS for a tracker, NOSTR_SILENT_MS for a Nostr relay, MQTT_SILENT_MS for an MQTT broker) is replaced
+ * too.
  *
  * Silent links (ADR 0004): any message from a peer shows that its link works, and every page sends its peer list
  * each LINKS_MS. While `silentLinks()` is true, the page closes only the link of a peer that sent nothing for
@@ -166,7 +168,9 @@ export interface MeshDiagnostics {
 	readonly trackers: number;
 	readonly nostrOpen: number;
 	readonly nostrRelays: number;
-	/** The configured trackers, then the configured Nostr relays, in configuration order. */
+	readonly mqttOpen: number;
+	readonly mqttBrokers: number;
+	/** The configured trackers, then the Nostr relays, then the MQTT brokers, each in configuration order. */
 	readonly relays: readonly RelayStatus[];
 	/** The configured STUN servers; null on a page that does not check them. */
 	readonly stun: readonly StunStatus[] | null;
@@ -301,6 +305,7 @@ export class Mesh implements Send {
 			rtcConfig: config.rtc,
 			trackerUrls: config.trackers,
 			nostrRelayUrls: config.nostrRelays,
+			mqttBrokerUrls: config.mqttBrokers,
 			maxReceiveBytes: MAX_RECEIVE_BYTES,
 			...(deps.rtcPolyfill ? { rtcPolyfill: deps.rtcPolyfill } : {}),
 		};
@@ -360,6 +365,8 @@ export class Mesh implements Send {
 			trackers: this.#deps.config.trackers.length,
 			nostrOpen: openOf("nostr"),
 			nostrRelays: this.#deps.config.nostrRelays.length,
+			mqttOpen: openOf("mqtt"),
+			mqttBrokers: this.#deps.config.mqttBrokers.length,
 			relays,
 			stun: this.#stun?.statuses() ?? null,
 			webRtc: this.#webRtc,
@@ -673,12 +680,13 @@ export class Mesh implements Send {
 		return false;
 	}
 
-	/** The configured relays: the trackers, then the Nostr relays. */
+	/** The configured relays: the trackers, then the Nostr relays, then the MQTT brokers. */
 	#configuredRelays(): { readonly kind: RelayKind; readonly url: string }[] {
-		const { trackers, nostrRelays } = this.#deps.config;
+		const { trackers, nostrRelays, mqttBrokers } = this.#deps.config;
 		return [
 			...trackers.map((url) => ({ kind: "tracker" as const, url })),
 			...nostrRelays.map((url) => ({ kind: "nostr" as const, url })),
+			...mqttBrokers.map((url) => ({ kind: "mqtt" as const, url })),
 		];
 	}
 
@@ -728,7 +736,11 @@ export class Mesh implements Send {
 				kind === "nostr" &&
 				state === OPEN &&
 				this.#relayChecks?.tick(url, now, since, checksOn) === true;
-			const limit = kind === "nostr" ? NOSTR_SILENT_MS : RELAY_SILENT_MS;
+			const limit = {
+				tracker: RELAY_SILENT_MS,
+				nostr: NOSTR_SILENT_MS,
+				mqtt: MQTT_SILENT_MS,
+			}[kind];
 			if (!unanswered && now - since < limit) continue;
 			this.#watchedAt.set(key, now);
 			this.#deps.reconnectRelay(kind, url);

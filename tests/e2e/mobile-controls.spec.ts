@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { mockOpenRouterKey } from "./openrouter-mock";
 import { Player } from "./player";
 
 /*
@@ -17,6 +18,7 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 	});
 	try {
 		const page = await player.page("./");
+		await mockOpenRouterKey(page);
 		await page.route(
 			"https://openrouter.ai/api/v1/responses",
 			async (route) => {
@@ -114,7 +116,7 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await settings.getByRole("button", { name: "Save settings" }).click();
 		await expect(settings).toBeHidden();
 		await expect(page.getByTestId("bot-status")).toContainText(
-			"The OpenRouter key works with",
+			"The OpenRouter key works. Balance: $10.0.",
 		);
 		expect(
 			await page.evaluate(() =>
