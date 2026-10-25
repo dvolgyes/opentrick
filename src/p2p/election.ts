@@ -486,10 +486,16 @@ function learnBeat(
 	const learned = learn(state, [beat.auth, beat.pos?.lastAuth]);
 	const leads = beat.role === "host" || beat.role === "claiming";
 	const direct = leads && beat.auth && sameAuthority(beat.auth, learned.known);
+	// A page that hears its host sends its beat at once, so its report of the host is fresh. A report sent up to a
+	// beat period later can be two beat periods old for a page two hops away, which then counts the host as lost.
+	const { lastBeatAt } = state;
 	return {
 		...learned,
 		heard,
 		knownSeenAt: direct ? state.now : learned.knownSeenAt,
+		...(direct && lastBeatAt !== null
+			? { lastBeatAt: Math.min(lastBeatAt, state.now - BEAT_MS) }
+			: {}),
 	};
 }
 
