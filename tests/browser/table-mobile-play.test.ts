@@ -2942,6 +2942,36 @@ describe("convention hint", () => {
 		},
 	);
 
+	it("marks an overcall that the hand does not fit, though the guide gives the hand no call", () => {
+		// ♠Q2 ♥KJ92 ♦Q874 ♣432: 8 points, but [1S] over [1H] shows a good five-card suit.
+		const { root } = renderView(
+			bidView(
+				["1H"],
+				[
+					"SQ",
+					"S2",
+					"HK",
+					"HJ",
+					"H9",
+					"H2",
+					"DQ",
+					"D8",
+					"D7",
+					"D4",
+					"C4",
+					"C3",
+					"C2",
+				],
+			),
+			"desktop",
+			undefined,
+			undefined,
+			{ pointSystem: (): PointSystem => "hcp-corrected" },
+		);
+		pickBid(root, "1", "S");
+		expect(hint(root)).toBe("(Unconventional)");
+	});
+
 	it("reads the hand with the viewer's point system, in the viewer's language", () => {
 		const { root } = renderView(
 			bidView([]),

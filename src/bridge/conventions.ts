@@ -712,6 +712,35 @@ function preferred(
 	return fitting;
 }
 
+/** Undefined for a hand with a suit longer than the guide checks. */
+function handOf(system: PointSystem, cards: readonly Card[]): Hand | undefined {
+	const lengths = Object.fromEntries(
+		SUITS.map((suit) => [
+			suit,
+			cards.filter((card) => suitOf(card) === suit).length,
+		]),
+	) as Record<Suit, number>;
+	if (SUITS.some((suit) => lengths[suit] > SHAPES.longestChecked))
+		return undefined;
+	return { points: countHandPoints(system, cards).total, lengths, cards };
+}
+
+/**
+ * Whether `cards` fit what `call` shows by the guide of `system` after `calls`. Undefined when the guide gives the call
+ * no meaning there. Unlike conventionCalls, this also judges a call in a position where the guide gives some hands no call.
+ */
+export function fitsCall(
+	system: PointSystem,
+	cards: readonly Card[],
+	calls: readonly Call[],
+	call: Call,
+): boolean | undefined {
+	const meaning = callMeaning(system, [...calls, call], calls.length);
+	const hand = handOf(system, cards);
+	if (meaning === undefined || hand === undefined) return undefined;
+	return inRange(hand.points, meaning.range) && fitsShape(hand, meaning.shape);
+}
+
 /**
  * The calls that the guide of `system` gives `cards`, the bidder's 13 cards, after `calls`, in bid-box order. Empty when
  * the guide describes the position and the hand but no call fits; undefined when it does not describe them.
@@ -723,20 +752,9 @@ export function conventionCalls(
 ): readonly GuideCall[] | undefined {
 	const ranges = rules(system);
 	const at = position(calls);
-	if (ranges === undefined || at === undefined) return undefined;
-	const lengths = Object.fromEntries(
-		SUITS.map((suit) => [
-			suit,
-			cards.filter((card) => suitOf(card) === suit).length,
-		]),
-	) as Record<Suit, number>;
-	if (SUITS.some((suit) => lengths[suit] > SHAPES.longestChecked))
+	const hand = handOf(system, cards);
+	if (ranges === undefined || at === undefined || hand === undefined)
 		return undefined;
-	const hand: Hand = {
-		points: countHandPoints(system, cards).total,
-		lengths,
-		cards,
-	};
 	const fitting = CALLS.flatMap((call) => {
 		const meaning = meaningAt(ranges, at, call);
 		return meaning !== undefined &&

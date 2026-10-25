@@ -1,5 +1,5 @@
 import { type Card, SUIT_SYMBOLS, suitOf } from "../bridge/cards";
-import { callMeaning, conventionCalls } from "../bridge/conventions";
+import { callMeaning, conventionCalls, fitsCall } from "../bridge/conventions";
 import type { Action } from "../bridge/engine";
 import {
 	countHandPoints,
@@ -277,8 +277,8 @@ const HINT_CALLS = 3;
 
 /**
  * The hint on Confirm when the chosen call is not one that the guide of `system` gives the viewer's hand: the guide
- * calls, or "Unconventional" when the guide gives none. Undefined when the guide does not describe the position. The
- * [4NT] ask fits any hand, so its hint is its meaning and not a verdict, on two lines.
+ * calls, or "Unconventional" when the guide gives none. Where the guide gives the hand no call, "Unconventional" when
+ * the hand does not fit the meaning of the chosen call, and otherwise undefined. The [4NT] ask fits any hand, so its hint is its meaning and not a verdict, on two lines.
  */
 function conventionHint(
 	system: PointSystem,
@@ -294,8 +294,12 @@ function conventionHint(
 	if (meaning?.shape.kind === "blackwood")
 		return blackwoodHint(meaning.shape, system, t);
 	const guide = conventionCalls(system, cards, before);
-	if (guide === undefined || guide.some(({ call }) => call === chosen))
-		return undefined;
+	// The guide gives this hand no call here, but the chosen call can still show what the hand lacks.
+	if (guide === undefined)
+		return fitsCall(system, cards, before, chosen) === false
+			? t("(Unconventional)")
+			: undefined;
+	if (guide.some(({ call }) => call === chosen)) return undefined;
 	if (guide.length === 0) return t("(Unconventional)");
 	const calls = guide
 		.slice(0, HINT_CALLS)

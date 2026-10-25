@@ -8,7 +8,11 @@ import {
 	type RangeKey,
 	type RuleSystem,
 } from "../../src/bridge/convention-rules";
-import { callMeaning, conventionCalls } from "../../src/bridge/conventions";
+import {
+	callMeaning,
+	conventionCalls,
+	fitsCall,
+} from "../../src/bridge/conventions";
 import { dealCards, randomBelowFrom } from "../../src/bridge/deal";
 import { countHandPoints } from "../../src/bridge/hand-points";
 import type { Call } from "../../src/bridge/rules";
@@ -183,6 +187,25 @@ describe("guide calls for a hand", () => {
 	])("describes %s but gives no call for %s", (auction, cardsText) => {
 		expect(suggested("hcp", cardsText, auction)).toEqual([]);
 	});
+});
+
+describe("a hand against the meaning of one call", () => {
+	it.each([
+		// 8, two spades: the overcall needs a good five-card suit. The guide gives this hand no call over [1H].
+		["hcp-corrected", "Q2.KJ92.Q874.432", "1H", "1S", false],
+		["hcp", "KQJ74.92.Q87.432", "1H", "1S", true], // 8, a good five-card suit
+		["hcp", "Q2.KJ92.Q874.432", "1H", "P", undefined], // the guide gives no pass over an opening
+		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "2C", undefined], // the guide does not describe the position
+		["hcp", "Q2.KJ92.Q874.432", "1H P 3H P", "4NT", true], // the ask fits any hand
+		["other", "Q2.KJ92.Q874.432", "1H", "1S", undefined],
+	] as const)(
+		"%s: %s after %s, %s fits: %s",
+		(system, cardsText, auction, call, fits) => {
+			expect(fitsCall(system, hand(cardsText), calls(auction), call)).toBe(
+				fits,
+			);
+		},
+	);
 });
 
 describe("guide meaning of a call", () => {
