@@ -380,6 +380,16 @@ describe("auction", () => {
 		]);
 	});
 
+	it("explains a pass where the guide gives it to the hands that fit no other call", () => {
+		const state = {
+			...tableState(bidding(BOARD, "1H P")),
+			systems: { N: "hcp", E: "hcp" },
+		} as const;
+		expect(view("S", null, { state }).auction?.meanings).toEqual([
+			["12–21 HCP, 5+ ♥", "no other guide call fits"],
+		]);
+	});
+
 	it("explains Blackwood with the slam targets of the caller's system", () => {
 		const state = {
 			...tableState(bidding(BOARD, "1H P 3H P 4NT")),

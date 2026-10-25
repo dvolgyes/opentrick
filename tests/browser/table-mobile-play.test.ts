@@ -2943,14 +2943,14 @@ describe("convention hint", () => {
 		},
 	);
 
-	// ♠Q2 ♥KJ92 ♦Q874 ♣432: 8 points. [1S] over [1H] shows a good five-card suit, the guide has no [7NT] there, and
-	// a pass is the call of a hand to which the guide gives no call.
+	// ♠Q2 ♥KJ92 ♦Q874 ♣432: 8 points. [1S] over [1H] shows a good five-card suit, and the guide has no [7NT] there,
+	// so the guide gives this hand a pass.
 	it.each([
-		["1", "S", "(Unconventional)"],
-		["7", "NT", "(Unconventional)"],
+		["1", "S", "(Convention: Pass)"],
+		["7", "NT", "(Convention: Pass)"],
 		[undefined, "P", undefined],
 	])(
-		"judges %s%s over [1H] where the guide gives the hand no call",
+		"judges %s%s over [1H] where the guide gives the hand only a pass",
 		(level, strain, expected) => {
 			const { root } = renderView(
 				bidView(

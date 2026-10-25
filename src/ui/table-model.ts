@@ -734,6 +734,8 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 			return t("weak, a {min}+ card minor", { min: shape.min });
 		case "waiting":
 			return t("waiting");
+		case "rest":
+			return t("no other guide call fits");
 		case "good-suit":
 			return t("a good {min}+ card {suit} suit", {
 				min: shape.min,

@@ -687,6 +687,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Stayman, a {min}-card major": "Stayman, eine Oberfarbe mit {min} Karten",
 		"weak, a {min}+ card minor": "schwach, eine Unterfarbe mit {min}+ Karten",
 		waiting: "Wartegebot",
+		"no other guide call fits":
+			"kein anderes Gebot aus dem Reizleitfaden passt",
 		"a good {min}+ card {suit} suit":
 			"eine gute {suit}-Farbe mit {min}+ Karten",
 		"no {min}-card major": "keine Oberfarbe mit {min} Karten",
@@ -1359,6 +1361,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Stayman, a {min}-card major": "Stayman, {min} lapos nemes szín",
 		"weak, a {min}+ card minor": "gyenge, {min}+ lapos alacsony szín",
 		waiting: "várakozó",
+		"no other guide call fits": "az útmutatóban nincs más illő licit",
 		"a good {min}+ card {suit} suit": "jó {min}+ lapos {suit} szín",
 		"no {min}-card major": "nincs {min} lapos nemes szín",
 		"completes the transfer to {suit}": "teljesíti a transzfert: {suit}",
@@ -2023,6 +2026,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Stayman, a {min}-card major": "Stayman, en høyfarge med {min} kort",
 		"weak, a {min}+ card minor": "svak, en lavfarge med {min}+ kort",
 		waiting: "ventemelding",
+		"no other guide call fits":
+			"ingen annen melding i meldeveiledningen passer",
 		"a good {min}+ card {suit} suit": "en god {suit}-farge med {min}+ kort",
 		"no {min}-card major": "ingen høyfarge med {min} kort",
 		"completes the transfer to {suit}": "fullfører overføringen til {suit}",

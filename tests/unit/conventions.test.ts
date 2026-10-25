@@ -120,15 +120,13 @@ describe("guide calls for a hand", () => {
 	it.each([
 		["other", "", "AQ4.KJ5.Q862.K73"],
 		["hcp", "", "KQT98732.4.J52.6"], // an eight-card suit
-		["hcp", "1H X", "K84.Q73.J652.Q64"],
 		["hcp", "1H 1S", "K84.Q73.J652.Q64"],
-		["hcp", "1H", "K84.Q73.J652.Q64"], // an overcall
-		["hcp", "P 1H", "K84.Q73.J652.Q64"],
 		["hcp", "1H P 1S 2C", "K84.Q73.J652.Q64"], // the rebid after an overcall
 		["hcp", "1H P 2H P", "K84.Q73.J652.Q64"], // the rebid after a raise
 		["hcp", "1H P 1S P 2C P", "K84.Q73.J652.Q64"], // responder's second call
 		["hcp", "1H P 1S P", "A4.KQJ73.K82.Q65"], // 15, balanced: no rebid fits
-		["hcp", "2S P", "K8.Q73.J652.Q643"], // no support, too weak for [2NT]
+		["hcp", "1H P 1S P", "A2.KQ952.K3.Q432"], // 14, not balanced, after a forcing new suit
+		["hcp", "2C P 2D P", "AKQ2.AKQ52.K3.Q4"], // 24, not balanced
 		["hcp", "3S P", "K84.Q73.J652.Q64"],
 		["hcp", "2NT P", "K84.Q73.J652.Q64"],
 		["hcp", "3NT P", "K84.Q73.J652.Q64"],
@@ -160,6 +158,12 @@ describe("guide calls for a hand", () => {
 		["1H", "A84.4.KQ52.KJ643", ["X"]], // 13, short in hearts
 		["1H", "AQ4.KJ5.Q862.K73", ["1NT"]], // 15, balanced, KJ5 stops hearts
 		["1H X", "AQ4.84.Q862.K732", ["XX"]], // 11
+		["1H X", "K84.Q73.J652.Q64", ["P"]], // 8: no other guide call fits
+		["1H", "K84.Q73.J652.Q64", ["P"]], // 8, no five-card suit: no overcall fits
+		["P 1H", "K84.Q73.J652.Q64", ["P"]],
+		["1H P P", "K84.Q73.J652.Q64", ["P"]],
+		["2S P", "K8.Q73.J652.Q643", ["P"]], // no support, too weak for [2NT]
+		["1H P 1NT P", "A2.KQ952.K3.Q432", ["P"]], // 14, not balanced, five hearts
 		["1H P 3H P 4NT P", "AQ4.KJ5.Q862.K73", ["5D"]], // one ace
 		["1H P 3H P 4NT P", "KQ4.KJ5.Q862.K73", ["5C"]], // no ace
 	] as const)(
@@ -196,6 +200,10 @@ describe("a hand against the meaning of one call", () => {
 		["hcp", "KQJ74.92.Q87.432", "1H", "1S", true], // 8, a good five-card suit
 		["hcp", "Q2.KJ92.Q874.432", "1H", "7NT", false], // the guide has no 7NT over an opening
 		["hcp", "Q2.KJ92.Q874.432", "1H", "P", true], // a pass is the call of a hand that fits no guide call
+		["hcp", "KQ974.92.A87.432", "1H", "P", true], // also with a good overcall: a pass fits any hand here
+		["hcp", "A2.KQ952.K3.Q432", "1H P 1S P", "P", false], // the new suit forces a rebid
+		["hcp", "AKQ2.AKQ52.K3.Q4", "2C P 2D P", "P", false], // [2C] forces to game
+		["hcp", "AQ4.84.Q862.K732", "2C P", "P", false], // the guide always answers [2C]
 		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "7NT", undefined], // the guide does not describe the position
 		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "2C", undefined], // the guide does not describe the position
 		["hcp", "Q2.KJ92.Q874.432", "1H P 3H P", "4NT", true], // the ask fits any hand
@@ -510,7 +518,6 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H P 1S 2C 2S"], // the rebid after an overcall
 		["hcp", "1H 2H"], // a cue bid
 		["hcp", "1H 2S"], // a jump overcall
-		["hcp", "1H P"],
 		["hcp", "1H 1S 2H"],
 		["hcp", "1NT 2C"],
 		["hcp", "1NT X"],

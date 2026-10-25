@@ -278,7 +278,8 @@ const HINT_CALLS = 3;
 /**
  * The hint on Confirm when the chosen call is not one that the guide of `system` gives the viewer's hand: the guide
  * calls, or "Unconventional" when the guide gives none. Where the guide gives the hand no call, "Unconventional" when
- * the hand does not fit the meaning of the chosen call or the guide has no such call, and nothing for a pass. The [4NT] ask fits any hand, so its hint is its meaning and not a verdict, on two lines.
+ * the hand does not fit the meaning of the chosen call or the guide has no such call there. The [4NT] ask fits any
+ * hand, so its hint is its meaning and not a verdict, on two lines.
  */
 function conventionHint(
 	system: PointSystem,

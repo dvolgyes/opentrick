@@ -40,6 +40,8 @@ export type Shape =
 	/** `min` or more cards in a minor. */
 	| { readonly kind: "weak-minor"; readonly min: number }
 	| { readonly kind: "waiting" }
+	/** A pass when no other guide call fits the hand. */
+	| { readonly kind: "rest" }
 	/** `min` or more cards in `suit`, with the top cards of SHAPES.goodSuit. */
 	| { readonly kind: "good-suit"; readonly suit: Suit; readonly min: number }
 	/** Opener's answer to Stayman: no major with `min` cards. */
@@ -490,11 +492,30 @@ export const ACE_ANSWERS: Readonly<Partial<Record<Call, readonly number[]>>> = {
 	"5S": [3],
 };
 
+/**
+ * Whether the guide gives a pass to the hands that fit no other call in `at`: after the opponents' opening, after
+ * partner's opening is doubled, after partner's weak two, and opener's rebid after [1NT]. The other positions
+ * force a call, or give a pass its own meaning.
+ */
+function passesTheRest(at: Position): boolean {
+	switch (at.kind) {
+		case "overcall":
+		case "redouble":
+		case "weak-two":
+			return true;
+		case "rebid":
+			return at.response === "1NT";
+		default:
+			return false;
+	}
+}
+
 function meaningAt(
 	ranges: Ranges,
 	at: Position,
 	call: Call,
 ): CallMeaning | undefined {
+	if (call === "P" && passesTheRest(at)) return { shape: { kind: "rest" } };
 	switch (at.kind) {
 		case "opening":
 			return openingMeaning(ranges, call);
@@ -610,6 +631,7 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 		case "none":
 		case "artificial":
 		case "waiting":
+		case "rest":
 		case "accept":
 		case "relay":
 		case "ask":
@@ -727,9 +749,8 @@ function handOf(system: PointSystem, cards: readonly Card[]): Hand | undefined {
 
 /**
  * Whether `cards` fit what `call` shows by the guide of `system` after `calls`. In a position that the guide describes, a
- * call without a meaning does not fit, but a pass does: it is the call of a hand to which the guide gives no call.
- * Undefined when the guide does not describe the position. Unlike conventionCalls, this also judges a call in a
- * position where the guide gives some hands no call.
+ * call without a meaning does not fit. Undefined when the guide does not describe the position. Unlike
+ * conventionCalls, this also judges a call in a position where the guide gives some hands no call.
  */
 export function fitsCall(
 	system: PointSystem,
@@ -743,7 +764,7 @@ export function fitsCall(
 	if (meaning === undefined)
 		return rules(system) === undefined || position(calls) === undefined
 			? undefined
-			: call === "P";
+			: false;
 	return inRange(hand.points, meaning.range) && fitsShape(hand, meaning.shape);
 }
 
@@ -769,6 +790,7 @@ export function conventionCalls(
 			? [{ call, meaning }]
 			: [];
 	});
+	const others = fitting.filter(({ meaning }) => meaning.shape.kind !== "rest");
 	if (fitting.length === 0 && !EVERY_HAND.has(at.kind)) return undefined;
-	return preferred(at, hand, fitting);
+	return preferred(at, hand, others.length > 0 ? others : fitting);
 }

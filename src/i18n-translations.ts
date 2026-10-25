@@ -3433,6 +3433,14 @@ const rows: readonly TranslationRow[] = [
 		"afwachtend",
 	],
 	[
+		"no other guide call fits",
+		"ninguna otra voz de la guía encaja",
+		"nenhuma outra voz do guia se aplica",
+		"aucune autre enchère du guide ne convient",
+		"nessun'altra dichiarazione della guida è adatta",
+		"geen ander bod uit de biedgids past",
+	],
+	[
 		"a good {min}+ card {suit} suit",
 		"un buen palo de {suit} de {min}+ cartas",
 		"um bom naipe de {suit} com {min}+ cartas",
