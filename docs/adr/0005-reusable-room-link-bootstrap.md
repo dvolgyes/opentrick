@@ -4,7 +4,7 @@ Status: accepted (2026-10-20).
 
 ## Context
 
-ADR 0004 stores table state in each player's browser and expires an idle table after 24 hours.
+ADR 0004 stores table state in each player's browser and expires an idle table after 8 hours (24 hours until 2026-10-25).
 The room URL already carries the four player names, the host seat, and the room key.
 The player-specific URL carries `selected_player` with the player's seat, while the shared URL carries `selected_player=none`.
 The host needs to reopen a weekly room even when its local copy has expired or is missing.
