@@ -309,6 +309,29 @@ describe("table controller seeding from the setup link", () => {
 		expect(rig.storage.commits).toBe(0);
 	});
 
+	it("seeds while the only beats come from pages without the table that report a host lost long ago", async () => {
+		// The only replica was lost (its browser cleared its data); East remembers the host, but has no entry.
+		const holder = await deriveHolder(TABLE, "clientE-0123456789abcd");
+		const host = await deriveHolder(TABLE, "clientW-0123456789abcd");
+		const table = await rig.start("N");
+		for (let beats = 0; beats < (2 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			rig.handlers?.ctl("east000000000000000", {
+				k: "beat",
+				role: "follower",
+				holder,
+				seat: "E",
+				elig: false,
+				auth: { term: 1, tag: makeTag(host, "N"), inc: 1 },
+				seenAgoMs: 60_000 + beats * BEAT_MS,
+				pos: { rev: 0, lastAuth: null },
+			});
+			await settle();
+			await rig.advance(BEAT_MS);
+		}
+
+		expect(table.view().hosting).toBe(true);
+	});
+
 	/** A beat of West's page, which has no table either; its link names S as the host seat. */
 	async function westBeat(): Promise<void> {
 		const holder = await deriveHolder(TABLE, "clientW-0123456789abcd");
