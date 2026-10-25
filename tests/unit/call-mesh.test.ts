@@ -525,7 +525,7 @@ describe("CallMesh announcements", () => {
 		expect(west.live("N")).toHaveLength(1);
 	});
 
-	it("never shows video for a compact peer, whatever its message says", async () => {
+	it("keeps the switches a compact peer announces, so its camera can reach this side", async () => {
 		table.take("N");
 		const west = table.take("W");
 		west.mesh.join(AUDIO);
@@ -537,11 +537,11 @@ describe("CallMesh announcements", () => {
 		} satisfies CallMessage;
 		table.broker.deliver(west.inbox, envelope("N", 1, west, message));
 		expect(west.mesh.peer("N")).toEqual({
-			prefs: AUDIO.prefs,
+			prefs: BOTH.prefs,
 			form: "compact",
 		});
 		expect(west.live("N")[0]?.remote).toEqual({
-			prefs: AUDIO.prefs,
+			prefs: BOTH.prefs,
 			form: "compact",
 		});
 	});

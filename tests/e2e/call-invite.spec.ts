@@ -107,12 +107,14 @@ test("a guest gets an invitation when the host starts a room call, or when it co
 		await n.waitForTimeout(2_000);
 		await expect(invite(n)).toBeHidden();
 
-		// South comes while West is in the call: the phone gets the invitation too, with its audio switches only.
+		// South comes while West is in the call: the phone gets the invitation too, with its audio switches and Send
+		// camera, but no See cameras switch: a phone shows no video.
 		const s = await south.page(link);
 		await pick(s, "S");
 		await expect(invite(s)).toBeVisible({ timeout: CONNECT_MS });
 		await expectCentered(s);
-		await expect(invite(s).locator(".call-toggle:visible")).toHaveCount(2);
+		await expect(invite(s).locator(".call-toggle:visible")).toHaveCount(3);
+		await expect(inviteButton(s, "See cameras: receive video")).toBeHidden();
 		await inviteButton(s, "Send mic audio").click();
 		await expect(inviteButton(s, "Send mic audio")).toHaveAttribute(
 			"aria-pressed",

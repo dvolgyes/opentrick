@@ -8,7 +8,7 @@ import type {
 	IceCandidate,
 	InboxIdentity,
 } from "./messages";
-import { type Party, restrict } from "./policy";
+import type { Party } from "./policy";
 import type {
 	CallSignaling,
 	OpenCallSignaling,
@@ -107,7 +107,7 @@ interface Waiting {
 
 function remoteParty(announcement: Announcement): Party {
 	const { prefs, form } = announcement;
-	return { prefs: { inCall: prefs.inCall, ...restrict(prefs, form) }, form };
+	return { prefs, form };
 }
 
 /** Other held seats that are online in `next` but were not in `previous` (none before a first snapshot). */
@@ -163,7 +163,7 @@ export class CallMesh {
 		return this.#problem;
 	}
 
-	/** The seat's last valid announcement while it is in this call; video is already off for compact devices. */
+	/** The seat's last valid announcement while it is in this call. */
 	peer(seat: Seat): Party | undefined {
 		return this.#peers.get(seat)?.remote;
 	}

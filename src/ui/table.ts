@@ -599,21 +599,23 @@ export function tableSection(
 		if (!controls) throw new Error("room call controls are missing");
 		return controls;
 	})();
-	// An icon keeps the top bar within a 360 px phone; the name stays "Reload" for assistive technology.
+	// Icons keep the top bar within a 360 px phone in every language; the names stay for assistive technology.
 	const mobileReload = button("", handlers.reload, {
 		className: "icon-button mobile-auction-reload",
 		attrs: { "aria-label": t("Reload"), title: t("Reload") },
 	});
 	mobileReload.append(icon("reload"));
-	const mobileExit = button(t("Exit"), handlers.exit, {
-		className: "mobile-auction-exit",
+	const mobileExit = button("", handlers.exit, {
+		className: "icon-button mobile-auction-exit",
+		attrs: { "aria-label": t("Exit"), title: t("Exit") },
 	});
+	mobileExit.append(icon("exit"));
 	const mobileShareStatus = el("span", {
 		className: "visually-hidden",
 		attrs: { role: "status", "aria-live": "polite" },
 	});
 	const mobileShare = button(
-		t("Share URL"),
+		"",
 		() => {
 			void handlers.shareUrl().then(
 				() => {
@@ -626,8 +628,12 @@ export function tableSection(
 				},
 			);
 		},
-		{ className: "mobile-auction-share" },
+		{
+			className: "icon-button mobile-auction-share",
+			attrs: { "aria-label": t("Share URL"), title: t("Share URL") },
+		},
 	);
+	mobileShare.append(icon("share"));
 	const mobileTopbar = el(
 		"div",
 		{ className: "mobile-auction-topbar" },

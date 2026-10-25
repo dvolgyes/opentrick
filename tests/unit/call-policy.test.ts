@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Form } from "../../src/call/device-class";
 import {
 	allowed,
-	changeForm,
 	direction,
 	join,
 	leave,
@@ -85,16 +84,14 @@ describe("local preference changes", () => {
 
 	it("treats a Join with every available switch off as staying outside", () => {
 		expect(join(presetById("out").switches, "desktop").inCall).toBe(false);
-		// Video only on a compact device leaves nothing available.
-		expect(join(prefs(false, false, true, true), "compact")).toEqual(
-			NOT_IN_CALL,
+		// A compact device shows no video, so Receive video alone leaves nothing; the choice stays for the desktop view.
+		expect(join(prefs(false, false, false, true), "compact")).toEqual(
+			prefs(false, false, false, true, false),
 		);
 	});
 
-	it("never keeps a video switch on a compact device, even when the selection asks for it", () => {
-		expect(join(presetById("both").switches, "compact")).toEqual(
-			prefs(true, true, false, false),
-		);
+	it("lets a compact device send video and keeps its Receive video choice for the desktop view", () => {
+		expect(join(presetById("both").switches, "compact")).toEqual(ALL_ON);
 		expect(
 			setSwitch(
 				prefs(true, true, false, false),
@@ -103,7 +100,7 @@ describe("local preference changes", () => {
 				"video",
 				true,
 			),
-		).toEqual(prefs(true, true, false, false));
+		).toEqual(prefs(true, true, true, false));
 		expect(
 			setSwitch(
 				prefs(true, true, false, false),
@@ -112,7 +109,17 @@ describe("local preference changes", () => {
 				"video",
 				true,
 			),
-		).toEqual(prefs(true, true, false, false));
+		).toEqual(prefs(true, true, false, true));
+		// The last switch that a compact device uses goes off: the call ends, Receive video stays.
+		expect(
+			setSwitch(
+				prefs(false, false, true, true),
+				"compact",
+				"send",
+				"video",
+				false,
+			),
+		).toEqual(prefs(false, false, false, true, false));
 	});
 
 	it("keeps the other switches when the microphone goes off", () => {
@@ -160,23 +167,14 @@ describe("local preference changes", () => {
 		expect(leave(ALL_ON)).toEqual(prefs(true, true, true, true, false));
 	});
 
-	it("clears both video switches when a desktop becomes compact", () => {
-		expect(changeForm(ALL_ON, "compact")).toEqual(
-			prefs(true, true, false, false),
-		);
-	});
-
-	it("leaves the call when a video-only desktop becomes compact", () => {
-		expect(changeForm(prefs(false, false, true, true), "compact")).toEqual(
-			prefs(false, false, false, false, false),
-		);
-	});
-
-	it("keeps video off when a compact device becomes desktop again", () => {
-		const compact = changeForm(ALL_ON, "compact");
-		expect(changeForm(compact, "desktop")).toEqual(
-			prefs(true, true, false, false),
-		);
+	it("receives video with the same switches again when a compact device becomes desktop", () => {
+		const peer = party(ALL_ON);
+		expect(mediaPlan(party(ALL_ON, "compact"), peer).video).toEqual({
+			send: true,
+			receive: false,
+			direction: "sendonly",
+		});
+		expect(mediaPlan(party(ALL_ON), peer).video.direction).toBe("sendrecv");
 	});
 });
 
@@ -253,7 +251,6 @@ describe("allowed (handover §3)", () => {
 			party(ALL_ON),
 			party(prefs(true, true, true, false)),
 		],
-		["sender compact", party(ALL_ON, "compact"), party(ALL_ON)],
 		["receiver compact", party(ALL_ON), party(ALL_ON, "compact")],
 	];
 
@@ -268,11 +265,11 @@ describe("allowed (handover §3)", () => {
 		},
 	);
 
-	it("a compact side blocks video either way and leaves audio unchanged", () => {
+	it("a compact receiver blocks video, a compact sender sends it, and audio is unchanged", () => {
 		const phone = party(ALL_ON, "compact");
 		const desktop = party(ALL_ON);
 		expect(allowed(desktop, phone, "video")).toBe(false);
-		expect(allowed(phone, desktop, "video")).toBe(false);
+		expect(allowed(phone, desktop, "video")).toBe(true);
 		expect(allowed(desktop, phone, "audio")).toBe(true);
 		expect(allowed(phone, desktop, "audio")).toBe(true);
 	});

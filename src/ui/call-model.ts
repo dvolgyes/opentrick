@@ -130,7 +130,7 @@ function switchView(
 	cameraAvailable: boolean | undefined,
 ): SwitchView {
 	const inCall = view.requested.inCall;
-	const available = view.media.includes(medium);
+	const available = view.media[way].includes(medium);
 	const requested = view.requested[way][medium];
 	const cameraMissing =
 		way === "send" && medium === "video" && cameraAvailable === false;
@@ -232,11 +232,12 @@ export function callControlsView(
 			inCall ||
 			(view.canJoin &&
 				(rejoin !== undefined ||
-					view.media.some((medium) =>
-						medium === "video" && cameraAvailable === false
-							? view.requested.receive.video
-							: view.requested.send[medium] || view.requested.receive[medium],
-					))),
+					view.media.send.some(
+						(medium) =>
+							view.requested.send[medium] &&
+							!(medium === "video" && cameraAvailable === false),
+					) ||
+					view.media.receive.some((medium) => view.requested.receive[medium]))),
 		joinName: inCall
 			? t("Leave call")
 			: rejoin === undefined
@@ -319,7 +320,7 @@ function connectedText(
 			: undefined;
 	if (remote.video !== undefined) return audio ?? t("Audio + video");
 	const videoOff =
-		view.media.includes("video") &&
+		view.media.receive.includes("video") &&
 		remote.peerSendsVideo &&
 		!view.requested.receive.video;
 	if (!videoOff) return audio ?? t("Audio only");

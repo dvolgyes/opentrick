@@ -207,7 +207,7 @@ describe("the restore", () => {
 		});
 	});
 
-	it("drops video on a compact device, and a listener captures nothing", () => {
+	it("keeps the video switches on a compact device, and captures the camera that its Send switch asks for", () => {
 		const listen: CallRecord = {
 			version: 1,
 			prefs: {
@@ -218,11 +218,8 @@ describe("the restore", () => {
 			form: "desktop",
 		};
 		expect(callRestore(listen, "compact")).toEqual({
-			selection: {
-				send: { audio: false, video: false },
-				receive: { audio: true, video: false },
-			},
-			devices: [],
+			selection: { send: listen.prefs.send, receive: listen.prefs.receive },
+			devices: ["video"],
 		});
 	});
 

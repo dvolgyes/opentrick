@@ -595,13 +595,26 @@ describe("PeerLink video and asymmetric combinations (call/layout plan C6)", () 
 		});
 	});
 
+	it("has no video section for two compact devices on Both: audio only", async () => {
+		const pair = new Pair(party("both", "compact"), party("both", "compact"));
+		await settle();
+		expect(observed(pair, "audio").directions).toEqual([
+			"sendrecv",
+			"sendrecv",
+		]);
+		expect(observed(pair, "video")).toEqual({
+			sections: [false, false],
+			directions: [null, null],
+			sends: [null, null],
+		});
+	});
+
 	it.each([
-		["desktop", "compact"],
-		["compact", "desktop"],
-		["compact", "compact"],
+		["desktop", "compact", ["recvonly", "sendonly"], [null, "camB"]],
+		["compact", "desktop", ["sendonly", "recvonly"], ["camA", null]],
 	] as const)(
-		"N %s, E %s on Both: audio only, with no video section",
-		async (n, e) => {
+		"N %s, E %s on Both: the compact camera reaches the desktop, and no video reaches the compact side",
+		async (n, e, directions, sends) => {
 			const pair = new Pair(party("both", n), party("both", e));
 			await settle();
 			expect(observed(pair, "audio").directions).toEqual([
@@ -609,22 +622,22 @@ describe("PeerLink video and asymmetric combinations (call/layout plan C6)", () 
 				"sendrecv",
 			]);
 			expect(observed(pair, "video")).toEqual({
-				sections: [false, false],
-				directions: [null, null],
-				sends: [null, null],
+				sections: [true, true],
+				directions,
+				sends,
 			});
 		},
 	);
 
-	it("ignores video switches that a compact party claims (stored or forged prefs)", async () => {
+	it("ignores the Receive video switch of a compact party (stored or forged prefs)", async () => {
 		const pair = new Pair(BOTH, { ...BOTH, form: "compact" });
 		await settle();
-		expect(pair.section("a", "video")).toBeUndefined();
-		expect(pair.section("b", "video")).toBeUndefined();
+		expect(pair.sending("a", "video")).toBeNull();
+		expect(pair.section("a", "video")?.currentDirection).toBe("recvonly");
 	});
 
-	it("keeps an offered video section inactive on a compact side, without a camera", async () => {
-		// A modified desktop client offers video to a compact peer anyway.
+	it("answers an offered two-way video section on a compact side with its camera only", async () => {
+		// A modified desktop client offers its camera to a compact peer anyway.
 		const pair = new Pair(BOTH, { ...BOTH, form: "compact" }, (p) => {
 			const add = p.a.addTransceiver.bind(p.a);
 			p.a.addTransceiver = (trackOrKind, init) => {
@@ -637,10 +650,9 @@ describe("PeerLink video and asymmetric combinations (call/layout plan C6)", () 
 		});
 		await settle();
 		const video = pair.section("b", "video");
-		expect(video?.direction).toBe("inactive");
-		expect(video?.currentDirection).toBe("inactive");
-		expect(pair.sending("b", "video")).toBeNull();
-		expect(pair.section("a", "video")?.currentDirection).toBe("inactive");
+		expect(video?.direction).toBe("sendonly");
+		expect(video?.currentDirection).toBe("sendonly");
+		expect(pair.sending("b", "video")).toBe("camB");
 		expect(observed(pair, "audio").directions).toEqual([
 			"sendrecv",
 			"sendrecv",

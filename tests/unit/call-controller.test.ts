@@ -130,11 +130,7 @@ class Player {
 
 	/** Confirms Join with the switches of one preset. */
 	join(preset: PresetId): void {
-		if (
-			presetById(preset).switches.send.video &&
-			this.call.view.form === "desktop"
-		)
-			this.prepareCamera();
+		if (presetById(preset).switches.send.video) this.prepareCamera();
 		this.call.join(presetById(preset).switches);
 	}
 
@@ -238,15 +234,22 @@ describe("CallController (call/layout plan §4.5)", () => {
 			receive: { audio: true, video: true },
 		});
 		expect([view.mic, view.camera]).toEqual(["off", "off"]);
-		expect(view.media).toEqual(["audio", "video"]);
+		expect(view.media).toEqual({
+			send: ["audio", "video"],
+			receive: ["audio", "video"],
+		});
 		expect(view.remotes.map((r) => [r.seat, r.status])).toEqual([
 			["E", "unknown"],
 			["S", "unknown"],
 			["W", "unknown"],
 		]);
 
+		// A compact device sends its camera but shows no video.
 		north.call.setForm("compact");
-		expect(north.call.view.media).toEqual(["audio"]);
+		expect(north.call.view.media).toEqual({
+			send: ["audio", "video"],
+			receive: ["audio"],
+		});
 	});
 
 	it("does not send video until a preview track is explicitly prepared", () => {
@@ -282,26 +285,24 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(north.asked("video")).toEqual([]);
 	});
 
-	it("never asks a compact device for the camera: not for restored video switches, not for a video switch", async () => {
+	it("sends the prepared camera of a compact device to a desktop, and shows the compact device no video", async () => {
 		north.call.dispose();
 		north = new Player("N", wire, "compact");
 		north.call.update(snapshot("N"));
-		// The switches of a desktop session, as a restored preference would give them.
 		north.join("both");
 		expect(north.call.view.requested).toEqual({
 			inCall: true,
-			...presetById("audio").switches,
+			...presetById("both").switches,
 		});
-		north.call.setSwitch("send", "video", true);
-		north.call.setSwitch("receive", "video", true);
 		east.join("both");
 		await settle();
+		for (const player of [north, east]) player.open?.setConnection("connected");
+		await settle(10);
+		// The preview track is the camera: the call asks for no other.
 		expect(north.asked("video")).toEqual([]);
-		expect(north.call.view.requested.send.video).toBe(false);
-		// Audio only on both sides of the pair: neither side has a video section.
-		expect(north.sections).toEqual(["audio"]);
-		expect(east.sections).toEqual(["audio"]);
-		expect(east.remote("N")?.peerSendsVideo).toBe(false);
+		expect(north.sendingVideo).toBe(asTrack(north.preparedCamera as FakeTrack));
+		expect(east.remote("N")?.video).toBeDefined();
+		expect(north.remote("E")?.video).toBeUndefined();
 	});
 
 	it("sends the camera to a desktop that receives video, and stops it at once on Send camera off", async () => {
@@ -338,32 +339,37 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(east.call.view.status).toBe("subscribed");
 	});
 
-	it("stops the camera at once when a desktop call becomes compact, keeps audio, and does not restore video after", async () => {
+	it("keeps sending the camera when a desktop call becomes compact, stops receiving video, and receives it again on desktop", async () => {
 		await connected("both", "both");
 		const mic = north.grant("audio");
 		const camera = north.preparedCamera;
 		await settle(10);
+		expect(north.remote("E")?.video).toBeDefined();
 		north.call.setForm("compact");
-		expect(camera?.stops).toBe(1);
+		expect(camera?.stops).toBe(0);
 		expect(mic.stops).toBe(0);
 		expect(north.call.view.requested).toEqual({
 			inCall: true,
-			...presetById("audio").switches,
+			...presetById("both").switches,
 		});
-		expect(north.remote("E")?.video).toBeUndefined();
 		await settle();
-		expect(north.sendingVideo).toBeNull();
-		expect(east.remote("N")?.video).toBeUndefined();
+		expect(north.remote("E")?.video).toBeUndefined();
+		expect(north.sendingVideo).toBe(asTrack(camera as FakeTrack));
+		expect(east.remote("N")?.video).toBeDefined();
 		expect(east.remote("N")?.audio).toBeDefined();
 		const video = (pc: FakePeerConnection | undefined) =>
 			pc?.getTransceivers().find((t) => t.receiver.track.kind === "video");
-		expect(video(north.open)?.currentDirection).toBe("inactive");
-		expect(video(east.open)?.currentDirection).toBe("inactive");
+		expect(video(north.open)?.currentDirection).toBe("sendonly");
+		expect(video(east.open)?.currentDirection).toBe("recvonly");
 
 		north.call.setForm("desktop");
 		await settle();
-		expect(north.call.view.requested.send.video).toBe(false);
-		expect(north.call.view.requested.receive.video).toBe(false);
+		expect(north.call.view.requested).toEqual({
+			inCall: true,
+			...presetById("both").switches,
+		});
+		expect(north.remote("E")?.video).toBeDefined();
+		expect(video(north.open)?.currentDirection).toBe("sendrecv");
 		expect(north.asked("video")).toHaveLength(0);
 	});
 

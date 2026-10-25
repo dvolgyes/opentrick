@@ -28,7 +28,7 @@ export interface Announcement {
 	readonly prefs: Prefs;
 	/** Increases with each local change in one session; an older value than the last one seen is ignored. */
 	readonly prefVersion: number;
-	/** Decides whether the pair has a video section at all. */
+	/** Decides whether this side receives video. */
 	readonly form: Form;
 }
 

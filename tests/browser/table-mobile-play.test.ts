@@ -1278,7 +1278,10 @@ describe("compact play controls", () => {
 				status: "subscribed" as const,
 				canJoin: false,
 				form: "desktop" as const,
-				media: ["audio", "video"] as const,
+				media: {
+					send: ["audio", "video"] as const,
+					receive: ["audio", "video"] as const,
+				},
 				requested: {
 					inCall: true,
 					send: { audio: false, video: false },

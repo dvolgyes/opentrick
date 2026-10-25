@@ -1,5 +1,6 @@
 /**
- * The single device-class rule of the call (handover §1, §2): "desktop" may use video, "compact" is audio only.
+ * The single device-class rule of the call (handover §1, §2): "desktop" shows video, "compact" shows none but can
+ * send the camera.
  * The same class drives the layout. It is a user-experience rule, not a security boundary.
  */
 export type Form = "desktop" | "compact";

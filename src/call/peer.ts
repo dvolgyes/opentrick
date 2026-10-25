@@ -318,7 +318,7 @@ export class PeerLink implements CallLink {
 
 	/**
 	 * Impolite side only: an audio section from the start, and a video section once the plan first sends or
-	 * receives video. A pair with a compact device therefore never has one. A section is never removed; it goes
+	 * receives video. A pair of two compact devices therefore never has one. A section is never removed; it goes
 	 * inactive. Returns whether a section was added.
 	 */
 	#addSections(): boolean {
@@ -342,8 +342,8 @@ export class PeerLink implements CallLink {
 
 	/**
 	 * Puts the media plan on the transceivers: tracks always, directions only when `directions` is set. Returns
-	 * whether a direction changed. A video section that the plan does not allow (for example one offered to a
-	 * compact device) goes inactive and gets no track.
+	 * whether a direction changed. A video section that the plan does not allow (for example one offered between two
+	 * compact devices) goes inactive and gets no track.
 	 */
 	async #applyPlan(directions: boolean): Promise<boolean> {
 		const plan = mediaPlan(this.#local, this.#remote);

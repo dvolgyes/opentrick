@@ -708,12 +708,17 @@ test("4: the call controls have names that spell out the way and the medium, and
 			);
 		}
 	}
-	// The compact call row has no video switches: a phone is audio only (src/call/device-class.ts,
-	// src/ui/call-panel.ts).
-	for (const name of ["Send camera video", "See cameras: receive video"])
-		await expect(
-			phoneTab.getByRole("button", { name, exact: true }),
-		).toHaveCount(0);
+	// The compact call row can send the camera but shows no video, so it has no See cameras switch
+	// (src/call/device-class.ts, src/ui/call-panel.ts).
+	await expect(
+		phoneTab.getByRole("button", { name: "Send camera video", exact: true }),
+	).toHaveCount(1);
+	await expect(
+		phoneTab.getByRole("button", {
+			name: "See cameras: receive video",
+			exact: true,
+		}),
+	).toHaveCount(0);
 	// The compact table offers no claim during the auction (src/ui/table.ts enables the claims only in play), and
 	// both Undo controls stay disabled before the first call.
 	for (const id of ["claim-compact", "claim-all-compact", "undo-compact"])

@@ -196,7 +196,7 @@ export function callRecordFor(
 }
 
 export interface CallRestore {
-	/** The switches to join with, without the ones this device does not support. */
+	/** The switches to join with. */
 	readonly selection: Switches;
 	/** The devices that the join captures: each medium whose Send switch is on. */
 	readonly devices: readonly Medium[];

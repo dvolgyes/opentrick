@@ -262,9 +262,10 @@ export function callControls(
 				attrs: { role: "group", "aria-label": t("Room call") },
 			},
 			joinButton(false),
-			// Compact devices are audio only: no camera controls.
+			// Compact devices show no video, but can send the camera.
 			toggleButton(SEND_AUDIO),
 			toggleButton(RECEIVE_AUDIO),
+			toggleButton(SEND_VIDEO),
 		),
 		el("span", {
 			className: "icon-separator",
@@ -323,11 +324,15 @@ export function callControls(
 		renderInvite();
 	}
 
-	/** The invitation shows while it is due and this player can join; a phone sees only its audio switches. */
+	/** The invitation shows while it is due and this player can join; a phone sees no See cameras switch. */
 	function renderInvite(): void {
-		const media = display?.available ? display.view.media : [];
-		for (const node of inviteToggles)
-			node.hidden = !media.some((medium) => medium === node.dataset.medium);
+		const media = display?.available ? display.view.media : undefined;
+		for (const node of inviteToggles) {
+			const way = node.dataset.way === "send" ? "send" : "receive";
+			node.hidden = !media?.[way].some(
+				(medium) => medium === node.dataset.medium,
+			);
+		}
 		// Not Join's enabled state: with all switches off the invitation stays open, and its Join waits for a switch.
 		const open =
 			invite.due &&

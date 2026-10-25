@@ -316,3 +316,57 @@ test("a phone keeps its screen on during the bidding and the play, not on the st
 		await context.close();
 	}
 });
+
+for (const locale of [
+	"en-US",
+	"hu-HU",
+	"de-DE",
+	"fr-FR",
+	"es-ES",
+	"pt-PT",
+	"it-IT",
+	"nl-NL",
+	"nb-NO",
+]) {
+	test(`a 360 px phone in ${locale} shows each top bar button whole`, async ({
+		browser,
+		baseURL,
+	}) => {
+		if (!baseURL) throw new Error("baseURL is not configured");
+		const context = await browser.newContext({
+			baseURL,
+			viewport: { width: 360, height: 800 },
+			isMobile: true,
+			hasTouch: true,
+			locale,
+		});
+		try {
+			const page = await context.newPage();
+			await mockBots(page);
+			await page.goto("/");
+			for (const seat of ["N", "E", "S"])
+				await page.locator(`input[name="bot-${seat}"]`).check();
+			await page.locator('input[name="openrouter-key"]').fill("test-key");
+			await page.getByTestId("create").tap();
+			const topbar = page.locator(".mobile-auction-topbar");
+			await expect(topbar).toBeVisible();
+			await expectCompactPage(page);
+
+			// A label wider than its button is cut off, and a bar wider than its box cuts off its last button.
+			expect(
+				await topbar.evaluate((bar) => ({
+					bar: bar.scrollWidth - bar.clientWidth,
+					clipped: [...bar.querySelectorAll("button")]
+						.filter((button) => button.checkVisibility())
+						.filter((button) => button.scrollWidth > button.clientWidth)
+						.map(
+							(button) =>
+								button.getAttribute("aria-label") ?? button.textContent,
+						),
+				})),
+			).toEqual({ bar: 0, clipped: [] });
+		} finally {
+			await context.close();
+		}
+	});
+}
