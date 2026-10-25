@@ -76,8 +76,9 @@ Transport:
 - Recovery after a network change: the mesh, not Trystero, reconnects the relays.
   When the browser reports a network change (the `online` event, or a change of the Network Information API), the page replaces every relay socket at once, without the reconnect wait.
   For the next 60 s, a page without links rejoins the table room as soon as a relay is open, without the 10 s wait, because its old offers carry the addresses of the old network.
-  A relay socket that looks open but sends nothing for 240 s is replaced, because after a network change a socket can stay half-open.
-  A Nostr relay answers each announcement (every 60 s), and the trackers asked for an announce every 120 s to 180 s in a live check (October 2026), so a working relay is never silent that long.
+  A relay socket that looks open but sends nothing for too long is replaced, because after a network change a socket can stay half-open.
+  The limit is 90 s for a Nostr relay, which answers each announcement (every 60 s), and 240 s for a tracker, which asked for an announce every 120 s to 180 s in a live check (October 2026).
+  A Nostr relay that rate-limits the page gets no announcement for a time, so its silence counts only from the end of that rest.
 - The ICE servers are only the configured STUN servers (`VITE_STUN_URLS`); TURN URLs are refused.
 
 State:

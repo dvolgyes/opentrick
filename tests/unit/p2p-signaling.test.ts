@@ -6,6 +6,7 @@ import {
 	joinRoom,
 	type Room,
 	reconnectRelay,
+	relayResting,
 	relaySockets,
 	selfId,
 } from "../../src/p2p/signaling";
@@ -286,6 +287,22 @@ describe("the signaling strategy over Nostr relays only", () => {
 				{ timeout: 5_000 },
 			)
 			.toEqual([true, true]);
+	}, 20_000);
+
+	it("rests a relay that rejects an announcement with a rate limit", async () => {
+		vi.stubGlobal("WebSocket", FakeRelay);
+		const relay = "wss://nostr-rate-limited.test";
+		join("nostr-rate-limited", { nostr: [relay] });
+		await expect
+			.poll(() => announcements(relay).length, { timeout: 10_000 })
+			.toBeGreaterThan(0);
+		expect(relayResting("nostr", relay)).toBe(false);
+		const announcement = announcements(relay)[0] as NostrEvent;
+		socket(relay)?.deliver(
+			JSON.stringify(["OK", announcement.id, false, "rate-limited: slow down"]),
+		);
+		expect(relayResting("nostr", relay)).toBe(true);
+		expect(relayResting("tracker", relay)).toBe(false);
 	}, 20_000);
 });
 

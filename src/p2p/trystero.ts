@@ -1,7 +1,13 @@
 import type { MeshConfig } from "./config";
 import { Mesh, type MeshHandlers } from "./mesh";
 import type { Clock } from "./ports";
-import { joinRoom, reconnectRelay, relaySockets, selfId } from "./signaling";
+import {
+	joinRoom,
+	reconnectRelay,
+	relayResting,
+	relaySockets,
+	selfId,
+} from "./signaling";
 import { stunProbe } from "./stun-probe";
 
 /** The production mesh: the real Trystero bundle over the configured trackers and Nostr relays. */
@@ -23,6 +29,7 @@ export function trysteroMesh(
 				self: selfId,
 				relaySockets,
 				reconnectRelay,
+				relayResting,
 				...(typeof window === "undefined"
 					? {}
 					: { watchNetwork: browserNetworkChanges }),

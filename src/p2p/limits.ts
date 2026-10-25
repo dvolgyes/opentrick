@@ -65,11 +65,15 @@ export const REJOIN_MAX_MS = 60_000;
  */
 export const NETWORK_REJOIN_MS = 60_000;
 /**
- * An open relay socket that sends nothing for this long is replaced: after a network change, a socket can look open
- * and never deliver again. A Nostr relay answers each announcement (every 60 s); the trackers asked for an announce
- * every 120 s to 180 s in a live check (October 2026).
+ * An open tracker socket that sends nothing for this long is replaced: after a network change, a socket can look open
+ * and never deliver again. The trackers asked for an announce every 120 s to 180 s in a live check (October 2026).
  */
 export const RELAY_SILENT_MS = 240_000;
+/**
+ * An open Nostr relay socket that sends nothing for this long is replaced. A Nostr relay answers each announcement,
+ * every 60 s. A relay that rests the page after a rate limit gets no announcement, so its silence does not count.
+ */
+export const NOSTR_SILENT_MS = 90_000;
 /**
  * Offers in each announce of the table room (src/p2p/torrent.ts). A tracker gives each offer to one peer, so a page
  * of a four-seat table reaches the other three in one announce, not one of them every 10 s. A pair room has two

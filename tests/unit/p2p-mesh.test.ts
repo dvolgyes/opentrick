@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { rtcConfiguration } from "../../src/call/ice";
-import { REJOIN_MS, RELAY_SILENT_MS, TABLE_OFFERS } from "../../src/p2p/limits";
+import {
+	NOSTR_SILENT_MS,
+	REJOIN_MS,
+	RELAY_SILENT_MS,
+	TABLE_OFFERS,
+} from "../../src/p2p/limits";
 import {
 	type JoinMeshRoom,
 	Mesh,
@@ -127,6 +132,7 @@ function statusMesh(
 	const clock = { now: 0 };
 	const joins: SignalingRoomConfig[] = [];
 	const reconnects: string[] = [];
+	const resting = new Set<string>();
 	const network = { change: () => {}, watching: false };
 	const mesh = new Mesh(
 		{
@@ -140,6 +146,7 @@ function statusMesh(
 			self: "0123456789AbCdEfGhIj",
 			relaySockets: () => ({ tracker: sockets, nostr: nostrSockets }),
 			reconnectRelay: (kind, url) => reconnects.push(`${kind} ${url}`),
+			relayResting: (kind, url) => resting.has(`${kind} ${url}`),
 			watchNetwork: (onChange) => {
 				network.change = onChange;
 				network.watching = true;
@@ -152,7 +159,16 @@ function statusMesh(
 		},
 		handlers,
 	);
-	return { mesh, sockets, nostrSockets, clock, joins, reconnects, network };
+	return {
+		mesh,
+		sockets,
+		nostrSockets,
+		clock,
+		joins,
+		reconnects,
+		resting,
+		network,
+	};
 }
 
 describe("the mesh's evidence that the trackers are alive", () => {
@@ -265,26 +281,69 @@ describe("the mesh's evidence that the Nostr relays are alive", () => {
 });
 
 describe("the mesh's recovery of its relays", () => {
-	it("replaces an open relay socket that is silent for RELAY_SILENT_MS, once for each silence", () => {
-		const { mesh, sockets, nostrSockets, clock, reconnects } = statusMesh(
-			[A],
-			undefined,
-			[N],
-		);
+	it("replaces an open tracker socket that is silent for RELAY_SILENT_MS, once for each silence", () => {
+		const { mesh, sockets, clock, reconnects } = statusMesh([A, B]);
 		sockets[A] = new FakeSocket();
-		nostrSockets[N] = new FakeSocket();
+		sockets[B] = new FakeSocket();
 		mesh.tick();
+		clock.now = NOSTR_SILENT_MS;
+		mesh.tick();
+		expect(reconnects).toEqual([]);
 		clock.now = RELAY_SILENT_MS - 1_000;
 		sockets[A].message();
 		clock.now = RELAY_SILENT_MS;
 		mesh.tick();
-		expect(reconnects).toEqual([`nostr ${N}`]);
+		expect(reconnects).toEqual([`tracker ${B}`]);
 		clock.now = RELAY_SILENT_MS + 1_000;
 		mesh.tick();
-		expect(reconnects).toEqual([`nostr ${N}`]);
+		expect(reconnects).toEqual([`tracker ${B}`]);
 		clock.now = 2 * RELAY_SILENT_MS - 1_000;
 		mesh.tick();
-		expect(reconnects).toEqual([`nostr ${N}`, `tracker ${A}`]);
+		expect(reconnects).toEqual([`tracker ${B}`, `tracker ${A}`]);
+	});
+
+	it("replaces an open Nostr socket that is silent for NOSTR_SILENT_MS, once for each silence", () => {
+		const { mesh, nostrSockets, clock, reconnects } = statusMesh(
+			[],
+			undefined,
+			[N],
+		);
+		nostrSockets[N] = new FakeSocket();
+		mesh.tick();
+		clock.now = NOSTR_SILENT_MS - 1;
+		mesh.tick();
+		expect(reconnects).toEqual([]);
+		clock.now = NOSTR_SILENT_MS;
+		mesh.tick();
+		expect(reconnects).toEqual([`nostr ${N}`]);
+		clock.now = 2 * NOSTR_SILENT_MS - 1;
+		mesh.tick();
+		expect(reconnects).toEqual([`nostr ${N}`]);
+		clock.now = 2 * NOSTR_SILENT_MS;
+		mesh.tick();
+		expect(reconnects).toEqual([`nostr ${N}`, `nostr ${N}`]);
+	});
+
+	it("leaves a relay that rests after a rate limit, and counts its silence from the end of the rest", () => {
+		const { mesh, nostrSockets, clock, reconnects, resting } = statusMesh(
+			[],
+			undefined,
+			[N],
+		);
+		nostrSockets[N] = new FakeSocket();
+		resting.add(`nostr ${N}`);
+		mesh.tick();
+		clock.now = 3 * NOSTR_SILENT_MS;
+		mesh.tick();
+		expect(reconnects).toEqual([]);
+		resting.clear();
+		mesh.tick();
+		clock.now = 4 * NOSTR_SILENT_MS - 1;
+		mesh.tick();
+		expect(reconnects).toEqual([]);
+		clock.now = 4 * NOSTR_SILENT_MS;
+		mesh.tick();
+		expect(reconnects).toEqual([`nostr ${N}`]);
 	});
 
 	it("leaves a closed socket to its own retries", () => {

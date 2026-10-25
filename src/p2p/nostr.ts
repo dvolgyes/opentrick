@@ -634,3 +634,9 @@ export const getNostrSockets = relayManager.getSockets;
 /** Replaces the socket to a Nostr relay now, after a network change or a long silence. */
 export const reconnectNostrRelay = (url: string): void =>
 	clients[url]?.reconnect();
+
+/** Whether the page sends nothing to a Nostr relay for a time, after the relay's rate limit. */
+export const nostrRelayResting = (url: string): boolean => {
+	const client = clients[url];
+	return client !== undefined && getRelayBackoffMs(client) > 0;
+};

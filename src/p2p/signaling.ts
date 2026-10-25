@@ -4,7 +4,12 @@ import {
 	libName,
 	selfId,
 } from "@trystero-p2p/core";
-import { getNostrSockets, nostrAdapter, reconnectNostrRelay } from "./nostr";
+import {
+	getNostrSockets,
+	nostrAdapter,
+	nostrRelayResting,
+	reconnectNostrRelay,
+} from "./nostr";
 import type { RelayClient } from "./relay-socket";
 import {
 	getTrackerSockets,
@@ -135,6 +140,10 @@ export const relaySockets = (): Record<
 /** Replaces the socket to one relay now; a URL that the page never opened is ignored. */
 export const reconnectRelay = (kind: RelayKind, url: string): void =>
 	kind === "tracker" ? reconnectTracker(url) : reconnectNostrRelay(url);
+
+/** Whether the page sends nothing to a relay for a time, after its rate limit; only a Nostr relay rests. */
+export const relayResting = (kind: RelayKind, url: string): boolean =>
+	kind === "nostr" && nostrRelayResting(url);
 
 export type * from "@trystero-p2p/core";
 

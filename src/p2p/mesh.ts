@@ -10,6 +10,7 @@ import {
 	MAX_RECEIVE_BYTES,
 	MESH_BYTES,
 	NETWORK_REJOIN_MS,
+	NOSTR_SILENT_MS,
 	REJOIN_MAX_MS,
 	REJOIN_MS,
 	RELAY_SILENT_MS,
@@ -52,8 +53,8 @@ import {
  * without links has no list and, as a visitor, no seat, so it joins the table room again (REJOIN_MS).
  *
  * Relay recovery (ADR 0004): after a network change, the page replaces each relay socket and, when alone, joins the
- * table room again as soon as a relay is open. A relay socket that is open and silent for RELAY_SILENT_MS is
- * replaced too.
+ * table room again as soon as a relay is open. A relay socket that is open and silent for its kind's limit
+ * (RELAY_SILENT_MS for a tracker, NOSTR_SILENT_MS for a Nostr relay) is replaced too.
  */
 
 /** The part of a Trystero room that the mesh uses; the unit tests implement it without WebRTC. */
@@ -106,6 +107,8 @@ export interface MeshDeps {
 	>;
 	/** Replaces one relay's socket now. */
 	readonly reconnectRelay: (kind: RelayKind, url: string) => void;
+	/** Whether the page sends nothing to a relay for a time, after the relay's rate limit; without it, no relay rests. */
+	readonly relayResting?: (kind: RelayKind, url: string) => boolean;
 	/** Calls `onChange` at each network change until the returned function runs; a mesh without it does not watch. */
 	readonly watchNetwork?: (onChange: () => void) => () => void;
 	/** Asks one STUN server for this page's public address; a mesh without it does not check. */
@@ -601,18 +604,26 @@ export class Mesh implements Send {
 		}
 	}
 
-	/** A socket that is open or opening, and silent for RELAY_SILENT_MS, is replaced; a closed one retries by itself. */
+	/**
+	 * A socket that is open or opening, and silent for its kind's limit, is replaced; a closed one retries by itself. A
+	 * relay that rests the page sends nothing by design, so its silence counts from the end of the rest.
+	 */
 	#replaceSilentRelays(now: number): void {
 		const sockets = this.#deps.relaySockets();
 		for (const { kind, url } of this.#configuredRelays()) {
 			const key = `${kind} ${url}`;
 			const state = sockets[kind][url]?.readyState;
 			if (state !== OPEN && state !== CONNECTING) continue;
+			if (this.#deps.relayResting?.(kind, url)) {
+				this.#watchedAt.set(key, now);
+				continue;
+			}
 			const since = Math.max(
 				this.#heardAt.get(key) ?? Number.NEGATIVE_INFINITY,
 				this.#watchedAt.get(key) ?? now,
 			);
-			if (now - since < RELAY_SILENT_MS) continue;
+			const limit = kind === "nostr" ? NOSTR_SILENT_MS : RELAY_SILENT_MS;
+			if (now - since < limit) continue;
 			this.#watchedAt.set(key, now);
 			this.#deps.reconnectRelay(kind, url);
 		}
