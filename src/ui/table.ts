@@ -856,7 +856,6 @@ export function tableSection(
 		const beside = desktop && phase !== "waiting";
 		const hideDetails = beside && phase !== "auction";
 		heading.hidden = hideDetails;
-		vulnerability.hidden = hideDetails;
 		details.hidden = hideDetails;
 		prompt.hidden = hideDetails;
 		if (beside) {
@@ -2002,14 +2001,35 @@ export function tableSection(
 				` (${t("{points}p", { points: stats.total })})`,
 			);
 		};
+		// Each side's points, and below them whether that side is vulnerable.
+		const side = (key: "ew" | "ns", label: string): HTMLElement => {
+			const line = view.vulnerability.find((entry) => entry.side === key);
+			return el(
+				"span",
+				{ className: "mobile-round-side" },
+				record(key, label),
+				...(line
+					? [
+							el(
+								"span",
+								{
+									className: "mobile-round-vulnerability",
+									attrs: { "data-vulnerable": String(line.vulnerable) },
+								},
+								line.status,
+							),
+						]
+					: []),
+			);
+		};
 		mobileRoundStatus.replaceChildren(
 			el(
 				"strong",
 				{ className: "mobile-round-number" },
 				`${t("Round")} ${view.board}`,
 			),
-			record("ew", t("E-W")),
-			record("ns", t("N-S")),
+			side("ew", t("E-W")),
+			side("ns", t("N-S")),
 		);
 	}
 

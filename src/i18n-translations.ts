@@ -356,6 +356,22 @@ const rows: readonly TranslationRow[] = [
 		"O-W niet kwetsbaar",
 	],
 	[
+		"vulnerable",
+		"vulnerable",
+		"vulnerável",
+		"vulnérable",
+		"in zona",
+		"kwetsbaar",
+	],
+	[
+		"not vulnerable",
+		"no vulnerable",
+		"não vulnerável",
+		"non vulnérable",
+		"in prima",
+		"niet kwetsbaar",
+	],
+	[
 		"Bots could not start. Check that this page is the ready host.",
 		"No se pudieron iniciar los bots. Comprueba que esta página sea el anfitrión listo.",
 		"Não foi possível iniciar os bots. Confirme que esta página é o anfitrião preparado.",

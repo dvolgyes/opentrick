@@ -68,6 +68,22 @@ function seat(
 	};
 }
 
+/** North-South vulnerable, East-West not. */
+const NS_VULNERABLE: TableView["vulnerability"] = [
+	{
+		side: "ns",
+		text: "N-S vulnerable",
+		status: "vulnerable",
+		vulnerable: true,
+	},
+	{
+		side: "ew",
+		text: "E-W not vulnerable",
+		status: "not vulnerable",
+		vulnerable: false,
+	},
+];
+
 function playView(): TableView {
 	return {
 		phase: "play",
@@ -76,8 +92,18 @@ function playView(): TableView {
 		heading: "Board 1",
 		details: "Dealer: North",
 		vulnerability: [
-			{ text: "N-S not vulnerable", vulnerable: false },
-			{ text: "E-W not vulnerable", vulnerable: false },
+			{
+				side: "ns",
+				text: "N-S not vulnerable",
+				status: "not vulnerable",
+				vulnerable: false,
+			},
+			{
+				side: "ew",
+				text: "E-W not vulnerable",
+				status: "not vulnerable",
+				vulnerable: false,
+			},
 		],
 		prompt: "Your turn to play from dummy.",
 		waiting: "",
@@ -801,10 +827,7 @@ describe("desktop auction", () => {
 				{
 					...undoOpenView({}),
 					heading: "AUCTION",
-					vulnerability: [
-						{ text: "N-S vulnerable", vulnerable: true },
-						{ text: "E-W not vulnerable", vulnerable: false },
-					],
+					vulnerability: NS_VULNERABLE,
 				},
 				layout,
 			);
@@ -833,6 +856,27 @@ describe("desktop auction", () => {
 			expect(second.top).toBeGreaterThanOrEqual(first.bottom - 0.5);
 			expect(Math.abs(first.top - head.top)).toBeLessThanOrEqual(2);
 			expect(Math.abs(second.bottom - head.bottom)).toBeLessThanOrEqual(2);
+		},
+	);
+
+	it.each<Layout>(["desktop", "sideways"])(
+		"keeps the vulnerability of each side in the sidebar during play (%s)",
+		(layout) => {
+			const { section } = renderView(
+				{ ...playView(), vulnerability: NS_VULNERABLE },
+				layout,
+			);
+			const lines = [
+				...section.sidebar.querySelectorAll<HTMLElement>(
+					"[data-testid='vulnerability'] > *",
+				),
+			];
+			expect(
+				lines.map((line) => [line.textContent, line.checkVisibility()]),
+			).toEqual([
+				["N-S vulnerable", true],
+				["E-W not vulnerable", true],
+			]);
 		},
 	);
 
@@ -1945,6 +1989,42 @@ describe("mobile top bar and round status", () => {
 		);
 		expect(records(root)).toEqual(["E-W: +2 (1250p)", "N-S: -2 (1000p)"]);
 	});
+
+	it.each<TableView["phase"]>(["auction", "play"])(
+		"shows under the points of each side whether that side is vulnerable (%s)",
+		(phase) => {
+			const { root } = renderMobile({
+				...roundView(),
+				phase,
+				vulnerability: NS_VULNERABLE,
+			});
+			const sides = [
+				...root.querySelectorAll<HTMLElement>(".mobile-round-side"),
+			].map((side) => {
+				const record = side.querySelector(".mobile-round-record");
+				const status = side.querySelector<HTMLElement>(
+					".mobile-round-vulnerability",
+				);
+				if (!record || !status) throw new Error("a record and a status");
+				expect(status.checkVisibility()).toBe(true);
+				const above = record.getBoundingClientRect();
+				const below = status.getBoundingClientRect();
+				expect(below.top).toBeGreaterThanOrEqual(above.bottom - 0.5);
+				expect(below.left).toBeLessThan(above.right);
+				expect(below.right).toBeGreaterThan(above.left);
+				return [
+					record.textContent,
+					status.textContent,
+					status.dataset.vulnerable,
+					getComputedStyle(status).color,
+				];
+			});
+			expect(sides).toEqual([
+				["E-W: +2 (1250p)", "not vulnerable", "false", expect.any(String)],
+				["N-S: -2 (1000p)", "vulnerable", "true", "rgb(192, 38, 45)"],
+			]);
+		},
+	);
 
 	it("translates the points mark", () => {
 		const { root } = renderView(

@@ -369,7 +369,7 @@ main:has(> .room) {
 	white-space: nowrap;
 }
 
-.table-vulnerability [data-vulnerable="true"] {
+:is(.table-vulnerability, .mobile-round-status) [data-vulnerable="true"] {
 	color: var(--red-suit);
 	font-weight: 700;
 }
@@ -3030,6 +3030,19 @@ main:has(> .room[data-form="compact"]) {
 	font-size: 1.08rem;
 	line-height: 1.2;
 	white-space: nowrap;
+	align-items: center;
+}
+
+/* The points of one side, and below them whether that side is vulnerable. */
+.mobile-round-side {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.mobile-round-vulnerability {
+	font-size: 0.72rem;
+	line-height: 1.1;
 }
 
 .mobile-round-record[data-own-side="true"][data-result="positive"] strong {

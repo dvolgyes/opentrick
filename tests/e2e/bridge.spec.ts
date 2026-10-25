@@ -258,6 +258,11 @@ test("2:the auction 1♣ and three passes; a guest and the host reload mid-aucti
 	for (const seat of SEATS) {
 		const page = tab[seat];
 		await expect(table(page)).toHaveAttribute("data-phase", "play");
+		// The vulnerability stays in view during play.
+		await expect(page.getByTestId("vulnerability")).toBeVisible();
+		await expect(page.getByTestId("vulnerability")).toHaveText(
+			"N-S not vulnerableE-W not vulnerable",
+		);
 		await expect(page.getByTestId("auction").locator("tbody td")).toHaveText([
 			"1♣",
 			"Pass",

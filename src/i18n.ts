@@ -493,6 +493,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"N-S not vulnerable": "N-S nicht in Gefahr",
 		"E-W vulnerable": "O-W in Gefahr",
 		"E-W not vulnerable": "O-W nicht in Gefahr",
+		vulnerable: "in Gefahr",
+		"not vulnerable": "nicht in Gefahr",
 		"Choose how many of the {count} remaining tricks you claim.":
 			"Wähle, wie viele der {count} verbleibenden Tricks du beanspruchst.",
 		"Confirm that you claim all {count} remaining tricks.":
@@ -986,6 +988,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"N-S not vulnerable": "É-D mansban",
 		"E-W vulnerable": "K-Ny bellben",
 		"E-W not vulnerable": "K-Ny mansban",
+		vulnerable: "bellben",
+		"not vulnerable": "mansban",
 		Confirm: "Megerősítés",
 		"Next board {board} in {seconds} second":
 			"Következő parti {board}, {seconds} másodperc múlva",
@@ -1633,6 +1637,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"N-S not vulnerable": "N-S utenfor sonen",
 		"E-W vulnerable": "Ø-V i sonen",
 		"E-W not vulnerable": "Ø-V utenfor sonen",
+		vulnerable: "i sonen",
+		"not vulnerable": "utenfor sonen",
 		"Bots could not start. Check that this page is the ready host.":
 			"Botene kunne ikke starte. Kontroller at denne siden er verten og er klar.",
 		"Check the bot models, retry count, and retry delay.":

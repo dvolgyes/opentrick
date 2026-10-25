@@ -254,8 +254,18 @@ describe("table layout", () => {
 		expect(table.heading).toBe("AUCTION");
 		expect(table.details).toBe("Dealer: North");
 		expect(table.vulnerability).toEqual([
-			{ text: "N-S not vulnerable", vulnerable: false },
-			{ text: "E-W not vulnerable", vulnerable: false },
+			{
+				side: "ns",
+				text: "N-S not vulnerable",
+				status: "not vulnerable",
+				vulnerable: false,
+			},
+			{
+				side: "ew",
+				text: "E-W not vulnerable",
+				status: "not vulnerable",
+				vulnerable: false,
+			},
 		]);
 		const own = seatView(table, "E");
 		expect(own.tags).toEqual([]);
@@ -294,8 +304,18 @@ describe("auction", () => {
 		const table = view("N", board2);
 		expect(table.details).toBe("Dealer: East");
 		expect(table.vulnerability).toEqual([
-			{ text: "N-S vulnerable", vulnerable: true },
-			{ text: "E-W not vulnerable", vulnerable: false },
+			{
+				side: "ns",
+				text: "N-S vulnerable",
+				status: "vulnerable",
+				vulnerable: true,
+			},
+			{
+				side: "ew",
+				text: "E-W not vulnerable",
+				status: "not vulnerable",
+				vulnerable: false,
+			},
 		]);
 		expect(table.auction).toEqual({
 			seats: ["N", "E", "S", "W"],
@@ -481,8 +501,18 @@ describe("the viewer's language", () => {
 		expect(board3.heading).toBe("LICITÁLÁS");
 		expect(board3.details).toBe("Osztó: Dél");
 		expect(board3.vulnerability).toEqual([
-			{ text: "É-D mansban", vulnerable: false },
-			{ text: "K-Ny bellben", vulnerable: true },
+			{
+				side: "ns",
+				text: "É-D mansban",
+				status: "mansban",
+				vulnerable: false,
+			},
+			{
+				side: "ew",
+				text: "K-Ny bellben",
+				status: "bellben",
+				vulnerable: true,
+			},
 		]);
 		expect(
 			view("N", createBoard(4, DEAL), hu).vulnerability.map(

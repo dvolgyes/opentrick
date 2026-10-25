@@ -115,6 +115,12 @@ for (const viewport of PHONES) {
 			const auction = page.getByTestId("mobile-auction");
 			await expect(auction).toBeVisible();
 			await expectCompactPage(page);
+			// Board 1: under the points of each side, neither side is vulnerable.
+			const vulnerability = auction.locator(".mobile-round-vulnerability");
+			await expect(vulnerability).toHaveText([
+				"not vulnerable",
+				"not vulnerable",
+			]);
 
 			// North opens 1NT and East passes. West overcalls in the longest suit, so its trump suit has at least four cards.
 			await expect.poll(() => phoneTurn(page), { timeout: 30_000 }).toBe(true);
@@ -140,6 +146,7 @@ for (const viewport of PHONES) {
 				.tap();
 			await auction.getByRole("button", { name: "Confirm" }).tap();
 			await expect.poll(() => phase(page), { timeout: 30_000 }).toBe("play");
+			await expect(vulnerability.first()).toBeVisible();
 
 			// West declares, so the phone plays its own cards and dummy's (East, at the top) until the last trick.
 			const taps = { dummy: 0, own: 0 };

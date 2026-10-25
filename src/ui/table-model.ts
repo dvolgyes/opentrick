@@ -76,11 +76,15 @@ function vulnerabilityLines(
 	const ew = vulnerability === "EW" || vulnerability === "both";
 	return [
 		{
+			side: "ns",
 			text: ns ? t("N-S vulnerable") : t("N-S not vulnerable"),
+			status: ns ? t("vulnerable") : t("not vulnerable"),
 			vulnerable: ns,
 		},
 		{
+			side: "ew",
 			text: ew ? t("E-W vulnerable") : t("E-W not vulnerable"),
+			status: ew ? t("vulnerable") : t("not vulnerable"),
 			vulnerable: ew,
 		},
 	];
@@ -324,7 +328,11 @@ export interface ContractHeader {
 
 /** The vulnerability of one side, as a line of text. */
 export interface VulnerabilityLine {
+	readonly side: "ns" | "ew";
+	/** With the side, for example "E-W vulnerable". */
 	readonly text: string;
+	/** Without the side, for example "vulnerable". */
+	readonly status: string;
 	readonly vulnerable: boolean;
 }
 
