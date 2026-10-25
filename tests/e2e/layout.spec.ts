@@ -28,12 +28,11 @@ const AROUND: Readonly<
 	S: { left: "W", partner: "N", right: "E" },
 	W: { left: "N", partner: "E", right: "S" },
 };
-/** Portrait and landscape phone viewports; a phone gets the compact table at each of them. */
+/** Portrait phone viewports; a phone held upright gets the compact table at each of them. */
 const PHONE_VIEWPORTS = [
 	{ width: 320, height: 568 },
 	{ width: 360, height: 640 },
 	{ width: 390, height: 664 },
-	{ width: 844, height: 390 },
 ] as const;
 /** 4:3, Full HD, ultrawide and low desktop viewports used to check the room canvas. */
 const CANVAS_VIEWPORTS = [
@@ -638,7 +637,7 @@ test("2: desktop, during play: dummy's cards and the trick keep apart from the r
 	await expectRoomCanvasFit(tab.E);
 });
 
-test("3: a phone and a portrait window get the compact table, and a landscape desktop scales the Full HD room canvas across aspect ratios", async () => {
+test("3: a phone held upright and a portrait window get the compact table, and a phone held sideways and a landscape desktop scale the Full HD room canvas", async () => {
 	if (!phone) throw new Error("the phone browser is not open");
 	const host = await players.W.page("./");
 	const link = await createRoom(host);
@@ -661,6 +660,12 @@ test("3: a phone and a portrait window get the compact table, and a landscape de
 		await test.step(`phone ${size.width}×${size.height}`, () =>
 			expectCompactRoom(phoneTab as Page, phoneParts));
 	}
+	// A phone held sideways gets the desktop room by default (Settings, Screen orientation).
+	await phoneTab.setViewportSize({ width: 844, height: 390 });
+	await test.step("phone 844×390, landscape", () =>
+		expectRoomCanvasFit(phoneTab as Page));
+	await phoneTab.setViewportSize({ width: 390, height: 664 });
+	await expectCompactRoom(phoneTab);
 	for (const size of CANVAS_VIEWPORTS) {
 		await host.setViewportSize(size);
 		await test.step(`desktop ${size.width}×${size.height}`, () =>

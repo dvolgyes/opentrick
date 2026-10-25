@@ -45,6 +45,8 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Show as text whose turn it is to bid",
 		"Show as text whose turn it is to play",
 		"Show the network quality",
+		"On a phone or tablet in landscape, show the desktop view",
+		"On a computer with a portrait window, show the mobile view",
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
 	const relayChecks = dialog.getByLabel("Check the connection more often");
@@ -85,11 +87,13 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.bid-turn-frame",
 		"opentrick.settings.bid-turn-text",
 		"opentrick.settings.card-points",
+		"opentrick.settings.landscape-desktop",
 		"opentrick.settings.model-order",
 		"opentrick.settings.network-quality",
 		"opentrick.settings.play-turn-frame",
 		"opentrick.settings.play-turn-text",
 		"opentrick.settings.points",
+		"opentrick.settings.portrait-mobile",
 		"opentrick.settings.relay-checks",
 		"opentrick.settings.theme",
 	]);
@@ -248,4 +252,27 @@ test("on a phone, Settings is below the board and its dialog fits the screen", a
 	} finally {
 		await player.close();
 	}
+});
+
+test("the portrait choice gives a portrait window the mobile view, and Save applies a new choice at once", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await openTable(page);
+	const room = page.locator(".room");
+	await expect(room).toHaveAttribute("data-form", "desktop");
+	const portraitChoice =
+		"On a computer with a portrait window, show the mobile view";
+
+	let dialog = await openSettings(page);
+	await dialog.getByLabel(portraitChoice).uncheck();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await page.setViewportSize({ width: 1000, height: 1200 });
+	await expect(room).toHaveAttribute("data-form", "desktop");
+
+	dialog = await openSettings(page);
+	await dialog.getByLabel(portraitChoice).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	await expect(room).toHaveAttribute("data-form", "compact");
 });

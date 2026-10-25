@@ -3,6 +3,7 @@ import {
 	classify,
 	type DeviceSignals,
 	type Form,
+	type OrientationChoices,
 	uaMobile,
 } from "../../src/call/device-class";
 
@@ -25,21 +26,21 @@ function desktop(overrides: Partial<DeviceSignals> = {}): DeviceSignals {
 	};
 }
 
+/** Neither orientation choice forces a view, so only the device and the width decide. */
+const NO_FORCING: OrientationChoices = {
+	landscapeDesktop: false,
+	portraitMobile: false,
+};
+const DEFAULT_CHOICES: OrientationChoices = {
+	landscapeDesktop: true,
+	portraitMobile: true,
+};
+
 describe("classify", () => {
 	it.each<[string, Partial<DeviceSignals>, Form]>([
 		["a wide desktop with a mouse", {}, "desktop"],
 		["width 899", { viewportWidth: 899 }, "compact"],
 		["width 900 with a fine pointer", { viewportWidth: 900 }, "desktop"],
-		[
-			"a portrait 1000 × 1200 window with a mouse",
-			{ viewportWidth: 1000, viewportHeight: 1200 },
-			"compact",
-		],
-		[
-			"a square 1000 × 1000 window with a mouse",
-			{ viewportWidth: 1000, viewportHeight: 1000 },
-			"desktop",
-		],
 		[
 			"userAgentData.mobile at 1400 px",
 			{ viewportWidth: 1400, uaMobile: true },
@@ -66,8 +67,90 @@ describe("classify", () => {
 			{ maxTouchPoints: 10 },
 			"desktop",
 		],
-	])("%s → %s", (_name, overrides, expected) => {
-		expect(classify(desktop(overrides))).toBe(expected);
+		[
+			"a portrait 1000 × 1200 window with a mouse",
+			{ viewportWidth: 1000, viewportHeight: 1200 },
+			"desktop",
+		],
+	])(
+		"%s → %s, when no orientation choice forces a view",
+		(_name, overrides, expected) => {
+			expect(classify(desktop(overrides), NO_FORCING)).toBe(expected);
+		},
+	);
+
+	const PHONE = { uaMobile: true, anyFinePointer: false } as const;
+	const TABLET = {
+		userAgent: IPAD_DESKTOP_UA,
+		maxTouchPoints: 5,
+		uaMobile: undefined,
+		anyFinePointer: false,
+	} as const;
+	it.each<[string, Partial<DeviceSignals>, Partial<OrientationChoices>, Form]>([
+		[
+			"a phone in landscape, 844 × 390",
+			{ ...PHONE, viewportWidth: 844, viewportHeight: 390 },
+			{},
+			"desktop",
+		],
+		[
+			"a phone in landscape without the landscape choice",
+			{ ...PHONE, viewportWidth: 844, viewportHeight: 390 },
+			{ landscapeDesktop: false },
+			"compact",
+		],
+		[
+			"a phone in portrait, 390 × 844",
+			{ ...PHONE, viewportWidth: 390, viewportHeight: 844 },
+			{},
+			"compact",
+		],
+		[
+			"a tablet in landscape, 1180 × 820",
+			{ ...TABLET, viewportWidth: 1180, viewportHeight: 820 },
+			{},
+			"desktop",
+		],
+		[
+			"a tablet in portrait, 820 × 1180",
+			{ ...TABLET, viewportWidth: 820, viewportHeight: 1180 },
+			{},
+			"compact",
+		],
+		[
+			"a portrait 1000 × 1200 window with a mouse",
+			{ viewportWidth: 1000, viewportHeight: 1200 },
+			{},
+			"compact",
+		],
+		[
+			"a portrait 1000 × 1200 window without the portrait choice",
+			{ viewportWidth: 1000, viewportHeight: 1200 },
+			{ portraitMobile: false },
+			"desktop",
+		],
+		[
+			"a portrait 600 × 1000 window without the portrait choice",
+			{ viewportWidth: 600, viewportHeight: 1000 },
+			{ portraitMobile: false },
+			"compact",
+		],
+		[
+			"a square 1000 × 1000 window with a mouse",
+			{ viewportWidth: 1000, viewportHeight: 1000 },
+			{},
+			"desktop",
+		],
+		[
+			"a landscape 899 × 600 window with a mouse",
+			{ viewportWidth: 899, viewportHeight: 600 },
+			{},
+			"compact",
+		],
+	])("%s → %s", (_name, overrides, choices, expected) => {
+		expect(
+			classify(desktop(overrides), { ...DEFAULT_CHOICES, ...choices }),
+		).toBe(expected);
 	});
 });
 

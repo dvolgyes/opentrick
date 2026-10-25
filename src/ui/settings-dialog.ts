@@ -45,6 +45,11 @@ const FLAG_LABELS = {
 	networkQuality: "Show the network quality",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
+const ORIENTATION_LABELS = {
+	landscapeDesktop: "On a phone or tablet in landscape, show the desktop view",
+	portraitMobile: "On a computer with a portrait window, show the mobile view",
+} as const satisfies Partial<Record<keyof Settings, string>>;
+
 export interface SettingsDialog {
 	readonly element: HTMLDialogElement;
 	/** Shows the stored settings. */
@@ -119,6 +124,12 @@ export function settingsDialog(
 			el("input", { attrs: { type: "checkbox" } }),
 		]),
 	) as Record<keyof typeof FLAG_LABELS, HTMLInputElement>;
+	const orientation = Object.fromEntries(
+		Object.keys(ORIENTATION_LABELS).map((field) => [
+			field,
+			el("input", { attrs: { type: "checkbox" } }),
+		]),
+	) as Record<keyof typeof ORIENTATION_LABELS, HTMLInputElement>;
 	const relayChecks = el("input", {
 		attrs: { type: "checkbox", "aria-describedby": "settings-relay-checks" },
 	});
@@ -233,6 +244,19 @@ export function settingsDialog(
 		el(
 			"fieldset",
 			{},
+			el("legend", {}, t("Screen orientation")),
+			...Object.entries(ORIENTATION_LABELS).map(([field, label]) =>
+				el(
+					"label",
+					{},
+					orientation[field as keyof typeof ORIENTATION_LABELS],
+					` ${t(label)}`,
+				),
+			),
+		),
+		el(
+			"fieldset",
+			{},
 			el("legend", {}, t("Connection")),
 			el("label", {}, relayChecks, ` ${t("Check the connection more often")}`),
 			el(
@@ -307,6 +331,8 @@ export function settingsDialog(
 			playTurnText: flags.playTurnText.checked,
 			networkQuality: flags.networkQuality.checked,
 			relayChecks: relayChecks.checked,
+			landscapeDesktop: orientation.landscapeDesktop.checked,
+			portraitMobile: orientation.portraitMobile.checked,
 			customModel: model,
 			modelOrder: resolveModelOrder(order, model),
 		};
@@ -366,6 +392,10 @@ export function settingsDialog(
 				FLAG_LABELS,
 			) as (keyof typeof FLAG_LABELS)[])
 				flags[field].checked = settings[field];
+			for (const field of Object.keys(
+				ORIENTATION_LABELS,
+			) as (keyof typeof ORIENTATION_LABELS)[])
+				orientation[field].checked = settings[field];
 			relayChecks.checked = settings.relayChecks;
 			apiKey.value = readHostApiKey(deps.browser);
 			customModel.value = settings.customModel;

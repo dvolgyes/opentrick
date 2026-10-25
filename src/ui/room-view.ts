@@ -157,7 +157,7 @@ export function showRoom(
 	const wakeLock = new WakeLockPolicy(screenWakeLock);
 
 	// The call is optional and separate from the game: it reads the table, and its actions never send a command.
-	const deviceForm = classify(readSignals(window));
+	const deviceForm = classify(readSignals(window), readSettings(deps.browser));
 	const support = deps.call;
 	const camera = support.available
 		? cameraSetup({
@@ -432,6 +432,8 @@ export function showRoom(
 			botStatus.textContent = "";
 		else if (modelOrderChanged && botRunner)
 			botStatus.textContent = runningBotStatus();
+		// A new orientation choice changes the view at once.
+		deviceWatch.check();
 		// The table reads the display settings when it renders, so it renders again although its view did not change.
 		shownTable = undefined;
 		render();
@@ -1151,10 +1153,14 @@ export function showRoom(
 		checkTurnAlert();
 		render();
 	};
-	const stopWatching = watchDeviceClass(window, (form) => {
-		setRoomForm(form);
-		call?.setForm(form);
-	});
+	const deviceWatch = watchDeviceClass(
+		window,
+		() => readSettings(deps.browser),
+		(form) => {
+			setRoomForm(form);
+			call?.setForm(form);
+		},
+	);
 	root.replaceChildren(room);
 	root.append(settings.element);
 	root.append(rateLimitReminder);
@@ -1706,7 +1712,7 @@ export function showRoom(
 		botRunner?.stop();
 		if (rateLimitTimer !== undefined) window.clearTimeout(rateLimitTimer);
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
-		stopWatching();
+		deviceWatch.stop();
 		window.removeEventListener("resize", updateRoomCanvasScale);
 		root.style.removeProperty("--room-canvas-scale");
 		delete root.dataset.form;

@@ -25,6 +25,10 @@ export interface Settings {
 	readonly networkQuality: boolean;
 	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
 	readonly relayChecks: boolean;
+	/** A phone or tablet in landscape gets the desktop view (src/call/device-class.ts). */
+	readonly landscapeDesktop: boolean;
+	/** A computer with a portrait window gets the mobile view (src/call/device-class.ts). */
+	readonly portraitMobile: boolean;
 	/** An OpenRouter model id, or "" for none. */
 	readonly customModel: string;
 	/** Each built-in model and the custom slot once; the slot is last while the custom model is "". */
@@ -41,6 +45,8 @@ export const DEFAULT_SETTINGS: Settings = {
 	playTurnText: true,
 	networkQuality: true,
 	relayChecks: false,
+	landscapeDesktop: true,
+	portraitMobile: true,
 	customModel: "",
 	modelOrder: [...BOT_MODELS, CUSTOM_MODEL_SLOT],
 };
@@ -53,6 +59,8 @@ const FLAGS = {
 	playTurnText: "play-turn-text",
 	networkQuality: "network-quality",
 	relayChecks: "relay-checks",
+	landscapeDesktop: "landscape-desktop",
+	portraitMobile: "portrait-mobile",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
 const MODEL_ID = /^~?[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9._~:-]+$/;

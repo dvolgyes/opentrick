@@ -277,6 +277,11 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show as text whose turn it is to play":
 			"Als Text zeigen, wer spielen muss",
 		"Show the network quality": "Netzwerkqualität zeigen",
+		"Screen orientation": "Bildschirmausrichtung",
+		"On a phone or tablet in landscape, show the desktop view":
+			"Auf einem Smartphone oder Tablet im Querformat die Desktop-Ansicht zeigen",
+		"On a computer with a portrait window, show the mobile view":
+			"Auf einem Computer mit einem Fenster im Hochformat die mobile Ansicht zeigen",
 		"Custom model": "Eigenes Modell",
 		"Bot model order": "Reihenfolge der Bot-Modelle",
 		"Custom model (not set)": "Eigenes Modell (nicht gesetzt)",
@@ -840,6 +845,11 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show as text whose turn it is to play":
 			"Szövegként mutassa, ki következik lapot tenni",
 		"Show the network quality": "Hálózati minőség mutatása",
+		"Screen orientation": "Képernyő tájolása",
+		"On a phone or tablet in landscape, show the desktop view":
+			"Telefonon vagy táblagépen fekvő tájolásban az asztali nézet mutatása",
+		"On a computer with a portrait window, show the mobile view":
+			"Számítógépen álló ablakban a mobilnézet mutatása",
 		"Custom model": "Saját modell",
 		"Bot model order": "Botmodellek sorrendje",
 		"Custom model (not set)": "Saját modell (nincs megadva)",
@@ -1321,6 +1331,11 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show as text whose turn it is to play":
 			"Vis som tekst hvem som skal spille",
 		"Show the network quality": "Vis nettverkskvaliteten",
+		"Screen orientation": "Skjermretning",
+		"On a phone or tablet in landscape, show the desktop view":
+			"Vis skrivebordsvisningen på en telefon eller et nettbrett i liggende format",
+		"On a computer with a portrait window, show the mobile view":
+			"Vis mobilvisningen på en datamaskin med et vindu i stående format",
 		"Custom model": "Egen modell",
 		"Bot model order": "Rekkefølge for botmodeller",
 		"Custom model (not set)": "Egen modell (ikke satt)",

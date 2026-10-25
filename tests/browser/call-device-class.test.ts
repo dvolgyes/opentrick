@@ -3,12 +3,23 @@ import { cdp, page } from "vitest/browser";
 import {
 	classify,
 	type Form,
+	type OrientationChoices,
 	readSignals,
 	watchDeviceClass,
 } from "../../src/call/device-class";
 
 // The tests use this page's window in Chrome. The viewport changes the layout width, and Chrome's DevTools
 // emulation changes the user agent and the pointer.
+
+/** The default choices of the settings: a phone or tablet in landscape is desktop, a portrait window is compact. */
+const DEFAULT_CHOICES: OrientationChoices = {
+	landscapeDesktop: true,
+	portraitMobile: true,
+};
+const NO_LANDSCAPE_DESKTOP: OrientationChoices = {
+	...DEFAULT_CHOICES,
+	landscapeDesktop: false,
+};
 
 /** Sets the viewport size and waits for the window's resize event. */
 async function resizeTo(width: number, height = 720): Promise<void> {
@@ -33,7 +44,7 @@ describe("readSignals on Chrome's window", () => {
 			maxTouchPoints: 0,
 			anyFinePointer: true,
 		});
-		expect(classify(signals)).toBe("desktop");
+		expect(classify(signals, DEFAULT_CHOICES)).toBe("desktop");
 	});
 
 	it("reads userAgentData.mobile from a mobile user agent", async () => {
@@ -50,7 +61,11 @@ describe("readSignals on Chrome's window", () => {
 		});
 		try {
 			expect(readSignals(window).uaMobile).toBe(true);
-			expect(classify(readSignals(window))).toBe("compact");
+			expect(classify(readSignals(window), NO_LANDSCAPE_DESKTOP)).toBe(
+				"compact",
+			);
+			// A phone in landscape gets the desktop view by default.
+			expect(classify(readSignals(window), DEFAULT_CHOICES)).toBe("desktop");
 		} finally {
 			await cdp().send("Emulation.setUserAgentOverride", { userAgent: "" });
 		}
@@ -59,29 +74,44 @@ describe("readSignals on Chrome's window", () => {
 });
 
 describe("watchDeviceClass on Chrome's window", () => {
-	it("reports only changes of class from viewport resizes, and nothing after stop", async () => {
+	it("reports only changes of class from viewport resizes and checks after a new choice, and nothing after stop", async () => {
 		await resizeTo(1280);
 		const seen: Form[] = [];
-		const stop = watchDeviceClass(window, (form) => seen.push(form));
+		const choices = { ...DEFAULT_CHOICES };
+		const watch = watchDeviceClass(
+			window,
+			() => choices,
+			(form) => seen.push(form),
+		);
 		await resizeTo(1000); // still desktop
 		await resizeTo(800); // compact
 		await resizeTo(700); // still compact
 		await resizeTo(1280); // desktop
 		await resizeTo(1000, 1200); // compact: a portrait window
-		await resizeTo(1280); // desktop
+		choices.portraitMobile = false;
+		watch.check(); // desktop: the player turned off the portrait choice
+		await resizeTo(1280); // still desktop
 		expect(seen).toEqual(["compact", "desktop", "compact", "desktop"]);
-		stop();
+		watch.stop();
 		await resizeTo(800);
 		expect(seen).toEqual(["compact", "desktop", "compact", "desktop"]);
 	});
 
 	// Last test of the file: Chrome keeps the touch-only pointer until the browser closes.
-	it("reports compact when the pointer becomes touch only, and nothing after stop", async () => {
+	it("reports compact when the pointer becomes touch only, without the landscape choice, and nothing after stop", async () => {
 		await resizeTo(1280);
 		const stopped: Form[] = [];
-		watchDeviceClass(window, (form) => stopped.push(form))();
+		watchDeviceClass(
+			window,
+			() => NO_LANDSCAPE_DESKTOP,
+			(form) => stopped.push(form),
+		).stop();
 		const seen: Form[] = [];
-		const stop = watchDeviceClass(window, (form) => seen.push(form));
+		const watch = watchDeviceClass(
+			window,
+			() => NO_LANDSCAPE_DESKTOP,
+			(form) => seen.push(form),
+		);
 		await cdp().send("Emulation.setTouchEmulationEnabled", {
 			enabled: true,
 			maxTouchPoints: 5,
@@ -92,6 +122,6 @@ describe("watchDeviceClass on Chrome's window", () => {
 			maxTouchPoints: 5,
 		});
 		expect(stopped).toEqual([]);
-		stop();
+		watch.stop();
 	});
 });

@@ -4,7 +4,7 @@
  */
 export type Form = "desktop" | "compact";
 
-/** A layout viewport narrower than this many CSS pixels is compact. A portrait viewport is compact at any width. */
+/** On a computer, a layout viewport narrower than this many CSS pixels is compact. */
 export const COMPACT_BELOW_WIDTH = 900;
 
 export interface DeviceSignals {
@@ -20,19 +20,41 @@ export interface DeviceSignals {
 	readonly anyFinePointer: boolean;
 }
 
+/** The player's orientation choices (src/ui/settings.ts). */
+export interface OrientationChoices {
+	/** A phone or tablet in landscape gets the desktop form, at any width. */
+	readonly landscapeDesktop: boolean;
+	/** A computer with a portrait viewport gets the compact form, at any width. */
+	readonly portraitMobile: boolean;
+}
+
 /** iPadOS Safari reports a Macintosh desktop user agent; the touch points give it away. */
 function isIPadDesktopMode(signals: DeviceSignals): boolean {
 	return /\bMacintosh\b/.test(signals.userAgent) && signals.maxTouchPoints > 1;
 }
 
-/** Without evidence of a desktop (a fine pointer, a wide landscape viewport, no mobile signal) the result is compact. */
-export function classify(signals: DeviceSignals): Form {
+/** A phone or tablet: a mobile signal, or no fine pointer. */
+function isTouchDevice(signals: DeviceSignals): boolean {
+	return (
+		signals.uaMobile === true ||
+		isIPadDesktopMode(signals) ||
+		!signals.anyFinePointer
+	);
+}
+
+/**
+ * A phone or tablet is compact, or desktop in landscape when the player chose it. A computer is desktop, or compact
+ * below the width limit, and in portrait when the player chose it. A square viewport is landscape.
+ */
+export function classify(
+	signals: DeviceSignals,
+	choices: OrientationChoices,
+): Form {
+	const portrait = signals.viewportHeight > signals.viewportWidth;
+	if (isTouchDevice(signals))
+		return choices.landscapeDesktop && !portrait ? "desktop" : "compact";
 	if (signals.viewportWidth < COMPACT_BELOW_WIDTH) return "compact";
-	// A portrait viewport, such as a phone or tablet held upright, has no room for the Full HD room and the video.
-	if (signals.viewportHeight > signals.viewportWidth) return "compact";
-	if (signals.uaMobile === true) return "compact";
-	if (isIPadDesktopMode(signals)) return "compact";
-	if (!signals.anyFinePointer) return "compact";
+	if (portrait && choices.portraitMobile) return "compact";
 	return "desktop";
 }
 
@@ -80,26 +102,37 @@ export function readSignals(win: DeviceWindow): DeviceSignals {
 	};
 }
 
+export interface DeviceClassWatch {
+	/** Classifies again now, for example after the player changed the orientation choices. */
+	check(): void;
+	/** Removes the listeners. */
+	stop(): void;
+}
+
 /**
- * Calls `onChange` with the new class whenever a resize, rotation or pointer change moves the device across
- * the boundary. Returns a function that removes the listeners.
+ * Calls `onChange` with the new class whenever a resize, rotation, pointer change or `check` moves the device across
+ * the boundary. Each check reads the choices again.
  */
 export function watchDeviceClass(
 	win: DeviceWindow,
+	choices: () => OrientationChoices,
 	onChange: (form: Form) => void,
-): () => void {
+): DeviceClassWatch {
 	const pointer = win.matchMedia(FINE_POINTER_QUERY);
-	let current = classify(readSignals(win));
+	let current = classify(readSignals(win), choices());
 	const check = () => {
-		const next = classify(readSignals(win));
+		const next = classify(readSignals(win), choices());
 		if (next === current) return;
 		current = next;
 		onChange(next);
 	};
 	win.addEventListener("resize", check);
 	pointer.addEventListener("change", check);
-	return () => {
-		win.removeEventListener("resize", check);
-		pointer.removeEventListener("change", check);
+	return {
+		check,
+		stop() {
+			win.removeEventListener("resize", check);
+			pointer.removeEventListener("change", check);
+		},
 	};
 }
