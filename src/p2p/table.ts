@@ -854,7 +854,7 @@ export class TableController {
 	#begin(seated: Seated | null, creator: boolean): void {
 		const mesh = this.#mesh;
 		if (!mesh) throw new Error("the mesh is not open");
-		const replication = this.#replicate(seated);
+		this.#replicate(seated);
 		const now = this.#now();
 		const init = initElection({ now, self: this.#facts(), creator });
 		this.#election = init.state;
@@ -865,12 +865,10 @@ export class TableController {
 			this.#online = true;
 			this.#step({ type: "network", now, online: true });
 		}
-		for (const peer of mesh.peers()) {
-			this.#step({ type: "join", now, peer });
-			replication.join(peer);
-		}
+		for (const peer of mesh.peers()) this.#step({ type: "join", now, peer });
 	}
 
+	/** A new replication that knows the mesh's peers, so that a host engine it starts later counts them as connected. */
 	#replicate(seated: Seated | null): Replication {
 		const mesh = this.#mesh;
 		if (!mesh) throw new Error("the mesh is not open");
@@ -898,6 +896,7 @@ export class TableController {
 			seated,
 		);
 		replication.setAutoplayHandler(this.#autoplayHandler);
+		for (const peer of mesh.peers()) replication.join(peer);
 		this.#replication = replication;
 		return replication;
 	}
