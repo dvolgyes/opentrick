@@ -84,6 +84,7 @@ function playView(): TableView {
 		auction: {
 			seats: ["N", "E", "S", "W"],
 			rows: [["1♣", "Pass", "Pass", "Pass"]],
+			systems: [],
 		},
 		bids: [],
 		contract: "2♣ by North",
@@ -746,7 +747,11 @@ describe("desktop auction", () => {
 				tags: [],
 				turnPill: undefined,
 			})),
-			auction: { seats: ["N", "E", "S", "W"], rows: [["1♣", "Pass"]] },
+			auction: {
+				seats: ["N", "E", "S", "W"],
+				rows: [["1♣", "Pass"]],
+				systems: [],
+			},
 			bids: [],
 			contract: "",
 			header: undefined,
@@ -813,7 +818,7 @@ describe("undo request off turn", () => {
 				phase: "auction",
 				prompt: "",
 				yourTurn: false,
-				auction: { seats: ["N", "E", "S", "W"], rows: [["1♣"]] },
+				auction: { seats: ["N", "E", "S", "W"], rows: [["1♣"]], systems: [] },
 				bids: [],
 				contract: "",
 				header: undefined,
@@ -868,7 +873,7 @@ describe("bid box under a held press", () => {
 		phase: "auction",
 		prompt: "",
 		yourTurn: true,
-		auction: { seats: ["N", "E", "S", "W"], rows: [] },
+		auction: { seats: ["N", "E", "S", "W"], rows: [], systems: [] },
 		bids: [
 			{ call: "1C", text: "1♣" },
 			{ call: "2C", text: "2♣" },
@@ -2313,6 +2318,51 @@ describe("bidding guide", () => {
 		);
 		close.click();
 		expect(guide(root)?.open).toBe(false);
+	});
+
+	it("names each player's bidding system below the name, and opens its guide in the viewer's language", async () => {
+		const view: TableView = {
+			...auction(),
+			auction: {
+				seats: ["N", "E", "S", "W"],
+				rows: [["1♣"]],
+				systems: ["hcp-corrected", "vienna", undefined, "other"],
+			},
+		};
+		const { root } = renderView(view, "desktop", undefined, translator("de"), {
+			locale: "de",
+			pointSystem: () => "reith",
+		});
+		const heads = [
+			...root.querySelectorAll("[data-testid='auction'] thead th"),
+		];
+		expect(
+			heads.map((head) => [
+				head.querySelector(".auction-player")?.textContent,
+				head.querySelector(".auction-system")?.textContent ?? "",
+			]),
+		).toEqual([
+			["playerN (N)", "korr. HCP"],
+			["playerE (O)", "Wien"],
+			["playerS (S)", ""],
+			["playerW (W)", "Andere"],
+		]);
+		const system = (index: number) =>
+			heads[index]?.querySelector<HTMLElement>(".auction-system");
+		// The guides do not describe an other system, so it opens nothing.
+		expect(system(3)?.tagName).toBe("SPAN");
+		const vienna = system(1);
+		if (!(vienna instanceof HTMLButtonElement))
+			throw new Error("the Vienna system is not a button");
+		// One line of text, under the name, not a full-size button.
+		expect(vienna.getBoundingClientRect().height).toBeLessThan(24);
+		expect(vienna.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+			heads[1]?.querySelector(".auction-player")?.getBoundingClientRect()
+				.bottom ?? Number.POSITIVE_INFINITY,
+		);
+		vienna.click();
+		expect(guide(root)?.open).toBe(true);
+		await loaded(root).toBe("Reizleitfaden: Wiener Punkte (7-5-3-1)");
 	});
 
 	it("shows the guide and its calls in the language of the table", async () => {

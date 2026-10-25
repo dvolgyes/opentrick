@@ -27,6 +27,7 @@ import {
 	isChatEvent,
 	isTableCommand,
 	parseBridgeState,
+	systemPayload,
 	totals,
 } from "../../src/game/bridge";
 import { chatModule, chatPayload } from "../../src/game/chat";
@@ -198,6 +199,7 @@ describe("bridge table state", () => {
 			claimResult: null,
 			reset: null,
 			media: {},
+			systems: {},
 		});
 	});
 
@@ -685,5 +687,64 @@ describe("call status at the table", () => {
 		).toBeUndefined();
 		const { media: _, ...withoutMedia } = table.state;
 		expect(parseBridgeState(withoutMedia, ROOM_ID)).toBeUndefined();
+	});
+});
+
+describe("bidding systems at the table", () => {
+	it("keeps the system of the sender's seat, never a seat from the payload, and needs nobody present", () => {
+		const table = new Table();
+		const alone = { ...context("S"), present: [] };
+		const result = table.module.apply(table.state, alone, {
+			...systemPayload(ROOM_ID, "vienna"),
+			seat: "N",
+		});
+		expect(result.ok && result.event).toEqual({
+			kind: "system",
+			seat: "S",
+			system: "vienna",
+		});
+		if (!result.ok) throw new Error(result.reason);
+		table.state = result.state;
+		table.send("E", systemPayload(ROOM_ID, "other"));
+		table.send("S", systemPayload(ROOM_ID, "hcp"));
+		expect(parseBridgeState(table.state, ROOM_ID)?.systems).toEqual({
+			S: "hcp",
+			E: "other",
+		});
+	});
+
+	it("keeps the systems after a new deal", () => {
+		const table = new Table();
+		table.send("W", systemPayload(ROOM_ID, "reith"));
+		table.send("N", dealPayload(ROOM_ID, 1));
+		expect(parseBridgeState(table.state, ROOM_ID)?.systems).toEqual({
+			W: "reith",
+		});
+	});
+
+	it("refuses an unknown system, and a stored state with an unknown seat or system", () => {
+		const table = new Table();
+		const payload = systemPayload(ROOM_ID, "hcp");
+		for (const system of ["none", "goren", 4, undefined])
+			expect(rejection(table.send("S", { ...payload, system }))).toBe(
+				"not a known bidding system",
+			);
+		expect(parseBridgeState(table.state, ROOM_ID)?.systems).toEqual({});
+		for (const systems of [{ X: "hcp" }, { S: "goren" }, ["hcp"], "hcp"])
+			expect(
+				parseBridgeState({ ...table.state, systems }, ROOM_ID),
+			).toBeUndefined();
+		// A state stored before the systems has none.
+		const { systems: _, ...withoutSystems } = table.state;
+		expect(parseBridgeState(withoutSystems, ROOM_ID)?.systems).toEqual({});
+	});
+
+	it("is neither a table command nor chat", () => {
+		const payload = systemPayload(ROOM_ID, "hcp");
+		expect(isTableCommand(payload)).toBe(false);
+		expect(isChatCommand(payload)).toBe(false);
+		expect(isChatEvent({ kind: "system", seat: "N", system: "hcp" })).toBe(
+			false,
+		);
 	});
 });

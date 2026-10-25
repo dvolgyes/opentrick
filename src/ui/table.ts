@@ -126,6 +126,16 @@ const ACTION_STATUS: Readonly<Record<TableActionLine["state"], string>> = {
 	undone: "Undone after a host change",
 };
 
+/** The short name of each bidding system, below the player's name in the auction. */
+const SYSTEM_LABELS: Readonly<Record<PointSystem, string>> = {
+	hcp: "HCP",
+	"hcp-corrected": "corr. HCP",
+	vienna: "Vienna",
+	reith: "Reith",
+	"four-aces": "Four Aces",
+	other: "Other",
+};
+
 /** The strain that each suit mark or NT label stands for, as the bid box names it. */
 const MARK_STRAIN: ReadonlyMap<string, string> = new Map([
 	[SUIT_SYMBOLS.C, "C"],
@@ -1768,6 +1778,20 @@ export function tableSection(
 		setCountdown(view.countdown);
 	}
 
+	/** The system below a player's name opens its guide in the viewer's language; the guides do not describe "other". */
+	function systemLabel(system: PointSystem | undefined): HTMLElement[] {
+		if (system === undefined) return [];
+		const text = t(SYSTEM_LABELS[system]);
+		if (system === "other")
+			return [el("span", { className: "auction-system" }, text)];
+		return [
+			button(text, () => guide.open(system), {
+				className: "auction-system",
+				attrs: { title: t("Bidding guide") },
+			}),
+		];
+	}
+
 	function renderAuction(view: TableView): void {
 		const grid = view.auction;
 		auction.hidden = grid === undefined;
@@ -1784,9 +1808,14 @@ export function tableSection(
 				el(
 					"tr",
 					{},
-					...grid.seats.map((seat) => {
+					...grid.seats.map((seat, index) => {
 						const player = `${names.get(seat) || t(seat)} (${t(seat)})`;
-						return el("th", { attrs: { scope: "col", title: player } }, player);
+						return el(
+							"th",
+							{ attrs: { scope: "col", title: player } },
+							el("span", { className: "auction-player" }, player),
+							...systemLabel(grid.systems[index]),
+						);
 					}),
 				),
 			),

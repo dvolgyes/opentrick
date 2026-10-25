@@ -15,6 +15,7 @@ import {
 	type UndoPosition,
 	undoPosition,
 } from "../bridge/engine";
+import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import {
 	applyCallRecord,
 	type CallRecords,
@@ -47,14 +48,16 @@ import type { ApplyContext, ApplyResult, GameModule } from "./module";
  *   delayed command never lands in a later position.
  * - `{type: "media", version, prefs, form}`: the sender's call status (src/call/record.ts); the stored record
  *   also gets the holder of the sender's seat (`ApplyContext.holder`).
+ * - `{type: "system", system}`: the bidding system of the sender's seat, one of POINT_SYSTEMS.
  * Events: `{fromName, text}` for chat, `{kind: "deal", board}` with the full new board,
  * `{kind: "call", board, call}` and `{kind: "play", board, hand, card}`, where `hand` is the seat that
- * held the card (dummy when declarer plays from dummy), and `{kind: "media", seat, version}`.
+ * held the card (dummy when declarer plays from dummy), `{kind: "media", seat, version}` and
+ * `{kind: "system", seat, system}`.
  *
  * A deal or a call needs all four players present (`ApplyContext.present`); a card needs all but dummy,
- * because declarer plays dummy's cards. A chat message or a call status needs nobody. The rules come first, so
- * an action that the rules reject keeps its own reason; an action that only waits for a player is marked
- * `waiting`.
+ * because declarer plays dummy's cards. A chat message, a call status or a bidding system needs nobody. The rules
+ * come first, so an action that the rules reject keeps its own reason; an action that only waits for a player is
+ * marked `waiting`.
  */
 
 export type BridgeState = {
@@ -74,6 +77,8 @@ export type BridgeState = {
 	readonly reset?: ResetRequest | null;
 	/** Each seat's latest call status. */
 	readonly media: CallRecords;
+	/** The bidding system that each seat's player chose; a seat without one has sent none. */
+	readonly systems: Partial<Record<Seat, PointSystem>>;
 };
 
 export interface UndoRequest extends UndoPosition {
@@ -164,6 +169,8 @@ export function parseBridgeState(
 		return undefined;
 	const media = parseCallRecords(state.media);
 	if (media === undefined) return undefined;
+	const systems = parseSystems(state.systems);
+	if (systems === undefined) return undefined;
 	return {
 		v: PROTOCOL_VERSION,
 		roomId,
@@ -176,7 +183,26 @@ export function parseBridgeState(
 		claimResult,
 		reset,
 		media,
+		systems,
 	};
+}
+
+/** A state stored before the bidding systems has none. */
+function parseSystems(
+	value: unknown,
+): Partial<Record<Seat, PointSystem>> | undefined {
+	if (value === undefined) return {};
+	if (!isObject(value)) return undefined;
+	const systems: Partial<Record<Seat, PointSystem>> = {};
+	for (const [seat, system] of Object.entries(value)) {
+		if (!isSeat(seat) || !isPointSystem(system)) return undefined;
+		systems[seat] = system;
+	}
+	return systems;
+}
+
+function isPointSystem(value: unknown): value is PointSystem {
+	return (POINT_SYSTEMS as readonly unknown[]).includes(value);
 }
 
 function parseResetRequest(value: unknown): ResetRequest | null | undefined {
@@ -365,6 +391,11 @@ function parseUndoRequest(
 	};
 }
 
+/** The bidding system of the sender's seat. */
+export function systemPayload(roomId: string, system: PointSystem): JsonObject {
+	return { v: PROTOCOL_VERSION, roomId, type: "system", system };
+}
+
 export function dealPayload(roomId: string, board: number): JsonObject {
 	return { v: PROTOCOL_VERSION, roomId, type: "deal", board };
 }
@@ -540,6 +571,21 @@ function applyMedia(
 	return accept(
 		{ kind: "media", seat, version: applied.record.version },
 		{ ...state, media: applied.records },
+	);
+}
+
+/** The seat comes from the command row, never from the payload. */
+function applySystem(
+	state: BridgeState,
+	context: ApplyContext,
+	payload: JsonObject,
+): ApplyResult {
+	const { system } = payload;
+	if (!isPointSystem(system)) return reject("not a known bidding system");
+	const { seat } = context;
+	return accept(
+		{ kind: "system", seat, system },
+		{ ...state, systems: { ...state.systems, [seat]: system } },
 	);
 }
 
@@ -946,6 +992,7 @@ export function createBridgeModule(randomBelow: RandomBelow): GameModule {
 				claimResult: null,
 				reset: null,
 				media: {},
+				systems: {},
 			};
 			return state;
 		},
@@ -998,6 +1045,8 @@ export function createBridgeModule(randomBelow: RandomBelow): GameModule {
 					return applyResetCancel(table, context, payload);
 				case "media":
 					return applyMedia(table, context, payload);
+				case "system":
+					return applySystem(table, context, payload);
 				default:
 					return reject("unknown command type");
 			}

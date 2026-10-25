@@ -1535,6 +1535,14 @@ const rows: readonly TranslationRow[] = [
 		"Biedsysteem",
 	],
 	[
+		"corr. HCP",
+		"HCP corr.",
+		"HCP corr.",
+		"HCP corr.",
+		"HCP corr.",
+		"gecorr. HCP",
+	],
+	[
 		"Show the points next to the cards",
 		"Mostrar los puntos junto a las cartas",
 		"Mostrar os pontos junto às cartas",

@@ -264,6 +264,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Dark: "Dunkel",
 		Theme: "Design",
 		"Bidding system": "Reizsystem",
+		"corr. HCP": "korr. HCP",
 		"Show the points next to the cards": "Punkte neben den Karten zeigen",
 		"Frame the player whose turn it is to bid":
 			"Rahmen um den Spieler, der bieten muss",
@@ -815,6 +816,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Dark: "Sötét",
 		Theme: "Téma",
 		"Bidding system": "Licitrendszer",
+		"corr. HCP": "korr. HCP",
 		"Show the points next to the cards": "Pontok mutatása a lapok mellett",
 		"Frame the player whose turn it is to bid":
 			"Keret a licitre következő játékos körül",
@@ -1287,6 +1289,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Dark: "Mørk",
 		Theme: "Tema",
 		"Bidding system": "Meldesystem",
+		"corr. HCP": "korr. HCP",
 		"Show the points next to the cards": "Vis poengene ved kortene",
 		"Frame the player whose turn it is to bid":
 			"Ramme rundt spilleren som skal melde",

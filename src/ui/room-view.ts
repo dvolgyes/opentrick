@@ -5,6 +5,7 @@ import {
 	type HostBotSettings,
 } from "../bot/host-runner";
 import { type Board, boardStatus } from "../bridge/engine";
+import type { PointSystem } from "../bridge/hand-points";
 import { type BuildInfo, formatBuildDate } from "../build";
 import { CallController } from "../call/call";
 import {
@@ -23,6 +24,7 @@ import {
 	resetCancelPayload,
 	resetRequestPayload,
 	resetVotePayload,
+	systemPayload,
 	undoCancelPayload,
 	undoRequestPayload,
 	undoVotePayload,
@@ -515,6 +517,8 @@ export function showRoom(
 	};
 	/** The host deals the first board once all four seats are filled. */
 	let firstDealSent = false;
+	/** The bidding system that this page sent for its seat; sent once, so a host that rejects it gets no resend loop. */
+	let sentSystem: PointSystem | undefined;
 
 	function manageBotSeat(targetSeat: Seat, enabled: boolean): void {
 		if (enabled && !readHostApiKey(deps.browser)) {
@@ -1491,6 +1495,17 @@ export function showRoom(
 				sendsAudio: record.prefs.send.audio,
 				sendsVideo: record.prefs.send.video,
 			};
+		}
+		// The other players see this player's bidding system below the name.
+		const ownSystem = readSettings(deps.browser).pointSystem;
+		if (
+			state &&
+			!terminal &&
+			state.systems[seat] !== ownSystem &&
+			sentSystem !== ownSystem
+		) {
+			sentSystem = ownSystem;
+			submit(systemPayload(tableId, ownSystem), () => undefined);
 		}
 		renderCall();
 		shownBoard = state?.board ?? null;

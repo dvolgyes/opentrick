@@ -13,6 +13,7 @@ import {
 	undoPosition,
 	viewForPlayer,
 } from "../bridge/engine";
+import type { PointSystem } from "../bridge/hand-points";
 import type { Call, Contract, Strain, Vulnerability } from "../bridge/rules";
 import {
 	type BridgeState,
@@ -191,6 +192,8 @@ export interface AuctionView {
 	 * last row stops at the last call, and the calls still to come have no cell.
 	 */
 	readonly rows: readonly (readonly string[])[];
+	/** The bidding system of each seat, in `seats` order; undefined when the seat's player has sent none. */
+	readonly systems: readonly (PointSystem | undefined)[];
 }
 
 export interface BidView {
@@ -600,14 +603,24 @@ function scoreRows(results: readonly BoardResult[]): ScoreRow[] {
 	});
 }
 
-function auctionView(dealer: Seat, calls: readonly Call[]): AuctionView {
+/** A bot bids with HCP (src/bot/strategy.ts), whatever an earlier player of its seat sent. */
+function auctionView(
+	dealer: Seat,
+	calls: readonly Call[],
+	systems: BridgeState["systems"],
+	bots: ReadonlySet<Seat> | undefined,
+): AuctionView {
 	const cells = [
 		...Array.from({ length: SEATS.indexOf(dealer) }, () => "—"),
 		...calls.map(callText),
 	];
 	const rows: string[][] = [];
 	for (let i = 0; i < cells.length; i += 4) rows.push(cells.slice(i, i + 4));
-	return { seats: SEATS, rows };
+	return {
+		seats: SEATS,
+		rows,
+		systems: SEATS.map((seat) => (bots?.has(seat) ? "hcp" : systems[seat])),
+	};
 }
 
 /** One action of this seat at a time: further clicks wait until the host has decided on the last one. */
@@ -1044,7 +1057,7 @@ export function tableView(input: TableViewInput): TableView {
 			vulnerable: t(VULNERABILITY_TEXT[view.vulnerability]),
 		}),
 		seats,
-		auction: auctionView(view.dealer, view.calls),
+		auction: auctionView(view.dealer, view.calls, state.systems, input.bots),
 		contract: contract
 			? `${contractText(contract)} by ${SEAT_NAMES[contract.declarer]}`
 			: "",

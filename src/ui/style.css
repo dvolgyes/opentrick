@@ -1316,6 +1316,31 @@ main:has(> .room) {
 	text-overflow: ellipsis;
 }
 
+/* The bidding system sits below the player's name; a click opens its guide. */
+.auction .auction-player,
+.auction .auction-system {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.auction .auction-system {
+	width: 100%;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-weight: 400;
+}
+
+.auction button.auction-system {
+	text-decoration: underline dotted;
+	cursor: pointer;
+}
+
 .bridge-table .auction td {
 	padding: 0.2rem 0.1rem;
 	border-radius: 0.4rem;

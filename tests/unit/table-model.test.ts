@@ -64,6 +64,7 @@ function tableState(board: Board | null): BridgeState {
 		claim: null,
 		claimResult: null,
 		media: {},
+		systems: {},
 	};
 }
 
@@ -290,6 +291,7 @@ describe("auction", () => {
 		expect(table.auction).toEqual({
 			seats: ["N", "E", "S", "W"],
 			rows: [["—", "1♣", "Double", "Pass"]],
+			systems: [undefined, undefined, undefined, undefined],
 		});
 	});
 
@@ -299,6 +301,16 @@ describe("auction", () => {
 			["—", "—", "1♥", "Pass"],
 			["Pass", "Pass"],
 		]);
+	});
+
+	it("names each seat's bidding system, and HCP for a bot", () => {
+		const state = {
+			...tableState(bidding(BOARD, "1C")),
+			systems: { N: "vienna", E: "other", W: "reith" },
+		} as const;
+		expect(
+			view("S", null, { state, bots: new Set<Seat>(["W"]) }).auction?.systems,
+		).toEqual(["vienna", "other", undefined, "hcp"]);
 	});
 });
 
