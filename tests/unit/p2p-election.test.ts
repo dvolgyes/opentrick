@@ -812,6 +812,27 @@ describe("the seed of a table that nobody has (rule 14)", () => {
 		}
 	});
 
+	it("says in its beats that it can host while it may seed its seat, so that the pages after it wait", () => {
+		const elig = (seed: boolean, overrides: Partial<Seating> = {}) => {
+			const page = new Page({
+				...facts(
+					HOLDER_W,
+					seating("W", { pos: EMPTY, host: null, bound: false, ...overrides }),
+				),
+				pref: "S",
+				seed,
+			});
+			const beats = ofType(page.run(BEAT_MS), "beat");
+			expect(beats.length).toBeGreaterThan(0);
+			return beats.every(({ beat }) => beat.elig);
+		};
+		expect(elig(true)).toBe(true);
+		expect(elig(false)).toBe(false);
+		expect(elig(true, { persistent: false })).toBe(false);
+		expect(elig(true, { writable: false })).toBe(false);
+		expect(elig(true, { pos: POS, host: AUTH_1 })).toBe(false);
+	});
+
 	it("never seeds without a seat or without a host seat in its link", () => {
 		expect(
 			seedsFirst(new Page({ ...facts(VISITOR, null), pref: "S" }).state),

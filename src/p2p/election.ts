@@ -54,6 +54,8 @@ export interface SelfFacts {
 	readonly hostEligible?: boolean;
 	/** The host seat that this page's setup link names (`host=`), if any. */
 	readonly pref?: Seat;
+	/** The page may seed the table that its seat does not have yet (rule 14). */
+	readonly seed?: boolean;
 }
 
 interface Heard {
@@ -732,7 +734,7 @@ function beatOf(state: ElectionState): Beat {
 		holder,
 		seat: seating.seat,
 		pos: seating.pos,
-		elig: isEligible(state.self),
+		elig: isEligible(state.self) || canSeed(state.self),
 		...report,
 		...prefOf(state.self),
 	};
@@ -747,6 +749,19 @@ function isEligible(self: SelfFacts): boolean {
 	return (
 		self.hostEligible !== false &&
 		seating?.bound === true &&
+		seating.persistent &&
+		seating.writable
+	);
+}
+
+/** Rule 14: a page that may seed its empty seat counts as eligible in its beats, so the pages after it wait. */
+function canSeed(self: SelfFacts): boolean {
+	const { seating } = self;
+	return (
+		self.seed === true &&
+		self.hostEligible !== false &&
+		seating !== null &&
+		seating.pos.rev === 0 &&
 		seating.persistent &&
 		seating.writable
 	);

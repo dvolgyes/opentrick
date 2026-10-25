@@ -6,47 +6,15 @@ import { deriveHolder, makeTag } from "../../src/p2p/keys";
 import { BEAT_MS, SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
 import { LINK_VERSION } from "../../src/p2p/link";
 import { creationCommit, LocalLog } from "../../src/p2p/log";
-import type { MeshDiagnostics, MeshHandlers } from "../../src/p2p/mesh";
+import type { MeshHandlers } from "../../src/p2p/mesh";
 import { TableController, type TableMesh } from "../../src/p2p/table";
 import type { CtlMessage, Roster } from "../../src/p2p/wire";
 import { SEATS, type Seat } from "../../src/protocol";
 import type { HoldOptions, SeatLocks } from "../../src/session";
 import { settle, syncDigest, TestStorage, VirtualClock } from "./fake-mesh";
-import { CONFIG, TABLE } from "./p2p-fixtures";
+import { CONFIG, DIAGNOSTICS, TABLE } from "./p2p-fixtures";
 
 const CLIENT = "clientN-0123456789abcd";
-
-const DIAGNOSTICS: MeshDiagnostics = {
-	trackersOpen: 1,
-	trackers: 1,
-	nostrOpen: 0,
-	nostrRelays: 0,
-	mqttOpen: 0,
-	mqttBrokers: 0,
-	relays: [],
-	stun: null,
-	webRtc: null,
-	peers: 0,
-	wrongKey: 0,
-	unreachable: 0,
-	refused: 0,
-	incompatible: 0,
-	dropped: {
-		malformed: 0,
-		incompatible: 0,
-		foreign: 0,
-		oversize: 0,
-		rate: 0,
-		stranger: 0,
-	},
-	sendFailures: 0,
-	pairRooms: 0,
-	repaired: 0,
-	pairTimeouts: 0,
-	unattached: 0,
-	rejoins: 0,
-	silentCloses: [],
-};
 
 let restoreDigest: () => void;
 beforeEach(() => {
@@ -307,6 +275,29 @@ describe("table controller seeding from the setup link", () => {
 		expect(table.view().seat).toBe("N");
 		expect(table.view().hosting).toBe(false);
 		expect(rig.storage.commits).toBe(0);
+	});
+
+	it("seeds while the only beats come from pages without the table that report a host lost long ago", async () => {
+		// The only replica was lost (its browser cleared its data); East remembers the host, but has no entry.
+		const holder = await deriveHolder(TABLE, "clientE-0123456789abcd");
+		const host = await deriveHolder(TABLE, "clientW-0123456789abcd");
+		const table = await rig.start("N");
+		for (let beats = 0; beats < (2 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			rig.handlers?.ctl("east000000000000000", {
+				k: "beat",
+				role: "follower",
+				holder,
+				seat: "E",
+				elig: false,
+				auth: { term: 1, tag: makeTag(host, "N"), inc: 1 },
+				seenAgoMs: 60_000 + beats * BEAT_MS,
+				pos: { rev: 0, lastAuth: null },
+			});
+			await settle();
+			await rig.advance(BEAT_MS);
+		}
+
+		expect(table.view().hosting).toBe(true);
 	});
 
 	/** A beat of West's page, which has no table either; its link names S as the host seat. */

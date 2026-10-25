@@ -43,6 +43,7 @@ import {
 import {
 	CLEANUP_MS,
 	CONNECTION_FAILED_MS,
+	HOST_LOST_MS,
 	SEED_WAIT_MS,
 	TICK_MS,
 } from "./limits";
@@ -912,9 +913,14 @@ export class TableController {
 			return { holder, seating: null, ...shared };
 		const table = log.table;
 		const row = table?.seats.find((item) => item.seat === log.seat);
+		const candidate = this.#seedCandidate;
 		return {
 			holder,
 			...shared,
+			seed:
+				candidate !== null &&
+				candidate.log.seat === log.seat &&
+				this.#seedable(candidate),
 			seating: {
 				seat: log.seat,
 				pos: log.position(),
@@ -1116,9 +1122,16 @@ export class TableController {
 		if (this.#closed()) return;
 		switch (message.k) {
 			case "beat":
-				// A beat with an authority or with entries comes from a page that has the table: the setup link seeds
-				// nothing yet.
-				if (message.auth !== undefined || (message.pos?.rev ?? 0) > 0)
+				// A beat from a host, a claimer or a page with entries shows the table, and so does a report of a host
+				// seen within HOST_LOST_MS: the setup link seeds nothing yet. An older report shows no table, as the only
+				// replica can be gone.
+				if (
+					message.role === "host" ||
+					message.role === "claiming" ||
+					(message.pos?.rev ?? 0) > 0 ||
+					(message.auth !== undefined &&
+						(message.seenAgoMs ?? HOST_LOST_MS) < HOST_LOST_MS)
+				)
 					this.#tableSeenAt = this.#now();
 				// The host engine also gets the beat: it is how the host knows that a quiet player is present.
 				this.#step({ type: "beat", now: this.#now(), peer, beat: message });
