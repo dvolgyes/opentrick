@@ -487,19 +487,28 @@ function summaryLines(
 		{
 			label: t("Trackers reachable"),
 			value: network
-				? `${network.trackersOpen} of ${network.trackers}`
+				? t("{open} of {total}", {
+						open: network.trackersOpen,
+						total: network.trackers,
+					})
 				: t("not started"),
 		},
 		{
 			label: t("Nostr relays reachable"),
 			value: network
-				? `${network.nostrOpen} of ${network.nostrRelays}`
+				? t("{open} of {total}", {
+						open: network.nostrOpen,
+						total: network.nostrRelays,
+					})
 				: t("not started"),
 		},
 		{
 			label: t("MQTT brokers reachable"),
 			value: network
-				? `${network.mqttOpen} of ${network.mqttBrokers}`
+				? t("{open} of {total}", {
+						open: network.mqttOpen,
+						total: network.mqttBrokers,
+					})
 				: t("not started"),
 		},
 		{ label: t("Direct connections"), value: String(input.peers.length) },

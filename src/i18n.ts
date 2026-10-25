@@ -557,6 +557,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Trackers reachable": "Tracker erreichbar",
 		"Nostr relays reachable": "Nostr-Relays erreichbar",
 		"MQTT brokers reachable": "MQTT-Broker erreichbar",
+		"{open} of {total}": "{open} von {total}",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Es sind höchstens {count} Nostr-Relay-URLs erlaubt (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
@@ -917,6 +918,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Trackers reachable": "Elérhető trackerek",
 		"Nostr relays reachable": "Elérhető Nostr-továbbítók",
 		"MQTT brokers reachable": "Elérhető MQTT-brókerek",
+		"{open} of {total}": "{total} közül {open}",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Legfeljebb {count} Nostr-továbbító URL használható (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":
@@ -1516,6 +1518,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Trackers reachable": "Sporingstjenester nås",
 		"Nostr relays reachable": "Nostr-reléer nås",
 		"MQTT brokers reachable": "MQTT-meglere nås",
+		"{open} of {total}": "{open} av {total}",
 		"At most {count} Nostr relay URLs are allowed (VITE_NOSTR_RELAY_URLS).":
 			"Du kan angi maksimalt {count} Nostr-relé-URL-er (VITE_NOSTR_RELAY_URLS).",
 		"Not a valid wss: Nostr relay URL in VITE_NOSTR_RELAY_URLS: {url}":

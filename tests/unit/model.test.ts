@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chatPayload } from "../../src/game/chat";
+import { translator } from "../../src/i18n";
 import type { ElectionView } from "../../src/p2p/election";
 import type { MeshDiagnostics } from "../../src/p2p/mesh";
 import type { OutboxItem } from "../../src/p2p/outbox";
@@ -414,6 +415,21 @@ describe("networkLines", () => {
 		).toBe(
 			"Trackers reachable: not started · Nostr relays reachable: not started · MQTT brokers reachable: not started · Direct connections: 0 · Public address found: no",
 		);
+	});
+
+	it("writes the counts of the summary in the page's language", () => {
+		const counts = (locale: "de" | "hu") =>
+			connectionSummary({
+				network: NETWORK,
+				peers: PEERS,
+				publicAddress: true,
+				t: translator(locale),
+			})
+				.split(" · ")
+				.slice(0, 3)
+				.map((line) => line.slice(line.indexOf(": ") + 2));
+		expect(counts("de")).toEqual(["2 von 3", "4 von 5", "6 von 7"]);
+		expect(counts("hu")).toEqual(["3 közül 2", "5 közül 4", "7 közül 6"]);
 	});
 
 	it("adds the summary to the banners that wait for a connection only", () => {
