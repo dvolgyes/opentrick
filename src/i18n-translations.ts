@@ -2597,6 +2597,22 @@ const rows: readonly TranslationRow[] = [
 		"Datakanaal binnen deze pagina",
 	],
 	[
+		"WebRTC in this browser",
+		"WebRTC en este navegador",
+		"WebRTC neste navegador",
+		"WebRTC dans ce navigateur",
+		"WebRTC in questo browser",
+		"WebRTC in deze browser",
+	],
+	[
+		"missing",
+		"no disponible",
+		"indisponível",
+		"absent",
+		"assente",
+		"ontbreekt",
+	],
+	[
 		"Local candidates",
 		"Candidatos locales",
 		"Candidatos locais",

@@ -256,6 +256,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		answered: "geantwortet",
 		"no answer": "keine Antwort",
 		"Data channel inside this page": "Datenkanal innerhalb dieser Seite",
+		"WebRTC in this browser": "WebRTC in diesem Browser",
+		missing: "fehlt",
 		"Local candidates": "Lokale Kandidaten",
 		works: "funktioniert",
 		"This browser has WebRTC turned off, so this page cannot reach the other players. On an iPhone or iPad, Lockdown Mode turns WebRTC off: turn it off for this website in the website settings of Safari, or use another device.":
@@ -973,6 +975,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		answered: "válaszolt",
 		"no answer": "nincs válasz",
 		"Data channel inside this page": "Adatcsatorna ezen az oldalon belül",
+		"WebRTC in this browser": "WebRTC ebben a böngészőben",
+		missing: "hiányzik",
 		"Local candidates": "Helyi jelöltek",
 		works: "működik",
 		"This browser has WebRTC turned off, so this page cannot reach the other players. On an iPhone or iPad, Lockdown Mode turns WebRTC off: turn it off for this website in the website settings of Safari, or use another device.":
@@ -1591,6 +1595,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		answered: "svarte",
 		"no answer": "ikke svar",
 		"Data channel inside this page": "Datakanal inne i denne siden",
+		"WebRTC in this browser": "WebRTC i denne nettleseren",
+		missing: "mangler",
 		"Local candidates": "Lokale kandidater",
 		works: "virker",
 		"This browser has WebRTC turned off, so this page cannot reach the other players. On an iPhone or iPad, Lockdown Mode turns WebRTC off: turn it off for this website in the website settings of Safari, or use another device.":

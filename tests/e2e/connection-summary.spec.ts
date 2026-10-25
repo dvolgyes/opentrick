@@ -3,12 +3,13 @@ import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
 /*
- * A page that waits for the host shows how far its connection got, below the waiting text: the trackers and the
- * Nostr relays that it reaches, its direct connections, and whether STUN found its public address.
+ * A page that waits for the host shows how far its connection got, below the waiting text: the trackers, the
+ * Nostr relays and the MQTT brokers that it reaches, whether WebRTC works in the browser, its direct connections,
+ * and whether STUN found its public address.
  */
 
 const SUMMARY =
-	/^Trackers reachable: (\d+ of \d+|not started) · Nostr relays reachable: (\d+ of \d+|not started) · Direct connections: \d+ · Public address found: (yes|no)$/;
+	/^Trackers reachable: (\d+ of \d+|not started) · Nostr relays reachable: (\d+ of \d+|not started) · MQTT brokers reachable: (\d+ of \d+|not started) · WebRTC in this browser: (checking|works|failed) · Direct connections: \d+ · Public address found: (yes|no)$/;
 
 test("a page without a host shows the tracker, relay and connection counts in the lobby, and in the banner after it takes a seat", async ({
 	browser,

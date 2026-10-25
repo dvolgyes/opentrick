@@ -411,7 +411,11 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 				`${SEAT_NAMES[peer.seat]} (${Math.round(peer.check.rttMs)} ms)`,
 			);
 	}
-	const [trackers, nostr, mqtt, direct, publicAddress] = summaryLines(input, t);
+	// The panel shows the WebRTC check in its own lines (`webRtcLines`).
+	const [trackers, nostr, mqtt, , direct, publicAddress] = summaryLines(
+		input,
+		t,
+	);
 	return [
 		trackers,
 		nostr,
@@ -481,7 +485,14 @@ export function connectionDetail(
 function summaryLines(
 	input: SummaryInput,
 	t: Translate,
-): readonly [NetworkLine, NetworkLine, NetworkLine, NetworkLine, NetworkLine] {
+): readonly [
+	NetworkLine,
+	NetworkLine,
+	NetworkLine,
+	NetworkLine,
+	NetworkLine,
+	NetworkLine,
+] {
 	const { network } = input;
 	return [
 		{
@@ -510,6 +521,10 @@ function summaryLines(
 						total: network.mqttBrokers,
 					})
 				: t("not started"),
+		},
+		{
+			label: t("WebRTC in this browser"),
+			value: channelValue(network?.webRtc ?? null, t),
 		},
 		{ label: t("Direct connections"), value: String(input.peers.length) },
 		{
@@ -541,12 +556,7 @@ function webRtcLines(
 	return [
 		{
 			label: t("Data channel inside this page"),
-			value:
-				checked === undefined
-					? t("checking")
-					: checked.channel === "open"
-						? t("works")
-						: t("failed"),
+			value: channelValue(report, t),
 		},
 		{
 			label: t("Local candidates"),
@@ -558,6 +568,13 @@ function webRtcLines(
 						: checked.candidates.join(", "),
 		},
 	];
+}
+
+/** Whether the data channel of the WebRTC check carried its message, or that the browser has no WebRTC. */
+function channelValue(report: MeshDiagnostics["webRtc"], t: Translate): string {
+	if (report === null) return t("checking");
+	if (report.kind === "missing") return t("missing");
+	return report.channel === "open" ? t("works") : t("failed");
 }
 
 const STUN_STATE: Readonly<Record<StunStatus["state"], string>> = {

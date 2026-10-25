@@ -400,7 +400,7 @@ describe("networkLines", () => {
 		]);
 	});
 
-	it("sums up the trackers, the Nostr relays, the MQTT brokers, the direct connections and the public address in one line", () => {
+	it("sums up the trackers, the Nostr relays, the MQTT brokers, the WebRTC check, the direct connections and the public address in one line", () => {
 		expect(
 			connectionSummary({
 				network: NETWORK,
@@ -408,13 +408,31 @@ describe("networkLines", () => {
 				publicAddress: true,
 			}),
 		).toBe(
-			"Trackers reachable: 2 of 3 · Nostr relays reachable: 4 of 5 · MQTT brokers reachable: 6 of 7 · Direct connections: 3 · Public address found: yes",
+			"Trackers reachable: 2 of 3 · Nostr relays reachable: 4 of 5 · MQTT brokers reachable: 6 of 7 · WebRTC in this browser: checking · Direct connections: 3 · Public address found: yes",
 		);
 		expect(
 			connectionSummary({ network: null, peers: [], publicAddress: false }),
 		).toBe(
-			"Trackers reachable: not started · Nostr relays reachable: not started · MQTT brokers reachable: not started · Direct connections: 0 · Public address found: no",
+			"Trackers reachable: not started · Nostr relays reachable: not started · MQTT brokers reachable: not started · WebRTC in this browser: checking · Direct connections: 0 · Public address found: no",
 		);
+		const webRtc = (channel: "open" | "failed") =>
+			connectionSummary({
+				network: {
+					...NETWORK,
+					webRtc: { kind: "checked", candidates: [], channel },
+				},
+				peers: [],
+				publicAddress: false,
+			}).split(" · ")[3];
+		expect(webRtc("open")).toBe("WebRTC in this browser: works");
+		expect(webRtc("failed")).toBe("WebRTC in this browser: failed");
+		expect(
+			connectionSummary({
+				network: { ...NETWORK, webRtc: { kind: "missing" } },
+				peers: [],
+				publicAddress: false,
+			}).split(" · ")[3],
+		).toBe("WebRTC in this browser: missing");
 	});
 
 	it("writes the counts of the summary in the page's language", () => {
