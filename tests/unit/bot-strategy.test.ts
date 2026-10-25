@@ -18,7 +18,7 @@ import {
 	responseText,
 } from "../../src/bot/strategy";
 import { createBoard, legalActions } from "../../src/bridge/engine";
-import { bidding, DEAL } from "./bridge-fixtures";
+import { bidding, DEAL, playing } from "./bridge-fixtures";
 
 describe("bot decisions", () => {
 	it("recognizes the board position carried by a pending action key", () => {
@@ -307,5 +307,66 @@ describe("bot decisions", () => {
 		expect(prompt).toContain("do not overthink unlikely lines");
 		expect(prompt).not.toContain("♠ AKQJT98  ♥ AKQ  ♦ K  ♣ A");
 		expect(prompt).not.toContain("♠ —  ♥ 32  ♦ 5432  ♣ 8765432");
+	});
+
+	it("summarizes the auction and the tricks in short lines, and counts the hidden cards", () => {
+		// North declares 4♠, East leads. West shows out of spades in trick 2, and North leads ♠K to trick 3.
+		const board = playing(
+			bidding(createBoard(1, DEAL), "1S P 4S P P P"),
+			"HJ H4 H3 HA SA S7 S2 D2 SK",
+		);
+		const prompt = renderPlayPrompt(
+			board,
+			"E",
+			legalActions(board, "E"),
+			NODE_PROMPT_TEMPLATES,
+		);
+		expect(prompt).toContain("Auction: N 1♠ · E P · S 4♠ · all pass");
+		expect(prompt).toContain(
+			"T1 E♥J S♥4 W♥3 N♥A → N\nT2 N♠A E♠7 S♠2 W♦2 → N\nT3 N♠K (in progress)",
+		);
+		// East sees 8 spades, 10 hearts, 8 diamonds and 5 clubs; West has no spade, so North holds the other 5.
+		expect(prompt).toContain("### CARD COUNT");
+		expect(prompt).toContain(
+			[
+				"Unaccounted (North+West): ♠ QJT98 (5) · ♥ KQ2 (3) · ♦ AK543 (5) · ♣ A8765432 (8)",
+				"North: 10 left; ♠ 5, ♣ 0–5; holds ♠QJT98",
+				"West: 11 left; void ♠ (T2); ♣ 3–8",
+			].join("\n"),
+		);
+		expect(prompt).not.toContain("Trick 1:");
+
+		// Before the opening lead nothing limits the three hidden hands, so their lines give only the count.
+		const lead = bidding(createBoard(1, DEAL), "1S P 4S P P P");
+		const first = renderPlayPrompt(
+			lead,
+			"E",
+			legalActions(lead, "E"),
+			NODE_PROMPT_TEMPLATES,
+		);
+		expect(first).toContain("T1: E leads");
+		expect(first).toContain(
+			"(North+South+West): ♠ AKQJT98432 (10) · ♥ AKQ65432 (8) · ♦ AK98765432 (10) · ♣ AJT98765432 (11)\nNorth: 13 left\nSouth: 13 left\nWest: 13 left\n",
+		);
+	});
+
+	it("gives the same play prompt whatever the hidden hands hold", () => {
+		const board = playing(
+			bidding(createBoard(1, DEAL), "1S P 4S P P P"),
+			"HJ H4 H3 HA SA S7 S2 D2 SK",
+		);
+		// North and West both still hold diamonds: swap one, keeping every played card legal.
+		const swapped = {
+			...board,
+			deal: {
+				...board.deal,
+				N: board.deal.N.map((card) => (card === "DA" ? "D5" : card)),
+				W: board.deal.W.map((card) => (card === "D5" ? "DA" : card)),
+			},
+		} satisfies typeof board;
+		const legal = legalActions(board, "E");
+		expect(renderPlayPrompt(swapped, "E", legal, NODE_PROMPT_TEMPLATES)).toBe(
+			renderPlayPrompt(board, "E", legal, NODE_PROMPT_TEMPLATES),
+		);
 	});
 });

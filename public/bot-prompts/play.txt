@@ -17,8 +17,12 @@ Dummy: {{DUMMY}}
 Your seat: {{SEAT}}
 Known hands (cards visible to you):
 {{KNOWN_HANDS}}
-Play so far:
-{{COMPLETED_TRICKS}}
-{{CURRENT_TRICK}}
+Tricks (seat letter and card in play order, → the winner):
+{{TRICKS}}
 Tricks won: North-South {{TRICKS_NS}}, East-West {{TRICKS_EW}}
+
+### CARD COUNT
+Deduced only from your hand, the dummy, and the played cards; the auction is not used. "Unaccounted" are the cards that the hidden hands hold together. A void means that the hand did not follow suit in that trick. A range is the possible number of cards of that suit in the hand, shown only when the count limits it; "holds" lists the cards that can only be in that hand.
+{{CARD_KNOWLEDGE}}
+
 Legal cards: {{LEGAL_CARDS}}

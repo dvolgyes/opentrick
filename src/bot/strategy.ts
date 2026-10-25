@@ -1,4 +1,9 @@
 import {
+	type CardKnowledge,
+	cardKnowledge,
+	visiblePlay,
+} from "../bridge/card-knowledge";
+import {
 	type Card,
 	rankOf,
 	SUIT_SYMBOLS,
@@ -149,13 +154,89 @@ function callsText(board: Board): string {
 		.join(" · ");
 }
 
-function trickText(trick: Pick<CompletedTrick, "leader" | "cards">): string {
-	return trick.cards
-		.map((card, index) => {
-			const seat = seatAfter(trick.leader, index);
-			return `${SEAT_NAMES[seat]} ${cardLabel(card)}`;
-		})
-		.join(" · ");
+/** The auction in one line of seat letters, for example "N 1♠ · E P · S 4♠ · all pass". */
+function shortCallsText(board: Board): string {
+	const last = board.calls.findLastIndex((call) => call !== "P");
+	const calls = board.calls.map(
+		(call, index) =>
+			`${seatAfter(board.dealer, index)} ${call === "P" || call === "X" || call === "XX" ? call : callLabel(call)}`,
+	);
+	if (last === -1) return calls.length ? "all pass" : "No calls yet";
+	return [
+		...calls.slice(0, last + 1),
+		...(last < calls.length - 1 ? ["all pass"] : []),
+	].join(" · ");
+}
+
+/** One trick per line, for example "T1 W♦K E♦2 N♦A S♦3 → N"; the last line is the current trick. */
+function shortTricksText(
+	tricks: readonly CompletedTrick[],
+	current: Pick<CompletedTrick, "leader" | "cards">,
+): string {
+	const plays = (trick: Pick<CompletedTrick, "leader" | "cards">) =>
+		trick.cards
+			.map(
+				(card, index) => `${seatAfter(trick.leader, index)}${cardLabel(card)}`,
+			)
+			.join(" ");
+	const number = tricks.length + 1;
+	return [
+		...tricks.map(
+			(trick, index) => `T${index + 1} ${plays(trick)} → ${trick.winner}`,
+		),
+		current.cards.length
+			? `T${number} ${plays(current)} (in progress)`
+			: `T${number}: ${current.leader} leads`,
+	].join("\n");
+}
+
+function playKnowledge(board: Board, seat: Seat): CardKnowledge {
+	const view = visiblePlay(board, seat);
+	if (view === undefined) throw new Error("the board is not in play");
+	return cardKnowledge(view);
+}
+
+function suitRanks(cards: readonly Card[]): string {
+	return cards.map(rankOf).join("");
+}
+
+/** The card count for the play prompt: the unaccounted cards, then one line for each hidden hand. */
+function cardKnowledgeText(knowledge: CardKnowledge): string {
+	const hidden = knowledge.hidden.map((hand) => SEAT_NAMES[hand.seat]);
+	const unaccounted = SUITS.map((suit) => {
+		const cards = knowledge.unaccounted[suit];
+		return `${SUIT_SYMBOLS[suit]} ${cards.length ? `${suitRanks(cards)} (${cards.length})` : "none"}`;
+	}).join(" · ");
+	const hands = knowledge.hidden.map((hand) => {
+		const voids = hand.voids.map(
+			(known) => `void ${SUIT_SYMBOLS[known.suit]} (T${known.trick})`,
+		);
+		// Only the ranges that the count limits: 0 to the unaccounted cards of the suit says nothing.
+		const lengths = SUITS.filter((suit) => {
+			const { min, max } = hand.lengths[suit];
+			const open = Math.min(knowledge.unaccounted[suit].length, hand.remaining);
+			return (
+				!hand.voids.some((known) => known.suit === suit) &&
+				(min > 0 || max < open)
+			);
+		}).map((suit) => {
+			const { min, max } = hand.lengths[suit];
+			return `${SUIT_SYMBOLS[suit]} ${min === max ? min : `${min}–${max}`}`;
+		});
+		const holds = SUITS.map((suit) => {
+			const cards = hand.known.filter((card) => suitOf(card) === suit);
+			return cards.length ? `${SUIT_SYMBOLS[suit]}${suitRanks(cards)}` : "";
+		}).filter(Boolean);
+		return [
+			`${SEAT_NAMES[hand.seat]}: ${hand.remaining} left`,
+			...(voids.length ? [voids.join(", ")] : []),
+			...(lengths.length ? [lengths.join(", ")] : []),
+			...(holds.length ? [`holds ${holds.join(" ")}`] : []),
+		].join("; ");
+	});
+	return [`Unaccounted (${hidden.join("+")}): ${unaccounted}`, ...hands].join(
+		"\n",
+	);
 }
 
 function legalChoices(actions: readonly Action[]): string[] {
@@ -214,13 +295,6 @@ export function renderPlayPrompt(
 ): string {
 	const status = boardStatus(board);
 	if (status.phase !== "play") throw new Error("the board is not in play");
-	const completed = status.tricks.map(
-		(trick, index) =>
-			`Trick ${index + 1}: ${trickText(trick)}; won by ${SEAT_NAMES[trick.winner]}`,
-	);
-	const current = status.current.cards.length
-		? `Current trick: ${trickText(status.current)}`
-		: "Current trick: empty; you are leading";
 	const dummy = status.dummy;
 	const dummyExposed = board.cards.length > 0;
 	const knownHands = [
@@ -237,15 +311,13 @@ export function renderPlayPrompt(
 	return renderTemplate(templates.play, {
 		BOARD: String(board.number),
 		VULNERABILITY: VULNERABILITY[board.vulnerability],
-		AUCTION: callsText(board),
+		AUCTION: shortCallsText(board),
 		CONTRACT: contractLabel(contract),
 		DECLARER: `${SEAT_NAMES[contract.declarer]} (${contract.declarer})`,
 		DUMMY: dummy === undefined ? "unknown" : `${SEAT_NAMES[dummy]} (${dummy})`,
 		KNOWN_HANDS: knownHands.join("\n"),
-		COMPLETED_TRICKS: completed.length
-			? completed.join("\n")
-			: "No completed tricks",
-		CURRENT_TRICK: current,
+		TRICKS: shortTricksText(status.tricks, status.current),
+		CARD_KNOWLEDGE: cardKnowledgeText(playKnowledge(board, seat)),
 		SEAT: `${SEAT_NAMES[seat]} (${seat})`,
 		TRICKS_NS: String(status.tricksNS),
 		TRICKS_EW: String(status.tricksEW),
@@ -299,6 +371,7 @@ export function decisionState(
 	const contract = status.contract;
 	const dummy = status.dummy;
 	const dummyVisible = board.cards.length > 0;
+	const knowledge = playKnowledge(board, seat);
 	const trickPlays = (trick: Pick<CompletedTrick, "leader" | "cards">) =>
 		trick.cards.map((card, index) => ({
 			seat: seatAfter(trick.leader, index),
@@ -330,6 +403,18 @@ export function decisionState(
 			plays: trickPlays(status.current),
 		},
 		tricks_won: { NS: status.tricksNS, EW: status.tricksEW },
+		card_knowledge: {
+			unaccounted: Object.fromEntries(
+				SUITS.map((suit) => [suit, suitRanks(knowledge.unaccounted[suit])]),
+			),
+			hands: knowledge.hidden.map((hand) => ({
+				seat: hand.seat,
+				remaining: hand.remaining,
+				voids: hand.voids,
+				lengths: hand.lengths,
+				known: hand.known.map(cardLabel),
+			})),
+		},
 	};
 }
 

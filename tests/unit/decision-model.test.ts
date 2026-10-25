@@ -12,7 +12,7 @@ import {
 	legalActions,
 } from "../../src/bridge/engine";
 import { botModelType, DECISION_BOT_MODELS } from "../../src/protocol";
-import { bidding, DEAL } from "./bridge-fixtures";
+import { bidding, DEAL, playing } from "./bridge-fixtures";
 
 describe("OpenRouter decision models", () => {
 	it("looks up decision API type by model ID", () => {
@@ -147,5 +147,28 @@ describe("OpenRouter decision models", () => {
 		const serialized = JSON.stringify(state);
 		expect(serialized).toContain('"dummy_hand":');
 		expect(serialized).not.toContain("H3");
+	});
+
+	it("gives the play state the card count of the hidden hands", () => {
+		// West shows out of spades in trick 2, so North holds the five spades that East cannot see.
+		const board = playing(
+			bidding(createBoard(1, DEAL), "1S P 4S P P P"),
+			"HJ H4 H3 HA SA S7 S2 D2 SK",
+		);
+		expect(
+			decisionState(board, "E", "play", NODE_PROMPT_TEMPLATES).card_knowledge,
+		).toMatchObject({
+			unaccounted: { S: "QJT98", H: "KQ2", D: "AK543", C: "A8765432" },
+			hands: [
+				{
+					seat: "N",
+					remaining: 10,
+					voids: [],
+					lengths: { S: { min: 5, max: 5 }, C: { min: 0, max: 5 } },
+					known: ["♠Q", "♠J", "♠10", "♠9", "♠8"],
+				},
+				{ seat: "W", remaining: 11, voids: [{ suit: "S", trick: 2 }] },
+			],
+		});
 	});
 });
