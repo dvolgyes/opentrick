@@ -170,7 +170,9 @@ async function run(options: Options): Promise<void> {
 		route.key,
 		meshResult.config,
 		clock,
-		WeriftPeerConnection as unknown as typeof RTCPeerConnection,
+		{
+			rtcPolyfill: WeriftPeerConnection as unknown as typeof RTCPeerConnection,
+		},
 	);
 	const controller = new TableController({
 		identity,

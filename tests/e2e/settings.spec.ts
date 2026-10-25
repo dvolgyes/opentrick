@@ -46,6 +46,11 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Show the network quality",
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
+	const relayChecks = dialog.getByLabel("Check the connection more often");
+	await expect(relayChecks).not.toBeChecked();
+	await expect(relayChecks).toHaveAccessibleDescription(
+		/network connection is unstable/,
+	);
 	// An empty custom model is last, and it does not move.
 	expect((await modelOrder(dialog)).at(-1)).toBe("custom");
 	await expect(
@@ -56,6 +61,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByLabel("Dark").check();
 	await dialog.getByLabel("Frame the player whose turn it is to bid").uncheck();
 	await dialog.getByLabel("Show the network quality").uncheck();
+	await relayChecks.check();
 	const firstModel = (await modelOrder(dialog))[0];
 	await dialog
 		.locator(".model-priority-list li")
@@ -81,6 +87,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.play-turn-frame",
 		"opentrick.settings.play-turn-text",
 		"opentrick.settings.points",
+		"opentrick.settings.relay-checks",
 		"opentrick.settings.theme",
 	]);
 
@@ -96,6 +103,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		dialog.getByLabel("Frame the player whose turn it is to play"),
 	).toBeChecked();
 	await expect(dialog.getByLabel("Show the network quality")).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Check the connection more often"),
+	).toBeChecked();
 	expect(await modelOrder(dialog)).toEqual(order);
 
 	// Cancel keeps the stored choices.

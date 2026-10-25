@@ -273,6 +273,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Save settings": "Einstellungen speichern",
 		Settings: "Einstellungen",
 		"Turn and network display": "Anzeige von Zug und Netzwerk",
+		Connection: "Verbindung",
+		"Check the connection more often": "Die Verbindung öfter prüfen",
+		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
+			"Schalte dies ein, wenn deine Netzwerkverbindung instabil ist, zum Beispiel im Zug, bei schwachen mobilen Daten oder bei WLAN mit Aussetzern. Die Seite erkennt dann eine verlorene Verbindung früher und sendet etwas mehr Nachrichten an die öffentlichen Relays.",
 		Bots: "Bots",
 		"Enter an OpenRouter model id, for example vendor/model.":
 			"Gib eine OpenRouter-Modell-ID ein, zum Beispiel vendor/model.",
@@ -815,6 +819,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Save settings": "Beállítások mentése",
 		Settings: "Beállítások",
 		"Turn and network display": "Soron következő és hálózat kijelzése",
+		Connection: "Kapcsolat",
+		"Check the connection more often": "A kapcsolat gyakoribb ellenőrzése",
+		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
+			"Kapcsold be, ha a hálózati kapcsolatod instabil, például vonaton, gyenge mobilneten vagy akadozó Wi-Fi-n. Az oldal így hamarabb észreveszi a megszakadt kapcsolatot, és valamivel több üzenetet küld a nyilvános továbbítóknak.",
 		Bots: "Botok",
 		"Enter an OpenRouter model id, for example vendor/model.":
 			"Adj meg egy OpenRouter modellazonosítót, például vendor/model.",
@@ -1276,6 +1284,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Save settings": "Lagre innstillinger",
 		Settings: "Innstillinger",
 		"Turn and network display": "Visning av tur og nettverk",
+		Connection: "Tilkobling",
+		"Check the connection more often": "Sjekk tilkoblingen oftere",
+		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
+			"Slå på dette hvis nettverkstilkoblingen er ustabil, for eksempel på tog, med svak mobildata eller med Wi-Fi som faller ut. Siden oppdager da en tapt tilkobling raskere, og sender litt flere meldinger til de offentlige reléene.",
 		Bots: "Boter",
 		"Enter an OpenRouter model id, for example vendor/model.":
 			"Skriv inn en OpenRouter-modell-ID, for eksempel vendor/model.",

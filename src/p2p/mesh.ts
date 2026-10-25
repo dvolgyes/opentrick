@@ -17,6 +17,7 @@ import {
 	TABLE_OFFERS,
 } from "./limits";
 import type { Clock, Send } from "./ports";
+import { type CheckRelay, RelayChecks } from "./relay-check";
 import { peerRendezvous, Rendezvous } from "./rendezvous";
 import type {
 	DataPayload,
@@ -113,6 +114,11 @@ export interface MeshDeps {
 	readonly watchNetwork?: (onChange: () => void) => () => void;
 	/** Asks one STUN server for this page's public address; a mesh without it does not check. */
 	readonly probeStun?: ProbeStun;
+	/** The frequent checks of the Nostr relays, while `on()` (a setting) is true; a mesh without them does not check. */
+	readonly relayChecks?: {
+		readonly on: () => boolean;
+		readonly check: CheckRelay;
+	};
 	readonly clock: Clock;
 }
 
@@ -236,6 +242,7 @@ export class Mesh implements Send {
 	/** Since when the mesh has listened to each relay's socket, or when it last replaced the socket. */
 	readonly #watchedAt = new Map<string, number>();
 	readonly #stun: StunChecks | null;
+	readonly #relayChecks: RelayChecks | null;
 	readonly #unwatchNetwork: () => void;
 
 	constructor(deps: MeshDeps, handlers: MeshHandlers) {
@@ -268,6 +275,10 @@ export class Mesh implements Send {
 						this.#handlers.change(),
 					);
 		this.#stun?.tick(deps.clock.monotonic(), true);
+		this.#relayChecks =
+			deps.relayChecks === undefined
+				? null
+				: new RelayChecks(deps.relayChecks.check);
 		this.#unwatchNetwork =
 			deps.watchNetwork?.(() => this.#networkChanged()) ?? (() => {});
 	}
@@ -606,10 +617,12 @@ export class Mesh implements Send {
 
 	/**
 	 * A socket that is open or opening, and silent for its kind's limit, is replaced; a closed one retries by itself. A
-	 * relay that rests the page sends nothing by design, so its silence counts from the end of the rest.
+	 * relay that rests the page sends nothing by design, so its silence counts from the end of the rest. With the relay
+	 * checks on, an open Nostr socket is also replaced when its relay does not answer a check (src/p2p/relay-check.ts).
 	 */
 	#replaceSilentRelays(now: number): void {
 		const sockets = this.#deps.relaySockets();
+		const checksOn = this.#deps.relayChecks?.on() ?? false;
 		for (const { kind, url } of this.#configuredRelays()) {
 			const key = `${kind} ${url}`;
 			const state = sockets[kind][url]?.readyState;
@@ -622,8 +635,12 @@ export class Mesh implements Send {
 				this.#heardAt.get(key) ?? Number.NEGATIVE_INFINITY,
 				this.#watchedAt.get(key) ?? now,
 			);
+			const unanswered =
+				kind === "nostr" &&
+				state === OPEN &&
+				this.#relayChecks?.tick(url, now, since, checksOn) === true;
 			const limit = kind === "nostr" ? NOSTR_SILENT_MS : RELAY_SILENT_MS;
-			if (now - since < limit) continue;
+			if (!unanswered && now - since < limit) continue;
 			this.#watchedAt.set(key, now);
 			this.#deps.reconnectRelay(kind, url);
 		}

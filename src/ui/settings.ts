@@ -21,6 +21,8 @@ export interface Settings {
 	readonly bidTurnText: boolean;
 	readonly playTurnText: boolean;
 	readonly networkQuality: boolean;
+	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
+	readonly relayChecks: boolean;
 	/** An OpenRouter model id, or "" for none. */
 	readonly customModel: string;
 	/** Each built-in model and the custom slot once; the slot is last while the custom model is "". */
@@ -35,6 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	bidTurnText: true,
 	playTurnText: true,
 	networkQuality: true,
+	relayChecks: false,
 	customModel: "",
 	modelOrder: [...BOT_MODELS, CUSTOM_MODEL_SLOT],
 };
@@ -46,6 +49,7 @@ const FLAGS = {
 	bidTurnText: "bid-turn-text",
 	playTurnText: "play-turn-text",
 	networkQuality: "network-quality",
+	relayChecks: "relay-checks",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
 const MODEL_ID = /^~?[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9._~:-]+$/;

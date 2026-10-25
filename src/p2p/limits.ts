@@ -82,6 +82,12 @@ export const RELAY_SILENT_MS = 240_000;
  */
 export const NOSTR_SILENT_MS = 90_000;
 /**
+ * With the frequent relay checks on (Settings), a Nostr relay that sends nothing for this long gets a check
+ * (src/p2p/relay-check.ts), and a relay that does not answer in RELAY_CHECK_ANSWER_MS is replaced.
+ */
+export const RELAY_CHECK_MS = 30_000;
+export const RELAY_CHECK_ANSWER_MS = 10_000;
+/**
  * Offers in each announce of the table room (src/p2p/torrent.ts). A tracker gives each offer to one peer, so a page
  * of a four-seat table reaches the other three in one announce, not one of them every 10 s. A pair room has two
  * pages and keeps Trystero's one offer.

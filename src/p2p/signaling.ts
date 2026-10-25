@@ -5,6 +5,7 @@ import {
 	selfId,
 } from "@trystero-p2p/core";
 import {
+	checkNostrRelay,
 	getNostrSockets,
 	nostrAdapter,
 	nostrRelayResting,
@@ -144,6 +145,9 @@ export const reconnectRelay = (kind: RelayKind, url: string): void =>
 /** Whether the page sends nothing to a relay for a time, after its rate limit; only a Nostr relay rests. */
 export const relayResting = (kind: RelayKind, url: string): boolean =>
 	kind === "nostr" && nostrRelayResting(url);
+
+/** Checks that a Nostr relay answers (src/p2p/relay-check.ts). */
+export const checkRelay = checkNostrRelay;
 
 export type * from "@trystero-p2p/core";
 

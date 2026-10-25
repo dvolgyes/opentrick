@@ -80,6 +80,12 @@ Transport:
   A relay socket that looks open but sends nothing for too long is replaced, because after a network change a socket can stay half-open.
   The limit is 90 s for a Nostr relay, which answers each announcement (every 60 s), and 240 s for a tracker, which asked for an announce every 120 s to 180 s in a live check (October 2026).
   A Nostr relay that rate-limits the page gets no announcement for a time, so its silence counts only from the end of that rest.
+- Frequent relay checks (a setting, off by default, for an unstable network): every page, host or guest, checks each open Nostr relay that sent nothing for 30 s.
+  The check asks for one event with a random ID, which cannot exist, so a live relay answers at once with EOSE; the page then closes the subscription.
+  A relay that does not answer in 10 s, and sends nothing else in that time, gets a new socket, so a dead socket is found after about 40 s instead of 90 s.
+  A relay that refuses a check (CLOSED) is not checked again while the page is open, and a relay that rests the page gets no check.
+  Trackers get no check: the tracker protocol has no request that does not announce the page.
+  In a live check (October 2026), the five default Nostr relays answered the check in 32–115 ms.
 - The ICE servers are only the configured STUN servers (`VITE_STUN_URLS`); TURN URLs are refused.
 
 State:
@@ -135,6 +141,7 @@ Call signaling:
   A network that blocks one kind of relay leaves the other kind.
 - A relay can send forged Nostr events or tracker messages; they cannot connect without the room password, but they can cost a page work.
 - A tracker that asks for an announce interval above 240 s gets its socket replaced once per silent period.
+- With the frequent relay checks on, a page sends at most one extra request and one CLOSE to each Nostr relay per 30 s of silence; a relay that applies a stricter rate limit can refuse them, and the page then stops the checks of that relay.
 - Without TURN, a player without a direct path to the host cannot act.
 - Residual risks of the election, accepted by the owner as the default D1:
   - Two browsers cut off together, or one browser and a newcomer, can start a new term.

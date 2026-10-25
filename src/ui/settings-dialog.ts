@@ -115,6 +115,9 @@ export function settingsDialog(
 			el("input", { attrs: { type: "checkbox" } }),
 		]),
 	) as Record<keyof typeof FLAG_LABELS, HTMLInputElement>;
+	const relayChecks = el("input", {
+		attrs: { type: "checkbox", "aria-describedby": "settings-relay-checks" },
+	});
 	const apiKey = el("input", {
 		attrs: {
 			type: "password",
@@ -226,6 +229,22 @@ export function settingsDialog(
 		el(
 			"fieldset",
 			{},
+			el("legend", {}, t("Connection")),
+			el("label", {}, relayChecks, ` ${t("Check the connection more often")}`),
+			el(
+				"p",
+				{
+					className: "settings-hint",
+					attrs: { id: "settings-relay-checks" },
+				},
+				t(
+					"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.",
+				),
+			),
+		),
+		el(
+			"fieldset",
+			{},
 			el("legend", {}, t("Bots")),
 			el(
 				"label",
@@ -282,6 +301,7 @@ export function settingsDialog(
 			bidTurnText: flags.bidTurnText.checked,
 			playTurnText: flags.playTurnText.checked,
 			networkQuality: flags.networkQuality.checked,
+			relayChecks: relayChecks.checked,
 			customModel: model,
 			modelOrder: resolveModelOrder(order, model),
 		};
@@ -340,6 +360,7 @@ export function settingsDialog(
 				FLAG_LABELS,
 			) as (keyof typeof FLAG_LABELS)[])
 				flags[field].checked = settings[field];
+			relayChecks.checked = settings.relayChecks;
 			apiKey.value = readHostApiKey(deps.browser);
 			customModel.value = settings.customModel;
 			shownModel = settings.customModel;

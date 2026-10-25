@@ -13,6 +13,7 @@ import { trysteroMesh } from "./p2p/trystero";
 import { guardedStorage, SeatMemory, webSeatLocks } from "./session";
 import { startApp } from "./ui/app";
 import type { CallSupport } from "./ui/deps";
+import { readSettings } from "./ui/settings";
 
 /** Set by vite.config.ts at build time. */
 declare const __OPENTRICK_BUILD__: BuildInfo;
@@ -226,7 +227,10 @@ async function main(root: HTMLElement): Promise<void> {
 		memory,
 		browser,
 		clock,
-		openMesh: (tableId, key) => trysteroMesh(tableId, key, config, clock),
+		openMesh: (tableId, key) =>
+			trysteroMesh(tableId, key, config, clock, {
+				relayChecks: () => readSettings(browser).relayChecks,
+			}),
 		call: callSupport(import.meta.env.VITE_STUN_URLS),
 		pageUrl: () => location.href,
 		persist: () => {

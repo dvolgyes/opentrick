@@ -52,6 +52,7 @@ import {
 	toHex,
 	toJson,
 } from "@trystero-p2p/core";
+import type { RelayCheckAnswer } from "./relay-check";
 import { type RelayClient, relaySocket } from "./relay-socket";
 
 const relayManager = createRelayManager<RelayClient>((client) => client.socket);
@@ -71,6 +72,11 @@ const relayBackoffs = new WeakMap<
 >();
 const announcementMessages = relayManager.scoped<string>();
 const retiredRelays = new WeakSet<RelayClient>();
+/** The checks that wait for a relay's answer, by subscription ID. */
+const checks = new Map<
+	string,
+	{ client: RelayClient; finish: (answer: RelayCheckAnswer) => void }
+>();
 
 /** Not exported by @trystero-p2p/core 0.26.0 (src/types.ts). */
 type AnnounceResult =
@@ -403,6 +409,16 @@ const handleRelayMessage = (
 ): void => {
 	const message = parseRelayMessage(raw);
 	if (message === undefined) return;
+	// The answer to a check (`checkNostrRelay`) is not about a subscription of the rooms.
+	if (
+		(message.type === "EOSE" || message.type === "CLOSED") &&
+		checks.get(message.subId)?.client === client
+	) {
+		checks
+			.get(message.subId)
+			?.finish(message.type === "EOSE" ? "answered" : "refused");
+		return;
+	}
 	if (message.type === eventMsgType) {
 		const batcher = batchers[client.url];
 		if (batcher?.subIds.includes(message.subId))
@@ -639,4 +655,41 @@ export const reconnectNostrRelay = (url: string): void =>
 export const nostrRelayResting = (url: string): boolean => {
 	const client = clients[url];
 	return client !== undefined && getRelayBackoffMs(client) > 0;
+};
+
+/**
+ * Asks a Nostr relay for one event whose random id cannot exist, so a live relay answers at once with EOSE and no
+ * event; the page then closes the subscription. CLOSED is a refusal, for example a rate limit. A relay that rests the
+ * page, a socket that is not open, and an unknown relay get no message.
+ */
+export const checkNostrRelay = (
+	url: string,
+	timeoutMs: number,
+): Promise<RelayCheckAnswer> => {
+	const client = clients[url];
+	if (
+		client === undefined ||
+		retiredRelays.has(client) ||
+		client.isClosed ||
+		client.socket.readyState !== 1 ||
+		getRelayBackoffMs(client) > 0
+	)
+		return Promise.resolve("not-sent");
+	const subId = genId(32);
+	const id = toHex(crypto.getRandomValues(new Uint8Array(32)));
+	const { socket } = client;
+	return new Promise((resolve) => {
+		const finish = (answer: RelayCheckAnswer) => {
+			if (checks.get(subId)?.client !== client) return;
+			checks.delete(subId);
+			clearTimeout(timer);
+			// A relay drops its own side of a subscription that it refused, and a new socket never had it.
+			if (answer !== "refused" && client.socket === socket)
+				client.send(toJson(["CLOSE", subId]));
+			resolve(answer);
+		};
+		const timer = setTimeout(() => finish("silent"), timeoutMs);
+		checks.set(subId, { client, finish });
+		client.send(toJson(["REQ", subId, { ids: [id], limit: 1 }]));
+	});
 };

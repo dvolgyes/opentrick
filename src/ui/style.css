@@ -1113,6 +1113,12 @@ main:has(> .room) {
 	margin: 0;
 }
 
+.settings-dialog .settings-hint {
+	margin: 0;
+	font-size: 0.85em;
+	color: var(--muted);
+}
+
 .settings-dialog .settings-row {
 	display: flex;
 	flex-wrap: wrap;

@@ -1,8 +1,10 @@
 import type { MeshConfig } from "./config";
+import { RELAY_CHECK_ANSWER_MS } from "./limits";
 import { Mesh, type MeshHandlers } from "./mesh";
 import { watchNetworkChanges } from "./network-watch";
 import type { Clock } from "./ports";
 import {
+	checkRelay,
 	joinRoom,
 	reconnectRelay,
 	relayResting,
@@ -11,13 +13,20 @@ import {
 } from "./signaling";
 import { stunProbe } from "./stun-probe";
 
+export interface TrysteroMeshOptions {
+	/** A Node-compatible WebRTC implementation; browsers use their global constructor. */
+	readonly rtcPolyfill?: typeof RTCPeerConnection;
+	/** Whether the frequent relay checks are on (a setting), asked at each tick; without it they are off. */
+	readonly relayChecks?: () => boolean;
+}
+
 /** The production mesh: the real Trystero bundle over the configured trackers and Nostr relays. */
 export function trysteroMesh(
 	tableId: string,
 	key: string,
 	config: MeshConfig,
 	clock: Clock,
-	rtcPolyfill?: typeof RTCPeerConnection,
+	{ rtcPolyfill, relayChecks }: TrysteroMeshOptions = {},
 ): (handlers: MeshHandlers) => Mesh {
 	return (handlers) =>
 		new Mesh(
@@ -47,6 +56,14 @@ export function trysteroMesh(
 								),
 						}),
 				probeStun: stunProbe(rtcPolyfill ?? RTCPeerConnection),
+				...(relayChecks === undefined
+					? {}
+					: {
+							relayChecks: {
+								on: relayChecks,
+								check: (url: string) => checkRelay(url, RELAY_CHECK_ANSWER_MS),
+							},
+						}),
 				clock,
 			},
 			handlers,

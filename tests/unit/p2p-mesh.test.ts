@@ -3,6 +3,8 @@ import { rtcConfiguration } from "../../src/call/ice";
 import {
 	NOSTR_SILENT_MS,
 	REJOIN_MS,
+	RELAY_CHECK_ANSWER_MS,
+	RELAY_CHECK_MS,
 	RELAY_SILENT_MS,
 	TABLE_OFFERS,
 } from "../../src/p2p/limits";
@@ -13,6 +15,7 @@ import {
 	type MeshRoom,
 	type RelaySocket,
 } from "../../src/p2p/mesh";
+import type { RelayCheckAnswer } from "../../src/p2p/relay-check";
 import { seatRendezvous } from "../../src/p2p/rendezvous";
 import type { SignalingRoomConfig } from "../../src/p2p/signaling";
 import type { ProbeStun, StunAnswer } from "../../src/p2p/stun-probe";
@@ -116,9 +119,18 @@ const B = "wss://b.test";
 const C = "wss://c.test";
 const N = "wss://n.test";
 
+interface RelayCheckFake {
+	on: boolean;
+	readonly asked: {
+		readonly url: string;
+		readonly answer: (answer: RelayCheckAnswer) => void;
+	}[];
+}
+
 /**
  * A mesh over the given trackers and Nostr relays, with sockets, a clock, a network and a STUN probe that the test
- * controls. `reconnects` records each socket that the mesh replaces, as "kind url".
+ * controls. `reconnects` records each socket that the mesh replaces, as "kind url". With `checks`, the mesh has the
+ * frequent relay checks, turned on or off by `checks.on`; each check is in `checks.asked` until the test answers it.
  */
 function statusMesh(
 	trackers: readonly string[],
@@ -126,6 +138,7 @@ function statusMesh(
 		urls: [],
 	},
 	nostrRelays: readonly string[] = [],
+	checks?: RelayCheckFake,
 ) {
 	const sockets: Record<string, FakeSocket> = {};
 	const nostrSockets: Record<string, FakeSocket> = {};
@@ -156,6 +169,17 @@ function statusMesh(
 			},
 			clock: { monotonic: () => clock.now, wall: () => clock.now },
 			...(stun.probe === undefined ? {} : { probeStun: stun.probe }),
+			...(checks === undefined
+				? {}
+				: {
+						relayChecks: {
+							on: () => checks.on,
+							check: (url: string) =>
+								new Promise<RelayCheckAnswer>((resolve) =>
+									checks.asked.push({ url, answer: resolve }),
+								),
+						},
+					}),
 		},
 		handlers,
 	);
@@ -344,6 +368,111 @@ describe("the mesh's recovery of its relays", () => {
 		clock.now = 4 * NOSTR_SILENT_MS;
 		mesh.tick();
 		expect(reconnects).toEqual([`nostr ${N}`]);
+	});
+
+	describe("with the frequent relay checks", () => {
+		/** Lets the mesh take a check's answer. */
+		const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+		function checkedMesh(on: boolean) {
+			const checks: RelayCheckFake = { on, asked: [] };
+			const made = statusMesh([A], undefined, [N], checks);
+			made.sockets[A] = new FakeSocket();
+			made.nostrSockets[N] = new FakeSocket();
+			made.mesh.tick();
+			return { ...made, checks };
+		}
+
+		it("sends no check while the setting is off", () => {
+			const { mesh, clock, reconnects, checks } = checkedMesh(false);
+			clock.now = NOSTR_SILENT_MS - 1;
+			mesh.tick();
+			expect(checks.asked).toEqual([]);
+			expect(reconnects).toEqual([]);
+			clock.now = NOSTR_SILENT_MS;
+			mesh.tick();
+			expect(reconnects).toEqual([`nostr ${N}`]);
+		});
+
+		it("checks a Nostr relay silent for RELAY_CHECK_MS, once at a time, and replaces it when the check gets no answer", async () => {
+			const { mesh, clock, reconnects, checks } = checkedMesh(true);
+			clock.now = RELAY_CHECK_MS - 1;
+			mesh.tick();
+			expect(checks.asked).toEqual([]);
+			clock.now = RELAY_CHECK_MS;
+			mesh.tick();
+			clock.now = RELAY_CHECK_MS + 5_000;
+			mesh.tick();
+			expect(checks.asked.map((check) => check.url)).toEqual([N]);
+			checks.asked[0]?.answer("silent");
+			await settle();
+			clock.now = RELAY_CHECK_MS + RELAY_CHECK_ANSWER_MS;
+			mesh.tick();
+			expect(reconnects).toEqual([`nostr ${N}`]);
+			// The new socket gets its first check after RELAY_CHECK_MS of its own silence.
+			clock.now += RELAY_CHECK_MS - 1;
+			mesh.tick();
+			expect(checks.asked).toHaveLength(1);
+			clock.now += 1;
+			mesh.tick();
+			expect(checks.asked).toHaveLength(2);
+		});
+
+		it("keeps a relay that answers, and checks it again after the next silence", async () => {
+			const { mesh, nostrSockets, clock, reconnects, checks } =
+				checkedMesh(true);
+			clock.now = RELAY_CHECK_MS;
+			mesh.tick();
+			clock.now = RELAY_CHECK_MS + 100;
+			nostrSockets[N]?.message();
+			checks.asked[0]?.answer("answered");
+			await settle();
+			mesh.tick();
+			clock.now = 2 * RELAY_CHECK_MS + 99;
+			mesh.tick();
+			expect(checks.asked).toHaveLength(1);
+			clock.now = 2 * RELAY_CHECK_MS + 100;
+			mesh.tick();
+			expect(checks.asked).toHaveLength(2);
+			expect(reconnects).toEqual([]);
+		});
+
+		it("keeps a relay whose check got no answer when the relay sent something after the check", async () => {
+			const { mesh, nostrSockets, clock, reconnects, checks } =
+				checkedMesh(true);
+			clock.now = RELAY_CHECK_MS;
+			mesh.tick();
+			clock.now = RELAY_CHECK_MS + 1_000;
+			nostrSockets[N]?.message();
+			checks.asked[0]?.answer("silent");
+			await settle();
+			clock.now = RELAY_CHECK_MS + RELAY_CHECK_ANSWER_MS;
+			mesh.tick();
+			expect(reconnects).toEqual([]);
+		});
+
+		it("does not check again a relay that refused a check, and keeps NOSTR_SILENT_MS for it", async () => {
+			const { mesh, clock, reconnects, checks } = checkedMesh(true);
+			clock.now = RELAY_CHECK_MS;
+			mesh.tick();
+			checks.asked[0]?.answer("refused");
+			await settle();
+			clock.now = NOSTR_SILENT_MS - 1;
+			mesh.tick();
+			expect(checks.asked).toHaveLength(1);
+			expect(reconnects).toEqual([]);
+			clock.now = NOSTR_SILENT_MS;
+			mesh.tick();
+			expect(reconnects).toEqual([`nostr ${N}`]);
+		});
+
+		it("does not check a tracker, or a relay that rests the page", () => {
+			const { mesh, clock, resting, checks } = checkedMesh(true);
+			resting.add(`nostr ${N}`);
+			clock.now = 2 * RELAY_CHECK_MS;
+			mesh.tick();
+			expect(checks.asked).toEqual([]);
+		});
 	});
 
 	it("leaves a closed socket to its own retries", () => {

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { RTCPeerConnection as WeriftPeerConnection } from "werift";
 import { APP_ID } from "../../src/p2p/config";
 import {
+	checkRelay,
 	joinRoom,
 	type Room,
 	reconnectRelay,
@@ -303,6 +304,89 @@ describe("the signaling strategy over Nostr relays only", () => {
 		);
 		expect(relayResting("nostr", relay)).toBe(true);
 		expect(relayResting("tracker", relay)).toBe(false);
+	}, 20_000);
+});
+
+/** The page's messages of `type` to the relay after the first `from` messages. */
+function sentOfType(url: string, type: string, from = 0): unknown[][] {
+	return sent(url)
+		.slice(from)
+		.filter(isArray)
+		.filter((message) => message[0] === type);
+}
+
+/** A room on one fake Nostr relay that has subscribed and announced; resolves to the count of sent messages. */
+async function announcedOn(relay: string): Promise<number> {
+	vi.stubGlobal("WebSocket", FakeRelay);
+	join(relay.replace("wss://", ""), { nostr: [relay] });
+	await expect
+		.poll(() => announcements(relay).length, { timeout: 10_000 })
+		.toBeGreaterThan(0);
+	return sent(relay).length;
+}
+
+describe("the check of a Nostr relay", () => {
+	it("asks for one event that cannot exist, and closes the subscription after the relay's answer", async () => {
+		const relay = "wss://nostr-check.test";
+		const before = await announcedOn(relay);
+		const answer = checkRelay(relay, 1_000);
+		const [request] = sentOfType(relay, "REQ", before);
+		const subId = String(request?.[1]);
+		const filter = request?.[2] as { ids: string[]; limit: number };
+		expect(Object.keys(filter).sort()).toEqual(["ids", "limit"]);
+		expect(filter.ids).toHaveLength(1);
+		expect(filter.ids[0]).toMatch(/^[0-9a-f]{64}$/);
+		expect(filter.limit).toBe(1);
+		expect(sentOfType(relay, "REQ", before)).toHaveLength(1);
+		socket(relay)?.deliver(JSON.stringify(["EOSE", subId]));
+		await expect(answer).resolves.toBe("answered");
+		expect(sentOfType(relay, "CLOSE", before)).toEqual([["CLOSE", subId]]);
+	}, 20_000);
+
+	it("reports a refusal, and does not subscribe again or rest the relay because of it", async () => {
+		const relay = "wss://nostr-check-refused.test";
+		const before = await announcedOn(relay);
+		const answer = checkRelay(relay, 1_000);
+		const subId = String(sentOfType(relay, "REQ", before)[0]?.[1]);
+		socket(relay)?.deliver(
+			JSON.stringify(["CLOSED", subId, "rate-limited: slow down"]),
+		);
+		await expect(answer).resolves.toBe("refused");
+		// The adapter subscribes again after a CLOSED of its own subscription, after about 5 s.
+		await new Promise((resolve) => setTimeout(resolve, 6_000));
+		expect(sentOfType(relay, "REQ", before)).toHaveLength(1);
+		expect(sentOfType(relay, "CLOSE", before)).toEqual([]);
+		expect(relayResting("nostr", relay)).toBe(false);
+	}, 20_000);
+
+	it("reports a relay that does not answer in time, and closes the subscription", async () => {
+		const relay = "wss://nostr-check-silent.test";
+		const before = await announcedOn(relay);
+		await expect(checkRelay(relay, 100)).resolves.toBe("silent");
+		const subId = sentOfType(relay, "REQ", before)[0]?.[1];
+		expect(sentOfType(relay, "CLOSE", before)).toEqual([["CLOSE", subId]]);
+	}, 20_000);
+
+	it("sends nothing to a relay that rests the page, or to an unknown relay", async () => {
+		const relay = "wss://nostr-check-resting.test";
+		const before = await announcedOn(relay);
+		const announcement = announcements(relay)[0] as NostrEvent;
+		socket(relay)?.deliver(
+			JSON.stringify(["OK", announcement.id, false, "rate-limited: slow down"]),
+		);
+		await expect(checkRelay(relay, 1_000)).resolves.toBe("not-sent");
+		await expect(checkRelay("wss://unknown.test", 1_000)).resolves.toBe(
+			"not-sent",
+		);
+		expect(sent(relay).length).toBe(before);
+	}, 20_000);
+
+	it("sends nothing to a socket that is not open", async () => {
+		const relay = "wss://nostr-check-closed.test";
+		const before = await announcedOn(relay);
+		socket(relay)?.close();
+		await expect(checkRelay(relay, 1_000)).resolves.toBe("not-sent");
+		expect(sent(relay).length).toBe(before);
 	}, 20_000);
 });
 
