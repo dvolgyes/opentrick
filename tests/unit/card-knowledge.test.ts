@@ -186,5 +186,6 @@ describe("card knowledge", () => {
 				board = result.board;
 			}
 		}
-	});
+		// About 3 s alone; the pre-commit hook runs it beside the browser tests.
+	}, 30_000);
 });
