@@ -1141,6 +1141,11 @@ main:has(> .room) {
 	list-style: none;
 }
 
+.points-lines .strain-H,
+.points-lines .strain-D {
+	color: var(--red-suit);
+}
+
 /* The guide text scrolls; the red Close button stays below it, inside the screen. */
 .guide-dialog {
 	box-sizing: border-box;

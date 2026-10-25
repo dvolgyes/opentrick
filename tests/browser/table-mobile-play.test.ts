@@ -2110,6 +2110,23 @@ describe("hand points", () => {
 					(line) => line.textContent,
 				),
 			).toEqual(LINES);
+			// Each suit symbol has the colour of its suit: red hearts and diamonds, as on the cards.
+			const red = document.createElement("span");
+			red.style.color = "var(--red-suit)";
+			points?.append(red);
+			const marks = [...(points?.querySelectorAll("li") ?? [])].flatMap(
+				(line) =>
+					[...line.querySelectorAll("span")].map((mark) => ({
+						text: mark.textContent,
+						red: getComputedStyle(mark).color === getComputedStyle(red).color,
+					})),
+			);
+			red.remove();
+			expect(marks).toEqual([
+				{ text: "♠", red: false },
+				{ text: "♥", red: true },
+				{ text: "♥", red: true },
+			]);
 			const buttons = [...(points?.querySelectorAll("button") ?? [])];
 			expect(buttons.map((ok) => ok.textContent)).toEqual(["OK"]);
 			buttons[0]?.click();

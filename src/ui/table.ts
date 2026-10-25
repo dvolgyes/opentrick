@@ -164,6 +164,19 @@ function contractBid(header: ContractHeader): HTMLElement {
 	);
 }
 
+/** A text such as "+2 singleton ♦ (5431)", with each suit symbol in its own mark in the suit's colour. */
+function suitMarked(text: string): (string | HTMLElement)[] {
+	return text
+		.split(/([♠♥♦♣])/u)
+		.filter((part) => part !== "")
+		.map((part) => {
+			const strain = part.length === 1 ? MARK_STRAIN.get(part) : undefined;
+			return strain === undefined
+				? part
+				: el("span", { className: `suit-mark strain-${strain}` }, part);
+		});
+}
+
 const WAITING_TEXT = "WAITING";
 const CONNECTING_TEXT = "CONNECTING TO HOST";
 
@@ -909,7 +922,7 @@ export function tableSection(
 				() => {
 					pointsTitle.textContent = text;
 					pointsLines.replaceChildren(
-						...lines.map((line) => el("li", {}, line)),
+						...lines.map((line) => el("li", {}, ...suitMarked(line))),
 					);
 					if (!pointsDialog.open) pointsDialog.showModal();
 				},
