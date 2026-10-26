@@ -1162,8 +1162,13 @@ export class HostEngine {
 		this.#markRoster();
 	}
 
-	/** The seat's bound peer sent a message within HOST_LOST_MS. */
+	/**
+	 * The seat's bound peer sent a message within HOST_LOST_MS. A bot of this host is always heard: the browser can run
+	 * the timers of a hidden tab only once a minute, so the tick does not keep the bot's time fresh.
+	 */
 	#heard(seat: Seat, now = this.#deps.clock.monotonic()): boolean {
+		if (this.#localBots.has(seat) && this.#bindings.has(this.#localPeer(seat)))
+			return true;
 		const seen = this.#seen.get(seat);
 		return seen !== undefined && now - seen < HOST_LOST_MS;
 	}
@@ -1243,6 +1248,11 @@ export class HostEngine {
 					available: holder !== null && this.#available(table, seat, holder),
 					online: this.#online(table, seat),
 					mine: holder !== null && row.holder === holder,
+					...(seat === this.#deps.log.seat
+						? { host: true as const }
+						: this.#localBots.has(seat)
+							? { bot: true as const }
+							: {}),
 				};
 			}),
 		};

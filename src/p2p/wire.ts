@@ -96,6 +96,10 @@ export interface LobbySeat {
 	readonly available: boolean;
 	readonly online: boolean;
 	readonly mine: boolean;
+	/** The seat of the host that sends the lobby. An older host leaves the mark out. */
+	readonly host?: true;
+	/** A robot of the host plays the seat. An older host leaves the mark out. */
+	readonly bot?: true;
 }
 
 export interface Lobby {
@@ -600,16 +604,25 @@ function parseRosterSeat(item: JsonObject): RosterSeat | undefined {
 }
 
 function parseLobbySeat(item: JsonObject): LobbySeat | undefined {
-	const { seat, available, online, mine } = item;
+	const { seat, available, online, mine, host, bot } = item;
 	if (
 		!isSeat(seat) ||
 		typeof available !== "boolean" ||
 		typeof online !== "boolean" ||
-		typeof mine !== "boolean"
+		typeof mine !== "boolean" ||
+		(host !== undefined && host !== true) ||
+		(bot !== undefined && bot !== true)
 	) {
 		return undefined;
 	}
-	return { seat, available, online, mine };
+	return {
+		seat,
+		available,
+		online,
+		mine,
+		...(host === true ? { host } : {}),
+		...(bot === true ? { bot } : {}),
+	};
 }
 
 /** Bindings are unique per peer and per seat, and name the seat's current holder generation. */

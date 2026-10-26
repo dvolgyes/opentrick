@@ -2,6 +2,7 @@
 
 Status: accepted (2026-10-19).
 Room URL setup and post-expiry bootstrap are amended by [ADR 0005](0005-reusable-room-link-bootstrap.md).
+The host election is amended by [ADR 0007](0007-host-priority-by-link-seat.md): the host seat of the setup link orders the pages, and two tables of one link merge.
 
 ## Context
 
@@ -126,6 +127,9 @@ State:
 Host election (a pure reducer, `src/p2p/election.ts`):
 
 - Every page sends a beat every 10 s; a host counts as offline 20 s after its last beat.
+- A follower's beat reports its host and how long ago it heard that host.
+  A page counts such a report only while that time plus the age of the beat is less than 20 s.
+  A page that hears its host sends its beat at once, so a report is at most about one beat period old.
 - The button shows after 10 s without a host.
   It is enabled only when the page holds a seat, stores the table in IndexedDB, and a **witness** is connected: another browser at the table.
 - At 30 s plus 1.5 s per rank, an eligible page with a witness volunteers automatically.
@@ -134,14 +138,16 @@ Host election (a pure reducer, `src/p2p/election.ts`):
 - Tiebreak: the higher term wins; for equal terms, the lower tag (holder and seat) wins; for equal tags, the higher incarnation wins.
   The entries of the losing host that the winner does not have are undone, and their senders see "Undone after a host change".
 - The creator hosts term 1 at once, and a host that reloads resumes its own term without a witness.
+- Between pages whose links name the same host seat, ADR 0007 adds rules before the tiebreak: the order of priority from that seat, the handover to a page with a higher priority (rule 12), the merge of two tables by entries and then priority (rule 13), and the page that seeds (rule 14).
 
 Presence (owner requirement R4):
 
 - A seat is present when its page is bound at the current seat generation, is connected to the host, and the host heard from it in the last 20 s, or when it is the host's own seat.
   The 20 s rule is necessary because a frozen page keeps its WebRTC link.
-- The first deal needs all four seats (a bot seat is present).
-  After it, a deal, a bid or a card needs no other seat: only the seat to act sends a bid or a card, so the others play on while a player who is not to act is away, and the game stops only while the seat to act is away (owner decision, October 2026; before it, a deal and a bid needed all four seats and a card all seats except dummy).
-  The host checks the first deal in the bridge module and refuses with a reason such as "Waiting for South to come back"; the page disables the controls and shows the same text, and it shows that text too while the seat to act is away.
+- Each deal needs all four seats (a bot seat is present), so the bidding never starts at a table with an empty seat (owner decision, 2026-10-26; before it, only the first deal needed all four seats).
+  A reset while a seat is away keeps no board, and the first deal waits for all four seats.
+  After a deal, a bid or a card needs no other seat: only the seat to act sends a bid or a card, so the others play on while a player who is not to act is away, and the game stops only while the seat to act is away (owner decision, October 2026; before it, a deal and a bid needed all four seats and a card all seats except dummy).
+  The host checks each deal in the bridge module and refuses with a reason such as "Waiting for South to come back"; the page disables the controls and shows the same text, and it shows that text too while the seat to act is away and when the countdown to the next board ends.
 - A page that comes back gets every entry that it missed from the host's log (the welcome and the sync), so it shows the whole table again.
 
 Call signaling:

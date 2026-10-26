@@ -1,5 +1,6 @@
+import { randomBytes } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
-import { HOST_LOST_MS } from "../../src/p2p/limits";
+import { HOST_LOST_MS, SEED_WAIT_MS } from "../../src/p2p/limits";
 import { freeze } from "./lifecycle";
 import { Player, reportNetwork } from "./player";
 import {
@@ -11,6 +12,7 @@ import {
 	expectSeat,
 	hostRows,
 	MESSAGE,
+	NAME,
 	pick,
 	type SeatKey,
 	sendDraft,
@@ -311,6 +313,46 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 		await expect(texts(page)).toHaveText([MESSAGE.W]);
 });
 
+/** A setup link with host=south and a new key: nobody has this table yet. Returns the link of `seat`. */
+function setupLink(): (seat: SeatKey) => string {
+	const key = randomBytes(32).toString("base64url");
+	const names = `north=${NAME.N}&east=${NAME.E}&south=${NAME.S}&west=${NAME.W}`;
+	return (seat) =>
+		`./?${names}&host=south&selected_player=${seat}#v=p2p-v1&k=${key}`;
+}
+
+test("with a setup link to South, West seeds the table that West and North open; South takes the host role when it joins", async () => {
+	test.setTimeout(240_000);
+	const link = setupLink();
+	const west = await (await openBrowser("W")).page(link("W"));
+	const north = await (await openBrowser("N")).page(link("N"));
+	for (const [page, seat] of [
+		[west, "W"],
+		[north, "N"],
+	] as const)
+		await expectSeat(page, seat, { timeout: CONNECT_MS });
+	const since = Date.now();
+	// The order from South is S, W, N, E: of the two pages, West seeds the table after SEED_WAIT_MS (rule 14).
+	await expectHost([west, north], "W");
+	const seededAfter = Date.now() - since;
+	test.info().annotations.push({
+		type: "West hosts after (ms)",
+		description: String(seededAfter),
+	});
+	expect(seededAfter).toBeGreaterThanOrEqual(SEED_WAIT_MS - 5_000);
+	await expectReplica(north, { timeout: CONNECT_MS });
+	await sendDraft(north);
+
+	const south = await (await openBrowser("S")).page(link("S"));
+	await expectSeat(south, "S", { timeout: CONNECT_MS });
+	// South's seat is the link's host seat: it takes the host role at once (rule 12), with North's message.
+	await expectHost([west, north, south], "S");
+	await expect(hostRows(west)).toHaveCount(1);
+	await sendDraft(south);
+	for (const page of [west, north, south])
+		await expect(texts(page)).toHaveText([MESSAGE.N, MESSAGE.S]);
+});
+
 test("two players who click at the same moment get exactly one host", async () => {
 	const { tab } = await seatTable(["N", "E"]);
 	const north = tabOf(tab, "N");
@@ -403,7 +445,7 @@ test("a second tab cannot take the host's active seat", async () => {
 	await expect(
 		west.getByRole("heading", { name: "Choose your seat" }),
 	).toBeVisible({ timeout: CONNECT_MS });
-	await expect(west.getByTestId("pick-W")).toHaveCount(0);
+	await expect(west.getByTestId("pick-W")).toBeDisabled();
 	await expectSeat(old, "W");
 	await expect(old.getByTestId("send")).toBeEnabled();
 

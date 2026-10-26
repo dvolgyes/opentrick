@@ -119,6 +119,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"This link is not valid. Check that you copied all of it.":
 			"Dieser Link ist ungültig. Prüfe, ob du ihn vollständig kopiert hast.",
 		"All seats are taken.": "Alle Plätze sind belegt.",
+		"{seat} (host)": "{seat} (Host)",
+		"{seat} (bot)": "{seat} (Bot)",
+		"{seat} (taken)": "{seat} (belegt)",
+		"{seat} (in another tab)": "{seat} (in einem anderen Tab)",
 		"The game has expired or is no longer available":
 			"Dieses Spiel ist abgelaufen oder nicht mehr verfügbar.",
 		"Make me the host": "Mich zum Host machen",
@@ -256,6 +260,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		answered: "geantwortet",
 		"no answer": "keine Antwort",
 		"Data channel inside this page": "Datenkanal innerhalb dieser Seite",
+		"WebRTC in this browser": "WebRTC in diesem Browser",
+		missing: "fehlt",
 		"Local candidates": "Lokale Kandidaten",
 		works: "funktioniert",
 		"This browser has WebRTC turned off, so this page cannot reach the other players. On an iPhone or iPad, Lockdown Mode turns WebRTC off: turn it off for this website in the website settings of Safari, or use another device.":
@@ -806,6 +812,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"This link is not valid. Check that you copied all of it.":
 			"Ez a hivatkozás érvénytelen. Ellenőrizd, hogy teljes egészében másoltad-e.",
 		"All seats are taken.": "Minden hely foglalt.",
+		"{seat} (host)": "{seat} (host)",
+		"{seat} (bot)": "{seat} (bot)",
+		"{seat} (taken)": "{seat} (foglalt)",
+		"{seat} (in another tab)": "{seat} (egy másik lapon)",
 		"The game has expired or is no longer available":
 			"Ez a játék lejárt, vagy már nem érhető el.",
 		"Make me the host": "Legyek én a host",
@@ -973,6 +983,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		answered: "válaszolt",
 		"no answer": "nincs válasz",
 		"Data channel inside this page": "Adatcsatorna ezen az oldalon belül",
+		"WebRTC in this browser": "WebRTC ebben a böngészőben",
+		missing: "hiányzik",
 		"Local candidates": "Helyi jelöltek",
 		works: "működik",
 		"This browser has WebRTC turned off, so this page cannot reach the other players. On an iPhone or iPad, Lockdown Mode turns WebRTC off: turn it off for this website in the website settings of Safari, or use another device.":
@@ -1453,6 +1465,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Retries: "Nye forsøk",
 		"Wait between retries (seconds)": "Vent mellom forsøk (sekunder)",
 		"All seats are taken.": "Alle plassene er opptatt.",
+		"{seat} (host)": "{seat} (vert)",
+		"{seat} (bot)": "{seat} (bot)",
+		"{seat} (taken)": "{seat} (opptatt)",
+		"{seat} (in another tab)": "{seat} (i en annen fane)",
 		"Make me the host": "Gjør meg til vert",
 		"Try seat again": "Prøv plassen igjen",
 		Reload: "Last inn på nytt",
@@ -1591,6 +1607,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		answered: "svarte",
 		"no answer": "ikke svar",
 		"Data channel inside this page": "Datakanal inne i denne siden",
+		"WebRTC in this browser": "WebRTC i denne nettleseren",
+		missing: "mangler",
 		"Local candidates": "Lokale kandidater",
 		works: "virker",
 		"This browser has WebRTC turned off, so this page cannot reach the other players. On an iPhone or iPad, Lockdown Mode turns WebRTC off: turn it off for this website in the website settings of Safari, or use another device.":

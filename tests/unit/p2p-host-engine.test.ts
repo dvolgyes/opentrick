@@ -317,6 +317,35 @@ describe("host-local bots", () => {
 		expect(rig.log.entries.at(-1)).toMatchObject({ seat: "E", kind: "cmd" });
 	});
 
+	it("marks the host's seat and the bots' seats in the lobby", async () => {
+		const rig = await new Rig().create();
+		expect(await rig.host.activateBots(["E"])).toBe(true);
+		await rig.hello(SOUTH, CLIENT_S);
+		const lobby = rig.to(SOUTH).findLast((message) => message.k === "lobby");
+		expect(lobby?.k === "lobby" && lobby.seats).toEqual([
+			{ seat: "N", available: false, online: true, mine: false, host: true },
+			{ seat: "E", available: false, online: true, mine: false, bot: true },
+			{ seat: "S", available: true, online: false, mine: false },
+			{ seat: "W", available: true, online: false, mine: false },
+		]);
+	});
+
+	it("keeps the bots' seats taken while the host's timer is throttled, as in a background tab", async () => {
+		const rig = await new Rig().create();
+		expect(await rig.host.activateBots(["E"])).toBe(true);
+		// Chrome runs the timers of a hidden tab about once a minute, so no tick runs in this time.
+		rig.clock.now += HOST_LOST_MS + SEAT_GRACE_MS;
+		await rig.hello(SOUTH, CLIENT_S);
+		const lobby = rig.to(SOUTH).findLast((message) => message.k === "lobby");
+		expect(lobby?.k === "lobby" && lobby.seats[1]).toEqual({
+			seat: "E",
+			available: false,
+			online: true,
+			mine: false,
+			bot: true,
+		});
+	});
+
 	it("takes back a saved autoplay request after a reload only for a seat that its bot plays", async () => {
 		const rig = await new Rig().create();
 		await rig.seat(EAST, CLIENT_E, "E");
@@ -535,7 +564,7 @@ describe("hello", () => {
 		expect(lobby).toMatchObject({ k: "lobby", auth: rig.auth, config: CONFIG });
 		if (lobby?.k !== "lobby") return;
 		expect(lobby.seats).toEqual([
-			{ seat: "N", available: false, online: true, mine: false },
+			{ seat: "N", available: false, online: true, mine: false, host: true },
 			{ seat: "E", available: true, online: false, mine: false },
 			{ seat: "S", available: true, online: false, mine: false },
 			{ seat: "W", available: true, online: false, mine: false },

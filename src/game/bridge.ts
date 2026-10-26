@@ -54,9 +54,10 @@ import type { ApplyContext, ApplyResult, GameModule } from "./module";
  * held the card (dummy when declarer plays from dummy), `{kind: "media", seat, version}` and
  * `{kind: "system", seat, system}`.
  *
- * The first deal needs all four players present (`ApplyContext.present`). A later deal, a call or a card needs
- * nobody else: only the seat to act sends a call or a card, so the game stops only while that seat is away. A chat
- * message, a call status or a bidding system needs nobody. The rules come first, so an action that the rules reject
+ * Each deal needs all four seats present (`ApplyContext.present`): a player or a robot at each, so the bidding never
+ * starts at a table with an empty seat. A reset while a seat is away keeps no board, and the first deal waits. A call
+ * or a card needs nobody else: only the seat to act sends a call or a card, so the game stops only while that seat is
+ * away. A chat message, a call status or a bidding system needs nobody. The rules come first, so an action that the rules reject
  * keeps its own reason; an action that only waits for a player is marked `waiting`.
  */
 
@@ -624,7 +625,7 @@ function applyDeal(
 	)
 		return reject(`board ${current.number} is not over`);
 	if (requested !== next) return reject(`the next board is board ${next}`);
-	const waiting = current ? undefined : absence(SEATS, present);
+	const waiting = absence(SEATS, present);
 	if (waiting) return waiting;
 	const board = createBoard(next, dealCards(randomBelow));
 	return accept(
@@ -721,10 +722,18 @@ function canUseReset(context: ApplyContext, seats: readonly Seat[]): boolean {
 	);
 }
 
-function resetGame(state: BridgeState, randomBelow: RandomBelow): BridgeState {
+/** Board 1 when all four seats are present, as for any deal; otherwise no board, and the first deal waits. */
+function resetGame(
+	state: BridgeState,
+	present: readonly Seat[],
+	randomBelow: RandomBelow,
+): BridgeState {
 	return {
 		...state,
-		board: createBoard(1, dealCards(randomBelow)),
+		board:
+			absence(SEATS, present) === undefined
+				? createBoard(1, dealCards(randomBelow))
+				: null,
 		results: [],
 		undo: null,
 		claim: null,
@@ -747,7 +756,7 @@ function applyResetRequest(
 		return reject("all present players must use a version that supports reset");
 	const required = present.filter((seat) => seat !== context.seat);
 	if (required.length === 0) {
-		const next = resetGame(state, randomBelow);
+		const next = resetGame(state, present, randomBelow);
 		return accept(
 			{ kind: "reset-applied", requester: context.seat, board: next.board },
 			next,
@@ -789,7 +798,7 @@ function applyResetVote(
 		);
 	const approved = [...pending.approved, context.seat];
 	if (pending.required.every((seat) => approved.includes(seat))) {
-		const next = resetGame(state, randomBelow);
+		const next = resetGame(state, context.present, randomBelow);
 		return accept(
 			{
 				kind: "reset-applied",

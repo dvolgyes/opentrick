@@ -322,6 +322,8 @@ export class TableController {
 	#seedCandidate: Seated | null = null;
 	/** When a beat or a lobby last showed that the table exists; no seed until SEED_WAIT_MS after it. */
 	#tableSeenAt: number | null = null;
+	/** While the seed writes: the election of the page without the table must not see the seeded log. */
+	#seeding = false;
 	#busy = false;
 	#started = false;
 	#stopped = false;
@@ -538,16 +540,21 @@ export class TableController {
 		if (seen !== null && this.#now() - seen < SEED_WAIT_MS) return;
 		this.#seedCandidate = null;
 		this.#busy = true;
+		// Otherwise it volunteers a new term on the seeded log, and the creator's term 1 steps down at once.
+		this.#seeding = true;
 		void this.#seedHost(candidate, candidate.log.seat)
 			.then((seeded) => {
+				this.#seeding = false;
 				if (
 					seeded &&
 					!this.#closed() &&
 					this.#lock?.seat === candidate.log.seat
 				)
 					this.#begin(candidate, true);
+				else this.#refresh();
 			})
 			.finally(() => {
+				this.#seeding = false;
 				this.#busy = false;
 				this.#notify();
 			});
@@ -939,7 +946,7 @@ export class TableController {
 
 	#step(event: ElectionEvent): void {
 		const state = this.#election;
-		if (!state || this.#closed()) return;
+		if (!state || this.#closed() || this.#seeding) return;
 		const next = stepElection(state, event);
 		this.#election = next.state;
 		this.#effects(next.effects);

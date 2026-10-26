@@ -537,15 +537,23 @@ describe("presence (plan §12 R4)", () => {
 		expect(declarerAway.prompt).toBe("Waiting for North to come back");
 	});
 
-	it("deals the next board while dummy is away", () => {
+	it("waits with the next board while dummy is away, and names dummy when the countdown ends", () => {
 		const done = playing(
 			bidding(BOARD, "1S P P P"),
 			"S7 S2 H3 SA SK S6 S3 H2 SQ S5 S4 D2 SJ HJ H4 D3 ST HT H5 D4 S9 H9 H6 D5 S8 H8 D6 C2 HA H7 D7 C3 HK DT D8 C4 HQ DJ D9 C5 DA DQ CT C6 DK CK CJ C7 CA CQ C9 C8",
 		);
-		const table = view("N", done, { present: without("S") });
-		expect(table.nextBoard?.ready).toBe(true);
-		expect(table.prompt).toBe("");
-		expect(table.waiting).toBe("");
+		const counting = view("N", done, { present: without("S") });
+		expect(counting.nextBoard?.ready).toBe(false);
+		expect(counting.prompt).toBe("");
+		expect(counting.waiting).toBe("");
+		const ended = view("N", done, {
+			present: without("S"),
+			scoringCountdown: 0,
+		});
+		expect(ended.waiting).toBe("Waiting for South to come back");
+		expect(view("N", done, { scoringCountdown: 0 }).nextBoard?.ready).toBe(
+			true,
+		);
 	});
 
 	it("names the absent seat to act for the waiting overlay, and nobody else", () => {

@@ -3,6 +3,7 @@ import type { Authority } from "../../src/p2p/authority";
 import {
 	frame,
 	jsonBytes,
+	type LobbySeat,
 	parseCall,
 	parseCtl,
 	parseLog,
@@ -86,10 +87,10 @@ const CTL: Case[] = [
 			config: CONFIG,
 			idleMs: 1000,
 			seats: [
-				{ seat: "N", available: false, online: true, mine: false },
+				{ seat: "N", available: false, online: true, mine: false, host: true },
 				{ seat: "E", available: true, online: false, mine: true },
 				{ seat: "S", available: true, online: false, mine: false },
-				{ seat: "W", available: false, online: false, mine: false },
+				{ seat: "W", available: false, online: true, mine: false, bot: true },
 			],
 		},
 		["auth", "config", "idleMs", "seats"],
@@ -490,6 +491,25 @@ describe("size and depth caps", () => {
 			...lobby,
 			config: { ...CONFIG, names: { ...CONFIG.names, N: "x".repeat(41) } },
 		});
+	});
+
+	it("reads a lobby seat without the host and bot marks, as from an older host, and rejects a mark that is not true", () => {
+		const [, lobby] = CTL[3] ?? [];
+		if (lobby?.k !== "lobby") throw new Error("missing sample");
+		const seats = lobby.seats as readonly LobbySeat[];
+		const plain = seats.map(({ seat, available, online, mine }) => ({
+			seat,
+			available,
+			online,
+			mine,
+		}));
+		const older = { ...lobby, seats: plain };
+		expect(parseCtl(wire(older), TABLE)).toEqual({ ok: true, message: older });
+		for (const mark of ["host", "bot"])
+			malformed(parseCtl, {
+				...lobby,
+				seats: seats.map((row) => ({ ...row, [mark]: false })),
+			});
 	});
 
 	it("rejects a page with more than 200 entries", () => {

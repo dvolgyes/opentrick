@@ -226,12 +226,73 @@ describe("lobbyScreen", () => {
 			...overrides,
 		});
 
-	it("offers only available seats that no active same-browser tab holds", () => {
+	it("lists all four seats, and offers only available seats that no active same-browser tab holds", () => {
 		expect(lobby({ heldElsewhere: ["S"] })).toEqual({
 			kind: "lobby",
 			status: undefined,
-			choices: [{ seat: "N", label: "North — player1" }],
+			choices: [
+				{ seat: "N", label: "North — player1", free: true },
+				{ seat: "E", label: "East — player3 (taken)", free: false },
+				{ seat: "S", label: "South — player2 (in another tab)", free: false },
+				{ seat: "W", label: "West — player4 (taken)", free: false },
+			],
+			autoSeat: "N",
 		});
+	});
+
+	it("names the host's seat and the bots' seats", () => {
+		const seats = LOBBY.seats.map((row) =>
+			row.seat === "W"
+				? { ...row, host: true as const }
+				: row.seat === "E"
+					? { ...row, bot: true as const }
+					: row,
+		);
+		const screen = lobby({ lobby: { ...LOBBY, seats } });
+		expect(screen.kind === "lobby" && screen.choices).toEqual([
+			{ seat: "N", label: "North — player1", free: true },
+			{ seat: "E", label: "East — player3 (bot)", free: false },
+			{ seat: "S", label: "South — player2", free: true },
+			{ seat: "W", label: "West — player4 (host)", free: false },
+		]);
+		expect(screen.kind === "lobby" && screen.autoSeat).toBeUndefined();
+	});
+
+	it("with selected_player=none, takes the only free seat of the host's lobby, but not the seat that this browser held", () => {
+		const only = (seat: Seat, mine: boolean): Lobby => ({
+			...LOBBY,
+			seats: LOBBY.seats.map((row) => ({
+				...row,
+				available: row.seat === seat,
+				mine: row.seat === seat && mine,
+			})),
+		});
+		const auto = (input: Partial<LobbyInput>) => {
+			const screen = lobby({ none: true, ...input });
+			return screen.kind === "lobby" ? screen.autoSeat : "no lobby";
+		};
+		expect(auto({ lobby: only("S", false) })).toBe("S");
+		expect(auto({ lobby: only("S", true) })).toBeUndefined();
+		expect(auto({ none: false, lobby: only("S", true) })).toBe("S");
+		expect(auto({})).toBeUndefined();
+	});
+
+	it("before the host's lobby, lists the setup's seats, and takes the last one only without selected_player=none", () => {
+		const setup = { setup: { config: CONFIG }, lobby: null };
+		const screen = lobby({ ...setup, heldElsewhere: ["N", "E", "W"] });
+		expect(screen.kind === "lobby" && screen.choices).toEqual([
+			{ seat: "N", label: "North — player1 (in another tab)", free: false },
+			{ seat: "E", label: "East — player3 (in another tab)", free: false },
+			{ seat: "S", label: "South — player2", free: true },
+			{ seat: "W", label: "West — player4 (in another tab)", free: false },
+		]);
+		expect(screen.kind === "lobby" && screen.autoSeat).toBe("S");
+		const none = lobby({
+			...setup,
+			heldElsewhere: ["N", "E", "W"],
+			none: true,
+		});
+		expect(none.kind === "lobby" && none.autoSeat).toBeUndefined();
 	});
 
 	it("waits for the host's lobby before it lists seats, and names a seat by its compass point until the config is known", () => {
@@ -245,6 +306,7 @@ describe("lobbyScreen", () => {
 			kind: "lobby",
 			status: "Waiting for the host (3 s)",
 			choices: undefined,
+			autoSeat: undefined,
 		});
 	});
 
@@ -400,7 +462,7 @@ describe("networkLines", () => {
 		]);
 	});
 
-	it("sums up the trackers, the Nostr relays, the MQTT brokers, the direct connections and the public address in one line", () => {
+	it("sums up the trackers, the Nostr relays, the MQTT brokers, the WebRTC check, the direct connections and the public address in one line", () => {
 		expect(
 			connectionSummary({
 				network: NETWORK,
@@ -408,13 +470,31 @@ describe("networkLines", () => {
 				publicAddress: true,
 			}),
 		).toBe(
-			"Trackers reachable: 2 of 3 · Nostr relays reachable: 4 of 5 · MQTT brokers reachable: 6 of 7 · Direct connections: 3 · Public address found: yes",
+			"Trackers reachable: 2 of 3 · Nostr relays reachable: 4 of 5 · MQTT brokers reachable: 6 of 7 · WebRTC in this browser: checking · Direct connections: 3 · Public address found: yes",
 		);
 		expect(
 			connectionSummary({ network: null, peers: [], publicAddress: false }),
 		).toBe(
-			"Trackers reachable: not started · Nostr relays reachable: not started · MQTT brokers reachable: not started · Direct connections: 0 · Public address found: no",
+			"Trackers reachable: not started · Nostr relays reachable: not started · MQTT brokers reachable: not started · WebRTC in this browser: checking · Direct connections: 0 · Public address found: no",
 		);
+		const webRtc = (channel: "open" | "failed") =>
+			connectionSummary({
+				network: {
+					...NETWORK,
+					webRtc: { kind: "checked", candidates: [], channel },
+				},
+				peers: [],
+				publicAddress: false,
+			}).split(" · ")[3];
+		expect(webRtc("open")).toBe("WebRTC in this browser: works");
+		expect(webRtc("failed")).toBe("WebRTC in this browser: failed");
+		expect(
+			connectionSummary({
+				network: { ...NETWORK, webRtc: { kind: "missing" } },
+				peers: [],
+				publicAddress: false,
+			}).split(" · ")[3],
+		).toBe("WebRTC in this browser: missing");
 	});
 
 	it("writes the counts of the summary in the page's language", () => {

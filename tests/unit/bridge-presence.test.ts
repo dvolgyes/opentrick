@@ -10,15 +10,23 @@ import {
 	actionPayload,
 	createBridgeModule,
 	dealPayload,
+	parseBridgeState,
+	resetRequestPayload,
 } from "../../src/game/bridge";
 import { chatPayload } from "../../src/game/chat";
 import type { ApplyResult } from "../../src/game/module";
-import { type JsonObject, SEATS, type Seat } from "../../src/protocol";
+import {
+	APPLICATION_FEATURES,
+	type JsonObject,
+	SEATS,
+	type Seat,
+} from "../../src/protocol";
 import { bidding, call, DEAL } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
-// Plan §12 R4: the first deal needs every player at the table. After it, a call or a card needs only its sender,
-// the seat to act, so the others play on while a player who is not to act is away.
+// Plan §12 R4: each deal needs every seat at the table, a player or a robot, so the bidding never starts at a table
+// with an empty seat. After the deal, a call or a card needs only its sender, the seat to act, so the others play on
+// while a player who is not to act is away.
 // A command that waits for a player is marked `waiting`, so the host keeps it for a resend (R3).
 
 const module = createBridgeModule(randomBelowFrom(() => 7));
@@ -43,6 +51,9 @@ function send(
 			commandId: "cmd-1",
 			seq: 1,
 			present,
+			features: new Map(
+				SEATS.map((seat) => [seat, Object.values(APPLICATION_FEATURES)]),
+			),
 		},
 		payload,
 	);
@@ -101,11 +112,32 @@ describe("the presence rule for game actions", () => {
 		);
 	});
 
-	it("deals the next board while a player is away", () => {
+	it("waits with the next board until all four players are present", () => {
 		const done = finished(contract());
-		expect(send(done, "N", dealPayload(ROOM_ID, 2), without("S")).ok).toBe(
-			true,
-		);
+		expect(send(done, "N", dealPayload(ROOM_ID, 2), without("S"))).toEqual({
+			ok: false,
+			reason: "Waiting for South to come back",
+			waiting: true,
+		});
+		expect(send(done, "N", dealPayload(ROOM_ID, 2), SEATS).ok).toBe(true);
+	});
+
+	it("restarts without a board while a seat is away, so the first deal waits for all four", () => {
+		const reset = (present: readonly Seat[]) => {
+			const result = send(
+				finished(contract()),
+				"N",
+				resetRequestPayload(ROOM_ID),
+				present,
+			);
+			if (!result.ok) throw new Error(result.reason);
+			return parseBridgeState(result.state, ROOM_ID);
+		};
+		const alone = reset(["N"]);
+		expect([alone?.board, alone?.results]).toEqual([null, []]);
+		expect(
+			send(finished(contract()), "N", resetRequestPayload(ROOM_ID), SEATS).ok,
+		).toBe(true);
 	});
 
 	it("accepts a call from the seat to bid while the other three are away", () => {

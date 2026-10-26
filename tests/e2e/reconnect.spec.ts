@@ -104,6 +104,14 @@ async function commonHost(): Promise<SeatKey> {
 	return seat;
 }
 
+/** Every open tab shows the page at `seat` as the host. */
+async function expectHost(seat: SeatKey): Promise<void> {
+	for (const open of openSeats())
+		await expect(hostRows(tab[open])).toHaveAttribute("data-seat", seat, {
+			timeout: CONNECT_MS,
+		});
+}
+
 /** Every open tab shows the board at the position: the number of calls and cards made. */
 async function expectAt(board: number, at: number): Promise<void> {
 	for (const seat of openSeats()) {
@@ -224,7 +232,7 @@ test("2: a follower that crashes, or reloads, gets the messages it missed, each 
 	await expectTranscripts();
 });
 
-test("3: the host crashes mid-auction; a player clicks Make me the host; the auction goes on until West is to bid; the old host reopens, follows, and bids", async () => {
+test("3: the host crashes mid-auction; a player clicks Make me the host, and the seat next in priority takes over; the auction goes on until West is to bid; the old host reopens, hosts again, and bids", async () => {
 	test.setTimeout(180_000);
 	expect(await call(1, 0, "1C")).toBe("N");
 	await expectAt(1, 1);
@@ -233,7 +241,9 @@ test("3: the host crashes mid-auction; a player clicks Make me the host; the auc
 	const become = tab.E.getByTestId("become-host");
 	await expect(become).toBeEnabled({ timeout: BUTTON_LATEST_MS });
 	await become.click();
-	expect(await commonHost()).toBe("E");
+	// The link names West as the host seat, so North comes first after West (ADR 0007, election rule 12): it takes
+	// over from East at once.
+	await expectHost("N");
 	// The new host keeps the board, and East and South bid while West is away (R4).
 	expect(await call(1, 1, "P")).toBe("E");
 	expect(await call(1, 2, "P")).toBe("S");
@@ -248,7 +258,8 @@ test("3: the host crashes mid-auction; a player clicks Make me the host; the auc
 	}
 
 	await reopen("W");
-	expect(await commonHost()).toBe("E");
+	// West comes first in the order of priority, so it takes over from North when it comes back (rule 12).
+	await expectHost("W");
 	await expect(tab.W.getByTestId("banner")).toBeHidden({ timeout: CONNECT_MS });
 	expect(await call(1, 3, "P")).toBe("W");
 	await expectAt(1, 4);
@@ -258,7 +269,7 @@ test("3: the host crashes mid-auction; a player clicks Make me the host; the auc
 	}
 });
 
-test("4: dummy crashes during the play: declarer plays on; the next board is dealt and its auction waits for dummy; dummy returns with everything it missed (R4)", async () => {
+test("4: dummy crashes during the play: declarer plays on; the next board waits for dummy; dummy returns with everything it missed, and board 2 is dealt (R4)", async () => {
 	test.setTimeout(300_000);
 	await crash(DUMMY);
 	for (let at = 4; at < 56; at += 1) {
@@ -278,22 +289,22 @@ test("4: dummy crashes during the play: declarer plays on; the next board is dea
 		);
 	}
 	const sheet = await tab.W.getByTestId("scores").innerText();
-	// After the 10 s countdown, the host deals board 2 without a click while South is away. East deals board 2
-	// and opens; South is next, so the auction waits for South.
-	expect(await call(2, 0, "1D")).toBe("E");
-	await expectAt(2, 1);
+	// After the 10 s countdown, the host does not deal board 2 while South is away: the bidding never starts at a
+	// table with an empty seat.
 	for (const seat of openSeats())
-		await expect(prompt(tab[seat])).toHaveText(
+		await expect(tab[seat].getByTestId("waiting")).toHaveText(
 			"Waiting for South to come back",
 			{ timeout: CONNECT_MS },
 		);
+	await expectAt(1, 56);
 
-	// South comes back to the score sheet and the call that it missed, and bids.
+	// South comes back to the score sheet, and the host deals board 2 without a click. East deals and opens, and
+	// South bids.
 	await reopen(DUMMY);
-	await expectAt(2, 1);
 	await expect(tab.S.getByTestId("scores")).toHaveText(sheet, {
 		useInnerText: true,
 	});
+	expect(await call(2, 0, "1D")).toBe("E");
 	expect(await call(2, 1, "P")).toBe("S");
 	await expectAt(2, 2);
 	for (const seat of SEATS)
