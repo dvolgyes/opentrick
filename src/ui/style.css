@@ -674,8 +674,9 @@ main:has(> .room) {
 	min-width: 0;
 }
 
+/* The result stays in the middle of the felt, clear of the side hands that reach into the centre. */
 .scoring {
-	width: min(100%, 38rem);
+	width: min(80%, 30.4rem);
 	padding: 1rem;
 	border-radius: 0.6rem;
 	background: var(--sheet-bg);
