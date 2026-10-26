@@ -450,8 +450,8 @@ async function expectRoomCanvasFit(page: Page, hosting = false): Promise<void> {
 }
 
 /**
- * The build date and the language picker share the sidebar's top row, above its buttons. The host's debug buttons
- * come first in that row, so no content of a long board pushes them off the canvas.
+ * The build date and the language picker share the sidebar's top row, above its buttons. The host's Debug and Reload
+ * players are not in the sidebar: the host opens them with Host controls.
  */
 async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
 	const rects = await measure(page, {
@@ -461,24 +461,21 @@ async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
 		copy: byTestId("copy-board-url"),
 		debug: byTestId("debug-export"),
 		reload: byTestId("reload-players"),
+		hostControls: byTestId("host-controls"),
 	});
 	const sidebar = shown(rects, "sidebar");
 	const version = shown(rects, "version");
 	const language = shown(rects, "language");
 	const copy = shown(rects, "copy");
-	const debugParts = hosting
-		? ([
-				["debug", shown(rects, "debug")],
-				["reload", shown(rects, "reload")],
-			] as const)
-		: [];
-	expect(rects.debug === undefined, "the debug buttons only for the host").toBe(
-		!hosting,
-	);
+	expect(rects.debug, "no Debug in the sidebar").toBeUndefined();
+	expect(rects.reload, "no Reload players in the sidebar").toBeUndefined();
+	expect(
+		rects.hostControls === undefined,
+		"Host controls only for the host",
+	).toBe(!hosting);
 	for (const [name, rect] of [
 		["version", version],
 		["language", language],
-		...debugParts,
 	] as const) {
 		expect(rect.x, `${name} left edge`).toBeGreaterThanOrEqual(
 			sidebar.x - SUBPIXEL,
@@ -498,15 +495,6 @@ async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
 			Math.max(version.y, language.y),
 		"the date and the language in one row",
 	).toBeGreaterThan(SUBPIXEL);
-	for (const [name, rect] of debugParts) {
-		expect(right(rect), `${name} before the date`).toBeLessThanOrEqual(
-			version.x + SUBPIXEL,
-		);
-		expect(
-			Math.min(bottom(rect), bottom(language)) - Math.max(rect.y, language.y),
-			`${name} in the language row`,
-		).toBeGreaterThan(SUBPIXEL);
-	}
 }
 
 /**

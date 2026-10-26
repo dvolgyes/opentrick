@@ -98,6 +98,10 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 			["Copy link", 0],
 			["Set API key", 0],
 			["Model", 0],
+			["Debug", 0],
+			["Reload players", 0],
+			["Reset", 0],
+			["Host controls", 1],
 		] as const)
 			await expect(
 				page.getByRole("button", { name, exact: true }),
@@ -108,6 +112,20 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 				.locator(".mobile-auction-topbar")
 				.getByRole("button", { name: "Reload", exact: true }),
 		).toBeVisible();
+		// Host controls opens a dialog with the host's Debug, Reload players and Reset; Close closes it.
+		await page
+			.getByRole("button", { name: "Host controls", exact: true })
+			.click();
+		const hostControls = page.getByTestId("host-controls-dialog");
+		for (const name of ["Debug", "Reload players", "Reset", "Close"])
+			await expect(
+				hostControls.getByRole("button", { name, exact: true }),
+				name,
+			).toBeInViewport();
+		await hostControls
+			.getByRole("button", { name: "Close", exact: true })
+			.click();
+		await expect(hostControls).toBeHidden();
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		const settings = page.getByTestId("settings-dialog");
 		await settings

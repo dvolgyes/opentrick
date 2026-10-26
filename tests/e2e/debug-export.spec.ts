@@ -36,7 +36,7 @@ function storedSecrets(page: Page): Promise<string[]> {
 	);
 }
 
-test("the host copies a debug export with each player's page report, and reloads the players", async ({
+test("the host copies a debug export with each player's page report, and reloads the players, from Host controls", async ({
 	browser,
 	baseURL,
 }) => {
@@ -64,21 +64,28 @@ test("the host copies a debug export with each player's page report, and reloads
 				"auction",
 				{ timeout: CONNECT_MS },
 			);
-		await expect(guestPage.getByTestId("debug-export")).toBeHidden();
-		await expect(guestPage.getByTestId("reload-players")).toBeHidden();
+		// Only the host has Host controls; Debug, Reload players and Reset show only in its dialog.
+		const hostControls = (page: Page) =>
+			page.getByRole("button", { name: "Host controls", exact: true });
+		await expect(hostControls(guestPage)).toHaveCount(0);
+		for (const page of [hostPage, guestPage])
+			for (const name of ["Debug", "Reload players", "Reset"])
+				await expect(
+					page.getByRole("button", { name, exact: true }),
+					name,
+				).toHaveCount(0);
+		await hostControls(hostPage).click();
+		const dialog = hostPage.getByTestId("host-controls-dialog");
+		await expect(dialog).toBeVisible();
+		await expect(
+			dialog.getByRole("button", { name: "Reset", exact: true }),
+		).toBeVisible();
 
-		await hostPage.getByTestId("debug-export").click();
-		await expect(hostPage.getByTestId("debug-status")).toHaveText(
+		await dialog.getByTestId("debug-export").click();
+		await expect(dialog.getByTestId("debug-status")).toHaveText(
 			"Debug export copied.",
 			{ timeout: CONNECT_MS },
 		);
-		// The debug message sits under the sidebar's top row, above the room buttons.
-		const status = await hostPage.getByTestId("debug-status").boundingBox();
-		const copy = await hostPage.getByTestId("copy-board-url").boundingBox();
-		expect(
-			(status?.y ?? Number.NaN) + (status?.height ?? 0),
-			"the debug message above the room buttons",
-		).toBeLessThanOrEqual(copy?.y ?? Number.NaN);
 		const text = await hostPage.evaluate(() => navigator.clipboard.readText());
 		const exported = JSON.parse(text);
 		expect(exported.kind).toBe("opentrick-debug-export");
@@ -114,11 +121,13 @@ test("the host copies a debug export with each player's page report, and reloads
 			"false",
 		);
 		const reloaded = guestPage.waitForEvent("load");
-		await hostPage.getByTestId("reload-players").click();
-		await expect(hostPage.getByTestId("debug-status")).toHaveText(
+		await dialog.getByTestId("reload-players").click();
+		await expect(dialog.getByTestId("debug-status")).toHaveText(
 			"Asked 1 pages to reload.",
 		);
 		await reloaded;
+		await dialog.getByRole("button", { name: "Close", exact: true }).click();
+		await expect(dialog).toBeHidden();
 		await expect(guestPage.getByTestId("table")).toHaveAttribute(
 			"data-phase",
 			"auction",

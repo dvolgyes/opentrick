@@ -1047,25 +1047,46 @@ export function showRoom(
 		},
 		{ attrs: { "data-testid": "reload-players" } },
 	);
-	const debugRow = el(
-		"div",
-		{ className: "room-debug-controls" },
-		debug,
-		reloadPlayers,
-	);
 	const openSettings = button(deps.t("Settings"), () => settings.open(), {
 		className: "settings-button",
 	});
-	const reset = button(
-		deps.t("Reset"),
-		() => {
-			resetBotSpend();
-			actionError = undefined;
-			submit(resetRequestPayload(tableId), (reason) => {
-				actionError = deps.t("Reset not sent: {reason}", { reason });
-			});
+	// Reset closes the dialog, so the host sees who must approve the reset.
+	const reset = button(deps.t("Reset"), () => {
+		hostControls.close();
+		resetBotSpend();
+		actionError = undefined;
+		submit(resetRequestPayload(tableId), (reason) => {
+			actionError = deps.t("Reset not sent: {reason}", { reason });
+		});
+	});
+	const hostControls = el(
+		"dialog",
+		{
+			className: "host-controls-dialog",
+			attrs: {
+				"aria-labelledby": "host-controls-title",
+				"data-testid": "host-controls-dialog",
+			},
 		},
-		{ className: "reset-button" },
+		el("h2", { attrs: { id: "host-controls-title" } }, deps.t("Host controls")),
+		el(
+			"div",
+			{ className: "host-controls-actions" },
+			debug,
+			reloadPlayers,
+			reset,
+		),
+		debugStatus,
+		el(
+			"div",
+			{ className: "host-controls-close" },
+			button(deps.t("Close"), () => hostControls.close()),
+		),
+	);
+	const openHostControls = button(
+		deps.t("Host controls"),
+		() => hostControls.showModal(),
+		{ attrs: { "data-testid": "host-controls" } },
 	);
 	const reload = button(deps.t("Reload"), handlers.reload, {
 		className: "sidebar-reload",
@@ -1095,20 +1116,16 @@ export function showRoom(
 	const resetControls = el(
 		"section",
 		{ className: "room-controls", attrs: { "data-testid": "room-controls" } },
-		// The host's debug buttons, the build date and the language picker head the sidebar, so they scale with the
-		// room canvas, and no content of a long board pushes the debug buttons off it.
+		// The build date and the language picker head the sidebar, so they scale with the room canvas.
 		el(
 			"div",
 			{ className: "room-control-row room-header-controls" },
-			debugRow,
 			languageControl(deps),
 		),
-		debugStatus,
 		el(
 			"div",
 			{ className: "room-control-row room-primary-controls" },
 			copyRoomLink,
-			reset,
 			reload,
 			exit,
 		),
@@ -1116,6 +1133,7 @@ export function showRoom(
 			"div",
 			{ className: "room-control-row room-bot-controls" },
 			openSettings,
+			openHostControls,
 			pauseBots,
 			resumeBots,
 			el("span", { className: "bot-money" }, botSpendCounter, botBalance),
@@ -1244,7 +1262,7 @@ export function showRoom(
 		},
 	);
 	root.replaceChildren(room);
-	root.append(settings.element);
+	root.append(settings.element, hostControls);
 	root.append(rateLimitReminder);
 	if (camera) root.append(camera.element);
 	if (initialBotSettings) void startHostBots();
@@ -1477,8 +1495,8 @@ export function showRoom(
 					).join(","))
 		)
 			rememberBotSeats(activeBots);
-		debugRow.hidden = !view.hosting;
-		debugStatus.hidden = !view.hosting;
+		openHostControls.hidden = !view.hosting;
+		if (!view.hosting && hostControls.open) hostControls.close();
 		if (view.hosting) showPlayerBuilds(view.roster?.bots ?? []);
 		pauseBots.hidden =
 			!view.hosting || activeBots.length === 0 || botsPaused || !botRunner;

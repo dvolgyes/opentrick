@@ -252,9 +252,27 @@ test("on a phone, Settings is below the board and its dialog fits the screen", a
 		expect(box.x).toBeGreaterThanOrEqual(0);
 		expect(box.x + box.width).toBeLessThanOrEqual(360);
 		expect(box.y + box.height).toBeLessThanOrEqual(800);
+		// The settings scroll above Save and Cancel; the buttons stay at the bottom of the dialog.
 		const save = dialog.getByRole("button", { name: "Save settings" });
-		await save.scrollIntoViewIfNeeded();
+		const cancel = dialog.getByRole("button", { name: "Cancel" });
 		await expect(save).toBeInViewport();
+		await expect(cancel).toBeInViewport();
+		const content = dialog.getByTestId("settings-content");
+		const before = await save.boundingBox();
+		const scrolled = await content.evaluate((node) => {
+			const room = node.scrollHeight - node.clientHeight;
+			node.scrollTop = node.scrollHeight;
+			return { room, top: node.scrollTop };
+		});
+		expect(
+			scrolled.room,
+			"the settings are taller than the dialog",
+		).toBeGreaterThan(100);
+		expect(scrolled.top).toBeGreaterThan(100);
+		expect(await save.boundingBox()).toEqual(before);
+		expect((before?.y ?? 0) + (before?.height ?? 0)).toBeLessThanOrEqual(
+			box.y + box.height,
+		);
 		expect(
 			await page.evaluate(
 				() => document.documentElement.scrollWidth <= window.innerWidth,

@@ -2872,6 +2872,14 @@ const rows: readonly TranslationRow[] = [
 		"Spelers herladen",
 	],
 	[
+		"Host controls",
+		"Controles del anfitrión",
+		"Controlos do anfitrião",
+		"Commandes de l'hôte",
+		"Controlli dell'host",
+		"Hostbediening",
+	],
+	[
 		"Collecting the players' reports…",
 		"Recopilando los informes de los jugadores…",
 		"A recolher os relatórios dos jogadores…",

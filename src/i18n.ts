@@ -589,6 +589,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"TURN - {title}": "AM ZUG - {title}",
 		Debug: "Debug",
 		"Reload players": "Spieler neu laden",
+		"Host controls": "Gastgeber-Steuerung",
 		"Collecting the players' reports…":
 			"Berichte der Spieler werden gesammelt…",
 		"Debug export copied.": "Debug-Export kopiert.",
@@ -1277,6 +1278,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"TURN - {title}": "TE JÖSSZ - {title}",
 		Debug: "Hibakeresés",
 		"Reload players": "Játékosok újratöltése",
+		"Host controls": "Házigazda eszközei",
 		"Collecting the players' reports…": "A játékosok jelentéseinek gyűjtése…",
 		"Debug export copied.": "Hibakeresési export másolva.",
 		"Could not copy the debug export. Allow clipboard access and try again.":
@@ -1954,6 +1956,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{seat}: bruk maksimalt {max} tegn.",
 		Debug: "Feilsøking",
 		"Reload players": "Last inn spillerne på nytt",
+		"Host controls": "Vertskontroller",
 		"Collecting the players' reports…": "Henter rapportene fra spillerne…",
 		"Debug export copied.": "Feilsøkingseksporten er kopiert.",
 		"Could not copy the debug export. Allow clipboard access and try again.":

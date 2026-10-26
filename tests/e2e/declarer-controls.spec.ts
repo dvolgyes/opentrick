@@ -117,10 +117,10 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 			page.getByRole("button", { name: "Claim …", exact: true }),
 		).toBeHidden();
 
-		// The sidebar reads top to bottom: the host's debug buttons in the top row, bidding, tricks, the controls,
+		// The sidebar reads top to bottom: the room buttons with Host controls, bidding, tricks, the controls,
 		// statistics, and the bot status last.
 		const parts = {
-			debug: page.getByTestId("debug-export"),
+			hostControls: page.getByTestId("host-controls"),
 			bidding: page.getByTestId("bid-history"),
 			tricks: page.getByTestId("tricks-panel"),
 			claim: page.getByRole("button", { name: "Claim all", exact: true }),

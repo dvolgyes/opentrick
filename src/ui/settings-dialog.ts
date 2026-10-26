@@ -231,7 +231,13 @@ export function settingsDialog(
 	});
 
 	const save = button(t("Save settings"), () => void saveSettings());
-	element.append(
+	// The settings scroll; the status and the buttons stay below them.
+	const content = el(
+		"div",
+		{
+			className: "settings-content",
+			attrs: { "data-testid": "settings-content" },
+		},
 		el("h2", { attrs: { id: "settings-title" } }, t("Settings")),
 		el("label", { className: "settings-row" }, `${t("Language")} `, language),
 		points.element,
@@ -297,12 +303,19 @@ export function settingsDialog(
 			el("p", { className: "settings-order-title" }, t("Bot model order")),
 			orderList,
 		),
-		status,
+	);
+	element.append(
+		content,
 		el(
 			"div",
-			{ className: "settings-actions" },
-			save,
-			button(t("Cancel"), () => element.close()),
+			{ className: "settings-footer" },
+			status,
+			el(
+				"div",
+				{ className: "settings-actions" },
+				save,
+				button(t("Cancel"), () => element.close()),
+			),
 		),
 	);
 	element.addEventListener("close", () => {

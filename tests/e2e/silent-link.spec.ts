@@ -86,6 +86,9 @@ test("the host closes the link of a paused player after 15 s of silence, and the
 			timeout: CONNECT_MS,
 		});
 
+		await hostPage
+			.getByRole("button", { name: "Host controls", exact: true })
+			.click();
 		await hostPage.getByTestId("debug-export").click();
 		await expect(hostPage.getByTestId("debug-status")).toHaveText(
 			"Debug export copied.",

@@ -2970,7 +2970,8 @@ describe("bidding guide", () => {
 		const close = root.querySelector<HTMLButtonElement>(".guide-close");
 		if (!close) throw new Error("the guide has no Close button");
 		expect(close.textContent).toBe("Close");
-		expect(getComputedStyle(close).backgroundColor).toBe("rgb(192, 38, 45)");
+		// Close is a plain green button: nothing in the guide is dangerous.
+		expect(getComputedStyle(close).backgroundColor).toBe("rgb(31, 111, 80)");
 		expect(text.scrollHeight).toBeGreaterThan(text.clientHeight + 100);
 		const before = close.getBoundingClientRect();
 		text.scrollTop = text.scrollHeight;
