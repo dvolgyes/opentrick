@@ -89,7 +89,7 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await expect(settings).toBeHidden();
 		expect(
 			await page.evaluate(() =>
-				localStorage.getItem("opentrick.settings.theme"),
+				localStorage.getItem("opentrick.settings.scheme"),
 			),
 		).toBe("dark");
 	} finally {
