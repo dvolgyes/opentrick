@@ -263,6 +263,14 @@ export async function sendDraft(page: Page): Promise<void> {
 	await expect(lines(page)).toHaveCount(before + 1);
 }
 
-export async function expectBanner(page: Page, kind: string): Promise<void> {
-	await expect(page.getByTestId("banner")).toHaveAttribute("data-kind", kind);
+export async function expectBanner(
+	page: Page,
+	kind: string,
+	options: { timeout?: number } = {},
+): Promise<void> {
+	await expect(page.getByTestId("banner")).toHaveAttribute(
+		"data-kind",
+		kind,
+		options,
+	);
 }

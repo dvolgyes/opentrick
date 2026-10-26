@@ -153,7 +153,11 @@ test("a frozen host is replaced; its seat frees after the timeout; the thawed ol
 	test.setTimeout(360_000);
 	const old = tab.W;
 	const thaw = await freeze(old);
-	await expectBanner(tab.N, "waiting-for-host");
+	// North waits for the host HOST_LOST_MS after the last host beat that it got, and the host can send a beat just
+	// before the freeze, so the default 20 s is not enough. A beat cycle more leaves room for the timer and the network.
+	await expectBanner(tab.N, "waiting-for-host", {
+		timeout: HOST_LOST_MS + BEAT_MS,
+	});
 	// East is the witness of the new North (plan §2 D1).
 	const become = tab.N.getByTestId("become-host");
 	await expect(become).toBeEnabled({ timeout: BUTTON_LATEST_MS });
