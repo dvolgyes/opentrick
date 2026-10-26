@@ -1102,9 +1102,10 @@ main:has(> .room) {
 	height: 2.7rem;
 }
 
+/* The bot picture stands in the tile above the caption, so it does not cover the bot's name. */
 .bot-overlay {
 	position: absolute;
-	inset: 0;
+	inset: 0 0 var(--tile-caption-h, 1.05rem);
 	z-index: 2;
 	display: grid;
 	place-items: center;
@@ -1173,8 +1174,8 @@ main:has(> .room) {
 }
 
 .bot-artwork {
-	width: min(68%, 8rem);
-	height: min(68%, 8rem);
+	width: min(75%, 7rem);
+	height: min(75%, 7rem);
 	object-fit: contain;
 	background: var(--tile-bg);
 }

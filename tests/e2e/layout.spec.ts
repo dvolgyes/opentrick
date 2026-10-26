@@ -786,3 +786,34 @@ test("4: the call controls have names that spell out the way and the medium, and
 		}),
 	).toBeDisabled();
 });
+
+for (const viewport of [
+	{ width: 1440, height: 900 },
+	{ width: 1280, height: 720 },
+]) {
+	test(`the bot picture of a tile stays above the bot's name at ${viewport.width}×${viewport.height}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await page.goto("/");
+		await page.getByTestId("create-solo").click();
+		for (const seat of ["N", "E", "W"]) {
+			const tile = page.getByTestId(`tile-${seat}`);
+			const picture = tile
+				.locator(".bot-artwork, .bot-overlay-fallback")
+				.filter({ visible: true });
+			await expect(picture).toBeVisible({ timeout: CONNECT_MS });
+			const [art, caption] = await Promise.all([
+				picture.boundingBox(),
+				tile.locator(".tile-caption").boundingBox(),
+			]);
+			expect(art?.y ?? 0).toBeGreaterThanOrEqual(
+				(await tile.boundingBox())?.y ?? 0,
+			);
+			// A clear gap, because the artwork glows to the edge of its box.
+			expect((art?.y ?? 0) + (art?.height ?? 0)).toBeLessThanOrEqual(
+				(caption?.y ?? 0) - 4,
+			);
+		}
+	});
+}
