@@ -474,9 +474,7 @@ try {
 	const options = parseArgs(process.argv.slice(2));
 	await run(options);
 } catch (error) {
-	console.error(
-		`Bot stopped: ${describeFailure(error, [process.env.OPENROUTER_API_KEY ?? ""])}`,
-	);
+	console.error(`Bot stopped: ${describeFailure(error, [])}`);
 	process.exitCode = 1;
 }
 // Trystero keeps the relay sockets after the room is left, and they alone would keep the process alive.
