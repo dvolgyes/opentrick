@@ -346,6 +346,30 @@ describe("host-local bots", () => {
 		});
 	});
 
+	it("keeps the configured bots' seats taken before the bots start", async () => {
+		const rig = await new Rig().create({
+			...CONFIG,
+			botSetup: {
+				seats: ["E", "W"],
+				model: "inception/mercury-3",
+				fallbackModel: "openai/gpt-6-luna",
+				retries: 5,
+				retryDelayMs: 5000,
+			},
+		});
+		rig.clock.now += HOST_LOST_MS + SEAT_GRACE_MS;
+		await rig.hello(SOUTH, CLIENT_S);
+		const lobby = rig.to(SOUTH).findLast((message) => message.k === "lobby");
+		expect(lobby?.k === "lobby" && lobby.seats).toEqual([
+			{ seat: "N", available: false, online: true, mine: false, host: true },
+			{ seat: "E", available: false, online: false, mine: false, bot: true },
+			{ seat: "S", available: true, online: false, mine: false },
+			{ seat: "W", available: false, online: false, mine: false, bot: true },
+		]);
+		await rig.from(SOUTH, { k: "claim-seat", req: 1, seat: "E" });
+		expect(rig.row("E")?.holder).toBeNull();
+	});
+
 	it("takes back a saved autoplay request after a reload only for a seat that its bot plays", async () => {
 		const rig = await new Rig().create();
 		await rig.seat(EAST, CLIENT_E, "E");
