@@ -392,7 +392,7 @@ export interface LobbyInput extends BannerInput {
 	readonly heldElsewhere: readonly Seat[];
 	readonly setup?: { readonly config: RoomConfig };
 	/**
-	 * The link has selected_player=none. The page then takes the only free seat only when the host's lobby lists it,
+	 * The link has no `pl`. The page then takes the only free seat only when the host's lobby lists it,
 	 * and not when it is the seat of this browser's holder (ADR 0005).
 	 */
 	readonly none?: boolean;

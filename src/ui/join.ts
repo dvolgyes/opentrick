@@ -50,7 +50,7 @@ function message(...children: (Node | string)[]): HTMLElement {
 /**
  * A table link. Runs one table controller at a time: the lobby while this page holds no seat, and the room
  * screen while it holds one. `creator` is true only for the page load that has just created the table. A null
- * `seatHint` (selected_player=none) does not reopen the seat that this browser held: it takes a seat by itself only
+ * `seatHint` (no `pl` in the link) does not reopen the seat that this browser held: it takes a seat by itself only
  * when the host's lobby has one free seat that another browser held, and otherwise the person picks one in the lobby.
  */
 export function showTable(

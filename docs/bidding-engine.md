@@ -36,7 +36,7 @@ No rules or network weights were tuned after this comparison.
 All host-managed bots at a table use the selected policy.
 The host can view and change the engine in **Settings**.
 The browser remembers the choice for new tables; an explicit engine in a saved link takes priority.
-The selection is retained in room links as `bot_bidder`.
+The selection is retained in room links as `r` (`bot_bidder` in earlier links).
 
 Recommendations use explicit convention rules, independently of the selected bot.
 New display settings default to ordinary HCP; saved point-scale preferences remain available.

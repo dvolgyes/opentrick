@@ -5,7 +5,7 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	page,
 }) => {
 	await mockBotBidding(page, () => "P", 250);
-	await page.goto("/?bot_bidder=sl");
+	await page.goto("/?r=sl");
 	for (const seat of ["N", "E", "S", "W"] as const)
 		await page.locator(`input[name="name-${seat}"]`).fill(`Player ${seat}`);
 	await page.locator('input[name="me"][value="W"]').check();
@@ -33,7 +33,7 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	await settings.getByLabel("BRL RL/FSP", { exact: true }).check();
 	await settings.getByRole("button", { name: "Save settings" }).click();
 	await expect(settings).toBeHidden();
-	expect(new URL(page.url()).searchParams.get("bot_bidder")).toBe("rl-fsp");
+	expect(new URL(page.url()).searchParams.get("r")).toBe("rl-fsp");
 	await page.getByRole("button", { name: "Resume bots", exact: true }).click();
 	await expect(page.getByTestId("bot-status")).toContainText(
 		"Local BRL · rl-fsp",
@@ -51,6 +51,6 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	await settings.getByRole("button", { name: "Save settings" }).click();
 	await page.goto("/");
 	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("sl");
-	await page.goto("/?bot_bidder=rl-fsp");
+	await page.goto("/?r=rl-fsp");
 	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("rl-fsp");
 });

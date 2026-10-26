@@ -3,11 +3,11 @@ import { Player } from "./player";
 import { CONNECT_MS, createRoom } from "./room";
 
 /*
- * The copied table link says selected_player=none, so no browser takes a seat by itself from it: not even the
+ * The copied table link has no pl, so no browser takes a seat by itself from it: not even the
  * creator's browser, which remembers its seat for each room (src/session.ts). Taking a seat names it in the URL.
  */
 
-test("Copy link copies selected_player=none, and the creator's browser opens that link without taking its seat", async ({
+test("Copy link copies a link without a seat, and the creator's browser opens that link without taking its seat", async ({
 	browser,
 	baseURL,
 }) => {
@@ -24,8 +24,7 @@ test("Copy link copies selected_player=none, and the creator's browser opens tha
 		await expect.poll(clipboard).not.toBe("");
 		const link = await clipboard();
 		const shared = new URL(link);
-		expect(shared.searchParams.getAll("selected_player")).toEqual(["none"]);
-		shared.searchParams.delete("selected_player");
+		expect(shared.searchParams.has("pl")).toBe(false);
 		expect(shared.toString()).toBe(own.toString());
 
 		await page.close();
@@ -34,12 +33,10 @@ test("Copy link copies selected_player=none, and the creator's browser opens tha
 			timeout: CONNECT_MS,
 		});
 		await expect(again).toHaveTitle("Bridge");
-		expect(new URL(again.url()).searchParams.get("selected_player")).toBe(
-			"none",
-		);
+		expect(new URL(again.url()).searchParams.has("pl")).toBe(false);
 		await again.getByTestId("pick-W").click();
 		await expect(again).toHaveTitle(/player4 \(W\)$/);
-		expect(new URL(again.url()).searchParams.get("selected_player")).toBe("W");
+		expect(new URL(again.url()).searchParams.get("pl")).toBe("W");
 		expect(host.errors).toEqual([]);
 	} finally {
 		await host.close();
@@ -58,7 +55,7 @@ function installShareProbe(): void {
 	});
 }
 
-test("on a phone the link button opens the device's share sheet with the selected_player=none link", async ({
+test("on a phone the link button opens the device's share sheet with the link that has no seat", async ({
 	browser,
 	baseURL,
 }) => {
@@ -83,8 +80,7 @@ test("on a phone the link button opens the device's share sheet with the selecte
 		await expect.poll(async () => (await sharedData()).length).toBe(1);
 		const [data] = await sharedData();
 		const shared = new URL(data?.url ?? "");
-		expect(shared.searchParams.getAll("selected_player")).toEqual(["none"]);
-		shared.searchParams.delete("selected_player");
+		expect(shared.searchParams.has("pl")).toBe(false);
 		expect(shared.toString()).toBe(own.toString());
 		expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("");
 		expect(host.errors).toEqual([]);

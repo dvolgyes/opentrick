@@ -92,14 +92,14 @@ test.afterAll(async () => {
 
 test("South's video reaches East without a gap while the host North reloads", async () => {
 	test.setTimeout(180_000);
-	const north = await players.N.page("./?host=north");
+	const north = await players.N.page("./?h=N");
 	await namePlayers(north, "N");
 	await north
 		.getByTestId("create")
 		.evaluate((button) => (button as HTMLButtonElement).click());
 	await expectSeat(north, "N");
 	const linkUrl = new URL(north.url());
-	linkUrl.searchParams.delete("selected_player");
+	linkUrl.searchParams.delete("pl");
 	const link = linkUrl.toString();
 	const tab = { N: north } as Record<SeatKey, Page>;
 	for (const seat of ["E", "S", "W"] as const) {

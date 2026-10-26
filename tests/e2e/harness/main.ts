@@ -74,7 +74,7 @@ export interface CallView {
 export interface Harness {
 	createTable(seat: Seat): Promise<{ readonly key: string }>;
 	/**
-	 * Opens the table link. `seat` is the seat in the player's own URL (`selected_player`, ADR 0005), which
+	 * Opens the table link. `seat` is the seat in the player's own URL (`pl`, ADR 0005), which
 	 * gives a reloaded or reopened page its seat back; the shared link has none.
 	 */
 	openTable(key: string, seat?: Seat): Promise<void>;

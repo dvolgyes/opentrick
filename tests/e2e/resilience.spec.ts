@@ -186,15 +186,14 @@ test("a browser that does not store data cannot create a table, but it can take 
 	);
 });
 
-test("a link of another version shows the version message", async () => {
+// The link names no version: the peers compare versions in the hello message, so this link opens a table like any other.
+test("a link that names another version opens the table, where nobody is", async () => {
 	const page = await (await openBrowser("visitor")).page(
 		`./#v=p2p-v9&k=${"A".repeat(43)}`,
 	);
-	await expect(
-		page.getByText(
-			"This link is for another version of the app. Reload the page, or ask the table creator for a new link.",
-		),
-	).toBeVisible();
+	await expect(page.getByText("Nobody is at this table right now")).toBeVisible(
+		{ timeout: CONNECT_MS },
+	);
 });
 
 test("a damaged key opens an empty table: nobody is there", async () => {

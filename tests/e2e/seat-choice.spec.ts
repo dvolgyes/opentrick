@@ -7,7 +7,7 @@ import { Player, reportNetwork } from "./player";
 import { CONNECT_MS, createRoom, expectSeat, NAME, picks } from "./room";
 
 /**
- * The seat page from the shared link (selected_player=none) lists all four seats. A seat that the page cannot take
+ * The seat page from the shared link (no pl) lists all four seats. A seat that the page cannot take
  * is disabled and says why: the host's seat, a bot's seat, or a player's seat. When only one seat is free, the
  * page takes it by itself.
  */
@@ -55,7 +55,7 @@ test("the shared link shows the host's and the bots' seats as taken, and takes t
 	await switchToBot(hostPage, "N");
 
 	const shared = new URL(link);
-	shared.searchParams.set("selected_player", "none");
+	shared.searchParams.delete("pl");
 	const page = await guest.page(shared.toString());
 	await expect(page.getByTestId("pick-N")).toHaveText("North — player1 (bot)", {
 		timeout: CONNECT_MS,
@@ -91,8 +91,8 @@ test("the host's page keeps its bot seats in its URL without a reload, so the re
 	await switchToBot(hostPage, "N");
 	await switchToBot(hostPage, "E");
 	await expect
-		.poll(() => new URL(hostPage.url()).searchParams.get("bot_seats"))
-		.toBe("N,E");
+		.poll(() => new URL(hostPage.url()).searchParams.get("b"))
+		.toBe("NE");
 	expect(
 		await hostPage.evaluate(
 			() => (window as { notReloaded?: boolean }).notReloaded,
@@ -111,11 +111,9 @@ test("the host's page keeps its bot seats in its URL without a reload, so the re
 
 test("a link whose table nobody has offers its seats only after the page finds no host", async () => {
 	const [, guest] = players as [Player, Player];
-	const key = randomBytes(32).toString("base64url");
-	const names = `north=${NAME.N}&east=${NAME.E}&south=${NAME.S}&west=${NAME.W}`;
-	const page = await guest.page(
-		`./?${names}&host=south&selected_player=none#v=p2p-v1&k=${key}`,
-	);
+	const key = randomBytes(16).toString("base64url");
+	const names = `n=${NAME.N}&e=${NAME.E}&s=${NAME.S}&w=${NAME.W}`;
+	const page = await guest.page(`./?${names}&h=S#k=${key}`);
 	await expect(page.getByTestId("pick-E")).toHaveText(
 		`East — ${NAME.E} (waiting for the host)`,
 	);

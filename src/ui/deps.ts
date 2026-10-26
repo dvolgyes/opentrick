@@ -70,7 +70,7 @@ export interface Navigation {
 	update(targetDate: string): void;
 	/** Stores the seat choice in this page's URL without navigating. */
 	rememberSeat(seat: Seat): void;
-	/** Stores "no seat" (selected_player=none) in this page's URL without navigating, so a reload opens the seat page. */
+	/** Removes the seat (`pl`) from this page's URL without navigating, so a reload opens the seat page. */
 	forgetSeat(): void;
 }
 

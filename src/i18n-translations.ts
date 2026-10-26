@@ -2013,14 +2013,6 @@ const rows: readonly TranslationRow[] = [
 	],
 	["This is me", "Soy yo", "Sou eu", "C'est moi", "Sono io", "Dit ben ik"],
 	[
-		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.",
-		"Este enlace es de otra versión de la aplicación. Recarga la página o pide un enlace nuevo al creador de la mesa.",
-		"Esta ligação é de outra versão da aplicação. Recarregue a página ou peça uma nova ligação a quem criou a mesa.",
-		"Ce lien correspond à une autre version de l'application. Rechargez la page ou demandez un nouveau lien au créateur de la table.",
-		"Questo link è per un'altra versione dell'app. Ricarica la pagina o chiedi un nuovo link a chi ha creato il tavolo.",
-		"Deze link is voor een andere versie van de app. Herlaad de pagina of vraag de maker van de tafel om een nieuwe link.",
-	],
-	[
 		"This link is not valid. Check that you copied all of it.",
 		"Este enlace no es válido. Comprueba que lo copiaste completo.",
 		"Esta ligação não é válida. Verifique se a copiou por completo.",

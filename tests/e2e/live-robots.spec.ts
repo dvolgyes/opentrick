@@ -243,9 +243,8 @@ async function waitForFullBoard(
 
 /** Local bidding is shared by the host and the three independent Node bots. */
 const SETUP_QUERY = new URLSearchParams({
-	host: "west",
-	bot_seats: "",
-	bot_bidder: "sl",
+	h: "W",
+	b: "",
 }).toString();
 
 // Room invitation keys remain private.
@@ -291,7 +290,7 @@ test.describe("four robots play a full board through the public relays", () => {
 				await expect(autoplay).toHaveText("👱 Disable autoplay");
 
 				const link = new URL(page.url());
-				link.searchParams.delete("selected_player");
+				link.searchParams.delete("pl");
 				const env = botEnvironment(mode.on);
 				for (const { seat, name } of SEATS)
 					bots.push(

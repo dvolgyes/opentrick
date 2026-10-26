@@ -30,8 +30,8 @@ test("host bots play two consecutive boards from auction through the final trick
 		"👱 Disable autoplay",
 	);
 	const roomUrl = new URL(page.url());
-	expect(roomUrl.searchParams.get("bot_seats")).toBe("N,E,S,W");
-	expect(roomUrl.searchParams.get("bot_bidder")).toBe("sl");
+	expect(roomUrl.searchParams.get("b")).toBe("NESW");
+	expect(roomUrl.searchParams.has("r")).toBe(false);
 	await expect(page.getByTestId("bot-spend")).toHaveCount(0);
 	await expect(page.getByTestId("bot-balance")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
@@ -225,7 +225,7 @@ test("switching the current bidder to a bot starts it immediately", async ({
 				timeout: 15_000,
 			},
 		);
-		expect(new URL(hostPage.url()).searchParams.get("bot_seats")).toBe("N");
+		expect(new URL(hostPage.url()).searchParams.get("b")).toBe("N");
 		await hostPage.reload();
 		await expect(
 			hostPage.getByTestId("tile-N").locator(".bot-overlay"),
@@ -490,7 +490,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		);
 		// A later host reload must not bring the bot back.
 		await expect
-			.poll(() => new URL(hostPage.url()).searchParams.get("bot_seats"))
+			.poll(() => new URL(hostPage.url()).searchParams.get("b"))
 			.toBe("");
 		expect(new URL(hostPage.url()).searchParams.has("autoplay_seats")).toBe(
 			false,

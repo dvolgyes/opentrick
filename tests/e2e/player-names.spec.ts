@@ -20,9 +20,9 @@ test("an unnamed creator from a reusable setup link names themselves before seed
 		south: "player",
 		west: "player",
 		host: "south",
-		selected_player: "S",
+		pl: "S",
 	}).toString();
-	url.hash = `v=p2p-v1&k=${randomBytes(32).toString("base64url")}`;
+	url.hash = `k=${randomBytes(16).toString("base64url")}`;
 	await page.goto(url.toString());
 	await expect(page.getByTestId("name-entry")).toBeVisible({ timeout: 30_000 });
 	await page.getByTestId("personal-name").fill("Seeder");
@@ -65,7 +65,7 @@ test("the creation and seating crosses fit a phone without changing compass dire
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	const url = new URL(page.url());
-	url.searchParams.set("selected_player", "none");
+	url.searchParams.delete("pl");
 	const guest = await Player.open(browser, baseURL, "phone-guest");
 	try {
 		const other = await guest.page(url.toString());
@@ -102,7 +102,7 @@ test("South hosts a compass layout and an unnamed entrant edits a persistent nam
 		await page.evaluate(() => localStorage.getItem("opentrick.player-name")),
 	).toBe("Alice");
 	const url = new URL(page.url());
-	url.searchParams.set("selected_player", "none");
+	url.searchParams.delete("pl");
 	const guest = await Player.open(browser, baseURL, "name-guest");
 	const guestPage = await guest.page(baseURL);
 	try {
@@ -230,7 +230,7 @@ test("preassigned names join directly and a host can open a bot seat for a named
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	const url = new URL(page.url());
-	url.searchParams.set("selected_player", "none");
+	url.searchParams.delete("pl");
 	const guest = await Player.open(browser, baseURL, "preassigned-guest");
 	const guestPage = await guest.page(baseURL);
 	try {
@@ -380,11 +380,14 @@ test("a solo game seats the saved name at South as host against three bots", asy
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	await expect(page).toHaveTitle(/Céline \(S\)$/);
 	const params = new URL(page.url()).searchParams;
-	expect(
-		["north", "east", "south", "west", "host", "bot_seats"].map((key) =>
-			params.get(key),
-		),
-	).toEqual(["bot", "bot", "Céline", "bot", "south", "N,E,W"]);
+	expect(["n", "e", "s", "w", "h", "b"].map((key) => params.get(key))).toEqual([
+		"bot",
+		"bot",
+		"Céline",
+		"bot",
+		"S",
+		"NEW",
+	]);
 });
 
 test("on a desktop the host opens the player names from a name above the cards or below a video, and a phone does not", async ({

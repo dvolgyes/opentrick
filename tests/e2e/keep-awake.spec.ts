@@ -69,7 +69,7 @@ test("the create page, the seat page, the table and a broken link each keep the 
 		await expect(page.getByText(/keep this page open/i)).toHaveCount(0);
 		await expect(created.getByText(/keep this page open/i)).toHaveCount(0);
 
-		const broken = await guest.page("./#v=p2p-v1&k=broken");
+		const broken = await guest.page("./#k=broken");
 		await expect(
 			broken.getByText("This link is not valid", { exact: false }),
 		).toBeVisible();

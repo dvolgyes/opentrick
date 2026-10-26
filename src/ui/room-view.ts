@@ -42,7 +42,13 @@ import {
 	SEATS,
 	type Seat,
 } from "../protocol";
-import { botSeatsQuery, parseAutoplaySeats, sharedQuery } from "./bookmark";
+import {
+	bidderQuery,
+	botSeatsQuery,
+	parseAutoplaySeats,
+	sharedQuery,
+	storedBotSeats,
+} from "./bookmark";
 import { CallMemory } from "./call-memory";
 import type { CallDisplay, RemoteCallPresence } from "./call-model";
 import { cameraSetup } from "./camera-setup";
@@ -353,12 +359,10 @@ export function showRoom(
 				...(botSettings ?? settingsFor(controller.view().table?.config)),
 				bidder,
 			};
-			const query = new URLSearchParams(location.search);
-			query.set("bot_bidder", bidder);
 			history.replaceState(
 				null,
 				"",
-				`${location.pathname}?${query}${location.hash}`,
+				`${location.pathname}?${bidderQuery(location.search, bidder)}${location.hash}`,
 			);
 		}
 		if (botSettings) {
@@ -1283,8 +1287,8 @@ export function showRoom(
 			view.roster !== null &&
 			!botRestorePending &&
 			(view.hosting || (view.hostSeat !== null && view.hostSeat !== seat)) &&
-			(new URLSearchParams(location.search).get("bot_seats") !==
-				SEATS.filter((targetSeat) => activeBotSet.has(targetSeat)).join(",") ||
+			(storedBotSeats(location.search)?.join("") !==
+				SEATS.filter((targetSeat) => activeBotSet.has(targetSeat)).join("") ||
 				parseAutoplaySeats(location.search).join(",") !==
 					SEATS.filter(
 						(targetSeat) =>

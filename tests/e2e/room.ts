@@ -48,8 +48,7 @@ export const hostRows = (page: Page): Locator =>
 		.locator("li")
 		.filter({ has: page.locator(".tag", { hasText: /^Host$/ }) });
 
-const TABLE_LINK =
-	/^http:\/\/localhost:\d+\/?\?.*#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
+const TABLE_LINK = /^http:\/\/localhost:\d+\/?\?.*#k=[A-Za-z0-9_-]{22}$/;
 
 /**
  * Names all fixture players and explicitly chooses the host required by the scenario. The host comes first, because
@@ -81,12 +80,12 @@ export async function createRoom(
 		.getByTestId("create")
 		.evaluate((button) => (button as HTMLButtonElement).click());
 	await expect(page).toHaveTitle(/player4 \(W\)$/);
-	await expect(page).toHaveURL(/\?.*#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/);
+	await expect(page).toHaveURL(/\?.*#k=[A-Za-z0-9_-]{22}$/);
 	const linkUrl = new URL(page.url());
-	linkUrl.searchParams.delete("selected_player");
+	linkUrl.searchParams.delete("pl");
 	const link = linkUrl.toString();
 	expect(link).toMatch(TABLE_LINK);
-	expect(linkUrl.searchParams.has("selected_player")).toBe(false);
+	expect(linkUrl.searchParams.has("pl")).toBe(false);
 	return link;
 }
 

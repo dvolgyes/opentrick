@@ -1,13 +1,13 @@
 # ADR 0005: Reusable room links bootstrap an expired room
 
-Status: accepted (2026-10-20).
+Status: accepted (2026-10-20). Amended 2026-10-27: the seat parameter is `pl`, and a URL without `pl` takes no seat.
 The page that seeds is amended by [ADR 0007](0007-host-priority-by-link-seat.md) (2026-10-25).
 
 ## Context
 
 ADR 0004 stores table state in each player's browser and expires an idle table after 8 hours (24 hours until 2026-10-25).
 The room URL already carries the four player names, the host seat, and the room key.
-The player-specific URL carries `selected_player` with the player's seat, while the shared URL carries `selected_player=none`.
+The player-specific URL carries `pl` with the player's seat, while the shared URL carries no `pl`.
 The host needs to reopen a weekly room even when its local copy has expired or is missing.
 
 ## Decision
@@ -27,14 +27,14 @@ An older report does not show the table, because the only replica can be gone.
 So a page whose peers with the table all left does not wait for a host until a reload.
 Until then, the seat waits for a host like any other seat.
 Other pages can select seats and wait for that host.
-The table link carries `selected_player=none`; a player's own URL keeps the player's seat for reload.
-With `none`, a page does not reopen a seat that the browser remembers.
+The table link carries no `pl`; a player's own URL keeps the player's seat for reload.
+Without `pl`, a page does not reopen a seat that the browser remembers. This replaces the earlier rule, in which an absent `selected_player` reopened the remembered seat (amended 2026-10-27).
 Until 2026-10-26, it also did not take the last free seat.
 Now, at the owner's request, it takes the only free seat of the host's lobby by itself, unless the lobby shows that this browser held that seat.
-Before the host's lobby arrives, a page with `none` takes no seat by itself.
+Before the host's lobby arrives, a page without `pl` takes no seat by itself.
 The seat page lists all four seats.
 A seat that the page cannot take is disabled and says why: the host's seat, a bot's seat, a seat in another tab of this browser, or a taken seat.
-Without `selected_player`, a page reopens the remembered seat of this browser.
+The shared link and the seat page are the only places that set or clear `pl`; the seat of a page is never restored from the remembered seat by a missing `pl`.
 
 ## Consequences
 

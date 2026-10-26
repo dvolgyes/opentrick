@@ -34,7 +34,7 @@ test("a cached older website gets one automatic reload and a manual retry instea
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	const url = new URL(page.url());
-	url.searchParams.set("selected_player", "none");
+	url.searchParams.delete("pl");
 	const guest = await Player.open(browser, baseURL, "cached-guest");
 	const guestPage = await guest.page(baseURL);
 	try {
@@ -75,7 +75,7 @@ for (const older of ["host", "guest"] as const) {
 		await expect(page).toHaveTitle(/Host \(S\)$/);
 		const initial = new URL(page.url());
 		const link = new URL(initial);
-		link.searchParams.set("selected_player", "none");
+		link.searchParams.delete("pl");
 		const guest = await Player.open(browser, baseURL, `refresh-${older}`);
 		const guestPage = await guest.page(baseURL);
 		try {

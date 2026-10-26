@@ -313,10 +313,9 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 
 /** A setup link with host=south and a new key: nobody has this table yet. Returns the link of `seat`. */
 function setupLink(): (seat: SeatKey) => string {
-	const key = randomBytes(32).toString("base64url");
-	const names = `north=${NAME.N}&east=${NAME.E}&south=${NAME.S}&west=${NAME.W}`;
-	return (seat) =>
-		`./?${names}&host=south&selected_player=${seat}#v=p2p-v1&k=${key}`;
+	const key = randomBytes(16).toString("base64url");
+	const names = `n=${NAME.N}&e=${NAME.E}&s=${NAME.S}&w=${NAME.W}`;
+	return (seat) => `./?${names}&h=S&pl=${seat}#k=${key}`;
 }
 
 test("with a setup link to South, West seeds the table that West and North open; South takes the host role when it joins", async () => {

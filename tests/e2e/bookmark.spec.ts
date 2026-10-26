@@ -5,9 +5,9 @@ import { CONNECT_MS } from "./room";
 /** A shared room link carries setup values and selects no seat; a player's page URL selects their seat. */
 test.describe.configure({ mode: "serial" });
 
-const BOOKMARK_QUERY = "east=zsdh&west=dvolgyes&host=east";
+const BOOKMARK_QUERY = "e=zsdh&w=dvolgyes&h=E";
 const TABLE_LINK =
-	/^http:\/\/localhost:\d+\/\?north=player1&east=zsdh&south=player&west=dvolgyes&host=east&bot_seats=&bot_bidder=sl&selected_player=none#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
+	/^http:\/\/localhost:\d+\/\?n=player1&e=zsdh&s=player&w=dvolgyes&h=E&b=#k=[A-Za-z0-9_-]{22}$/;
 
 const players: Player[] = [];
 let owner: Player;
@@ -50,7 +50,7 @@ test("create opens the game and selects the host seat in the page URL", async ()
 	await page.getByTestId("create").click();
 	await expect(page).toHaveTitle("Bridge: zsdh (E)");
 	await expect(page).toHaveURL(
-		/\?north=player1&east=zsdh&south=player&west=dvolgyes&host=east&bot_seats=&bot_bidder=sl&selected_player=E#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/,
+		/\?n=player1&e=zsdh&s=player&w=dvolgyes&h=E&b=&pl=E#k=[A-Za-z0-9_-]{22}$/,
 	);
 	await expect(page.getByRole("textbox", { name: "Table link" })).toHaveCount(
 		0,

@@ -205,7 +205,7 @@ test("5c: another player releases a silent seat; a new browser takes it; the old
 	).toBeVisible({ timeout: CONNECT_MS });
 	await expect(old.getByText("All seats are taken.")).toBeVisible();
 	await expect(old.getByTestId("table")).toHaveCount(0);
-	expect(new URL(old.url()).searchParams.get("selected_player")).toBe("none");
+	expect(new URL(old.url()).searchParams.has("pl")).toBe(false);
 	await old.close();
 	await expect(
 		tab.W.getByTestId("roster").locator('li[data-state="online"]'),

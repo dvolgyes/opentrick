@@ -93,8 +93,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Chicago (later)": "Chicago (später)",
 		"Rubber (later)": "Rubber (später)",
 
-		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
-			"Dieser Link gehört zu einer anderen App-Version. Lade die Seite neu oder bitte den Ersteller um einen neuen Link.",
 		"This link is not valid. Check that you copied all of it.":
 			"Dieser Link ist ungültig. Prüfe, ob du ihn vollständig kopiert hast.",
 		"All seats are taken.": "Alle Plätze sind belegt.",
@@ -719,8 +717,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Chicago (later)": "Chicago (később)",
 		"Rubber (later)": "Gumi (később)",
 
-		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
-			"Ez a hivatkozás az alkalmazás másik verziójához tartozik. Töltsd újra az oldalt, vagy kérj új hivatkozást a létrehozótól.",
 		"This link is not valid. Check that you copied all of it.":
 			"Ez a hivatkozás érvénytelen. Ellenőrizd, hogy teljes egészében másoltad-e.",
 		"All seats are taken.": "Minden hely foglalt.",
@@ -1731,8 +1727,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 
 		"This browser does not store data ({problem}). You can play, but you cannot become the host, and a reload loses this copy of the table.":
 			"Nettleseren lagrer ikke data ({problem}). Du kan spille, men ikke bli vert. Hvis du laster inn siden på nytt, går denne bordkopien tapt.",
-		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
-			"Denne lenken er for en annen versjon av appen. Last inn siden på nytt, eller be den som opprettet bordet om en ny lenke.",
 		"This link is not valid. Check that you copied all of it.":
 			"Denne lenken er ugyldig. Kontroller at du kopierte hele lenken.",
 		"This table has too many open pages":
