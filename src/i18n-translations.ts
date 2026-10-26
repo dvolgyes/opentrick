@@ -1566,6 +1566,15 @@ const rows: readonly TranslationRow[] = [
 		"Solarized",
 	],
 	[
+		"Selenized",
+		"Selenized",
+		"Selenized",
+		"Selenized",
+		"Selenized",
+		"Selenized",
+	],
+	["Gruvbox", "Gruvbox", "Gruvbox", "Gruvbox", "Gruvbox", "Gruvbox"],
+	[
 		"Bidding system",
 		"Sistema de subasta",
 		"Sistema de leilão",

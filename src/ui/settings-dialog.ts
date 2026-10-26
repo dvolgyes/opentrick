@@ -33,6 +33,8 @@ const SCHEME_LABELS: Readonly<Record<Scheme, string>> = {
 const THEME_LABELS: Readonly<Record<Theme, string>> = {
 	normal: "Normal",
 	solarized: "Solarized",
+	selenized: "Selenized",
+	gruvbox: "Gruvbox",
 };
 
 const FLAG_LABELS = {

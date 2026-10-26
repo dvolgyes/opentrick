@@ -12,7 +12,7 @@ import {
 import type { MaybeStorage } from "../session";
 
 /** The colour themes of themes.css; each has a light and a dark palette. */
-export const THEMES = ["normal", "solarized"] as const;
+export const THEMES = ["normal", "solarized", "selenized", "gruvbox"] as const;
 export type Theme = (typeof THEMES)[number];
 
 /** The palette of the theme: "auto" follows the light or dark preference of the browser. */
