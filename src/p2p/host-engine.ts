@@ -1248,6 +1248,11 @@ export class HostEngine {
 					available: holder !== null && this.#available(table, seat, holder),
 					online: this.#online(table, seat),
 					mine: holder !== null && row.holder === holder,
+					...(seat === this.#deps.log.seat
+						? { host: true as const }
+						: this.#localBots.has(seat)
+							? { bot: true as const }
+							: {}),
 				};
 			}),
 		};

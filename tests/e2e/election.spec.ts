@@ -445,7 +445,7 @@ test("a second tab cannot take the host's active seat", async () => {
 	await expect(
 		west.getByRole("heading", { name: "Choose your seat" }),
 	).toBeVisible({ timeout: CONNECT_MS });
-	await expect(west.getByTestId("pick-W")).toHaveCount(0);
+	await expect(west.getByTestId("pick-W")).toBeDisabled();
 	await expectSeat(old, "W");
 	await expect(old.getByTestId("send")).toBeEnabled();
 

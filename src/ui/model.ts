@@ -322,7 +322,10 @@ export function chooseText(
 
 export interface LobbyChoice {
 	readonly seat: Seat;
+	/** The seat and its player; a seat that this page cannot take also says why, for example "(host)". */
 	readonly label: string;
+	/** This page can take the seat. The page shows the other seats too, but disabled. */
+	readonly free: boolean;
 }
 
 export type LobbyScreen =
@@ -331,18 +334,25 @@ export type LobbyScreen =
 	| {
 			readonly kind: "lobby";
 			readonly status: string | undefined;
-			/** The seats to take; undefined until the host's lobby arrives. */
+			/** All four seats; undefined until the host's lobby or the setup link names the players. */
 			readonly choices: readonly LobbyChoice[] | undefined;
+			/** The only free seat, which the page takes without a choice. */
+			readonly autoSeat: Seat | undefined;
 	  };
 
 export interface LobbyInput extends BannerInput {
 	readonly lobby: Lobby | null;
 	readonly heldElsewhere: readonly Seat[];
 	readonly setup?: { readonly config: RoomConfig };
+	/**
+	 * The link has selected_player=none. The page then takes the only free seat only when the host's lobby lists it,
+	 * and not when it is the seat of this browser's holder (ADR 0005).
+	 */
+	readonly none?: boolean;
 	readonly t?: Translate;
 }
 
-/** The screen of a page without a seat. The lobby lists only the seats this page can take. */
+/** The screen of a page without a seat. The lobby lists all four seats, and marks the seats this page can take. */
 export function lobbyScreen(input: LobbyInput): LobbyScreen {
 	const banner = bannerFor(input);
 	const t = input.t ?? english;
@@ -358,23 +368,51 @@ export function lobbyScreen(input: LobbyInput): LobbyScreen {
 	const { lobby } = input;
 	const elsewhere = new Set(input.heldElsewhere);
 	const setupConfig = input.setup?.config;
+	const choice = (
+		config: RoomConfig,
+		seat: Seat,
+		taken: string | undefined,
+	): LobbyChoice => {
+		const label = seatLabel(config, seat);
+		return taken === undefined
+			? { seat, label, free: true }
+			: { seat, label: t(taken, { seat: label }), free: false };
+	};
+	const choices =
+		lobby !== null
+			? lobby.seats.map((row) =>
+					choice(
+						lobby.config,
+						row.seat,
+						row.host === true && !row.available
+							? "{seat} (host)"
+							: row.bot === true && !row.available
+								? "{seat} (bot)"
+								: elsewhere.has(row.seat)
+									? "{seat} (in another tab)"
+									: row.available
+										? undefined
+										: "{seat} (taken)",
+					),
+				)
+			: setupConfig !== undefined
+				? SEATS.map((seat) =>
+						choice(
+							setupConfig,
+							seat,
+							elsewhere.has(seat) ? "{seat} (in another tab)" : undefined,
+						),
+					)
+				: undefined;
+	const free = choices?.filter((item) => item.free) ?? [];
+	const only = free.length === 1 ? free[0]?.seat : undefined;
+	const held =
+		lobby?.seats.some((row) => row.seat === only && row.mine) ?? true;
 	return {
 		kind: "lobby",
 		status: banner === undefined ? undefined : bannerText(banner, t),
-		choices:
-			lobby !== null
-				? lobby.seats
-						.filter((row) => row.available && !elsewhere.has(row.seat))
-						.map((row) => ({
-							seat: row.seat,
-							label: seatLabel(lobby.config, row.seat),
-						}))
-				: setupConfig !== undefined
-					? SEATS.filter((seat) => !elsewhere.has(seat)).map((seat) => ({
-							seat,
-							label: seatLabel(setupConfig, seat),
-						}))
-					: undefined,
+		choices,
+		autoSeat: input.none === true && held ? undefined : only,
 	};
 }
 

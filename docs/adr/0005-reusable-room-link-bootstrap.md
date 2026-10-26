@@ -24,7 +24,12 @@ So a page whose peers with the table all left does not wait for a host until a r
 Until then, the seat waits for a host like any other seat.
 Other pages can select seats and wait for that host.
 The table link carries `selected_player=none`; a player's own URL keeps the player's seat for reload.
-With `none`, a page takes no seat by itself: it does not reopen a seat that the browser remembers, and it does not take the last free seat.
+With `none`, a page does not reopen a seat that the browser remembers.
+Until 2026-10-26, it also did not take the last free seat.
+Now, at the owner's request, it takes the only free seat of the host's lobby by itself, unless the lobby shows that this browser held that seat.
+Before the host's lobby arrives, a page with `none` takes no seat by itself.
+The seat page lists all four seats.
+A seat that the page cannot take is disabled and says why: the host's seat, a bot's seat, a seat in another tab of this browser, or a taken seat.
 Without `selected_player`, a page reopens the remembered seat of this browser.
 
 ## Consequences
