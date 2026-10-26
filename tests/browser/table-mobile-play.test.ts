@@ -1847,6 +1847,41 @@ describe("compact play controls", () => {
 	});
 });
 
+describe("call presence on the video tile", () => {
+	it("shows a viewer outside the call the microphone and camera of a player in it, large and centred on the tile", () => {
+		const { root, section } = renderView(playView(), "desktop");
+		section.renderCall(
+			{ available: false, reason: "" },
+			{
+				E: { sendsAudio: true, sendsVideo: false },
+			},
+		);
+		const tile = root
+			.querySelector("[data-testid='tile-E']")
+			?.getBoundingClientRect();
+		const badge = root.querySelector<HTMLElement>(
+			"[data-testid='call-presence-E']",
+		);
+		expect(badge?.checkVisibility()).toBe(true);
+		const icons = [...(badge?.querySelectorAll(".icon") ?? [])].map((icon) =>
+			icon.getBoundingClientRect(),
+		);
+		expect(icons).toHaveLength(2);
+		const rem = Number.parseFloat(
+			getComputedStyle(document.documentElement).fontSize,
+		);
+		// Three times the earlier 0.9rem.
+		for (const icon of icons) {
+			expect(icon.width).toBeCloseTo(2.7 * rem, 0);
+			expect(icon.height).toBeCloseTo(2.7 * rem, 0);
+		}
+		const box = badge?.getBoundingClientRect();
+		if (tile === undefined || box === undefined) throw new Error("no tile");
+		expect(box.left + box.width / 2).toBeCloseTo(tile.left + tile.width / 2, 0);
+		expect(box.top + box.height / 2).toBeCloseTo(tile.top + tile.height / 2, 0);
+	});
+});
+
 describe("round trip on the video tile", () => {
 	const withRoundTrips = (
 		roundTrips: Partial<Record<Seat, RoundTripView>>,
