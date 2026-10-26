@@ -324,6 +324,8 @@ export function tableSection(
 		options.pointSystem ?? (() => DEFAULT_SETTINGS.pointSystem);
 	const cardPoints = options.cardPoints ?? (() => DEFAULT_SETTINGS.cardPoints);
 	let shownPointSystem = pointSystem();
+	// While the table waits for an absent player, the guide stays closed.
+	let guideBlocked = false;
 	let shownCardPoints = cardPoints();
 	const guide = guideDialog(t, options.locale ?? "en");
 	const marks = options.marks ?? (() => DEFAULT_SETTINGS);
@@ -1514,6 +1516,7 @@ export function tableSection(
 			pick,
 			compact,
 			shownPointSystem,
+			guideBlocked,
 		]);
 		if (key === drawnBidBox) return;
 		drawnBidBox = key;
@@ -1633,14 +1636,12 @@ export function tableSection(
 		// The approval dialog asks the question.
 		const status = el("span", { className: "undo-message" }, view.undo.message);
 		status.hidden = view.undo.message === "" || view.undo.canVote;
-		const guideRow = el(
-			"div",
-			{ className: "bid-guide" },
-			button(t("Guide"), () => guide.open(shownPointSystem), {
-				className: "guide-open",
-				attrs: { "aria-haspopup": "dialog" },
-			}),
-		);
+		const guideOpen = button(t("Guide"), () => guide.open(shownPointSystem), {
+			className: "guide-open",
+			attrs: { "aria-haspopup": "dialog" },
+		});
+		guideOpen.disabled = guideBlocked;
+		const guideRow = el("div", { className: "bid-guide" }, guideOpen);
 		bidBox.replaceChildren(
 			guideRow,
 			levels,
@@ -1925,12 +1926,12 @@ export function tableSection(
 		const text = t(SYSTEM_LABELS[system]);
 		if (system === "other")
 			return [el("span", { className: "auction-system" }, text)];
-		return [
-			button(text, () => guide.open(system), {
-				className: "auction-system",
-				attrs: { title: t("Bidding guide") },
-			}),
-		];
+		const open = button(text, () => guide.open(system), {
+			className: "auction-system",
+			attrs: { title: t("Bidding guide") },
+		});
+		open.disabled = guideBlocked;
+		return [open];
 	}
 
 	/**
@@ -1978,7 +1979,7 @@ export function tableSection(
 		const rows = grid.rows;
 		const names = new Map(view.seats.map((seat) => [seat.seat, seat.name]));
 		// A rebuild closes an open meaning, so draw only when the auction or a name changed.
-		const key = JSON.stringify([grid, [...names]]);
+		const key = JSON.stringify([grid, [...names], guideBlocked]);
 		if (key === drawnAuction) return;
 		drawnAuction = key;
 		const meanings: HTMLElement[] = [];
@@ -2196,6 +2197,8 @@ export function tableSection(
 	function render(view: TableView): void {
 		latestView = view;
 		shownPointSystem = pointSystem();
+		guideBlocked = view.waiting !== "";
+		if (guideBlocked && guide.element.open) guide.element.close();
 		shownCardPoints = cardPoints();
 		shownMarks = marks();
 		element.dataset.phase = view.phase;

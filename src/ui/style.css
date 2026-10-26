@@ -8,6 +8,9 @@
 	--accent: #1f6f50;
 	--warn-bg: #fff4d6;
 	--warn-fg: #5c4300;
+	/* Network messages: white on red. */
+	--alert-bg: #b3261e;
+	--alert-fg: #ffffff;
 	--online: #2e9d5b;
 	--offline: #b0b0a8;
 	--felt: #3d7a5c;
@@ -144,8 +147,8 @@ td label {
 }
 
 .banner {
-	background: var(--warn-bg);
-	color: var(--warn-fg);
+	background: var(--alert-bg);
+	color: var(--alert-fg);
 	padding: 0.6rem 0.8rem;
 	border-radius: 0.3rem;
 	display: flex;
@@ -218,6 +221,10 @@ td label {
 .note {
 	color: var(--muted);
 	font-size: 0.9rem;
+}
+
+.banner .note {
+	color: inherit;
 }
 
 .from {
@@ -644,8 +651,8 @@ main:has(> .room) {
 	margin: 0.3rem 0;
 	padding: 0.3rem 0.6rem;
 	border-radius: 0.4rem;
-	background: #e8b84a;
-	color: #1d1a0b;
+	background: var(--alert-bg);
+	color: var(--alert-fg);
 	font-weight: 700;
 	text-align: center;
 }
@@ -2159,10 +2166,10 @@ button.call-join[data-in-call="true"] {
 
 .waiting-notice {
 	padding: 0.75rem;
-	border: 1px solid var(--line);
+	border: 1px solid var(--alert-bg);
 	border-radius: 0.45rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--alert-bg);
+	color: var(--alert-fg);
 }
 
 .waiting-overlay .waiting-notice {

@@ -2381,6 +2381,48 @@ describe("approval of an undo or a claim", () => {
 		expect(approval(root).nextElementSibling).toBe(notice);
 		expect(getComputedStyle(notice).position).not.toBe("fixed");
 	});
+
+	// Network messages are white on red, so that nobody misses them.
+	const ALERT = ["rgb(179, 38, 30)", "rgb(255, 255, 255)"];
+	const colours = (element: Element | null) => {
+		if (!element) throw new Error("the message is missing");
+		const style = getComputedStyle(element);
+		return [style.backgroundColor, style.color];
+	};
+
+	it.each(["desktop", "compact"] as const)(
+		"shows the waiting notice in white on red (%s)",
+		(form) => {
+			const { root } = renderView({ ...playView(), waiting: WAITING }, form);
+			expect(colours(waiting(root))).toEqual(ALERT);
+		},
+	);
+
+	it.each(["desktop", "compact"] as const)(
+		"shows the connection to the host in white on red (%s)",
+		(form) => {
+			const base = playView();
+			const { root } = renderView(
+				{
+					...base,
+					seats: base.seats.map((player) =>
+						player.seat === "E" ? { ...player, connecting: true } : player,
+					),
+				},
+				form,
+			);
+			expect(colours(root.querySelector(".connecting"))).toEqual(ALERT);
+		},
+	);
+
+	it("shows the room banner in white on red", () => {
+		renderView(playView(), "desktop");
+		const banner = document.createElement("div");
+		banner.className = "banner";
+		banner.textContent = "Waiting for the host (12 s)";
+		document.body.append(banner);
+		expect(colours(banner)).toEqual(ALERT);
+	});
 });
 
 describe("hand points", () => {
@@ -2675,6 +2717,46 @@ describe("bidding guide", () => {
 		).toBe("Rekontra(XX)");
 		expect(root.querySelector(".guide-close")?.textContent).toBe("Schließen");
 	});
+
+	it.each(["desktop", "compact"] as const)(
+		"closes the guide and cannot open it while a player is away (%s)",
+		(form) => {
+			const view: TableView = {
+				...auction(),
+				auction: {
+					seats: ["N", "E", "S", "W"],
+					rows: [["1♣"]],
+					systems: ["hcp-corrected", "vienna", undefined, "other"],
+					calls: ["1C"],
+					meanings: [],
+				},
+			};
+			const { root, section } = renderView(view, form);
+			const open = () =>
+				root.querySelector<HTMLButtonElement>(".bid-guide button");
+			const systems = () => [
+				...root.querySelectorAll<HTMLButtonElement>("button.auction-system"),
+			];
+			open()?.click();
+			expect(guide(root)?.open).toBe(true);
+			section.render({
+				...view,
+				bids: [],
+				waiting: "Waiting for South to come back",
+			});
+			expect(guide(root)?.open).toBe(false);
+			expect(open()?.disabled).toBe(true);
+			open()?.click();
+			for (const system of systems()) {
+				expect(system.disabled).toBe(true);
+				system.click();
+			}
+			expect(guide(root)?.open).toBe(false);
+			section.render(view);
+			expect(open()?.disabled).toBe(false);
+			expect(systems().every((system) => !system.disabled)).toBe(true);
+		},
+	);
 });
 
 describe("call meanings in the auction", () => {
