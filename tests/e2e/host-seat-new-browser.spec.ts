@@ -24,9 +24,6 @@ test("a new browser that takes the seat of the departed host joins the existing 
 			const player = await Player.open(browser, baseURL, `player-${seat}`);
 			others.push(player);
 			const page = await player.page(link);
-			await expect(page.getByTestId(`pick-${seat}`)).toBeVisible({
-				timeout: CONNECT_MS,
-			});
 			await pick(page, seat);
 			pages.set(seat, page);
 		}
@@ -41,13 +38,10 @@ test("a new browser that takes the seat of the departed host joins the existing 
 		const newcomer = await Player.open(browser, baseURL, "newcomer");
 		others.push(newcomer);
 		const page = await newcomer.page(link);
-		await expect(page.getByTestId("pick-W")).toBeVisible({
-			timeout: CONNECT_MS,
-		});
-		await page.getByTestId("pick-W").click();
+		// One of the three pages becomes the host, and the newcomer gets West from it.
+		await pick(page, "W", 150_000);
 		pages.set("W", page);
 
-		// One of the three pages becomes the host, and the newcomer gets West from it.
 		await expect(page.locator(".bridge-table")).toHaveAttribute(
 			"data-phase",
 			"auction",

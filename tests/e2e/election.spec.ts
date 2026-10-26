@@ -270,10 +270,8 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 	// "All players connected" needs the other three seats.
 	await expectAllConnected(tabOf(tab, "W"), false);
 	const south = await (await openBrowser("S")).page(link);
-	await expect(south.getByTestId("pick-S")).toBeVisible({
-		timeout: CONNECT_MS,
-	});
-	await pick(south, "S");
+	// South is the only free seat in the host's lobby, so the page takes it by itself.
+	await expectSeat(south, "S", { timeout: CONNECT_MS });
 	tab.S = south;
 	for (const seat of SEATS)
 		await expectAllConnected(tabOf(tab, seat), true, {

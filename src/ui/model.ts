@@ -2,6 +2,7 @@ import { isChatCommand, isChatEvent } from "../game/bridge";
 import { parseChatEvent } from "../game/chat";
 import { englishTranslator as english, type Translate } from "../i18n";
 import type { ElectionView, HostBlock } from "../p2p/election";
+import { NOBODY_MS } from "../p2p/limits";
 import type { MeshDiagnostics, RelayStatus } from "../p2p/mesh";
 import type { OutboxItem, SubmitResult } from "../p2p/outbox";
 import type { StorageCode } from "../p2p/storage";
@@ -334,7 +335,10 @@ export type LobbyScreen =
 	| {
 			readonly kind: "lobby";
 			readonly status: string | undefined;
-			/** All four seats; undefined until the host's lobby or the setup link names the players. */
+			/**
+			 * All four seats; undefined until the host's lobby or the setup link names the players. The setup link's seats
+			 * are free only when the page finds no host.
+			 */
 			readonly choices: readonly LobbyChoice[] | undefined;
 			/** The only free seat, which the page takes without a choice. */
 			readonly autoSeat: Seat | undefined;
@@ -368,15 +372,20 @@ export function lobbyScreen(input: LobbyInput): LobbyScreen {
 	const { lobby } = input;
 	const elsewhere = new Set(input.heldElsewhere);
 	const setupConfig = input.setup?.config;
+	// The link only finds the host, and the host's lobby says which seats are free. The page offers the link's seats
+	// only when it finds no host, so that it can start the table again from the link (ADR 0005).
+	const hostless =
+		banner?.kind === "nobody-here" ||
+		(banner?.kind === "waiting-for-host" && banner.seconds * 1000 >= NOBODY_MS);
 	const choice = (
 		config: RoomConfig,
 		seat: Seat,
-		taken: string | undefined,
+		taken: SeatMark | undefined,
 	): LobbyChoice => {
 		const label = seatLabel(config, seat);
 		return taken === undefined
 			? { seat, label, free: true }
-			: { seat, label: t(taken, { seat: label }), free: false };
+			: { seat, label: markedSeat(taken, label, t), free: false };
 	};
 	const choices =
 		lobby !== null
@@ -385,14 +394,14 @@ export function lobbyScreen(input: LobbyInput): LobbyScreen {
 						lobby.config,
 						row.seat,
 						row.host === true && !row.available
-							? "{seat} (host)"
+							? "host"
 							: row.bot === true && !row.available
-								? "{seat} (bot)"
+								? "bot"
 								: elsewhere.has(row.seat)
-									? "{seat} (in another tab)"
+									? "elsewhere"
 									: row.available
 										? undefined
-										: "{seat} (taken)",
+										: "taken",
 					),
 				)
 			: setupConfig !== undefined
@@ -400,7 +409,11 @@ export function lobbyScreen(input: LobbyInput): LobbyScreen {
 						choice(
 							setupConfig,
 							seat,
-							elsewhere.has(seat) ? "{seat} (in another tab)" : undefined,
+							elsewhere.has(seat)
+								? "elsewhere"
+								: hostless
+									? undefined
+									: "waiting",
 						),
 					)
 				: undefined;
@@ -414,6 +427,24 @@ export function lobbyScreen(input: LobbyInput): LobbyScreen {
 		choices,
 		autoSeat: input.none === true && held ? undefined : only,
 	};
+}
+
+/** Why the page cannot take a seat. */
+type SeatMark = "host" | "bot" | "elsewhere" | "taken" | "waiting";
+
+function markedSeat(mark: SeatMark, seat: string, t: Translate): string {
+	switch (mark) {
+		case "host":
+			return t("{seat} (host)", { seat });
+		case "bot":
+			return t("{seat} (bot)", { seat });
+		case "elsewhere":
+			return t("{seat} (in another tab)", { seat });
+		case "taken":
+			return t("{seat} (taken)", { seat });
+		case "waiting":
+			return t("{seat} (waiting for the host)", { seat });
+	}
 }
 
 // ---------------------------------------------------------------------------------------------------------------

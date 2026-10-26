@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { chatPayload } from "../../src/game/chat";
 import { translator } from "../../src/i18n";
 import type { ElectionView } from "../../src/p2p/election";
+import { NOBODY_MS } from "../../src/p2p/limits";
 import type { MeshDiagnostics } from "../../src/p2p/mesh";
 import type { OutboxItem } from "../../src/p2p/outbox";
 import type {
@@ -256,6 +257,13 @@ describe("lobbyScreen", () => {
 			{ seat: "W", label: "West — player4 (host)", free: false },
 		]);
 		expect(screen.kind === "lobby" && screen.autoSeat).toBeUndefined();
+		// The host's seat in another tab of this browser is still the host's seat.
+		const own = lobby({ lobby: { ...LOBBY, seats }, heldElsewhere: ["W"] });
+		expect(own.kind === "lobby" && own.choices?.[3]).toEqual({
+			seat: "W",
+			label: "West — player4 (host)",
+			free: false,
+		});
 	});
 
 	it("with selected_player=none, takes the only free seat of the host's lobby, but not the seat that this browser held", () => {
@@ -277,9 +285,55 @@ describe("lobbyScreen", () => {
 		expect(auto({})).toBeUndefined();
 	});
 
-	it("before the host's lobby, lists the setup's seats, and takes the last one only without selected_player=none", () => {
+	it("before the host's lobby, shows the setup's seats but offers none of them", () => {
 		const setup = { setup: { config: CONFIG }, lobby: null };
-		const screen = lobby({ ...setup, heldElsewhere: ["N", "E", "W"] });
+		for (const election of [
+			{ phase: "connecting" },
+			{ phase: "lobby" },
+			{ phase: "host-unreachable" },
+			{ phase: "waiting-for-host", absentMs: NOBODY_MS - 1000, button: null },
+		] as const) {
+			const screen = lobby({ ...setup, election, heldElsewhere: ["N"] });
+			expect(screen.kind === "lobby" && screen.choices).toEqual([
+				{ seat: "N", label: "North — player1 (in another tab)", free: false },
+				{
+					seat: "E",
+					label: "East — player3 (waiting for the host)",
+					free: false,
+				},
+				{
+					seat: "S",
+					label: "South — player2 (waiting for the host)",
+					free: false,
+				},
+				{
+					seat: "W",
+					label: "West — player4 (waiting for the host)",
+					free: false,
+				},
+			]);
+			expect(screen.kind === "lobby" && screen.autoSeat).toBeUndefined();
+		}
+	});
+
+	it("when no host is found, offers the setup's seats, and takes the last one only without selected_player=none", () => {
+		const setup = { setup: { config: CONFIG }, lobby: null };
+		const waited = lobby({
+			...setup,
+			election: {
+				phase: "waiting-for-host",
+				absentMs: NOBODY_MS,
+				button: null,
+			},
+		});
+		expect(
+			waited.kind === "lobby" && waited.choices?.every((c) => c.free),
+		).toBe(true);
+		const screen = lobby({
+			...setup,
+			election: { phase: "nobody-here" },
+			heldElsewhere: ["N", "E", "W"],
+		});
 		expect(screen.kind === "lobby" && screen.choices).toEqual([
 			{ seat: "N", label: "North — player1 (in another tab)", free: false },
 			{ seat: "E", label: "East — player3 (in another tab)", free: false },
@@ -289,6 +343,7 @@ describe("lobbyScreen", () => {
 		expect(screen.kind === "lobby" && screen.autoSeat).toBe("S");
 		const none = lobby({
 			...setup,
+			election: { phase: "nobody-here" },
 			heldElsewhere: ["N", "E", "W"],
 			none: true,
 		});

@@ -1,7 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
+import { NOBODY_MS } from "../../src/p2p/limits";
 import { mockOpenRouter, mockOpenRouterKey } from "./openrouter-mock";
 import { Player, reportNetwork } from "./player";
-import { CONNECT_MS, createRoom, expectSeat, picks } from "./room";
+import { CONNECT_MS, createRoom, expectSeat, NAME, picks } from "./room";
 
 /**
  * The seat page from the shared link (selected_player=none) lists all four seats. A seat that the page cannot take
@@ -73,6 +75,23 @@ test("the shared link shows the host's and the bots' seats as taken, and takes t
 	await expect(page.getByTestId("table")).toHaveAttribute("data-board", "1", {
 		timeout: CONNECT_MS,
 	});
+});
+
+test("a link whose table nobody has offers its seats only after the page finds no host", async () => {
+	const [, guest] = players as [Player, Player];
+	const key = randomBytes(32).toString("base64url");
+	const names = `north=${NAME.N}&east=${NAME.E}&south=${NAME.S}&west=${NAME.W}`;
+	const page = await guest.page(
+		`./?${names}&host=south&selected_player=none#v=p2p-v1&k=${key}`,
+	);
+	await expect(page.getByTestId("pick-E")).toHaveText(
+		`East — ${NAME.E} (waiting for the host)`,
+	);
+	await expect(picks(page)).toHaveCount(0);
+	const since = Date.now();
+	await expect(picks(page)).toHaveCount(4, { timeout: NOBODY_MS + CONNECT_MS });
+	expect(Date.now() - since).toBeGreaterThan(NOBODY_MS - 5_000);
+	await expect(page.getByTestId("pick-E")).toHaveText(`East — ${NAME.E}`);
 });
 
 test("no uncaught errors", () => {

@@ -202,6 +202,14 @@ const rows: readonly TranslationRow[] = [
 		"{seat} (in een ander tabblad)",
 	],
 	[
+		"{seat} (waiting for the host)",
+		"{seat} (esperando al anfitrión)",
+		"{seat} (aguardando o anfitrião)",
+		"{seat} (en attente de l'hôte)",
+		"{seat} (in attesa dell'host)",
+		"{seat} (wacht op de host)",
+	],
+	[
 		"Another player must be online to confirm",
 		"Otro jugador debe estar conectado para confirmar",
 		"Outro jogador tem de estar ligado para confirmar",

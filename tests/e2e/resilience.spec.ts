@@ -88,13 +88,16 @@ test("a relay outage keeps the table: messages, the deal and the auction go on; 
 		browsers[seat] = await openBrowser(seat, { relaySwitch: true });
 	tab.W = await browsers.W.page("./");
 	const link = await createRoom(tab.W);
-	for (const seat of ["N", "E", "S"] as const) {
+	for (const seat of ["N", "E"] as const) {
 		tab[seat] = await browsers[seat].page(link);
 		await expect(tab[seat].getByTestId(`pick-${seat}`)).toBeVisible({
 			timeout: CONNECT_MS,
 		});
 		await pick(tab[seat], seat);
 	}
+	// South is the only free seat in the host's lobby, so the page takes it by itself.
+	tab.S = await browsers.S.page(link);
+	await expectSeat(tab.S, "S", { timeout: CONNECT_MS });
 	for (const seat of seats)
 		await expectAllConnected(tab[seat], true, {
 			timeout: CONNECT_MS,

@@ -123,6 +123,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{seat} (bot)": "{seat} (Bot)",
 		"{seat} (taken)": "{seat} (belegt)",
 		"{seat} (in another tab)": "{seat} (in einem anderen Tab)",
+		"{seat} (waiting for the host)": "{seat} (wartet auf den Host)",
 		"The game has expired or is no longer available":
 			"Dieses Spiel ist abgelaufen oder nicht mehr verfügbar.",
 		"Make me the host": "Mich zum Host machen",
@@ -815,6 +816,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{seat} (bot)": "{seat} (bot)",
 		"{seat} (taken)": "{seat} (foglalt)",
 		"{seat} (in another tab)": "{seat} (egy másik lapon)",
+		"{seat} (waiting for the host)": "{seat} (várakozás a hostra)",
 		"The game has expired or is no longer available":
 			"Ez a játék lejárt, vagy már nem érhető el.",
 		"Make me the host": "Legyek én a host",
@@ -1467,6 +1469,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{seat} (bot)": "{seat} (bot)",
 		"{seat} (taken)": "{seat} (opptatt)",
 		"{seat} (in another tab)": "{seat} (i en annen fane)",
+		"{seat} (waiting for the host)": "{seat} (venter på verten)",
 		"Make me the host": "Gjør meg til vert",
 		"Try seat again": "Prøv plassen igjen",
 		Reload: "Last inn på nytt",

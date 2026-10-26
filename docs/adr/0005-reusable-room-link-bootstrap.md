@@ -13,7 +13,11 @@ The host needs to reopen a weekly room even when its local copy has expired or i
 ## Decision
 
 A complete room setup in the URL allows the page to clear its local expiry tombstone when it has no local replica.
-The page shows all four seats while no host lobby is available.
+The page shows all four seats from the URL while no host lobby is available.
+The URL only finds the host: the host's lobby says which seats are free.
+So the page offers the URL's seats only when it finds no host: after `NOBODY_MS` (10 s) with nobody, or 10 s of waiting for a host.
+Before that, the URL's seats are disabled and say "waiting for the host".
+Until 2026-10-26, the page offered the URL's seats at once, and a person could take a seat that the host had given to a bot.
 A seated page seeds the local replica from the URL setup and starts hosting.
 Until 2026-10-25, only the configured host seat seeded.
 Now any seated page of the setup link can seed, but only the page first in the order of priority from the host seat (ADR 0007, election rule 14).

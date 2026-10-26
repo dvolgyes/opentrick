@@ -70,9 +70,24 @@ export async function createRoom(page: Page): Promise<string> {
 	return link;
 }
 
-export async function pick(page: Page, seat: SeatKey): Promise<void> {
-	await page.getByTestId(`pick-${seat}`).click();
-	await expect(page).toHaveTitle(new RegExp(`${NAME[seat]} \\(${seat}\\)$`));
+export async function pick(
+	page: Page,
+	seat: SeatKey,
+	timeout = CONNECT_MS,
+): Promise<void> {
+	const title = new RegExp(`${NAME[seat]} \\(${seat}\\)$`);
+	const button = page.getByTestId(`pick-${seat}`);
+	// The seats wait for the host's lobby, and the page takes the only free seat of the lobby by itself (ADR 0005).
+	await expect
+		.poll(
+			async () =>
+				title.test(await page.title()) ||
+				(await button.isEnabled({ timeout: 100 }).catch(() => false)),
+			{ timeout },
+		)
+		.toBe(true);
+	if (!title.test(await page.title())) await button.click();
+	await expect(page).toHaveTitle(title);
 }
 
 const STRAIN_NAME: Readonly<Record<string, string>> = {
