@@ -63,6 +63,8 @@ export interface TableHandlers {
 	claimVote(requestId: string, approve: boolean): void;
 	setBotSeat?(seat: Seat, enabled: boolean): void;
 	requestAutoplay?(enabled: boolean): void;
+	/** Opens the host's player name editor. */
+	editPlayerNames?(): void;
 	readonly call: CallHandlers;
 }
 
@@ -1154,10 +1156,12 @@ export function tableSection(
 		const label = el(
 			"div",
 			{ className: "seat-label" },
-			el(
-				"span",
-				{ className: "name", attrs: { "data-bot": String(seat.bot) } },
-				seat.label,
+			nameShortcut(
+				el(
+					"span",
+					{ className: "name", attrs: { "data-bot": String(seat.bot) } },
+					seat.label,
+				),
 			),
 			...seat.tags.map((tag) => el("span", { className: "tag" }, t(tag))),
 		);
@@ -1269,10 +1273,8 @@ export function tableSection(
 	function callSpot(seat: Seat): CallSpot {
 		const known = callSpots.get(seat);
 		if (known !== undefined) return known;
-		const caption = el(
-			"span",
-			{ className: "tile-caption" },
-			t(SEAT_NAMES[seat]),
+		const caption = nameShortcut(
+			el("span", { className: "tile-caption" }, t(SEAT_NAMES[seat])),
 		);
 		const video = el("video", {
 			attrs: { "aria-hidden": "true", "data-testid": `video-${seat}` },
@@ -1576,7 +1578,54 @@ export function tableSection(
 				: `🤖 ${t("Switch to bot")}`;
 			spot.botControl.dataset.bot = String(isBot);
 		}
+		showNameShortcuts();
 		if (latestView) renderMobilePlayers(latestView);
+	}
+
+	/** On a desktop, a click on a player's name opens the host's player name editor. */
+	function namesEditable(): boolean {
+		return (
+			botControlHost &&
+			desktop &&
+			!sideways &&
+			handlers.editPlayerNames !== undefined
+		);
+	}
+
+	function nameShortcut(target: HTMLElement): HTMLElement {
+		target.addEventListener("click", () => {
+			if (namesEditable()) handlers.editPlayerNames?.();
+		});
+		target.addEventListener("keydown", (event) => {
+			if (!namesEditable() || (event.key !== "Enter" && event.key !== " "))
+				return;
+			event.preventDefault();
+			handlers.editPlayerNames?.();
+		});
+		showNameShortcut(target);
+		return target;
+	}
+
+	function showNameShortcut(target: HTMLElement): void {
+		const editable = namesEditable();
+		target.classList.toggle("name-edit", editable);
+		if (editable) {
+			target.setAttribute("role", "button");
+			target.tabIndex = 0;
+			target.title = t("Player names");
+		} else {
+			target.removeAttribute("role");
+			target.removeAttribute("tabindex");
+			target.removeAttribute("title");
+		}
+	}
+
+	function showNameShortcuts(): void {
+		for (const name of element.querySelectorAll<HTMLElement>(
+			".seat-label .name",
+		))
+			showNameShortcut(name);
+		for (const spot of callSpots.values()) showNameShortcut(spot.caption);
 	}
 
 	function setPlayerAutoplay(
@@ -2685,6 +2734,7 @@ export function tableSection(
 		compact = layout === "compact";
 		sideways = layout === "sideways";
 		placeStatus();
+		showNameShortcuts();
 		if (latestView) render(latestView);
 	}
 

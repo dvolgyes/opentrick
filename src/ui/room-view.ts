@@ -645,6 +645,9 @@ export function showRoom(
 			setBotSeat(targetSeat, enabled) {
 				manageBotSeat(targetSeat, enabled);
 			},
+			editPlayerNames() {
+				players.open();
+			},
 			requestAutoplay(enabled) {
 				playerAutoplayPending = true;
 				playerAutoplayStatus = deps.t("Sending autoplay request…");

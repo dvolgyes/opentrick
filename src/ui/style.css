@@ -753,6 +753,20 @@ main:has(> .room) {
 	overflow-wrap: anywhere;
 }
 
+/*
+ * On a desktop, the host opens the player names from a name (src/ui/table.ts `namesEditable`). The name is a flex item
+ * or an absolute caption, so its z-index puts it above the centre column that covers it.
+ */
+.name-edit {
+	z-index: 1;
+	pointer-events: auto;
+	cursor: pointer;
+}
+
+.name-edit:hover {
+	text-decoration: underline;
+}
+
 .seat-label .tag {
 	border-color: var(--label-frame);
 	background: var(--felt-fg);

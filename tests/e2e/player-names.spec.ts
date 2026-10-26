@@ -143,6 +143,12 @@ test("South hosts a compass layout and an unnamed entrant edits a persistent nam
 		await expect(editor.getByTestId("rename-E")).toHaveValue("Dana");
 		await editor.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(guestPage).toHaveTitle(/Dana \(E\)$/);
+		// Only the host edits the names: a guest's click on a name opens nothing.
+		await guestPage
+			.getByTestId("hand-S")
+			.locator(".seat-label .name")
+			.dispatchEvent("click");
+		await expect(guestPage.getByTestId("player-editor")).toBeHidden();
 		await page.reload();
 		await expect(page.getByTestId("roster")).toContainText("Dana");
 		await guestPage.goto("/");
@@ -376,4 +382,44 @@ test("a solo game seats the saved name at South as host against three bots", asy
 			params.get(key),
 		),
 	).toEqual(["bot", "bot", "Céline", "bot", "south", "N,E,W"]);
+});
+
+test("on a desktop the host opens the player names from a name above the cards or below a video, and a phone does not", async ({
+	page,
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL missing");
+	await page.goto("/");
+	await page.getByTestId("create-solo").click();
+	const editor = page.getByTestId("player-editor");
+	const cancel = editor.getByRole("button", { name: "Cancel", exact: true });
+	await page.getByTestId("hand-N").locator(".seat-label .name").click();
+	await expect(editor).toBeVisible();
+	await expect(editor.getByTestId("rename-N")).toHaveValue("bot");
+	await cancel.click();
+	await expect(editor).toBeHidden();
+	await page.getByTestId("tile-E").locator(".tile-caption").click();
+	await expect(editor).toBeVisible();
+	await cancel.click();
+	await page.getByTestId("hand-W").locator(".seat-label .name").focus();
+	await page.keyboard.press("Enter");
+	await expect(editor).toBeVisible();
+	await cancel.click();
+	const phone = await Player.open(browser, baseURL, "phone-names", {
+		viewport: { width: 360, height: 800 },
+		isMobile: true,
+		hasTouch: true,
+	});
+	try {
+		const phonePage = await phone.page("./");
+		await phonePage.getByTestId("create-solo").click();
+		await phonePage
+			.getByTestId("hand-N")
+			.locator(".seat-label .name")
+			.dispatchEvent("click");
+		await expect(phonePage.getByTestId("player-editor")).toBeHidden();
+	} finally {
+		await phone.close();
+	}
 });
