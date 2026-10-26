@@ -480,42 +480,39 @@ async function westDeclaresAgainstBots(page: Page): Promise<Locator> {
 	return phase;
 }
 
-test("the bots approve the host's claim", async ({ page }) => {
-	const phase = await westDeclaresAgainstBots(page);
-	// North leads, and West claims all tricks at its first turn.
-	const claimAll = page
-		.locator(".play-controls")
-		.getByRole("button", { name: "Claim all" });
-	await expect(claimAll).toBeEnabled({ timeout: 30_000 });
-	await claimAll.click();
-	await page.getByTestId("claim-confirm").click();
-	await expect(phase).toHaveAttribute("data-phase", "complete", {
-		timeout: 30_000,
-	});
-});
-
-test("the bots approve the host's claim of some of the last five tricks", async ({
+test("the bots reject the host's claims, so the board is played out", async ({
 	page,
 }) => {
 	test.setTimeout(120_000);
-	const phase = await westDeclaresAgainstBots(page);
-	// West plays its own and dummy's first legal card until "Claim …" shows with five tricks left.
-	const claim = page
-		.locator(".play-controls")
-		.getByRole("button", { name: "Claim …" });
+	await westDeclaresAgainstBots(page);
+	// North dealer: 1NT, pass, pass, West 2NT, and three passes.
+	const calls = 7;
+	const controls = page.locator(".play-controls");
+	const claimAll = controls.getByRole("button", { name: "Claim all" });
+	const claim = controls.getByRole("button", { name: "Claim …" });
 	const card = page
 		.locator('[data-testid="hand-W"], [data-testid="hand-E"]')
 		.locator("button.card:enabled")
 		.first();
-	while (!(await claim.isVisible())) {
-		await expect(card.or(claim).first()).toBeVisible({ timeout: 30_000 });
-		if (await claim.isVisible()) break;
-		await card.click();
-	}
+	/** West plays its own and dummy's first legal card until `stop` shows. */
+	const playUntil = async (stop: Locator): Promise<void> => {
+		for (;;) {
+			await expect(card.or(stop).first()).toBeVisible({ timeout: 30_000 });
+			if (await stop.isVisible()) return;
+			await card.click();
+		}
+	};
+
+	// North leads, and West claims all tricks at its first turn.
+	await expect(claimAll).toBeEnabled({ timeout: 30_000 });
+	await claimAll.click();
+	await page.getByTestId("claim-confirm").click();
+
+	// The bots reject it, so West plays on until "Claim …" shows with five tricks left, and claims 2 of them.
+	await playUntil(claim);
 	await expect(claim).toBeEnabled({ timeout: 30_000 });
 	await claim.click();
-	const claims = page.getByTestId("claim-panel");
-	await expect(claims).toContainText(
+	await expect(page.getByTestId("claim-panel")).toContainText(
 		"How many of the remaining 5 tricks will you take?",
 	);
 	await expect(page.getByTestId("claim-count").getByRole("button")).toHaveText([
@@ -528,9 +525,13 @@ test("the bots approve the host's claim of some of the last five tricks", async 
 	]);
 	await page.getByTestId("claim-count-2").click();
 	await page.getByTestId("claim-confirm").click();
-	await expect(phase).toHaveAttribute("data-phase", "complete", {
-		timeout: 30_000,
-	});
+
+	// The bots reject this claim too, and board 1 ends after all 52 cards; board 2 is dealt soon after.
+	await playUntil(
+		page.locator(
+			`[data-board="1"][data-phase="complete"][data-at="${calls + 52}"]`,
+		),
+	);
 });
 
 /** The bots of `page` answer with the first legal call or card. */

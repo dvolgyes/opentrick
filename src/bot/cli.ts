@@ -377,7 +377,8 @@ async function run(options: Options): Promise<void> {
 			strategyKey = undefined;
 			await submitVote(
 				`claim:${state.claim.id}`,
-				claimVotePayload(identity.tableId, state.claim.id, true),
+				// A bot rejects every claim, so the board is played out (src/bot/host-runner.ts).
+				claimVotePayload(identity.tableId, state.claim.id, false),
 			);
 			return;
 		}
