@@ -1,8 +1,8 @@
 import { CALLS, type Call } from "../bridge/rules";
+import { LOCAL_BIDDERS, type LocalBidder } from "../protocol";
 import { type BidPosition, encodeBidPosition } from "./bid-position";
 
-export const LOCAL_BIDDERS = ["sl", "rl-fsp"] as const;
-export type LocalBidder = (typeof LOCAL_BIDDERS)[number];
+export { LOCAL_BIDDERS, type LocalBidder } from "../protocol";
 export const BID_MODEL_BYTES = 14_725_276;
 
 export interface BidAnalysis {

@@ -7,33 +7,33 @@ describe("parseRoomConfig", () => {
 		expect(parseRoomConfig(structuredClone(CONFIG))).toEqual(CONFIG);
 	});
 
-	it("validates bot seats, full model names, retry count, and delay", () => {
+	it("validates bot seats and the local bidding policy", () => {
 		const botSetup = {
 			seats: ["W"],
-			model: "inception/mercury-3",
-			fallbackModel: "openai/gpt-6-luna",
-			retries: 5,
-			retryDelayMs: 5000,
+			bidder: "sl",
 		};
 		expect(parseRoomConfig({ ...CONFIG, botSetup })).toEqual({
 			...CONFIG,
 			botSetup,
 		});
 		expect(
-			parseRoomConfig({ ...CONFIG, botSetup: { ...botSetup, model: "other" } }),
+			parseRoomConfig({
+				...CONFIG,
+				botSetup: { ...botSetup, bidder: "other" },
+			}),
 		).toBeUndefined();
 		expect(
-			parseRoomConfig({ ...CONFIG, botSetup: { ...botSetup, retries: 99 } }),
+			parseRoomConfig({
+				...CONFIG,
+				botSetup: { ...botSetup, seats: ["N", "N"] },
+			}),
 		).toBeUndefined();
 	});
 
 	it("does not infer bot seats from player names", () => {
 		const botSetup = {
 			seats: [],
-			model: "inception/mercury-3",
-			fallbackModel: "openai/gpt-6-luna",
-			retries: 5,
-			retryDelayMs: 5000,
+			bidder: "sl",
 		};
 		const config = {
 			...CONFIG,

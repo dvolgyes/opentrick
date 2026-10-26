@@ -3,7 +3,8 @@
 Select a **Local** option in **Bidding engine** when creating a table.
 The host bids with TypeScript in a Web Worker and plays cards with the existing DDS engine.
 The game needs no Python runtime, model API, or additional server.
-OpenRouter remains the default for existing room links.
+WBridge5 imitation (`sl`) is the default, including links that omit a bidding policy.
+The retired remote model integration, credentials, billing controls, and SDK are removed.
 
 ## Options researched
 
@@ -22,10 +23,24 @@ OpenTrick uses that numeric data, with an independent inference implementation; 
 
 ## Policies and partnership agreements
 
+A fixed [SAYC comparison](benchmarks/sayc-compatibility.jsonl) tested 32 hands in each of 12 specified opening, Stayman, and transfer situations, using seed 271828.
+The expectations come from the [ACBL SAYC booklet](https://web2.acbl.org/documentLibrary/play/sayc_book.pdf), independently of the neural policies and the in-game recommendation code.
+SL matched 350/384 positions (91.1%); RL/FSP matched 209/384 (54.4%).
+Each policy accepted all 32 tested heart transfers with a doubleton.
+This establishes closer agreement for SL on those situations, not full SAYC compliance or superior playing strength.
+No rules or network weights were tuned after this comparison.
+
 **Local · WBridge5 imitation** uses BRL's supervised policy (`sl`).
 **Local · RL/FSP learned system** uses its reinforcement-learning policy (`rl-fsp`).
 All host-managed bots at a table use the selected policy.
 The selection is retained in room links as `bot_bidder`.
+
+Recommendations use explicit convention rules, independently of the selected bot.
+New display settings default to ordinary HCP; saved point-scale preferences remain available.
+Jacoby transfers are part of SAYC: after an uncontested 1NT–2♦, opener accepts with 2♥ even with a doubleton.
+If an opponent doubles the transfer, opener passes with two hearts and bids 2♥ with at least three.
+Transfers remain on when the opponent doubles the 1NT opening instead.
+The recommendation explains this distinction and gives no forced-transfer recommendation after a suit overcall.
 
 Neither policy is advertised as a strict implementation of OpenTrick's standard bidding guide.
 The RL policy can use artificial or weak openings that need its learned partner's interpretation.
@@ -90,7 +105,8 @@ npm run demo:bot -- --local-rl
 The demo opens a visible Chrome window at `http://localhost:5178`, temporarily enables West's autoplay to verify a full board, then returns West to human control.
 The other three bots stay active.
 Close the browser to stop the demo server.
-The standalone Node bot also recognizes the local policy in a room link; an explicit `--model` selects OpenRouter instead.
+The standalone Node bot recognizes the local policy in a room link and otherwise uses SL.
+It uses the same own-hand projection and numerical inference as the browser.
 
 Python is only an optional numerical reference generator for developers.
 To regenerate the reference from the fixture positions:
@@ -120,5 +136,7 @@ No cryptographic scheme or secret lifecycle changes.
 The user owns residual bidding-quality and third-party availability risks.
 Keep prepared assets with a deployment; if preparation fails, the build reports the error.
 An engine failure visibly stops affected bots so the host can retry or take manual control.
-To recover the earlier bidding behavior, create a table with **OpenRouter** or revert this change.
+To change bidding behavior, select the other local policy when creating a table.
+Saved credentials and remote-model preferences are discarded on startup.
+Older application versions must reload to use the new bot configuration.
 No stored-board migration is required.

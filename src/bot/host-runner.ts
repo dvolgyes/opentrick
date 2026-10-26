@@ -1,4 +1,4 @@
-import { legalActions } from "../bridge/engine";
+import { type Action, legalActions } from "../bridge/engine";
 import {
 	actionPayload,
 	claimVotePayload,
@@ -8,69 +8,33 @@ import {
 	undoVotePayload,
 } from "../game/bridge";
 import type { TableController } from "../p2p/table";
-import { type BotModel, type RoomConfig, SEATS, type Seat } from "../protocol";
+import { type RoomConfig, SEATS, type Seat } from "../protocol";
 import type { LocalBidder } from "./bid-network";
 import { bidPosition } from "./bid-position";
 import { type BidChooser, BrowserBidder } from "./browser-bidder";
-import {
-	type BotMessage,
-	BotRequestAbortedError,
-	type BotStatus,
-	BrowserOpenRouterStrategy,
-	botRequestFailureMessage,
-	InsufficientBalanceError,
-} from "./browser-openrouter";
 import { BrowserPlayEngine, type PlayChooser } from "./browser-play";
-import { loadBrowserPromptTemplates } from "./browser-prompts";
-import { normalizeHostApiKey } from "./host-key";
+import { BotRequestAbortedError } from "./errors";
 import { playPosition } from "./play-position";
 import { actionPositionKey } from "./position";
-import type { Decision } from "./strategy";
-import {
-	BOT_FALLBACK_MODEL,
-	BOT_MODEL,
-	decisionState,
-	renderBidPrompt,
-} from "./strategy";
 
 export interface HostBotSettings {
-	readonly bidder?: LocalBidder;
-	readonly apiKey: string;
-	readonly model: BotModel;
-	readonly fallbackModel: BotModel;
-	readonly modelOrder: readonly BotModel[];
-	readonly retries: number;
-	readonly retryDelayMs: number;
+	readonly bidder: LocalBidder;
 }
 
 export function configuredBotSeats(config: RoomConfig): Seat[] {
 	return SEATS.filter((seat) => config.botSetup?.seats.includes(seat) === true);
 }
 
-/** A bot status line of the seat named `name`: a catalog text and its values (`BotStatus`). */
-export type SeatBotStatus = (
-	name: string,
-	...status: Parameters<BotStatus>
-) => void;
-
 /** Runs host-managed bot decisions in the page that currently owns the host. */
 export class HostBotRunner {
 	readonly #controller: TableController;
 	#settings: HostBotSettings;
-	readonly #onError: (
-		kind: "balance" | "failed" | "rate-limit",
-		detail?: BotMessage,
-	) => void;
-	readonly #onUsageCost: (cost: number) => void;
-	readonly #onStatus: SeatBotStatus;
+	readonly #onError: () => void;
 	readonly #playEngine: PlayChooser;
 	readonly #bidEngine: BidChooser;
 	#requestAbort = new AbortController();
 	readonly #processed = new Set<string>();
 	#unsubscribe: (() => void) | undefined;
-	#templates:
-		| Awaited<ReturnType<typeof loadBrowserPromptTemplates>>
-		| undefined;
 	#running = false;
 	#rerun = false;
 	#stopped = false;
@@ -80,23 +44,13 @@ export class HostBotRunner {
 	constructor(
 		controller: TableController,
 		settings: HostBotSettings,
-		onError: (
-			kind: "balance" | "failed" | "rate-limit",
-			detail?: BotMessage,
-		) => void = () => {},
-		onUsageCost: (cost: number) => void = () => {},
-		onStatus: SeatBotStatus = () => {},
+		onError: () => void = () => {},
 		playEngine: PlayChooser = new BrowserPlayEngine(),
 		bidEngine: BidChooser = new BrowserBidder(),
 	) {
-		const normalizedApiKey = normalizeHostApiKey(settings.apiKey);
-		if (!normalizedApiKey && !settings.bidder)
-			throw new Error("OpenRouter API key is required");
 		this.#controller = controller;
-		this.#settings = { ...settings, apiKey: normalizedApiKey };
+		this.#settings = settings;
 		this.#onError = onError;
-		this.#onUsageCost = onUsageCost;
-		this.#onStatus = onStatus;
 		this.#playEngine = playEngine;
 		this.#bidEngine = bidEngine;
 	}
@@ -136,19 +90,9 @@ export class HostBotRunner {
 		this.#schedule();
 	}
 
-	updateApiKey(apiKey: string): void {
-		this.#settings = {
-			...this.#settings,
-			apiKey: normalizeHostApiKey(apiKey),
-		};
-	}
-
 	updateSettings(settings: HostBotSettings): void {
 		if (settings.bidder !== this.#settings.bidder) this.#bidEngine.stop();
-		this.#settings = {
-			...settings,
-			apiKey: normalizeHostApiKey(settings.apiKey),
-		};
+		this.#settings = settings;
 		this.#schedule();
 	}
 
@@ -183,19 +127,14 @@ export class HostBotRunner {
 				await this.#step();
 			} while (this.#rerun && !this.#stopped && !this.#paused);
 		} catch (error) {
-			// The key and upstream response are private. The room remains playable and the host can retry.
+			// Engine failures stop affected bots; the room remains playable and the host can retry.
 			if (this.#stopped) return;
 			if (error instanceof BotRequestAbortedError) {
 				this.#rerun = true;
 				return;
 			}
-			if (error instanceof InsufficientBalanceError) {
-				this.pause();
-				this.#onError("balance");
-				return;
-			}
 			this.stop();
-			this.#onError("failed", botRequestFailureMessage(error));
+			this.#onError();
 		} finally {
 			this.#running = false;
 			if (this.#rerun && !this.#stopped && !this.#paused) this.#schedule();
@@ -217,11 +156,7 @@ export class HostBotRunner {
 		const seats = this.#activeSeats(bots);
 		const state = parseBridgeState(view.table.state, this.#controller.tableId);
 		if (!state) return;
-		const systems = seatSystems(
-			state.systems,
-			bots,
-			this.#settings.bidder ? "other" : undefined,
-		);
+		const systems = seatSystems(state.systems, bots, "other");
 		for (const seat of seats) {
 			const voteKey =
 				state.claim?.required.includes(seat) &&
@@ -261,7 +196,7 @@ export class HostBotRunner {
 			this.#processed.add(key);
 			const kind = actions[0]?.type;
 			if (!kind) return;
-			let decision: Decision;
+			let decision: Action;
 			try {
 				if (kind === "play") {
 					const analysis = await this.#playEngine.choose(
@@ -269,42 +204,13 @@ export class HostBotRunner {
 						this.#requestAbort.signal,
 					);
 					decision = { type: "play", card: analysis.card };
-				} else if (this.#settings.bidder) {
+				} else {
 					const analysis = await this.#bidEngine.choose(
 						bidPosition(state.board, seat),
 						this.#settings.bidder,
 						this.#requestAbort.signal,
 					);
 					decision = { type: "call", call: analysis.call };
-				} else {
-					this.#templates ??= await loadBrowserPromptTemplates();
-					const strategy = new BrowserOpenRouterStrategy(
-						this.#settings.apiKey,
-						{
-							model: this.#settings.model || BOT_MODEL,
-							fallbackModel: this.#settings.fallbackModel || BOT_FALLBACK_MODEL,
-							modelOrder: this.#settings.modelOrder,
-							retries: this.#settings.retries,
-							retryDelayMs: this.#settings.retryDelayMs,
-						},
-						this.#requestAbort.signal,
-						() => this.#onError("rate-limit"),
-						this.#onUsageCost,
-						(message, values) =>
-							this.#onStatus(config.names[seat], message, values),
-					);
-					decision = await strategy.choose(
-						kind,
-						renderBidPrompt(
-							state.board,
-							seat,
-							actions,
-							this.#templates,
-							systems,
-						),
-						actions,
-						decisionState(state.board, seat, kind, this.#templates, systems),
-					);
 				}
 			} catch (error) {
 				this.#processed.delete(key);

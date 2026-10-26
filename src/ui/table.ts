@@ -38,7 +38,12 @@ import type {
 	TrickView,
 	TurnPill,
 } from "./table-model";
-import { blackwoodHint, comeBackText } from "./table-model";
+import {
+	blackwoodHint,
+	callText,
+	comeBackText,
+	meaningText,
+} from "./table-model";
 import {
 	litSegments,
 	nextShownLevel,
@@ -79,7 +84,7 @@ export interface TableSection {
 		presence?: Readonly<Partial<Record<Seat, RemoteCallPresence>>>,
 		hostInCall?: boolean,
 	): void;
-	setBotControls(hosting: boolean, bots: readonly Seat[], model?: string): void;
+	setBotControls(hosting: boolean, bots: readonly Seat[]): void;
 	setPlayerAutoplay(
 		available: boolean,
 		enabled: boolean,
@@ -889,7 +894,6 @@ export function tableSection(
 	const callSpots = new Map<Seat, CallSpot>();
 	let botControlHost = false;
 	let botControlSeats: readonly Seat[] = [];
-	let botModel: string | undefined;
 	let playerAutoplayAvailable = false;
 	let playerAutoplayEnabled = false;
 	let playerAutoplayPending = false;
@@ -1286,7 +1290,7 @@ export function tableSection(
 		botControl.className = "tile-bot-control";
 		botControl.hidden = !botControlHost;
 		const isBot = botControlSeats.includes(seat);
-		const artworkUrl = robotArtwork(botModel);
+		const artworkUrl = robotArtwork();
 		if (artworkUrl !== undefined) botArtworkImage.src = artworkUrl;
 		botArtworkImage.hidden = !isBot || artworkUrl === undefined;
 		botFallback.hidden = artworkUrl !== undefined;
@@ -1535,15 +1539,10 @@ export function tableSection(
 		renderCallStates();
 	}
 
-	function setBotControls(
-		hosting: boolean,
-		bots: readonly Seat[],
-		model?: string,
-	): void {
+	function setBotControls(hosting: boolean, bots: readonly Seat[]): void {
 		botControlHost = hosting;
 		botControlSeats = bots;
-		botModel = model;
-		const artworkUrl = robotArtwork(botModel);
+		const artworkUrl = robotArtwork();
 		const hostSeat = latestView?.seats.find((seat) =>
 			seat.tags.includes("Host"),
 		)?.seat;
@@ -1778,11 +1777,33 @@ export function tableSection(
 		});
 		guideOpen.disabled = guideBlocked;
 		const guideRow = el("div", { className: "bid-guide" }, guideOpen);
+		const ownCards = view.seats.find(
+			(player) => player.turnPill?.yours,
+		)?.pointCards;
+		const transfer =
+			ownCards && view.auction
+				? conventionCalls(shownPointSystem, ownCards, view.auction.calls)?.find(
+						({ meaning }) =>
+							meaning.shape.kind === "accept" ||
+							meaning.shape.kind === "short-suit",
+					)
+				: undefined;
+		const explanation = transfer
+			? el(
+					"p",
+					{
+						className: "bid-explanation",
+						attrs: { "data-testid": "transfer-explanation" },
+					},
+					`${callText(transfer.call)}: ${meaningText(transfer.meaning, shownPointSystem, t)}`,
+				)
+			: undefined;
 		bidBox.replaceChildren(
 			guideRow,
 			levels,
 			calls,
 			el("div", { className: "bid-actions" }, confirm, undo, cancel, status),
+			...(explanation ? [explanation] : []),
 		);
 	}
 

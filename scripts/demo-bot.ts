@@ -1,14 +1,9 @@
 import { spawn } from "node:child_process";
 import { chromium } from "@playwright/test";
 
-const apiKey = process.env.OPENROUTER_API_KEY;
-const local =
-	process.argv.includes("--local") || process.argv.includes("--local-rl");
 const policy = process.argv.includes("--local-rl") ? "rl-fsp" : "sl";
-if (!apiKey && !local)
-	throw new Error("OPENROUTER_API_KEY is required in .env");
-if (local) await import("./prepare-bidder");
-const port = local ? "5178" : "5177";
+await import("./prepare-bidder");
+const port = "5178";
 const origin = `http://localhost:${port}`;
 const server = spawn(
 	"npm",
@@ -30,9 +25,7 @@ if (!ready) {
 	throw new Error("demo server did not start");
 }
 const context = await chromium.launchPersistentContext(
-	local
-		? "/tmp/opentrick-local-bidder-host-browser"
-		: "/tmp/opentrick-bot-host-browser",
+	"/tmp/opentrick-local-bidder-host-browser",
 	{
 		channel: "chrome",
 		headless: false,
@@ -45,19 +38,13 @@ const shutdown = () => {
 };
 process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);
-if (!local && apiKey)
-	await context.addInitScript(
-		(key) => localStorage.setItem("opentrick.openrouter-api-key", key),
-		apiKey,
-	);
 const page = context.pages()[0] ?? (await context.newPage());
 let apiRequests = 0;
-if (local)
-	await page.route("https://openrouter.ai/**", async (route) => {
-		apiRequests++;
-		await route.abort();
-	});
-await page.goto(local ? `${origin}/?bot_bidder=${policy}` : origin);
+await page.route("https://openrouter.ai/**", async (route) => {
+	apiRequests++;
+	await route.abort();
+});
+await page.goto(`${origin}/?bot_bidder=${policy}`);
 for (const seat of ["N", "E", "S", "W"] as const) {
 	await page
 		.locator(`input[name="name-${seat}"]`)
@@ -69,7 +56,7 @@ await page
 	.getByTestId("room-controls")
 	.waitFor({ state: "visible", timeout: 60_000 });
 console.error(
-	`Host browser open at ${origin} — ${local ? `local ${policy} bidding and DDS play` : "LLM bidding and DDS play"}, with West available to you.`,
+	`Host browser open at ${origin} — local ${policy} bidding and DDS play, with West available to you.`,
 );
 const autoplay = page.getByTestId("host-autoplay-toggle");
 await autoplay.click();
@@ -85,10 +72,10 @@ while (!complete && Date.now() < boardDeadline && !page.isClosed()) {
 }
 if (complete) {
 	await autoplay.click();
-	if (local && apiRequests !== 0)
+	if (apiRequests !== 0)
 		throw new Error("local demo attempted an OpenRouter request");
 	console.error(
-		`Verified: a full board with ${local ? "local bidding, zero OpenRouter requests," : "live OpenRouter bidding and"} 52 local DDS card plays. West is now under human control; the three bots remain active.`,
+		"Verified: a full board with local bidding, zero model API requests, and 52 local DDS card plays. West is now under human control; the three bots remain active.",
 	);
 } else {
 	console.error(

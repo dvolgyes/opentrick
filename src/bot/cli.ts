@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { RTCPeerConnection as WeriftPeerConnection } from "werift";
-import { legalActions } from "../bridge/engine";
+import { type Action, legalActions } from "../bridge/engine";
 import {
 	actionPayload,
 	bridgeModule,
@@ -20,42 +20,26 @@ import { MemoryStorage } from "../p2p/storage";
 import { TableController, tableIdentity } from "../p2p/table";
 import { trysteroMesh } from "../p2p/trystero";
 import type { RoomConfig, Seat } from "../protocol";
-import {
-	botModelOrder,
-	DEFAULT_BOT_SETUP,
-	isBotName,
-	SEATS,
-} from "../protocol";
+import { DEFAULT_BOT_SETUP, isBotName, SEATS } from "../protocol";
 import { type SeatLocks, SeatMemory } from "../session";
 import { parseRoomSetup } from "../ui/bookmark";
 import { BidNetwork } from "./bid-network";
 import { bidPosition } from "./bid-position";
 import { DdsSolver } from "./dds-solver";
-import { OpenRouterStrategy } from "./node-openrouter";
-import { NODE_PROMPT_TEMPLATES } from "./node-prompts";
 import { analyzePlay } from "./play-engine";
 import { playPosition } from "./play-position";
 import { actionPositionKey, matchesActionPosition } from "./position";
-import {
-	type Decision,
-	decisionState,
-	randomDecision,
-	renderBidPrompt,
-	renderPlayPrompt,
-} from "./strategy";
 
 interface Options {
 	readonly url: URL;
 	readonly username?: string;
 	readonly random: boolean;
-	readonly model?: string;
 }
 
 function parseArgs(argv: readonly string[]): Options {
 	let urlText: string | undefined;
 	let username: string | undefined;
 	let random = false;
-	let model: string | undefined;
 	for (let index = 0; index < argv.length; index++) {
 		const value = argv[index];
 		if (value === "--random") {
@@ -64,10 +48,6 @@ function parseArgs(argv: readonly string[]): Options {
 			const name = argv[++index]?.trim();
 			if (!name) throw new Error("--user needs a player name");
 			username = name;
-		} else if (value === "--model") {
-			const name = argv[++index]?.trim();
-			if (!name) throw new Error("--model needs a model name");
-			model = name;
 		} else if (value?.startsWith("--")) {
 			throw new Error(`unknown option: ${value}`);
 		} else if (urlText === undefined && value !== undefined) {
@@ -93,7 +73,6 @@ function parseArgs(argv: readonly string[]): Options {
 		url,
 		...(username === undefined ? {} : { username }),
 		random,
-		...(model === undefined ? {} : { model }),
 	};
 }
 
@@ -133,33 +112,9 @@ async function run(options: Options): Promise<void> {
 				: `no seat named ${options.username} was found in the room link`,
 		);
 	}
-	const localBidder = options.model
-		? undefined
-		: setup?.config.botSetup?.bidder;
-	const apiKey =
-		options.random || localBidder ? undefined : process.env.OPENROUTER_API_KEY;
-	const configuredModels = setup?.config.botSetup
-		? botModelOrder(setup.config.botSetup)
-		: botModelOrder(DEFAULT_BOT_SETUP);
-	const modelOrder = options.model
-		? [
-				options.model,
-				...configuredModels.filter((model) => model !== options.model),
-			]
-		: configuredModels;
-	const strategy = apiKey
-		? new OpenRouterStrategy(apiKey, {
-				model: modelOrder[0] as string,
-				fallbackModel: modelOrder[1] as (typeof configuredModels)[number],
-				modelOrder,
-				retries: setup?.config.botSetup?.retries,
-				retryDelayMs: setup?.config.botSetup?.retryDelayMs,
-			})
-		: undefined;
 	let cardSolver: DdsSolver | undefined;
 	let biddingNetwork: BidNetwork | undefined;
-	if (!options.random && !localBidder && strategy === undefined)
-		throw new Error("OPENROUTER_API_KEY is missing from .env");
+	let biddingPolicy: string | undefined;
 	const meshResult = readMeshConfig(process.env);
 	if (!meshResult.ok) throw new Error(meshResult.error);
 
@@ -302,7 +257,7 @@ async function run(options: Options): Promise<void> {
 		state: NonNullable<ReturnType<typeof parseBridgeState>>,
 		seat: Seat,
 		key: string,
-		decision: Decision,
+		decision: Action,
 		view: ReturnType<TableController["view"]>,
 	): Promise<void> => {
 		const board = state.board;
@@ -443,75 +398,55 @@ async function run(options: Options): Promise<void> {
 		const systems = seatSystems(
 			state.systems,
 			[seat, ...(view.roster?.bots ?? [])],
-			localBidder ? "other" : undefined,
+			"other",
 		);
-		const prompt =
-			kind === "call"
-				? renderBidPrompt(
-						state.board,
-						seat,
-						actions,
-						NODE_PROMPT_TEMPLATES,
-						systems,
-					)
-				: renderPlayPrompt(state.board, seat, actions, NODE_PROMPT_TEMPLATES);
+		const policy = (view.table?.config.botSetup ?? DEFAULT_BOT_SETUP).bidder;
 		try {
-			if (
-				!options.random &&
-				kind === "call" &&
-				localBidder &&
-				!biddingNetwork
-			) {
-				const data = await readFile(
-					new URL(
-						`../../public/bot-models/brl-${localBidder}.f32`,
-						import.meta.url,
-					),
-				);
-				biddingNetwork = new BidNetwork(
-					data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
-					localBidder,
-				);
-			}
-			if (!options.random && kind === "play")
+			let decision: Action;
+			if (options.random) {
+				const chosen = actions[Math.floor(Math.random() * actions.length)];
+				if (!chosen) throw new Error("no legal action for the random bot");
+				decision = chosen;
+			} else if (kind === "call") {
+				if (!biddingNetwork || biddingPolicy !== policy) {
+					const bytes = await readFile(
+						new URL(
+							`../../public/bot-models/brl-${policy}.f32`,
+							import.meta.url,
+						),
+					);
+					biddingNetwork = new BidNetwork(
+						bytes.buffer.slice(
+							bytes.byteOffset,
+							bytes.byteOffset + bytes.byteLength,
+						),
+						policy,
+					);
+					biddingPolicy = policy;
+				}
+				decision = {
+					type: "call",
+					call: biddingNetwork.choose(bidPosition(state.board, seat)).call,
+				};
+			} else {
 				cardSolver ??= await DdsSolver.create();
-			const decision = options.random
-				? randomDecision(actions)
-				: kind === "call" && biddingNetwork
-					? {
-							type: "call" as const,
-							call: biddingNetwork.choose(bidPosition(state.board, seat)).call,
-						}
-					: kind === "play" && cardSolver
-						? {
-								type: "play" as const,
-								card: analyzePlay(
-									playPosition(state.board, seat, systems),
-									cardSolver,
-								).card,
-							}
-						: await strategy?.choose(
-								kind,
-								prompt,
-								actions,
-								decisionState(
-									state.board,
-									seat,
-									kind,
-									NODE_PROMPT_TEMPLATES,
-									systems,
-								),
-							);
-			if (!decision) throw new Error("bot strategy is not configured");
+				decision = {
+					type: "play",
+					card: analyzePlay(
+						playPosition(state.board, seat, systems),
+						cardSolver,
+					).card,
+				};
+			}
 			await sendAction(state, seat, actionKey, decision, controller.view());
 		} catch (error) {
-			await stop(new Error(describeFailure(error, [apiKey ?? "", route.key])));
+			await stop(new Error(describeFailure(error, [route.key])));
 		}
 	};
 
 	removeListener = controller.onChange(() => {
 		void drive().catch((error: unknown) => {
-			void stop(new Error(describeFailure(error, [apiKey ?? "", route.key])));
+			void stop(new Error(describeFailure(error, [route.key])));
 		});
 	});
 	startupTimer = setTimeout(
@@ -525,7 +460,7 @@ async function run(options: Options): Promise<void> {
 	try {
 		await controller.start();
 		void drive().catch((error: unknown) => {
-			void stop(new Error(describeFailure(error, [apiKey ?? "", route.key])));
+			void stop(new Error(describeFailure(error, [route.key])));
 		});
 		await finished;
 	} finally {

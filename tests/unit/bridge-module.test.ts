@@ -762,13 +762,13 @@ describe("bidding systems at the table", () => {
 		});
 	});
 
-	it("gives a bot seat HCP, whatever an earlier player of its seat sent, and a human seat the system it sent", () => {
+	it("marks learned bot systems as other and preserves each human's system", () => {
 		const systems = { N: "vienna", E: "other", W: "reith" } as const;
 		expect(seatSystems(systems, ["W", "S"])).toEqual({
 			N: "vienna",
 			E: "other",
-			S: "hcp",
-			W: "hcp",
+			S: "other",
+			W: "other",
 		});
 		expect(seatSystems(systems, [])).toEqual(systems);
 	});

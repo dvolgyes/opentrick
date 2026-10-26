@@ -1,9 +1,6 @@
 import { DdsSolver } from "../src/bot/dds-solver";
-import { OpenRouterStrategy } from "../src/bot/node-openrouter";
-import { NODE_PROMPT_TEMPLATES } from "../src/bot/node-prompts";
 import { analyzePlay } from "../src/bot/play-engine";
 import { playPosition } from "../src/bot/play-position";
-import { decisionState, renderPlayPrompt } from "../src/bot/strategy";
 import { dealCards } from "../src/bridge/deal";
 import {
 	applyAction,
@@ -14,22 +11,13 @@ import {
 } from "../src/bridge/engine";
 import type { Call } from "../src/bridge/rules";
 
-// Frozen evaluation protocol: six independent deals, four positions per deal, one paired LLM comparison per
-// position. Oracle trick loss is a perfect-information diagnostic, not a tournament-strength rating.
+// Frozen evaluation protocol: six independent deals, four positions per deal.
+// Oracle trick loss is a perfect-information diagnostic, not a tournament-strength rating.
 const mixed = process.argv.includes("--mixed");
 const SEEDS = mixed
 	? [981173, 177331, 672103, 410299, 801193, 261773, 590111, 371077]
 	: [20261027, 693107, 881923, 190081, 371213, 510613];
 const PLY = mixed ? [0, 8, 24, 40] : [1, 9, 25, 41];
-const withLlm = process.argv.includes("--llm");
-const model = process.env.BENCHMARK_MODEL ?? "openai/gpt-6-luna";
-const apiKey = process.env.OPENROUTER_API_KEY;
-if (withLlm && !apiKey) throw new Error("--llm requires OPENROUTER_API_KEY");
-const llm =
-	withLlm && apiKey
-		? new OpenRouterStrategy(apiKey, { model, modelOrder: [model], retries: 0 })
-		: undefined;
-
 function random(seed: number): () => number {
 	let state = seed;
 	return () => {
@@ -78,42 +66,6 @@ for (const [index, seed] of SEEDS.entries()) {
 			const engineTricks = oracle.get(engine.card);
 			if (engineTricks === undefined)
 				throw new Error("engine card missing from oracle");
-			let llmCard: string | null = null;
-			let llmLoss: number | null = null;
-			let llmMs: number | null = null;
-			let llmError: string | null = null;
-			if (llm) {
-				const start = performance.now();
-				try {
-					const decision = await llm.choose(
-						"play",
-						renderPlayPrompt(board, status.actor, legal, NODE_PROMPT_TEMPLATES),
-						legal,
-						decisionState(
-							board,
-							status.actor,
-							"play",
-							NODE_PROMPT_TEMPLATES,
-							{},
-						),
-					);
-					llmMs = performance.now() - start;
-					if (decision.type !== "play")
-						throw new Error("LLM did not return a card");
-					llmCard = decision.card;
-					const tricks = oracle.get(decision.card);
-					if (tricks === undefined)
-						throw new Error("LLM card missing from oracle");
-					llmLoss = best - tricks;
-				} catch (error) {
-					// A failed upstream request is an evaluation outcome, never a successful substitute move.
-					llmError =
-						error instanceof Error
-							? error.message.replaceAll(apiKey ?? "", "[redacted]")
-							: "LLM request failed";
-				}
-				llmMs = performance.now() - start;
-			}
 			const row = {
 				seed,
 				ply,
@@ -125,10 +77,6 @@ for (const [index, seed] of SEEDS.entries()) {
 				engineMs: engine.elapsedMs,
 				samples: engine.samples,
 				effectiveSamples: engine.effectiveSamples,
-				llmCard,
-				llmLoss,
-				llmMs,
-				llmError,
 			};
 			rows.push(row);
 			console.log(JSON.stringify({ type: "position", ...row }));
@@ -146,24 +94,15 @@ const values = (key: string) =>
 	);
 const mean = (items: number[]) =>
 	items.length ? items.reduce((a, b) => a + b, 0) / items.length : null;
-const paired = rows.filter((row) => typeof row.llmLoss === "number");
 console.log(
 	JSON.stringify({
 		type: "summary",
 		protocol: `${SEEDS.length} deals, four fixed random-play positions each; ${mixed ? "mixed strains and opening leads" : "no trump"}; DD trick regret; all rows reported`,
-		model: llm ? model : null,
 		positions: rows.length,
 		engineMeanLoss: mean(values("engineLoss")),
-		llmMeanLoss: mean(values("llmLoss")),
 		engineMeanMs: mean(values("engineMs")),
-		llmMeanMs: mean(values("llmMs")),
 		engineMaxMs: Math.max(...values("engineMs")),
 		enginePerfectChoices: values("engineLoss").filter((loss) => loss === 0)
 			.length,
-		llmPerfectChoices: values("llmLoss").filter((loss) => loss === 0).length,
-		llmFailures: rows.filter((row) => row.llmError !== null).length,
-		pairedPositions: paired.length,
-		pairedEngineMeanLoss: mean(paired.map((row) => row.engineLoss as number)),
-		pairedLlmMeanLoss: mean(paired.map((row) => row.llmLoss as number)),
 	}),
 );

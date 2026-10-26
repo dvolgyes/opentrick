@@ -1,7 +1,7 @@
 # OpenTrick
 
 OpenTrick is a four-player contract bridge game that runs in the browser.
-It supports human players, optional voice and video calls, and bots with local or OpenRouter bidding.
+It supports human players, optional voice and video calls, and local browser bots.
 The game handles bidding, trick play, duplicate scoring, undo requests, and claims with opponent approval.
 
 **Play:** [dvolgyes.github.io/opentrick](https://dvolgyes.github.io/opentrick/)
@@ -72,9 +72,10 @@ For a permanent bot seat, select **Bot** for that seat while creating the table.
 For a temporary substitute, the host can enable the bot for the player's seat from the table controls, then turn it off when the player returns.
 The player keeps their seat and stays in the room call while the bot handles bridge actions.
 
-Bots can bid with a local neural engine or the selected OpenRouter language model.
+Bots bid with a local neural engine and play cards with a local DDS engine.
 Choose **Bidding engine** when creating a table.
-The local WBridge5-imitation and RL/FSP policies run entirely in a browser worker, with no Python runtime or API key.
+WBridge5 imitation is the default because it agreed with more of the tested SAYC positions than RL/FSP.
+Both policies run entirely in a browser worker, with no Python runtime or API key.
 Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
 All bots use a local bridge engine for card play.
 The card engine samples possible hidden hands, respects shown voids and auction meanings, and evaluates legal cards with the [DDS double-dummy solver](https://github.com/bookchris/bridge-dds-js) compiled to WebAssembly.
@@ -83,20 +84,10 @@ The host runs the search in a background worker, so the table remains responsive
 Card play requires no model requests and has no API cost.
 See [the engine guide](docs/card-engine.md) for its budgets, verification, and strength limits.
 
-With **OpenRouter** bidding selected, the following key and balance controls apply.
-OpenRouter is a service that provides access to AI models from many providers through one API.
-Bot bidding can cost money because AI model requests may be billed; the table displays the accumulated OpenRouter cost as you play.
-Next to the cost, the host's table shows the OpenRouter balance, which it reads again at the start of each board that bots play.
-You bring your own [OpenRouter API key](https://openrouter.ai/).
-Enter the key in the create screen, also when no seat is a bot yet, or in the table's bot controls before enabling a substitute.
-The key is stored in the host browser and is not included in the shared room link.
-When you save a key, the browser reads the key and its balance from OpenRouter, without a model request, so the check costs nothing.
-The balance is the credits of the account less their usage, and not more than the remaining limit of the key.
-The key is saved when OpenRouter accepts it and its balance is more than $0.10.
-If OpenRouter accepts the key but reports no balance, the key is saved, and the bots find out at their first request.
-Otherwise, the create screen does not create the table, and the Settings dialog stays open; both show the reason.
-If the current host has no usable key, bot play is unavailable until a host with a key takes over or the key is set.
-You can choose the model order and retry settings when creating the room.
+Bots need no external account, and their decisions have no API cost.
+The host loads the selected bidding policy's 14.7 MB weights from the static site on first use.
+Both bidders see only their own cards and public auction information.
+The playing engine sees its own hand, exposed dummy, and public history, and samples possible hidden hands.
 
 ### Call and finding players
 

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { HostBotRunner } from "../../src/bot/host-runner";
-import { BOT_FALLBACK_MODEL, BOT_MODEL } from "../../src/bot/strategy";
 import { randomBelowFrom } from "../../src/bridge/deal";
 import {
 	type Action,
@@ -26,12 +25,7 @@ import { call, DEAL } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
 const SETTINGS = {
-	apiKey: "test-key",
-	model: BOT_MODEL,
-	fallbackModel: BOT_FALLBACK_MODEL,
-	modelOrder: [],
-	retries: 0,
-	retryDelayMs: 0,
+	bidder: "sl",
 } as const;
 
 /** Board 1, dealt by North, as the host's table state after `steps`; each step is a payload from a seat. */

@@ -52,8 +52,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		WAITING: "WARTEN",
 		"CONNECTING TO HOST": "VERBINDUNG ZUM HOST",
 		"Enable autoplay (bot)": "Autoplay (Bot) aktivieren",
-		"Autoplay is using this host's OpenRouter key.":
-			"Autoplay verwendet den OpenRouter-Schlüssel dieses Hosts.",
+
 		"Disable autoplay": "Autoplay deaktivieren",
 		"Stop autoplay": "Autoplay stoppen",
 		"Sending autoplay request…": "Autoplay-Anfrage wird gesendet…",
@@ -72,12 +71,22 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Choose your seat": "Wähle deinen Platz",
 		"Create new game": "Neues Spiel erstellen",
 		"Creating…": "Wird erstellt…",
+		"Check the bidding engine.": "Prüfe das Bietprogramm.",
+		"Autoplay uses the local bridge engine.":
+			"Autoplay verwendet das lokale Bridgeprogramm.",
+		"The local bot failed. Resume bots to try again.":
+			"Der lokale Bot ist fehlgeschlagen. Setze die Bots fort, um es erneut zu versuchen.",
+		"Three-card support is not required.":
+			"Drei Karten zur Unterstützung sind nicht erforderlich.",
+		"at most {max} {suit} after the transfer was doubled":
+			"höchstens {max} {suit}, nachdem der Transfer kontriert wurde",
+		"Local bidding runs in your browser. Learned conventions can differ from SAYC.":
+			"Das lokale Bietprogramm läuft im Browser. Erlernte Konventionen können von SAYC abweichen.",
 		"Optional automated players": "Optionale automatisierte Spieler",
 		"Bidding engine": "Bietprogramm",
 		"Local · WBridge5 imitation": "Lokal · WBridge5-Nachahmung",
 		"Local · RL/FSP learned system": "Lokal · erlerntes RL/FSP-System",
-		"Local bidders need no API key. Their learned bidding can differ from the standard guide.":
-			"Lokale Bietprogramme benötigen keinen API-Schlüssel. Ihre erlernte Reizung kann von der Standardanleitung abweichen.",
+
 		Seat: "Platz",
 		Name: "Name",
 		You: "Du",
@@ -87,36 +96,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Duplicate: "Duplikat",
 		"Chicago (later)": "Chicago (später)",
 		"Rubber (later)": "Rubber (später)",
-		"OpenRouter API key": "OpenRouter-API-Schlüssel",
-		"Model priority: the first model is primary; after a server error, the bot tries the next model.":
-			"Modellreihenfolge: Das erste Modell ist das Hauptmodell. Nach einem Serverfehler versucht der Bot das nächste Modell.",
-		Retries: "Wiederholungen",
-		"Wait between retries (seconds)":
-			"Wartezeit zwischen Wiederholungen (Sekunden)",
-		"Check the bot models, retry count, and retry delay.":
-			"Prüfe die Bot-Modelle, die Anzahl der Wiederholungen und die Wartezeit.",
-		"Enter an OpenRouter API key to run bot seats in this browser.":
-			"Gib einen OpenRouter-API-Schlüssel ein, um Bots in diesem Browser zu verwenden.",
-		"This browser could not store the OpenRouter API key.":
-			"Dieser Browser konnte den OpenRouter-API-Schlüssel nicht speichern.",
-		"Checking the OpenRouter key and balance…":
-			"Prüfe den OpenRouter-Schlüssel und das Guthaben…",
-		"The OpenRouter key works. Balance: {balance}.":
-			"Der OpenRouter-Schlüssel funktioniert. Guthaben: {balance}.",
-		"Cost: {cost}": "Kosten: {cost}",
-		"Balance: {balance}": "Guthaben: {balance}",
-		"The OpenRouter key works. OpenRouter did not report the balance.":
-			"Der OpenRouter-Schlüssel funktioniert. OpenRouter hat das Guthaben nicht gemeldet.",
-		"OpenRouter rejected the API key (401).":
-			"OpenRouter hat den API-Schlüssel abgelehnt (401).",
-		"OpenRouter returned HTTP {status} for the key check.":
-			"OpenRouter hat bei der Schlüsselprüfung HTTP {status} zurückgegeben.",
-		"The browser could not reach OpenRouter.":
-			"Der Browser konnte OpenRouter nicht erreichen.",
-		"The OpenRouter key check timed out.":
-			"Die Prüfung des OpenRouter-Schlüssels hat zu lange gedauert.",
-		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
-			"Das OpenRouter-Guthaben beträgt {balance}. Ein Schlüssel braucht mehr als {minimum}.",
+
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Gib die vier Spielernamen ein und wähle deinen Platz. Dein Browser hostet zuerst; alle am Tisch können übernehmen.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -144,13 +124,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Confirm claim": "Beanspruchen bestätigen",
 		"Go back": "Zurück",
 		"Previous game statistics": "Statistik der vorherigen Spiele",
-		"Insufficient OpenRouter balance. Bots are paused until you update the API key or balance.":
-			"OpenRouter-Guthaben reicht nicht aus. Bots sind pausiert, bis du den API-Schlüssel oder das Guthaben aktualisierst.",
-		"The bot request failed. Check the model and resume bots.":
-			"Die Bot-Anfrage ist fehlgeschlagen. Prüfe das Modell und setze die Bots fort.",
+
 		"Bots paused.": "Bots pausiert.",
-		"Running {count} bot seat(s) with {model}.":
-			"{count} Bot-Platz/-Plätze aktiv mit {model}.",
+		"Running {count} bot seat(s) with {engine}.":
+			"{count} Bot-Platz/-Plätze aktiv mit {engine}.",
 		Online: "Online",
 		Offline: "Offline",
 		Free: "Frei",
@@ -167,9 +144,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Primary: "Primär",
 		Fallback: "Ausweichmodell",
 		Backup: "Reserve",
-		"Bot model priority": "Bot-Modellreihenfolge",
-		"Move {model} up": "{model} nach oben verschieben",
-		"Move {model} down": "{model} nach unten verschieben",
+
 		"Join call": "Anruf beitreten",
 		"Leave call": "Anruf verlassen",
 		"Rejoin the call": "Anruf erneut beitreten",
@@ -324,9 +299,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Auf einem Smartphone oder Tablet im Querformat die Desktop-Ansicht zeigen",
 		"On a computer with a portrait window, show the mobile view":
 			"Auf einem Computer mit einem Fenster im Hochformat die mobile Ansicht zeigen",
-		"Custom model": "Eigenes Modell",
-		"Bot model order": "Reihenfolge der Bot-Modelle",
-		"Custom model (not set)": "Eigenes Modell (nicht gesetzt)",
+
 		"Save settings": "Einstellungen speichern",
 		Settings: "Einstellungen",
 		"Turn and network display": "Anzeige von Zug und Netzwerk",
@@ -335,12 +308,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
 			"Schalte dies ein, wenn deine Netzwerkverbindung instabil ist, zum Beispiel im Zug, bei schwachen mobilen Daten oder bei WLAN mit Aussetzern. Die Seite erkennt dann eine verlorene Verbindung früher und sendet etwas mehr Nachrichten an die öffentlichen Relays.",
 		Bots: "Bots",
-		"Enter an OpenRouter model id, for example vendor/model.":
-			"Gib eine OpenRouter-Modell-ID ein, zum Beispiel vendor/model.",
-		"This model is already in the list.":
-			"Dieses Modell ist schon in der Liste.",
-		"Enter an OpenRouter API key to use a custom model.":
-			"Gib einen OpenRouter-API-Schlüssel ein, um ein eigenes Modell zu nutzen.",
+
 		"This browser could not store the settings.":
 			"Dieser Browser konnte die Einstellungen nicht speichern.",
 		Target: "Ziel",
@@ -542,16 +510,14 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Pause bots": "Bots pausieren",
 		"Resume bots": "Bots fortsetzen",
 		"All players connected": "Alle Spieler verbunden",
-		"Set an OpenRouter API key before switching a seat to a bot.":
-			"Setze einen OpenRouter-API-Schlüssel, bevor du einen Platz in einen Bot umwandelst.",
+
 		"The host could not change that seat.":
 			"Der Host konnte diesen Platz nicht ändern.",
 		"The host could not restore the saved bot seats.":
 			"Der Host konnte die gespeicherten Bot-Plätze nicht wiederherstellen.",
 		"Only the current host can run bots in this browser.":
 			"Nur der aktuelle Host kann Bots in diesem Browser ausführen.",
-		"Set an OpenRouter API key to run the bots.":
-			"Setze einen OpenRouter-API-Schlüssel, um die Bots auszuführen.",
+
 		"Bots could not start. Check that this page is the ready host.":
 			"Die Bots konnten nicht starten. Prüfe, ob diese Seite der aktive Host ist.",
 		"Host changed. Bots stopped.":
@@ -564,7 +530,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Exit: "Beenden",
 		Reset: "Zurücksetzen",
 		"Copy table link": "Tischlink kopieren",
-		"OpenRouter spending total": "OpenRouter-Ausgaben gesamt",
+
 		Message: "Nachricht",
 		"Your call": "Dein Gebot",
 		"Trackers reachable": "Tracker erreichbar",
@@ -583,8 +549,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Ungültige wss:-MQTT-Broker-URL in VITE_MQTT_BROKER_URLS: {url}",
 		"A URL cannot be both an MQTT broker and a tracker or Nostr relay: {url}":
 			"Eine URL kann nicht zugleich MQTT-Broker und Tracker oder Nostr-Relay sein: {url}",
-		"Openrouter rate limit - I will retry in a moment":
-			"OpenRouter-Ratenlimit – neuer Versuch in Kürze",
+
 		"YOUR TURN TO BID": "DU BIST MIT BIETEN DRAN",
 		"{seat} TO BID": "{seat} IST MIT BIETEN DRAN",
 		"YOUR TURN TO PLAY": "DU BIST AM ZUG",
@@ -642,48 +607,14 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Hearts: "Herz",
 		Spades: "Pik",
 		"No trump": "Ohne Trumpf",
-		"Asking {model} for a bid (attempt {attempt} of {attempts}).":
-			"{model} wird nach einem Gebot gefragt (Versuch {attempt} von {attempts}).",
-		"Asking {model} for a card play (attempt {attempt} of {attempts}).":
-			"{model} wird nach einer Karte gefragt (Versuch {attempt} von {attempts}).",
-		"HTTP {status} from {previous}; trying next priority model {model} in {seconds} seconds.":
-			"HTTP {status} von {previous}; nächstes Modell {model} in {seconds} Sekunden.",
-		"OpenRouter rate limit (429). Retrying in {seconds} seconds.":
-			"OpenRouter-Ratenlimit (429). Neuer Versuch in {seconds} Sekunden.",
-		"OpenRouter returned HTTP {status}. Retrying in {seconds} seconds.":
-			"OpenRouter hat HTTP {status} geantwortet. Neuer Versuch in {seconds} Sekunden.",
-		"OpenRouter request timed out. Retrying in {seconds} seconds.":
-			"Die OpenRouter-Anfrage hat das Zeitlimit überschritten. Neuer Versuch in {seconds} Sekunden.",
-		"Could not reach OpenRouter. Retrying in {seconds} seconds.":
-			"OpenRouter ist nicht erreichbar. Neuer Versuch in {seconds} Sekunden.",
-		"Still waiting for {model} to return a decision.":
-			"Warte noch auf eine Entscheidung von {model}.",
-		"OpenRouter rejected the API key (401). Set the key again, then resume bots.":
-			"OpenRouter hat den API-Schlüssel abgelehnt (401). Gib den Schlüssel neu ein und setze dann die Bots fort.",
-		"OpenRouter has insufficient balance. Update the balance or API key, then resume bots.":
-			"Das OpenRouter-Guthaben reicht nicht. Aktualisiere Guthaben oder API-Schlüssel und setze dann die Bots fort.",
-		"OpenRouter denied access to this model (403). Check the account and model access.":
-			"OpenRouter hat den Zugriff auf dieses Modell verweigert (403). Prüfe das Konto und den Modellzugriff.",
-		"OpenRouter could not find this model or endpoint (404). Choose another model.":
-			"OpenRouter hat dieses Modell oder diesen Endpunkt nicht gefunden (404). Wähle ein anderes Modell.",
-		"OpenRouter rejected the request as too large (413). Choose another model.":
-			"OpenRouter hat die Anfrage als zu groß abgelehnt (413). Wähle ein anderes Modell.",
-		"OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.":
-			"OpenRouter hat den Bot auch nach neuen Versuchen gebremst (Ratenlimit). Warte und setze dann die Bots fort.",
-		"OpenRouter or the model provider returned HTTP {status} after retries. Check provider status or choose another model.":
-			"OpenRouter oder der Modellanbieter hat nach neuen Versuchen HTTP {status} geantwortet. Prüfe den Anbieterstatus oder wähle ein anderes Modell.",
-		"OpenRouter returned HTTP {status} after retries. Check the selected model and request settings.":
-			"OpenRouter hat nach neuen Versuchen HTTP {status} geantwortet. Prüfe das gewählte Modell und die Anfrageeinstellungen.",
-		"The OpenRouter request timed out. Resume bots to try again.":
-			"Die OpenRouter-Anfrage hat das Zeitlimit überschritten. Setze die Bots fort, um es erneut zu versuchen.",
-		"The browser could not reach OpenRouter. Check the connection, then resume bots.":
-			"Der Browser erreicht OpenRouter nicht. Prüfe die Verbindung und setze dann die Bots fort.",
-		"The selected model returned an unusable decision: {detail}. Choose another model or resume bots.":
-			"Das gewählte Modell hat eine unbrauchbare Entscheidung geliefert: {detail}. Wähle ein anderes Modell oder setze die Bots fort.",
-		"The bot could not use the model response. Choose another model or resume bots.":
-			"Der Bot konnte die Modellantwort nicht verwenden. Wähle ein anderes Modell oder setze die Bots fort.",
-		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Anzeige mit vier Dezimalstellen. Genauer Gesamtbetrag laut OpenRouter: {total} USD.",
+		"Asking {engine} for a bid (attempt {attempt} of {attempts}).":
+			"{engine} wird nach einem Gebot gefragt (Versuch {attempt} von {attempts}).",
+		"Asking {engine} for a card play (attempt {attempt} of {attempts}).":
+			"{engine} wird nach einer Karte gefragt (Versuch {attempt} von {attempts}).",
+
+		"Still waiting for {engine} to return a decision.":
+			"Warte noch auf eine Entscheidung von {engine}.",
+
 		"Vienna points": "Wiener Punkte",
 		"Reith points": "Reith-Punkte",
 		"Four Aces points": "Four-Aces-Punkte",
@@ -751,8 +682,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		WAITING: "VÁRAKOZÁS",
 		"CONNECTING TO HOST": "KAPCSOLÓDÁS A HOSTHOZ",
 		"Enable autoplay (bot)": "Automatikus játék (bot) bekapcsolása",
-		"Autoplay is using this host's OpenRouter key.":
-			"Az automatikus játék ennek a házigazdának az OpenRouter-kulcsát használja.",
+
 		"Disable autoplay": "Automatikus játék kikapcsolása",
 		"Stop autoplay": "Automatikus játék leállítása",
 		"Sending autoplay request…": "Automatikus játék kérése…",
@@ -773,12 +703,22 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Create new game": "Új játék létrehozása",
 		"Create game": "Játék létrehozása",
 		"Creating…": "Létrehozás…",
+		"Check the bidding engine.": "Ellenőrizd a licitáló motort.",
+		"Autoplay uses the local bridge engine.":
+			"Az automatikus játék a helyi bridzsmotort használja.",
+		"The local bot failed. Resume bots to try again.":
+			"A helyi bot hibát észlelt. Az újrapróbáláshoz folytasd a botokat.",
+		"Three-card support is not required.":
+			"Nem szükséges háromlapos támogatás.",
+		"at most {max} {suit} after the transfer was doubled":
+			"legfeljebb {max} {suit}, miután a transzfert kontrázták",
+		"Local bidding runs in your browser. Learned conventions can differ from SAYC.":
+			"A helyi licitálás a böngészőben fut. A tanult konvenciók eltérhetnek a SAYC-től.",
 		"Optional automated players": "Opcionális automatizált játékosok",
 		"Bidding engine": "Licitáló motor",
 		"Local · WBridge5 imitation": "Helyi · WBridge5 utánzása",
 		"Local · RL/FSP learned system": "Helyi · tanult RL/FSP-rendszer",
-		"Local bidders need no API key. Their learned bidding can differ from the standard guide.":
-			"A helyi licitáló motorokhoz nem kell API-kulcs. Tanult licitálásuk eltérhet a szokásos útmutatótól.",
+
 		Seat: "Hely",
 		Name: "Név",
 		You: "Te",
@@ -788,36 +728,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Duplicate: "Duplikált",
 		"Chicago (later)": "Chicago (később)",
 		"Rubber (later)": "Gumi (később)",
-		"OpenRouter API key": "OpenRouter API-kulcs",
-		"Model priority: the first model is primary; after a server error, the bot tries the next model.":
-			"Modellprioritás: az első az elsődleges modell; szerverhiba után a bot a következőt próbálja.",
-		Retries: "Újrapróbálkozások",
-		"Wait between retries (seconds)":
-			"Várakozás az újrapróbálkozások között (másodperc)",
-		"Check the bot models, retry count, and retry delay.":
-			"Ellenőrizd a botmodelleket, az újrapróbálkozások számát és a várakozási időt.",
-		"Enter an OpenRouter API key to run bot seats in this browser.":
-			"Adj meg egy OpenRouter API-kulcsot a botok futtatásához ebben a böngészőben.",
-		"This browser could not store the OpenRouter API key.":
-			"A böngésző nem tudta eltárolni az OpenRouter API-kulcsot.",
-		"Checking the OpenRouter key and balance…":
-			"Az OpenRouter-kulcs és az egyenleg ellenőrzése…",
-		"The OpenRouter key works. Balance: {balance}.":
-			"Az OpenRouter-kulcs működik. Egyenleg: {balance}.",
-		"Cost: {cost}": "Költség: {cost}",
-		"Balance: {balance}": "Egyenleg: {balance}",
-		"The OpenRouter key works. OpenRouter did not report the balance.":
-			"Az OpenRouter-kulcs működik. Az OpenRouter nem közölte az egyenleget.",
-		"OpenRouter rejected the API key (401).":
-			"Az OpenRouter elutasította az API-kulcsot (401).",
-		"OpenRouter returned HTTP {status} for the key check.":
-			"Az OpenRouter HTTP {status} választ adott a kulcs ellenőrzésére.",
-		"The browser could not reach OpenRouter.":
-			"A böngésző nem érte el az OpenRoutert.",
-		"The OpenRouter key check timed out.":
-			"Az OpenRouter-kulcs ellenőrzése túllépte az időkorlátot.",
-		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
-			"Az OpenRouter-egyenleg {balance}. Egy kulcshoz több mint {minimum} kell.",
+
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Add meg a négy játékos nevét, majd válassz helyet. A böngésződ lesz először a host; bárki átveheti az asztalnál.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -859,16 +770,11 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Claim all remaining tricks": "Mindent visz",
 		"Previous game statistics": "Előző játékok statisztikája",
 		Target: "Cél",
-		"Openrouter rate limit - I will retry in a moment":
-			"OpenRouter-korlát – hamarosan újrapróbálkozom",
-		"Insufficient OpenRouter balance. Bots are paused until you update the API key or balance.":
-			"Nincs elegendő OpenRouter-egyenleg. A botok szünetelnek, amíg frissíted a kulcsot vagy az egyenleget.",
-		"The bot request failed. Check the model and resume bots.":
-			"A botkérés nem sikerült. Ellenőrizd a modellt, majd folytasd a botokat.",
+
 		"Bots paused.": "A botok szünetelnek.",
 		"No bot seats are active.": "Nincs aktív bothely.",
-		"Running {count} bot seat(s) with {model}.":
-			"{count} bothely fut ezzel: {model}.",
+		"Running {count} bot seat(s) with {engine}.":
+			"{count} bothely fut ezzel: {engine}.",
 		Online: "Online",
 		Offline: "Offline",
 		Free: "Szabad",
@@ -885,9 +791,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Primary: "Elsődleges",
 		Fallback: "Tartalék",
 		Backup: "Másodlagos tartalék",
-		"Bot model priority": "Botmodellek sorrendje",
-		"Move {model} up": "{model} feljebb",
-		"Move {model} down": "{model} lejjebb",
+
 		"Join call": "Hívás",
 		"Leave call": "Lerak",
 		"Rejoin the call": "Újracsatlakozás a híváshoz",
@@ -1055,9 +959,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Telefonon vagy táblagépen fekvő tájolásban az asztali nézet mutatása",
 		"On a computer with a portrait window, show the mobile view":
 			"Számítógépen álló ablakban a mobilnézet mutatása",
-		"Custom model": "Saját modell",
-		"Bot model order": "Botmodellek sorrendje",
-		"Custom model (not set)": "Saját modell (nincs megadva)",
+
 		"Save settings": "Beállítások mentése",
 		Settings: "Beállítások",
 		"Turn and network display": "Soron következő és hálózat kijelzése",
@@ -1066,12 +968,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
 			"Kapcsold be, ha a hálózati kapcsolatod instabil, például vonaton, gyenge mobilneten vagy akadozó Wi-Fi-n. Az oldal így hamarabb észreveszi a megszakadt kapcsolatot, és valamivel több üzenetet küld a nyilvános továbbítóknak.",
 		Bots: "Botok",
-		"Enter an OpenRouter model id, for example vendor/model.":
-			"Adj meg egy OpenRouter modellazonosítót, például vendor/model.",
-		"This model is already in the list.":
-			"Ez a modell már szerepel a listában.",
-		"Enter an OpenRouter API key to use a custom model.":
-			"Saját modellhez adj meg egy OpenRouter API-kulcsot.",
+
 		"This browser could not store the settings.":
 			"Ez a böngésző nem tudta tárolni a beállításokat.",
 		"Opponents'": "Ellenfél",
@@ -1143,16 +1040,14 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Release failed: no host is connected. Try again later.":
 			"A feladás nem sikerült: nincs csatlakozott host. Próbáld később.",
 		"All players connected": "Minden játékos csatlakozott",
-		"Set an OpenRouter API key before switching a seat to a bot.":
-			"Adj meg OpenRouter API-kulcsot, mielőtt egy helyet botra váltasz.",
+
 		"The host could not change that seat.":
 			"A host nem tudta módosítani ezt a helyet.",
 		"The host could not restore the saved bot seats.":
 			"A host nem tudta visszaállítani a mentett bothelyeket.",
 		"Only the current host can run bots in this browser.":
 			"Ebben a böngészőben csak az aktuális host futtathat botokat.",
-		"Set an OpenRouter API key to run the bots.":
-			"Adj meg OpenRouter API-kulcsot a botok futtatásához.",
+
 		"Bots could not start. Check that this page is the ready host.":
 			"A botok nem indultak el. Ellenőrizd, hogy ez az oldal az aktív host-e.",
 		"Host changed. Bots stopped.": "Megváltozott a host. A botok leálltak.",
@@ -1233,7 +1128,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Could not copy the link. Allow clipboard access and try again.":
 			"Nem sikerült másolni a hivatkozást. Engedélyezd a vágólap elérését, majd próbáld újra.",
 		Cancel: "Mégse",
-		"OpenRouter spending total": "OpenRouter-kiadások összesen",
+
 		"Room call": "Szobahívás",
 		Storage: "Tárhely",
 		failed: "sikertelen",
@@ -1334,48 +1229,14 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Hearts: "Kőr",
 		Spades: "Pikk",
 		"No trump": "Szanzadu",
-		"Asking {model} for a bid (attempt {attempt} of {attempts}).":
-			"Licit kérése: {model} ({attempt}. kísérlet / {attempts}).",
-		"Asking {model} for a card play (attempt {attempt} of {attempts}).":
-			"Lapkijátszás kérése: {model} ({attempt}. kísérlet / {attempts}).",
-		"HTTP {status} from {previous}; trying next priority model {model} in {seconds} seconds.":
-			"HTTP {status} ettől: {previous}; a következő modell ({model}) {seconds} másodperc múlva.",
-		"OpenRouter rate limit (429). Retrying in {seconds} seconds.":
-			"OpenRouter-sebességkorlát (429). Újra {seconds} másodperc múlva.",
-		"OpenRouter returned HTTP {status}. Retrying in {seconds} seconds.":
-			"Az OpenRouter HTTP {status} választ adott. Újra {seconds} másodperc múlva.",
-		"OpenRouter request timed out. Retrying in {seconds} seconds.":
-			"Az OpenRouter-kérés túllépte az időkorlátot. Újra {seconds} másodperc múlva.",
-		"Could not reach OpenRouter. Retrying in {seconds} seconds.":
-			"Az OpenRouter nem érhető el. Újra {seconds} másodperc múlva.",
-		"Still waiting for {model} to return a decision.":
-			"Még várunk a döntésre: {model}.",
-		"OpenRouter rejected the API key (401). Set the key again, then resume bots.":
-			"Az OpenRouter elutasította az API-kulcsot (401). Add meg újra a kulcsot, majd folytasd a botokat.",
-		"OpenRouter has insufficient balance. Update the balance or API key, then resume bots.":
-			"Az OpenRouter egyenlege nem elegendő. Frissítsd az egyenleget vagy az API-kulcsot, majd folytasd a botokat.",
-		"OpenRouter denied access to this model (403). Check the account and model access.":
-			"Az OpenRouter megtagadta a hozzáférést ehhez a modellhez (403). Ellenőrizd a fiókot és a modell-hozzáférést.",
-		"OpenRouter could not find this model or endpoint (404). Choose another model.":
-			"Az OpenRouter nem találja ezt a modellt vagy végpontot (404). Válassz másik modellt.",
-		"OpenRouter rejected the request as too large (413). Choose another model.":
-			"Az OpenRouter túl nagynak találta a kérést (413). Válassz másik modellt.",
-		"OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.":
-			"Az OpenRouter az újrapróbálások után is korlátozta a botot. Várj, majd folytasd a botokat.",
-		"OpenRouter or the model provider returned HTTP {status} after retries. Check provider status or choose another model.":
-			"Az OpenRouter vagy a modell szolgáltatója HTTP {status} választ adott az újrapróbálások után. Ellenőrizd a szolgáltató állapotát, vagy válassz másik modellt.",
-		"OpenRouter returned HTTP {status} after retries. Check the selected model and request settings.":
-			"Az OpenRouter HTTP {status} választ adott az újrapróbálások után. Ellenőrizd a választott modellt és a kérés beállításait.",
-		"The OpenRouter request timed out. Resume bots to try again.":
-			"Az OpenRouter-kérés túllépte az időkorlátot. Folytasd a botokat egy új próbához.",
-		"The browser could not reach OpenRouter. Check the connection, then resume bots.":
-			"A böngésző nem éri el az OpenRoutert. Ellenőrizd a kapcsolatot, majd folytasd a botokat.",
-		"The selected model returned an unusable decision: {detail}. Choose another model or resume bots.":
-			"A választott modell használhatatlan döntést adott: {detail}. Válassz másik modellt, vagy folytasd a botokat.",
-		"The bot could not use the model response. Choose another model or resume bots.":
-			"A bot nem tudta használni a modell válaszát. Válassz másik modellt, vagy folytasd a botokat.",
-		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Négy tizedesjegyes kijelzés. Az OpenRouter által jelentett pontos összeg: {total} USD.",
+		"Asking {engine} for a bid (attempt {attempt} of {attempts}).":
+			"Licit kérése: {engine} ({attempt}. kísérlet / {attempts}).",
+		"Asking {engine} for a card play (attempt {attempt} of {attempts}).":
+			"Lapkijátszás kérése: {engine} ({attempt}. kísérlet / {attempts}).",
+
+		"Still waiting for {engine} to return a decision.":
+			"Még várunk a döntésre: {engine}.",
+
 		"Vienna points": "bécsi pont",
 		"Reith points": "Reith pont",
 		"Four Aces points": "Four Aces pont",
@@ -1441,8 +1302,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		WAITING: "VENTER",
 		"CONNECTING TO HOST": "KOBLER TIL VERTEN",
 		"Enable autoplay (bot)": "Slå på automatisk spilling (bot)",
-		"Autoplay is using this host's OpenRouter key.":
-			"Automatisk spilling bruker vertens OpenRouter-nøkkel.",
+
 		"Disable autoplay": "Slå av automatisk spilling",
 		"Stop autoplay": "Stopp automatisk spilling",
 		"Sending autoplay request…": "Sender forespørsel om automatisk spilling…",
@@ -1467,12 +1327,21 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Create new game": "Opprett nytt spill",
 		"Create game": "Opprett spill",
 		"Creating…": "Oppretter…",
+		"Check the bidding engine.": "Kontroller meldemotoren.",
+		"Autoplay uses the local bridge engine.":
+			"Automatisk spilling bruker den lokale bridgemotoren.",
+		"The local bot failed. Resume bots to try again.":
+			"Den lokale boten feilet. Start botene igjen for å prøve på nytt.",
+		"Three-card support is not required.": "Trekortsstøtte er ikke nødvendig.",
+		"at most {max} {suit} after the transfer was doubled":
+			"høyst {max} {suit} etter at overføringen ble doblet",
+		"Local bidding runs in your browser. Learned conventions can differ from SAYC.":
+			"Lokal melding kjører i nettleseren. Innlærte konvensjoner kan avvike fra SAYC.",
 		"Optional automated players": "Valgfrie automatiske spillere",
 		"Bidding engine": "Meldemotor",
 		"Local · WBridge5 imitation": "Lokal · WBridge5-etterligning",
 		"Local · RL/FSP learned system": "Lokal · innlært RL/FSP-system",
-		"Local bidders need no API key. Their learned bidding can differ from the standard guide.":
-			"Lokale meldemotorer trenger ingen API-nøkkel. De innlærte meldingene kan avvike fra standardveiledningen.",
+
 		Seat: "Plass",
 		Name: "Navn",
 		You: "Du",
@@ -1482,9 +1351,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Duplicate: "Duplikat",
 		"Chicago (later)": "Chicago (senere)",
 		"Rubber (later)": "Gummibridge (senere)",
-		"OpenRouter API key": "OpenRouter API-nøkkel",
-		Retries: "Nye forsøk",
-		"Wait between retries (seconds)": "Vent mellom forsøk (sekunder)",
+
 		"All seats are taken.": "Alle plassene er opptatt.",
 		"{seat} (host)": "{seat} (vert)",
 		"{seat} (bot)": "{seat} (bot)",
@@ -1538,9 +1405,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Primary: "Primær",
 		Fallback: "Reserve",
 		Backup: "Ekstra reserve",
-		"Bot model priority": "Rekkefølge for botmodeller",
-		"Move {model} up": "Flytt {model} opp",
-		"Move {model} down": "Flytt {model} ned",
+
 		"Join call": "Bli med",
 		"Leave call": "Legg på",
 		"Rejoin the call": "Bli med igjen",
@@ -1682,9 +1547,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Vis skrivebordsvisningen på en telefon eller et nettbrett i liggende format",
 		"On a computer with a portrait window, show the mobile view":
 			"Vis mobilvisningen på en datamaskin med et vindu i stående format",
-		"Custom model": "Egen modell",
-		"Bot model order": "Rekkefølge for botmodeller",
-		"Custom model (not set)": "Egen modell (ikke satt)",
+
 		"Save settings": "Lagre innstillinger",
 		Settings: "Innstillinger",
 		"Turn and network display": "Visning av tur og nettverk",
@@ -1693,12 +1556,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
 			"Slå på dette hvis nettverkstilkoblingen er ustabil, for eksempel på tog, med svak mobildata eller med Wi-Fi som faller ut. Siden oppdager da en tapt tilkobling raskere, og sender litt flere meldinger til de offentlige reléene.",
 		Bots: "Boter",
-		"Enter an OpenRouter model id, for example vendor/model.":
-			"Skriv inn en OpenRouter-modell-ID, for eksempel vendor/model.",
-		"This model is already in the list.":
-			"Denne modellen er allerede i listen.",
-		"Enter an OpenRouter API key to use a custom model.":
-			"Skriv inn en OpenRouter API-nøkkel for å bruke en egen modell.",
+
 		"This browser could not store the settings.":
 			"Denne nettleseren kunne ikke lagre innstillingene.",
 		"Opponents'": "Motstanderne",
@@ -1772,7 +1630,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Kunne ikke kopiere lenken. Gi tilgang til utklippstavlen og prøv igjen.",
 		"Copied.": "Kopiert.",
 		Cancel: "Avbryt",
-		"OpenRouter spending total": "Samlet forbruk hos OpenRouter",
+
 		Storage: "Lagring",
 		failed: "mislyktes",
 		"Waiting for {players} to approve.": "Venter på at {players} godkjenner.",
@@ -1781,8 +1639,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Venter på at {players} godkjenner nullstillingen.",
 		"last played card": "sist spilte kort",
 		"last bid": "siste melding",
-		"The bot request failed. Check the model and resume bots.":
-			"Botforespørselen mislyktes. Kontroller modellen og start botene igjen.",
+
 		"Another tab changed the table at the same time. Reload the page.":
 			"En annen fane endret bordet samtidig. Last inn siden på nytt.",
 		"Another player took this seat. Choose another one.":
@@ -1828,8 +1685,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"not vulnerable": "utenfor sonen",
 		"Bots could not start. Check that this page is the ready host.":
 			"Botene kunne ikke starte. Kontroller at denne siden er verten og er klar.",
-		"Check the bot models, retry count, and retry delay.":
-			"Kontroller botmodellene, antall forsøk og ventetiden mellom forsøk.",
+
 		"How many of the remaining {count} tricks will you take?":
 			"Hvor mange av de {count} gjenværende stikkene tar du?",
 		"Claim decision not sent: {reason}": "Kravet ble ikke sendt: {reason}",
@@ -1839,14 +1695,10 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Tilkoblingen mislyktes: de andre spillerne ble funnet, men ingen direkte tilkobling fungerer. Prøv et annet nettverk.",
 		"Could not share the board URL.": "Kunne ikke dele URL-en til bordet.",
 		"Current trick": "Pågående stikk",
-		"Enter an OpenRouter API key to run bot seats in this browser.":
-			"Skriv inn en OpenRouter API-nøkkel for å kjøre botplasser i denne nettleseren.",
+
 		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
 			"Skriv inn de fire spillerne. Velg plassen din. Nettleseren din er vert først; hvem som helst ved bordet kan ta over.",
-		"Insufficient OpenRouter balance. Bots are paused until you update the API key or balance.":
-			"For lav saldo hos OpenRouter. Botene er satt på pause til du oppdaterer API-nøkkelen eller saldoen.",
-		"Model priority: the first model is primary; after a server error, the bot tries the next model.":
-			"Modellrekkefølge: Den første modellen er primær. Etter en serverfeil prøver boten den neste.",
+
 		"No direct connection to {names}.": "Ingen direkte tilkobling til {names}.",
 		"Nobody is at this table right now. Keep this page open":
 			"Ingen sitter ved bordet nå. La denne siden stå åpen",
@@ -1860,8 +1712,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Bare en spiller med plass kan frigi en plass.",
 		"Only the current host can run bots in this browser.":
 			"Bare den nåværende verten kan kjøre boter i denne nettleseren.",
-		"Openrouter rate limit - I will retry in a moment":
-			"OpenRouter-grense nådd – prøver igjen om litt",
+
 		"Our tricks": "Våre stikk",
 		"Release failed: no host is connected. Try again later.":
 			"Frigivelsen mislyktes: ingen vert er tilkoblet. Prøv igjen senere.",
@@ -1873,14 +1724,11 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Avgjørelsen om nullstilling ble ikke sendt: {reason}",
 		"Retry call connection to {name}":
 			"Prøv å koble til samtalen med {name} igjen",
-		"Running {count} bot seat(s) with {model}.":
-			"Kjører {count} botplasser med {model}.",
+		"Running {count} bot seat(s) with {engine}.":
+			"Kjører {count} botplasser med {engine}.",
 		"Send this link to the three other players. Each one opens it and takes a seat.":
 			"Send denne lenken til de tre andre spillerne. Alle åpner den og velger en plass.",
-		"Set an OpenRouter API key before switching a seat to a bot.":
-			"Angi en OpenRouter API-nøkkel før du bytter en plass til en bot.",
-		"Set an OpenRouter API key to run the bots.":
-			"Angi en OpenRouter API-nøkkel for å kjøre botene.",
+
 		"The host could not change that seat.":
 			"Verten kunne ikke endre den plassen.",
 		"The host could not restore the saved bot seats.":
@@ -1898,26 +1746,7 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Bordet er stengt. Last inn siden på nytt.",
 		"This browser could not save the table.":
 			"Nettleseren kunne ikke lagre bordet.",
-		"This browser could not store the OpenRouter API key.":
-			"Nettleseren kunne ikke lagre OpenRouter API-nøkkelen.",
-		"Checking the OpenRouter key and balance…":
-			"Kontrollerer OpenRouter-nøkkelen og saldoen…",
-		"The OpenRouter key works. Balance: {balance}.":
-			"OpenRouter-nøkkelen virker. Saldo: {balance}.",
-		"Cost: {cost}": "Kostnad: {cost}",
-		"Balance: {balance}": "Saldo: {balance}",
-		"The OpenRouter key works. OpenRouter did not report the balance.":
-			"OpenRouter-nøkkelen virker. OpenRouter oppga ikke saldoen.",
-		"OpenRouter rejected the API key (401).":
-			"OpenRouter avviste API-nøkkelen (401).",
-		"OpenRouter returned HTTP {status} for the key check.":
-			"OpenRouter svarte HTTP {status} på nøkkelkontrollen.",
-		"The browser could not reach OpenRouter.":
-			"Nettleseren nådde ikke OpenRouter.",
-		"The OpenRouter key check timed out.":
-			"Kontrollen av OpenRouter-nøkkelen tok for lang tid.",
-		"The OpenRouter balance is {balance}. A key needs more than {minimum}.":
-			"OpenRouter-saldoen er {balance}. En nøkkel trenger mer enn {minimum}.",
+
 		"This browser does not store data ({problem}). You can play, but you cannot become the host, and a reload loses this copy of the table.":
 			"Nettleseren lagrer ikke data ({problem}). Du kan spille, men ikke bli vert. Hvis du laster inn siden på nytt, går denne bordkopien tapt.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
@@ -2017,48 +1846,14 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Hearts: "Hjerter",
 		Spades: "Spar",
 		"No trump": "Grand",
-		"Asking {model} for a bid (attempt {attempt} of {attempts}).":
-			"Spør {model} om en melding (forsøk {attempt} av {attempts}).",
-		"Asking {model} for a card play (attempt {attempt} of {attempts}).":
-			"Spør {model} om et kort (forsøk {attempt} av {attempts}).",
-		"HTTP {status} from {previous}; trying next priority model {model} in {seconds} seconds.":
-			"HTTP {status} fra {previous}; prøver neste modell {model} om {seconds} sekunder.",
-		"OpenRouter rate limit (429). Retrying in {seconds} seconds.":
-			"OpenRouter-grense for forespørsler (429). Prøver igjen om {seconds} sekunder.",
-		"OpenRouter returned HTTP {status}. Retrying in {seconds} seconds.":
-			"OpenRouter svarte med HTTP {status}. Prøver igjen om {seconds} sekunder.",
-		"OpenRouter request timed out. Retrying in {seconds} seconds.":
-			"OpenRouter-forespørselen tok for lang tid. Prøver igjen om {seconds} sekunder.",
-		"Could not reach OpenRouter. Retrying in {seconds} seconds.":
-			"Får ikke kontakt med OpenRouter. Prøver igjen om {seconds} sekunder.",
-		"Still waiting for {model} to return a decision.":
-			"Venter fortsatt på en avgjørelse fra {model}.",
-		"OpenRouter rejected the API key (401). Set the key again, then resume bots.":
-			"OpenRouter avviste API-nøkkelen (401). Angi nøkkelen på nytt, og fortsett så botene.",
-		"OpenRouter has insufficient balance. Update the balance or API key, then resume bots.":
-			"OpenRouter-saldoen er for lav. Oppdater saldoen eller API-nøkkelen, og fortsett så botene.",
-		"OpenRouter denied access to this model (403). Check the account and model access.":
-			"OpenRouter nektet tilgang til denne modellen (403). Sjekk kontoen og modelltilgangen.",
-		"OpenRouter could not find this model or endpoint (404). Choose another model.":
-			"OpenRouter fant ikke denne modellen eller dette endepunktet (404). Velg en annen modell.",
-		"OpenRouter rejected the request as too large (413). Choose another model.":
-			"OpenRouter avviste forespørselen som for stor (413). Velg en annen modell.",
-		"OpenRouter kept rate limiting the bot after retries. Wait, then resume bots.":
-			"OpenRouter fortsatte å begrense boten etter nye forsøk. Vent, og fortsett så botene.",
-		"OpenRouter or the model provider returned HTTP {status} after retries. Check provider status or choose another model.":
-			"OpenRouter eller modelleverandøren svarte med HTTP {status} etter nye forsøk. Sjekk leverandørens status eller velg en annen modell.",
-		"OpenRouter returned HTTP {status} after retries. Check the selected model and request settings.":
-			"OpenRouter svarte med HTTP {status} etter nye forsøk. Sjekk den valgte modellen og forespørselsinnstillingene.",
-		"The OpenRouter request timed out. Resume bots to try again.":
-			"OpenRouter-forespørselen tok for lang tid. Fortsett botene for å prøve igjen.",
-		"The browser could not reach OpenRouter. Check the connection, then resume bots.":
-			"Nettleseren får ikke kontakt med OpenRouter. Sjekk tilkoblingen, og fortsett så botene.",
-		"The selected model returned an unusable decision: {detail}. Choose another model or resume bots.":
-			"Den valgte modellen ga en ubrukelig avgjørelse: {detail}. Velg en annen modell eller fortsett botene.",
-		"The bot could not use the model response. Choose another model or resume bots.":
-			"Boten kunne ikke bruke svaret fra modellen. Velg en annen modell eller fortsett botene.",
-		"Four-decimal display. Exact total reported by OpenRouter: {total} USD.":
-			"Vist med fire desimaler. Nøyaktig total fra OpenRouter: {total} USD.",
+		"Asking {engine} for a bid (attempt {attempt} of {attempts}).":
+			"Spør {engine} om en melding (forsøk {attempt} av {attempts}).",
+		"Asking {engine} for a card play (attempt {attempt} of {attempts}).":
+			"Spør {engine} om et kort (forsøk {attempt} av {attempts}).",
+
+		"Still waiting for {engine} to return a decision.":
+			"Venter fortsatt på en avgjørelse fra {engine}.",
+
 		"Vienna points": "Vienna-poeng",
 		"Reith points": "Reith-poeng",
 		"Four Aces points": "Four Aces-poeng",

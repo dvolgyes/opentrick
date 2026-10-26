@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+test("new tables default to local SL with no remote model controls", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("sl");
+	await expect(page.locator('input[name="openrouter-key"]')).toHaveCount(0);
+	await expect(page.locator(".model-priority-list")).toHaveCount(0);
+	await expect(page.locator('input[name="bot-retries"]')).toHaveCount(0);
+});
+
 for (const policy of ["sl", "rl-fsp"] as const)
 	test(`local ${policy} bidding and card play finish a board without an API key`, async ({
 		page,

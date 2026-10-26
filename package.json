@@ -18,14 +18,14 @@
 		"benchmark:play": "node --env-file-if-exists=.env --import tsx scripts/benchmark-play.ts",
 		"benchmark:3nt": "node --import tsx scripts/benchmark-notrump.ts",
 		"benchmark:bidding": "npm run prepare:bidder && node --import tsx scripts/benchmark-bidding.ts",
-		"demo:bot": "node --env-file-if-exists=.env --import tsx scripts/demo-bot.ts",
+		"benchmark:sayc": "npm run prepare:bidder && node --import tsx scripts/benchmark-sayc.ts",
+		"demo:bot": "node --import tsx scripts/demo-bot.ts",
 		"test:e2e": "playwright test",
 		"test:e2e:live": "E2E_LIVE=1 playwright test tests/e2e/live-robots.spec.ts"
 	},
 	"dependencies": {
 		"@bridge-tools/core": "0.3.1",
 		"@noble/secp256k1": "3.2.0",
-		"@openrouter/agent": "0.11.0",
 		"@trystero-p2p/core": "0.26.0",
 		"bridge-dds": "1.4.0",
 		"mqtt": "5.16.0",

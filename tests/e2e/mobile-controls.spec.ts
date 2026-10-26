@@ -1,12 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { mockOpenRouterKey } from "./openrouter-mock";
+import { mockBotBidding } from "./bot-mock";
+
 import { Player } from "./player";
 
 /*
  * A phone shows the compact table (src/ui/room-view.ts sets the form from the device class); phone.spec.ts plays a
  * board on it, and layout.spec.ts checks it at several phone sizes. This test checks the host bot controls on a phone.
  */
-test("on a phone the host pauses the bots, finds each top-bar button once, and changes the API key in Settings", async ({
+test("on a phone the host pauses the bots, finds each top-bar button once, and changes display settings", async ({
 	browser,
 	baseURL,
 }) => {
@@ -18,59 +19,13 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 	});
 	try {
 		const page = await player.page("./");
-		await mockOpenRouterKey(page);
-		await page.route(
-			"https://openrouter.ai/api/v1/responses",
-			async (route) => {
-				if (route.request().method() === "OPTIONS") {
-					await route.fulfill({
-						status: 204,
-						headers: {
-							"access-control-allow-origin": "*",
-							"access-control-allow-methods": "POST, OPTIONS",
-							"access-control-allow-headers": "authorization,content-type",
-						},
-					});
-					return;
-				}
-				const body = route.request().postDataJSON();
-				const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-				const field = kind === "call" ? "call" : "card";
-				const values = body.text.format.schema.properties[field]
-					.enum as string[];
-				const choice =
-					kind === "call" && body.input.includes("No calls yet")
-						? (values.find((value) => value === "1NT") ?? values[0])
-						: kind === "call"
-							? (values.find((value) => value === "P") ?? values[0])
-							: values[0];
-				await new Promise((resolve) => setTimeout(resolve, 100));
-				await route.fulfill({
-					status: 200,
-					headers: { "access-control-allow-origin": "*" },
-					contentType: "application/json",
-					body: JSON.stringify({
-						output: [
-							{
-								type: "message",
-								role: "assistant",
-								content: [
-									{
-										type: "output_text",
-										text: JSON.stringify({ [field]: choice }),
-									},
-								],
-							},
-						],
-					}),
-				});
-			},
-		);
+
+		await mockBotBidding(page, (position) => {
+			return position.calls.length === 0 ? "1NT" : "P";
+		});
 		for (const seat of ["N", "E", "S", "W"])
 			await page.locator(`input[name="bot-${seat}"]`).check({ force: true });
-		await page
-			.locator('input[name="openrouter-key"]')
-			.fill("test-key", { force: true });
+
 		await page
 			.getByTestId("create")
 			.evaluate((button) => (button as HTMLButtonElement).click());
@@ -128,19 +83,15 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await expect(hostControls).toBeHidden();
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		const settings = page.getByTestId("settings-dialog");
-		await settings
-			.getByRole("textbox", { name: "OpenRouter API key" })
-			.fill("updated-test-key");
+		await expect(settings.getByRole("textbox")).toHaveCount(0);
+		await settings.getByLabel("Dark").check();
 		await settings.getByRole("button", { name: "Save settings" }).click();
 		await expect(settings).toBeHidden();
-		await expect(page.getByTestId("bot-status")).toContainText(
-			"The OpenRouter key works. Balance: $10.0.",
-		);
 		expect(
 			await page.evaluate(() =>
-				localStorage.getItem("opentrick.openrouter-api-key"),
+				localStorage.getItem("opentrick.settings.theme"),
 			),
-		).toBe("updated-test-key");
+		).toBe("dark");
 	} finally {
 		await player.close();
 	}

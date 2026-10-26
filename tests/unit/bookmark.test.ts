@@ -51,12 +51,12 @@ describe("parseBookmark", () => {
 describe("bookmarkQuery", () => {
 	it("updates the bot-seat snapshot without changing other room settings", () => {
 		const query = botSeatsQuery(
-			"?north=North&east=East&host=west&bot_seats=N&bot_model=custom/model&selected_player=W",
+			"?north=North&east=East&host=west&bot_seats=N&bot_bidder=rl-fsp&selected_player=W",
 			["W", "E"],
 		);
 		const params = new URLSearchParams(query);
 		expect(params.get("bot_seats")).toBe("E,W");
-		expect(params.get("bot_model")).toBe("custom/model");
+		expect(params.get("bot_bidder")).toBe("rl-fsp");
 		expect(params.get("selected_player")).toBe("W");
 		expect(params.get("north")).toBe("North");
 		expect(params.has("autoplay_seats")).toBe(false);
@@ -78,30 +78,21 @@ describe("bookmarkQuery", () => {
 		);
 	});
 
-	it("encodes initial bot seats and model/retry settings without an API key", () => {
+	it("encodes initial bot seats and the local bidding policy", () => {
 		const query = bookmarkQuery(
 			{ N: "player1", E: "player3", S: "player2", W: "player4" },
 			"W",
 			{
 				seats: ["W"],
-				model: "inception/mercury-3",
-				fallbackModel: "openai/gpt-6-luna",
-				retries: 5,
-				retryDelayMs: 5000,
+				bidder: "sl",
 			},
 		);
 		expect(query).toContain("bot_seats=W");
-		expect(query).toContain("bot_model=inception%2Fmercury-3");
-		expect(query).toContain("bot_fallback=openai%2Fgpt-6-luna");
-		expect(query).toContain("bot_retries=5");
-		expect(query).toContain("bot_delay_ms=5000");
+		expect(query).toContain("bot_bidder=sl");
 		expect(query).not.toMatch(/api.?key|secret/i);
 		expect(parseRoomSetup(`?${query}`)?.config.botSetup).toEqual({
 			seats: ["W"],
-			model: "inception/mercury-3",
-			fallbackModel: "openai/gpt-6-luna",
-			retries: 5,
-			retryDelayMs: 5000,
+			bidder: "sl",
 		});
 	});
 

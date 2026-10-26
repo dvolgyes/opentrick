@@ -1,5 +1,5 @@
 import { isCard } from "../bridge/cards";
-import { BotRequestAbortedError } from "./browser-openrouter";
+import { BotRequestAbortedError } from "./errors";
 import type { PlayAnalysis } from "./play-engine";
 import type { PlayPosition } from "./play-position";
 

@@ -254,25 +254,6 @@ td label {
 	border-radius: 0.3rem;
 }
 
-.rate-limit-reminder {
-	position: fixed;
-	top: 1rem;
-	left: 50%;
-	z-index: 1100;
-	transform: translateX(-50%);
-	max-width: calc(100vw - 2rem);
-	padding: 0.65rem 1rem;
-	border-radius: 0.4rem;
-	background: var(--warn-bg);
-	color: var(--warn-fg);
-	box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 25%);
-	font-weight: 600;
-}
-
-.rate-limit-reminder[hidden] {
-	display: none;
-}
-
 .network {
 	margin: 0.8rem 0;
 }
@@ -1210,27 +1191,6 @@ main:has(> .room) {
 	display: none;
 }
 
-.model-priority-list {
-	display: grid;
-	gap: 0.25rem;
-	padding-left: 1.8rem;
-}
-
-.model-priority-list li {
-	display: flex;
-	align-items: center;
-	gap: 0.35rem;
-}
-
-.model-priority-label {
-	flex: 1;
-}
-
-.model-priority-list button {
-	margin: 0;
-	padding: 0.15rem 0.45rem;
-}
-
 /* The settings scroll inside the screen; Save and Cancel stay below them, so they are always in reach on a phone. */
 .settings-dialog {
 	box-sizing: border-box;
@@ -1395,32 +1355,15 @@ main:has(> .room) {
 	color: var(--call-orange);
 }
 
-.settings-order-title {
-	margin: 0.4rem 0 0;
-}
-
 .settings-actions {
 	display: flex;
 	gap: 0.4rem;
 }
 
-/* In a narrow row, the balance goes below the cost. */
-.bot-money {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	column-gap: 0.4rem;
-	min-width: 0;
-	margin-right: auto;
-	margin-left: auto;
-}
-
-/* In a narrow row, an amount also goes below its label. */
-.bot-spend-counter,
-.bot-balance {
-	font-variant-numeric: tabular-nums;
-	font-weight: 700;
-	text-align: center;
+.bid-explanation {
+	margin: 0.35rem 0;
+	font-size: 0.85rem;
+	line-height: 1.3;
 }
 
 .mobile-bot-controls {

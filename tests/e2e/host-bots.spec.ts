@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { mockOpenRouterKey } from "./openrouter-mock";
+import { mockBotBidding } from "./bot-mock";
+
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
@@ -9,47 +10,10 @@ test("host bots play two consecutive boards from auction through the final trick
 	page,
 }) => {
 	let requests = 0;
-	let cardRequests = 0;
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({
-				status: 204,
-				headers: {
-					"access-control-allow-origin": "*",
-					"access-control-allow-methods": "POST, OPTIONS",
-					"access-control-allow-headers": "authorization,content-type",
-				},
-			});
-			return;
-		}
+
+	await mockBotBidding(page, (position) => {
 		requests++;
-		const body = route.request().postDataJSON();
-		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-		if (kind === "card") cardRequests++;
-		const values = body.text.format.schema.properties[kind].enum as string[];
-		const choice =
-			kind === "call" && body.input.includes("No calls yet")
-				? (values.find((value) => value === "1NT") ?? values[0])
-				: kind === "call"
-					? (values.find((value) => value === "P") ?? values[0])
-					: values[0];
-		await route.fulfill({
-			status: 200,
-			headers: { "access-control-allow-origin": "*" },
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [
-							{ type: "output_text", text: JSON.stringify({ [kind]: choice }) },
-						],
-					},
-				],
-			}),
-		});
+		return position.calls.length === 0 ? "1NT" : "P";
 	});
 
 	await page.goto("/");
@@ -63,21 +27,14 @@ test("host bots play two consecutive boards from auction through the final trick
 	}
 	for (const seat of ["N", "E", "S", "W"])
 		await page.locator(`input[name="bot-${seat}"]`).check();
-	await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	const roomUrl = new URL(page.url());
 	expect(roomUrl.searchParams.get("bot_seats")).toBe("N,E,S,W");
-	expect(roomUrl.searchParams.get("bot_model")).toBe("openai/gpt-6-luna");
-	expect(roomUrl.searchParams.get("bot_fallback")).toBe("inception/mercury-3");
-	expect(roomUrl.searchParams.get("bot_retries")).toBe("5");
-	expect(roomUrl.searchParams.get("bot_delay_ms")).toBe("3000");
-	expect(roomUrl.search).not.toMatch(/api.?key|test-key/i);
-	expect(
-		await page.evaluate(() =>
-			localStorage.getItem("opentrick.openrouter-api-key"),
-		),
-	).toBe("test-key");
+	expect(roomUrl.searchParams.get("bot_bidder")).toBe("sl");
+	await expect(page.getByTestId("bot-spend")).toHaveCount(0);
+	await expect(page.getByTestId("bot-balance")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
 	await page.getByRole("button", { name: "Pause bots" }).click();
 	await expect(page.getByRole("button", { name: "Resume bots" })).toBeVisible();
@@ -105,51 +62,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	// Four bids per board; all 104 card decisions run in the host's DDS worker.
 	expect(requests).toBeGreaterThanOrEqual(8);
 	expect(requests).toBeLessThan(12);
-	expect(cardRequests).toBe(0);
 	await expect(page.locator("[data-phase]")).toHaveAttribute("data-at", "56");
-});
-
-test("the create page stores the OpenRouter key also when no seat is a bot", async ({
-	page,
-}) => {
-	// Create checks the key and its balance (openrouter-key.spec.ts); this mock passes the check.
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", (route) =>
-		route.fulfill({
-			status: 200,
-			headers: {
-				"access-control-allow-origin": "*",
-				"access-control-allow-headers": "authorization,content-type",
-			},
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [{ type: "output_text", text: '{"call":"P"}' }],
-					},
-				],
-			}),
-		}),
-	);
-	await page.goto("/");
-	await page.locator('input[name="name-W"]').fill("host west");
-	await page.locator('input[name="openrouter-key"]').fill(" later-key ");
-	await page.getByTestId("create").click();
-	await expect(page.getByTestId("room-controls")).toBeVisible();
-	expect(page.url()).not.toContain("later-key");
-	expect(
-		await page.evaluate(() =>
-			localStorage.getItem("opentrick.openrouter-api-key"),
-		),
-	).toBe("later-key");
-	await page.getByRole("button", { name: "Settings", exact: true }).click();
-	await expect(
-		page
-			.getByTestId("settings-dialog")
-			.getByRole("textbox", { name: "OpenRouter API key" }),
-	).toHaveValue("later-key");
 });
 
 test("a bot bids and plays when the site is served below a path, as on GitHub Pages", async ({
@@ -169,39 +82,10 @@ test("a bot bids and plays when the site is served below a path, as on GitHub Pa
 		await route.fulfill({ response: await route.fetch({ url: url.href }) });
 	});
 	let requests = 0;
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({
-				status: 204,
-				headers: {
-					"access-control-allow-origin": "*",
-					"access-control-allow-methods": "POST, OPTIONS",
-					"access-control-allow-headers": "authorization,content-type",
-				},
-			});
-			return;
-		}
+
+	await mockBotBidding(page, (position) => {
 		requests++;
-		await route.fulfill({
-			status: 200,
-			headers: { "access-control-allow-origin": "*" },
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [
-							{
-								type: "output_text",
-								text: JSON.stringify({ call: requests === 1 ? "1NT" : "P" }),
-							},
-						],
-					},
-				],
-			}),
-		});
+		return position.calls.length === 0 ? "1NT" : "P";
 	});
 
 	await page.goto("/opentrick/");
@@ -211,7 +95,7 @@ test("a bot bids and plays when the site is served below a path, as on GitHub Pa
 		await page.locator(`input[name="bot-${seat}"]`).check();
 	}
 	await page.locator('input[name="bot-W"]').check();
-	await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 	await page.getByTestId("create").click();
 	// Board 1: North deals, so the North bot bids first.
 	await expect(page.getByTestId("bid-history")).toContainText("1NT", {
@@ -241,46 +125,8 @@ test("switching the current bidder to a bot starts it immediately", async ({
 	const south = await Player.open(browser, baseURL, "south");
 	try {
 		const hostPage = await host.page("./");
-		await mockOpenRouterKey(hostPage);
-		await hostPage.route(
-			"https://openrouter.ai/api/v1/responses",
-			async (route) => {
-				if (route.request().method() === "OPTIONS") {
-					await route.fulfill({
-						status: 204,
-						headers: {
-							"access-control-allow-origin": "*",
-							"access-control-allow-methods": "POST, OPTIONS",
-							"access-control-allow-headers": "authorization,content-type",
-						},
-					});
-					return;
-				}
-				const body = route.request().postDataJSON();
-				const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-				const values = body.text.format.schema.properties[kind]
-					.enum as string[];
-				await route.fulfill({
-					status: 200,
-					headers: { "access-control-allow-origin": "*" },
-					contentType: "application/json",
-					body: JSON.stringify({
-						output: [
-							{
-								type: "message",
-								role: "assistant",
-								content: [
-									{
-										type: "output_text",
-										text: JSON.stringify({ [kind]: values[0] }),
-									},
-								],
-							},
-						],
-					}),
-				});
-			},
-		);
+
+		await mockBotBidding(hostPage, () => "P");
 
 		const link = await createRoom(hostPage);
 		const northPage = await north.page(link);
@@ -324,10 +170,7 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		await hostPage
 			.getByRole("button", { name: "Settings", exact: true })
 			.click();
-		await hostPage
-			.getByTestId("settings-dialog")
-			.getByRole("textbox", { name: "OpenRouter API key" })
-			.fill("test-key");
+
 		await hostPage.getByRole("button", { name: "Save settings" }).click();
 		await expect(hostPage.getByTestId("settings-dialog")).toBeHidden();
 		await hostPage
@@ -441,50 +284,15 @@ test("switching the current bidder to a bot starts it immediately", async ({
 /** West, the host, declares 2NT against three host bots, which call and play their first legal choice. */
 async function westDeclaresAgainstBots(page: Page): Promise<Locator> {
 	// North opens 1NT and every other bot call is a pass; each bot card is its first legal card.
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({
-				status: 204,
-				headers: {
-					"access-control-allow-origin": "*",
-					"access-control-allow-methods": "POST, OPTIONS",
-					"access-control-allow-headers": "authorization,content-type",
-				},
-			});
-			return;
-		}
-		const body = route.request().postDataJSON();
-		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-		const values = body.text.format.schema.properties[kind].enum as string[];
-		const choice =
-			kind === "call" && body.input.includes("No calls yet")
-				? (values.find((value) => value === "1NT") ?? values[0])
-				: kind === "call"
-					? (values.find((value) => value === "P") ?? values[0])
-					: values[0];
-		await route.fulfill({
-			status: 200,
-			headers: { "access-control-allow-origin": "*" },
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [
-							{ type: "output_text", text: JSON.stringify({ [kind]: choice }) },
-						],
-					},
-				],
-			}),
-		});
+
+	await mockBotBidding(page, (position) => {
+		return position.calls.length === 0 ? "1NT" : "P";
 	});
 
 	await page.goto("/");
 	for (const seat of ["N", "E", "S"])
 		await page.locator(`input[name="bot-${seat}"]`).check();
-	await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 	await page.getByTestId("create").click();
 	const phase = page.locator("[data-phase]").first();
 
@@ -558,42 +366,7 @@ test("the bots reject the host's claims, so the board is played out", async ({
 
 /** The bots of `page` answer with the first legal call or card. */
 async function firstChoiceBots(page: Page): Promise<void> {
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({
-				status: 204,
-				headers: {
-					"access-control-allow-origin": "*",
-					"access-control-allow-methods": "POST, OPTIONS",
-					"access-control-allow-headers": "authorization,content-type",
-				},
-			});
-			return;
-		}
-		const body = route.request().postDataJSON();
-		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-		const values = body.text.format.schema.properties[kind].enum as string[];
-		await route.fulfill({
-			status: 200,
-			headers: { "access-control-allow-origin": "*" },
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [
-							{
-								type: "output_text",
-								text: JSON.stringify({ [kind]: values[0] }),
-							},
-						],
-					},
-				],
-			}),
-		});
-	});
+	await mockBotBidding(page, () => "P");
 }
 
 test("a player on autoplay stays in the call when the host reloads, and can still stop autoplay", async ({
@@ -621,16 +394,14 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		await hostPage
 			.getByRole("button", { name: "Settings", exact: true })
 			.click();
-		await hostPage
-			.getByTestId("settings-dialog")
-			.getByRole("textbox", { name: "OpenRouter API key" })
-			.fill("test-key");
+
 		await hostPage.getByRole("button", { name: "Save settings" }).click();
 		await expect(hostPage.getByTestId("settings-dialog")).toBeHidden();
 		await host.grantPermissions(["microphone"]);
 		await north.grantPermissions(["microphone"]);
 		for (const page of [hostPage, northPage])
 			await page
+				.getByTestId("call-panel")
 				.getByRole("button", { name: "Join call", exact: true })
 				.click();
 		await expect(hostPage.getByTestId("call-note")).toContainText(

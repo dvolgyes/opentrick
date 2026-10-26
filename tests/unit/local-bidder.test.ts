@@ -50,10 +50,8 @@ describe("local bidder integration", () => {
 		const errors = vi.fn();
 		const runner = new HostBotRunner(
 			controller,
-			{ ...DEFAULT_BOT_SETUP, apiKey: "", modelOrder: [], bidder: "sl" },
+			{ bidder: "sl" },
 			errors,
-			undefined,
-			undefined,
 			undefined,
 			bidder,
 		);
@@ -84,6 +82,6 @@ describe("local bidder integration", () => {
 			N: "other",
 			E: "hcp",
 		});
-		expect(seatSystems({}, ["N"])).toEqual({ N: "hcp" });
+		expect(seatSystems({}, ["N"])).toEqual({ N: "other" });
 	});
 });

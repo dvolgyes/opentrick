@@ -1,7 +1,7 @@
 import { isCall } from "../bridge/rules";
 import type { BidAnalysis, LocalBidder } from "./bid-network";
 import type { BidPosition } from "./bid-position";
-import { BotRequestAbortedError } from "./browser-openrouter";
+import { BotRequestAbortedError } from "./errors";
 
 export interface BidChooser {
 	choose(

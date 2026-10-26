@@ -88,6 +88,8 @@ function chrome(fakeDevices = "--use-fake-device-for-media-stream") {
 
 export default defineConfig({
 	base: "./",
+	// Discovering DDS during a browser test reloads Vite's harness; prepare it before tests start.
+	optimizeDeps: { include: ["bridge-dds"] },
 	envPrefix: ENV_PREFIXES,
 	define: { __OPENTRICK_BUILD__: JSON.stringify(BUILD) },
 	build: {

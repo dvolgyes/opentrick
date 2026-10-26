@@ -1,10 +1,8 @@
-import { readHostApiKey } from "../bot/host-key";
 import {
 	configuredBotSeats,
 	HostBotRunner,
 	type HostBotSettings,
 } from "../bot/host-runner";
-import { readOpenRouterBalance } from "../bot/openrouter-balance";
 import { type Board, boardStatus } from "../bridge/engine";
 import type { PointSystem } from "../bridge/hand-points";
 import { type BuildInfo, formatBuildDate } from "../build";
@@ -36,22 +34,13 @@ import { chatPayload, checkMessageText } from "../game/chat";
 import { tableLink } from "../p2p/link";
 import type { TableController, TableStatus } from "../p2p/table";
 import {
-	type BotModel,
-	botModelLabel,
-	botModelOrder,
 	DEFAULT_BOT_SETUP,
-	isBotModel,
 	type JsonObject,
 	type RoomConfig,
 	SEATS,
 	type Seat,
 } from "../protocol";
-import {
-	botSeatsQuery,
-	parseAutoplaySeats,
-	parseBookmark,
-	sharedQuery,
-} from "./bookmark";
+import { botSeatsQuery, parseAutoplaySeats, sharedQuery } from "./bookmark";
 import { CallMemory } from "./call-memory";
 import type { CallDisplay, RemoteCallPresence } from "./call-model";
 import { cameraSetup } from "./camera-setup";
@@ -84,8 +73,8 @@ import { networkPanel } from "./network";
 import { pageReport, type TableFacts } from "./page-report";
 import { pageTitle } from "./page-title";
 import { remoteAudio } from "./remote-audio";
-import { effectiveModelOrder, readSettings } from "./settings";
-import { type SavedSettings, settingsDialog } from "./settings-dialog";
+import { readSettings } from "./settings";
+import { settingsDialog } from "./settings-dialog";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
 import type { TurnSound } from "./turn-sound";
@@ -111,20 +100,8 @@ function roomShareLink(pageUrl: string, key: string): string {
 	return tableLink(page.toString(), key);
 }
 
-function settingsFor(
-	config: RoomConfig | undefined,
-	apiKey: string,
-	modelOrderOverride?: readonly BotModel[],
-): HostBotSettings {
-	const setup = config?.botSetup ?? DEFAULT_BOT_SETUP;
-	const modelOrder = modelOrderOverride ?? botModelOrder(setup);
-	return {
-		apiKey,
-		...setup,
-		model: modelOrder[0] as BotModel,
-		fallbackModel: modelOrder[1] as BotModel,
-		modelOrder,
-	};
+function settingsFor(config: RoomConfig | undefined): HostBotSettings {
+	return { bidder: (config?.botSetup ?? DEFAULT_BOT_SETUP).bidder };
 }
 
 /** After these, the room stays on the screen but can no longer act. */
@@ -136,7 +113,6 @@ const TERMINAL: ReadonlySet<TableStatus> = new Set([
 
 /** How long the Debug button waits for the players' new reports before it copies the export. */
 const REPORT_WAIT_MS = 1_500;
-const BOT_SPEND_STORAGE_KEY = "opentrick.openrouter-spend-usd";
 
 function botsPausedStorageKey(tableId: string): string {
 	return `opentrick.bots-paused.${tableId}`;
@@ -213,13 +189,6 @@ export function showRoom(
 	let botRestoreStarted = false;
 	let botRestorePending = false;
 	let botsPaused = readBotsPaused();
-	let botBalancePaused = false;
-	let rateLimitTimer: number | undefined;
-	let botSpendUsd = readBotSpend();
-	/** The board whose start read the OpenRouter balance last, and whether a read is running. */
-	let balanceBoard: number | undefined;
-	let balanceReading = false;
-	let pendingBotSeat: Seat | undefined;
 	let remoteCallPresence: Partial<Record<Seat, RemoteCallPresence>> = {};
 	/** A guest's page sees the host in the room call: the call controls invite this player. */
 	let hostInCall = false;
@@ -319,15 +288,7 @@ export function showRoom(
 			botRunner?.setSeatEnabled(targetSeat, false);
 			return "disabled";
 		}
-		const apiKey = readHostApiKey(deps.browser);
-		if (!apiKey.trim() && !controller.view().table?.config.botSetup?.bidder)
-			return "unavailable";
-		botSettings ??= settingsFor(
-			controller.view().table?.config,
-			apiKey,
-			modelOrderFromUrl(),
-		);
-		if (!botSettings.apiKey.trim()) botSettings = { ...botSettings, apiKey };
+		botSettings ??= settingsFor(controller.view().table?.config);
 		const enabledSeat = await controller.setBotSeat(targetSeat, true);
 		if (!enabledSeat) return "failed";
 		delegatedBotSeats.add(targetSeat);
@@ -335,11 +296,8 @@ export function showRoom(
 		if (botRunner) {
 			botRunner.setSeatEnabled(targetSeat, true);
 			setBotsPaused(false);
-			botBalancePaused = false;
 			botRunner.resume();
-			botStatus.textContent = deps.t(
-				"Autoplay is using this host's OpenRouter key.",
-			);
+			botStatus.textContent = deps.t("Autoplay uses the local bridge engine.");
 			return "enabled";
 		}
 		setBotsPaused(false);
@@ -349,9 +307,7 @@ export function showRoom(
 			await controller.setBotSeat(targetSeat, false);
 			return "failed";
 		}
-		botStatus.textContent = deps.t(
-			"Autoplay is using this host's OpenRouter key.",
-		);
+		botStatus.textContent = deps.t("Autoplay uses the local bridge engine.");
 		return "enabled";
 	});
 
@@ -373,94 +329,9 @@ export function showRoom(
 		className: "bot-status",
 		attrs: { role: "status", "data-testid": "bot-status" },
 	});
-	const botSpendCounter = el("span", {
-		className: "bot-spend-counter",
-		attrs: {
-			"aria-label": deps.t("OpenRouter spending total"),
-			"data-testid": "bot-spend",
-		},
-	});
-	updateBotSpendCounter();
-	const botBalance = el("span", {
-		className: "bot-balance",
-		attrs: { "data-testid": "bot-balance" },
-	});
-	botBalance.hidden = true;
-	const rateLimitReminder = el(
-		"div",
-		{
-			className: "rate-limit-reminder",
-			attrs: { role: "status", "data-testid": "rate-limit-reminder" },
-		},
-		deps.t("Openrouter rate limit - I will retry in a moment"),
-	);
-	rateLimitReminder.hidden = true;
-	const showRateLimitReminder = (): void => {
-		rateLimitReminder.hidden = false;
-		if (rateLimitTimer !== undefined) window.clearTimeout(rateLimitTimer);
-		rateLimitTimer = window.setTimeout(() => {
-			rateLimitReminder.hidden = true;
-			rateLimitTimer = undefined;
-		}, 1000);
-	};
 	const settings = settingsDialog(deps, handlers.reload, applySettings);
 
-	/**
-	 * Settings stored a checked key and the model order in this browser; the bots use them at once. A newly checked key
-	 * resumes the bots that a low balance paused, and switches the seat that waited for a key.
-	 */
-	function applySettings({
-		checkedKey,
-		modelOrderChanged,
-	}: SavedSettings): void {
-		const apiKey = readHostApiKey(deps.browser);
-		const current =
-			botSettings ??
-			settingsFor(
-				controller.view().table?.config ?? fallbackConfig,
-				apiKey,
-				modelOrderFromUrl(),
-			);
-		// The table link and the bot setup name only the built-in models, so the bots do not use a custom model yet.
-		const modelOrder = modelOrderChanged
-			? effectiveModelOrder(readSettings(deps.browser)).filter(isBotModel)
-			: current.modelOrder;
-		botSettings = {
-			...current,
-			apiKey,
-			modelOrder,
-			model: modelOrder[0] as BotModel,
-			fallbackModel: modelOrder[1] as BotModel,
-		};
-		if (modelOrderChanged) rememberBotModels(modelOrder);
-		if (modelOrderChanged || apiKey !== current.apiKey)
-			botRunner?.updateSettings(botSettings);
-		if (checkedKey !== undefined) {
-			// The check read the balance of this board, so the board start does not read it again.
-			balanceBoard = shownBoard?.number;
-			showBotBalance(checkedKey.balanceUsd);
-			botStatus.textContent =
-				checkedKey.balanceUsd === undefined
-					? deps.t(
-							"The OpenRouter key works. OpenRouter did not report the balance.",
-						)
-					: deps.t("The OpenRouter key works. Balance: {balance}.", {
-							balance: `$${checkedKey.balanceUsd.toFixed(1)}`,
-						});
-			if (botBalancePaused) {
-				botBalancePaused = false;
-				setBotsPaused(false);
-				botRunner?.resume();
-			}
-			if (pendingBotSeat !== undefined) {
-				const target = pendingBotSeat;
-				pendingBotSeat = undefined;
-				manageBotSeat(target, true);
-			} else if (!botRunner) void startHostBots();
-		} else if (apiKey === "" && current.apiKey !== "")
-			botStatus.textContent = "";
-		else if (modelOrderChanged && botRunner)
-			botStatus.textContent = runningBotStatus();
+	function applySettings(): void {
 		// A new orientation choice changes the view at once.
 		deviceWatch.check();
 		// The table reads the display settings when it renders, so it renders again although its view did not change.
@@ -562,18 +433,6 @@ export function showRoom(
 	let sentSystem: PointSystem | undefined;
 
 	function manageBotSeat(targetSeat: Seat, enabled: boolean): void {
-		if (
-			enabled &&
-			!readHostApiKey(deps.browser) &&
-			!controller.view().table?.config.botSetup?.bidder
-		) {
-			pendingBotSeat = targetSeat;
-			botStatus.textContent = deps.t(
-				"Set an OpenRouter API key before switching a seat to a bot.",
-			);
-			settings.open();
-			return;
-		}
 		void controller.setBotSeat(targetSeat, enabled).then((ok) => {
 			if (!ok) {
 				botStatus.textContent = deps.t("The host could not change that seat.");
@@ -589,7 +448,6 @@ export function showRoom(
 				botRunner?.setSeatEnabled(targetSeat, true);
 				if (botRunner) {
 					setBotsPaused(false);
-					botBalancePaused = false;
 					botRunner.resume();
 				} else {
 					setBotsPaused(false);
@@ -604,74 +462,6 @@ export function showRoom(
 					: runningBotStatus();
 			render();
 		});
-	}
-
-	function readBotSpend(): number {
-		try {
-			const stored = deps.browser?.getItem(BOT_SPEND_STORAGE_KEY);
-			if (stored === null || stored === undefined || stored.trim() === "")
-				return 0;
-			const amount = Number(stored);
-			return Number.isFinite(amount) &&
-				amount >= 0 &&
-				amount <= Number.MAX_SAFE_INTEGER
-				? amount
-				: 0;
-		} catch {
-			return 0;
-		}
-	}
-
-	function updateBotSpendCounter(): void {
-		botSpendCounter.textContent = deps.t("Cost: {cost}", {
-			cost: `$${botSpendUsd.toFixed(4)}`,
-		});
-		botSpendCounter.title = deps.t(
-			"Four-decimal display. Exact total reported by OpenRouter: {total} USD.",
-			{ total: `$${botSpendUsd.toFixed(10)}` },
-		);
-	}
-
-	function showBotBalance(balanceUsd: number | undefined): void {
-		if (balanceUsd === undefined) return;
-		botBalance.textContent = deps.t("Balance: {balance}", {
-			balance: `$${balanceUsd.toFixed(1)}`,
-		});
-		botBalance.hidden = false;
-	}
-
-	/**
-	 * The host reads the OpenRouter balance once at the start of each board that bots play. A failed read keeps the
-	 * last balance; the bots report a key or balance error at their next request.
-	 */
-	function readBotBalanceAtBoardStart(boardNumber: number): void {
-		const apiKey = readHostApiKey(deps.browser);
-		if (
-			botSettings?.bidder ||
-			controller.view().table?.config.botSetup?.bidder ||
-			balanceReading ||
-			balanceBoard === boardNumber ||
-			!apiKey
-		)
-			return;
-		balanceBoard = boardNumber;
-		balanceReading = true;
-		void readOpenRouterBalance(apiKey).then((result) => {
-			balanceReading = false;
-			if (!disposed && result.ok) showBotBalance(result.balanceUsd);
-		});
-	}
-
-	function recordBotSpend(cost: number): void {
-		const next = botSpendUsd + cost;
-		if (!Number.isFinite(next) || next > Number.MAX_SAFE_INTEGER) return;
-		botSpendUsd = next;
-		try {
-			deps.browser?.setItem(BOT_SPEND_STORAGE_KEY, String(botSpendUsd));
-		} catch {
-			// The counter remains available until this page closes if storage is unavailable.
-		}
-		updateBotSpendCounter();
 	}
 
 	/** A reload keeps the bots stopped when this host paused them or they stopped on an error. */
@@ -693,16 +483,6 @@ export function showRoom(
 		}
 	}
 
-	function resetBotSpend(): void {
-		botSpendUsd = 0;
-		try {
-			deps.browser?.removeItem(BOT_SPEND_STORAGE_KEY);
-		} catch {
-			// Clearing this reminder does not depend on persistent storage.
-		}
-		updateBotSpendCounter();
-	}
-
 	function effectiveBotSeats(): Seat[] {
 		const view = controller.view();
 		const config = view.table?.config ?? fallbackConfig;
@@ -720,29 +500,10 @@ export function showRoom(
 		const count = effectiveBotSeats().length;
 		return count === 0
 			? deps.t("No bot seats are active.")
-			: deps.t("Running {count} bot seat(s) with {model}.", {
+			: deps.t("Running {count} bot seat(s) with {engine}.", {
 					count,
-					model: botSettings?.bidder
-						? `Local BRL · ${botSettings.bidder}`
-						: botModelLabel(botSettings?.model ?? DEFAULT_BOT_SETUP.model),
+					engine: `Local BRL · ${(botSettings ?? settingsFor(controller.view().table?.config)).bidder}`,
 				});
-	}
-
-	function modelOrderFromUrl(): BotModel[] | undefined {
-		const setup = parseBookmark(location.search).botSetup;
-		return setup === undefined ? undefined : botModelOrder(setup);
-	}
-
-	function rememberBotModels(modelOrder: readonly BotModel[]): void {
-		const params = new URLSearchParams(location.search);
-		params.set("bot_model", modelOrder[0] as BotModel);
-		params.set("bot_fallback", modelOrder[1] as BotModel);
-		params.set("bot_models", modelOrder.join(","));
-		history.replaceState(
-			null,
-			"",
-			`${location.pathname}?${params.toString()}${location.hash}`,
-		);
 	}
 
 	function rememberBotSeats(bots: readonly Seat[]): void {
@@ -1067,7 +828,6 @@ export function showRoom(
 	// Reset closes the dialog, so the host sees who must approve the reset.
 	const reset = button(deps.t("Reset"), () => {
 		hostControls.close();
-		resetBotSpend();
 		actionError = undefined;
 		submit(resetRequestPayload(tableId), (reason) => {
 			actionError = deps.t("Reset not sent: {reason}", { reason });
@@ -1121,7 +881,6 @@ export function showRoom(
 			void startHostBots();
 			return;
 		}
-		botBalancePaused = false;
 		botRunner.resume();
 		setBotsPaused(false);
 		botStatus.textContent = runningBotStatus();
@@ -1150,7 +909,6 @@ export function showRoom(
 			openHostControls,
 			pauseBots,
 			resumeBots,
-			el("span", { className: "bot-money" }, botSpendCounter, botBalance),
 		),
 	);
 	const resetStatus = el("p", { className: "note", attrs: { role: "status" } });
@@ -1277,7 +1035,6 @@ export function showRoom(
 	);
 	root.replaceChildren(room);
 	root.append(settings.element, hostControls);
-	root.append(rateLimitReminder);
 	if (camera) root.append(camera.element);
 	if (initialBotSettings) void startHostBots();
 
@@ -1295,55 +1052,22 @@ export function showRoom(
 			);
 			return false;
 		}
-		botSettings ??= settingsFor(
-			config,
-			readHostApiKey(deps.browser),
-			modelOrderFromUrl(),
-		);
-		if (!botSettings.apiKey.trim() && !botSettings.bidder) {
-			botStatus.textContent = deps.t(
-				"Set an OpenRouter API key to run the bots.",
-			);
-			return false;
-		}
+		botSettings ??= settingsFor(config);
 		botStarting = true;
 		botAutoAttempted = true;
-		const runner = new HostBotRunner(
-			controller,
-			botSettings,
-			(kind, detail) => {
-				if (kind === "rate-limit") {
-					showRateLimitReminder();
-					return;
-				}
-				for (const delegatedSeat of delegatedBotSeats) {
-					delegatedBotSeats.delete(delegatedSeat);
-					botRunner?.setSeatEnabled(delegatedSeat, false);
-					void controller.setBotSeat(delegatedSeat, false);
-				}
-				if (kind === "balance") {
-					setBotsPaused(true);
-					botBalancePaused = true;
-					botStatus.textContent = deps.t(
-						"Insufficient OpenRouter balance. Bots are paused until you update the API key or balance.",
-					);
-				} else {
-					botRunner = undefined;
-					setBotsPaused(true);
-					botStatus.textContent =
-						detail === undefined
-							? deps.t(
-									"The bot request failed. Check the model and resume bots.",
-								)
-							: deps.t(detail.text, detail.values);
-				}
-				render();
-			},
-			recordBotSpend,
-			(name, message, values) => {
-				botStatus.textContent = `${name}: ${deps.t(message, values)}`;
-			},
-		);
+		const runner = new HostBotRunner(controller, botSettings, () => {
+			for (const delegatedSeat of delegatedBotSeats) {
+				delegatedBotSeats.delete(delegatedSeat);
+				botRunner?.setSeatEnabled(delegatedSeat, false);
+				void controller.setBotSeat(delegatedSeat, false);
+			}
+			botRunner = undefined;
+			setBotsPaused(true);
+			botStatus.textContent = deps.t(
+				"The local bot failed. Resume bots to try again.",
+			);
+			render();
+		});
 		// A reload after a pause starts the runner paused, so it restores the bot seats without playing.
 		if (botsPaused) runner.pause();
 		if (
@@ -1527,8 +1251,7 @@ export function showRoom(
 			!botAutoAttempted &&
 			!botRestorePending &&
 			activeBots.length > 0 &&
-			view.hosting &&
-			(readHostApiKey(deps.browser) || view.table?.config.botSetup?.bidder)
+			view.hosting
 		)
 			void startHostBots();
 		const terminal = view.seat !== seat || TERMINAL.has(view.status);
@@ -1652,8 +1375,6 @@ export function showRoom(
 		}
 		renderCall();
 		shownBoard = state?.board ?? null;
-		if (view.hosting && activeBots.length > 0 && shownBoard)
-			readBotBalanceAtBoardStart(shownBoard.number);
 		const pendingReset = state?.reset ?? null;
 		resetRequestId = pendingReset?.id;
 		reset.disabled = terminal || pendingReset !== null;
@@ -1724,20 +1445,7 @@ export function showRoom(
 			t: deps.t,
 		});
 		shownModel = tableModel;
-		const displayBotModel = view.hosting
-			? (botSettings?.model ??
-				config.botSetup?.model ??
-				DEFAULT_BOT_SETUP.model)
-			: (config.botSetup?.model ??
-				modelOrderFromUrl()?.[0] ??
-				DEFAULT_BOT_SETUP.model);
-		table.setBotControls(
-			view.hosting && !botRestorePending,
-			activeBots,
-			config.botSetup?.bidder
-				? `Local BRL · ${config.botSetup.bidder}`
-				: displayBotModel,
-		);
+		table.setBotControls(view.hosting && !botRestorePending, activeBots);
 		if (!view.hosting) delegatedBotSeats.clear();
 		const rosterHost = JSON.stringify(view.roster?.auth ?? null);
 		if (rosterHost !== playerAutoplayHost) {
@@ -1845,7 +1553,6 @@ export function showRoom(
 	return () => {
 		disposed = true;
 		botRunner?.stop();
-		if (rateLimitTimer !== undefined) window.clearTimeout(rateLimitTimer);
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
 		deviceWatch.stop();
 		window.removeEventListener("resize", updateRoomCanvasScale);

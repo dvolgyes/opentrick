@@ -1,6 +1,6 @@
 # Local card engine
 
-Host-managed bots and the Node bot can use OpenRouter or the [local bidding engine](bidding-engine.md) for bidding.
+Host-managed bots and the Node bot use the [local bidding engine](bidding-engine.md).
 They use a local single-dummy card engine for play.
 The browser runs this engine in a Web Worker.
 There is no new server and no change to the room protocol or stored boards.
@@ -52,40 +52,36 @@ DDS results are also compared with independent exhaustive minimax on two-trick e
 The browser tests play a complete board in a real Chrome worker while a page timer continues, then abort and restart the worker.
 The production-build end-to-end test plays two consecutive boards, checks 104 local card decisions, and asserts that no card-play request reaches OpenRouter.
 
-A visible Chrome window at `http://localhost:5177` also completed a full board with live OpenRouter bidding.
-After that check, West was returned to human control and the other three bots remained active.
-Run the demo again with an `OPENROUTER_API_KEY` in `.env`:
+Run the fully local visible demo at `http://localhost:5178`:
 
 ```sh
 npm run demo:bot
 ```
 
-The demo stores the key in its host browser profile, as the game normally does.
-It does not print or export the key or the room invitation.
-Close the demo browser to stop its server.
+It verifies one full board, returns West to human control, and leaves three bots active.
+Close the browser to stop the demo server.
 
 ## Reproducible evaluation
 
 ```sh
 npm run benchmark:play
-npm run benchmark:play -- --llm
-BENCHMARK_MODEL=inception/mercury-3 npm run benchmark:play -- --llm --mixed
+npm run benchmark:play -- --mixed
 ```
 
-The `--llm` runs make real, billed API calls using `.env`.
-Without that flag, the command measures only the local engine.
-Fixed seeds and positions are declared in the script before each suite runs.
-All sampled positions are reported, including forced plays and unusable model replies.
-Models get only their permitted view and the existing game prompts.
+The commands evaluate the local engine against DDS on fixed seeded positions.
+They need no credentials or external inference service.
+All positions are reported, including forced plays.
 Actual hidden hands are used only by the separate evaluation oracle.
-Neither engine nor model receives them for its decision.
+The playing engine receives only its permitted position.
 
 The metric is tricks lost relative to perfect-information optimal play at the same position.
 It is a diagnostic, not a tournament rating: a valid single-dummy choice can lose against an oracle that knows the hidden cards.
 The recorded positions follow random legal play and fixed contracts, rather than expert auctions and play.
 Comparisons use the same successful model-response positions; request failures are reported separately.
 
-Observed on Node 22.22.1, Linux x64, AMD Ryzen 7 4800H:
+The following earlier measurements are archived baselines from before remote inference was removed.
+Their raw records remain available, but current tools run the local engine only.
+They were observed on Node 22.22.1, Linux x64, AMD Ryzen 7 4800H:
 
 | Suite | Local engine | LLM |
 | --- | --- | --- |
@@ -112,11 +108,11 @@ Run it with `npm run --silent benchmark:3nt`; it requires no API key.
 
 ## Security and recovery
 
-The assets in this change are the host's API key, hidden cards, game authority, and browser responsiveness.
+The protected assets are hidden cards, game authority, and browser responsiveness.
 The new crossing is from a permitted position to a local worker and then to a native solver.
 Boundary checks use card enums, bounded card counts, and a bounded PBN string; there is no dynamic code or HTML sink.
 The resulting card is checked against the legal list before the existing host authorizes an action.
-API keys stay outside the worker, benchmark output, room links, and source bundle.
+The local bot path has no credential input or remote inference client.
 
 Spoofing and elevation of privilege use the unchanged host authorization controls.
 Tampering is checked by legal-card and stale-position validation.

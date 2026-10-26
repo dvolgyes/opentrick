@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BotRequestAbortedError } from "../../src/bot/browser-openrouter";
 import type { PlayChooser } from "../../src/bot/browser-play";
+import { BotRequestAbortedError } from "../../src/bot/errors";
 import { HostBotRunner } from "../../src/bot/host-runner";
 import type { PlayAnalysis } from "../../src/bot/play-engine";
-import { BOT_FALLBACK_MODEL, BOT_MODEL } from "../../src/bot/strategy";
 import { randomBelowFrom } from "../../src/bridge/deal";
 import { createBoard } from "../../src/bridge/engine";
 import { createBridgeModule } from "../../src/game/bridge";
@@ -12,12 +11,7 @@ import { bidding, DEAL } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
 const SETTINGS = {
-	apiKey: "test-key",
-	model: BOT_MODEL,
-	fallbackModel: BOT_FALLBACK_MODEL,
-	modelOrder: [BOT_MODEL],
-	retries: 0,
-	retryDelayMs: 0,
+	bidder: "sl",
 } as const;
 const ANALYSIS: PlayAnalysis = {
 	card: "S7",
@@ -52,14 +46,7 @@ function host(chooser: PlayChooser) {
 	} as unknown as TableController;
 	const onError = vi.fn();
 	return {
-		runner: new HostBotRunner(
-			controller,
-			SETTINGS,
-			onError,
-			undefined,
-			undefined,
-			chooser,
-		),
+		runner: new HostBotRunner(controller, SETTINGS, onError, chooser),
 		sendBot,
 		onError,
 	};

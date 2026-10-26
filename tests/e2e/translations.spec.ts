@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { type Locale, translatedMessageKeys, translator } from "../../src/i18n";
-import { mockOpenRouterKey } from "./openrouter-mock";
+import { mockBotBidding } from "./bot-mock";
 
 // The host plays West in Hungarian against three host bots, on a desktop and on a phone. At each stage of a board,
 // every visible text and label must be Hungarian: no English catalog text, and no common English word.
@@ -112,44 +112,8 @@ async function englishOn(page: Page, stage: string): Promise<string[]> {
 
 /** The first call of a board is 1NT; every later bot call is a pass, and every bot card is its first legal card. */
 async function mockBots(page: Page): Promise<void> {
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({
-				status: 204,
-				headers: {
-					"access-control-allow-origin": "*",
-					"access-control-allow-methods": "POST, OPTIONS",
-					"access-control-allow-headers": "authorization,content-type",
-				},
-			});
-			return;
-		}
-		const body = route.request().postDataJSON();
-		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-		const values = body.text.format.schema.properties[kind].enum as string[];
-		const choice =
-			kind === "call" && body.input.includes("No calls yet")
-				? (values.find((value) => value === "1NT") ?? values[0])
-				: kind === "call"
-					? (values.find((value) => value === "P") ?? values[0])
-					: values[0];
-		await route.fulfill({
-			status: 200,
-			headers: { "access-control-allow-origin": "*" },
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [
-							{ type: "output_text", text: JSON.stringify({ [kind]: choice }) },
-						],
-					},
-				],
-			}),
-		});
+	await mockBotBidding(page, (position) => {
+		return position.calls.length === 0 ? "1NT" : "P";
 	});
 }
 
@@ -183,7 +147,7 @@ for (const form of FORMS) {
 				await page.locator(`input[name="name-${seat}"]`).fill(name);
 			for (const seat of ["N", "E", "S"])
 				await page.locator(`input[name="bot-${seat}"]`).check();
-			await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 			await page.getByTestId("create").click();
 			await expect.poll(() => phase(page)).toBe("auction");
 

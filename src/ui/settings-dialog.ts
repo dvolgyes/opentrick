@@ -1,21 +1,9 @@
-import {
-	normalizeHostApiKey,
-	readHostApiKey,
-	writeHostApiKey,
-} from "../bot/host-key";
-import { checkOpenRouterKey } from "../bot/openrouter-balance";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
-import { botModelLabel } from "../protocol";
 import type { AppDeps } from "./deps";
 import { button, el } from "./dom";
 import { languageSelect, saveLanguage } from "./language-control";
 import {
-	CUSTOM_MODEL_SLOT,
-	customModelProblem,
-	effectiveModelOrder,
-	type ModelSlot,
 	readSettings,
-	resolveModelOrder,
 	type Settings,
 	THEMES,
 	type Theme,
@@ -57,27 +45,11 @@ export interface SettingsDialog {
 	open(): void;
 }
 
-/** A new OpenRouter key that the check accepted, with its balance in USD (undefined: OpenRouter reported none). */
-export interface CheckedKey {
-	readonly balanceUsd: number | undefined;
-}
-
-/** What a Save changed that a running table must apply. */
-export interface SavedSettings {
-	/** Undefined when Save checked no key. */
-	readonly checkedKey: CheckedKey | undefined;
-	readonly modelOrderChanged: boolean;
-}
-
-/**
- * The player's own settings, kept in this browser. Save checks a new OpenRouter key and its balance before it stores
- * anything; a failed check keeps the dialog open with the reason. A new language reloads the
- * page; any other change calls `saved`, so the page can apply it.
- */
+/** Local display preferences; a language change reloads the page. */
 export function settingsDialog(
 	deps: AppDeps,
 	reload: () => void,
-	saved: (change: SavedSettings) => void = () => {},
+	saved: () => void = () => {},
 ): SettingsDialog {
 	const { t } = deps;
 	const element = el("dialog", {
@@ -139,97 +111,7 @@ export function settingsDialog(
 	const relayChecks = el("input", {
 		attrs: { type: "checkbox", "aria-describedby": "settings-relay-checks" },
 	});
-	const apiKey = el("input", {
-		attrs: {
-			type: "text",
-			autocomplete: "off",
-			autocapitalize: "off",
-			spellcheck: "false",
-			"aria-label": t("OpenRouter API key"),
-		},
-	});
-	apiKey.addEventListener("input", () => {
-		apiKey.value = normalizeHostApiKey(apiKey.value);
-	});
-	const customModel = el("input", {
-		attrs: {
-			type: "text",
-			autocomplete: "off",
-			spellcheck: "false",
-			placeholder: "vendor/model",
-			"aria-label": t("Custom model"),
-		},
-	});
-	const orderList = el("ol", {
-		className: "model-priority-list",
-		attrs: { "aria-label": t("Bot model order") },
-	});
 	const status = el("p", { attrs: { role: "status" } });
-	let order: ModelSlot[] = [];
-	let shownModel = "";
-	// A Cancel or a new Save makes the result of a running check irrelevant.
-	let attempt = 0;
-
-	const slotLabel = (slot: ModelSlot): string =>
-		slot !== CUSTOM_MODEL_SLOT
-			? botModelLabel(slot)
-			: shownModel === ""
-				? t("Custom model (not set)")
-				: shownModel;
-
-	const renderOrder = (): void => {
-		// An empty custom model stays last, so only the slots before it move.
-		const movable = shownModel === "" ? order.length - 1 : order.length;
-		orderList.replaceChildren(
-			...order.map((slot, index) => {
-				const label = slotLabel(slot);
-				const move = (offset: -1 | 1): void => {
-					const target = index + offset;
-					if (target < 0 || target >= movable) return;
-					[order[index], order[target]] = [
-						order[target] as ModelSlot,
-						order[index] as ModelSlot,
-					];
-					renderOrder();
-				};
-				return el(
-					"li",
-					{ attrs: { "data-model": slot } },
-					el(
-						"span",
-						{ className: "model-priority-label" },
-						`${index + 1}. ${label}`,
-					),
-					button("↑", () => move(-1), {
-						attrs: {
-							"aria-label": t("Move {model} up", { model: label }),
-							...(index === 0 || index >= movable ? { disabled: "" } : {}),
-						},
-					}),
-					button("↓", () => move(1), {
-						attrs: {
-							"aria-label": t("Move {model} down", { model: label }),
-							...(index >= movable - 1 ? { disabled: "" } : {}),
-						},
-					}),
-				);
-			}),
-		);
-	};
-
-	customModel.addEventListener("input", () => {
-		const next = customModel.value.trim();
-		// A custom model that was empty was not in the order the player chose, so it goes first again.
-		order = resolveModelOrder(
-			shownModel === ""
-				? order.filter((slot) => slot !== CUSTOM_MODEL_SLOT)
-				: order,
-			next,
-		);
-		shownModel = next;
-		renderOrder();
-	});
-
 	const save = button(t("Save settings"), () => void saveSettings());
 	// The settings scroll; the status and the buttons stay below them.
 	const content = el(
@@ -284,25 +166,6 @@ export function settingsDialog(
 				),
 			),
 		),
-		el(
-			"fieldset",
-			{},
-			el("legend", {}, t("Bots")),
-			el(
-				"label",
-				{ className: "settings-row" },
-				`${t("OpenRouter API key")} `,
-				apiKey,
-			),
-			el(
-				"label",
-				{ className: "settings-row" },
-				`${t("Custom model")} `,
-				customModel,
-			),
-			el("p", { className: "settings-order-title" }, t("Bot model order")),
-			orderList,
-		),
 	);
 	element.append(
 		content,
@@ -319,29 +182,11 @@ export function settingsDialog(
 		),
 	);
 	element.addEventListener("close", () => {
-		attempt++;
 		save.disabled = false;
 		status.textContent = "";
 	});
 
-	async function saveSettings(): Promise<void> {
-		const current = attempt + 1;
-		attempt = current;
-		const stored = readSettings(deps.browser);
-		const storedKey = readHostApiKey(deps.browser);
-		const key = normalizeHostApiKey(apiKey.value);
-		const model = customModel.value.trim();
-		const problem = customModelProblem(model);
-		if (problem !== undefined) {
-			status.textContent = t(problem);
-			return;
-		}
-		if (model !== "" && key === "") {
-			status.textContent = t(
-				"Enter an OpenRouter API key to use a custom model.",
-			);
-			return;
-		}
+	function saveSettings(): void {
 		const settings: Settings = {
 			pointSystem: points.value(),
 			cardPoints: cardPoints.checked,
@@ -355,24 +200,8 @@ export function settingsDialog(
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,
 			portraitMobile: orientation.portraitMobile.checked,
-			customModel: model,
-			modelOrder: resolveModelOrder(order, model),
 		};
-		let checkedKey: CheckedKey | undefined;
-		if (key !== "" && key !== storedKey) {
-			save.disabled = true;
-			status.textContent = t("Checking the OpenRouter key and balance…");
-			const result = await checkOpenRouterKey(key);
-			if (attempt !== current) return;
-			save.disabled = false;
-			if (!result.ok) {
-				status.textContent = t(result.message.text, result.message.values);
-				return;
-			}
-			checkedKey = { balanceUsd: result.balanceUsd };
-		}
 		try {
-			writeHostApiKey(deps.browser, key);
 			writeSettings(deps.browser, settings);
 		} catch {
 			status.textContent = t("This browser could not store the settings.");
@@ -382,13 +211,7 @@ export function settingsDialog(
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
 		if (languageChanged) reload();
-		else
-			saved({
-				checkedKey,
-				modelOrderChanged:
-					effectiveModelOrder(settings).join(",") !==
-					effectiveModelOrder(stored).join(","),
-			});
+		else saved();
 	}
 
 	return {
@@ -408,11 +231,6 @@ export function settingsDialog(
 			) as (keyof typeof ORIENTATION_LABELS)[])
 				orientation[field].checked = settings[field];
 			relayChecks.checked = settings.relayChecks;
-			apiKey.value = readHostApiKey(deps.browser);
-			customModel.value = settings.customModel;
-			shownModel = settings.customModel;
-			order = [...settings.modelOrder];
-			renderOrder();
 			status.textContent = "";
 			save.disabled = false;
 			if (!element.open) element.showModal();
