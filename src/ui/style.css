@@ -1,8 +1,17 @@
 @import "./themes.css";
 
-/* A card and the sheets on the felt take the card ink, so their text, lines and suits read on the card colour. */
+/* A card takes the card ink, so its text and suits read on the card colour. */
 .face,
-.played,
+.played {
+	--fg: var(--card-fg);
+	--muted: var(--card-muted);
+	--line: var(--card-line);
+	--panel: var(--card-bg);
+	--red-suit: var(--card-red);
+	color: var(--fg);
+}
+
+/* The panels on the felt take the sheet ink of the right panel, so their text, lines, suits and calls follow the theme. */
 .scoring,
 .bridge-table .auction,
 .bid-box,
@@ -11,13 +20,13 @@
 .mobile-auction-bids,
 .mobile-auction-controls,
 .mobile-tricks {
-	--fg: var(--card-fg);
-	--muted: var(--card-muted);
-	--line: var(--card-line);
-	--panel: var(--card-bg);
-	--red-suit: var(--card-red);
-	--call-green: var(--card-call-green);
-	--call-orange: var(--card-call-orange);
+	--fg: var(--sheet-fg);
+	--muted: var(--sheet-muted);
+	--line: var(--sheet-line);
+	--panel: var(--sheet-bg);
+	--red-suit: var(--sheet-red);
+	--call-green: var(--sheet-call-green);
+	--call-orange: var(--sheet-call-orange);
 	color: var(--fg);
 }
 
@@ -521,8 +530,8 @@ main:has(> .room) {
 	width: min(100%, 38rem);
 	padding: 1rem;
 	border-radius: 0.6rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 	text-align: center;
 }
 
@@ -1469,8 +1478,8 @@ dialog {
 	width: min(100%, 42rem);
 	border-collapse: separate;
 	border-spacing: 0.25rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 }
 
 .bridge-table .auction th,
@@ -1484,7 +1493,7 @@ dialog {
 	top: 0;
 	z-index: 1;
 	padding: 0.15rem 0.2rem;
-	background: var(--card-bg);
+	background: var(--sheet-bg);
 	font-size: 0.82rem;
 	font-weight: 600;
 	line-height: 1.1;
@@ -1552,7 +1561,7 @@ dialog {
 .bridge-table .auction td {
 	padding: 0.2rem 0.1rem;
 	border-radius: 0.4rem;
-	background: var(--card-cell);
+	background: var(--sheet-cell);
 	font-weight: 600;
 }
 
@@ -1564,7 +1573,7 @@ dialog {
 
 .bridge-table .auction .bid-mark.strain-S,
 .bridge-table .auction .bid-mark.strain-C {
-	color: var(--card-fg);
+	color: var(--sheet-fg);
 }
 
 .auction .bid-mark.strain-H,
@@ -2074,8 +2083,8 @@ button.call-join[data-in-call="true"] {
 	width: 100%;
 	padding: 0.5rem;
 	border-radius: 0.5rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 }
 
 /* During the auction the bidding history and the bid box sit together; on a phone they stack. */
@@ -2138,8 +2147,8 @@ button.call-join[data-in-call="true"] {
 	min-height: 2.5rem;
 	padding: 0.25rem 0.2rem;
 	border-color: var(--line);
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 	font-weight: 600;
 	line-height: 1.2;
 }
@@ -2147,7 +2156,7 @@ button.call-join[data-in-call="true"] {
 /* The levels and suits are light gray, the same as a bid in the bidding history. */
 .bid-levels button,
 .bid-calls button {
-	background: var(--card-cell);
+	background: var(--sheet-cell);
 }
 
 .bid-levels button[aria-pressed="true"],
@@ -2188,8 +2197,8 @@ button.call-join[data-in-call="true"] {
 	background-image: linear-gradient(
 		to bottom right,
 		transparent 49.5%,
-		var(--card-strike) 49.5%,
-		var(--card-strike) 50.5%,
+		var(--sheet-strike) 49.5%,
+		var(--sheet-strike) 50.5%,
 		transparent 50.5%
 	);
 }
@@ -2269,8 +2278,8 @@ button.call-join[data-in-call="true"] {
 	padding: 1.25rem;
 	border: 1px solid var(--line);
 	border-radius: 0.75rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 }
 
 .approval-backdrop .approval {
@@ -2344,8 +2353,8 @@ button.call-join[data-in-call="true"] {
 }
 
 .approval-actions .approval-reject {
-	border-color: var(--red-suit);
-	background: var(--red-suit);
+	border-color: var(--reject-bg);
+	background: var(--reject-bg);
 	color: var(--on-strong);
 }
 
@@ -2594,6 +2603,9 @@ button.call-join[data-in-call="true"] {
 	--fg: var(--sheet-fg);
 	--line: var(--sheet-line);
 	--muted: var(--sheet-muted);
+	--red-suit: var(--sheet-red);
+	--call-green: var(--sheet-call-green);
+	--call-orange: var(--sheet-call-orange);
 	color: var(--fg);
 }
 
@@ -3191,8 +3203,8 @@ main:has(> .room[data-form="compact"]) {
 	padding: 0.15rem 0.35rem;
 	border: 1px solid var(--line);
 	border-radius: 0.35rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 	font-size: 1.08rem;
 	line-height: 1.2;
 	white-space: nowrap;
@@ -3212,15 +3224,15 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-round-record[data-own-side="true"][data-result="positive"] strong {
-	color: var(--card-success);
+	color: var(--sheet-success);
 }
 
 .mobile-round-record[data-own-side="true"][data-result="negative"] strong {
-	color: var(--card-error);
+	color: var(--sheet-error);
 }
 
 .mobile-round-record[data-own-side="true"][data-result="zero"] strong {
-	color: var(--card-neutral);
+	color: var(--sheet-neutral);
 }
 
 .mobile-auction-board {
@@ -3384,8 +3396,8 @@ main:has(> .room[data-form="compact"]) {
 	padding: 0.35rem;
 	border: 1px solid var(--line);
 	border-radius: 0.45rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 }
 
 .mobile-auction-controls {
@@ -3393,8 +3405,8 @@ main:has(> .room[data-form="compact"]) {
 	padding: 0.35rem;
 	border: 1px solid var(--line);
 	border-radius: 0.45rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 }
 
 .mobile-tricks {
@@ -3402,8 +3414,8 @@ main:has(> .room[data-form="compact"]) {
 	padding: 0.25rem 0.35rem;
 	border: 1px solid var(--line);
 	border-radius: 0.45rem;
-	background: var(--card-bg);
-	color: var(--card-fg);
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 }
 
 .mobile-tricks .tricks-counts > * {

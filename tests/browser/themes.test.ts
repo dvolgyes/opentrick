@@ -63,27 +63,53 @@ const PAIRS: readonly (readonly [string, string, number])[] = [
 	["waiting-fg", "felt", 3],
 	["turn-name", "felt-fg", 3],
 	["card-fg", "card-bg", 4.5],
-	["card-fg", "card-cell", 4.5],
-	["card-muted", "card-bg", 4.5],
 	["card-red", "card-bg", 3],
-	["card-call-green", "card-bg", 3],
-	["card-call-orange", "card-bg", 3],
-	["card-success", "card-bg", 3],
-	["card-error", "card-bg", 4.5],
-	["card-neutral", "card-bg", 4.5],
 	["sheet-fg", "sheet-bg", 4.5],
+	["sheet-fg", "sheet-cell", 4.5],
 	["sheet-muted", "sheet-bg", 4.5],
-	["red-suit", "sheet-bg", 3],
-	["call-green", "sheet-bg", 3],
-	["call-orange", "sheet-bg", 3],
+	["sheet-red", "sheet-bg", 3],
+	["sheet-red", "sheet-cell", 3],
+	["sheet-call-green", "sheet-bg", 3],
+	["sheet-call-green", "sheet-cell", 3],
+	["sheet-call-orange", "sheet-bg", 3],
+	["sheet-success", "sheet-bg", 3],
+	["sheet-error", "sheet-bg", 4.5],
+	["sheet-neutral", "sheet-bg", 4.5],
 	["join-fg", "sheet-bg", 3],
 	["gold-fg", "gold", 4.5],
 	["gold-fg", "pill-bg", 4.5],
 	["control-fg", "control-bg", 4.5],
 	["red-suit", "control-bg", 3],
 	["on-strong", "confirm-bg", 4.5],
-	["on-strong", "card-red", 4.5],
+	["on-strong", "reject-bg", 4.5],
 ];
+
+/** Places elements that match this selector of descendant classes, such as ".bridge-table .auction", and returns the last. */
+function place(selector: string): HTMLElement {
+	let parent: HTMLElement = document.body;
+	for (const part of selector.split(" ")) {
+		const element = document.createElement("div");
+		element.className = part.slice(1);
+		parent.append(element);
+		parent = element;
+	}
+	return parent;
+}
+
+/** The panels on the felt; they take the sheet colours, as the right panel does. */
+const SHEETS = [
+	".table-sidebar",
+	".scoring",
+	".bridge-table .auction",
+	".bid-box",
+	".approval",
+	".mobile-round-status",
+	".mobile-auction-bids",
+	".mobile-auction-controls",
+	".mobile-tricks",
+] as const;
+
+const rgb = (name: string) => `rgb(${token(name).join(", ")})`;
 
 afterEach(() => {
 	applyTheme(document.documentElement, "light");
@@ -121,6 +147,7 @@ describe("themes", () => {
 			).toBeLessThan(0.05);
 			expect(luminance(token("fg"))).toBeGreaterThan(0.6);
 			expect(luminance(token("sheet-bg"))).toBeLessThan(0.05);
+			expect(luminance(token("sheet-cell"))).toBeLessThan(0.1);
 			const [red = 0, green = 0, blue = 0] = token("felt");
 			expect(luminance(token("felt"))).toBeLessThan(felt);
 			expect(green).toBeGreaterThan(red);
@@ -147,17 +174,49 @@ describe("themes", () => {
 		"%s colours the cards, the sheets and the dialogs with their own ink",
 		(theme) => {
 			applyTheme(document.documentElement, theme);
-			const box = document.createElement("div");
-			box.className = "bid-box";
-			document.body.append(box);
-			expect(token("red-suit", box)).toEqual(token("card-red"));
-			expect(token("call-green", box)).toEqual(token("card-call-green"));
-			expect(token("fg", box)).toEqual(token("card-fg"));
-			const sidebar = document.createElement("div");
-			sidebar.className = "table-sidebar";
-			document.body.append(sidebar);
-			expect(token("fg", sidebar)).toEqual(token("sheet-fg"));
-			expect(token("panel", sidebar)).toEqual(token("sheet-bg"));
+			const wrong: string[] = [];
+			for (const card of [".face", ".played"]) {
+				const shown = place(card);
+				const style = getComputedStyle(shown);
+				if (style.backgroundColor !== rgb("card-bg"))
+					wrong.push(`${card} background ${style.backgroundColor}`);
+				if (style.color !== rgb("card-fg"))
+					wrong.push(`${card} text ${style.color}`);
+				if (token("red-suit", shown).join() !== token("card-red").join())
+					wrong.push(`${card} red suit`);
+			}
+			for (const sheet of SHEETS) {
+				const shown = place(sheet);
+				const style = getComputedStyle(shown);
+				if (
+					sheet !== ".table-sidebar" &&
+					style.backgroundColor !== rgb("sheet-bg")
+				)
+					wrong.push(`${sheet} background ${style.backgroundColor}`);
+				if (style.color !== rgb("sheet-fg"))
+					wrong.push(`${sheet} text ${style.color}`);
+				for (const [ink, sheetInk] of [
+					["red-suit", "sheet-red"],
+					["call-green", "sheet-call-green"],
+					["call-orange", "sheet-call-orange"],
+					["muted", "sheet-muted"],
+				] as const)
+					if (token(ink, shown).join() !== token(sheetInk).join())
+						wrong.push(`${sheet} ${ink}`);
+			}
+			const bid = place(".bid-box .bid-calls");
+			const call = document.createElement("button");
+			bid.append(call);
+			if (getComputedStyle(call).backgroundColor !== rgb("sheet-cell"))
+				wrong.push("bid button background");
+			const record = place(".mobile-round-status .mobile-round-record");
+			record.dataset.ownSide = "true";
+			record.dataset.result = "negative";
+			const score = document.createElement("strong");
+			record.append(score);
+			if (getComputedStyle(score).color !== rgb("sheet-error"))
+				wrong.push("lost points");
+			expect(wrong).toEqual([]);
 			const dialog = document.createElement("dialog");
 			document.body.append(dialog);
 			dialog.show();

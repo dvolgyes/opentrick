@@ -3,9 +3,10 @@
  * later a skin) is one more block of the same tokens. Light is the default on :root; each other theme replaces the
  * tokens under :root[data-theme="…"], which the Theme setting sets.
  *
- * The surfaces: the page (--bg, --fg), the green felt (--felt, --felt-fg), the cards and the sheets on the felt, such
- * as the bidding history and the bid box (--card-*), and the right panel and the call settings (--sheet-*). style.css
- * sets the card and sheet ink as --fg, --muted, --line and the suit colours on those surfaces.
+ * The surfaces: the page (--bg, --fg), the green felt (--felt, --felt-fg), the playing cards (--card-*), and the
+ * sheets: the right panel, the call settings and the panels on the felt, such as the bidding history, the bid box and
+ * the round status (--sheet-*). style.css sets the card and sheet ink as --fg, --muted, --line and the suit colours on
+ * those surfaces.
  */
 :root {
 	--bg: #ffffff;
@@ -54,21 +55,24 @@
 	--card-muted: #66665f;
 	--card-line: #d6d6cf;
 	--card-shadow: rgb(0 0 0 / 0.2);
-	/* A call cell of the bidding history and a call button of the bid box. */
-	--card-cell: #efefea;
-	--card-strike: #8a8a84;
 	--card-red: #c0262d;
-	--card-call-green: #1f7a46;
-	--card-call-orange: #c75b00;
-	--card-success: #247a3e;
-	--card-error: #b3261e;
-	--card-neutral: #171717;
 	--sheet-bg: #ffffff;
 	--sheet-fg: #1d1d1b;
 	--sheet-muted: #66665f;
 	--sheet-line: #d6d6cf;
-	/* Confirm and Accept; the text on them and on Reject. */
+	/* A call cell of the bidding history and a call button of the bid box; the line across a call that is not legal. */
+	--sheet-cell: #efefea;
+	--sheet-strike: #8a8a84;
+	--sheet-red: #c0262d;
+	--sheet-call-green: #1f7a46;
+	--sheet-call-orange: #c75b00;
+	/* The points the own side won, lost or kept at zero, in the round status. */
+	--sheet-success: #247a3e;
+	--sheet-error: #b3261e;
+	--sheet-neutral: #171717;
+	/* Confirm and Accept, Reject; the text on them. */
 	--confirm-bg: #2e7d57;
+	--reject-bg: #c0262d;
 	--on-strong: #ffffff;
 	/* Claim, Claim all and Undo on the felt. */
 	--control-bg: #ffffff;
@@ -140,19 +144,21 @@
 	--card-muted: #6f6656;
 	--card-line: #ddd3c2;
 	--card-shadow: rgb(59 53 44 / 0.2);
-	--card-cell: #efe8da;
-	--card-strike: #9a9182;
 	--card-red: #b0443c;
-	--card-call-green: #3f7a52;
-	--card-call-orange: #b8622a;
-	--card-success: #3f7a52;
-	--card-error: #a8453a;
-	--card-neutral: #2b251c;
 	--sheet-bg: #fbf7ef;
 	--sheet-fg: #3b352c;
 	--sheet-muted: #6f6656;
 	--sheet-line: #ddd3c2;
+	--sheet-cell: #efe8da;
+	--sheet-strike: #9a9182;
+	--sheet-red: #b0443c;
+	--sheet-call-green: #3f7a52;
+	--sheet-call-orange: #b8622a;
+	--sheet-success: #3f7a52;
+	--sheet-error: #a8453a;
+	--sheet-neutral: #2b251c;
 	--confirm-bg: #47705a;
+	--reject-bg: #b0443c;
 	--on-strong: #fffdf8;
 	--control-bg: #fbf7ef;
 	--control-fg: #2b251c;
@@ -211,19 +217,21 @@
 	--card-muted: #586e75;
 	--card-line: #ddd6c1;
 	--card-shadow: rgb(0 0 0 / 0.35);
-	--card-cell: #eee8d5;
-	--card-strike: #93a1a1;
 	--card-red: #c0262d;
-	--card-call-green: #5b7a00;
-	--card-call-orange: #b8470f;
-	--card-success: #5b7a00;
-	--card-error: #c0262d;
-	--card-neutral: #073642;
 	--sheet-bg: #073642;
 	--sheet-fg: #eee8d5;
 	--sheet-muted: #93a1a1;
 	--sheet-line: #2f5560;
+	--sheet-cell: #0e4a58;
+	--sheet-strike: #657b83;
+	--sheet-red: #ff6e64;
+	--sheet-call-green: #a5c13a;
+	--sheet-call-orange: #e8803a;
+	--sheet-success: #a5c13a;
+	--sheet-error: #ff7b72;
+	--sheet-neutral: #eee8d5;
 	--confirm-bg: #2e7d57;
+	--reject-bg: #c42a27;
 	--on-strong: #ffffff;
 	--control-bg: #073642;
 	--control-fg: #eee8d5;
@@ -282,19 +290,21 @@
 	--card-muted: #5e5e57;
 	--card-line: #c9c3b3;
 	--card-shadow: rgb(0 0 0 / 0.4);
-	--card-cell: #ddd8ca;
-	--card-strike: #8a8a84;
 	--card-red: #b8282e;
-	--card-call-green: #1f7a46;
-	--card-call-orange: #b85400;
-	--card-success: #247a3e;
-	--card-error: #b3261e;
-	--card-neutral: #171717;
 	--sheet-bg: #1b1f23;
 	--sheet-fg: #e6e6e1;
 	--sheet-muted: #a3a39b;
 	--sheet-line: #343a40;
+	--sheet-cell: #2a3036;
+	--sheet-strike: #6b7075;
+	--sheet-red: #f07070;
+	--sheet-call-green: #5cc98a;
+	--sheet-call-orange: #f0954a;
+	--sheet-success: #5cc98a;
+	--sheet-error: #ff7b72;
+	--sheet-neutral: #e6e6e1;
 	--confirm-bg: #2e7d57;
+	--reject-bg: #b3261e;
 	--on-strong: #ffffff;
 	--control-bg: #262b31;
 	--control-fg: #f0f0ea;
