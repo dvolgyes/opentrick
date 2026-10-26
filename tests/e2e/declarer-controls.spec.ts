@@ -108,11 +108,14 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 		await expect(own.getByTestId("turn-pill")).toHaveText("YOUR TURN TO PLAY");
 		await expect(page.getByTestId("turn-pill")).toHaveCount(1);
 
-		for (const name of ["Claim …", "Claim all"])
-			await expectReachable(
-				page,
-				page.getByRole("button", { name, exact: true }),
-			);
+		// With 13 tricks to play only "Claim all" shows; "Claim …" waits until five tricks or fewer remain.
+		await expectReachable(
+			page,
+			page.getByRole("button", { name: "Claim all", exact: true }),
+		);
+		await expect(
+			page.getByRole("button", { name: "Claim …", exact: true }),
+		).toBeHidden();
 
 		// The sidebar reads top to bottom: the host's debug buttons in the top row, bidding, tricks, the controls,
 		// statistics, and the bot status last.

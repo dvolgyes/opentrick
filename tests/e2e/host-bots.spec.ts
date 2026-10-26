@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { mockOpenRouterKey } from "./openrouter-mock";
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
@@ -416,7 +416,8 @@ test("switching the current bidder to a bot starts it immediately", async ({
 	}
 });
 
-test("the bots approve the host's claim", async ({ page }) => {
+/** West, the host, declares 2NT against three host bots, which call and play their first legal choice. */
+async function westDeclaresAgainstBots(page: Page): Promise<Locator> {
 	// North opens 1NT and every other bot call is a pass; each bot card is its first legal card.
 	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
@@ -476,13 +477,56 @@ test("the bots approve the host's claim", async ({ page }) => {
 	await expect(phase).toHaveAttribute("data-phase", "play", {
 		timeout: 30_000,
 	});
+	return phase;
+}
 
+test("the bots approve the host's claim", async ({ page }) => {
+	const phase = await westDeclaresAgainstBots(page);
 	// North leads, and West claims all tricks at its first turn.
 	const claimAll = page
 		.locator(".play-controls")
 		.getByRole("button", { name: "Claim all" });
 	await expect(claimAll).toBeEnabled({ timeout: 30_000 });
 	await claimAll.click();
+	await page.getByTestId("claim-confirm").click();
+	await expect(phase).toHaveAttribute("data-phase", "complete", {
+		timeout: 30_000,
+	});
+});
+
+test("the bots approve the host's claim of some of the last five tricks", async ({
+	page,
+}) => {
+	test.setTimeout(120_000);
+	const phase = await westDeclaresAgainstBots(page);
+	// West plays its own and dummy's first legal card until "Claim …" shows with five tricks left.
+	const claim = page
+		.locator(".play-controls")
+		.getByRole("button", { name: "Claim …" });
+	const card = page
+		.locator('[data-testid="hand-W"], [data-testid="hand-E"]')
+		.locator("button.card:enabled")
+		.first();
+	while (!(await claim.isVisible())) {
+		await expect(card.or(claim).first()).toBeVisible({ timeout: 30_000 });
+		if (await claim.isVisible()) break;
+		await card.click();
+	}
+	await expect(claim).toBeEnabled({ timeout: 30_000 });
+	await claim.click();
+	const claims = page.getByTestId("claim-panel");
+	await expect(claims).toContainText(
+		"How many of the remaining 5 tricks will you take?",
+	);
+	await expect(page.getByTestId("claim-count").getByRole("button")).toHaveText([
+		"0",
+		"1",
+		"2",
+		"3",
+		"4",
+		"5",
+	]);
+	await page.getByTestId("claim-count-2").click();
 	await page.getByTestId("claim-confirm").click();
 	await expect(phase).toHaveAttribute("data-phase", "complete", {
 		timeout: 30_000,

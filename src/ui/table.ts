@@ -465,10 +465,11 @@ export function tableSection(
 	let finishedTrickHidden = false;
 	let finishedTrickTimer: ReturnType<typeof setTimeout> | undefined;
 	let claimMode: "choose" | "all" | null = null;
-	let claimCount = 1;
+	/** The count that the declarer tapped; "Confirm claim" stays disabled until there is one. */
+	let claimCount: number | null = null;
 	const claim = button(t("Claim …"), () => {
 		claimMode = "choose";
-		claimCount = 1;
+		claimCount = null;
 		if (latestView) renderClaimPanel(latestView);
 	});
 	const claimAll = button(t("Claim all"), () => {
@@ -586,8 +587,10 @@ export function tableSection(
 		className: "undo-message",
 		attrs: { role: "status", "data-testid": "claim-message" },
 	});
-	const claimCountSelect = el("select", {
+	const claimCounts = el("div", {
+		className: "claim-counts",
 		attrs: {
+			role: "group",
 			"aria-label": t("Number of tricks to claim"),
 			"data-testid": "claim-count",
 		},
@@ -598,6 +601,7 @@ export function tableSection(
 			const view = latestView;
 			if (!view?.claim.canRequest) return;
 			const tricks = claimMode === "all" ? view.claim.maxTricks : claimCount;
+			if (tricks === null) return;
 			claimMode = null;
 			handlers.claimRequest(view.board, tricks);
 		},
@@ -615,7 +619,7 @@ export function tableSection(
 		},
 		el("h3", { className: "panel-title" }, t("Claim tricks")),
 		claimMessage,
-		claimCountSelect,
+		claimCounts,
 		confirmClaim,
 		cancelClaimChoice,
 	);
@@ -639,7 +643,7 @@ export function tableSection(
 		"",
 		() => {
 			claimMode = "choose";
-			claimCount = 1;
+			claimCount = null;
 			if (latestView) renderClaimPanel(latestView);
 		},
 		{
@@ -1680,22 +1684,29 @@ export function tableSection(
 		const choosing = claimMode === "choose" && view.claim.canRequest;
 		const confirmingAll = claimMode === "all" && view.claim.canRequest;
 		if (choosing) {
-			const count = Math.max(1, Math.min(claimCount, view.claim.maxTricks));
-			claimCount = count;
-			claimCountSelect.replaceChildren(
-				...Array.from({ length: view.claim.maxTricks }, (_, index) => {
-					const value = index + 1;
-					return el(
-						"option",
-						{ attrs: { value: String(value) } },
-						String(value),
-					);
-				}),
+			if (claimCount !== null && claimCount > view.claim.maxTricks)
+				claimCount = null;
+			// A button for each count from none to every remaining trick.
+			claimCounts.replaceChildren(
+				...Array.from({ length: view.claim.maxTricks + 1 }, (_, count) =>
+					button(
+						String(count),
+						() => {
+							claimCount = count;
+							if (latestView) renderClaimPanel(latestView);
+						},
+						{
+							attrs: {
+								"aria-pressed": String(count === claimCount),
+								"data-testid": `claim-count-${count}`,
+							},
+						},
+					),
+				),
 			);
-			claimCountSelect.value = String(count);
 		}
 		claimMessage.textContent = choosing
-			? t("Choose how many of the {count} remaining tricks you claim.", {
+			? t("How many of the remaining {count} tricks will you take?", {
 					count: view.claim.maxTricks,
 				})
 			: confirmingAll
@@ -1703,8 +1714,9 @@ export function tableSection(
 						count: view.claim.maxTricks,
 					})
 				: view.claim.message;
-		claimCountSelect.hidden = !choosing;
+		claimCounts.hidden = !choosing;
 		confirmClaim.hidden = !choosing && !confirmingAll;
+		confirmClaim.disabled = choosing && claimCount === null;
 		cancelClaimChoice.hidden = !choosing && !confirmingAll;
 		// The approval panel asks the players who decide the claim.
 		claimPanel.hidden =
@@ -1771,11 +1783,6 @@ export function tableSection(
 		waitingOverlay.hidden = below !== undefined || !visible;
 		waitingText.textContent = visible ? view.waiting : "";
 	}
-
-	claimCountSelect.addEventListener("change", () => {
-		claimCount = Number(claimCountSelect.value);
-		if (latestView) renderClaimPanel(latestView);
-	});
 
 	/** Shows the trick. A finished trick stays until its timer or a click anywhere takes it off; the grid keeps its place. */
 	function showTrick(view: TableView): void {
@@ -2361,11 +2368,12 @@ export function tableSection(
 						!view.undo.canVote &&
 						!view.undo.canCancel &&
 						!view.claim.canRequest);
-		claim.hidden = view.phase !== "play";
+		// "Claim …" offers a button for each count, so it waits until few tricks remain; "Claim all" stays.
+		claim.hidden = view.phase !== "play" || !view.claim.choosable;
 		claimAll.hidden = view.phase !== "play";
 		claim.disabled = !view.claim.canRequest;
 		claimAll.disabled = !view.claim.canRequest;
-		compactClaim.hidden = view.phase !== "play";
+		compactClaim.hidden = view.phase !== "play" || !view.claim.choosable;
 		compactClaim.disabled = !view.claim.canRequest;
 		compactClaimAll.hidden = view.phase !== "play";
 		compactClaimAll.disabled = !view.claim.canRequest;
