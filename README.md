@@ -2,6 +2,7 @@
 
 OpenTrick is a four-player contract bridge game that runs in the browser.
 It supports human players, optional voice and video calls, and local browser bots.
+You can play a solo game with three bots, or a multiplayer game with friends.
 The game handles bidding, trick play, duplicate scoring, undo requests, and claims with opponent approval.
 
 **Play:** [dvolgyes.github.io/opentrick](https://dvolgyes.github.io/opentrick/)
@@ -18,6 +19,16 @@ OpenTrick is a four-player contract bridge table.
 North and South form one partnership, and East and West form the other.
 Players use the auction to agree a contract, then play tricks to try to make it.
 The game deals the cards, guides the auction and card play, and keeps the duplicate score.
+
+### Play a solo game
+
+1. Open [OpenTrick](https://dvolgyes.github.io/opentrick/) and enter your name in the **Solo game** section.
+2. Select **Start solo game**.
+   You take the South seat, and bots take North, East, and West.
+3. Play the board with the bots, using the same auction and card play as a table.
+
+A solo game needs no friends, no invitation link, and no other browser.
+Bots use the bidding policy and play settings chosen in the create screen and the settings dialog.
 
 ### Create a table and invite friends
 
@@ -72,9 +83,9 @@ For a permanent bot seat, select **Bot** for that seat while creating the table.
 For a temporary substitute, the host can enable the bot for the player's seat from the table controls, then turn it off when the player returns.
 The player keeps their seat and stays in the room call while the bot handles bridge actions.
 
-Bots bid with a local neural engine and play cards with a local DDS engine.
-Choose **Bidding engine** when creating a table.
-The WBridge5 imitation is the default, because human partners and opponents can read its natural calls.
+Bots bid with a local bidding engine and play cards with a local DDS engine.
+Choose **Bidding bot** when creating a table.
+The **BRL SL (WBridge5 imitation)** option is the default, because human partners and opponents can read its natural calls.
 BRL's RL/FSP learned system remains available for bot partnerships and future work.
 Both policies run entirely in a browser worker, with no Python runtime or API key.
 Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
@@ -87,14 +98,13 @@ See [the engine guide](docs/card-engine.md) for its budgets, verification, and s
 
 Bots need no external account, and their decisions have no API cost.
 The host loads the selected bidding policy's 14.7 MB weights from the static site on first use.
-Both bidders see only their own cards and public auction information.
-The playing engine sees its own hand, exposed dummy, and public history, and samples possible hidden hands.
 
 ### Call and finding players
 
 The table includes an optional audio and video call for room members.
 Each player chooses whether to join the call and whether to send a microphone or camera.
-On mobile phones, video calls are intentionally unavailable because the screen has limited space; audio calls remain available.
+On phones and tablets, and in a browser window narrower than 900 pixels, the call uses a compact form without video; audio calls remain available.
+The compact form can still send the camera, but it does not show video tiles.
 The call is separate from bridge actions, so using autoplay does not make the player leave the call.
 The call has no kibitz or spectator access.
 
@@ -109,6 +119,42 @@ The link keeps the seat names and table setup, so it can start a fresh table for
 The current game state is stored in the players' browsers, not on a game server.
 After about 8 hours without activity on a device, its saved table expires; starting again from the saved link creates a fresh session and does not restore the previous deal, score, or seat claims.
 Use **Copy link** in the table if you need to share the invitation again.
+
+## Settings
+
+Open **Settings** to change these options.
+The page language can be one of English, German, Spanish, French, Hungarian, Italian, Norwegian, Dutch, or Portuguese.
+The colour theme can be Selenized, Normal, Solarized, or Gruvbox, each with a light and a dark palette.
+The palette can also follow your system's light or dark preference.
+Display options include the point system, card points, turn markers, and the mobile view for portrait windows.
+Bot play time is also set here.
+Settings are kept in this browser and are never sent to the table.
+
+## Development
+
+Use Node.js 22, as in the deploy workflow.
+
+```sh
+npm ci
+npm run dev          # local development server
+npm run build        # prepare bidding model files, typecheck, and build dist/
+npm test             # unit tests (Vitest)
+npm run test:e2e     # browser tests (Playwright)
+npm run lint         # Biome checks
+npm run typecheck    # TypeScript without emit
+npm run bot          # run a Node bot that joins a table
+npm run demo:bot     # demo bot script
+npm run benchmark:bidding   # bidding benchmark; also benchmark:sayc, benchmark:play, benchmark:3nt
+```
+
+`npm run prepare:bidder` downloads the two bidding model files (14.7 MB each) into `public/bot-models/` when they are missing.
+The `build` and `test` scripts run it first.
+
+Install the Git hooks with `pre-commit install`, then run `pre-commit run --all` before committing.
+The hooks run Biome, reject DOM HTML sinks such as `innerHTML`, and reject colour literals outside the theme tokens in `src/ui/themes.css`.
+
+Pushing to `main` deploys the static site to GitHub Pages through [the deploy workflow](.github/workflows).
+Design notes are in [docs/](docs/), and architecture decisions are in [docs/adr/](docs/adr/).
 
 ## License
 
