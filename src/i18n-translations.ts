@@ -2621,14 +2621,6 @@ const rows: readonly TranslationRow[] = [
 		"geen antwoord",
 	],
 	[
-		"Data channel inside this page",
-		"Canal de datos dentro de esta página",
-		"Canal de dados dentro desta página",
-		"Canal de données dans cette page",
-		"Canale dati all'interno di questa pagina",
-		"Datakanaal binnen deze pagina",
-	],
-	[
 		"WebRTC in this browser",
 		"WebRTC en este navegador",
 		"WebRTC neste navegador",

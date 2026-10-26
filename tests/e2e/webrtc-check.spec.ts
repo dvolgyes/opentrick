@@ -30,10 +30,9 @@ test("the seat page shows that WebRTC works and which kinds of local candidates 
 		const page = await guest.page(link);
 		const network = page.getByTestId("network");
 		await expect(network).toHaveAttribute("open", "");
-		await expect(line(network, "Data channel inside this page")).toHaveText(
-			"works",
-			{ timeout: CONNECT_MS },
-		);
+		await expect(line(network, "WebRTC in this browser")).toHaveText("works", {
+			timeout: CONNECT_MS,
+		});
 		await expect(line(network, "Local candidates")).toHaveText(
 			/^(host|srflx) (IPv4|IPv6|mDNS)/,
 		);

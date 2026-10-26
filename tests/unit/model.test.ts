@@ -382,7 +382,7 @@ describe("networkLines", () => {
 			{ label: "Trackers reachable", value: "2 of 3" },
 			{ label: "Nostr relays reachable", value: "4 of 5" },
 			{ label: "MQTT brokers reachable", value: "6 of 7" },
-			{ label: "Data channel inside this page", value: "checking" },
+			{ label: "WebRTC in this browser", value: "checking" },
 			{ label: "Local candidates", value: "checking" },
 			{ label: "Direct connections", value: "3" },
 			{ label: "Players checked", value: "East (42 ms)" },
@@ -398,7 +398,7 @@ describe("networkLines", () => {
 		]);
 	});
 
-	it("lists each tracker, Nostr relay, MQTT broker and STUN server by host name after the counts", () => {
+	it("lists each tracker, Nostr relay, MQTT broker and STUN server by host name after the counts and the WebRTC check", () => {
 		const lines = networkLines({
 			network: {
 				...NETWORK,
@@ -439,10 +439,11 @@ describe("networkLines", () => {
 			persistent: true,
 			persisted: true,
 		});
-		expect(lines.slice(0, 10)).toEqual([
+		expect(lines.slice(0, 11)).toEqual([
 			{ label: "Trackers reachable", value: "2 of 3" },
 			{ label: "Nostr relays reachable", value: "4 of 5" },
 			{ label: "MQTT brokers reachable", value: "6 of 7" },
+			{ label: "WebRTC in this browser", value: "checking" },
 			{
 				label: "Tracker tracker.example.org",
 				value: "open, heard 3 s ago",
@@ -542,11 +543,11 @@ describe("networkLines", () => {
 				persisted: true,
 			}).filter(
 				(line) =>
-					line.label === "Data channel inside this page" ||
+					line.label === "WebRTC in this browser" ||
 					line.label === "Local candidates",
 			);
 		expect(lines(null)).toEqual([
-			{ label: "Data channel inside this page", value: "checking" },
+			{ label: "WebRTC in this browser", value: "checking" },
 			{ label: "Local candidates", value: "checking" },
 		]);
 		expect(
@@ -556,7 +557,7 @@ describe("networkLines", () => {
 				channel: "open",
 			}),
 		).toEqual([
-			{ label: "Data channel inside this page", value: "works" },
+			{ label: "WebRTC in this browser", value: "works" },
 			{
 				label: "Local candidates",
 				value: "host mDNS, srflx IPv4, srflx IPv6",
@@ -565,8 +566,33 @@ describe("networkLines", () => {
 		expect(
 			lines({ kind: "checked", candidates: [], channel: "failed" }),
 		).toEqual([
-			{ label: "Data channel inside this page", value: "failed" },
+			{ label: "WebRTC in this browser", value: "failed" },
 			{ label: "Local candidates", value: "none" },
+		]);
+		// The panel keeps the summary's lines at its top, so the WebRTC line stays where the summary showed it.
+		const panel = networkLines({
+			network: {
+				...NETWORK,
+				relays: [
+					{
+						kind: "tracker",
+						url: "wss://t.test",
+						open: true,
+						heardAgoMs: undefined,
+					},
+				],
+				stun: [{ url: "stun:a.test", state: "answered" }],
+			},
+			peers: [],
+			publicAddress: false,
+			persistent: true,
+			persisted: true,
+		});
+		expect(panel.slice(0, 4).map((line) => line.label)).toEqual([
+			"Trackers reachable",
+			"Nostr relays reachable",
+			"MQTT brokers reachable",
+			"WebRTC in this browser",
 		]);
 	});
 

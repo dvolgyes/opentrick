@@ -449,8 +449,8 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 				`${SEAT_NAMES[peer.seat]} (${Math.round(peer.check.rttMs)} ms)`,
 			);
 	}
-	// The panel shows the WebRTC check in its own lines (`webRtcLines`).
-	const [trackers, nostr, mqtt, , direct, publicAddress] = summaryLines(
+	// The panel starts with the summary's lines, so the WebRTC check stays where the summary showed it.
+	const [trackers, nostr, mqtt, webRtc, direct, publicAddress] = summaryLines(
 		input,
 		t,
 	);
@@ -458,12 +458,13 @@ export function networkLines(input: NetworkInput): NetworkLine[] {
 		trackers,
 		nostr,
 		mqtt,
+		webRtc,
 		...(network?.relays ?? []).map((relay) => relayLine(relay, t)),
 		...(network?.stun ?? []).map((stun) => ({
 			label: t("STUN {host}", { host: serverName(stun.url) }),
 			value: t(STUN_STATE[stun.state]),
 		})),
-		...webRtcLines(network?.webRtc ?? null, t),
+		candidatesLine(network?.webRtc ?? null, t),
 		direct,
 		{
 			label: t("Players checked"),
@@ -585,27 +586,21 @@ function publicAddressFound({ network, publicAddress }: SummaryInput): boolean {
 	);
 }
 
-/** The WebRTC check inside the page; a browser without WebRTC never gets this far (src/main.ts). */
-function webRtcLines(
+/** The kinds of local candidates of the WebRTC check inside the page. */
+function candidatesLine(
 	report: MeshDiagnostics["webRtc"],
 	t: Translate,
-): NetworkLine[] {
+): NetworkLine {
 	const checked = report?.kind === "checked" ? report : undefined;
-	return [
-		{
-			label: t("Data channel inside this page"),
-			value: channelValue(report, t),
-		},
-		{
-			label: t("Local candidates"),
-			value:
-				checked === undefined
-					? t("checking")
-					: checked.candidates.length === 0
-						? t("none")
-						: checked.candidates.join(", "),
-		},
-	];
+	return {
+		label: t("Local candidates"),
+		value:
+			checked === undefined
+				? t("checking")
+				: checked.candidates.length === 0
+					? t("none")
+					: checked.candidates.join(", "),
+	};
 }
 
 /** Whether the data channel of the WebRTC check carried its message, or that the browser has no WebRTC. */
