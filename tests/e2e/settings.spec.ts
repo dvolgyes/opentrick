@@ -46,6 +46,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Show as text whose turn it is to bid",
 		"Show as text whose turn it is to play",
 		"Show the network quality",
+		"Show the voice box for a player without video",
 		"On a computer with a portrait window, show the mobile view",
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
@@ -70,6 +71,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByLabel("Frame the player whose turn it is to bid").uncheck();
 	await dialog.getByLabel("Show the points next to the cards").uncheck();
 	await dialog.getByLabel("Show the network quality").uncheck();
+	await dialog
+		.getByLabel("Show the voice box for a player without video")
+		.uncheck();
 	await relayChecks.check();
 	const firstModel = (await modelOrder(dialog))[0];
 	await dialog
@@ -101,6 +105,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.portrait-mobile",
 		"opentrick.settings.relay-checks",
 		"opentrick.settings.theme",
+		"opentrick.settings.voicebox",
 	]);
 
 	await page.reload();
@@ -118,6 +123,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		dialog.getByLabel("Frame the player whose turn it is to play"),
 	).toBeChecked();
 	await expect(dialog.getByLabel("Show the network quality")).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Show the voice box for a player without video"),
+	).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Check the connection more often"),
 	).toBeChecked();

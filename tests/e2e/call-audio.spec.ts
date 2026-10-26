@@ -243,6 +243,13 @@ test("2: two seats on Audio only hear each other, and the call stores only its s
 		"data-play",
 		"playing",
 	);
+	// North's voice arrives without a picture: the voice box on West's tile of North lights with the fake microphone's
+	// beeps. East is outside the call and sees no voice box.
+	await expect(tab.W.getByTestId("voicebox-N")).toBeVisible();
+	await expect
+		.poll(() => tab.W.getByTestId("voicebox-N").locator("[data-lit]").count())
+		.toBeGreaterThan(0);
+	await expect(tab.E.getByTestId("voicebox-N")).toBeHidden();
 
 	// The probe sees the call, so its zero counts elsewhere are meaningful.
 	const west = await counts(tab.W);

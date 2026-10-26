@@ -28,6 +28,10 @@
 	--network-orange: #ff9800;
 	--network-red: #e53935;
 	--network-off: #7c8c82;
+	/* The voice box on a video tile: green segments on a dark panel. */
+	--voice-panel: rgb(0 0 0 / 55%);
+	--voice-frame: rgb(46 204 64 / 35%);
+	--voice-off: #173a26;
 	color-scheme: light;
 }
 
@@ -1038,9 +1042,58 @@ main:has(> .room) {
 	display: none;
 }
 
-/* A player who lets the bot play can stay in the call: their camera replaces the bot image. */
-.tile[data-video="on"] .bot-overlay {
+/* A player who lets the bot play can stay in the call: their camera or their voice box replaces the bot image. */
+.tile:is([data-video="on"], [data-voice="on"]) .bot-overlay {
 	display: none;
+}
+
+/* The voice box stands in the tile above the caption, in place of the avatar. */
+.voicebox {
+	position: absolute;
+	inset: 0 0 var(--tile-caption-h, 1.05rem);
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	pointer-events: none;
+}
+
+.voicebox[hidden],
+.tile[data-voice="on"] .avatar {
+	display: none;
+}
+
+.voicebox-panel {
+	display: flex;
+	gap: 0.4rem;
+	align-items: center;
+	height: 80%;
+	padding: 0.3rem 0.5rem;
+	border: 1px solid var(--voice-frame);
+	border-radius: 0.5rem;
+	background: var(--voice-panel);
+	--voice-gap: 0.15rem;
+}
+
+/* The segments of every column have the size of the middle column's (11) segments, so the side columns are shorter. */
+.voicebox-column {
+	display: flex;
+	flex-direction: column;
+	gap: var(--voice-gap);
+	justify-content: center;
+	width: 1.1rem;
+	height: 100%;
+}
+
+.voicebox-segment {
+	flex: none;
+	height: calc((100% - 10 * var(--voice-gap)) / 11);
+	border-radius: 1px;
+	background: var(--voice-off);
+}
+
+.voicebox-segment[data-lit] {
+	background: var(--network-green);
+	box-shadow: 0 0 6px var(--network-green);
 }
 
 .bot-artwork {

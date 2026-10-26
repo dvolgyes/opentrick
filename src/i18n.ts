@@ -312,6 +312,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show as text whose turn it is to play":
 			"Als Text zeigen, wer spielen muss",
 		"Show the network quality": "Netzwerkqualität zeigen",
+		"Show the voice box for a player without video":
+			"Sprachanzeige für Spieler ohne Video zeigen",
 		"Screen orientation": "Bildschirmausrichtung",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Auf einem Smartphone oder Tablet im Querformat die Desktop-Ansicht zeigen",
@@ -1035,6 +1037,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show as text whose turn it is to play":
 			"Szövegként mutassa, ki következik lapot tenni",
 		"Show the network quality": "Hálózati minőség mutatása",
+		"Show the voice box for a player without video":
+			"Hangjelző mutatása a videó nélküli játékosnál",
 		"Screen orientation": "Képernyő tájolása",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Telefonon vagy táblagépen fekvő tájolásban az asztali nézet mutatása",
@@ -1654,6 +1658,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show as text whose turn it is to play":
 			"Vis som tekst hvem som skal spille",
 		"Show the network quality": "Vis nettverkskvaliteten",
+		"Show the voice box for a player without video":
+			"Vis stemmeindikatoren for en spiller uten video",
 		"Screen orientation": "Skjermretning",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Vis skrivebordsvisningen på en telefon eller et nettbrett i liggende format",

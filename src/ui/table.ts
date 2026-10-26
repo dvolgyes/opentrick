@@ -8,7 +8,8 @@ import {
 	type PointSystem,
 } from "../bridge/hand-points";
 import type { Call } from "../bridge/rules";
-import type { Layout } from "../call/device-class";
+import type { RemoteView } from "../call/call";
+import type { Form, Layout } from "../call/device-class";
 import { englishTranslator, type Locale, type Translate } from "../i18n";
 import { SEAT_NAMES, SEATS, type Seat } from "../protocol";
 import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?url";
@@ -38,6 +39,12 @@ import type {
 	TurnPill,
 } from "./table-model";
 import { blackwoodHint, comeBackText } from "./table-model";
+import {
+	litSegments,
+	nextShownLevel,
+	type VoiceMeters,
+	voiceMeters,
+} from "./voice-meter";
 
 export interface TableHandlers {
 	exit(): void;
@@ -93,8 +100,10 @@ export interface TableOptions {
 	readonly cardPoints?: () => boolean;
 	/** The language of the bidding guide. */
 	readonly locale?: Locale;
-	/** The turn frames, the turn texts and the network quality to show; the table reads it at each render. */
+	/** The turn frames, the turn texts, the network quality and the voice box to show; the table reads it at each render. */
 	readonly marks?: () => TableMarks;
+	/** Measures the voices for the voice box; the owner stops it. A table without one makes its own. */
+	readonly voiceMeters?: VoiceMeters;
 }
 
 export type TableMarks = Pick<
@@ -104,6 +113,7 @@ export type TableMarks = Pick<
 	| "bidTurnText"
 	| "playTurnText"
 	| "networkQuality"
+	| "voicebox"
 >;
 
 export type PlayedCardStyle =
@@ -132,6 +142,12 @@ interface CallSpot {
 	readonly callPresence: HTMLElement;
 	/** The network quality: five bars beside the tile, lit from the bottom. */
 	readonly networkBars: HTMLElement;
+	/** The voice box: shown in place of the avatar while the seat's voice arrives without video. */
+	readonly voicebox: HTMLElement;
+	/** The segments of each voice box column, from top to bottom. */
+	readonly voiceColumns: readonly (readonly HTMLElement[])[];
+	/** The level that the voice box shows now, from 0 to 1. */
+	voiceLevel: number;
 	readonly botControl: HTMLButtonElement;
 	/** Compact: the status beside the seat's name. */
 	readonly state: HTMLElement;
@@ -273,6 +289,9 @@ function cardBackFor(board: number): string {
 	return board >= 2 && board % 2 === 0 ? cardBackBlue : cardBackRed;
 }
 
+/** The segments of the voice box columns: a taller middle column between two shorter ones, as on KITT. */
+const VOICE_COLUMNS = [7, 11, 7] as const;
+
 /** The lit bars of each network quality; none is lit before the host measured the player. */
 const NETWORK_BARS: Readonly<Record<RoundTripView["quality"], number>> = {
 	excellent: 5,
@@ -364,6 +383,9 @@ export function tableSection(
 	const guide = guideDialog(t, options.locale ?? "en");
 	const marks = options.marks ?? (() => DEFAULT_SETTINGS);
 	let shownMarks = marks();
+	const meters = options.voiceMeters ?? voiceMeters();
+	let voiceFrame: number | undefined;
+	let voiceFrameAt = 0;
 	// The points pill opens this dialog with the calculation, for a screen where no hint shows.
 	const pointsTitle = el("h3", {
 		className: "points-title",
@@ -1284,6 +1306,26 @@ export function tableSection(
 			),
 		);
 		networkBars.hidden = true;
+		const voiceColumns = VOICE_COLUMNS.map((count) =>
+			Array.from({ length: count }, () =>
+				el("span", { className: "voicebox-segment" }),
+			),
+		);
+		const voicebox = el(
+			"span",
+			{
+				className: "voicebox",
+				attrs: { "aria-hidden": "true", "data-testid": `voicebox-${seat}` },
+			},
+			el(
+				"span",
+				{ className: "voicebox-panel" },
+				...voiceColumns.map((segments) =>
+					el("span", { className: "voicebox-column" }, ...segments),
+				),
+			),
+		);
+		voicebox.hidden = true;
 		const tile = el(
 			"div",
 			{
@@ -1292,10 +1334,12 @@ export function tableSection(
 					"data-seat": seat,
 					"data-testid": `tile-${seat}`,
 					"data-video": "off",
+					"data-voice": "off",
 				},
 			},
 			el("span", { className: "avatar", attrs: { "aria-hidden": "true" } }),
 			video,
+			voicebox,
 			botOverlay,
 			callPresence,
 			caption,
@@ -1316,6 +1360,9 @@ export function tableSection(
 			botFallback,
 			callPresence,
 			networkBars,
+			voicebox,
+			voiceColumns,
+			voiceLevel: 0,
 			botControl,
 			state,
 			shown: undefined,
@@ -1361,6 +1408,65 @@ export function tableSection(
 	}
 
 	/**
+	 * The voice box while the call view gives the seat an audio track but no picture, on the desktop and with its
+	 * setting on. The seat's voice is measured only while its box shows.
+	 */
+	function renderVoicebox(
+		spot: CallSpot,
+		seat: Seat,
+		remote: RemoteView | undefined,
+		form: Form | undefined,
+	): void {
+		const track =
+			shownMarks.voicebox && form === "desktop" && remote?.video === undefined
+				? remote?.audio
+				: undefined;
+		meters.measure(seat, track);
+		spot.voicebox.hidden = track === undefined;
+		spot.tile.dataset.voice = track === undefined ? "off" : "on";
+		if (track !== undefined) {
+			startVoiceFrames();
+			return;
+		}
+		spot.voiceLevel = 0;
+		lightVoicebox(spot);
+	}
+
+	function lightVoicebox(spot: CallSpot): void {
+		for (const segments of spot.voiceColumns) {
+			const lit = litSegments(spot.voiceLevel, segments.length);
+			for (const [index, segment] of segments.entries())
+				segment.toggleAttribute("data-lit", lit[index]);
+		}
+	}
+
+	function startVoiceFrames(): void {
+		if (voiceFrame !== undefined) return;
+		voiceFrameAt = performance.now();
+		voiceFrame = requestAnimationFrame(drawVoiceFrame);
+	}
+
+	/** One frame of every shown voice box; the frames stop when no box shows or the table left the page. */
+	function drawVoiceFrame(now: number): void {
+		voiceFrame = undefined;
+		const elapsed = Math.max(0, now - voiceFrameAt);
+		voiceFrameAt = now;
+		let shown = false;
+		for (const [seat, spot] of callSpots) {
+			if (spot.voicebox.hidden) continue;
+			shown = true;
+			spot.voiceLevel = nextShownLevel(
+				spot.voiceLevel,
+				meters.level(seat),
+				elapsed,
+			);
+			lightVoicebox(spot);
+		}
+		if (shown && element.isConnected)
+			voiceFrame = requestAnimationFrame(drawVoiceFrame);
+	}
+
+	/**
 	 * The status of each remote seat (handover §4, §7): nothing while the local user is outside the call, else
 	 * the link state; a failed link offers Retry.
 	 */
@@ -1369,6 +1475,7 @@ export function tableSection(
 		for (const [seat, spot] of callSpots) {
 			const remote = view?.remotes.find((item) => item.seat === seat);
 			renderVideo(spot, remote?.video);
+			renderVoicebox(spot, seat, remote, view?.form);
 			const status =
 				view !== undefined && remote !== undefined
 					? remoteCallStatus(remote, view, t)

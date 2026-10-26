@@ -21,6 +21,7 @@ import type {
 	SeatView,
 	TableView,
 } from "../../src/ui/table-model";
+import { voiceMeters } from "../../src/ui/voice-meter";
 
 const card = (value: Card) => ({
 	card: value,
@@ -1867,6 +1868,150 @@ describe("video tile", () => {
 		);
 		// The larger text still fits in the caption bar.
 		expect(caption.scrollHeight).toBeLessThanOrEqual(caption.clientHeight);
+	});
+});
+
+describe("voice box", () => {
+	/** A sine tone as a received audio track; gain 0 gives silence. */
+	async function tone(gain: number) {
+		// A page without a user gesture keeps its audio suspended.
+		await userEvent.click(document.body);
+		const context = new AudioContext();
+		const oscillator = context.createOscillator();
+		const volume = context.createGain();
+		volume.gain.value = gain;
+		const output = context.createMediaStreamDestination();
+		oscillator.connect(volume).connect(output);
+		oscillator.start();
+		const track = output.stream.getAudioTracks()[0];
+		if (track === undefined) throw new Error("no tone track");
+		return { track, close: () => context.close() };
+	}
+
+	const remote = (
+		seat: Seat,
+		audio: MediaStreamTrack | undefined,
+		video?: MediaStreamTrack,
+	) => ({
+		seat,
+		status: "connected" as const,
+		audio,
+		video,
+		peerSendsAudio: audio !== undefined,
+		peerSendsVideo: video !== undefined,
+		fault: undefined,
+	});
+
+	const callView = (remotes: ReturnType<typeof remote>[]) => ({
+		available: true as const,
+		view: {
+			status: "subscribed" as const,
+			canJoin: false,
+			form: "desktop" as const,
+			media: {
+				send: ["audio", "video"] as const,
+				receive: ["audio", "video"] as const,
+			},
+			requested: {
+				inCall: true,
+				send: { audio: true, video: false },
+				receive: { audio: true, video: true },
+			},
+			mic: "on" as const,
+			camera: "off" as const,
+			localVideo: undefined,
+			problem: undefined,
+			remotes,
+		},
+	});
+
+	function render(
+		view: TableView,
+		voicebox = true,
+	): { root: HTMLElement; section: ReturnType<typeof tableSection> } {
+		const meters = voiceMeters();
+		const rendered = renderView(view, "desktop", undefined, undefined, {
+			marks: () => ({ ...DEFAULT_SETTINGS, voicebox }),
+			voiceMeters: meters,
+		});
+		return rendered;
+	}
+
+	const box = (root: HTMLElement, seat: Seat) => {
+		const found = root.querySelector<HTMLElement>(
+			`[data-testid='voicebox-${seat}']`,
+		);
+		if (found === null) throw new Error(`no voice box of ${seat}`);
+		return found;
+	};
+	const lit = (root: HTMLElement, seat: Seat) =>
+		box(root, seat).querySelectorAll("[data-lit]").length;
+	const segments = (root: HTMLElement, seat: Seat) =>
+		box(root, seat).querySelectorAll(".voicebox-segment").length;
+
+	it("lights green bars from the middle on the tile of a voice without video, in place of the avatar", async () => {
+		const loud = await tone(1);
+		const quiet = await tone(0);
+		const { root, section } = render(playView());
+		section.renderCall(
+			callView([remote("E", loud.track), remote("S", quiet.track)]),
+		);
+		expect(box(root, "E").checkVisibility()).toBe(true);
+		expect(
+			root.querySelector("[data-testid='tile-E'] .avatar")?.checkVisibility(),
+		).toBe(false);
+		// A loud tone lights every segment; silence lights none.
+		await expect.poll(() => lit(root, "E")).toBe(segments(root, "E"));
+		expect(segments(root, "E")).toBeGreaterThan(20);
+		expect(box(root, "S").checkVisibility()).toBe(true);
+		expect(lit(root, "S")).toBe(0);
+		const segment = box(root, "E").querySelector("[data-lit]");
+		if (segment === null) throw new Error("no lit segment");
+		expect(getComputedStyle(segment).backgroundColor).toBe("rgb(46, 204, 64)");
+		// The voice stops arriving: the avatar returns.
+		section.renderCall(callView([remote("E", undefined)]));
+		expect(box(root, "E").checkVisibility()).toBe(false);
+		expect(
+			root.querySelector("[data-testid='tile-E'] .avatar")?.checkVisibility(),
+		).toBe(true);
+		await loud.close();
+		await quiet.close();
+	});
+
+	it("shows the video and no voice box while the camera picture arrives", async () => {
+		const loud = await tone(1);
+		const canvas = document.createElement("canvas");
+		const camera = canvas.captureStream().getVideoTracks()[0];
+		const { root, section } = render(playView());
+		section.renderCall(callView([remote("E", loud.track, camera)]));
+		expect(box(root, "E").checkVisibility()).toBe(false);
+		camera?.stop();
+		await loud.close();
+	});
+
+	it("shows no voice box while its setting is off", async () => {
+		const loud = await tone(1);
+		const { root, section } = render(playView(), false);
+		section.renderCall(callView([remote("E", loud.track)]));
+		expect(box(root, "E").checkVisibility()).toBe(false);
+		await loud.close();
+	});
+
+	it("covers the bot image of a player who lets the bot play but speaks", async () => {
+		const loud = await tone(1);
+		const view = playView();
+		const { root, section } = render({
+			...view,
+			seats: view.seats.map((player) =>
+				player.seat === "E" ? { ...player, bot: true } : player,
+			),
+		});
+		const overlay = root.querySelector("[data-testid='tile-E'] .bot-overlay");
+		expect(overlay?.checkVisibility()).toBe(true);
+		section.renderCall(callView([remote("E", loud.track)]));
+		expect(box(root, "E").checkVisibility()).toBe(true);
+		expect(overlay?.checkVisibility()).toBe(false);
+		await loud.close();
 	});
 });
 

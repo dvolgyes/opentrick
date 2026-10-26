@@ -43,6 +43,7 @@ const FLAG_LABELS = {
 	bidTurnText: "Show as text whose turn it is to bid",
 	playTurnText: "Show as text whose turn it is to play",
 	networkQuality: "Show the network quality",
+	voicebox: "Show the voice box for a player without video",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
 const ORIENTATION_LABELS = {
@@ -337,6 +338,7 @@ export function settingsDialog(
 			bidTurnText: flags.bidTurnText.checked,
 			playTurnText: flags.playTurnText.checked,
 			networkQuality: flags.networkQuality.checked,
+			voicebox: flags.voicebox.checked,
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,
 			portraitMobile: orientation.portraitMobile.checked,

@@ -1674,6 +1674,14 @@ const rows: readonly TranslationRow[] = [
 		"Netwerkkwaliteit tonen",
 	],
 	[
+		"Show the voice box for a player without video",
+		"Mostrar el indicador de voz de un jugador sin vídeo",
+		"Mostrar o indicador de voz de um jogador sem vídeo",
+		"Afficher l'indicateur de voix d'un joueur sans vidéo",
+		"Mostra l'indicatore vocale di un giocatore senza video",
+		"Stemindicator tonen voor een speler zonder video",
+	],
+	[
 		"Custom model",
 		"Modelo personalizado",
 		"Modelo personalizado",

@@ -89,6 +89,7 @@ import { type SavedSettings, settingsDialog } from "./settings-dialog";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
 import type { TurnSound } from "./turn-sound";
+import { voiceMeters } from "./voice-meter";
 import { screenWakeLock, WakeLockPolicy } from "./wake-lock";
 
 export interface RoomScreenHandlers extends Navigation {
@@ -198,6 +199,7 @@ export function showRoom(
 			: undefined;
 	const unsubscribeCamera = camera?.onChange(() => renderCall());
 	const audio = remoteAudio();
+	const voices = voiceMeters();
 	const { turnSound: turnAlert } = handlers;
 	let yourTurn = false;
 	let currentTurnKey: string | undefined;
@@ -924,6 +926,7 @@ export function showRoom(
 			cardPoints: () => readSettings(deps.browser).cardPoints,
 			locale: deps.locale,
 			marks: () => readSettings(deps.browser),
+			voiceMeters: voices,
 		},
 	);
 
@@ -1786,9 +1789,10 @@ export function showRoom(
 			(model.send.hint === undefined ? "" : deps.t(model.send.hint));
 	}
 
-	// A gesture lets the browser start remote audio that its autoplay rule blocked.
+	// A gesture lets the browser start remote audio and the voice box that its autoplay rule blocked.
 	const onGesture = (): void => {
 		audio.resume();
+		voices.resume();
 	};
 	room.addEventListener("pointerdown", onGesture);
 	room.addEventListener("keydown", onGesture);
@@ -1826,5 +1830,6 @@ export function showRoom(
 		memory?.stop();
 		call?.dispose();
 		audio.detach();
+		voices.stop();
 	};
 }

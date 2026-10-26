@@ -571,11 +571,18 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 			{ timeout: CONNECT_MS },
 		);
 
-		const overlay = hostPage.getByTestId("tile-N").locator(".bot-overlay");
+		// North speaks without video, so the voice box covers the bot image; the host's switch shows the bot.
+		const botSwitch = hostPage
+			.getByTestId("tile-N")
+			.getByRole("button", { name: "Switch to player" });
 		const autoplay = northPage.getByTestId("player-autoplay-toggle");
 		await autoplay.click();
 		await expect(autoplay).toHaveText("Stop autoplay", { timeout: CONNECT_MS });
-		await expect(overlay).toBeVisible();
+		await expect(botSwitch).toBeVisible();
+		await expect(hostPage.getByTestId("voicebox-N")).toBeVisible();
+		await expect(
+			hostPage.getByTestId("tile-N").locator(".bot-overlay"),
+		).toBeHidden();
 		await expect(
 			northPage.getByRole("button", { name: "Leave call", exact: true }),
 		).toBeVisible();
@@ -585,7 +592,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 			"N",
 		);
 		await hostPage.reload();
-		await expect(overlay).toBeVisible({ timeout: CONNECT_MS });
+		await expect(botSwitch).toBeVisible({ timeout: CONNECT_MS });
 		await expect(hostPage.getByTestId("call-note")).toContainText(
 			"Connected to North.",
 			{ timeout: CONNECT_MS },
@@ -599,7 +606,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 
 		// The reloaded host still knows that the player asked for the bot, so the player can stop it.
 		await autoplay.click();
-		await expect(overlay).toBeHidden({ timeout: CONNECT_MS });
+		await expect(botSwitch).toBeHidden({ timeout: CONNECT_MS });
 		await expect(autoplay).toHaveText("Enable autoplay (bot)");
 		// The player stopped the bot, so the roster without it does not blame the host.
 		await expect(northPage.locator(".player-autoplay-status")).toHaveText(
@@ -619,12 +626,9 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		// When the host stops the bot instead, the player's page says so.
 		await autoplay.click();
 		await expect(autoplay).toHaveText("Stop autoplay", { timeout: CONNECT_MS });
-		await expect(overlay).toBeVisible();
+		await expect(botSwitch).toBeVisible();
 		// The host stops the bot at once, often before North's page gets a roster that shows it.
-		await hostPage
-			.getByTestId("tile-N")
-			.getByRole("button", { name: "Switch to player" })
-			.click();
+		await botSwitch.click();
 		await expect(autoplay).toHaveText("Enable autoplay (bot)", {
 			timeout: CONNECT_MS,
 		});
