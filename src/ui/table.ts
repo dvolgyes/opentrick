@@ -1294,11 +1294,7 @@ export function tableSection(
 					"data-video": "off",
 				},
 			},
-			el(
-				"span",
-				{ className: "avatar", attrs: { "aria-hidden": "true" } },
-				seat,
-			),
+			el("span", { className: "avatar", attrs: { "aria-hidden": "true" } }),
 			video,
 			botOverlay,
 			callPresence,

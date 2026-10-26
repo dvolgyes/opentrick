@@ -184,7 +184,7 @@ async function expectDesktopLayout(viewer: SeatKey): Promise<void> {
 			seatLabel(seat),
 		);
 	for (const seat of others) {
-		await expect(tile(page, seat).locator(".avatar")).toHaveText(seat);
+		await expect(tile(page, seat).locator(".avatar")).toHaveText("");
 		await expect(tile(page, seat)).toContainText(seatLabel(seat));
 	}
 	await expect(tile(page, viewer)).toHaveCount(0);

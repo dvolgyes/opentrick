@@ -1847,6 +1847,29 @@ describe("compact play controls", () => {
 	});
 });
 
+describe("video tile", () => {
+	it("shows an empty avatar and the seat and name in a large caption", () => {
+		const { root } = renderView(playView(), "desktop");
+		const tile = root.querySelector("[data-testid='tile-E']");
+		// The caption already names the seat.
+		expect(tile?.querySelector(".avatar")?.textContent).toBe("");
+		const caption = tile?.querySelector(".tile-caption");
+		if (caption === null || caption === undefined)
+			throw new Error("no caption");
+		expect(caption.textContent).toContain("E - playerE");
+		const rem = Number.parseFloat(
+			getComputedStyle(document.documentElement).fontSize,
+		);
+		// Half again the earlier 0.85rem.
+		expect(Number.parseFloat(getComputedStyle(caption).fontSize)).toBeCloseTo(
+			1.275 * rem,
+			1,
+		);
+		// The larger text still fits in the caption bar.
+		expect(caption.scrollHeight).toBeLessThanOrEqual(caption.clientHeight);
+	});
+});
+
 describe("call presence on the video tile", () => {
 	it("shows a viewer outside the call the microphone and camera of a player in it, large and centred on the tile", () => {
 		const { root, section } = renderView(playView(), "desktop");

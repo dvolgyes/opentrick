@@ -3700,7 +3700,7 @@ main:has(> .room[data-form="compact"]) {
  * line, so every window has the same taller caption bar and control row.
  */
 .room[data-form="desktop"] {
-	--tile-caption-h: 1.55rem;
+	--tile-caption-h: 1.75rem;
 	--tile-decoration-h: 1.5rem;
 }
 
@@ -3711,7 +3711,7 @@ main:has(> .room[data-form="compact"]) {
 
 .room[data-form="desktop"] .tile-caption:not(.call-switches) {
 	height: var(--tile-caption-h);
-	font-size: 0.85rem;
+	font-size: 1.275rem;
 	line-height: var(--tile-caption-h);
 }
 
