@@ -1607,6 +1607,22 @@ const rows: readonly TranslationRow[] = [
 		"Four Aces (3-2-1-½)",
 	],
 	["Light", "Claro", "Claro", "Clair", "Chiaro", "Licht"],
+	[
+		"Warm light",
+		"Claro cálido",
+		"Claro quente",
+		"Clair chaud",
+		"Chiaro caldo",
+		"Licht, warm",
+	],
+	[
+		"Solarized dark",
+		"Solarized oscuro",
+		"Solarized escuro",
+		"Solarized sombre",
+		"Solarized scuro",
+		"Solarized donker",
+	],
 	["Dark", "Oscuro", "Escuro", "Sombre", "Scuro", "Donker"],
 	["Theme", "Tema", "Tema", "Thème", "Tema", "Thema"],
 	[

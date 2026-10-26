@@ -53,7 +53,7 @@ describe("player settings", () => {
 		const settings = {
 			pointSystem: "vienna",
 			cardPoints: false,
-			theme: "auto",
+			theme: "solarized",
 			bidTurnFrame: false,
 			playTurnFrame: true,
 			bidTurnText: false,
@@ -94,6 +94,14 @@ describe("player settings", () => {
 				CUSTOM_MODEL_SLOT,
 			],
 		});
+	});
+
+	it("reads the earlier Automatic theme as the light theme, and keeps the dark theme", () => {
+		const storage = memoryStorage();
+		storage.setItem("opentrick.settings.theme", "auto");
+		expect(readSettings(storage).theme).toBe("light");
+		storage.setItem("opentrick.settings.theme", "dark");
+		expect(readSettings(storage).theme).toBe("dark");
 	});
 
 	it("reads the earlier choice of no points as the default bidding system without card points", () => {

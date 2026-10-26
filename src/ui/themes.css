@@ -1,0 +1,311 @@
+/*
+ * The colour themes. Every colour of the page is a token here, and style.css uses only these tokens, so a theme (and
+ * later a skin) is one more block of the same tokens. Light is the default on :root; each other theme replaces the
+ * tokens under :root[data-theme="…"], which the Theme setting sets.
+ *
+ * The surfaces: the page (--bg, --fg), the green felt (--felt, --felt-fg), the cards and the sheets on the felt, such
+ * as the bidding history and the bid box (--card-*), and the right panel and the call settings (--sheet-*). style.css
+ * sets the card and sheet ink as --fg, --muted, --line and the suit colours on those surfaces.
+ */
+:root {
+	--bg: #ffffff;
+	--fg: #1d1d1b;
+	--muted: #66665f;
+	--line: #d6d6cf;
+	--panel: #ffffff;
+	--accent: #1f6f50;
+	--accent-fg: #ffffff;
+	--error: #b3261e;
+	--warn-bg: #fff4d6;
+	--warn-fg: #5c4300;
+	/* Network messages: white on red. */
+	--alert-bg: #b3261e;
+	--alert-fg: #ffffff;
+	--online: #2e9d5b;
+	--offline: #b0b0a8;
+	/* The text and the frame of a dialog: the browser's own black. */
+	--dialog-fg: #000000;
+	--dialog-line: #000000;
+	--shadow: rgb(0 0 0 / 25%);
+	--shadow-soft: rgb(0 0 0 / 18%);
+	--scrim: rgb(0 0 0 / 55%);
+	--scrim-strong: rgb(0 0 0 / 65%);
+	/* The black frame around the scaled desktop table. */
+	--frame-bg: #000000;
+	--felt: #3d7a5c;
+	--felt-fg: #f2f5ef;
+	--label-frame: #ffffff;
+	--presence-online: #6ee7a0;
+	--waiting-line: #c9c9c9;
+	--waiting-fg: #e6e6e6;
+	--turn-hand-bg: #c8dccf;
+	--turn-name: #ff2a2a;
+	--trump-fg: #ffe14d;
+	/* The turn frame, the trump suit and a chosen call; the pills of the points and the turn. */
+	--gold: #e8b923;
+	--gold-fg: #1b1b1b;
+	--pill-bg: #fff8dc;
+	/* The suits and calls on the page and the sheets. */
+	--red-suit: #c0262d;
+	--call-green: #1f7a46;
+	--call-orange: #c75b00;
+	--card-bg: #ffffff;
+	--card-fg: #1d1d1b;
+	--card-muted: #66665f;
+	--card-line: #d6d6cf;
+	--card-shadow: rgb(0 0 0 / 0.2);
+	/* A call cell of the bidding history and a call button of the bid box. */
+	--card-cell: #efefea;
+	--card-strike: #8a8a84;
+	--card-red: #c0262d;
+	--card-call-green: #1f7a46;
+	--card-call-orange: #c75b00;
+	--card-success: #247a3e;
+	--card-error: #b3261e;
+	--card-neutral: #171717;
+	--sheet-bg: #ffffff;
+	--sheet-fg: #1d1d1b;
+	--sheet-muted: #66665f;
+	--sheet-line: #d6d6cf;
+	/* Confirm and Accept; the text on them and on Reject. */
+	--confirm-bg: #2e7d57;
+	--on-strong: #ffffff;
+	/* Claim, Claim all and Undo on the felt. */
+	--control-bg: #ffffff;
+	--control-fg: #000000;
+	--control-line: #ffffff;
+	--control-undo-line: #ffffff;
+	--control-disabled-bg: #efefea;
+	--control-disabled-fg: #9a9a9a;
+	--join-fg: #166534;
+	--tile-bg: #2f5f47;
+	--tile-caption-bg: #1d3a2c;
+	--video-bg: #171717;
+	/* The call icons and the bot name over a video tile. */
+	--overlay-fg: #ffffff;
+	--overlay-shadow: #000000;
+	/* The network quality bars beside a video tile; a bar that is not lit is grey. */
+	--network-green: #2ecc40;
+	--network-yellow: #fdd835;
+	--network-orange: #ff9800;
+	--network-red: #e53935;
+	--network-off: #7c8c82;
+	/* The voice box on a video tile: green segments on a dark panel. */
+	--voice-panel: rgb(0 0 0 / 55%);
+	--voice-frame: rgb(46 204 64 / 35%);
+	--voice-off: #173a26;
+	color-scheme: light;
+}
+
+/* Warm light: the light layout in softer, less saturated, warmer colours. */
+:root[data-theme="warm"] {
+	--bg: #f6f1e7;
+	--fg: #3b352c;
+	--muted: #6f6656;
+	--line: #ddd3c2;
+	--panel: #fbf7ef;
+	--accent: #47705a;
+	--accent-fg: #fbf7ef;
+	--error: #a8453a;
+	--warn-bg: #f8ead0;
+	--warn-fg: #5c4300;
+	--alert-bg: #a8453a;
+	--alert-fg: #ffffff;
+	--online: #4f9a68;
+	--offline: #b6ae9f;
+	--dialog-fg: #3b352c;
+	--dialog-line: #6f6656;
+	--shadow: rgb(59 53 44 / 25%);
+	--shadow-soft: rgb(59 53 44 / 18%);
+	--scrim: rgb(43 37 28 / 55%);
+	--scrim-strong: rgb(43 37 28 / 65%);
+	--frame-bg: #2b251c;
+	--felt: #4f6e55;
+	--felt-fg: #f6f1e7;
+	--label-frame: #f6f1e7;
+	--presence-online: #9fd9a8;
+	--waiting-line: #c4bba9;
+	--waiting-fg: #ece6d8;
+	--turn-hand-bg: #cfd8c4;
+	--turn-name: #d23a2a;
+	--trump-fg: #f3d27a;
+	--gold: #d4a93c;
+	--gold-fg: #2b251c;
+	--pill-bg: #fbf1d6;
+	--red-suit: #b0443c;
+	--call-green: #3f7a52;
+	--call-orange: #b8622a;
+	--card-bg: #fbf7ee;
+	--card-fg: #3b352c;
+	--card-muted: #6f6656;
+	--card-line: #ddd3c2;
+	--card-shadow: rgb(59 53 44 / 0.2);
+	--card-cell: #efe8da;
+	--card-strike: #9a9182;
+	--card-red: #b0443c;
+	--card-call-green: #3f7a52;
+	--card-call-orange: #b8622a;
+	--card-success: #3f7a52;
+	--card-error: #a8453a;
+	--card-neutral: #2b251c;
+	--sheet-bg: #fbf7ef;
+	--sheet-fg: #3b352c;
+	--sheet-muted: #6f6656;
+	--sheet-line: #ddd3c2;
+	--confirm-bg: #47705a;
+	--on-strong: #fffdf8;
+	--control-bg: #fbf7ef;
+	--control-fg: #2b251c;
+	--control-line: #fbf7ef;
+	--control-undo-line: #fbf7ef;
+	--control-disabled-bg: #ece5d6;
+	--control-disabled-fg: #a39a8a;
+	--join-fg: #3f6e4a;
+	--tile-bg: #46614c;
+	--tile-caption-bg: #33473a;
+	--video-bg: #2b251c;
+	--voice-off: #24382b;
+	color-scheme: light;
+}
+
+/* Solarized dark: the base03 page, bright base2 text, a dark teal-green felt and base3 cards. */
+:root[data-theme="solarized"] {
+	--bg: #002b36;
+	--fg: #eee8d5;
+	--muted: #93a1a1;
+	--line: #2f5560;
+	--panel: #073642;
+	--accent: #2aa198;
+	--accent-fg: #002b36;
+	--error: #ff6e64;
+	--warn-bg: #423606;
+	--warn-fg: #fdf6e3;
+	--alert-bg: #c42a27;
+	--alert-fg: #ffffff;
+	--online: #859900;
+	--offline: #586e75;
+	--dialog-fg: #eee8d5;
+	--dialog-line: #586e75;
+	--shadow: rgb(0 0 0 / 45%);
+	--shadow-soft: rgb(0 0 0 / 35%);
+	--scrim: rgb(0 20 26 / 70%);
+	--scrim-strong: rgb(0 20 26 / 80%);
+	--frame-bg: #001a21;
+	--felt: #0e3f37;
+	--felt-fg: #eee8d5;
+	--label-frame: #eee8d5;
+	--presence-online: #8fd16a;
+	--waiting-line: #5f7f7a;
+	--waiting-fg: #93a1a1;
+	--turn-hand-bg: #1d5a50;
+	--turn-name: #dc322f;
+	--trump-fg: #d9a91a;
+	--gold: #d9a91a;
+	--gold-fg: #002b36;
+	--pill-bg: #fdf6e3;
+	--red-suit: #ff6e64;
+	--call-green: #a5c13a;
+	--call-orange: #e8803a;
+	--card-bg: #fdf6e3;
+	--card-fg: #073642;
+	--card-muted: #586e75;
+	--card-line: #ddd6c1;
+	--card-shadow: rgb(0 0 0 / 0.35);
+	--card-cell: #eee8d5;
+	--card-strike: #93a1a1;
+	--card-red: #c0262d;
+	--card-call-green: #5b7a00;
+	--card-call-orange: #b8470f;
+	--card-success: #5b7a00;
+	--card-error: #c0262d;
+	--card-neutral: #073642;
+	--sheet-bg: #073642;
+	--sheet-fg: #eee8d5;
+	--sheet-muted: #93a1a1;
+	--sheet-line: #2f5560;
+	--confirm-bg: #2e7d57;
+	--on-strong: #ffffff;
+	--control-bg: #073642;
+	--control-fg: #eee8d5;
+	--control-line: #2f5560;
+	--control-undo-line: #ff6e64;
+	--control-disabled-bg: #0b3b47;
+	--control-disabled-fg: #657b83;
+	--join-fg: #a5c13a;
+	--tile-bg: #0b3330;
+	--tile-caption-bg: #062420;
+	--video-bg: #001f27;
+	--voice-off: #0b3a2c;
+	color-scheme: dark;
+}
+
+/* Dark: a charcoal page with bright text, a dark green felt and ivory cards. */
+:root[data-theme="dark"] {
+	--bg: #15181c;
+	--fg: #e6e6e1;
+	--muted: #a3a39b;
+	--line: #343a40;
+	--panel: #1e2328;
+	--accent: #3fa57a;
+	--accent-fg: #0d1512;
+	--error: #ff7b72;
+	--warn-bg: #3a3013;
+	--warn-fg: #f3e3b0;
+	--alert-bg: #b3261e;
+	--alert-fg: #ffffff;
+	--online: #3fbf72;
+	--offline: #6b6f72;
+	--dialog-fg: #e6e6e1;
+	--dialog-line: #4a5058;
+	--shadow: rgb(0 0 0 / 50%);
+	--shadow-soft: rgb(0 0 0 / 40%);
+	--scrim: rgb(0 0 0 / 70%);
+	--scrim-strong: rgb(0 0 0 / 80%);
+	--frame-bg: #000000;
+	--felt: #1e4a36;
+	--felt-fg: #ecefe8;
+	--label-frame: #ecefe8;
+	--presence-online: #6ee7a0;
+	--waiting-line: #6b7d72;
+	--waiting-fg: #c9cfc9;
+	--turn-hand-bg: #2f6b50;
+	--turn-name: #e03030;
+	--trump-fg: #ffd84d;
+	--gold: #e0b030;
+	--gold-fg: #1b1b1b;
+	--pill-bg: #f5ecc8;
+	--red-suit: #f07070;
+	--call-green: #5cc98a;
+	--call-orange: #f0954a;
+	--card-bg: #e9e4d6;
+	--card-fg: #1d1d1b;
+	--card-muted: #5e5e57;
+	--card-line: #c9c3b3;
+	--card-shadow: rgb(0 0 0 / 0.4);
+	--card-cell: #ddd8ca;
+	--card-strike: #8a8a84;
+	--card-red: #b8282e;
+	--card-call-green: #1f7a46;
+	--card-call-orange: #b85400;
+	--card-success: #247a3e;
+	--card-error: #b3261e;
+	--card-neutral: #171717;
+	--sheet-bg: #1b1f23;
+	--sheet-fg: #e6e6e1;
+	--sheet-muted: #a3a39b;
+	--sheet-line: #343a40;
+	--confirm-bg: #2e7d57;
+	--on-strong: #ffffff;
+	--control-bg: #262b31;
+	--control-fg: #f0f0ea;
+	--control-line: #3a4048;
+	--control-undo-line: #f07070;
+	--control-disabled-bg: #20252a;
+	--control-disabled-fg: #6b7075;
+	--join-fg: #5cc98a;
+	--tile-bg: #1a3d2d;
+	--tile-caption-bg: #10261c;
+	--video-bg: #0b0d0f;
+	--voice-off: #12301f;
+	color-scheme: dark;
+}

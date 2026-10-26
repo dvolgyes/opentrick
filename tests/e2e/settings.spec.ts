@@ -38,7 +38,8 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	let dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
 	await expect(dialog.getByLabel("Corrected Milton HCP")).toBeChecked();
-	await expect(dialog.getByLabel("Light")).toBeChecked();
+	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
+	await expect(page.locator("body")).toHaveCSS("color", "rgb(29, 29, 27)");
 	for (const flag of [
 		"Show the points next to the cards",
 		"Frame the player whose turn it is to bid",
@@ -67,7 +68,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).toBeDisabled();
 
 	await dialog.getByLabel("Vienna (7-5-3-1)").check();
-	await dialog.getByLabel("Dark").check();
+	await dialog.getByLabel("Dark", { exact: true }).check();
 	await dialog.getByLabel("Frame the player whose turn it is to bid").uncheck();
 	await dialog.getByLabel("Show the points next to the cards").uncheck();
 	await dialog.getByLabel("Show the network quality").uncheck();
@@ -85,6 +86,8 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	expect(order[1]).toBe(firstModel);
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
+	// The text turns bright at once.
+	await expect(page.locator("body")).toHaveCSS("color", "rgb(230, 230, 225)");
 	expect(openRouter.requests).toEqual([]);
 	expect(
 		await page.evaluate(() =>
@@ -110,9 +113,10 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 
 	await page.reload();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
+	await expect(page.locator("body")).toHaveCSS("color", "rgb(230, 230, 225)");
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
-	await expect(dialog.getByLabel("Dark")).toBeChecked();
+	await expect(dialog.getByLabel("Dark", { exact: true })).toBeChecked();
 	await expect(
 		dialog.getByLabel("Show the points next to the cards"),
 	).not.toBeChecked();

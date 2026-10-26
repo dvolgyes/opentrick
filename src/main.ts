@@ -14,6 +14,7 @@ import { guardedStorage, SeatMemory, webSeatLocks } from "./session";
 import { startApp } from "./ui/app";
 import type { CallSupport } from "./ui/deps";
 import { readSettings } from "./ui/settings";
+import { applyTheme } from "./ui/theme";
 
 /** Set by vite.config.ts at build time. */
 declare const __OPENTRICK_BUILD__: BuildInfo;
@@ -37,6 +38,7 @@ const savedLocale =
 const locale = savedLocale ?? detectedLocale;
 const t = translator(locale);
 document.documentElement.lang = locale;
+applyTheme(document.documentElement, readSettings(browser).theme);
 
 const root = document.getElementById("app");
 if (!root) throw new Error("index.html must contain #app");

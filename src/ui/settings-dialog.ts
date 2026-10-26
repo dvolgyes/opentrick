@@ -21,6 +21,7 @@ import {
 	type Theme,
 	writeSettings,
 } from "./settings";
+import { applyTheme } from "./theme";
 
 const POINT_SYSTEM_LABELS: Readonly<Record<PointSystem, string>> = {
 	hcp: "Milton/HCP (4-3-2-1)",
@@ -33,8 +34,9 @@ const POINT_SYSTEM_LABELS: Readonly<Record<PointSystem, string>> = {
 
 const THEME_LABELS: Readonly<Record<Theme, string>> = {
 	light: "Light",
+	warm: "Warm light",
+	solarized: "Solarized dark",
 	dark: "Dark",
-	auto: "Automatic",
 };
 
 const FLAG_LABELS = {
@@ -378,6 +380,7 @@ export function settingsDialog(
 			status.textContent = t("This browser could not store the settings.");
 			return;
 		}
+		applyTheme(element.ownerDocument.documentElement, settings.theme);
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();

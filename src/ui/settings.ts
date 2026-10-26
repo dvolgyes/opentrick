@@ -2,7 +2,8 @@ import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import { BOT_MODELS, type BotModel } from "../protocol";
 import type { MaybeStorage } from "../session";
 
-export const THEMES = ["light", "dark", "auto"] as const;
+/** The colour themes of themes.css. The earlier stored "auto" is no longer a theme, so it reads as the default. */
+export const THEMES = ["light", "warm", "solarized", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
 
 /** The place of the custom model in the model order. Model ids contain "/", so it cannot name a model. */
