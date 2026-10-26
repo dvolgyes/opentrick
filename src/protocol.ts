@@ -45,9 +45,10 @@ export interface BotSetup {
 	readonly seats: readonly Seat[];
 }
 
+/** The WBridge5 imitation bids a natural system that human partners and opponents can read; RL/FSP stays selectable. */
 export const DEFAULT_BOT_SETUP: BotSetup = {
 	seats: [],
-	bidder: "rl-fsp",
+	bidder: "sl",
 };
 
 export interface RoomConfig {

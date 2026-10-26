@@ -31,7 +31,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	);
 	const roomUrl = new URL(page.url());
 	expect(roomUrl.searchParams.get("bot_seats")).toBe("N,E,S,W");
-	expect(roomUrl.searchParams.get("bot_bidder")).toBe("rl-fsp");
+	expect(roomUrl.searchParams.get("bot_bidder")).toBe("sl");
 	await expect(page.getByTestId("bot-spend")).toHaveCount(0);
 	await expect(page.getByTestId("bot-balance")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();

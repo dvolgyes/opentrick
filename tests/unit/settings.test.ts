@@ -24,7 +24,7 @@ function memoryStorage(): Storage {
 describe("player settings", () => {
 	it("uses HCP, the normal theme in the automatic scheme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
-			bidder: "rl-fsp",
+			bidder: "sl",
 			playTimeMs: 5000,
 			pointSystem: "hcp",
 			cardPoints: true,
@@ -143,7 +143,7 @@ describe("local bot migration", () => {
 		};
 		expect(discardLegacyBotSettings(storage)).toBe(false);
 	});
-	it("defaults to RL/FSP and discards retired credentials without changing display choices", () => {
+	it("defaults to the WBridge5 imitation and discards retired credentials without changing display choices", () => {
 		const storage = memoryStorage();
 		storage.setItem("opentrick.openrouter-api-key", "obsolete-test-key");
 		storage.setItem("opentrick.openrouter-spend-usd", "2");
@@ -161,6 +161,6 @@ describe("local bot migration", () => {
 			scheme: "dark",
 			playTimeMs: 250,
 		});
-		expect(DEFAULT_BOT_SETUP).toEqual({ seats: [], bidder: "rl-fsp" });
+		expect(DEFAULT_BOT_SETUP).toEqual({ seats: [], bidder: "sl" });
 	});
 });

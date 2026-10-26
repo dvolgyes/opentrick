@@ -62,8 +62,8 @@ describe("local bidder integration", () => {
 		runner.stop();
 		expect(bidder.stop).toHaveBeenCalledOnce();
 	});
-	it("uses RL/FSP when a room setup or link omits the bidding policy", () => {
-		const setup = { seats: ["N"], bidder: "rl-fsp" };
+	it("uses the WBridge5 imitation when a room setup or link omits the bidding policy", () => {
+		const setup = { seats: ["N"], bidder: "sl" };
 		expect(parseBotSetup({ seats: ["N"] })).toEqual(setup);
 		expect(parseBookmark("?bot_seats=N").botSetup).toEqual(setup);
 	});

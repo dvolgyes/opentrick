@@ -3,8 +3,8 @@
 Select a **Local** option in **Bidding engine** when creating a table.
 The host bids with TypeScript in a Web Worker and plays cards with the existing DDS engine.
 The game needs no Python runtime, model API, or additional server.
-BRL's RL/FSP learned system (`rl-fsp`) is the default, including links that omit a bidding policy.
-WBridge5 imitation (`sl`) remains available.
+The WBridge5 imitation (`sl`) is the default, including links that omit a bidding policy.
+BRL's RL/FSP learned system (`rl-fsp`) remains available for bot partnerships and future work.
 The retired remote model integration, credentials, billing controls, and SDK are removed.
 
 ## Options researched
@@ -50,6 +50,9 @@ The RL policy can use artificial or weak openings that need its learned partner'
 For that reason, local bot seats use the **other** system designation: the table does not attach incorrect standard-guide meanings, and the card sampler does not impose those meanings on local bids.
 Human partnership compatibility and expert strength remain unverified.
 Prefer a matched bot partnership when evaluating the learned system.
+The default is the WBridge5 imitation, because a human at the table cannot read RL/FSP's undisclosed agreements.
+For example, RL/FSP opened 1♣ with 27 of the 32 weak balanced hands that SAYC passes, and passed 29 of the 32 balanced 15–17 point hands that SAYC opens 1NT.
+Its benchmark gain over SL comes from bot partnerships only, so it remains selectable for that use and for future work.
 
 ## Architecture and assets
 
@@ -106,10 +109,10 @@ npm run demo:bot -- --local-rl
 ```
 
 The demo opens a visible Chrome window at `http://localhost:5178`, temporarily enables West's autoplay to verify a full board, then returns West to human control.
-Without a policy flag, the demo uses the default RL/FSP policy.
+Without a policy flag, the demo uses the default WBridge5 imitation.
 The other three bots stay active.
 Close the browser to stop the demo server.
-The standalone Node bot recognizes the local policy in a room link and otherwise uses RL/FSP.
+The standalone Node bot recognizes the local policy in a room link and otherwise uses the WBridge5 imitation.
 It uses the same own-hand projection and numerical inference as the browser.
 
 Python is only an optional numerical reference generator for developers.
