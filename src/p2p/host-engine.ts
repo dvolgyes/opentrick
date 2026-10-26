@@ -1163,10 +1163,11 @@ export class HostEngine {
 	}
 
 	/**
-	 * The seat's bound peer sent a message within HOST_LOST_MS. A bot of this host is always heard: the browser can run
-	 * the timers of a hidden tab only once a minute, so the tick does not keep the bot's time fresh.
+	 * The seat's bound peer sent a message within HOST_LOST_MS. The host's seat and a bot of this host are always heard:
+	 * the browser can run the timers of a hidden tab only once a minute, so the tick does not keep their time fresh.
 	 */
 	#heard(seat: Seat, now = this.#deps.clock.monotonic()): boolean {
+		if (seat === this.#deps.log.seat) return true;
 		if (this.#localBots.has(seat) && this.#bindings.has(this.#localPeer(seat)))
 			return true;
 		const seen = this.#seen.get(seat);
@@ -1223,10 +1224,12 @@ export class HostEngine {
 
 	/**
 	 * Free; held by the asking holder with no connected peer on the seat, so a reopened page gets its seat back at
-	 * once; or held by an offline holder past the grace period (plan §4.6).
+	 * once; or held by an offline holder past the grace period (plan §4.6). A seat of this host's bots is never free for
+	 * another holder, also before the bot starts.
 	 */
 	#available(table: TableRecord, seat: Seat, holder: string): boolean {
 		const row = seatRow(table, seat);
+		if (this.#localBots.has(seat) && row.holder !== holder) return false;
 		return (
 			row.holder === null ||
 			(row.holder === holder && !this.#seatPeerConnected(table, seat)) ||
