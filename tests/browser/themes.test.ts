@@ -196,6 +196,17 @@ describe("themes", () => {
 		expect(saturation(token("felt"))).toBeGreaterThan(0.2);
 	});
 
+	it("solarized dark gives the cards and the turn pill one muted beige, darker than the names on the felt", () => {
+		applyTheme(document.documentElement, "solarized", "dark", false);
+		const [red = 0, , blue = 0] = token("card-bg");
+		expect(luminance(token("card-bg"))).toBeLessThan(0.8);
+		expect(luminance(token("card-bg"))).toBeLessThan(
+			luminance(token("felt-fg")),
+		);
+		expect(red - blue).toBeGreaterThan(24);
+		expect(token("pill-bg")).toEqual(token("card-bg"));
+	});
+
 	it.each<[Scheme, boolean, string]>([
 		["auto", false, "light"],
 		["auto", true, "dark"],

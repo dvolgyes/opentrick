@@ -176,7 +176,10 @@
 	color-scheme: light;
 }
 
-/* Solarized dark: the base03 page, bright base2 text, a dark teal-green felt and base3 cards. */
+/*
+ * Solarized dark: the base03 page, bright base2 text, a dark teal-green felt and beige cards, a shade darker than base2
+ * so they do not glare on the dark felt. The turn pill takes the card colour.
+ */
 :root[data-theme="solarized"][data-scheme="dark"] {
 	--bg: #002b36;
 	--fg: #eee8d5;
@@ -210,14 +213,14 @@
 	--trump-fg: #d9a91a;
 	--gold: #d9a91a;
 	--gold-fg: #002b36;
-	--pill-bg: #fdf6e3;
+	--pill-bg: var(--card-bg);
 	--red-suit: #ff6e64;
 	--call-green: #a5c13a;
 	--call-orange: #e8803a;
-	--card-bg: #fdf6e3;
+	--card-bg: #e8dfc6;
 	--card-fg: #073642;
 	--card-muted: #586e75;
-	--card-line: #ddd6c1;
+	--card-line: #cbc1a5;
 	--card-shadow: rgb(0 0 0 / 0.35);
 	--card-red: #c0262d;
 	--sheet-bg: #073642;
