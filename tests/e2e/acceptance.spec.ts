@@ -199,14 +199,13 @@ test("5c: another player releases a silent seat; a new browser takes it; the old
 	await expect(texts(page)).toHaveText(expected);
 
 	await thaw();
-	await expectBanner(old, "superseded");
-	await expect(old.getByTestId("send")).toBeDisabled();
-	// Taking the seat back fails while the new holder is present.
-	await old.getByTestId("retry-seat").click();
+	// The old tab goes back to the seat page by itself, and its URL no longer reopens North on a reload.
 	await expect(
 		old.getByText("Another player took this seat. Choose another one."),
 	).toBeVisible({ timeout: CONNECT_MS });
 	await expect(old.getByText("All seats are taken.")).toBeVisible();
+	await expect(old.getByTestId("table")).toHaveCount(0);
+	expect(new URL(old.url()).searchParams.get("selected_player")).toBe("none");
 	await old.close();
 	await expect(
 		tab.W.getByTestId("roster").locator('li[data-state="online"]'),

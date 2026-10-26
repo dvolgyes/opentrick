@@ -39,6 +39,13 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 				`${location.pathname}?${query}${location.hash}`,
 			);
 		},
+		forgetSeat: () => {
+			history.replaceState(
+				null,
+				"",
+				`${location.pathname}?${sharedQuery(location.search)}${location.hash}`,
+			);
+		},
 	};
 
 	const route = (): void => {
