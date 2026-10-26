@@ -156,7 +156,7 @@ export function showCreate(
 		"select",
 		{ attrs: { name: "bot-bidder", "aria-label": deps.t("Bidding bot") } },
 		...Object.entries(BIDDER_NAMES).map(([value, label]) =>
-			el("option", { attrs: { value } }, label),
+			el("option", { attrs: { value } }, deps.t(label)),
 		),
 	);
 	bidder.value = setup.bidder;

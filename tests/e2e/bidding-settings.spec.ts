@@ -21,12 +21,16 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 		await expect(settings).toBeVisible();
 	};
 	await open();
-	await expect(settings.getByLabel("WBridge5", { exact: true })).toBeChecked();
-	await settings.getByLabel("BRL", { exact: true }).check();
+	await expect(
+		settings.getByLabel("BRL SL (WBridge5 imitation)", { exact: true }),
+	).toBeChecked();
+	await settings.getByLabel("BRL RL/FSP", { exact: true }).check();
 	await settings.getByRole("button", { name: "Cancel", exact: true }).click();
 	await open();
-	await expect(settings.getByLabel("WBridge5", { exact: true })).toBeChecked();
-	await settings.getByLabel("BRL", { exact: true }).check();
+	await expect(
+		settings.getByLabel("BRL SL (WBridge5 imitation)", { exact: true }),
+	).toBeChecked();
+	await settings.getByLabel("BRL RL/FSP", { exact: true }).check();
 	await settings.getByRole("button", { name: "Save settings" }).click();
 	await expect(settings).toBeHidden();
 	expect(new URL(page.url()).searchParams.get("bot_bidder")).toBe("rl-fsp");
@@ -38,8 +42,12 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	await page.reload();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	await open();
-	await expect(settings.getByLabel("BRL", { exact: true })).toBeChecked();
-	await settings.getByLabel("WBridge5", { exact: true }).check();
+	await expect(
+		settings.getByLabel("BRL RL/FSP", { exact: true }),
+	).toBeChecked();
+	await settings
+		.getByLabel("BRL SL (WBridge5 imitation)", { exact: true })
+		.check();
 	await settings.getByRole("button", { name: "Save settings" }).click();
 	await page.goto("/");
 	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("sl");

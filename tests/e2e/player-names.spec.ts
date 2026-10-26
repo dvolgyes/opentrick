@@ -292,7 +292,10 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 	await expect(page.locator("body > .language-control")).toHaveCount(0);
 	const options = page.locator(".create-options");
 	const bidder = options.getByLabel("Bidding bot");
-	await expect(bidder.locator("option")).toHaveText(["BRL", "WBridge5"]);
+	await expect(bidder.locator("option")).toHaveText([
+		"BRL RL/FSP",
+		"BRL SL (WBridge5 imitation)",
+	]);
 	await expect(options.locator('select[name="scoring"]')).toBeVisible();
 	// The solo label, its field and its button share one row, also on a narrow phone; the field is at most 20
 	// characters wide.

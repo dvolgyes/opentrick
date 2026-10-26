@@ -31,8 +31,8 @@ Each policy accepted all 32 tested heart transfers with a doubleton.
 This establishes closer agreement for SL on those situations, not full SAYC compliance or superior playing strength.
 No rules or network weights were tuned after this comparison.
 
-**Local · WBridge5 imitation** uses BRL's supervised policy (`sl`).
-**Local · RL/FSP learned system** uses its reinforcement-learning policy (`rl-fsp`).
+**BRL SL (WBridge5 imitation)** uses BRL's supervised policy (`sl`), which imitates WBridge5.
+**BRL RL/FSP** uses BRL's reinforcement-learning policy (`rl-fsp`).
 All host-managed bots at a table use the selected policy.
 The host can view and change the engine in **Settings**.
 The browser remembers the choice for new tables; an explicit engine in a saved link takes priority.

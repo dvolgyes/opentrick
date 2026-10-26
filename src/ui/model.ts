@@ -70,10 +70,13 @@ export const BOT_NAME = "bot";
 export const isBotName = (name: string): boolean =>
 	name.trim().toLowerCase() === BOT_NAME;
 
-/** The names of the bidding bots, in the order of the create screen; they are names, so no language changes them. */
+/**
+ * The names of the bidding bots, in the order of the create screen. Both are BRL policies: SL imitates WBridge5, and
+ * RL/FSP learned its own system. The labels are catalog keys, so a language translates the word "imitation".
+ */
 export const BIDDER_NAMES: Readonly<Record<LocalBidder, string>> = {
-	"rl-fsp": "BRL",
-	sl: "WBridge5",
+	"rl-fsp": "BRL RL/FSP",
+	sl: "BRL SL (WBridge5 imitation)",
 };
 
 export type CreateCheck =

@@ -8,6 +8,7 @@ import {
 	translator,
 } from "../../src/i18n";
 import { additionalCatalogs } from "../../src/i18n-translations";
+import { BIDDER_NAMES } from "../../src/ui/model";
 
 const newLocales = [
 	"es",
@@ -126,6 +127,29 @@ describe("localization", () => {
 			string,
 		][]) {
 			expect(translator(locale)("Enable autoplay (bot)")).toBe(label);
+		}
+	});
+
+	it("names both bidding bots as BRL policies and says in every supported language that SL imitates WBridge5", () => {
+		const labels = {
+			en: "BRL SL (WBridge5 imitation)",
+			de: "BRL SL (WBridge5-Nachahmung)",
+			hu: "BRL SL (WBridge5-utánzat)",
+			no: "BRL SL (WBridge5-etterligning)",
+			es: "BRL SL (imitación de WBridge5)",
+			pt: "BRL SL (imitação do WBridge5)",
+			fr: "BRL SL (imitation de WBridge5)",
+			it: "BRL SL (imitazione di WBridge5)",
+			nl: "BRL SL (WBridge5-imitatie)",
+		} as const satisfies Record<Locale, string>;
+
+		for (const [locale, label] of Object.entries(labels) as [
+			Locale,
+			string,
+		][]) {
+			const t = translator(locale);
+			expect(t(BIDDER_NAMES.sl)).toBe(label);
+			expect(t(BIDDER_NAMES["rl-fsp"])).toBe("BRL RL/FSP");
 		}
 	});
 
