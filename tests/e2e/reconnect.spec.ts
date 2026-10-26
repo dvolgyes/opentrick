@@ -269,7 +269,7 @@ test("3: the host crashes mid-auction; a player clicks Make me the host, and the
 	}
 });
 
-test("4: dummy crashes during the play: declarer plays on; the next board is dealt and its auction waits for dummy; dummy returns with everything it missed (R4)", async () => {
+test("4: dummy crashes during the play: declarer plays on; the next board waits for dummy; dummy returns with everything it missed, and board 2 is dealt (R4)", async () => {
 	test.setTimeout(300_000);
 	await crash(DUMMY);
 	for (let at = 4; at < 56; at += 1) {
@@ -289,22 +289,22 @@ test("4: dummy crashes during the play: declarer plays on; the next board is dea
 		);
 	}
 	const sheet = await tab.W.getByTestId("scores").innerText();
-	// After the 10 s countdown, the host deals board 2 without a click while South is away. East deals board 2
-	// and opens; South is next, so the auction waits for South.
-	expect(await call(2, 0, "1D")).toBe("E");
-	await expectAt(2, 1);
+	// After the 10 s countdown, the host does not deal board 2 while South is away: the bidding never starts at a
+	// table with an empty seat.
 	for (const seat of openSeats())
-		await expect(prompt(tab[seat])).toHaveText(
+		await expect(tab[seat].getByTestId("waiting")).toHaveText(
 			"Waiting for South to come back",
 			{ timeout: CONNECT_MS },
 		);
+	await expectAt(1, 56);
 
-	// South comes back to the score sheet and the call that it missed, and bids.
+	// South comes back to the score sheet, and the host deals board 2 without a click. East deals and opens, and
+	// South bids.
 	await reopen(DUMMY);
-	await expectAt(2, 1);
 	await expect(tab.S.getByTestId("scores")).toHaveText(sheet, {
 		useInnerText: true,
 	});
+	expect(await call(2, 0, "1D")).toBe("E");
 	expect(await call(2, 1, "P")).toBe("S");
 	await expectAt(2, 2);
 	for (const seat of SEATS)

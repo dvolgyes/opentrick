@@ -553,7 +553,7 @@ export function showRoom(
 		});
 		render();
 	};
-	/** The host deals the first board once all four seats are filled. */
+	/** The host deals the first board once all four seats are filled, again after a reset that keeps no board. */
 	let firstDealSent = false;
 	/** The bidding system that this page sent for its seat; sent once, so a host that rejects it gets no resend loop. */
 	let sentSystem: PointSystem | undefined;
@@ -1758,6 +1758,7 @@ export function showRoom(
 		if (tableKey !== shownTable) {
 			shownTable = tableKey;
 			table.render(tableModel);
+			if (tableModel.board !== 0) firstDealSent = false;
 			const first = tableModel.nextBoard;
 			if (view.hosting && first?.board === 1 && first.ready && !firstDealSent) {
 				firstDealSent = true;

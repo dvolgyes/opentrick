@@ -1113,10 +1113,10 @@ export function tableView(input: TableViewInput): TableView {
 		input.outbox,
 		t,
 	);
-	// The host refuses the first deal unless all four seats are present; later, only the seat to act must be
+	// The host refuses each deal unless all four seats are present; in a board, only the seat to act must be
 	// (plan §12 R4).
 	const allPresent = [...input.present];
-	const dealWait = board ? undefined : waitingFor(SEATS, allPresent, t);
+	const dealWait = waitingFor(SEATS, allPresent, t);
 	const nextBoard = (): NextBoard => {
 		const next = current + 1;
 		return {
@@ -1356,16 +1356,18 @@ export function tableView(input: TableViewInput): TableView {
 						: t("Opponents made +{margin}", { margin })
 					: t("Opponents down {margin}", { margin })
 			: "";
+		const countdown = input.scoringCountdown ?? 10;
 		return {
 			...common,
 			phase: "complete",
 			prompt: "",
-			waiting: "",
+			// When the countdown ends, the next board waits for the absent seats.
+			waiting: countdown === 0 ? (dealWait ?? "") : "",
 			scoring: {
 				contract: contract ?? undefined,
 				compactOutcome: contract ? (viewerWon ? "WON" : "LOST") : "PASSED OUT",
 				compactDetail,
-				countdown: input.scoringCountdown ?? 10,
+				countdown,
 			},
 			nextBoard: nextBoard(),
 		};
