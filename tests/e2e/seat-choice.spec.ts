@@ -77,6 +77,43 @@ test("the shared link shows the host's and the bots' seats as taken, and takes t
 	});
 });
 
+test("the host's page keeps its bot seats in its URL without a reload, so the refreshed host still shows them as bots", async () => {
+	test.setTimeout(180_000);
+	const [host, guest] = players as [Player, Player];
+	const hostPage = await host.page("./");
+	await mockOpenRouter(hostPage);
+	await mockOpenRouterKey(hostPage);
+	const link = await createRoom(hostPage);
+	await hostPage.getByRole("button", { name: "Settings", exact: true }).click();
+	await hostPage
+		.getByTestId("settings-dialog")
+		.getByRole("textbox", { name: "OpenRouter API key" })
+		.fill("test-key");
+	await hostPage.getByRole("button", { name: "Save settings" }).click();
+	await hostPage.evaluate(() => {
+		(window as { notReloaded?: boolean }).notReloaded = true;
+	});
+	await switchToBot(hostPage, "N");
+	await switchToBot(hostPage, "E");
+	await expect
+		.poll(() => new URL(hostPage.url()).searchParams.get("bot_seats"))
+		.toBe("N,E");
+	expect(
+		await hostPage.evaluate(
+			() => (window as { notReloaded?: boolean }).notReloaded,
+		),
+	).toBe(true);
+
+	await hostPage.reload();
+	for (const seat of ["N", "E"])
+		await expect(
+			hostPage.getByTestId(`tile-${seat}`).locator(".bot-overlay"),
+		).toBeVisible({ timeout: CONNECT_MS });
+	const page = await guest.page(link);
+	// North and East are the host's bots, so South is the only free seat, and the page takes it.
+	await expectSeat(page, "S", { timeout: CONNECT_MS });
+});
+
 test("a link whose table nobody has offers its seats only after the page finds no host", async () => {
 	const [, guest] = players as [Player, Player];
 	const key = randomBytes(32).toString("base64url");
