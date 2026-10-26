@@ -129,8 +129,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Waiting for the host": "Warte auf den Host",
 		"Not accepted": "Nicht angenommen",
 		"Undone after a host change": "Nach einem Hostwechsel rückgängig gemacht",
-		"Keep this page open and in front until all four players are at the table. A phone stops a page in the background, and then the others cannot reach it.":
-			"Lass diese Seite offen und im Vordergrund, bis alle vier Spieler am Tisch sind. Ein Telefon hält eine Seite im Hintergrund an, und dann erreichen die anderen sie nicht.",
 		"Deal board {board}": "Board {board} geben",
 		"Call {call}": "Gebot {call}",
 		"Play {card}": "Spiele {card}",
@@ -210,8 +208,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Becoming host…": "Host wird gewählt…",
 		"A new host is taking over…": "Ein neuer Host übernimmt…",
 		"Waiting for the host ({seconds} s)": "Warte auf den Host ({seconds} s)",
-		"Nobody is at this table right now. Keep this page open":
-			"Niemand ist gerade am Tisch. Lass diese Seite geöffnet.",
+		"Nobody is at this table right now": "Niemand ist gerade am Tisch",
 		"Direct connections": "Direktverbindungen",
 		"Players checked": "Spieler geprüft",
 		"Pages not reachable directly": "Seiten nicht direkt erreichbar",
@@ -770,8 +767,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Waiting for the host": "Várakozás a hostra",
 		"Not accepted": "Elutasítva",
 		"Undone after a host change": "Hostváltás miatt visszavonva",
-		"Keep this page open and in front until all four players are at the table. A phone stops a page in the background, and then the others cannot reach it.":
-			"Tartsd nyitva és előtérben ezt az oldalt, amíg mind a négy játékos az asztalhoz ül. A telefon a háttérben leállítja az oldalt, és akkor a többiek nem érik el.",
 		"Deal board {board}": "Osztás: {board}",
 		"Call {call}": "Licit: {call}",
 		"Play {card}": "Kijátszás: {card}",
@@ -848,8 +843,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Becoming host…": "Host szerep átvétele…",
 		"A new host is taking over…": "Új host veszi át az irányítást…",
 		"Waiting for the host ({seconds} s)": "Várakozás a hostra ({seconds} mp)",
-		"Nobody is at this table right now. Keep this page open":
-			"Most senki sincs az asztalnál. Hagyd nyitva ezt az oldalt.",
+		"Nobody is at this table right now": "Most senki sincs az asztalnál",
 		"Trackers reachable": "Elérhető trackerek",
 		"Nostr relays reachable": "Elérhető Nostr-továbbítók",
 		"MQTT brokers reachable": "Elérhető MQTT-brókerek",
@@ -1379,8 +1373,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Waiting for the host": "Venter på verten",
 		"Not accepted": "Ikke godtatt",
 		"Undone after a host change": "Angret etter et vertsskifte",
-		"Keep this page open and in front until all four players are at the table. A phone stops a page in the background, and then the others cannot reach it.":
-			"Hold denne siden åpen og i forgrunnen til alle fire spillerne sitter ved bordet. En telefon stopper en side i bakgrunnen, og da når de andre den ikke.",
 		"Deal board {board}": "Del ut spill {board}",
 		"Call {call}": "Meld {call}",
 		"Play {card}": "Spill {card}",
@@ -1685,8 +1677,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Current trick": "Pågående stikk",
 
 		"No direct connection to {names}.": "Ingen direkte tilkobling til {names}.",
-		"Nobody is at this table right now. Keep this page open":
-			"Ingen sitter ved bordet nå. La denne siden stå åpen",
+		"Nobody is at this table right now": "Ingen sitter ved bordet nå",
 		"Not a valid stun: or stuns: URL in VITE_STUN_URLS: {url}":
 			"Ugyldig stun:- eller stuns:-URL i VITE_STUN_URLS: {url}",
 		"Not a valid wss: tracker URL in VITE_TRACKER_URLS: {url}":

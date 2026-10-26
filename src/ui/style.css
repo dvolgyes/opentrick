@@ -4070,12 +4070,3 @@ body:has(
 body:has(main[data-screen="table"]) > .language-control {
 	display: none;
 }
-
-.keep-open {
-	margin: 0.3rem 0;
-	font-size: 0.85rem;
-}
-
-.keep-open[hidden] {
-	display: none;
-}

@@ -254,7 +254,7 @@ test("a phone keeps its screen on in the lobby, while the host waits for the oth
 	}
 });
 
-test("a phone keeps its screen on during the bidding and the play, not on the start page", async ({
+test("a phone keeps its screen on from the start page through the bidding and the play", async ({
 	browser,
 	baseURL,
 }) => {
@@ -274,7 +274,7 @@ test("a phone keeps its screen on during the bidding and the play, not on the st
 		for (const seat of ["N", "E", "S"])
 			await page.locator(`input[name="bot-${seat}"]`).check();
 
-		expect(await wake()).toEqual({ requests: 0, held: 0 });
+		await expect.poll(wake).toEqual({ requests: 1, held: 1 });
 		await page.getByTestId("create").tap();
 
 		await expect.poll(() => phoneTurn(page), { timeout: 30_000 }).toBe(true);

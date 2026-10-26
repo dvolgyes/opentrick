@@ -3,8 +3,8 @@ import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
 /*
- * A page that waits for the other players keeps the screen on, so that the phone does not sleep and stop the page,
- * and tells the person to keep the page open and in front: a phone stops a page in the background.
+ * Every page keeps the screen on, so that a phone does not sleep and stop the page. The page does not ask the person
+ * to keep it open.
  */
 
 /** Replaces the Screen Wake Lock API with a fake that counts the locks that the page holds. */
@@ -40,7 +40,7 @@ const heldLocks = (page: Page): Promise<number> =>
 				.held,
 	);
 
-test("a page that waits for the host keeps the screen on, and asks to stay in front only after it takes a seat", async ({
+test("the create page, the seat page, the table and a broken link each keep the screen on without a keep-open note", async ({
 	browser,
 	baseURL,
 }) => {
@@ -49,25 +49,31 @@ test("a page that waits for the host keeps the screen on, and asks to stay in fr
 	const host = await Player.open(browser, baseURL, "awake-host");
 	const guest = await Player.open(browser, baseURL, "awake-guest");
 	try {
+		await host.addInitScript(installWakeLockProbe);
 		const created = await host.page("./");
+		await expect(created.getByTestId("create")).toBeVisible();
+		await expect.poll(() => heldLocks(created)).toBe(1);
 		const link = await createRoom(created);
-		await created.close();
+		await expect.poll(() => heldLocks(created)).toBe(1);
 
 		await guest.addInitScript(installWakeLockProbe);
 		const page = await guest.page(link);
 		await expect(page.getByTestId("pick-N")).toBeVisible({
 			timeout: CONNECT_MS,
 		});
-		// Taking a seat opens the table, so the seat page does not ask the player to stay on it.
-		await expect(page.getByTestId("keep-open")).toHaveCount(0);
 		await expect.poll(() => heldLocks(page)).toBe(1);
 
 		await pick(page, "N");
-		await expect(page.getByTestId("banner")).toBeVisible({
-			timeout: CONNECT_MS,
-		});
-		await expect(page.getByTestId("keep-open")).toBeVisible();
+		await expect(page).toHaveTitle(/\(N\)$/, { timeout: CONNECT_MS });
 		await expect.poll(() => heldLocks(page)).toBe(1);
+		await expect(page.getByText(/keep this page open/i)).toHaveCount(0);
+		await expect(created.getByText(/keep this page open/i)).toHaveCount(0);
+
+		const broken = await guest.page("./#v=p2p-v1&k=broken");
+		await expect(
+			broken.getByText("This link is not valid", { exact: false }),
+		).toBeVisible();
+		await expect.poll(() => heldLocks(broken)).toBe(1);
 		expect(guest.errors).toEqual([]);
 	} finally {
 		await host.close();

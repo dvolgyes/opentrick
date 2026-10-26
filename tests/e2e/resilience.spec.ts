@@ -151,12 +151,17 @@ test("a browser that does not store data cannot create a table, but it can take 
 	const blocked = await openBrowser("blocked", { blockSiteData: true });
 
 	const create = await blocked.page("./");
-	await expect(
-		create.getByText(
-			"This browser does not allow storing data, so it cannot create a table.",
-			{ exact: true },
-		),
-	).toBeVisible();
+	// The solo form and the multiplayer form each say why they cannot start.
+	for (const errors of ["solo-errors", "errors"])
+		await expect(
+			create
+				.getByTestId(errors)
+				.getByText(
+					"This browser does not allow storing data, so it cannot create a table.",
+					{ exact: true },
+				),
+		).toBeVisible();
+	await expect(create.getByTestId("create-solo")).toBeDisabled();
 	await expect(create.getByTestId("create")).toBeDisabled();
 	await create.close();
 
@@ -205,9 +210,9 @@ test("a damaged key opens an empty table: nobody is there", async () => {
 	expect(new URL(damaged).search).toBe(new URL(link).search);
 	expect(new URL(damaged).hash).not.toBe(new URL(link).hash);
 	const page = await (await openBrowser("visitor")).page(damaged);
-	await expect(
-		page.getByText("Nobody is at this table right now. Keep this page open"),
-	).toBeVisible({ timeout: CONNECT_MS });
+	await expect(page.getByText("Nobody is at this table right now")).toBeVisible(
+		{ timeout: CONNECT_MS },
+	);
 	// The damaged link keeps the room setup, so the page offers the four seats of that setup while no host answers
 	// (ADR 0005).
 	await expect(picks(page)).toHaveCount(4);

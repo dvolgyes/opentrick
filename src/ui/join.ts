@@ -31,7 +31,6 @@ import { pageTitle } from "./page-title";
 import { showRoom } from "./room-view";
 import { seatGrid } from "./seat-grid";
 import { turnSound } from "./turn-sound";
-import { screenWakeLock, WakeLockPolicy } from "./wake-lock";
 
 /** A room in one of these states stays on the screen, read-only, after its seat is gone. */
 const KEEP_ROOM: ReadonlySet<TableStatus> = new Set([
@@ -97,8 +96,6 @@ export function showTable(
 		attrs: { "data-testid": "connection-summary" },
 	});
 	const network = networkPanel(deps.t);
-	// A phone that sleeps on the seat page stops the page, and the host cannot reach it. The room holds its own lock.
-	const wakeLock = new WakeLockPolicy(screenWakeLock);
 
 	const leaveRoom = (): void => {
 		room?.();
@@ -283,7 +280,6 @@ export function showTable(
 			if (view.seat === roomSeat || KEEP_ROOM.has(view.status)) return;
 			leaveRoom();
 		}
-		wakeLock.update(view.seat === null);
 		if (view.seat !== null) {
 			navigation.rememberSeat(view.seat);
 			document.title = pageTitle(deps.t, {
@@ -446,7 +442,6 @@ export function showTable(
 	// The election restarts its absence clock when the page comes back (plan §4.4 rule 5).
 	const onVisible = (): void => {
 		if (document.visibilityState !== "visible") return;
-		wakeLock.pageShown();
 		controller?.wake();
 	};
 	const onWake = (): void => controller?.wake();
@@ -469,7 +464,6 @@ export function showTable(
 
 	return () => {
 		disposed = true;
-		wakeLock.update(false);
 		document.title = pageTitle(deps.t);
 		document.removeEventListener("visibilitychange", onVisible);
 		window.removeEventListener("online", onWake);

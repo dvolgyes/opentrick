@@ -44,8 +44,6 @@ export const TEXT = {
 	sendHint: "Stored; sent when a host is connected",
 	becomeHost: "Make me the host",
 	undone: "Undone after a host change",
-	keepOpen:
-		"Keep this page open and in front until all four players are at the table. A phone stops a page in the background, and then the others cannot reach it.",
 } as const;
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -335,7 +333,7 @@ export function bannerText(banner: Banner, t: Translate = english): string {
 				seconds: banner.seconds,
 			});
 		case "nobody-here":
-			return t("Nobody is at this table right now. Keep this page open");
+			return t("Nobody is at this table right now");
 		case "connecting":
 			return t(TEXT.connecting);
 	}

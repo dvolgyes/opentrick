@@ -31,9 +31,9 @@ export const screenWakeLock: WakeLockPort = {
 };
 
 /**
- * Keeps the screen of a phone or tablet on in the lobby and while a game is active, so the device does not sleep and drop the
- * connection. The browser releases the lock when the page is hidden, so the policy asks again when it is shown. After a
- * refusal it waits for the next time the page is shown or the game starts, so a render does not ask again.
+ * Keeps the screen of a phone or tablet on while it is active, so the device does not sleep and drop the connection. The
+ * browser releases the lock when the page is hidden, so the policy asks again when it is shown. After a refusal it waits
+ * for the next time the page is shown or the policy becomes active, so a render does not ask again.
  */
 export class WakeLockPolicy {
 	readonly #port: WakeLockPort;
@@ -45,7 +45,7 @@ export class WakeLockPolicy {
 		this.#port = port;
 	}
 
-	/** Active: the lobby, or the bidding or the play of a board, is on the table. */
+	/** Active: the page must keep the screen on. */
 	update(active: boolean): void {
 		if (active === this.#active) return;
 		this.#active = active;
