@@ -5,6 +5,31 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="referrer" content="no-referrer" />
 		<title>OpenTrick</title>
+		<script>
+			// Shows the saved theme before the first paint, so a dark palette does not start light. src/ui/theme.ts
+			// applies the same choice again and follows the system preference; the storage names and the choices are
+			// those of src/ui/settings.ts, and the first choice is the default. Stored text is untrusted: only a listed
+			// choice reaches the data attributes.
+			(() => {
+				const read = (name, choices) => {
+					try {
+						const value = localStorage.getItem(`opentrick.settings.${name}`);
+						return choices.includes(value) ? value : choices[0];
+					} catch {
+						return choices[0];
+					}
+				};
+				const root = document.documentElement;
+				const scheme = read("scheme", ["auto", "light", "dark"]);
+				root.dataset.theme = read("theme-style", ["normal", "solarized"]);
+				root.dataset.scheme =
+					scheme !== "auto"
+						? scheme
+						: matchMedia("(prefers-color-scheme: dark)").matches
+							? "dark"
+							: "light";
+			})();
+		</script>
 	</head>
 	<body>
 		<main id="app">Loading…</main>

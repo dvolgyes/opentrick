@@ -318,3 +318,52 @@ test("the portrait choice gives a portrait window the mobile view, and Save appl
 	await expect(dialog).toBeHidden();
 	await expect(room).toHaveAttribute("data-form", "compact");
 });
+
+test("the page starts in the saved theme before its script runs, as the app shows it", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const cases = [
+		[{}, "light", "normal", "light"],
+		[{}, "dark", "normal", "dark"],
+		[
+			{ "theme-style": "solarized", scheme: "auto" },
+			"dark",
+			"solarized",
+			"dark",
+		],
+		[
+			{ "theme-style": "solarized", scheme: "light" },
+			"dark",
+			"solarized",
+			"light",
+		],
+		[{ "theme-style": "normal", scheme: "dark" }, "light", "normal", "dark"],
+		[{ "theme-style": "<b>x</b>", scheme: "dim" }, "dark", "normal", "dark"],
+	] as const;
+	for (const [stored, system, theme, scheme] of cases) {
+		await page.emulateMedia({ colorScheme: system });
+		await page.evaluate((values) => {
+			localStorage.clear();
+			for (const [name, value] of Object.entries(values))
+				localStorage.setItem(`opentrick.settings.${name}`, value);
+		}, stored);
+		const shown = () =>
+			page.evaluate(() => [
+				document.documentElement.dataset.theme,
+				document.documentElement.dataset.scheme,
+			]);
+		const label = `${JSON.stringify(stored)} with a ${system} system`;
+		// Without the app script, only the inline script of index.html can set the palette.
+		await page.route("**/*.js", (route) => route.abort());
+		await page.reload();
+		expect(await shown(), `${label}, before the app runs`).toEqual([
+			theme,
+			scheme,
+		]);
+		await page.unroute("**/*.js");
+		await page.reload();
+		await expect(page.getByTestId("create")).toBeVisible();
+		expect(await shown(), `${label}, in the app`).toEqual([theme, scheme]);
+	}
+});
