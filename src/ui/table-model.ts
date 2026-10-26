@@ -340,9 +340,14 @@ export interface UndoPanelView {
 	readonly canCancel: boolean;
 }
 
+/** The most remaining tricks for which "Claim …" offers a button for each count. "Claim all" stays for more. */
+export const CLAIM_CHOICE_MAX = 5;
+
 export interface ClaimPanelView {
 	readonly canRequest: boolean;
 	readonly maxTricks: number;
+	/** True during play when CLAIM_CHOICE_MAX tricks or fewer remain, so the table offers "Claim …". */
+	readonly choosable: boolean;
 	readonly requestId: string | undefined;
 	readonly requester: string;
 	readonly tricks: number;
@@ -482,6 +487,7 @@ const EMPTY: Omit<TableView, "phase" | "prompt"> = {
 	claim: {
 		canRequest: false,
 		maxTricks: 0,
+		choosable: false,
 		requestId: undefined,
 		requester: "",
 		tricks: 0,
@@ -1008,12 +1014,13 @@ function claimPanelView(
 ): ClaimPanelView {
 	const pending = state.claim;
 	const board = state.board;
+	const status = board ? boardStatus(board) : undefined;
+	const remaining = status?.phase === "play" ? 13 - status.tricks.length : 0;
+	const choosable = remaining > 0 && remaining <= CLAIM_CHOICE_MAX;
 	if (!pending) {
 		const sending = outbox.some(
 			(item) => item.payload.type === "claim-request",
 		);
-		const status = board ? boardStatus(board) : undefined;
-		const maxTricks = status?.phase === "play" ? 13 - status.tricks.length : 0;
 		return {
 			canRequest:
 				!terminal &&
@@ -1024,7 +1031,8 @@ function claimPanelView(
 				status?.phase === "play" &&
 				status.actor === seat &&
 				status.contract.declarer === seat,
-			maxTricks,
+			maxTricks: remaining,
+			choosable,
 			requestId: undefined,
 			requester: "",
 			tricks: 0,
@@ -1056,6 +1064,7 @@ function claimPanelView(
 	return {
 		canRequest: false,
 		maxTricks: 0,
+		choosable,
 		requestId: pending.id,
 		requester,
 		tricks: pending.tricks,

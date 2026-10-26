@@ -418,6 +418,7 @@ export class Follower {
 			features: [
 				APPLICATION_FEATURES.bridgeUndo,
 				APPLICATION_FEATURES.bridgeClaim,
+				APPLICATION_FEATURES.bridgeClaimNone,
 				APPLICATION_FEATURES.bridgeReset,
 				CLIENT_REPORT_FEATURE,
 				ROUND_TRIP_FEATURE,

@@ -523,8 +523,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"E-W not vulnerable": "O-W nicht in Gefahr",
 		vulnerable: "in Gefahr",
 		"not vulnerable": "nicht in Gefahr",
-		"Choose how many of the {count} remaining tricks you claim.":
-			"Wähle, wie viele der {count} verbleibenden Tricks du beanspruchst.",
+		"How many of the remaining {count} tricks will you take?":
+			"Wie viele der verbleibenden {count} Stiche machst du?",
 		"Confirm that you claim all {count} remaining tricks.":
 			"Bestätige, dass du alle {count} verbleibenden Tricks beanspruchst.",
 		Undo: "Rückgängig machen",
@@ -1264,8 +1264,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{requester} kéri az utolsó {action} visszavonását. Jóváhagyod?",
 		"last played card": "utoljára kijátszott lap",
 		"last bid": "utolsó bid",
-		"Choose how many of the {count} remaining tricks you claim.":
-			"Válaszd ki, hányat igényelsz a hátralévő {count} Tricksből.",
+		"How many of the remaining {count} tricks will you take?":
+			"A hátralévő {count} ütésből hányat viszel el?",
 		"Confirm that you claim all {count} remaining tricks.":
 			"Erősítsd meg mind a hátralévő {count} Tricks igénylését.",
 		"YOUR TURN TO BID": "TE LICITÁLSZ",
@@ -1813,8 +1813,8 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Botene kunne ikke starte. Kontroller at denne siden er verten og er klar.",
 		"Check the bot models, retry count, and retry delay.":
 			"Kontroller botmodellene, antall forsøk og ventetiden mellom forsøk.",
-		"Choose how many of the {count} remaining tricks you claim.":
-			"Velg hvor mange av de {count} gjenværende stikkene du krever.",
+		"How many of the remaining {count} tricks will you take?":
+			"Hvor mange av de {count} gjenværende stikkene tar du?",
 		"Claim decision not sent: {reason}": "Kravet ble ikke sendt: {reason}",
 		"Confirm that you claim all {count} remaining tricks.":
 			"Bekreft at du krever alle de {count} gjenværende stikkene.",

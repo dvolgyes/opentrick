@@ -509,12 +509,12 @@ const rows: readonly TranslationRow[] = [
 		"Chicago (later)",
 	],
 	[
-		"Choose how many of the {count} remaining tricks you claim.",
-		"Elige cuántas de las {count} bazas restantes reclamas.",
-		"Escolha quantas das {count} vazas restantes reivindica.",
-		"Choisissez combien des {count} levées restantes vous réclamez.",
-		"Scegli quante delle {count} prese rimanenti rivendichi.",
-		"Kies hoeveel van de {count} resterende slagen je claimt.",
+		"How many of the remaining {count} tricks will you take?",
+		"¿Cuántas de las {count} bazas restantes harás?",
+		"Quantas das {count} vazas restantes vai fazer?",
+		"Combien des {count} levées restantes allez-vous faire ?",
+		"Quante delle {count} prese rimanenti farai?",
+		"Hoeveel van de {count} resterende slagen ga je maken?",
 	],
 	[
 		"Choose your seat",

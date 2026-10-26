@@ -2080,6 +2080,21 @@ button.call-join[data-in-call="true"] {
 	font-size: 0.9rem;
 }
 
+/* The claim counts from none to every remaining trick, in one row. */
+.claim-counts {
+	display: grid;
+	grid-auto-columns: minmax(0, 1fr);
+	grid-auto-flow: column;
+	gap: 0.3rem;
+}
+
+.claim-counts button {
+	min-width: 0;
+	margin: 0;
+	padding: 0.25rem 0.2rem;
+	font-weight: 600;
+}
+
 .bid-actions .undo-message {
 	grid-column: 1 / -1;
 }
@@ -2111,7 +2126,8 @@ button.call-join[data-in-call="true"] {
 }
 
 .bid-levels button[aria-pressed="true"],
-.bid-calls button[aria-pressed="true"] {
+.bid-calls button[aria-pressed="true"],
+.claim-counts button[aria-pressed="true"] {
 	border-color: #e8b923;
 	box-shadow: inset 0 0 0 2px #e8b923;
 }
@@ -3671,12 +3687,10 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-auction-controls .claim-panel p,
-.mobile-auction-controls .claim-panel select,
 .mobile-auction-controls .claim-panel button {
 	margin: 0;
 }
 
-.mobile-auction-controls .claim-panel select,
 .mobile-auction-controls .claim-panel button {
 	min-height: 2.4rem;
 }

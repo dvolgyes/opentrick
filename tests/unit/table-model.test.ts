@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { type Board, createBoard, scoreBoard } from "../../src/bridge/engine";
+import {
+	applyAction,
+	type Board,
+	boardStatus,
+	createBoard,
+	legalActions,
+	scoreBoard,
+} from "../../src/bridge/engine";
 import { countHandPoints } from "../../src/bridge/hand-points";
 import {
 	actionPayload,
@@ -132,6 +139,20 @@ const NORTH_DECLARER_BOARD = bidding(BOARD, "1C P P P");
 const NORTH_DUMMY_TURN = playing(NORTH_DECLARER_BOARD, "S7");
 const NORTH_OWN_TURN = playing(NORTH_DECLARER_BOARD, "S7 S4 H3");
 
+/** Plays the first legal card until `count` tricks are complete. */
+function afterTricks(board: Board, count: number): Board {
+	let current = board;
+	while (boardStatus(current).tricks.length < count) {
+		const seat = boardStatus(current).actor;
+		const [action] = seat === undefined ? [] : legalActions(current, seat);
+		if (seat === undefined || !action) throw new Error("nobody can play");
+		const result = applyAction(current, seat, action);
+		if (!result.ok) throw new Error(result.reason);
+		current = result.board;
+	}
+	return current;
+}
+
 describe("text", () => {
 	it("writes cards, calls and commands as players read them", () => {
 		expect(cardText("ST")).toBe("♠10");
@@ -160,6 +181,25 @@ describe("table layout", () => {
 	it("lets a player ask to undo their last action while another player is to act", () => {
 		expect(view("N", bidding(BOARD, "1C")).undo.canRequest).toBe(true);
 		expect(view("E", LED).undo.canRequest).toBe(true);
+	});
+
+	it("offers the trick count choice only when five tricks or fewer remain", () => {
+		const six = afterTricks(NORTH_DECLARER_BOARD, 7);
+		const five = afterTricks(NORTH_DECLARER_BOARD, 8);
+		expect(view("N", six).claim).toMatchObject({
+			maxTricks: 6,
+			choosable: false,
+		});
+		expect(view("N", five).claim).toMatchObject({
+			maxTricks: 5,
+			choosable: true,
+		});
+		// The other seats see the choice too, but only the declarer can use it.
+		expect(view("E", five).claim).toMatchObject({
+			canRequest: false,
+			choosable: true,
+		});
+		expect(view("N", NORTH_DECLARER_BOARD).claim.choosable).toBe(false);
 	});
 
 	it("asks each player who must decide an undo or a claim, and tells the other players who must decide", () => {

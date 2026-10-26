@@ -169,6 +169,7 @@ function playView(): TableView {
 		claim: {
 			canRequest: true,
 			maxTricks: 12,
+			choosable: false,
 			requestId: undefined,
 			requester: "",
 			tricks: 0,
@@ -1528,7 +1529,12 @@ describe("compact play controls", () => {
 		const view = playView();
 		const { root } = renderMobile({
 			...view,
-			claim: { ...view.claim, canRequest: false },
+			claim: {
+				...view.claim,
+				canRequest: false,
+				maxTricks: 3,
+				choosable: true,
+			},
 		});
 		const controls = root.querySelector(".mobile-auction-controls");
 		const claim = [
@@ -1810,8 +1816,27 @@ describe("compact play controls", () => {
 		},
 	);
 
-	it("uses the desktop claim confirmation and undo vote handlers", () => {
-		const { root, handlers } = renderMobile(playView());
+	it("hides Claim … while more than five tricks remain, and keeps Claim all", () => {
+		const { root } = renderMobile(playView());
+		const buttons = [...root.querySelectorAll("button")];
+		const claim = buttons.find((button) => button.textContent === "Claim …");
+		const claimAll = buttons.find(
+			(button) => button.textContent === "Claim all",
+		);
+		expect(claim?.hidden).toBe(true);
+		expect(claimAll?.hidden).toBe(false);
+		expect(
+			root.querySelector<HTMLButtonElement>('[data-testid="claim-compact"]')
+				?.hidden,
+		).toBe(true);
+	});
+
+	it("asks how many of the remaining tricks the declarer takes, with a button for each count", () => {
+		const view = playView();
+		const { root, handlers } = renderMobile({
+			...view,
+			claim: { ...view.claim, maxTricks: 3, choosable: true },
+		});
 		const controls = root.querySelector<HTMLElement>(
 			".mobile-auction-controls",
 		);
@@ -1820,18 +1845,56 @@ describe("compact play controls", () => {
 		const claim = [...controls.querySelectorAll("button")].find(
 			(button) => button.textContent === "Claim …",
 		);
+		expect(claim?.hidden).toBe(false);
 		claim?.click();
 		const confirm = controls.querySelector<HTMLButtonElement>(
 			'[data-testid="claim-confirm"]',
 		);
-		const count = controls.querySelector<HTMLSelectElement>(
+		const counts = controls.querySelector<HTMLElement>(
 			'[data-testid="claim-count"]',
 		);
-		if (!confirm || !count) throw new Error("claim confirmation is missing");
-		count.value = "2";
-		count.dispatchEvent(new Event("change"));
+		if (!confirm || !counts) throw new Error("claim confirmation is missing");
+		expect(
+			controls.querySelector('[data-testid="claim-message"]')?.textContent,
+		).toBe("How many of the remaining 3 tricks will you take?");
+		const choices = [...counts.querySelectorAll("button")];
+		expect(choices.map((button) => button.textContent)).toEqual([
+			"0",
+			"1",
+			"2",
+			"3",
+		]);
+		// The first tap chooses the count; only Confirm claim sends it.
+		expect(confirm.disabled).toBe(true);
+		choices[0]?.click();
+		expect(handlers.claimRequest).not.toHaveBeenCalled();
+		expect(
+			[...counts.querySelectorAll("button")].map((button) =>
+				button.getAttribute("aria-pressed"),
+			),
+		).toEqual(["true", "false", "false", "false"]);
+		expect(confirm.disabled).toBe(false);
 		confirm.click();
-		expect(handlers.claimRequest).toHaveBeenCalledWith(1, 2);
+		expect(handlers.claimRequest).toHaveBeenCalledWith(1, 0);
+
+		const claimAll = [...controls.querySelectorAll("button")].find(
+			(button) => button.textContent === "Claim all",
+		);
+		claimAll?.click();
+		confirm.click();
+		expect(handlers.claimRequest).toHaveBeenLastCalledWith(1, 3);
+	});
+
+	it("uses the desktop claim confirmation and undo vote handlers", () => {
+		const { root, handlers } = renderMobile(playView());
+		const controls = root.querySelector<HTMLElement>(
+			".mobile-auction-controls",
+		);
+		if (!controls) throw new Error("mobile controls are missing");
+		const confirm = controls.querySelector<HTMLButtonElement>(
+			'[data-testid="claim-confirm"]',
+		);
+		if (!confirm) throw new Error("claim confirmation is missing");
 
 		const claimAll = [...controls.querySelectorAll("button")].find(
 			(button) => button.textContent === "Claim all",
@@ -2355,6 +2418,7 @@ describe("approval of an undo or a claim", () => {
 		claim: {
 			canRequest: false,
 			maxTricks: 0,
+			choosable: false,
 			requestId: "claim-1",
 			requester: "playerW",
 			tricks: 3,
