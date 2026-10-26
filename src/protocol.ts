@@ -4,6 +4,8 @@ export const PROTOCOL_VERSION = 1;
 export const APPLICATION_FEATURES = {
 	bridgeUndo: "bridge-undo-v1",
 	bridgeClaim: "bridge-claim-v1",
+	/** The page reads a claim of no tricks, which gives the defenders every remaining trick. */
+	bridgeClaimNone: "bridge-claim-none-v1",
 	bridgeReset: "bridge-reset-v1",
 } as const;
 

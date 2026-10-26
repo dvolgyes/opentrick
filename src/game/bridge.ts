@@ -275,8 +275,7 @@ function claimedResult(
 	const status = boardStatus(board);
 	if (status.phase !== "play" || status.contract === null) return undefined;
 	const remaining = 13 - status.tricks.length;
-	if (!isNonNegativeInteger(tricks) || tricks < 1 || tricks > remaining)
-		return undefined;
+	if (!isNonNegativeInteger(tricks) || tricks > remaining) return undefined;
 	const nsClaims = requester === "N" || requester === "S";
 	const tricksNS = status.tricksNS + (nsClaims ? tricks : remaining - tricks);
 	const declarerTricks =
@@ -851,6 +850,18 @@ function applyClaimRequest(
 	if (waiting) return waiting;
 	if (!canUseClaim(context, [context.seat, ...required]))
 		return reject("all opponents must use a version that supports claims");
+	// Every seat's page reads the stored claim, and an older page refuses a claim of no tricks.
+	if (
+		payload.tricks === 0 &&
+		!SEATS.every((seat) =>
+			context.features
+				?.get(seat)
+				?.includes(APPLICATION_FEATURES.bridgeClaimNone),
+		)
+	)
+		return reject(
+			"all players must use a version that supports claiming no tricks",
+		);
 	const claim: ClaimRequest = {
 		id: context.commandId,
 		board: board.number,

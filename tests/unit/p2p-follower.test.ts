@@ -235,6 +235,7 @@ describe("joining", () => {
 					features: [
 						"bridge-undo-v1",
 						"bridge-claim-v1",
+						"bridge-claim-none-v1",
 						"bridge-reset-v1",
 						"client-report-v1",
 						"round-trip-v1",
@@ -277,6 +278,7 @@ describe("joining", () => {
 				features: [
 					"bridge-undo-v1",
 					"bridge-claim-v1",
+					"bridge-claim-none-v1",
 					"bridge-reset-v1",
 					"client-report-v1",
 					"round-trip-v1",
