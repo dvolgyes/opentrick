@@ -40,7 +40,7 @@ const heldLocks = (page: Page): Promise<number> =>
 				.held,
 	);
 
-test("a page that waits for the host keeps the screen on and asks to stay in front, on the seat page and after it takes a seat", async ({
+test("a page that waits for the host keeps the screen on, and asks to stay in front only after it takes a seat", async ({
 	browser,
 	baseURL,
 }) => {
@@ -58,7 +58,8 @@ test("a page that waits for the host keeps the screen on and asks to stay in fro
 		await expect(page.getByTestId("pick-N")).toBeVisible({
 			timeout: CONNECT_MS,
 		});
-		await expect(page.getByTestId("keep-open")).toBeVisible();
+		// Taking a seat opens the table, so the seat page does not ask the player to stay on it.
+		await expect(page.getByTestId("keep-open")).toHaveCount(0);
 		await expect.poll(() => heldLocks(page)).toBe(1);
 
 		await pick(page, "N");

@@ -96,11 +96,6 @@ export function showTable(
 		className: "status",
 		attrs: { "data-testid": "connection-summary" },
 	});
-	const keepOpen = el(
-		"p",
-		{ className: "note", attrs: { "data-testid": "keep-open" } },
-		deps.t(TEXT.keepOpen),
-	);
 	const network = networkPanel(deps.t);
 	// A phone that sleeps on the seat page stops the page, and the host cannot reach it. The room holds its own lock.
 	const wakeLock = new WakeLockPolicy(screenWakeLock);
@@ -410,7 +405,7 @@ export function showTable(
 				const parts: (Node | string)[] = [];
 				if (screen.choices !== undefined)
 					parts.push(el("h1", {}, deps.t("Choose your seat")));
-				parts.push(status, summary, keepOpen);
+				parts.push(status, summary);
 				if (deps.storageProblem !== undefined)
 					parts.push(
 						el(
