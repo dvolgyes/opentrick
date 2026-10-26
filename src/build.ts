@@ -15,6 +15,44 @@ const COMMIT_PATTERN = /^(?:[0-9a-f]{4,40}|unknown)$/;
 const DATE_PATTERN =
 	/^(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})|unknown)$/;
 
+/** Git commit dates are the only release ordering, independent of the browser clock. */
+export function isBuildDate(value: unknown): value is string {
+	return (
+		typeof value === "string" &&
+		DATE_PATTERN.test(value) &&
+		Number.isFinite(Date.parse(value))
+	);
+}
+
+export function newerBuildDate(local: string, remote: string): boolean {
+	return (
+		isBuildDate(local) &&
+		isBuildDate(remote) &&
+		Date.parse(remote) > Date.parse(local)
+	);
+}
+
+export const UPDATE_DATE_PARAM = "update_to";
+
+/** Retry once per advertised date; preserve the room key in the fragment. */
+export function updateUrl(
+	pageUrl: string,
+	local: string,
+	remote: string,
+): string | undefined {
+	if (!newerBuildDate(local, remote)) return undefined;
+	const url = new URL(pageUrl);
+	const attempted = url.searchParams.get(UPDATE_DATE_PARAM);
+	if (
+		attempted &&
+		isBuildDate(attempted) &&
+		Date.parse(attempted) >= Date.parse(remote)
+	)
+		return undefined;
+	url.searchParams.set(UPDATE_DATE_PARAM, remote);
+	return url.toString();
+}
+
 export function isBuildInfo(value: unknown): value is BuildInfo {
 	return (
 		isObject(value) &&

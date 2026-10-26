@@ -1,3 +1,4 @@
+import { initialPlayers, type PlayerProfiles, playersFor } from "../players";
 import {
 	envelopeEvent,
 	type JsonObject,
@@ -90,6 +91,11 @@ export class LocalLog {
 		return table
 			? { rev: table.rev, lastAuth: table.lastAuth }
 			: EMPTY_POSITION;
+	}
+
+	/** All writes queued before this call are durable when it resolves. */
+	async drain(): Promise<void> {
+		await this.#queue;
 	}
 
 	entry(seq: number): Entry | undefined {
@@ -195,11 +201,34 @@ export function seatsAfter(
 ): SeatHolder[] {
 	const rows = new Map(seats.map((row) => [row.seat, row]));
 	for (const entry of entries) {
-		if (entry.kind !== "seat") continue;
+		if (entry.kind !== "seat" || entry.op.type === "rename") continue;
 		const holder = entry.op.type === "claim" ? entry.op.holder : null;
 		rows.set(entry.seat, { seat: entry.seat, holder, gen: entry.gen });
 	}
 	return SEATS.map((seat) => rows.get(seat) ?? { seat, holder: null, gen: 0 });
+}
+
+function playersAfter(
+	players: PlayerProfiles,
+	entries: readonly Entry[],
+): PlayerProfiles {
+	const result = { ...players };
+	for (const entry of entries) {
+		if (entry.kind !== "seat") continue;
+		const current = result[entry.seat];
+		const op = entry.op;
+		if (op.type === "rename")
+			result[entry.seat] = {
+				name: op.name,
+				askOnEntry: op.askOnEntry,
+				rev: entry.seq,
+			};
+		else if (op.type === "claim" && op.name !== undefined)
+			result[entry.seat] = { ...current, name: op.name, rev: entry.seq };
+		else if (op.type === "release" && current.askOnEntry)
+			result[entry.seat] = { ...current, name: "player", rev: entry.seq };
+	}
+	return result;
 }
 
 /** Ids of the replica's own commands in `entries`, which leave its outbox in the same transaction. */
@@ -215,7 +244,7 @@ export function seatEvent(
 	seq: number,
 	id: string,
 	seat: Seat,
-	change: "claim" | "release",
+	change: "claim" | "release" | "rename",
 	by: Seat = seat,
 ): JsonObject {
 	return envelopeEvent(
@@ -241,6 +270,7 @@ export function appendCommit(
 			lastAuth: last.auth,
 			host: betterAuthority(last.auth, table.host),
 			seats: seatsAfter(table.seats, append),
+			players: playersAfter(playersFor(table), append),
 			lastActivityAt: now,
 		},
 		expect: { rev: table.rev, host: table.host },
@@ -284,6 +314,7 @@ export function replaceCommit(
 			inc: current?.inc ?? 0,
 			lastActivityAt: next.lastActivityAt,
 			seats: seatsAfter(NO_SEATS, next.entries),
+			players: playersAfter(initialPlayers(next.config), next.entries),
 		},
 		expect: current ? { rev: current.rev, host: current.host } : null,
 		...(current ? { replace: true } : {}),
@@ -296,6 +327,7 @@ export interface Creation {
 	readonly tableId: string;
 	readonly seat: Seat;
 	readonly holder: string;
+	readonly name?: string;
 	readonly config: RoomConfig;
 	readonly state: JsonObject;
 	/** Term 1 with the creator's tag. */
@@ -314,7 +346,10 @@ export interface Creation {
 /** The creator's first commit (rule 11): entry 1 claims its seat, and it hosts term 1. */
 export function creationCommit(input: Creation): Commit {
 	const { tableId, seat, holder, auth, id } = input;
-	const claims = [{ seat, holder, id }, ...(input.botClaims ?? [])];
+	const claims = [
+		{ seat, holder, id, name: input.name },
+		...(input.botClaims ?? []),
+	];
 	if (
 		claims.some((claim, index) =>
 			claims.slice(0, index).some((prior) => prior.seat === claim.seat),
@@ -331,7 +366,13 @@ export function creationCommit(input: Creation): Commit {
 			seat: claim.seat,
 			gen: 1,
 			kind: "seat",
-			op: { type: "claim", holder: claim.holder },
+			op: {
+				type: "claim",
+				holder: claim.holder,
+				...("name" in claim && claim.name !== undefined
+					? { name: claim.name }
+					: {}),
+			},
 			event: seatEvent(tableId, seq, claim.id, claim.seat, "claim"),
 		};
 	});
@@ -349,6 +390,7 @@ export function creationCommit(input: Creation): Commit {
 			inc: auth.inc,
 			lastActivityAt: input.now,
 			seats: seatsAfter(NO_SEATS, entries),
+			players: playersAfter(initialPlayers(input.config), entries),
 		},
 		expect: null,
 		append: entries,

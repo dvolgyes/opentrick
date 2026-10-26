@@ -121,10 +121,10 @@ export class Replication {
 	}
 
 	/** A visitor chose a seat; the page holds its lock and opened its partition. */
-	choose(seated: Seated): void {
+	choose(seated: Seated, name?: string): void {
 		if (this.#log) throw new Error("this page already has a seat");
 		this.#seat(seated);
-		this.follower.choose(seated.log.seat, seated.log);
+		this.follower.choose(seated.log.seat, seated.log, name);
 	}
 
 	submit(payload: JsonObject): Promise<SubmitResult> {
@@ -204,6 +204,19 @@ export class Replication {
 
 	activateBots(seats: readonly import("../protocol").Seat[]): Promise<boolean> {
 		return this.#engine?.activateBots(seats) ?? Promise.resolve(false);
+	}
+
+	renameSeat(
+		seat: Seat,
+		name: string,
+		gen: number,
+		revision: number,
+		askOnEntry: boolean,
+	): Promise<boolean> {
+		return (
+			this.#engine?.renameSeat(seat, name, gen, revision, askOnEntry) ??
+			Promise.resolve(false)
+		);
 	}
 
 	setBotSeat(
@@ -324,6 +337,14 @@ export class Replication {
 		}
 		this.#autoplayPending.clear();
 		this.#outbox?.dispose();
+	}
+
+	/** Settle the captured writers even if disposal removes the live engine reference. */
+	async drain(): Promise<void> {
+		const engine = this.#engine;
+		await this.#outbox?.drain();
+		await engine?.drain();
+		await this.#log?.drain();
 	}
 
 	// -------------------------------------------------------------------------------------------------------

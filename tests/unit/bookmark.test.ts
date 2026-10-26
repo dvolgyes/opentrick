@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { initialPlayers } from "../../src/players";
 import {
 	bookmarkQuery,
 	botSeatsQuery,
@@ -10,6 +11,34 @@ import {
 } from "../../src/ui/bookmark";
 
 describe("parseBookmark", () => {
+	it("normalizes Unicode names and refuses control characters from a link", () => {
+		expect(
+			parseBookmark(
+				`?north=${encodeURIComponent("Ce\u0301line")}&east=${encodeURIComponent("Alice\nBob")}`,
+			),
+		).toEqual({ names: { N: "Céline" } });
+	});
+	it("shares current fixed names and self-naming markers without a reload-attempt flag", () => {
+		const profiles = {
+			...initialPlayers({
+				scoring: "duplicate",
+				names: { N: "North", E: "East", S: "South", W: "West" },
+			}),
+			E: { name: "Dana", askOnEntry: false, rev: 2 },
+			W: { name: "Alice", askOnEntry: true, rev: 3 },
+		};
+		const query = new URLSearchParams(
+			sharedQuery(
+				"?north=old&host=south&selected_player=N&update_to=2026-10-26T12:00:00Z",
+				profiles,
+			),
+		);
+		expect(query.get("east")).toBe("Dana");
+		expect(query.get("west")).toBe("player");
+		expect(query.get("host")).toBe("south");
+		expect(query.get("selected_player")).toBe("none");
+		expect(query.has("update_to")).toBe(false);
+	});
 	it("reads the four names and the host seat by direction", () => {
 		expect(
 			parseBookmark("?north=ann&east=zsdh&south=bo&west=dvolgyes&host=west"),

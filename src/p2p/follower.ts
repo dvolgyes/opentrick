@@ -134,6 +134,7 @@ export class Follower {
 	#log: LocalLog | null;
 	/** The seat to claim when the host knows this page as a visitor. */
 	#want: Seat | null;
+	#claimName: string | undefined;
 	#host: Followed | null = null;
 	#status: FollowerStatus = "idle";
 	/** This page's generation, restored from its local record and kept across host changes. */
@@ -247,9 +248,10 @@ export class Follower {
 	}
 
 	/** A visitor chose a seat; `log` is its partition (possibly empty). */
-	choose(seat: Seat, log: LocalLog): void {
+	choose(seat: Seat, log: LocalLog, name?: string): void {
 		if (log.seat !== seat) throw new Error("the log belongs to another seat");
 		this.#want = seat;
+		this.#claimName = name;
 		this.#log = log;
 		if (this.#status === "unseated") this.#claim();
 	}
@@ -479,11 +481,31 @@ export class Follower {
 		const lobby = this.#lobby;
 		if (!host || seat === null || !this.#log || this.#claimReq !== null) return;
 		if (!lobby || !sameAuthority(lobby.auth, host.auth)) return;
+		const row = lobby.seats.find((item) => item.seat === seat);
+		if (row?.needsName && this.#claimName === undefined) {
+			this.#deps.onEvent({
+				type: "seat-result",
+				result: {
+					k: "seat-result",
+					req: ++this.#req,
+					ok: false,
+					code: "name_required",
+				},
+			});
+			this.#want = null;
+			this.#setStatus("unseated");
+			return;
+		}
 		this.#claimReq = ++this.#req;
 		this.#deps.send.ctl(host.peer, {
 			k: "claim-seat",
 			req: this.#claimReq,
 			seat,
+			...(this.#claimName === undefined ? {} : { name: this.#claimName }),
+			...(row?.gen === undefined ? {} : { gen: row.gen }),
+			...(row?.nameRevision === undefined
+				? {}
+				: { nameRevision: row.nameRevision }),
 		});
 		this.#setStatus("claiming");
 	}

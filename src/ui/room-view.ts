@@ -33,6 +33,7 @@ import {
 import { chatPayload, checkMessageText } from "../game/chat";
 import { tableLink } from "../p2p/link";
 import type { TableController, TableStatus } from "../p2p/table";
+import type { PlayerProfiles } from "../players";
 import {
 	DEFAULT_BOT_SETUP,
 	type JsonObject,
@@ -73,6 +74,7 @@ import {
 import { networkPanel } from "./network";
 import { pageReport, type TableFacts } from "./page-report";
 import { pageTitle } from "./page-title";
+import { playerEditor } from "./player-editor";
 import { remoteAudio } from "./remote-audio";
 import { readSettings } from "./settings";
 import { settingsDialog } from "./settings-dialog";
@@ -95,9 +97,13 @@ const STATE_TEXT: Readonly<Record<RosterRow["state"], string>> = {
 	free: "Free",
 };
 
-function roomShareLink(pageUrl: string, key: string): string {
+function roomShareLink(
+	pageUrl: string,
+	key: string,
+	players?: PlayerProfiles,
+): string {
 	const page = new URL(pageUrl);
-	page.search = sharedQuery(page.search);
+	page.search = sharedQuery(page.search, players);
 	return tableLink(page.toString(), key);
 }
 
@@ -591,7 +597,13 @@ export function showRoom(
 			async shareUrl() {
 				if (navigator.share === undefined)
 					throw new Error("Web Share API is unavailable");
-				await navigator.share({ url: roomShareLink(deps.pageUrl(), key) });
+				await navigator.share({
+					url: roomShareLink(
+						deps.pageUrl(),
+						key,
+						controller.view().table?.players,
+					),
+				});
 			},
 			act(action) {
 				if (!shownBoard) return;
@@ -777,7 +789,9 @@ export function showRoom(
 		),
 		button(deps.t("Copy table link"), async () => {
 			try {
-				await navigator.clipboard.writeText(roomShareLink(deps.pageUrl(), key));
+				await navigator.clipboard.writeText(
+					roomShareLink(deps.pageUrl(), key, controller.view().table?.players),
+				);
 			} catch {
 				// This secondary link control has no status text.
 			}
@@ -789,7 +803,11 @@ export function showRoom(
 	const copyRoomLink = button(
 		deps.t(nativeShare ? "Share URL" : "Copy link"),
 		async () => {
-			const link = roomShareLink(deps.pageUrl(), key);
+			const link = roomShareLink(
+				deps.pageUrl(),
+				key,
+				controller.view().table?.players,
+			);
 			if (nativeShare) {
 				// The share starts before the first await, while the browser still counts the tap as the person's.
 				// A share that the person cancels is done too; a refused one copies the link instead.
@@ -867,6 +885,9 @@ export function showRoom(
 			actionError = deps.t("Reset not sent: {reason}", { reason });
 		});
 	});
+	const players = playerEditor(deps, controller, (target) =>
+		manageBotSeat(target, false),
+	);
 	const hostControls = el(
 		"dialog",
 		{
@@ -883,6 +904,14 @@ export function showRoom(
 			debug,
 			reloadPlayers,
 			reset,
+			button(
+				deps.t("Player names"),
+				() => {
+					hostControls.close();
+					players.open();
+				},
+				{ attrs: { "data-testid": "edit-player-names" } },
+			),
 		),
 		debugStatus,
 		el(
@@ -1068,7 +1097,7 @@ export function showRoom(
 		},
 	);
 	root.replaceChildren(room);
-	root.append(settings.element, hostControls);
+	root.append(settings.element, hostControls, players.element);
 	if (camera) root.append(camera.element);
 	if (initialBotSettings) void startHostBots();
 
@@ -1273,6 +1302,7 @@ export function showRoom(
 			rememberBotSeats(activeBots);
 		openHostControls.hidden = !view.hosting;
 		if (!view.hosting && hostControls.open) hostControls.close();
+		if (!view.hosting && players.element.open) players.element.close();
 		if (view.hosting) showPlayerBuilds(view.roster?.bots ?? []);
 		pauseBots.hidden =
 			!view.hosting || activeBots.length === 0 || botsPaused || !botRunner;

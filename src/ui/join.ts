@@ -1,4 +1,5 @@
 import type { HostBotSettings } from "../bot/host-runner";
+import { updateUrl } from "../build";
 import { bridgeModule } from "../game/bridge";
 import { newCommandId } from "../ids";
 import { randomNonce } from "../p2p/checks";
@@ -9,6 +10,7 @@ import {
 	type TableView,
 	tableIdentity,
 } from "../p2p/table";
+import { unnamedPlayer } from "../players";
 import { SEAT_NAMES, type Seat } from "../protocol";
 import type { RoomSetup } from "./bookmark";
 import type { AppDeps, Dispose, Navigation } from "./deps";
@@ -23,9 +25,11 @@ import {
 	storageNotice,
 	TEXT,
 } from "./model";
+import { nameEntry } from "./name-entry";
 import { networkPanel } from "./network";
 import { pageTitle } from "./page-title";
 import { showRoom } from "./room-view";
+import { seatGrid } from "./seat-grid";
 import { turnSound } from "./turn-sound";
 import { screenWakeLock, WakeLockPolicy } from "./wake-lock";
 
@@ -82,6 +86,8 @@ export function showTable(
 	 * device took this page's seat: its player is probably at that device now, so the page takes no seat that frees later.
 	 */
 	let autoTook = false;
+	let namePreferredSeat: Seat | undefined;
+	let updating = false;
 
 	const status = el("p", {
 		attrs: { role: "status", "data-testid": "table-status" },
@@ -129,8 +135,7 @@ export function showTable(
 		void open(false, async (table) => {
 			const view = table.view();
 			if (view.seat !== null) return;
-			const result = await table.choose(seat);
-			if (!result.ok) notice = chooseText(result.reason, deps.t);
+			await take(seat);
 		});
 	};
 
@@ -153,7 +158,53 @@ export function showTable(
 		opening = true;
 		identity ??= await tableIdentity(key, deps.browser);
 		if (disposed) return;
+		let preferred = seatHint;
+		if (
+			!asCreator &&
+			typeof seatHint === "string" &&
+			bootstrap &&
+			unnamedPlayer(bootstrap.config.names[seatHint])
+		) {
+			const cached = await deps.storage.load(identity.tableId, seatHint);
+			if (disposed) return;
+			const owns =
+				cached.ok &&
+				cached.value?.table.seats.some(
+					(row) => row.seat === seatHint && row.holder === identity?.holder,
+				);
+			if (!owns) {
+				preferred = null;
+				namePreferredSeat = seatHint;
+			}
+		}
 		const table = new TableController({
+			buildDate: deps.build.date,
+			onNewerBuild: (date) => {
+				if (updating || disposed) return;
+				const target = updateUrl(deps.pageUrl(), deps.build.date, date);
+				updating = true;
+				leaveRoom();
+				root.replaceChildren(
+					message(el("p", {}, deps.t("Updating this page…"))),
+				);
+				void table.prepareReload().then(() => {
+					if (disposed) return;
+					if (target) navigation.reload(date);
+					else
+						root.replaceChildren(
+							message(
+								el(
+									"p",
+									{},
+									deps.t(
+										"The website still serves an older build. Reload to try again.",
+									),
+								),
+								button(deps.t("Reload"), () => navigation.reload()),
+							),
+						);
+				});
+			},
 			identity,
 			storage: deps.storage,
 			locks: deps.locks,
@@ -168,7 +219,7 @@ export function showTable(
 			newId: newCommandId,
 			nonce: randomNonce,
 			creator: asCreator,
-			preferredSeat: seatHint,
+			preferredSeat: preferred,
 			bootstrap,
 		});
 		controller = table;
@@ -181,11 +232,39 @@ export function showTable(
 		render();
 	}
 
-	async function take(seat: Seat): Promise<void> {
+	async function take(seat: Seat, name?: string): Promise<void> {
 		const table = controller;
 		if (!table) return;
+		const view = table.view();
+		const row = view.lobby?.seats.find((item) => item.seat === seat);
+		const needsName =
+			row?.needsName ??
+			unnamedPlayer(
+				(view.lobby?.config ?? bootstrap?.config)?.names[seat] ?? "player",
+			);
+		if (needsName && name === undefined) {
+			nameEntry(root, deps, seat, (value) => {
+				const current = table
+					.view()
+					.lobby?.seats.find((item) => item.seat === seat);
+				if (
+					(row &&
+						(row.gen !== current?.gen ||
+							row.nameRevision !== current?.nameRevision)) ||
+					(!row &&
+						current &&
+						(!current.needsName || current.nameRevision !== 0))
+				) {
+					notice = deps.t("The seat changed. Choose it again.");
+					render();
+					return;
+				}
+				void take(seat, value);
+			});
+			return;
+		}
 		notice = undefined;
-		const result = await table.choose(seat);
+		const result = await table.choose(seat, name);
 		if (disposed || table !== controller) return;
 		if (!result.ok) notice = chooseText(result.reason, deps.t);
 		render();
@@ -193,8 +272,14 @@ export function showTable(
 
 	function render(): void {
 		const table = controller;
-		if (disposed || opening || !table) return;
+		if (disposed || updating || opening || !table) return;
 		const view = table.view();
+		if (
+			view.seat === null &&
+			view.seatError === "name_required" &&
+			typeof seatHint === "string"
+		)
+			namePreferredSeat = seatHint;
 		if (room !== undefined) {
 			// The room renders itself. It goes only when the host refused or dropped the seat, or another device took it.
 			if (view.status === "superseded" && view.supersededBy === "seat") {
@@ -255,6 +340,17 @@ export function showTable(
 			return;
 		}
 		renderLobby(screen, view);
+		if (
+			namePreferredSeat !== undefined &&
+			screen.kind === "lobby" &&
+			screen.choices?.some(
+				(choice) => choice.seat === namePreferredSeat && choice.free,
+			)
+		) {
+			const preferred = namePreferredSeat;
+			namePreferredSeat = undefined;
+			void take(preferred);
+		}
 	}
 
 	function renderLobby(screen: LobbyScreen, view: TableView): void {
@@ -289,6 +385,7 @@ export function showTable(
 			screen.kind === "lobby" ? { ...screen, status: undefined } : screen,
 			problem,
 		]);
+		if (root.querySelector('[data-testid="name-entry"]')) return;
 		if (signature === shown) return;
 		shown = signature;
 		root.replaceChildren(lobbyElement(screen, problem));
@@ -329,10 +426,8 @@ export function showTable(
 					);
 				if (screen.choices !== undefined) {
 					parts.push(
-						el(
-							"div",
-							{ className: "choices" },
-							...screen.choices.map((choice) => {
+						seatGrid(
+							screen.choices.map((choice) => {
 								const pick = button(
 									choice.label,
 									() => void take(choice.seat),
@@ -341,7 +436,7 @@ export function showTable(
 									},
 								);
 								pick.disabled = !choice.free;
-								return pick;
+								return { seat: choice.seat, element: pick };
 							}),
 						),
 					);
@@ -368,6 +463,7 @@ export function showTable(
 	/** A start link seats its host directly. A seat that another device holds leaves the lobby with a notice. */
 	const claimHint = async (table: TableController): Promise<void> => {
 		if (seatHint === undefined || seatHint === null) return;
+		if (namePreferredSeat !== undefined) return;
 		const view = table.view();
 		if (view.seat !== null) return;
 		const result = await table.choose(seatHint);

@@ -83,6 +83,7 @@ export class Outbox {
 	#target: Target | null = null;
 	#stopped = false;
 	#order: number;
+	readonly #writes = new Set<Promise<SubmitResult>>();
 
 	constructor(
 		deps: OutboxDeps,
@@ -122,7 +123,17 @@ export class Outbox {
 	}
 
 	/** Stores the command, then sends it when a host is connected. */
-	async submit(id: string, payload: JsonObject): Promise<SubmitResult> {
+	submit(id: string, payload: JsonObject): Promise<SubmitResult> {
+		const pending = this.#submit(id, payload);
+		this.#writes.add(pending);
+		return pending.finally(() => this.#writes.delete(pending));
+	}
+
+	async drain(): Promise<void> {
+		await Promise.all(this.#writes);
+	}
+
+	async #submit(id: string, payload: JsonObject): Promise<SubmitResult> {
 		if (this.#items.size >= MAX_OUTBOX) return { ok: false, code: "full" };
 		const order = this.#order++;
 		const stored = await this.#deps.storage.putOutbox({

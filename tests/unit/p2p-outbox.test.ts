@@ -112,6 +112,40 @@ class Rig {
 	}
 }
 
+it("drains a pending command to storage before a reload, even after the sender is stopped", async () => {
+	const rig = await Rig.open();
+	const put = rig.storage.putOutbox.bind(rig.storage);
+	let release: (() => void) | undefined;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	rig.storage.putOutbox = async (record) => {
+		await gate;
+		return put(record);
+	};
+	const payload = { text: "pending across reload" };
+	const sent = rig.outbox.submit(commandId(50), payload);
+	let durable = false;
+	const drained = rig.outbox.drain().then(() => {
+		durable = true;
+	});
+	rig.outbox.dispose();
+	await settle();
+	expect(durable).toBe(false);
+	release?.();
+	expect(await sent).toEqual({ ok: true });
+	await drained;
+	const opened = await openLog(rig.storage, TABLE, "N");
+	if (!opened.ok) throw new Error(opened.detail);
+	expect(opened.value.outbox).toMatchObject([{ id: commandId(50), payload }]);
+	const restored = new Rig(rig.storage, opened.value.log, [
+		...opened.value.outbox,
+	]);
+	restored.outbox.connect(TARGET);
+	expect(restored.sentIds()).toEqual([commandId(50)]);
+	restored.outbox.dispose();
+});
+
 describe("submit", () => {
 	it("stores the command before it sends it", async () => {
 		const rig = await Rig.open();

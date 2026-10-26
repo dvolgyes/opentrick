@@ -23,6 +23,17 @@ export const SEAT_NAMES: Readonly<Record<Seat, string>> = {
 
 export const MAX_NAME_LENGTH = 40;
 
+export function isPlayerName(value: unknown): value is string {
+	return (
+		typeof value === "string" &&
+		value.trim() === value &&
+		value.normalize("NFC") === value &&
+		value.length > 0 &&
+		Array.from(value).length <= MAX_NAME_LENGTH &&
+		!/\p{Cc}/u.test(value)
+	);
+}
+
 export type Scoring = "duplicate";
 
 export const LOCAL_BIDDERS = ["sl", "rl-fsp"] as const;
@@ -58,7 +69,7 @@ export function isSeat(value: unknown): value is Seat {
 	);
 }
 
-/** Seat names containing "bot" or "robot" are reserved for an automated bridge player. */
+/** Older setup links identify automated players by name; explicit bot flags take priority in new rooms. */
 export function isBotName(name: string): boolean {
 	return /bot|robot/i.test(name);
 }
@@ -72,7 +83,7 @@ export function parseRoomConfig(value: unknown): RoomConfig | undefined {
 	const names: Partial<Record<Seat, string>> = {};
 	for (const seat of SEATS) {
 		const name = value.names[seat];
-		if (typeof name !== "string" || name.length === 0) return undefined;
+		if (!isPlayerName(name)) return undefined;
 		names[seat] = name;
 	}
 	const { scoring } = value;

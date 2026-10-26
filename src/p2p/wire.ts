@@ -1,10 +1,11 @@
-import { type BuildInfo, isBuildInfo } from "../build";
+import { type BuildInfo, isBuildDate, isBuildInfo } from "../build";
 import {
 	type CallMessage,
 	MAX_GENERATION,
 	parseCallMessage,
 } from "../call/messages";
 import { isCommandId } from "../ids";
+import { playerName } from "../players";
 import {
 	isNonNegativeInteger,
 	isObject,
@@ -70,6 +71,12 @@ export interface Hello {
 	readonly features?: readonly string[];
 }
 
+/** Exchanged directly whenever a peer connection opens, independently of host election. */
+export interface BuildDate {
+	readonly k: "build-date";
+	readonly date: string;
+}
+
 export type WelcomeStatus =
 	| "bound"
 	| "unseated"
@@ -92,6 +99,9 @@ export interface Welcome {
 
 export interface LobbySeat {
 	readonly seat: Seat;
+	readonly gen?: number;
+	readonly nameRevision?: number;
+	readonly needsName?: boolean;
 	/** Free, released, timed out, or held by the receiver's own holder with no connected peer on it. */
 	readonly available: boolean;
 	readonly online: boolean;
@@ -114,9 +124,19 @@ export interface ClaimSeat {
 	readonly k: "claim-seat";
 	readonly req: number;
 	readonly seat: Seat;
+	readonly name?: string;
+	readonly gen?: number;
+	readonly nameRevision?: number;
 }
 
-export type SeatCode = "taken" | "invalid" | "expired" | "storage" | "not_host";
+export type SeatCode =
+	| "taken"
+	| "invalid"
+	| "expired"
+	| "storage"
+	| "not_host"
+	| "name_required"
+	| "stale";
 
 export type SeatResult =
 	| {
@@ -325,6 +345,7 @@ export interface RoundTripReport {
 }
 
 export type CtlMessage =
+	| BuildDate
 	| Hello
 	| Welcome
 	| Lobby
@@ -350,8 +371,14 @@ export type CtlMessage =
 	| RoundTripReport;
 
 export type SeatOp =
-	| { readonly type: "claim"; readonly holder: string }
-	| { readonly type: "release"; readonly by: Seat };
+	| { readonly type: "claim"; readonly holder: string; readonly name?: string }
+	| { readonly type: "release"; readonly by: Seat }
+	| {
+			readonly type: "rename";
+			readonly by: Seat;
+			readonly name: string;
+			readonly askOnEntry: boolean;
+	  };
 
 interface EntryBase {
 	readonly seq: number;
@@ -615,11 +642,24 @@ function parseLobbySeat(item: JsonObject): LobbySeat | undefined {
 	) {
 		return undefined;
 	}
+	if (
+		(item.gen !== undefined && !isSeatGeneration(item.gen)) ||
+		(item.nameRevision !== undefined && !isRevision(item.nameRevision)) ||
+		(item.needsName !== undefined && typeof item.needsName !== "boolean")
+	)
+		return undefined;
 	return {
 		seat,
 		available,
 		online,
 		mine,
+		...(item.gen === undefined ? {} : { gen: item.gen as number }),
+		...(item.nameRevision === undefined
+			? {}
+			: { nameRevision: item.nameRevision as number }),
+		...(item.needsName === undefined
+			? {}
+			: { needsName: item.needsName as boolean }),
 		...(host === true ? { host } : {}),
 		...(bot === true ? { bot } : {}),
 	};
@@ -652,12 +692,31 @@ function parseBindings(
 function parseSeatOp(value: unknown): SeatOp | undefined {
 	if (!isObject(value)) return undefined;
 	if (value.type === "claim") {
+		if (value.name !== undefined && playerName(value.name) !== value.name)
+			return undefined;
 		return isHolder(value.holder)
-			? { type: "claim", holder: value.holder }
+			? {
+					type: "claim",
+					holder: value.holder,
+					...(value.name === undefined ? {} : { name: value.name as string }),
+				}
 			: undefined;
 	}
 	if (value.type === "release") {
 		return isSeat(value.by) ? { type: "release", by: value.by } : undefined;
+	}
+	if (value.type === "rename") {
+		return isSeat(value.by) &&
+			typeof value.name === "string" &&
+			playerName(value.name) === value.name &&
+			typeof value.askOnEntry === "boolean"
+			? {
+					type: "rename",
+					by: value.by,
+					name: value.name as string,
+					askOnEntry: value.askOnEntry,
+				}
+			: undefined;
 	}
 	return undefined;
 }
@@ -670,7 +729,7 @@ export function parseEntry(value: unknown): Entry | undefined {
 		!isSequence(seq) ||
 		!isCommandId(id) ||
 		!isSeat(seat) ||
-		!isGeneration(gen)
+		!isSeatGeneration(gen)
 	)
 		return undefined;
 	const auth = parseAuthority(value.auth);
@@ -687,6 +746,7 @@ export function parseEntry(value: unknown): Entry | undefined {
 	if (!isJsonObjectWithin(event, MAX_EVENT_BYTES)) return undefined;
 	const base = { seq, auth, prevAuth, id, seat, gen, event };
 	if (kind === "cmd") {
+		if (gen === 0) return undefined;
 		const { payload } = value;
 		return isJsonObjectWithin(payload, MAX_PAYLOAD_BYTES)
 			? { ...base, kind, payload }
@@ -694,7 +754,9 @@ export function parseEntry(value: unknown): Entry | undefined {
 	}
 	if (kind === "seat") {
 		const op = parseSeatOp(value.op);
-		return op && { ...base, kind, op };
+		return op && (op.type === "rename" || gen > 0)
+			? { ...base, kind, op }
+			: undefined;
 	}
 	return undefined;
 }
@@ -737,6 +799,8 @@ const WELCOME_STATUSES: readonly WelcomeStatus[] = [
 	"incompatible",
 ];
 const SEAT_CODES: readonly SeatCode[] = [
+	"name_required",
+	"stale",
 	"taken",
 	"invalid",
 	"expired",
@@ -823,8 +887,23 @@ const parseLobby: Parser<Lobby> = (value) => {
 
 const parseClaimSeat: Parser<ClaimSeat> = (value) => {
 	const { req, seat } = value;
+	if (
+		(value.name !== undefined && playerName(value.name) !== value.name) ||
+		(value.gen !== undefined && !isSeatGeneration(value.gen)) ||
+		(value.nameRevision !== undefined && !isRevision(value.nameRevision))
+	)
+		return undefined;
 	return isRequest(req) && isSeat(seat)
-		? { k: "claim-seat", req, seat }
+		? {
+				k: "claim-seat",
+				req,
+				seat,
+				...(value.name === undefined ? {} : { name: value.name as string }),
+				...(value.gen === undefined ? {} : { gen: value.gen as number }),
+				...(value.nameRevision === undefined
+					? {}
+					: { nameRevision: value.nameRevision as number }),
+			}
 		: undefined;
 };
 
@@ -1120,6 +1199,13 @@ const parseLinks: Parser<Links> = (value) => {
 };
 
 const CTL_PARSERS = new Map<string, Parser<CtlMessage>>([
+	[
+		"build-date",
+		(value) =>
+			isBuildDate(value.date)
+				? { k: "build-date", date: value.date }
+				: undefined,
+	],
 	["hello", parseHello],
 	["welcome", parseWelcome],
 	["lobby", parseLobby],

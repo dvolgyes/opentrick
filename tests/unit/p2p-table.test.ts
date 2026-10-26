@@ -49,6 +49,13 @@ class FakeLocks implements SeatLocks {
 }
 
 class Rig {
+	readonly newerBuilds: string[] = [];
+	readonly version = {
+		buildDate: "2026-10-24T12:00:00Z",
+		onNewerBuild: (date: string) => {
+			this.newerBuilds.push(date);
+		},
+	};
 	readonly clock = new VirtualClock();
 	readonly storage = new TestStorage();
 	readonly locks = new FakeLocks();
@@ -104,6 +111,7 @@ class Rig {
 			tick: () => {},
 		};
 		const controller = new TableController({
+			...this.version,
 			identity: { tableId: TABLE, client: CLIENT, holder },
 			storage: this.storage,
 			locks: this.locks,
@@ -143,6 +151,33 @@ beforeEach(() => {
 	rig = new Rig();
 });
 afterEach(() => rig.controller?.stop());
+
+describe("reconnect build dates", () => {
+	it("announces its Git date on each connection and only the older page asks to reload", async () => {
+		await rig.start(null);
+		const peer = "peer0000000000000000";
+		rig.handlers?.join(peer);
+		expect(rig.sentTo).toContainEqual({
+			to: peer,
+			message: { k: "build-date", date: "2026-10-24T12:00:00Z" },
+		});
+		const announce = (date: string) =>
+			rig.handlers?.ctl(peer, {
+				k: "build-date",
+				date,
+			} as unknown as CtlMessage);
+		announce("2026-10-23T12:00:00Z");
+		announce("2026-10-24T14:00:00+02:00");
+		expect(rig.newerBuilds).toEqual([]);
+		announce("2026-10-25T12:00:00Z");
+		expect(rig.newerBuilds).toEqual(["2026-10-25T12:00:00Z"]);
+		rig.handlers?.leave(peer);
+		rig.handlers?.join(peer);
+		expect(
+			rig.sentTo.filter((item) => item.message.k === "build-date"),
+		).toHaveLength(2);
+	});
+});
 
 describe("table controller seat from the URL", () => {
 	it("reopens the remembered seat when the URL names no seat", async () => {

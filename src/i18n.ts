@@ -1,3 +1,4 @@
+import { playerCatalogs } from "./i18n-players";
 import { additionalCatalogs } from "./i18n-translations";
 
 export type Locale =
@@ -23,7 +24,7 @@ export const englishTranslator: Translate = (message, values = {}) =>
 		String(values[key] ?? placeholder),
 	);
 
-const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
+const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 	de: {
 		Language: "Sprache",
 		Automatic: "Automatisch",
@@ -1903,6 +1904,13 @@ const catalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 	},
 	...additionalCatalogs,
 };
+
+const catalogs = Object.fromEntries(
+	Object.entries(baseCatalogs).map(([locale, catalog]) => [
+		locale,
+		{ ...catalog, ...playerCatalogs[locale as Exclude<Locale, "en">] },
+	]),
+) as Readonly<Record<Exclude<Locale, "en">, Catalog>>;
 
 export const translatedMessageKeys = [
 	...new Set(

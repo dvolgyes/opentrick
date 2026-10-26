@@ -1,8 +1,9 @@
 import { botSeatClaims } from "../bot/seats";
-import type { BuildInfo } from "../build";
+import { type BuildInfo, isBuildDate, newerBuildDate } from "../build";
 import type { CallRoomSnapshot } from "../call/mesh";
 import type { CallTransport } from "../call/signaling";
 import type { GameModule } from "../game/module";
+import { playerConfig } from "../players";
 import {
 	type JsonObject,
 	type RoomConfig,
@@ -168,6 +169,8 @@ export type TableMesh = Pick<
 >;
 
 export interface TableDeps {
+	readonly buildDate?: string;
+	readonly onNewerBuild?: (date: string) => void;
 	readonly identity: TableIdentity;
 	readonly storage: TableStorage;
 	readonly locks: SeatLocks;
@@ -298,6 +301,8 @@ export class TableController {
 	readonly #paths = new Map<string, PathTypes | null>();
 	readonly #call: MeshCallTransport;
 	#mesh: TableMesh | null = null;
+	#claimName: string | undefined;
+	#newerDate: string | undefined;
 	/**
 	 * The latest roster from the host engine or the followed host. A follower has none during a host change; the
 	 * call keeps its links meanwhile, and the generation checks drop stale bindings.
@@ -486,10 +491,11 @@ export class TableController {
 	}
 
 	/** A visitor takes a free seat. */
-	async choose(seat: Seat): Promise<ChooseResult> {
+	async choose(seat: Seat, name?: string): Promise<ChooseResult> {
 		if (this.#closed() || !this.#replication) return refused("closed");
 		if (this.#lock || this.#busy) return refused("seated");
 		this.#busy = true;
+		this.#claimName = name;
 		try {
 			this.#heldElsewhere = await this.#deps.locks.heldElsewhere(this.#tableId);
 			if (this.#heldElsewhere.has(seat)) return refused("held-elsewhere");
@@ -502,7 +508,7 @@ export class TableController {
 				return refused("closed");
 			}
 			this.#seatError = null;
-			replication.choose(opened.seated);
+			replication.choose(opened.seated, name);
 			this.#watch(opened.seated.log);
 			return { ok: true };
 		} finally {
@@ -572,6 +578,7 @@ export class TableController {
 				seat,
 				holder,
 				config: bootstrap.config,
+				name: this.#claimName,
 				state: this.#deps.module.initialState(this.#tableId, bootstrap.config),
 				auth,
 				id: this.#deps.newId(),
@@ -609,6 +616,18 @@ export class TableController {
 	setBotSeat(seat: Seat, enabled: boolean): Promise<boolean> {
 		if (this.#closed() || !this.#replication) return Promise.resolve(false);
 		return this.#replication.setBotSeat(seat, enabled);
+	}
+
+	renameSeat(
+		seat: Seat,
+		name: string,
+		gen: number,
+		revision: number,
+		askOnEntry: boolean,
+	): Promise<boolean> {
+		if (this.#closed() || !this.view().hosting || !this.#replication)
+			return Promise.resolve(false);
+		return this.#replication.renameSeat(seat, name, gen, revision, askOnEntry);
 	}
 
 	/** Marks a bot seat of this host as one whose own player asked for autoplay before a reload of the host page. */
@@ -696,6 +715,13 @@ export class TableController {
 		return () => this.#listeners.delete(listener);
 	}
 
+	/** Disconnect without releasing the holder, then await queued durable work before navigation. */
+	async prepareReload(): Promise<void> {
+		const pending = this.#replication?.drain();
+		this.stop();
+		await pending;
+	}
+
 	/** Leaves the table, for example when the page navigates away. */
 	stop(): void {
 		if (this.#stopped) return;
@@ -740,6 +766,7 @@ export class TableController {
 				: (followed?.auth ?? null);
 		const network = mesh?.diagnostics() ?? null;
 		const log = replication?.log ?? null;
+		const rawTable = log?.table ?? this.#lastTable;
 		return {
 			status: this.#status(network, hosting || followed !== null),
 			supersededBy:
@@ -753,7 +780,7 @@ export class TableController {
 			follower: replication?.follower.status ?? null,
 			hosting,
 			hostSeat: live && hostAuth ? tagSeat(hostAuth.tag) : null,
-			table: log?.table ?? this.#lastTable,
+			table: rawTable ? { ...rawTable, config: playerConfig(rawTable) } : null,
 			lobby: replication?.follower.lobby ?? null,
 			roster,
 			roundTrips: hosting
@@ -1078,7 +1105,13 @@ export class TableController {
 	/** The seat went to someone else: this page is a visitor again and may choose another seat. */
 	#claimFailed(code: SeatCode): void {
 		this.#seatError = code;
-		if (code !== "taken" && code !== "invalid") return;
+		if (
+			code !== "taken" &&
+			code !== "invalid" &&
+			code !== "name_required" &&
+			code !== "stale"
+		)
+			return;
 		const election = this.#election;
 		this.#dropLock();
 		const replication = this.#replicate(null);
@@ -1112,6 +1145,8 @@ export class TableController {
 
 	#join(peer: string): void {
 		if (this.#closed()) return;
+		if (isBuildDate(this.#deps.buildDate))
+			this.#mesh?.ctl(peer, { k: "build-date", date: this.#deps.buildDate });
 		this.#step({ type: "join", now: this.#now(), peer });
 		this.#replication?.join(peer);
 		this.#checks.start(peer);
@@ -1128,6 +1163,16 @@ export class TableController {
 	#ctl(peer: string, message: CtlMessage): void {
 		if (this.#closed()) return;
 		switch (message.k) {
+			case "build-date":
+				if (
+					newerBuildDate(this.#deps.buildDate ?? "unknown", message.date) &&
+					(this.#newerDate === undefined ||
+						newerBuildDate(this.#newerDate, message.date))
+				) {
+					this.#newerDate = message.date;
+					this.#deps.onNewerBuild?.(message.date);
+				}
+				return;
 			case "beat":
 				// A beat from a host, a claimer or a page with entries shows the table, and so does a report of a host
 				// seen within HOST_LOST_MS: the setup link seeds nothing yet. An older report shows no table, as the only

@@ -1,4 +1,5 @@
 import { isCommandId, isRoomId } from "../ids";
+import { type PlayerProfiles, parsePlayers } from "../players";
 import {
 	isNonNegativeInteger,
 	isObject,
@@ -41,6 +42,7 @@ export interface TableRecord {
 	/** The seat of this replica. */
 	readonly replica: Seat;
 	readonly config: RoomConfig;
+	readonly players?: PlayerProfiles;
 	/** The state after entry `rev`. */
 	readonly state: JsonObject;
 	readonly rev: number;
@@ -104,6 +106,11 @@ export function parseTableRecord(value: unknown): TableRecord | undefined {
 	if (!isTimestamp(lastActivityAt)) return undefined;
 	if (!isJsonObjectWithin(state, MAX_STATE_BYTES)) return undefined;
 	const config = parseTableConfig(value.config);
+	const players =
+		value.players === undefined ? undefined : parsePlayers(value.players);
+	if (value.players !== undefined && !players) return undefined;
+	if (players && Object.values(players).some((profile) => profile.rev > rev))
+		return undefined;
 	const lastAuth = parseAuthority(value.lastAuth);
 	const host = parseAuthority(value.host);
 	const seats = parseSeatHolders(value.seats);
@@ -114,6 +121,7 @@ export function parseTableRecord(value: unknown): TableRecord | undefined {
 		tableId,
 		replica,
 		config,
+		...(players === undefined ? {} : { players }),
 		state,
 		rev,
 		lastAuth,

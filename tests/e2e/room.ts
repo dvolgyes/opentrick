@@ -56,6 +56,9 @@ const TABLE_LINK =
  * Returns the unselected room URL that all players share.
  */
 export async function createRoom(page: Page): Promise<string> {
+	for (const [seat, name] of Object.entries(NAME))
+		await page.locator(`input[name="name-${seat}"]`).fill(name);
+	await page.locator('input[name="me"][value="W"]').check();
 	// Chrome's mobile emulation reports the form below the screenshot viewport; activate its native submit control.
 	await page
 		.getByTestId("create")

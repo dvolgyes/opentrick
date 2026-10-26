@@ -1,5 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { formatBuildDate, isBuildInfo } from "../../src/build";
+import {
+	formatBuildDate,
+	isBuildInfo,
+	newerBuildDate,
+	updateUrl,
+} from "../../src/build";
+
+describe("reconnect update", () => {
+	it("compares only the Git date, normalizing offsets and refusing invalid dates", () => {
+		expect(
+			newerBuildDate("2026-10-24T12:00:00Z", "2026-10-24T14:00:00+02:00"),
+		).toBe(false);
+		expect(newerBuildDate("2026-10-24T12:00:00Z", "2026-10-25T00:00:00Z")).toBe(
+			true,
+		);
+		expect(newerBuildDate("unknown", "2026-10-25T00:00:00Z")).toBe(false);
+		expect(newerBuildDate("2026-10-24T12:00:00Z", "javascript:alert(1)")).toBe(
+			false,
+		);
+	});
+	it("keeps the origin, room fragment, setup and selected seat, with one attempt per newer date", () => {
+		const local = "2026-10-24T12:00:00Z";
+		const remote = "2026-10-25T12:00:00Z";
+		const page =
+			"https://example.org/opentrick/?host=south&selected_player=S#v=p2p-v1&k=secret";
+		const updated = updateUrl(page, local, remote);
+		expect(updated).toBeDefined();
+		const url = new URL(updated ?? "");
+		expect(url.origin).toBe("https://example.org");
+		expect(url.pathname).toBe("/opentrick/");
+		expect(url.hash).toBe("#v=p2p-v1&k=secret");
+		expect(url.searchParams.get("selected_player")).toBe("S");
+		expect(updateUrl(url.toString(), local, remote)).toBeUndefined();
+		expect(updateUrl(page, remote, local)).toBeUndefined();
+	});
+});
 
 describe("formatBuildDate", () => {
 	it("shows the commit time as a short date with the 24-hour time", () => {

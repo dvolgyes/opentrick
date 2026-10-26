@@ -15,6 +15,8 @@ import type { Bookmark } from "./bookmark";
 import type { AppDeps, Dispose } from "./deps";
 import { el } from "./dom";
 import { checkCreateFields, DEFAULT_CREATE_FIELDS, storageText } from "./model";
+import { readPersonalName, savePersonalName } from "./personal-name";
+import { seatGrid } from "./seat-grid";
 import { readSettings } from "./settings";
 
 /**
@@ -43,10 +45,15 @@ export function showCreate(
 				type: "text",
 				name: `name-${seat}`,
 				autocomplete: "off",
+				placeholder: "player",
 				"aria-label": `${deps.t(SEAT_NAMES[seat])} ${deps.t("Name").toLowerCase()}`,
 			},
 		});
-		name.value = prefill.names[seat] ?? DEFAULT_CREATE_FIELDS.names[seat];
+		name.value =
+			prefill.names[seat] ??
+			(seat === host
+				? readPersonalName(deps.browser)
+				: DEFAULT_CREATE_FIELDS.names[seat]);
 		nameFields[seat] = name;
 		const me = el("input", {
 			attrs: { type: "radio", name: "me", value: seat },
@@ -58,14 +65,21 @@ export function showCreate(
 		bot.checked = (prefill.botSetup ?? DEFAULT_BOT_SETUP).seats.includes(seat);
 		meChoices[seat] = me;
 		botChoices[seat] = bot;
-		return el(
-			"tr",
-			{},
-			el("th", { attrs: { scope: "row" } }, deps.t(SEAT_NAMES[seat])),
-			el("td", {}, name),
-			el("td", {}, el("label", {}, me, ` ${deps.t("This is me")}`)),
-			el("td", {}, el("label", {}, bot, ` ${deps.t("Bot")}`)),
+		me.setAttribute(
+			"aria-label",
+			`${deps.t(SEAT_NAMES[seat])} ${deps.t("Host")}`,
 		);
+		return {
+			seat,
+			element: el(
+				"section",
+				{},
+				el("h2", {}, deps.t(SEAT_NAMES[seat])),
+				el("label", {}, deps.t("Name"), name),
+				el("label", {}, me, ` ${deps.t("Host")}`),
+				el("label", {}, bot, ` ${deps.t("Bot")}`),
+			),
+		};
 	});
 
 	const scoring = el(
@@ -114,22 +128,11 @@ export function showCreate(
 	const form = el(
 		"form",
 		{ className: "create" },
+		seatGrid(rows),
 		el(
-			"table",
-			{},
-			el(
-				"thead",
-				{},
-				el(
-					"tr",
-					{},
-					el("th", { attrs: { scope: "col" } }, deps.t("Seat")),
-					el("th", { attrs: { scope: "col" } }, deps.t("Name")),
-					el("th", { attrs: { scope: "col" } }, deps.t("You")),
-					el("th", { attrs: { scope: "col" } }, deps.t("Bot")),
-				),
-			),
-			el("tbody", {}, ...rows),
+			"p",
+			{ className: "note" },
+			deps.t("Leave a name blank or use player to ask the person joining."),
 		),
 		el("label", {}, `${deps.t("Scoring")}: `, scoring),
 		errors,
@@ -179,6 +182,7 @@ export function showCreate(
 			return;
 		}
 		const config: RoomConfig = { ...check.config, botSetup };
+		savePersonalName(deps.browser, config.names[check.seat]);
 		const hostBotSettings =
 			botSeats.length > 0
 				? {

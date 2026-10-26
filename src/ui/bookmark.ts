@@ -1,8 +1,9 @@
+import { UPDATE_DATE_PARAM } from "../build";
+import { type PlayerProfiles, playerName } from "../players";
 import {
 	type BotSetup,
 	DEFAULT_BOT_SETUP,
 	isSeat,
-	MAX_NAME_LENGTH,
 	parseBotSetup,
 	type RoomConfig,
 	SEATS,
@@ -43,9 +44,8 @@ export function parseBookmark(search: string): Bookmark {
 	const params = new URLSearchParams(search);
 	const names: Partial<Record<Seat, string>> = {};
 	for (const seat of SEATS) {
-		const name = (params.get(SEAT_PARAM[seat]) ?? "").trim();
-		if (name !== "" && Array.from(name).length <= MAX_NAME_LENGTH)
-			names[seat] = name;
+		const name = playerName(params.get(SEAT_PARAM[seat]));
+		if (name !== undefined) names[seat] = name;
 	}
 	const host = SEATS.find((seat) => SEAT_PARAM[seat] === params.get("host"));
 	const botSetup = parseBotSetupParams(params);
@@ -96,8 +96,15 @@ export function parseSelectedPlayer(search: string): Seat | null | undefined {
 }
 
 /** The query of a link to share: the room values of `search`, with no seat selected. */
-export function sharedQuery(search: string): string {
+export function sharedQuery(search: string, players?: PlayerProfiles): string {
 	const params = new URLSearchParams(search);
+	params.delete(UPDATE_DATE_PARAM);
+	if (players)
+		for (const seat of SEATS)
+			params.set(
+				SEAT_PARAM[seat],
+				players[seat].askOnEntry ? "player" : players[seat].name,
+			);
 	params.set(SELECTED_PLAYER_PARAM, NO_SELECTED_PLAYER);
 	return params.toString();
 }

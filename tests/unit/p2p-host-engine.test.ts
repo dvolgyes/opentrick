@@ -323,10 +323,44 @@ describe("host-local bots", () => {
 		await rig.hello(SOUTH, CLIENT_S);
 		const lobby = rig.to(SOUTH).findLast((message) => message.k === "lobby");
 		expect(lobby?.k === "lobby" && lobby.seats).toEqual([
-			{ seat: "N", available: false, online: true, mine: false, host: true },
-			{ seat: "E", available: false, online: true, mine: false, bot: true },
-			{ seat: "S", available: true, online: false, mine: false },
-			{ seat: "W", available: true, online: false, mine: false },
+			{
+				seat: "N",
+				available: false,
+				online: true,
+				mine: false,
+				host: true,
+				gen: rig.row("N")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "E",
+				available: false,
+				online: true,
+				mine: false,
+				bot: true,
+				gen: rig.row("E")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "S",
+				available: true,
+				online: false,
+				mine: false,
+				gen: rig.row("S")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "W",
+				available: true,
+				online: false,
+				mine: false,
+				gen: rig.row("W")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
 		]);
 	});
 
@@ -339,6 +373,9 @@ describe("host-local bots", () => {
 		const lobby = rig.to(SOUTH).findLast((message) => message.k === "lobby");
 		expect(lobby?.k === "lobby" && lobby.seats[1]).toEqual({
 			seat: "E",
+			gen: rig.row("E")?.gen ?? 0,
+			nameRevision: 0,
+			needsName: false,
 			available: false,
 			online: true,
 			mine: false,
@@ -358,10 +395,45 @@ describe("host-local bots", () => {
 		await rig.hello(SOUTH, CLIENT_S);
 		const lobby = rig.to(SOUTH).findLast((message) => message.k === "lobby");
 		expect(lobby?.k === "lobby" && lobby.seats).toEqual([
-			{ seat: "N", available: false, online: true, mine: false, host: true },
-			{ seat: "E", available: false, online: false, mine: false, bot: true },
-			{ seat: "S", available: true, online: false, mine: false },
-			{ seat: "W", available: false, online: false, mine: false, bot: true },
+			{
+				seat: "N",
+				available: false,
+				online: true,
+				mine: false,
+				host: true,
+				gen: rig.row("N")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "E",
+				available: false,
+				online: false,
+				mine: false,
+				bot: true,
+				gen: rig.row("E")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "S",
+				available: true,
+				online: false,
+				mine: false,
+				gen: rig.row("S")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "W",
+				available: false,
+				online: false,
+				mine: false,
+				bot: true,
+				gen: rig.row("W")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
 		]);
 		await rig.from(SOUTH, { k: "claim-seat", req: 1, seat: "E" });
 		expect(rig.row("E")?.holder).toBeNull();
@@ -572,6 +644,147 @@ describe("round trips", () => {
 	});
 });
 
+describe("player names", () => {
+	it("requires the next occupant's name after a self-naming seat is released", async () => {
+		const rig = await new Rig().create({
+			...CONFIG,
+			names: { ...CONFIG.names, E: "player" },
+		});
+		await rig.hello(EAST, CLIENT_E);
+		await rig.from(EAST, {
+			k: "claim-seat",
+			req: 1,
+			seat: "E",
+			gen: 0,
+			nameRevision: 0,
+			name: "Alice",
+		});
+		rig.host.leave(EAST);
+		await rig.from(HOST, { k: "release", req: 1, seat: "E" });
+		expect(rig.row("E")).toMatchObject({ holder: null, gen: 2 });
+		expect(rig.log.table?.players?.E).toEqual({
+			name: "player",
+			askOnEntry: true,
+			rev: 3,
+		});
+		await rig.hello(SOUTH, CLIENT_S);
+		await rig.from(SOUTH, {
+			k: "claim-seat",
+			req: 1,
+			seat: "E",
+			gen: 2,
+			nameRevision: 3,
+		});
+		expect(rig.to(SOUTH)).toContainEqual({
+			k: "seat-result",
+			req: 1,
+			ok: false,
+			code: "name_required",
+		});
+		await rig.from(SOUTH, {
+			k: "claim-seat",
+			req: 2,
+			seat: "E",
+			gen: 2,
+			nameRevision: 3,
+			name: "Bea",
+		});
+		expect(rig.log.table?.players?.E).toEqual({
+			name: "Bea",
+			askOnEntry: true,
+			rev: 4,
+		});
+		await rig.command(EAST, 58, 1, "stale");
+		expect(rig.log.table?.rev).toBe(4);
+	});
+	it("requires a supplied name for an unnamed seat and uses it in later chat events", async () => {
+		const rig = await new Rig().create({
+			...CONFIG,
+			names: { ...CONFIG.names, E: "player" },
+		});
+		await rig.hello(EAST, CLIENT_E);
+		await rig.from(EAST, {
+			k: "claim-seat",
+			req: 1,
+			seat: "E",
+			gen: 0,
+			nameRevision: 0,
+		});
+		expect(rig.to(EAST)).toContainEqual({
+			k: "seat-result",
+			req: 1,
+			ok: false,
+			code: "name_required",
+		});
+		expect(rig.row("E")?.holder).toBeNull();
+		await rig.from(EAST, {
+			k: "claim-seat",
+			req: 2,
+			seat: "E",
+			gen: 0,
+			nameRevision: 0,
+			name: "Alice",
+		});
+		expect(rig.log.table?.players?.E).toEqual({
+			name: "Alice",
+			askOnEntry: true,
+			rev: 2,
+		});
+		await rig.command(EAST, 54, 1, "hello");
+		expect(rig.log.entries.at(-1)?.event).toMatchObject({
+			fromName: "Alice",
+			text: "hello",
+		});
+		const state = rig.log.table?.state;
+		expect(await rig.host.renameSeat("E", "Alicia", 1, 2, true)).toBe(true);
+		expect(rig.log.table?.state).toBe(state);
+		expect(rig.row("E")?.gen).toBe(1);
+		expect(await rig.host.renameSeat("E", "Outdated", 1, 2, false)).toBe(false);
+		await rig.from(EAST, {
+			k: "claim-seat",
+			req: 2,
+			seat: "E",
+			gen: 0,
+			nameRevision: 0,
+			name: "Alice",
+		});
+		expect(rig.log.table?.players?.E.name).toBe("Alicia");
+		rig.host.stop();
+		rig.start();
+		expect(rig.log.table?.players?.E.name).toBe("Alicia");
+	});
+
+	it("rejects a stale named claim and keeps a supplied client name from changing a preassigned name", async () => {
+		const rig = await new Rig().create();
+		await rig.hello(EAST, CLIENT_E);
+		expect(await rig.host.renameSeat("E", "Dana", 0, 0, false)).toBe(true);
+		await rig.from(EAST, {
+			k: "claim-seat",
+			req: 1,
+			seat: "E",
+			gen: 0,
+			nameRevision: 0,
+			name: "Mallory",
+		});
+		expect(rig.to(EAST)).toContainEqual({
+			k: "seat-result",
+			req: 1,
+			ok: false,
+			code: "stale",
+		});
+		await rig.from(EAST, {
+			k: "claim-seat",
+			req: 2,
+			seat: "E",
+			gen: 0,
+			nameRevision: 2,
+			name: "Mallory",
+		});
+		expect(rig.row("E")?.holder).not.toBeNull();
+		expect(rig.log.table?.players?.E.name).toBe("Dana");
+	});
+});
+
 describe("hello", () => {
 	it("tells a visitor it is unseated and sends the lobby with the free seats", async () => {
 		const rig = await new Rig().create();
@@ -585,10 +798,43 @@ describe("hello", () => {
 		expect(lobby).toMatchObject({ k: "lobby", auth: rig.auth, config: CONFIG });
 		if (lobby?.k !== "lobby") return;
 		expect(lobby.seats).toEqual([
-			{ seat: "N", available: false, online: true, mine: false, host: true },
-			{ seat: "E", available: true, online: false, mine: false },
-			{ seat: "S", available: true, online: false, mine: false },
-			{ seat: "W", available: true, online: false, mine: false },
+			{
+				seat: "N",
+				available: false,
+				online: true,
+				mine: false,
+				host: true,
+				gen: rig.row("N")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "E",
+				available: true,
+				online: false,
+				mine: false,
+				gen: rig.row("E")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "S",
+				available: true,
+				online: false,
+				mine: false,
+				gen: rig.row("S")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
+			{
+				seat: "W",
+				available: true,
+				online: false,
+				mine: false,
+				gen: rig.row("W")?.gen ?? 0,
+				nameRevision: 0,
+				needsName: false,
+			},
 		]);
 	});
 
@@ -680,6 +926,9 @@ describe("hello", () => {
 		});
 		expect(lobby?.k === "lobby" && lobby.seats[1]).toMatchObject({
 			seat: "E",
+			gen: rig.row("E")?.gen ?? 0,
+			nameRevision: 0,
+			needsName: false,
 			available: true,
 		});
 		await rig.from(EAST, { k: "claim-seat", req: 1, seat: "E" });
@@ -876,6 +1125,9 @@ describe("seats", () => {
 		};
 		expect(ownRow(rig.to(EAST2))).toEqual({
 			seat: "E",
+			gen: rig.row("E")?.gen ?? 0,
+			nameRevision: 0,
+			needsName: false,
 			available: false,
 			online: true,
 			mine: true,
@@ -884,6 +1136,9 @@ describe("seats", () => {
 		await rig.hello(EAST2, CLIENT_E);
 		expect(ownRow(rig.to(EAST2))).toEqual({
 			seat: "E",
+			gen: rig.row("E")?.gen ?? 0,
+			nameRevision: 0,
+			needsName: false,
 			available: true,
 			online: false,
 			mine: true,

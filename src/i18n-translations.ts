@@ -1,3 +1,5 @@
+import { playerCatalogs } from "./i18n-players";
+
 type TranslationRow = readonly [string, string, string, string, string, string];
 
 const rows: readonly TranslationRow[] = [
@@ -3324,6 +3326,9 @@ export const additionalCatalogs: Readonly<
 > = Object.fromEntries(
 	Object.entries(localeIndexes).map(([locale, index]) => [
 		locale,
-		Object.fromEntries(rows.map((row) => [row[0], row[index]])),
+		{
+			...Object.fromEntries(rows.map((row) => [row[0], row[index]])),
+			...playerCatalogs[locale as NewLocale],
+		},
 	]),
 ) as Readonly<Record<NewLocale, Readonly<Record<string, string>>>>;

@@ -27,6 +27,7 @@ for (const policy of ["sl", "rl-fsp"] as const)
 			await page.locator(`input[name="bot-${seat}"]`).check();
 		}
 		await page.locator('input[name="name-W"]').fill("You");
+		await page.locator('input[name="me"][value="W"]').check();
 		await page.getByTestId("create").click();
 		await expect(page.getByTestId("room-controls")).toBeVisible();
 		expect(new URL(page.url()).searchParams.get("bot_bidder")).toBe(policy);
@@ -85,6 +86,7 @@ test("a local bidder works below a URL path and ignores a saved OpenRouter key",
 		await route.abort();
 	});
 	await page.goto("/opentrick/?bot_bidder=sl");
+	await page.locator('input[name="name-S"]').fill("Host");
 	for (const seat of ["N", "E", "S", "W"])
 		await page.locator(`input[name="bot-${seat}"]`).check();
 	await page.getByTestId("create").click();

@@ -1,5 +1,26 @@
 @import "./themes.css";
 
+.seat-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-areas: ". north ." "west . east" ". south .";
+	gap: 0.7rem;
+	margin: 1rem 0;
+}
+.player-editor { box-sizing: border-box; width: min(56rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; }
+.seat-card { min-width: 0; overflow-wrap: anywhere; padding: 0.7rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); color: var(--fg); }
+.seat-card h2 { margin: 0 0 0.4rem; font-size: 1rem; }
+.seat-card label { display: block; }
+.seat-card input[type="text"] { box-sizing: border-box; width: 100%; min-width: 0; }
+.seat-card[data-seat="N"] { grid-area: north; }
+.seat-card[data-seat="E"] { grid-area: east; }
+.seat-card[data-seat="S"] { grid-area: south; }
+.seat-card[data-seat="W"] { grid-area: west; }
+@media (max-width: 600px) {
+	.seat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "north north" "west east" "south south"; }
+	.seat-card:is([data-seat="N"], [data-seat="S"]) { width: calc(50% - 1.75rem); justify-self: center; }
+}
+
 /* A card takes the card ink, so its text and suits read on the card colour. */
 .face,
 .played {

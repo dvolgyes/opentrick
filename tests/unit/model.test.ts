@@ -93,12 +93,19 @@ function input(overrides: Partial<RoomViewInput> = {}): RoomViewInput {
 }
 
 describe("checkCreateFields", () => {
-	it("accepts the default fields with West as the creator's seat and trims names", () => {
+	it("defaults the host to South, trims assigned names, and leaves other seats to be named on entry", () => {
 		const result = checkCreateFields({
 			...DEFAULT_CREATE_FIELDS,
-			names: { ...DEFAULT_CREATE_FIELDS.names, N: "  player1  " },
+			names: { ...DEFAULT_CREATE_FIELDS.names, N: "  player1  ", S: "Alice" },
 		});
-		expect(result).toEqual({ ok: true, config: CONFIG, seat: "W" });
+		expect(result).toEqual({
+			ok: true,
+			config: {
+				scoring: "duplicate",
+				names: { N: "player1", E: "player", S: "Alice", W: "player" },
+			},
+			seat: "S",
+		});
 	});
 
 	it("counts characters, not UTF-16 units, against the 40-character limit", () => {
@@ -111,17 +118,17 @@ describe("checkCreateFields", () => {
 		});
 	});
 
-	it("lists every problem: blank names and no seat for the creator", () => {
+	it("requires a host seat and the creator's own name, while other names are optional", () => {
 		const names = { ...DEFAULT_CREATE_FIELDS.names, N: " ", W: "" };
 		expect(
 			checkCreateFields({ ...DEFAULT_CREATE_FIELDS, names, seat: "X" }),
 		).toEqual({
 			ok: false,
-			errors: [
-				"North: enter a name.",
-				"West: enter a name.",
-				"Choose your seat.",
-			],
+			errors: ["Choose your seat."],
+		});
+		expect(checkCreateFields(DEFAULT_CREATE_FIELDS)).toEqual({
+			ok: false,
+			errors: ["South: enter a name."],
 		});
 	});
 });

@@ -8,10 +8,10 @@ export interface BotSeatClaim {
 }
 
 export function botSeats(config: RoomConfig): Seat[] {
-	return SEATS.filter(
-		(seat) =>
-			config.botSetup?.seats.includes(seat) === true ||
-			isBotName(config.names[seat]),
+	return SEATS.filter((seat) =>
+		config.botSetup
+			? config.botSetup.seats.includes(seat)
+			: isBotName(config.names[seat]),
 	);
 }
 

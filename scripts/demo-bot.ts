@@ -50,6 +50,7 @@ await page.route("https://openrouter.ai/**", async (route) => {
 	await route.abort();
 });
 await page.goto(`${origin}/?bot_bidder=${policy}`);
+await page.locator('input[name="me"][value="W"]').check();
 for (const seat of ["N", "E", "S", "W"] as const) {
 	await page
 		.locator(`input[name="name-${seat}"]`)

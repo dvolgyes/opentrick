@@ -62,7 +62,7 @@ export interface Navigation {
 	/** Loads the create screen at the site root from the server. Never reuses the current table or its setup query. */
 	createNew(): void;
 	/** Loads this page again from the server, so a new version of the site takes effect. */
-	reload(): void;
+	reload(targetDate?: string): void;
 	/** Stores the seat choice in this page's URL without navigating. */
 	rememberSeat(seat: Seat): void;
 	/** Stores "no seat" (selected_player=none) in this page's URL without navigating, so a reload opens the seat page. */

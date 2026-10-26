@@ -21,6 +21,7 @@ import type {
 	SeatCode,
 	SeatHolder,
 } from "../p2p/wire";
+import { playerName, unnamedPlayer } from "../players";
 import {
 	isObject,
 	isSeat,
@@ -50,10 +51,10 @@ export const TEXT = {
 // Create form
 
 export const DEFAULT_NAMES: Readonly<Record<Seat, string>> = {
-	N: "player1",
-	S: "player2",
-	E: "player3",
-	W: "player4",
+	N: "",
+	S: "",
+	E: "",
+	W: "",
 };
 
 export interface CreateFields {
@@ -74,9 +75,9 @@ export function checkCreateFields(
 	const errors: string[] = [];
 	const names: Partial<Record<Seat, string>> = {};
 	for (const seat of SEATS) {
-		const name = fields.names[seat].trim();
+		const name = fields.names[seat].trim().normalize("NFC");
 		const length = Array.from(name).length;
-		if (length === 0)
+		if (seat === fields.seat && unnamedPlayer(name))
 			errors.push(t("{seat}: enter a name.", { seat: SEAT_NAMES[seat] }));
 		else if (length > MAX_NAME_LENGTH)
 			errors.push(
@@ -85,7 +86,9 @@ export function checkCreateFields(
 					seat: SEAT_NAMES[seat],
 				}),
 			);
-		names[seat] = name;
+		else if (length > 0 && !playerName(name))
+			errors.push(t("{seat}: enter a name.", { seat: SEAT_NAMES[seat] }));
+		names[seat] = unnamedPlayer(name) ? "player" : (playerName(name) ?? name);
 	}
 	if (!isSeat(fields.seat)) errors.push(t("Choose your seat."));
 	if (errors.length > 0 || !isSeat(fields.seat)) return { ok: false, errors };
@@ -101,7 +104,7 @@ export function checkCreateFields(
 
 export const DEFAULT_CREATE_FIELDS: CreateFields = {
 	names: DEFAULT_NAMES,
-	seat: "W",
+	seat: "S",
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -142,6 +145,10 @@ export function submitText(
 /** Why the host did not accept a seat claim. */
 export function seatText(code: SeatCode, t: Translate = english): string {
 	switch (code) {
+		case "name_required":
+			return t("Enter your name to take this seat.");
+		case "stale":
+			return t("The seat changed. Choose it again.");
 		case "taken":
 			return t("Another player took this seat. Choose another one.");
 		case "invalid":

@@ -1,3 +1,4 @@
+import { updateUrl } from "../build";
 import { parseRoute, tableFragment } from "../p2p/link";
 import {
 	bookmarkQuery,
@@ -28,8 +29,11 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 			dispose = undefined;
 			location.assign(new URL("./", location.href).toString());
 		},
-		reload: () => {
-			location.reload();
+		reload: (targetDate) => {
+			if (targetDate) {
+				const url = updateUrl(location.href, deps.build.date, targetDate);
+				if (url) location.replace(url);
+			} else location.reload();
 		},
 		rememberSeat: (seat) => {
 			const query = selectedPlayerQuery(location.search, seat);

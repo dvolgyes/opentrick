@@ -1,5 +1,11 @@
 import type { GameModule } from "../game/module";
 import {
+	playerConfig,
+	playerName,
+	playersFor,
+	unnamedPlayer,
+} from "../players";
+import {
 	APPLICATION_FEATURES,
 	envelopeEvent,
 	type JsonObject,
@@ -195,6 +201,70 @@ export class HostEngine {
 
 	get stopped(): boolean {
 		return this.#stopped;
+	}
+
+	/** Only the host's local controller exposes this operation. Ownership and bridge state do not change. */
+	renameSeat(
+		seat: Seat,
+		name: string,
+		gen: number,
+		revision: number,
+		askOnEntry: boolean,
+	): Promise<boolean> {
+		const run = async (): Promise<boolean> => {
+			const table = this.#table();
+			const normalized = playerName(name);
+			if (
+				this.#stopped ||
+				!table ||
+				!normalized ||
+				table.rev >= MAX_LOG_ENTRIES ||
+				seatRow(table, seat).gen !== gen ||
+				playersFor(table)[seat].rev !== revision
+			)
+				return false;
+			const id = this.#deps.newId();
+			const placeholder = unnamedPlayer(normalized);
+			const entry: Entry = {
+				seq: table.rev + 1,
+				auth: this.#deps.auth,
+				prevAuth: table.lastAuth,
+				id,
+				seat,
+				gen,
+				kind: "seat",
+				op: {
+					type: "rename",
+					by: this.#deps.log.seat,
+					name: placeholder ? "player" : normalized,
+					askOnEntry: placeholder || askOnEntry,
+				},
+				event: {
+					...seatEvent(
+						this.#tableId,
+						table.rev + 1,
+						id,
+						seat,
+						"rename",
+						this.#deps.log.seat,
+					),
+					name: placeholder ? "player" : normalized,
+				},
+			};
+			const done = await this.#commit(entry, table.state);
+			if (!done.ok) return false;
+			this.#broadcast(entry);
+			this.#lobbies();
+			return true;
+		};
+		const pending = this.#queue.then(run);
+		this.#queue = pending.then(() => {});
+		return pending;
+	}
+
+	async drain(): Promise<void> {
+		await this.#queue;
+		await this.#deps.log.drain();
 	}
 
 	/** Activates configured bot seats as private host-local actors. Empty seats are claimed for the bot. */
@@ -754,6 +824,18 @@ export class HostEngine {
 		}
 		if (!this.#available(table, claim.seat, holder)) return reply("taken");
 		const row = seatRow(table, claim.seat);
+		const profile = playersFor(table)[claim.seat];
+		if (
+			(claim.gen !== undefined && claim.gen !== row.gen) ||
+			(profile.askOnEntry && claim.gen !== row.gen) ||
+			(profile.rev > 0 && claim.nameRevision !== profile.rev) ||
+			(claim.nameRevision !== undefined && claim.nameRevision !== profile.rev)
+		)
+			return reply("stale");
+		const name = playerName(claim.name);
+		if (profile.askOnEntry && (!name || unnamedPlayer(name)))
+			return reply("name_required");
+		if (table.rev >= MAX_LOG_ENTRIES) return reply("invalid");
 		const id = this.#deps.newId();
 		const seq = table.rev + 1;
 		const entry: Entry = {
@@ -764,7 +846,11 @@ export class HostEngine {
 			seat: claim.seat,
 			gen: row.gen + 1,
 			kind: "seat",
-			op: { type: "claim", holder },
+			op: {
+				type: "claim",
+				holder,
+				...(profile.askOnEntry && name ? { name } : {}),
+			},
 			event: seatEvent(this.#tableId, seq, id, claim.seat, "claim"),
 		};
 		const done = await this.#commit(entry, table.state);
@@ -916,7 +1002,7 @@ export class HostEngine {
 			table.state,
 			{
 				roomId: this.#tableId,
-				config: table.config,
+				config: playerConfig(table),
 				seat: bound.seat,
 				holder,
 				commandId: id,
@@ -1244,12 +1330,15 @@ export class HostEngine {
 		return {
 			k: "lobby",
 			auth: this.#deps.auth,
-			config: table.config,
+			config: playerConfig(table),
 			idleMs: idleMs(table.lastActivityAt, this.#deps.clock.wall()),
 			seats: SEATS.map((seat) => {
 				const row = seatRow(table, seat);
 				return {
 					seat,
+					gen: row.gen,
+					nameRevision: playersFor(table)[seat].rev,
+					needsName: playersFor(table)[seat].askOnEntry,
 					available: holder !== null && this.#available(table, seat, holder),
 					online: this.#online(table, seat),
 					mine: holder !== null && row.holder === holder,

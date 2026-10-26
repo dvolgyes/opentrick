@@ -7,6 +7,7 @@ import { Player } from "./player";
 async function openTable(page: Page): Promise<void> {
 	await page.goto("/");
 	await page.locator('input[name="name-W"]').fill("host west");
+	await page.locator('input[name="me"][value="W"]').check();
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 }
@@ -158,6 +159,7 @@ test("on a phone, Settings is below the board and its dialog fits the screen", a
 	try {
 		const page = await player.page("./");
 		await page.locator('input[name="name-W"]').fill("host west");
+		await page.locator('input[name="me"][value="W"]').check();
 		await page.getByTestId("create").click();
 		const settings = page.getByRole("button", {
 			name: "Settings",

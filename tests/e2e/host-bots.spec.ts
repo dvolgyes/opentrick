@@ -17,6 +17,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	});
 
 	await page.goto("/");
+	await page.locator('input[name="me"][value="W"]').check();
 	for (const [seat, name] of [
 		["N", "robot north"],
 		["E", "bot east"],
@@ -89,6 +90,7 @@ test("a bot bids and plays when the site is served below a path, as on GitHub Pa
 	});
 
 	await page.goto("/opentrick/");
+	await page.locator('input[name="me"][value="W"]').check();
 	await page.locator('input[name="name-W"]').fill("host west");
 	for (const seat of ["N", "E", "S"]) {
 		await page.locator(`input[name="name-${seat}"]`).fill(`bot ${seat}`);
@@ -290,6 +292,14 @@ async function westDeclaresAgainstBots(page: Page): Promise<Locator> {
 	});
 
 	await page.goto("/");
+	for (const [seat, name] of Object.entries({
+		N: "player1",
+		E: "player3",
+		S: "player2",
+		W: "player4",
+	}))
+		await page.locator(`input[name="name-${seat}"]`).fill(name);
+	await page.locator('input[name="me"][value="W"]').check();
 	for (const seat of ["N", "E", "S"])
 		await page.locator(`input[name="bot-${seat}"]`).check();
 
@@ -346,7 +356,24 @@ test("the bots reject the host's claims, so the board is played out", async ({
 		for (;;) {
 			await expect(card.or(stop).first()).toBeVisible({ timeout: 30_000 });
 			if (await stop.isVisible()) return;
-			await card.click();
+			const table = page.locator("[data-phase]");
+			const before = await table.getAttribute("data-at");
+			// A pending play can remove the button during Playwright's actionability wait.
+			const clicked = await card.evaluateAll((buttons) => {
+				const button = buttons[0];
+				if (!(button instanceof HTMLButtonElement) || button.disabled)
+					return false;
+				button.click();
+				return true;
+			});
+			if (clicked)
+				await expect
+					.poll(
+						async () =>
+							(await stop.isVisible()) ||
+							(await table.getAttribute("data-at")) !== before,
+					)
+					.toBe(true);
 		}
 	};
 
