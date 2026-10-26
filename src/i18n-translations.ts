@@ -918,7 +918,7 @@ const rows: readonly TranslationRow[] = [
 		"Ascolta gli altri: ricevi l'audio",
 		"Anderen horen: audio ontvangen",
 	],
-	["Host", "Anfitrión", "Anfitrião", "Hôte", "Host", "Host"],
+	["Host", "Host", "Host", "Hôte", "Host", "Host"],
 	[
 		"Host changed. Bots stopped.",
 		"Cambió el anfitrión. Los bots se detuvieron.",
