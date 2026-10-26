@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { DdsSolver } from "../../src/bot/dds-solver";
 import { analyzePlay } from "../../src/bot/play-engine";
 import { playPosition } from "../../src/bot/play-position";
@@ -24,6 +24,37 @@ function random(seed: number): () => number {
 }
 
 describe("single-dummy play engine", () => {
+	it("uses the time budget beyond 96 samples and spends it on more worlds when solves are faster", () => {
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		let clock = 0;
+		const now = vi.spyOn(performance, "now").mockImplementation(() => clock);
+		const run = (cost: number) =>
+			analyzePlay(
+				position,
+				{
+					solve: () => {
+						clock += cost;
+						return new Map(position.legal.map((card) => [card, 7]));
+					},
+				},
+				{ timeMs: 500, random: random(917) },
+			);
+		try {
+			const slower = run(4);
+			const faster = run(1);
+			expect(slower.samples).toBeGreaterThan(96);
+			expect(faster.samples).toBeGreaterThan(slower.samples);
+			expect(slower.elapsedMs).toBeGreaterThanOrEqual(500);
+			expect(slower.elapsedMs).toBeLessThan(505);
+			expect(faster.elapsedMs).toBeGreaterThanOrEqual(500);
+			expect(faster.elapsedMs).toBeLessThan(502);
+		} finally {
+			now.mockRestore();
+		}
+	});
 	it("matches exhaustive minimax on two-trick endings in all strains and partial tricks", async () => {
 		const solver = await DdsSolver.create();
 		const rng = random(461821);

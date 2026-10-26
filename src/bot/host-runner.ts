@@ -14,11 +14,13 @@ import { bidPosition } from "./bid-position";
 import { type BidChooser, BrowserBidder } from "./browser-bidder";
 import { BrowserPlayEngine, type PlayChooser } from "./browser-play";
 import { BotRequestAbortedError } from "./errors";
+import { playTimeMs } from "./play-budget";
 import { playPosition } from "./play-position";
 import { actionPositionKey } from "./position";
 
 export interface HostBotSettings {
 	readonly bidder: LocalBidder;
+	readonly playTimeMs?: number;
 }
 
 export function configuredBotSeats(config: RoomConfig): Seat[] {
@@ -49,7 +51,10 @@ export class HostBotRunner {
 		bidEngine: BidChooser = new BrowserBidder(),
 	) {
 		this.#controller = controller;
-		this.#settings = settings;
+		this.#settings = {
+			...settings,
+			playTimeMs: playTimeMs(settings.playTimeMs),
+		};
 		this.#onError = onError;
 		this.#playEngine = playEngine;
 		this.#bidEngine = bidEngine;
@@ -91,8 +96,10 @@ export class HostBotRunner {
 	}
 
 	updateSettings(settings: HostBotSettings): void {
+		const budget = playTimeMs(settings.playTimeMs);
 		if (settings.bidder !== this.#settings.bidder) this.#bidEngine.stop();
-		this.#settings = settings;
+		if (budget !== this.#settings.playTimeMs) this.#playEngine.stop();
+		this.#settings = { ...settings, playTimeMs: budget };
 		this.#schedule();
 	}
 
@@ -202,6 +209,7 @@ export class HostBotRunner {
 					const analysis = await this.#playEngine.choose(
 						playPosition(state.board, seat, systems),
 						this.#requestAbort.signal,
+						this.#settings.playTimeMs,
 					);
 					decision = { type: "play", card: analysis.card };
 				} else {

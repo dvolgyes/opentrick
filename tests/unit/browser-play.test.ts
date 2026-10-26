@@ -22,10 +22,45 @@ afterEach(() => {
 });
 
 describe("card worker boundary", () => {
+	it("keeps searching until the default five-second response budget", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("Worker", WorkerStub);
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		const result = new BrowserPlayEngine().choose(
+			position,
+			new AbortController().signal,
+		);
+		const worker = WorkerStub.made[0];
+		expect(worker?.postMessage).toHaveBeenCalledWith({
+			position,
+			timeMs: 5000,
+		});
+		worker?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7", samples: 100 } },
+		});
+		let complete = false;
+		void result.then(() => {
+			complete = true;
+		});
+		await vi.advanceTimersByTimeAsync(4999);
+		expect(complete).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+		await expect(result).resolves.toMatchObject({ card: "S7", samples: 100 });
+		expect(worker?.terminate).toHaveBeenCalledOnce();
+	});
+	it("rejects invalid time budgets before constructing a worker", () => {
+		vi.stubGlobal("Worker", WorkerStub);
+		for (const timeMs of [0, -1, Number.NaN, Infinity, 60_001, 0.5])
+			expect(() => new BrowserPlayEngine({ timeMs })).toThrow(/play time/);
+		expect(WorkerStub.made).toHaveLength(0);
+	});
 	it("uses a completed evaluation when a later native search exceeds the response budget", async () => {
 		vi.useFakeTimers();
 		vi.stubGlobal("Worker", WorkerStub);
-		const engine = new BrowserPlayEngine();
+		const engine = new BrowserPlayEngine({ timeMs: 1500 });
 		const result = engine.choose(
 			playPosition(bidding(createBoard(1, DEAL), "1NT P P P"), "E"),
 			new AbortController().signal,

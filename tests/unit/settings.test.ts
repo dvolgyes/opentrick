@@ -24,6 +24,7 @@ function memoryStorage(): Storage {
 describe("player settings", () => {
 	it("uses HCP, the light theme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
+			playTimeMs: 5000,
 			pointSystem: "hcp",
 			cardPoints: true,
 			theme: "light",
@@ -43,6 +44,7 @@ describe("player settings", () => {
 	it("reads back what it stores, under the opentrick prefix", () => {
 		const storage = memoryStorage();
 		const settings = {
+			playTimeMs: 150,
 			pointSystem: "vienna",
 			cardPoints: false,
 			theme: "auto",
@@ -85,6 +87,30 @@ describe("player settings", () => {
 		expect(() => writeSettings(undefined, DEFAULT_SETTINGS)).toThrow(
 			"local storage is not available",
 		);
+	});
+	it("validates persisted search budgets and rejects an invalid budget before saving", () => {
+		const storage = memoryStorage();
+		for (const value of [
+			"0",
+			"-1",
+			"NaN",
+			"Infinity",
+			"60001",
+			"0.5",
+			"garbage",
+		]) {
+			storage.setItem("opentrick.settings.play-time-ms", value);
+			expect(readSettings(storage).playTimeMs).toBe(5000);
+		}
+		for (const value of ["150", "5000", "60000"]) {
+			storage.setItem("opentrick.settings.play-time-ms", value);
+			expect(readSettings(storage).playTimeMs).toBe(Number(value));
+		}
+		storage.clear();
+		expect(() =>
+			writeSettings(storage, { ...DEFAULT_SETTINGS, playTimeMs: 0 }),
+		).toThrow(/play time/);
+		expect(storage.length).toBe(0);
 	});
 });
 

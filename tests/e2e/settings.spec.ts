@@ -73,6 +73,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.card-points",
 		"opentrick.settings.landscape-desktop",
 		"opentrick.settings.network-quality",
+		"opentrick.settings.play-time-ms",
 		"opentrick.settings.play-turn-frame",
 		"opentrick.settings.play-turn-text",
 		"opentrick.settings.points",

@@ -2,8 +2,13 @@ import { DdsSolver } from "./dds-solver";
 import { analyzePlay } from "./play-engine";
 import type { PlayPosition } from "./play-position";
 
+interface PlayRequest {
+	readonly position: PlayPosition;
+	readonly timeMs: number;
+}
+
 interface WorkerScope {
-	onmessage: ((event: MessageEvent<PlayPosition>) => void) | null;
+	onmessage: ((event: MessageEvent<PlayRequest>) => void) | null;
 	postMessage(message: unknown): void;
 }
 
@@ -13,7 +18,8 @@ function start(scope: WorkerScope): void {
 	scope.onmessage = (event) => {
 		void solver
 			.then((dds) => {
-				const analysis = analyzePlay(event.data, dds, {
+				const analysis = analyzePlay(event.data.position, dds, {
+					timeMs: event.data.timeMs,
 					onProgress: (partial) =>
 						scope.postMessage({ ok: true, partial: true, analysis: partial }),
 				});

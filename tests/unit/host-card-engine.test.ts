@@ -55,6 +55,27 @@ function host(chooser: PlayChooser) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("host card engine integration", () => {
+	it("restarts a pending decision with a changed search budget", async () => {
+		let rejectFirst: ((error: Error) => void) | undefined;
+		const choose = vi.fn<PlayChooser["choose"]>();
+		choose.mockImplementationOnce(
+			() =>
+				new Promise((_resolve, reject) => {
+					rejectFirst = reject;
+				}),
+		);
+		choose.mockResolvedValue(ANALYSIS);
+		const stop = vi.fn(() => rejectFirst?.(new BotRequestAbortedError()));
+		const { runner, sendBot, onError } = host({ choose, stop });
+		await runner.start();
+		await vi.waitFor(() => expect(choose).toHaveBeenCalledOnce());
+		runner.updateSettings({ bidder: "sl", playTimeMs: 250 });
+		await vi.waitFor(() => expect(sendBot).toHaveBeenCalledOnce());
+		expect(choose.mock.calls.map((call) => call[2])).toEqual([5000, 250]);
+		expect(stop).toHaveBeenCalledOnce();
+		expect(onError).not.toHaveBeenCalled();
+		runner.stop();
+	});
 	it("can re-enable a seat at the same position after discarding its disabled search", async () => {
 		let answer: ((analysis: PlayAnalysis) => void) | undefined;
 		let requests = 0;
@@ -90,6 +111,11 @@ describe("host card engine integration", () => {
 		expect(network).not.toHaveBeenCalled();
 		expect(onError).not.toHaveBeenCalled();
 		expect(chooser.choose.mock.calls).toHaveLength(1);
+		expect(chooser.choose).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.any(AbortSignal),
+			5000,
+		);
 		runner.stop();
 		expect(chooser.stop).toHaveBeenCalledOnce();
 	});

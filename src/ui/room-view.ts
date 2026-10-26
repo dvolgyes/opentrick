@@ -100,8 +100,11 @@ function roomShareLink(pageUrl: string, key: string): string {
 	return tableLink(page.toString(), key);
 }
 
-function settingsFor(config: RoomConfig | undefined): HostBotSettings {
-	return { bidder: (config?.botSetup ?? DEFAULT_BOT_SETUP).bidder };
+function settingsFor(
+	config: RoomConfig | undefined,
+	playTimeMs?: number,
+): HostBotSettings {
+	return { bidder: (config?.botSetup ?? DEFAULT_BOT_SETUP).bidder, playTimeMs };
 }
 
 /** After these, the room stays on the screen but can no longer act. */
@@ -288,7 +291,10 @@ export function showRoom(
 			botRunner?.setSeatEnabled(targetSeat, false);
 			return "disabled";
 		}
-		botSettings ??= settingsFor(controller.view().table?.config);
+		botSettings ??= settingsFor(
+			controller.view().table?.config,
+			readSettings(deps.browser).playTimeMs,
+		);
 		const enabledSeat = await controller.setBotSeat(targetSeat, true);
 		if (!enabledSeat) return "failed";
 		delegatedBotSeats.add(targetSeat);
@@ -332,6 +338,13 @@ export function showRoom(
 	const settings = settingsDialog(deps, handlers.reload, applySettings);
 
 	function applySettings(): void {
+		if (botSettings) {
+			botSettings = {
+				...botSettings,
+				playTimeMs: readSettings(deps.browser).playTimeMs,
+			};
+			botRunner?.updateSettings(botSettings);
+		}
 		// A new orientation choice changes the view at once.
 		deviceWatch.check();
 		// The table reads the display settings when it renders, so it renders again although its view did not change.
@@ -1052,7 +1065,7 @@ export function showRoom(
 			);
 			return false;
 		}
-		botSettings ??= settingsFor(config);
+		botSettings ??= settingsFor(config, readSettings(deps.browser).playTimeMs);
 		botStarting = true;
 		botAutoAttempted = true;
 		const runner = new HostBotRunner(controller, botSettings, () => {

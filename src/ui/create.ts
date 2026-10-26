@@ -15,6 +15,7 @@ import type { Bookmark } from "./bookmark";
 import type { AppDeps, Dispose } from "./deps";
 import { el } from "./dom";
 import { checkCreateFields, DEFAULT_CREATE_FIELDS, storageText } from "./model";
+import { readSettings } from "./settings";
 
 /**
  * The create screen, prefilled from a bookmark (names and the creator's seat). Calls `onCreated` with the table key,
@@ -176,7 +177,12 @@ export function showCreate(
 		}
 		const config: RoomConfig = { ...check.config, botSetup };
 		const hostBotSettings =
-			botSeats.length > 0 ? { bidder: botSetup.bidder } : undefined;
+			botSeats.length > 0
+				? {
+						bidder: botSetup.bidder,
+						playTimeMs: readSettings(deps.browser).playTimeMs,
+					}
+				: undefined;
 		showErrors([]);
 		submit.disabled = true;
 		submit.textContent = deps.t("Creating…");

@@ -38,18 +38,28 @@ Stopping or pausing aborts the request.
 An abort terminates synchronous native work; resuming can create a fresh worker.
 Claims, undo requests, seat changes, and stale results still pass through the existing host checks.
 
-The default core budget is 96 samples or 1,200 ms, checked between native calls.
+The default budget is 5,000 ms per non-forced card decision, checked between native calls.
+There is no default sample-count cap, so faster positions use the remaining time for more hidden-hand samples.
+Explicit sample limits remain available for controlled evaluations.
+The host preference `opentrick.settings.play-time-ms` accepts integer milliseconds from 1 to 60,000 and defaults to 5,000 when absent or invalid.
+Saving display settings preserves it; its visible Settings control is deferred.
+`BrowserPlayEngine` also accepts a constructor budget and a per-request override.
 Completed evaluations are sent progressively.
-At 1,500 ms, the browser returns the latest completed evaluation and terminates a native call that has overrun the budget.
-If no evaluation has completed yet, it waits for the first result, with a hard deadline of 15 seconds.
+At the configured target, the browser returns the latest completed evaluation and terminates an overrunning native call.
+If no evaluation has completed yet, it waits for the first result, with a hard deadline of the larger of 15 seconds and the configured target plus 10 seconds.
 A hard deadline without a result is an explicit error; it does not substitute a random card or call an LLM.
 The Node bot uses the same core with its soft budget; a single synchronous native call can exceed that budget.
+Forced plays return immediately.
+The additional samples improve Monte Carlo resolution; DDS itself already solves each sampled deal exactly.
+The change does not remove imperfect-information strategy limits or establish a measured strength improvement.
 
 ## Verification
 
 The unit checks cover hidden-information invariance, unseen-card conservation, exposed dummy, shown voids, legal full-board play, equivalent cards, partial tricks, trump overruffs, invalid native input, contract safety, cancellation, and worker deadlines.
 DDS results are also compared with independent exhaustive minimax on two-trick endings in every strain and each partial-trick length.
 The browser tests play a complete board in a real Chrome worker while a page timer continues, then abort and restart the worker.
+They separately test the real five-second default on an ending with more than 96 samples.
+Routine full-board UI tests use the supported 150 ms preference to keep them bounded; these test integration and legality, rather than playing strength.
 The production-build end-to-end test plays two consecutive boards, checks 104 local card decisions, and asserts that no card-play request reaches OpenRouter.
 
 Run the fully local visible demo at `http://localhost:5178`:
@@ -103,6 +113,7 @@ The new mixed suite was fixed before running and used fresh deals.
 The runs do not establish strength against expert humans or established commercial bridge programs.
 
 A separate [3NT test with 25–27 HCP](benchmarks/3nt-25-27.md) played 12 complete boards through the production browser worker.
+Those recorded results used the earlier 96-sample budget and were not rerun for the five-second default.
 It records make rates by point total, double-dummy makeability, and every card played.
 Run it with `npm run --silent benchmark:3nt`; it requires no API key.
 

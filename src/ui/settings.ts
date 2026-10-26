@@ -1,3 +1,8 @@
+import {
+	DEFAULT_PLAY_TIME_MS,
+	isPlayTimeMs,
+	playTimeMs,
+} from "../bot/play-budget";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import type { MaybeStorage } from "../session";
 
@@ -9,6 +14,8 @@ export type Theme = (typeof THEMES)[number];
  * The language keeps its own storage name.
  */
 export interface Settings {
+	/** Local card-search target; a future settings control can edit the persisted value. */
+	readonly playTimeMs: number;
 	readonly pointSystem: PointSystem;
 	/** The points of the hand next to the cards. */
 	readonly cardPoints: boolean;
@@ -29,6 +36,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+	playTimeMs: DEFAULT_PLAY_TIME_MS,
 	pointSystem: "hcp",
 	cardPoints: true,
 	theme: "light",
@@ -77,6 +85,7 @@ export function readSettings(storage: MaybeStorage): Settings {
 		storage?.getItem(PREFIX + name);
 	// An earlier version stored "none" for no points: no system preference, so the default system without card points.
 	const storedPoints = read("points");
+	const storedPlayTime = Number(read("play-time-ms"));
 	const flags = Object.fromEntries(
 		Object.entries(FLAGS).map(([field, name]) => [
 			field,
@@ -84,6 +93,9 @@ export function readSettings(storage: MaybeStorage): Settings {
 		]),
 	) as Record<keyof typeof FLAGS, boolean>;
 	return {
+		playTimeMs: isPlayTimeMs(storedPlayTime)
+			? storedPlayTime
+			: DEFAULT_PLAY_TIME_MS,
 		pointSystem: readChoice(
 			storedPoints,
 			POINT_SYSTEMS,
@@ -98,9 +110,11 @@ export function readSettings(storage: MaybeStorage): Settings {
 	};
 }
 
-/** Saves display preferences independently of the table's bot policy. */
+/** Saves local preferences independently of the table's bidding policy. */
 export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
+	const budget = playTimeMs(settings.playTimeMs);
+	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);
 	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");
 	storage.setItem(`${PREFIX}theme`, settings.theme);

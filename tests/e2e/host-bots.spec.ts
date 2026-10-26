@@ -314,6 +314,23 @@ test("the bots reject the host's claims, so the board is played out", async ({
 	page,
 }) => {
 	test.setTimeout(120_000);
+	// Keep the observed completion after the next board replaces the table.
+	await page.addInitScript(() => {
+		new MutationObserver(() => {
+			const completed = document.querySelector('[data-phase="complete"]');
+			if (completed?.getAttribute("data-board") === "1") {
+				document.documentElement.setAttribute(
+					"data-completed-board-1-at",
+					completed.getAttribute("data-at") ?? "",
+				);
+			}
+		}).observe(document, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: ["data-phase", "data-board", "data-at"],
+		});
+	});
 	await westDeclaresAgainstBots(page);
 	// North dealer: 1NT, pass, pass, West 2NT, and three passes.
 	const calls = 7;
@@ -358,9 +375,7 @@ test("the bots reject the host's claims, so the board is played out", async ({
 
 	// The bots reject this claim too, and board 1 ends after all 52 cards; board 2 is dealt soon after.
 	await playUntil(
-		page.locator(
-			`[data-board="1"][data-phase="complete"][data-at="${calls + 52}"]`,
-		),
+		page.locator(`html[data-completed-board-1-at="${calls + 52}"]`),
 	);
 });
 

@@ -2,6 +2,7 @@ import { type Card, RANKS, rankOf, SUITS, suitOf } from "../bridge/cards";
 import { countHandPoints } from "../bridge/hand-points";
 import { scoreContract } from "../bridge/rules";
 import type { DoubleDummySolver } from "./dds-solver";
+import { playTimeMs } from "./play-budget";
 import type { PlayPosition } from "./play-position";
 import { createHandSampler, type RemainingHands } from "./play-sampling";
 
@@ -91,18 +92,14 @@ export function analyzePlay(
 	solver: DoubleDummySolver,
 	options: PlayOptions = {},
 ): PlayAnalysis {
-	const samples = options.samples ?? 96;
-	const timeMs = options.timeMs ?? 1200;
+	const samples = options.samples;
+	const timeMs = playTimeMs(options.timeMs);
 	if (
-		!Number.isInteger(samples) ||
-		samples < 1 ||
-		samples > 4096 ||
-		!Number.isFinite(timeMs) ||
-		timeMs <= 0 ||
-		timeMs > 60_000
+		samples !== undefined &&
+		(!Number.isInteger(samples) || samples < 1 || samples > 4096)
 	)
 		throw new Error(
-			"play budget requires 1..4096 samples and 0..60000 milliseconds",
+			"an explicit play sample limit must be an integer from 1 to 4096",
 		);
 	const only = position.legal[0];
 	if (!only) throw new Error("card engine has no legal play");
@@ -160,7 +157,7 @@ export function analyzePlay(
 		};
 	};
 	while (
-		count < samples &&
+		(samples === undefined || count < samples) &&
 		(count === 0 || performance.now() - start < timeMs)
 	) {
 		const hands = sampler(random);

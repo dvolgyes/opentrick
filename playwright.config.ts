@@ -12,6 +12,18 @@ export default defineConfig({
 	reporter: [["list"]],
 	use: {
 		baseURL: `http://localhost:${PORT}/`,
+		// UI flows use the supported shorter preference; a real-worker test covers the five-second default.
+		storageState: {
+			cookies: [],
+			origins: [
+				{
+					origin: `http://localhost:${PORT}`,
+					localStorage: [
+						{ name: "opentrick.settings.play-time-ms", value: "150" },
+					],
+				},
+			],
+		},
 		channel: "chrome",
 		// No traces: they would record the table keys in the links.
 		trace: "off",

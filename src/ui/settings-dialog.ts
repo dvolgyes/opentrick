@@ -188,6 +188,7 @@ export function settingsDialog(
 
 	function saveSettings(): void {
 		const settings: Settings = {
+			playTimeMs: readSettings(deps.browser).playTimeMs,
 			pointSystem: points.value(),
 			cardPoints: cardPoints.checked,
 			theme: theme.value(),

@@ -6,8 +6,50 @@ import { applyAction, boardStatus, createBoard } from "../../src/bridge/engine";
 import { bidding, DEAL } from "../unit/bridge-fixtures";
 
 describe("browser card engine", () => {
+	it("spends the default budget on more than 96 samples in an ending", async () => {
+		let board = bidding(createBoard(1, DEAL), "3NT P P P");
+		for (let ply = 0; ply < 52; ply++) {
+			const status = boardStatus(board);
+			if (status.phase !== "play") throw new Error("no test ending found");
+			const position = playPosition(board, status.actor);
+			if (ply >= 32 && position.legal.length > 1) {
+				const engine = new BrowserPlayEngine();
+				try {
+					const start = performance.now();
+					const result = await engine.choose(
+						position,
+						new AbortController().signal,
+					);
+					const elapsedMs = performance.now() - start;
+					expect(result.samples).toBeGreaterThan(96);
+					expect(elapsedMs).toBeGreaterThanOrEqual(4500);
+					expect(elapsedMs).toBeLessThan(8000);
+					expect(position.legal).toContain(result.card);
+					console.info(
+						"default play budget",
+						JSON.stringify({
+							elapsedMs,
+							samples: result.samples,
+							effectiveSamples: result.effectiveSamples,
+						}),
+					);
+					return;
+				} finally {
+					engine.stop();
+				}
+			}
+			const action = {
+				type: "play" as const,
+				card: position.legal[0] as NonNullable<(typeof position.legal)[0]>,
+			};
+			const applied = applyAction(board, status.actor, action);
+			if (!applied.ok) throw new Error(applied.reason);
+			board = applied.board;
+		}
+		throw new Error("no test ending with a choice");
+	}, 15_000);
 	it("plays a whole board in a real worker while the page stays responsive", async () => {
-		const engine = new BrowserPlayEngine();
+		const engine = new BrowserPlayEngine({ timeMs: 150 });
 		const abort = new AbortController();
 		let ticks = 0;
 		const timer = setInterval(() => ticks++, 10);

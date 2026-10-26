@@ -1,10 +1,15 @@
 import { isCard } from "../bridge/cards";
 import { BotRequestAbortedError } from "./errors";
+import { playTimeMs } from "./play-budget";
 import type { PlayAnalysis } from "./play-engine";
 import type { PlayPosition } from "./play-position";
 
 export interface PlayChooser {
-	choose(position: PlayPosition, signal: AbortSignal): Promise<PlayAnalysis>;
+	choose(
+		position: PlayPosition,
+		signal: AbortSignal,
+		timeMs?: number,
+	): Promise<PlayAnalysis>;
 	stop(): void;
 }
 
@@ -12,6 +17,10 @@ export interface PlayChooser {
 export class BrowserPlayEngine implements PlayChooser {
 	#worker: Worker | undefined;
 	#cancel: (() => void) | undefined;
+	readonly #timeMs: number;
+	constructor(options: { readonly timeMs?: number } = {}) {
+		this.#timeMs = playTimeMs(options.timeMs);
+	}
 
 	stop(): void {
 		this.#cancel?.();
@@ -19,7 +28,12 @@ export class BrowserPlayEngine implements PlayChooser {
 		this.#worker = undefined;
 	}
 
-	choose(position: PlayPosition, signal: AbortSignal): Promise<PlayAnalysis> {
+	choose(
+		position: PlayPosition,
+		signal: AbortSignal,
+		timeMs = this.#timeMs,
+	): Promise<PlayAnalysis> {
+		const budget = playTimeMs(timeMs);
 		if (signal.aborted) return Promise.reject(new BotRequestAbortedError());
 		if (this.#cancel)
 			return Promise.reject(new Error("card engine is already searching"));
@@ -55,10 +69,10 @@ export class BrowserPlayEngine implements PlayChooser {
 			};
 			const budgetTimer = setTimeout(() => {
 				if (latest) accept(latest, true);
-			}, 1500);
+			}, budget);
 			const timer = setTimeout(
 				() => fail(new Error("card engine exceeded its search deadline")),
-				15_000,
+				Math.max(15_000, budget + 10_000),
 			);
 			this.#cancel = abort;
 			signal.addEventListener("abort", abort, { once: true });
@@ -76,9 +90,9 @@ export class BrowserPlayEngine implements PlayChooser {
 				}
 				latest = data.analysis as PlayAnalysis;
 				if (!data.partial) accept(latest, false);
-				else if (performance.now() - started >= 1500) accept(latest, true);
+				else if (performance.now() - started >= budget) accept(latest, true);
 			};
-			worker.postMessage(position);
+			worker.postMessage({ position, timeMs: budget });
 		});
 	}
 }
