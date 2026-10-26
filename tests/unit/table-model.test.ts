@@ -429,24 +429,23 @@ describe("auction", () => {
 		]);
 	});
 
-	it("names each seat's bidding system, and HCP for a bot", () => {
+	it("names each seat's bidding system and marks learned bots as other", () => {
 		const state = {
 			...tableState(bidding(BOARD, "1C")),
 			systems: { N: "vienna", E: "other", W: "reith" },
 		} as const;
 		expect(
 			view("S", null, { state, bots: new Set<Seat>(["W"]) }).auction?.systems,
-		).toEqual(["vienna", "other", undefined, "hcp"]);
+		).toEqual(["vienna", "other", undefined, "other"]);
 	});
 
 	it("explains each described call by its caller's system, in the cell of the call", () => {
 		const state = {
 			...tableState(bidding(createBoard(2, DEAL), "1NT P 2C P")),
-			systems: { W: "hcp-corrected" },
+			systems: { E: "hcp", W: "hcp-corrected" },
 		} as const;
 		const auction = view("N", null, {
 			state,
-			bots: new Set<Seat>(["E"]),
 		}).auction;
 		expect(auction?.rows).toEqual([["—", "1NT", "Pass", "2♣"], ["Pass"]]);
 		expect(auction?.meanings).toEqual([
@@ -458,6 +457,10 @@ describe("auction", () => {
 			],
 			[undefined],
 		]);
+		expect(
+			view("N", null, { state, bots: new Set<Seat>(["E"]) }).auction
+				?.meanings[0]?.[1],
+		).toBeUndefined();
 	});
 
 	it("explains an overcall, marks a call that the guide does not describe, and gives no meaning to a scale with only a guide", () => {

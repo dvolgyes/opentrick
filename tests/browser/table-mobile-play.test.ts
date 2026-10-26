@@ -1323,7 +1323,7 @@ describe("compact play controls", () => {
 			},
 			"desktop",
 		);
-		section.setBotControls(false, ["E"], "inception/mercury-3");
+		section.setBotControls(false, ["E"]);
 		const name = root.querySelector<HTMLElement>(
 			"[data-testid='hand-E'] .seat-label .name",
 		);
@@ -1342,9 +1342,9 @@ describe("compact play controls", () => {
 		expect(artwork?.getAttribute("src")).toBeTruthy();
 		expect(fallback?.hidden).toBe(true);
 
-		section.setBotControls(false, ["E"], "unmapped/model");
+		section.setBotControls(false, []);
 		expect(artwork?.hidden).toBe(true);
-		expect(fallback?.hidden).toBe(false);
+		expect(overlay?.hidden).toBe(true);
 	});
 
 	it("shows a camera of a bot seat in place of the bot image", () => {
@@ -1358,7 +1358,7 @@ describe("compact play controls", () => {
 			},
 			"desktop",
 		);
-		section.setBotControls(false, ["E"], "inception/mercury-3");
+		section.setBotControls(false, ["E"]);
 		const canvas = document.createElement("canvas");
 		const track = canvas.captureStream().getVideoTracks()[0];
 		if (track === undefined) throw new Error("the canvas gives no track");
@@ -2801,7 +2801,9 @@ describe("hand points", () => {
 	it.each(["desktop", "compact"] as const)(
 		"hints the calculation of the points, one line each, and a click shows the same in a dialog with only OK (%s)",
 		(form) => {
-			const { root } = renderView(pointsView(), form);
+			const { root } = renderView(pointsView(), form, undefined, undefined, {
+				pointSystem: () => "hcp-corrected",
+			});
 			const shownPill = pill(root);
 			expect(shownPill?.textContent).toBe("corrected HCP: 15 (13 +2)");
 			expect(shownPill?.title).toBe(LINES.join("\n"));
@@ -2899,7 +2901,7 @@ describe("hand points", () => {
 			"desktop",
 			undefined,
 			translator("de"),
-			{ locale: "de" },
+			{ locale: "de", pointSystem: () => "hcp-corrected" },
 		);
 		pill(root)?.click();
 		expect(dialog(root)?.querySelector("li:last-child")?.textContent).toBe(
@@ -3040,7 +3042,7 @@ describe("bidding guide", () => {
 			"desktop",
 			undefined,
 			translator("de"),
-			{ locale: "de" },
+			{ locale: "de", pointSystem: () => "hcp-corrected" },
 		);
 		root.querySelector<HTMLButtonElement>(".bid-guide button")?.click();
 		await loaded(root).toBe("Reizleitfaden: korrigierte Milton HCP");
@@ -3286,6 +3288,52 @@ describe("convention hint", () => {
 		root.querySelector<HTMLButtonElement>(".bid-actions .confirm");
 	const hint = (root: HTMLElement) =>
 		confirm(root)?.querySelector(".convention-hint")?.textContent;
+
+	it.each(["desktop", "compact"] as const)(
+		"explains a doubleton transfer acceptance and the doubled-transfer exception (%s)",
+		(form) => {
+			const cards: readonly Card[] = [
+				"SA",
+				"SQ",
+				"SJ",
+				"S4",
+				"HK",
+				"H5",
+				"DA",
+				"D7",
+				"D3",
+				"CK",
+				"C8",
+				"C6",
+				"C2",
+			];
+			const normal = renderView(
+				bidView(["1NT", "P", "2D", "P"], cards),
+				form,
+				undefined,
+				undefined,
+				hcp,
+			).root;
+			const explanation = normal.querySelector(
+				'[data-testid="transfer-explanation"]',
+			);
+			expect(explanation?.textContent).toContain("2♥");
+			expect(explanation?.textContent).toContain(
+				"Three-card support is not required.",
+			);
+			const doubled = renderView(
+				bidView(["1NT", "P", "2D", "X"], cards),
+				form,
+				undefined,
+				undefined,
+				hcp,
+			).root;
+			expect(
+				doubled.querySelector('[data-testid="transfer-explanation"]')
+					?.textContent,
+			).toBe("Pass: at most 2 ♥ after the transfer was doubled");
+		},
+	);
 
 	it.each(["desktop", "compact"] as const)(
 		"names the guide call on Confirm when the chosen call differs, and nothing for the guide call (%s)",

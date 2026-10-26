@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
+import { mockBotBidding } from "./bot-mock";
 import { freeze } from "./lifecycle";
-import { mockOpenRouterKey } from "./openrouter-mock";
+
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, pick, rosterSeat } from "./room";
 
@@ -11,26 +12,7 @@ import { CONNECT_MS, createRoom, pick, rosterSeat } from "./room";
 
 /** The bots always pass, so the first board stays in the auction while the test runs. */
 async function passingBots(page: Page): Promise<void> {
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", (route) =>
-		route.fulfill({
-			status: 200,
-			headers: {
-				"access-control-allow-origin": "*",
-				"access-control-allow-headers": "authorization,content-type",
-			},
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [{ type: "output_text", text: '{"call":"P"}' }],
-					},
-				],
-			}),
-		}),
-	);
+	await mockBotBidding(page, () => "P");
 }
 
 interface Exported {
@@ -58,7 +40,7 @@ test("the host closes the link of a paused player after 15 s of silence, and the
 		await passingBots(hostPage);
 		for (const seat of ["E", "S"])
 			await hostPage.locator(`input[name="bot-${seat}"]`).check();
-		await hostPage.locator('input[name="openrouter-key"]').fill("test-key");
+
 		const link = await createRoom(hostPage);
 		const guestPage = await guest.page(link);
 		await pick(guestPage, "N");

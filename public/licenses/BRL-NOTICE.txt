@@ -1,0 +1,22 @@
+OpenTrick distributes the supervised and RL/FSP bidding weights from BRL.
+Copyright 2024 Haruka Kita and Sotetsu Koyamada.
+Source: https://github.com/harukaki/brl
+Original model revision: fdd958ff8adcb44844d70ea2e233bed18d5a7b70
+License: Apache-2.0 (BRL-LICENSE.txt in this directory).
+
+The parameters are converted from BRL's Haiku pickle files to little-endian float32 data.
+The numerical weights are unchanged.
+The raw data distribution is from Nickel Bridge by Brannon Dorsey at revision
+92a81b5e81cb7aac2eabc147e82f18e0040b512e, packages/ai/models/{sl,rl-fsp}.bin.
+Source: https://github.com/brannondorsey/nickel-bridge
+That project's README attributes the weights to BRL under Apache-2.0.
+OpenTrick does not incorporate Nickel Bridge application code.
+
+OpenTrick's bid-position encoder adapts the observation layout in PGX 1.4.0
+by Sotetsu Koyamada and contributors from Python/JAX to TypeScript.
+Source: https://github.com/sotetsuk/pgx/blob/v1.4.0/pgx/bridge_bidding.py
+Copyright 2023 The Pgx Authors. All Rights Reserved.
+License: Apache-2.0 (PGX-LICENSE.txt in this directory).
+OpenTrick adds input checks and uses its existing card and auction types.
+
+OpenTrick's original code and assets retain their existing license.

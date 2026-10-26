@@ -1,0 +1,3 @@
+{"type":"position","seed":20261027,"ply":1,"actor":"N","turn":"S","engineCard":"S3","engineLoss":0,"engineMs":1302.7480630000005,"samples":34,"effectiveSamples":34,"llmCard":"S3","llmLoss":0,"llmMs":6279.019174000001}
+{"type":"position","seed":20261027,"ply":9,"actor":"E","turn":"E","engineCard":"D2","engineLoss":0,"engineMs":1216.5347980000006,"samples":86,"effectiveSamples":86,"llmCard":"DA","llmLoss":0,"llmMs":13140.030934}
+{"type":"position","seed":20261027,"ply":25,"actor":"N","turn":"N","engineCard":"H7","engineLoss":0,"engineMs":0.021162000000913395,"samples":0,"effectiveSamples":0,"llmCard":"H7","llmLoss":0,"llmMs":2112.2962430000007}

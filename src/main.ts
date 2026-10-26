@@ -13,6 +13,7 @@ import { trysteroMesh } from "./p2p/trystero";
 import { guardedStorage, SeatMemory, webSeatLocks } from "./session";
 import { startApp } from "./ui/app";
 import type { CallSupport } from "./ui/deps";
+import { discardLegacyBotSettings } from "./ui/legacy-bot-settings";
 import { readSettings } from "./ui/settings";
 import { watchTheme } from "./ui/theme";
 
@@ -221,6 +222,7 @@ function askPersistence(): Promise<boolean> {
 }
 
 async function main(root: HTMLElement): Promise<void> {
+	discardLegacyBotSettings(browser);
 	// Trystero and the table identifiers need Web Crypto, which only a secure context has (plan §4.1).
 	if (!window.isSecureContext) {
 		root.textContent = t("Open this page over HTTPS.");

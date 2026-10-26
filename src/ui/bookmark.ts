@@ -1,6 +1,4 @@
 import {
-	BOT_MODELS,
-	type BotModel,
 	type BotSetup,
 	DEFAULT_BOT_SETUP,
 	isSeat,
@@ -154,25 +152,13 @@ export function bookmarkQuery(
 	if (botSetup !== undefined) {
 		pairs.push(
 			["bot_seats", botSetup.seats.join(",")],
-			["bot_model", botSetup.model],
-			["bot_fallback", botSetup.fallbackModel],
-			["bot_retries", String(botSetup.retries)],
-			["bot_delay_ms", String(botSetup.retryDelayMs)],
+			["bot_bidder", botSetup.bidder],
 		);
-		if (botSetup.modelOrder !== undefined)
-			pairs.push(["bot_models", botSetup.modelOrder.join(",")]);
 	}
 	return new URLSearchParams(pairs).toString();
 }
 
-const BOT_SETUP_PARAMS = [
-	"bot_seats",
-	"bot_model",
-	"bot_fallback",
-	"bot_models",
-	"bot_retries",
-	"bot_delay_ms",
-] as const;
+const BOT_SETUP_PARAMS = ["bot_bidder", "bot_seats"] as const;
 
 function hasBotSetupParams(params: URLSearchParams): boolean {
 	return BOT_SETUP_PARAMS.some((name) => params.has(name));
@@ -189,46 +175,8 @@ function parseBotSetupParams(params: URLSearchParams): BotSetup | undefined {
 			: seatsText.split(",").map((value) => value.toUpperCase());
 	const seatList = SEATS.filter((seat) => seats.includes(seat));
 	if (seatList.length !== seats.length) return undefined;
-	const retries = parseIntegerParam(
-		params.get("bot_retries"),
-		DEFAULT_BOT_SETUP.retries,
-	);
-	const retryDelayMs = parseIntegerParam(
-		params.get("bot_delay_ms"),
-		DEFAULT_BOT_SETUP.retryDelayMs,
-	);
-	if (retries === undefined || retryDelayMs === undefined) return undefined;
-	const modelOrder = params.has("bot_models")
-		? parseModelOrder(params.get("bot_models"))
-		: undefined;
-	if (params.has("bot_models") && modelOrder === undefined) return undefined;
 	return parseBotSetup({
 		seats: seatList,
-		model: params.get("bot_model") ?? DEFAULT_BOT_SETUP.model,
-		fallbackModel:
-			params.get("bot_fallback") ?? DEFAULT_BOT_SETUP.fallbackModel,
-		...(modelOrder === undefined ? {} : { modelOrder }),
-		retries,
-		retryDelayMs,
+		bidder: params.get("bot_bidder") ?? DEFAULT_BOT_SETUP.bidder,
 	});
-}
-
-function parseModelOrder(value: string | null): BotModel[] | undefined {
-	if (value === null) return undefined;
-	const models = value.split(",");
-	return models.length >= 2 &&
-		models.length <= BOT_MODELS.length &&
-		new Set(models).size === models.length
-		? (models as BotModel[])
-		: undefined;
-}
-
-function parseIntegerParam(
-	value: string | null,
-	fallback: number,
-): number | undefined {
-	if (value === null) return fallback;
-	if (!/^\d+$/.test(value)) return undefined;
-	const parsed = Number(value);
-	return Number.isSafeInteger(parsed) ? parsed : undefined;
 }

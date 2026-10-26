@@ -351,10 +351,7 @@ describe("host-local bots", () => {
 			...CONFIG,
 			botSetup: {
 				seats: ["E", "W"],
-				model: "inception/mercury-3",
-				fallbackModel: "openai/gpt-6-luna",
-				retries: 5,
-				retryDelayMs: 5000,
+				bidder: "sl",
 			},
 		});
 		rig.clock.now += HOST_LOST_MS + SEAT_GRACE_MS;

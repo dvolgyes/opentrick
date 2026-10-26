@@ -1,5 +1,9 @@
+import {
+	DEFAULT_PLAY_TIME_MS,
+	isPlayTimeMs,
+	playTimeMs,
+} from "../bot/play-budget";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
-import { BOT_MODELS, type BotModel } from "../protocol";
 import type { MaybeStorage } from "../session";
 
 /** The colour themes of themes.css; each has a light and a dark palette. */
@@ -10,15 +14,13 @@ export type Theme = (typeof THEMES)[number];
 export const SCHEMES = ["auto", "light", "dark"] as const;
 export type Scheme = (typeof SCHEMES)[number];
 
-/** The place of the custom model in the model order. Model ids contain "/", so it cannot name a model. */
-export const CUSTOM_MODEL_SLOT = "custom";
-export type ModelSlot = BotModel | typeof CUSTOM_MODEL_SLOT;
-
 /**
  * Display and bot choices of one player, kept in this browser's local storage and never sent to the table.
- * The language and the OpenRouter key keep their own storage names.
+ * The language keeps its own storage name.
  */
 export interface Settings {
+	/** Local card-search target; a future settings control can edit the persisted value. */
+	readonly playTimeMs: number;
 	readonly pointSystem: PointSystem;
 	/** The points of the hand next to the cards. */
 	readonly cardPoints: boolean;
@@ -37,14 +39,11 @@ export interface Settings {
 	readonly landscapeDesktop: boolean;
 	/** A computer with a portrait window gets the mobile view (src/call/device-class.ts). */
 	readonly portraitMobile: boolean;
-	/** An OpenRouter model id, or "" for none. */
-	readonly customModel: string;
-	/** Each built-in model and the custom slot once; the slot is last while the custom model is "". */
-	readonly modelOrder: readonly ModelSlot[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-	pointSystem: "hcp-corrected",
+	playTimeMs: DEFAULT_PLAY_TIME_MS,
+	pointSystem: "hcp",
 	cardPoints: true,
 	theme: "normal",
 	scheme: "auto",
@@ -57,8 +56,6 @@ export const DEFAULT_SETTINGS: Settings = {
 	relayChecks: false,
 	landscapeDesktop: false,
 	portraitMobile: true,
-	customModel: "",
-	modelOrder: [...BOT_MODELS, CUSTOM_MODEL_SLOT],
 };
 
 const PREFIX = "opentrick.settings.";
@@ -73,50 +70,6 @@ const FLAGS = {
 	landscapeDesktop: "landscape-desktop",
 	portraitMobile: "portrait-mobile",
 } as const satisfies Partial<Record<keyof Settings, string>>;
-
-const MODEL_ID = /^~?[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9._~:-]+$/;
-const MODEL_ID_MAX_LENGTH = 200;
-
-/** Why `model` (already trimmed) cannot be the custom model, as an English message; undefined when it can. */
-export function customModelProblem(model: string): string | undefined {
-	if (model === "") return undefined;
-	if (model.length > MODEL_ID_MAX_LENGTH || !MODEL_ID.test(model))
-		return "Enter an OpenRouter model id, for example vendor/model.";
-	if ((BOT_MODELS as readonly string[]).includes(model))
-		return "This model is already in the list.";
-	return undefined;
-}
-
-/**
- * Each built-in model once, in the stored order, then the missing ones in their default order. A set custom
- * model keeps its stored place, or goes first when the stored order has none; an empty one goes last.
- */
-export function resolveModelOrder(
-	stored: readonly string[] | undefined,
-	customModel: string,
-): ModelSlot[] {
-	const known = new Set<string>([...BOT_MODELS, CUSTOM_MODEL_SLOT]);
-	const order = [...new Set(stored ?? [])].filter((slot): slot is ModelSlot =>
-		known.has(slot),
-	);
-	for (const model of BOT_MODELS) if (!order.includes(model)) order.push(model);
-	const builtIn = order.filter((slot) => slot !== CUSTOM_MODEL_SLOT);
-	if (customModel === "") return [...builtIn, CUSTOM_MODEL_SLOT];
-	return order.includes(CUSTOM_MODEL_SLOT)
-		? order
-		: [CUSTOM_MODEL_SLOT, ...builtIn];
-}
-
-/** The model ids to ask, in order; an empty custom model is left out. */
-export function effectiveModelOrder(settings: Settings): string[] {
-	return settings.modelOrder.flatMap((slot) =>
-		slot !== CUSTOM_MODEL_SLOT
-			? [slot]
-			: settings.customModel === ""
-				? []
-				: [settings.customModel],
-	);
-}
 
 function readChoice<T extends string>(
 	value: string | null | undefined,
@@ -137,12 +90,9 @@ function readFlag(
 export function readSettings(storage: MaybeStorage): Settings {
 	const read = (name: string): string | null | undefined =>
 		storage?.getItem(PREFIX + name);
-	const storedModel = (read("custom-model") ?? "").trim();
-	const customModel =
-		customModelProblem(storedModel) === undefined ? storedModel : "";
-	const storedOrder = read("model-order");
 	// An earlier version stored "none" for no points: no system preference, so the default system without card points.
 	const storedPoints = read("points");
+	const storedPlayTime = Number(read("play-time-ms"));
 	const flags = Object.fromEntries(
 		Object.entries(FLAGS).map(([field, name]) => [
 			field,
@@ -150,6 +100,9 @@ export function readSettings(storage: MaybeStorage): Settings {
 		]),
 	) as Record<keyof typeof FLAGS, boolean>;
 	return {
+		playTimeMs: isPlayTimeMs(storedPlayTime)
+			? storedPlayTime
+			: DEFAULT_PLAY_TIME_MS,
 		pointSystem: readChoice(
 			storedPoints,
 			POINT_SYSTEMS,
@@ -163,17 +116,14 @@ export function readSettings(storage: MaybeStorage): Settings {
 		theme: readChoice(read("theme-style"), THEMES, DEFAULT_SETTINGS.theme),
 		scheme: readChoice(read("scheme"), SCHEMES, DEFAULT_SETTINGS.scheme),
 		...flags,
-		customModel,
-		modelOrder: resolveModelOrder(
-			storedOrder ? storedOrder.split(",") : undefined,
-			customModel,
-		),
 	};
 }
 
-/** An empty custom model is not stored in the order, so setting one later puts it first. */
+/** Saves local preferences independently of the table's bidding policy. */
 export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
+	const budget = playTimeMs(settings.playTimeMs);
+	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);
 	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");
 	storage.setItem(`${PREFIX}theme-style`, settings.theme);
@@ -184,14 +134,4 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 			PREFIX + name,
 			settings[field as keyof typeof FLAGS] ? "1" : "0",
 		);
-	if (settings.customModel === "") storage.removeItem(`${PREFIX}custom-model`);
-	else storage.setItem(`${PREFIX}custom-model`, settings.customModel);
-	storage.setItem(
-		`${PREFIX}model-order`,
-		settings.modelOrder
-			.filter(
-				(slot) => settings.customModel !== "" || slot !== CUSTOM_MODEL_SLOT,
-			)
-			.join(","),
-	);
 }

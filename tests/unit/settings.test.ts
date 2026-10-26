@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { BOT_MODEL } from "../../src/bot/strategy";
-import { BOT_MODELS, DEFAULT_BOT_SETUP } from "../../src/protocol";
+import { DEFAULT_BOT_SETUP } from "../../src/protocol";
+import { discardLegacyBotSettings } from "../../src/ui/legacy-bot-settings";
 import {
-	CUSTOM_MODEL_SLOT,
-	customModelProblem,
 	DEFAULT_SETTINGS,
-	effectiveModelOrder,
 	readSettings,
-	resolveModelOrder,
 	writeSettings,
 } from "../../src/ui/settings";
 
@@ -25,12 +21,11 @@ function memoryStorage(): Storage {
 	};
 }
 
-const CUSTOM = "anthropic/claude-sonnet-5.5";
-
 describe("player settings", () => {
-	it("uses corrected HCP, the normal theme in the automatic scheme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
+	it("uses HCP, the normal theme in the automatic scheme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
-			pointSystem: "hcp-corrected",
+			playTimeMs: 5000,
+			pointSystem: "hcp",
 			cardPoints: true,
 			theme: "normal",
 			scheme: "auto",
@@ -43,8 +38,6 @@ describe("player settings", () => {
 			relayChecks: false,
 			landscapeDesktop: false,
 			portraitMobile: true,
-			customModel: "",
-			modelOrder: [...BOT_MODELS, CUSTOM_MODEL_SLOT],
 		});
 		expect(readSettings(undefined)).toEqual(DEFAULT_SETTINGS);
 	});
@@ -52,6 +45,7 @@ describe("player settings", () => {
 	it("reads back what it stores, under the opentrick prefix", () => {
 		const storage = memoryStorage();
 		const settings = {
+			playTimeMs: 150,
 			pointSystem: "vienna",
 			cardPoints: false,
 			theme: "solarized",
@@ -65,12 +59,6 @@ describe("player settings", () => {
 			relayChecks: true,
 			landscapeDesktop: false,
 			portraitMobile: true,
-			customModel: CUSTOM,
-			modelOrder: [
-				BOT_MODELS[2],
-				CUSTOM_MODEL_SLOT,
-				...BOT_MODELS.filter((model) => model !== BOT_MODELS[2]),
-			],
 		} as const;
 		writeSettings(storage, settings);
 		expect(readSettings(storage)).toEqual(settings);
@@ -84,19 +72,7 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.theme-style", "<b>solarized</b>");
 		storage.setItem("opentrick.settings.scheme", "auto ");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
-		storage.setItem("opentrick.settings.custom-model", "not a model");
-		storage.setItem(
-			"opentrick.settings.model-order",
-			`unknown/model,${BOT_MODELS[3]},${BOT_MODELS[3]}`,
-		);
-		expect(readSettings(storage)).toEqual({
-			...DEFAULT_SETTINGS,
-			modelOrder: [
-				BOT_MODELS[3],
-				...BOT_MODELS.filter((model) => model !== BOT_MODELS[3]),
-				CUSTOM_MODEL_SLOT,
-			],
-		});
+		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
 	});
 
 	it("ignores the earlier flat theme, and removes it on the next save", () => {
@@ -118,7 +94,7 @@ describe("player settings", () => {
 		const storage = memoryStorage();
 		storage.setItem("opentrick.settings.points", "none");
 		expect(readSettings(storage)).toMatchObject({
-			pointSystem: "hcp-corrected",
+			pointSystem: "hcp",
 			cardPoints: false,
 		});
 		storage.setItem("opentrick.settings.card-points", "1");
@@ -130,78 +106,58 @@ describe("player settings", () => {
 			"local storage is not available",
 		);
 	});
-});
-
-describe("custom model", () => {
-	it("accepts an OpenRouter model id and rejects other text", () => {
-		expect(customModelProblem("")).toBeUndefined();
-		expect(customModelProblem(CUSTOM)).toBeUndefined();
-		expect(customModelProblem("~openai/gpt-sol-latest:free")).toBeUndefined();
-		expect(customModelProblem("gpt")).toBeDefined();
-		expect(customModelProblem("a/b,c/d")).toBeDefined();
-		expect(customModelProblem("a/b c")).toBeDefined();
-		expect(customModelProblem(`a/${"b".repeat(200)}`)).toBeDefined();
-		expect(customModelProblem(BOT_MODELS[0])).toBeDefined();
+	it("validates persisted search budgets and rejects an invalid budget before saving", () => {
+		const storage = memoryStorage();
+		for (const value of [
+			"0",
+			"-1",
+			"NaN",
+			"Infinity",
+			"60001",
+			"0.5",
+			"garbage",
+		]) {
+			storage.setItem("opentrick.settings.play-time-ms", value);
+			expect(readSettings(storage).playTimeMs).toBe(5000);
+		}
+		for (const value of ["150", "5000", "60000"]) {
+			storage.setItem("opentrick.settings.play-time-ms", value);
+			expect(readSettings(storage).playTimeMs).toBe(Number(value));
+		}
+		storage.clear();
+		expect(() =>
+			writeSettings(storage, { ...DEFAULT_SETTINGS, playTimeMs: 0 }),
+		).toThrow(/play time/);
+		expect(storage.length).toBe(0);
 	});
 });
 
-describe("model order", () => {
-	const rotated = [...BOT_MODELS.slice(1), BOT_MODELS[0]];
-
-	it("puts a set custom model first when no order is stored", () => {
-		expect(resolveModelOrder(undefined, CUSTOM)).toEqual([
-			CUSTOM_MODEL_SLOT,
-			...BOT_MODELS,
-		]);
+describe("local bot migration", () => {
+	it("allows a guest to continue when browser storage is denied", () => {
+		const storage = memoryStorage();
+		storage.removeItem = () => {
+			throw new Error("storage denied");
+		};
+		expect(discardLegacyBotSettings(storage)).toBe(false);
 	});
-
-	it("puts a set custom model first when the stored order has no custom model", () => {
-		expect(resolveModelOrder(rotated, CUSTOM)).toEqual([
-			CUSTOM_MODEL_SLOT,
-			...rotated,
-		]);
-	});
-
-	it("keeps the stored place of a set custom model", () => {
-		const stored = [BOT_MODELS[1], CUSTOM_MODEL_SLOT, ...rotated.slice(1)];
-		expect(resolveModelOrder(stored, CUSTOM)).toEqual(stored);
-	});
-
-	it("puts an empty custom model last, whatever the stored order says", () => {
-		expect(resolveModelOrder([CUSTOM_MODEL_SLOT, ...rotated], "")).toEqual([
-			...rotated,
-			CUSTOM_MODEL_SLOT,
-		]);
-	});
-
-	it("adds missing built-in models in their default order", () => {
-		expect(resolveModelOrder([BOT_MODELS[4]], "")).toEqual([
-			BOT_MODELS[4],
-			...BOT_MODELS.filter((model) => model !== BOT_MODELS[4]),
-			CUSTOM_MODEL_SLOT,
-		]);
-	});
-
-	it("names the models to ask, without an empty custom model", () => {
-		expect(
-			effectiveModelOrder({
-				...DEFAULT_SETTINGS,
-				customModel: CUSTOM,
-				modelOrder: [BOT_MODELS[1], CUSTOM_MODEL_SLOT, ...rotated.slice(1)],
-			}),
-		).toEqual([BOT_MODELS[1], CUSTOM, ...rotated.slice(1)]);
-		expect(effectiveModelOrder(DEFAULT_SETTINGS)).toEqual([...BOT_MODELS]);
-	});
-});
-
-describe("the default bot model", () => {
-	it("is Luna, with Mercury as the fallback, in the settings and in a new room", () => {
-		expect(effectiveModelOrder(DEFAULT_SETTINGS).slice(0, 2)).toEqual([
-			"openai/gpt-6-luna",
-			"inception/mercury-3",
-		]);
-		expect(DEFAULT_BOT_SETUP.model).toBe("openai/gpt-6-luna");
-		expect(DEFAULT_BOT_SETUP.fallbackModel).toBe("inception/mercury-3");
-		expect(BOT_MODEL).toBe("openai/gpt-6-luna");
+	it("defaults to SL and discards retired credentials without changing display choices", () => {
+		const storage = memoryStorage();
+		storage.setItem("opentrick.openrouter-api-key", "obsolete-test-key");
+		storage.setItem("opentrick.openrouter-spend-usd", "2");
+		storage.setItem("opentrick.settings.custom-model", "retired/model");
+		storage.setItem("opentrick.settings.model-order", "retired/model");
+		storage.setItem("opentrick.settings.theme-style", "solarized");
+		storage.setItem("opentrick.settings.scheme", "dark");
+		storage.setItem("opentrick.settings.play-time-ms", "250");
+		const before = readSettings(storage);
+		discardLegacyBotSettings(storage);
+		expect(storage.length).toBe(3);
+		expect(readSettings(storage)).toEqual(before);
+		expect(readSettings(storage)).toMatchObject({
+			theme: "solarized",
+			scheme: "dark",
+			playTimeMs: 250,
+		});
+		expect(DEFAULT_BOT_SETUP).toEqual({ seats: [], bidder: "sl" });
 	});
 });

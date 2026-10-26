@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
 import { NOBODY_MS } from "../../src/p2p/limits";
-import { mockOpenRouter, mockOpenRouterKey } from "./openrouter-mock";
+import { mockBotBidding } from "./bot-mock";
+
 import { Player, reportNetwork } from "./player";
 import { CONNECT_MS, createRoom, expectSeat, NAME, picks } from "./room";
 
@@ -45,14 +46,11 @@ test("the shared link shows the host's and the bots' seats as taken, and takes t
 	test.setTimeout(180_000);
 	const [host, guest] = players as [Player, Player];
 	const hostPage = await host.page("./");
-	await mockOpenRouter(hostPage);
-	await mockOpenRouterKey(hostPage);
+	await mockBotBidding(hostPage, () => "P");
+
 	const link = await createRoom(hostPage);
 	await hostPage.getByRole("button", { name: "Settings", exact: true }).click();
-	await hostPage
-		.getByTestId("settings-dialog")
-		.getByRole("textbox", { name: "OpenRouter API key" })
-		.fill("test-key");
+
 	await hostPage.getByRole("button", { name: "Save settings" }).click();
 	await switchToBot(hostPage, "N");
 
@@ -81,14 +79,11 @@ test("the host's page keeps its bot seats in its URL without a reload, so the re
 	test.setTimeout(180_000);
 	const [host, guest] = players as [Player, Player];
 	const hostPage = await host.page("./");
-	await mockOpenRouter(hostPage);
-	await mockOpenRouterKey(hostPage);
+	await mockBotBidding(hostPage, () => "P");
+
 	const link = await createRoom(hostPage);
 	await hostPage.getByRole("button", { name: "Settings", exact: true }).click();
-	await hostPage
-		.getByTestId("settings-dialog")
-		.getByRole("textbox", { name: "OpenRouter API key" })
-		.fill("test-key");
+
 	await hostPage.getByRole("button", { name: "Save settings" }).click();
 	await hostPage.evaluate(() => {
 		(window as { notReloaded?: boolean }).notReloaded = true;

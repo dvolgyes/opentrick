@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { PlayChooser } from "../../src/bot/browser-play";
 import { HostBotRunner } from "../../src/bot/host-runner";
-import { NODE_PROMPT_TEMPLATES } from "../../src/bot/node-prompts";
-import { BOT_FALLBACK_MODEL, BOT_MODEL } from "../../src/bot/strategy";
+import type { PlayAnalysis } from "../../src/bot/play-engine";
+import type { Card } from "../../src/bridge/cards";
 import { randomBelowFrom } from "../../src/bridge/deal";
 import {
 	type Action,
@@ -27,12 +28,7 @@ import { call, DEAL } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
 const SETTINGS = {
-	apiKey: "test-key",
-	model: BOT_MODEL,
-	fallbackModel: BOT_FALLBACK_MODEL,
-	modelOrder: [BOT_MODEL],
-	retries: 0,
-	retryDelayMs: 0,
+	bidder: "sl",
 } as const;
 
 const MODULE = createBridgeModule(randomBelowFrom(() => 0));
@@ -110,7 +106,7 @@ function hostAt(state: JsonObject) {
  * A host page at North whose bots sit East and West, on a table that applies each message with the bridge module
  * and refuses what the module refuses.
  */
-function liveHost(state: JsonObject) {
+function liveHost(state: JsonObject, playEngine: PlayChooser) {
 	let current = state;
 	let beforeBot: (() => void) | undefined;
 	let seq = 1000;
@@ -147,7 +143,7 @@ function liveHost(state: JsonObject) {
 	} as unknown as TableController;
 	const onError = vi.fn();
 	return {
-		runner: new HostBotRunner(controller, SETTINGS, onError),
+		runner: new HostBotRunner(controller, SETTINGS, onError, playEngine),
 		onError,
 		deliver,
 		/** `message` reaches the host just before the next bot message. */
@@ -158,42 +154,15 @@ function liveHost(state: JsonObject) {
 	};
 }
 
-/** A model reply that chooses `card`. */
-function playReply(card: string): Response {
-	return new Response(
-		JSON.stringify({
-			output: [
-				{
-					type: "message",
-					role: "assistant",
-					content: [{ type: "output_text", text: JSON.stringify({ card }) }],
-				},
-			],
-		}),
-		{ status: 200, headers: { "Content-Type": "application/json" } },
-	);
-}
-
-/**
- * Serves the prompt templates, and answers each model request with the card that `answer` gives; `asked` counts
- * the model requests.
- */
-function stubModel(answer: () => Promise<string>) {
-	const asked = vi.fn();
-	vi.stubGlobal("window", { setTimeout, clearTimeout });
-	vi.stubGlobal(
-		"fetch",
-		vi.fn(async (input: RequestInfo | URL) => {
-			const template = /^bot-prompts\/(\w+)\.txt$/.exec(String(input))?.[1];
-			if (template)
-				return new Response(
-					NODE_PROMPT_TEMPLATES[template as keyof typeof NODE_PROMPT_TEMPLATES],
-				);
-			asked();
-			return playReply(await answer());
-		}),
-	);
-	return asked;
+/** A card engine reply that chooses `card`. */
+function playReply(card: Card): PlayAnalysis {
+	return {
+		card,
+		samples: 1,
+		effectiveSamples: 1,
+		elapsedMs: 1,
+		evaluations: [],
+	};
 }
 
 afterEach(() => {
@@ -201,23 +170,27 @@ afterEach(() => {
 });
 
 describe("host bot play", () => {
-	// North declares 1C, and East, a bot, is to lead.
-	const start = tableState(OPENING);
-	const board = parseBridgeState(start, ROOM_ID)?.board;
-	const lead = board && legalActions(board, "E")[0];
-	if (lead?.type !== "play") throw new Error("East cannot lead");
-
 	it("decides a claim made while it chooses a card, then plays at the same position", async () => {
+		// North declares 1C, and East, a bot, is to lead.
+		const start = tableState(OPENING);
+		const board = parseBridgeState(start, ROOM_ID)?.board;
+		const lead = board && legalActions(board, "E")[0];
+		if (lead?.type !== "play") throw new Error("East cannot lead");
 		let answerFirst: (() => void) | undefined;
-		const asked = stubModel(async () => {
-			// The first answer waits until the test lets it go; later answers come at once.
-			if (asked.mock.calls.length === 1)
-				await new Promise<void>((resolve) => {
-					answerFirst = resolve;
-				});
-			return lead.card;
-		});
-		const host = liveHost(start);
+		const asked = vi.fn();
+		const chooser: PlayChooser = {
+			stop: () => {},
+			choose: async () => {
+				asked();
+				// The first answer waits until the test lets it go; later answers come at once.
+				if (asked.mock.calls.length === 1)
+					await new Promise<void>((resolve) => {
+						answerFirst = resolve;
+					});
+				return playReply(lead.card);
+			},
+		};
+		const host = liveHost(start, chooser);
 		expect(await host.runner.start()).toBe(true);
 		await vi.waitFor(() => expect(answerFirst).toBeDefined());
 
@@ -236,10 +209,23 @@ describe("host bot play", () => {
 		expect(host.onError).not.toHaveBeenCalled();
 		expect(asked).toHaveBeenCalledTimes(2);
 	});
+});
 
+describe("host bot play, refused", () => {
 	it("decides a claim that reaches the host just before its card, then plays at the same position", async () => {
-		const asked = stubModel(async () => lead.card);
-		const host = liveHost(start);
+		const start = tableState(OPENING);
+		const board = parseBridgeState(start, ROOM_ID)?.board;
+		const lead = board && legalActions(board, "E")[0];
+		if (lead?.type !== "play") throw new Error("East cannot lead");
+		const asked = vi.fn();
+		const chooser: PlayChooser = {
+			stop: () => {},
+			choose: async () => {
+				asked();
+				return playReply(lead.card);
+			},
+		};
+		const host = liveHost(start, chooser);
 		// Declarer North's claim reaches the host after the bot chose East's card, so the host refuses the card.
 		host.beforeNextBot(() => {
 			expect(host.deliver("N", claimRequestPayload(ROOM_ID, 1, 13)).ok).toBe(

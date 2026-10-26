@@ -1,24 +1,17 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import {
-	createWriteStream,
-	existsSync,
-	readFileSync,
-	type WriteStream,
-} from "node:fs";
-import { parseEnv } from "node:util";
+import { createWriteStream, type WriteStream } from "node:fs";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import {
 	DEFAULT_MQTT_BROKER_URLS,
 	DEFAULT_NOSTR_RELAY_URLS,
 	DEFAULT_TRACKER_URLS,
 } from "../../src/p2p/config";
-import { BOT_MODELS, type BotModel } from "../../src/protocol";
 
 /*
- * Four robots play a full board through the real public relays and OpenRouter, once for each kind of signaling
+ * Four robots play a full board through the real public relays with local bidding and DDS play, once for each kind of signaling
  * server alone and once for all three kinds (ADR 0004). The browser page hosts the table at West with autoplay; three
- * Node bots (src/bot/cli.ts) take North, East and South. Opt in: E2E_LIVE=1 and OPENROUTER_API_KEY in .env
- * (`npm run test:e2e:live`). Each run sends real, billed OpenRouter requests.
+ * Node bots (src/bot/cli.ts) take North, East and South. Opt in with E2E_LIVE=1
+ * (`npm run test:e2e:live`). No model API or key is used.
  *
  * In each list of a kind that is on, the first server fails: the browser closes its socket, and the Node bots also
  * have a name that does not exist and an address that does not answer in front of the defaults. A kind that is off
@@ -26,22 +19,9 @@ import { BOT_MODELS, type BotModel } from "../../src/protocol";
  */
 
 const LIVE = process.env.E2E_LIVE === "1";
-const ENV_FILE = ".env";
 const BOARD_MS = 30 * 60_000;
 const MAX_BOARDS = 3;
 const STALL_MS = 10 * 60_000;
-const TEST_MODEL: BotModel = "typesafe/jev-1.14";
-const TEST_MODEL_ORDER: readonly BotModel[] = [
-	TEST_MODEL,
-	...BOT_MODELS.filter((model) => model !== TEST_MODEL),
-];
-
-/** The key stays in this variable: no log, no artifact and no environment variable of this process holds it. */
-const apiKey =
-	LIVE && existsSync(ENV_FILE)
-		? parseEnv(readFileSync(ENV_FILE, "utf8")).OPENROUTER_API_KEY
-		: undefined;
-
 type Kind = "tracker" | "nostr" | "mqtt";
 
 const DEFAULTS: Readonly<Record<Kind, readonly string[]>> = {
@@ -107,7 +87,6 @@ async function closeSockets(
 
 function botEnvironment(on: readonly Kind[]): NodeJS.ProcessEnv {
 	const env: NodeJS.ProcessEnv = { ...process.env };
-	delete env.OPENROUTER_API_KEY;
 	for (const kind of KINDS)
 		env[VARIABLE[kind]] = on.includes(kind)
 			? [...badUrls(kind), ...DEFAULTS[kind]].join(",")
@@ -124,24 +103,11 @@ function startBot(
 ): ChildProcess {
 	const child = spawn(
 		process.execPath,
-		[
-			`--env-file=${ENV_FILE}`,
-			"--import",
-			"tsx",
-			"src/bot/cli.ts",
-			link,
-			"--user",
-			name,
-			"--model",
-			TEST_MODEL,
-		],
+		["--import", "tsx", "src/bot/cli.ts", link, "--user", name],
 		{ env, stdio: ["ignore", "pipe", "pipe"] },
 	);
 	const log = createWriteStream(logPath);
-	const write = (chunk: Buffer) =>
-		log.write(
-			apiKey ? chunk.toString().replaceAll(apiKey, "[redacted]") : chunk,
-		);
+	const write = (chunk: Buffer) => log.write(chunk);
 	child.stdout?.on("data", write);
 	child.stderr?.on("data", write);
 	child.on("exit", (code, signal) => {
@@ -215,9 +181,6 @@ function fullBoard(log: readonly Snapshot[]): FullBoard | undefined {
 	return undefined;
 }
 
-const redact = (text: string): string =>
-	apiKey ? text.replaceAll(apiKey, "[redacted]") : text;
-
 /** The table and the status lines of the page, for the log and for a failure. */
 function tableState() {
 	const text = (id: string) =>
@@ -250,7 +213,7 @@ async function waitForFullBoard(
 	let logged = 0;
 	for (;;) {
 		const { log, state } = await page.evaluate(tableState);
-		const line = redact(JSON.stringify(state));
+		const line = JSON.stringify(state);
 		const now = Date.now();
 		if (line !== shown || now - logged >= 60_000) {
 			tableLog.write(`${new Date(now).toISOString()} ${line}\n`);
@@ -278,15 +241,13 @@ async function waitForFullBoard(
 	}
 }
 
-/** The bot setup of the create page: jev-1.14 answers fast enough for a test; the production default stays. */
+/** Local bidding is shared by the host and the three independent Node bots. */
 const SETUP_QUERY = new URLSearchParams({
 	bot_seats: "",
-	bot_model: TEST_MODEL,
-	bot_fallback: TEST_MODEL_ORDER[1] as string,
-	bot_models: TEST_MODEL_ORDER.join(","),
+	bot_bidder: "sl",
 }).toString();
 
-// No artifact may hold the key: it is in the page's local storage.
+// Room invitation keys remain private.
 test.use({ screenshot: "off", trace: "off", video: "off" });
 
 const networkValue = (page: Page, label: string) =>
@@ -297,7 +258,6 @@ const networkValue = (page: Page, label: string) =>
 
 test.describe("four robots play a full board through the public relays", () => {
 	test.skip(!LIVE, "set E2E_LIVE=1 (npm run test:e2e:live)");
-	test.skip(LIVE && !apiKey, `OPENROUTER_API_KEY is missing from ${ENV_FILE}`);
 
 	for (const mode of MODES)
 		test(mode.name, async ({ browser }, testInfo) => {
@@ -307,16 +267,12 @@ test.describe("four robots play a full board through the public relays", () => {
 			let tableLog: WriteStream | undefined;
 			try {
 				await closeSockets(context, mode.on);
-				await context.addInitScript(
-					(key) => localStorage.setItem("opentrick.openrouter-api-key", key),
-					apiKey as string,
-				);
 				await context.addInitScript(recordTable);
 				const page = await context.newPage();
 				const pageLog = createWriteStream(testInfo.outputPath("page.log"));
 				page.on("console", (message) =>
 					pageLog.write(
-						`${new Date().toISOString()} ${message.type()} ${redact(message.text())}\n`,
+						`${new Date().toISOString()} ${message.type()} ${message.text()}\n`,
 					),
 				);
 				tableLog = createWriteStream(testInfo.outputPath("table.log"));

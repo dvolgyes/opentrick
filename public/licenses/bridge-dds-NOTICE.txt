@@ -1,0 +1,9 @@
+OpenTrick includes bridge-dds 1.4.0 by Christopher Book.
+Source: https://github.com/bookchris/bridge-dds-js
+License: Apache-2.0 (bridge-dds-LICENSE.txt in this directory).
+
+bridge-dds wraps the DDS bridge double-dummy solver by Bo Haglund and Soren Hein.
+DDS source: https://github.com/dds-bridge/dds
+
+The JavaScript and WebAssembly distributed by bridge-dds are bundled without source modifications.
+OpenTrick's original code and assets retain their existing license.

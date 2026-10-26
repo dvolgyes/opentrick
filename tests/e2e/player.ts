@@ -238,6 +238,12 @@ export class Player {
 				...(state === undefined ? {} : { storageState: state }),
 			});
 		this.#context = context;
+		if (!this.#rig.blockSiteData)
+			await context.addInitScript(() => {
+				const key = "opentrick.settings.play-time-ms";
+				if (localStorage.getItem(key) === null)
+					localStorage.setItem(key, "150");
+			});
 		for (const script of this.#initScripts) await context.addInitScript(script);
 		if (this.#grants.length > 0) await context.grantPermissions(this.#grants);
 		if (this.#rig.relaySwitch)

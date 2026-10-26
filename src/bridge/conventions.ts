@@ -6,7 +6,7 @@
  * The guides describe the opening, the first response to one of a suit, [1NT], [2C] or a weak two, opener's
  * rebid, opener's re-raise after a single or a jump raise of the major, opener's answer to Stayman, a transfer and [2S], the overcalls and the takeout double of one of a suit, the
  * redouble after partner's opening is doubled, and Blackwood. Each of them only when the other side passed, except
- * the overcalls, the double, the redouble, the re-raise and the [4NT] ask. Any other position, a hand with a suit longer than
+ * the overcalls, the double, the redouble, the re-raise, SAYC notrump transfers after doubles and the [4NT] ask. Any other position, a hand with a suit longer than
  * SHAPES.longestChecked, and the "other" system are not described, and the functions return undefined. Where the
  * guide describes only some hands, such as an overcall, conventionCalls returns undefined for a hand that fits no
  * call. The module returns data; the callers write the text.
@@ -31,6 +31,8 @@ export type Shape =
 	| { readonly kind: "cards"; readonly suit: Suit; readonly min: number }
 	/** `min` or more cards in partner's `suit`. */
 	| { readonly kind: "support"; readonly suit: Suit; readonly min: number }
+	/** A pass over a doubled transfer denies three-card support in the requested major. */
+	| { readonly kind: "short-suit"; readonly suit: Suit; readonly max: number }
 	| { readonly kind: "weak-two"; readonly suit: Suit; readonly length: number }
 	| { readonly kind: "preempt"; readonly suit: Suit; readonly length: number }
 	/** Opener's re-raise of the major after a pass: invites game, with `min` or more cards in `suit`. */
@@ -105,7 +107,11 @@ type Position =
 	/** Opener's second call after one of the major `suit`, a pass, partner's jump raise and a pass. */
 	| { readonly kind: "jump-raise"; readonly suit: Suit }
 	| { readonly kind: "stayman-answer" }
-	| { readonly kind: "transfer-answer"; readonly suit: Suit }
+	| {
+			readonly kind: "transfer-answer";
+			readonly suit: Suit;
+			readonly doubled?: boolean;
+	  }
 	| { readonly kind: "relay" }
 	/** Responder's call after [1NT] [P] [2S] [P] [3C] [P]. */
 	| { readonly kind: "relay-answer" }
@@ -253,13 +259,17 @@ function position(calls: readonly Call[]): Position | undefined {
 	if (after === "" || after === "P P")
 		return opened === undefined ? undefined : { kind: "overcall", opened };
 	if (after === "X")
-		return opened === undefined ? undefined : { kind: "redouble" };
+		return opening === "1NT"
+			? { kind: "1NT" }
+			: opened === undefined
+				? undefined
+				: { kind: "redouble" };
 	if (after === "P") return responsePosition(opening);
 	if (opening === "1NT" && after === "P 2S P 3C P")
 		return { kind: "relay-answer" };
 	const [pass, response, again, ...rest] = calls.slice(start + 1);
 	if (
-		pass !== "P" ||
+		(pass !== "P" && !(opening === "1NT" && pass === "X")) ||
 		response === undefined ||
 		again === undefined ||
 		rest.length !== 0
@@ -284,6 +294,16 @@ function position(calls: readonly Call[]): Position | undefined {
 			? { kind: "reraise", suit: opened, contested: true, last: again }
 			: undefined;
 	}
+	if (
+		opening === "1NT" &&
+		again === "X" &&
+		(response === "2D" || response === "2H")
+	)
+		return {
+			kind: "transfer-answer",
+			suit: response === "2D" ? "H" : "S",
+			doubled: true,
+		};
 	if (again !== "P") return undefined;
 	return opened !== undefined &&
 		MAJORS.includes(opened) &&
@@ -637,6 +657,13 @@ function meaningAt(
 		case "stayman-answer":
 			return staymanAnswerMeaning(call);
 		case "transfer-answer":
+			if (at.doubled) {
+				if (call === "P")
+					return { shape: { kind: "short-suit", suit: at.suit, max: 2 } };
+				return call === `2${at.suit}`
+					? { shape: { kind: "support", suit: at.suit, min: 3 } }
+					: undefined;
+			}
 			return call === `2${at.suit}`
 				? { shape: { kind: "accept", suit: at.suit } }
 				: undefined;
@@ -744,6 +771,8 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			return true;
 		case "balanced":
 			return isBalanced(hand);
+		case "short-suit":
+			return lengths[shape.suit] <= shape.max;
 		case "cards":
 		case "support":
 		case "transfer":

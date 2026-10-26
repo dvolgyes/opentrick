@@ -1,13 +1,8 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { mockOpenRouter } from "./openrouter-mock";
+
 import { Player } from "./player";
 
-/*
- * Settings opens a dialog of the player's own choices, kept in this browser's local storage under the opentrick
- * prefix (src/ui/settings.ts). A new key or a custom model must pass an OpenRouter request to one model of the model
- * order before Save stores it.
- */
-const CUSTOM = "vendor/custom-model";
+/* Display preferences remain local and take effect after Save or reload. */
 
 async function openTable(page: Page): Promise<void> {
 	await page.goto("/");
@@ -23,21 +18,13 @@ async function openSettings(page: Page): Promise<Locator> {
 	return dialog;
 }
 
-const modelOrder = (dialog: Locator): Promise<string[]> =>
-	dialog
-		.locator(".model-priority-list li")
-		.evaluateAll((items) =>
-			items.map((item) => item.getAttribute("data-model") ?? ""),
-		);
-
 test("Settings shows the defaults, and Save keeps the choices in this browser after a reload", async ({
 	page,
 }) => {
-	const openRouter = await mockOpenRouter(page);
 	await openTable(page);
 	let dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
-	await expect(dialog.getByLabel("Corrected Milton HCP")).toBeChecked();
+	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Automatic", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Normal", { exact: true })).toBeChecked();
 	await expect(page.locator("body")).toHaveCSS("color", "rgb(29, 29, 27)");
@@ -67,11 +54,6 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(relayChecks).toHaveAccessibleDescription(
 		/network connection is unstable/,
 	);
-	// An empty custom model is last, and it does not move.
-	expect((await modelOrder(dialog)).at(-1)).toBe("custom");
-	await expect(
-		dialog.getByRole("button", { name: "Move Custom model (not set) up" }),
-	).toBeDisabled();
 
 	await dialog.getByLabel("Vienna (7-5-3-1)").check();
 	await dialog.getByLabel("Dark", { exact: true }).check();
@@ -83,19 +65,11 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.getByLabel("Show the voice box for a player without video")
 		.uncheck();
 	await relayChecks.check();
-	const firstModel = (await modelOrder(dialog))[0];
-	await dialog
-		.locator(".model-priority-list li")
-		.nth(1)
-		.getByRole("button", { name: /up$/ })
-		.click();
-	const order = await modelOrder(dialog);
-	expect(order[1]).toBe(firstModel);
+
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
 	// The text turns to the bright base2 of Solarized dark at once, although the system prefers light.
 	await expect(page.locator("body")).toHaveCSS("color", "rgb(238, 232, 213)");
-	expect(openRouter.requests).toEqual([]);
 	expect(
 		await page.evaluate(() =>
 			Object.keys(localStorage)
@@ -107,8 +81,8 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.bid-turn-text",
 		"opentrick.settings.card-points",
 		"opentrick.settings.landscape-desktop",
-		"opentrick.settings.model-order",
 		"opentrick.settings.network-quality",
+		"opentrick.settings.play-time-ms",
 		"opentrick.settings.play-turn-frame",
 		"opentrick.settings.play-turn-text",
 		"opentrick.settings.points",
@@ -118,6 +92,11 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.theme-style",
 		"opentrick.settings.voicebox",
 	]);
+	expect(
+		await page.evaluate(() =>
+			localStorage.getItem("opentrick.settings.play-time-ms"),
+		),
+	).toBe("150");
 
 	await page.reload();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
@@ -142,80 +121,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(
 		dialog.getByLabel("Check the connection more often"),
 	).toBeChecked();
-	expect(await modelOrder(dialog)).toEqual(order);
 
 	// Cancel keeps the stored choices.
 	await dialog.getByLabel("Other", { exact: true }).check();
 	await dialog.getByRole("button", { name: "Cancel" }).click();
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
-});
-
-test("a custom model needs a key that OpenRouter accepts, then goes first in the model order", async ({
-	page,
-}) => {
-	const openRouter = await mockOpenRouter(page);
-	await openTable(page);
-	const dialog = await openSettings(page);
-	const custom = dialog.getByRole("textbox", { name: "Custom model" });
-	const key = dialog.getByLabel("OpenRouter API key");
-	const save = dialog.getByRole("button", { name: "Save settings" });
-
-	await custom.fill("not a model");
-	await save.click();
-	await expect(dialog.getByRole("status")).toHaveText(
-		"Enter an OpenRouter model id, for example vendor/model.",
-	);
-	await custom.fill(CUSTOM);
-	expect((await modelOrder(dialog))[0]).toBe("custom");
-	await save.click();
-	await expect(dialog.getByRole("status")).toHaveText(
-		"Enter an OpenRouter API key to use a custom model.",
-	);
-	expect(openRouter.requests).toEqual([]);
-
-	openRouter.keyStatus = 401;
-	await key.fill("good-key");
-	await save.click();
-	await expect(dialog.getByRole("status")).toContainText(
-		"OpenRouter rejected the API key (401).",
-	);
-	await expect(dialog).toBeVisible();
-	// The key check reads the balance; it asks no model, also not the custom one.
-	expect(openRouter.keyChecks).toEqual(["Bearer good-key"]);
-	expect(openRouter.requests).toEqual([]);
-	expect(
-		await page.evaluate(() => [
-			localStorage.getItem("opentrick.settings.custom-model"),
-			localStorage.getItem("opentrick.openrouter-api-key"),
-		]),
-	).toEqual([null, null]);
-
-	openRouter.keyStatus = 200;
-	await save.click();
-	await expect(dialog).toBeHidden();
-	expect(openRouter.keyChecks).toEqual(["Bearer good-key", "Bearer good-key"]);
-	expect(openRouter.requests).toEqual([]);
-	expect(
-		await page.evaluate(() => [
-			localStorage.getItem("opentrick.settings.custom-model"),
-			localStorage.getItem("opentrick.openrouter-api-key"),
-			localStorage.getItem("opentrick.settings.model-order")?.split(",")[0],
-		]),
-	).toEqual([CUSTOM, "good-key", "custom"]);
-
-	// An empty custom model goes last; set again, it goes first.
-	await openSettings(page);
-	await expect(dialog.locator(".model-priority-list li").first()).toContainText(
-		CUSTOM,
-	);
-	await custom.fill("");
-	expect((await modelOrder(dialog)).at(-1)).toBe("custom");
-	await save.click();
-	await expect(dialog).toBeHidden();
-	await openSettings(page);
-	await custom.fill(CUSTOM);
-	expect((await modelOrder(dialog))[0]).toBe("custom");
 });
 
 test("a new language in Settings reloads the page in that language", async ({

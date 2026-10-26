@@ -1,45 +1,12 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { mockOpenRouterKey } from "./openrouter-mock";
+import { mockBotBidding } from "./bot-mock";
+
 import { Player } from "./player";
 import { CONNECT_MS, createRoom, makeCall } from "./room";
 
 /** The bots pass every call and play a random legal card. */
 async function mockBots(page: Page): Promise<void> {
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		const headers = {
-			"access-control-allow-origin": "*",
-			"access-control-allow-methods": "POST, OPTIONS",
-			"access-control-allow-headers": "authorization,content-type",
-		};
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({ status: 204, headers });
-			return;
-		}
-		const body = route.request().postDataJSON();
-		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-		const values = body.text.format.schema.properties[kind].enum as string[];
-		const choice =
-			kind === "call"
-				? (values.find((value) => value === "P") ?? values[0])
-				: values[Math.floor(Math.random() * values.length)];
-		await route.fulfill({
-			status: 200,
-			headers,
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [
-							{ type: "output_text", text: JSON.stringify({ [kind]: choice }) },
-						],
-					},
-				],
-			}),
-		});
-	});
+	await mockBotBidding(page, () => "P");
 }
 
 /** The control is drawn inside the window and is the element under its centre, so a click reaches it. */
@@ -78,7 +45,7 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 		await mockBots(page);
 		for (const seat of ["N", "E", "S"])
 			await page.locator(`input[name="bot-${seat}"]`).check();
-		await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 		await createRoom(page);
 		const table = page.getByTestId("table");
 		await expect(table).toHaveAttribute("data-phase", "auction", {
@@ -159,7 +126,7 @@ test("the stored settings turn off the bid turn text and frame, and keep the pla
 		});
 		for (const seat of ["N", "E", "S"])
 			await page.locator(`input[name="bot-${seat}"]`).check();
-		await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 		await createRoom(page);
 		const table = page.getByTestId("table");
 		const own = page.getByTestId("hand-W");

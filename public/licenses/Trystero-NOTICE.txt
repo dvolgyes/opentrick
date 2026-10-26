@@ -1,0 +1,10 @@
+OpenTrick includes adapters derived from Trystero 0.26.0 by Dan Motzenbecker.
+Source: https://github.com/dmotz/trystero
+License: MIT (Trystero-LICENSE.txt in this directory).
+Copyright (c) 2021 Dan Motzenbecker.
+
+The affected files are src/p2p/{torrent,nostr,mqtt,relay-socket,topic-mapping}.ts.
+Their source headers retain the license and describe each modification.
+The adapters combine signaling strategies, accept configured relay endpoints,
+reconnect sockets, and validate incoming messages as described in those headers.
+This notice records existing vendored adapters; it does not change their code.

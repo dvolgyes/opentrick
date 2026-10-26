@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { mockOpenRouterKey } from "./openrouter-mock";
+import { mockBotBidding } from "./bot-mock";
 
 // A phone gets the compact table. The host plays West from the phone against three host bots, whose model this file mocks.
 const PHONES = [
@@ -16,44 +16,8 @@ const SUIT_BUTTONS = {
 
 /** The first call of a board is 1NT; every later bot call is a pass, and every bot card is its first legal card. */
 async function mockBots(page: Page): Promise<void> {
-	await mockOpenRouterKey(page);
-	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
-		if (route.request().method() === "OPTIONS") {
-			await route.fulfill({
-				status: 204,
-				headers: {
-					"access-control-allow-origin": "*",
-					"access-control-allow-methods": "POST, OPTIONS",
-					"access-control-allow-headers": "authorization,content-type",
-				},
-			});
-			return;
-		}
-		const body = route.request().postDataJSON();
-		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
-		const values = body.text.format.schema.properties[kind].enum as string[];
-		const choice =
-			kind === "call" && body.input.includes("No calls yet")
-				? (values.find((value) => value === "1NT") ?? values[0])
-				: kind === "call"
-					? (values.find((value) => value === "P") ?? values[0])
-					: values[0];
-		await route.fulfill({
-			status: 200,
-			headers: { "access-control-allow-origin": "*" },
-			contentType: "application/json",
-			body: JSON.stringify({
-				output: [
-					{
-						type: "message",
-						role: "assistant",
-						content: [
-							{ type: "output_text", text: JSON.stringify({ [kind]: choice }) },
-						],
-					},
-				],
-			}),
-		});
+	await mockBotBidding(page, (position) => {
+		return position.calls.length === 0 ? "1NT" : "P";
 	});
 }
 
@@ -112,7 +76,7 @@ for (const viewport of PHONES) {
 			await page.goto("/");
 			for (const seat of ["N", "E", "S"])
 				await page.locator(`input[name="bot-${seat}"]`).check();
-			await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 			await page.getByTestId("create").tap();
 			const auction = page.getByTestId("mobile-auction");
 			await expect(auction).toBeVisible();
@@ -305,7 +269,7 @@ test("a phone keeps its screen on during the bidding and the play, not on the st
 		await page.goto("/");
 		for (const seat of ["N", "E", "S"])
 			await page.locator(`input[name="bot-${seat}"]`).check();
-		await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 		expect(await wake()).toEqual({ requests: 0, held: 0 });
 		await page.getByTestId("create").tap();
 
@@ -358,7 +322,7 @@ for (const locale of [
 			await page.goto("/");
 			for (const seat of ["N", "E", "S"])
 				await page.locator(`input[name="bot-${seat}"]`).check();
-			await page.locator('input[name="openrouter-key"]').fill("test-key");
+
 			await page.getByTestId("create").tap();
 			const topbar = page.locator(".mobile-auction-topbar");
 			await expect(topbar).toBeVisible();

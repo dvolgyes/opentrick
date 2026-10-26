@@ -793,7 +793,12 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 		case "no-major":
 			return t("no {min}-card major", { min: shape.min });
 		case "accept":
-			return t("completes the transfer to {suit}", {
+			return `${t("completes the transfer to {suit}", {
+				suit: SUIT_SYMBOLS[shape.suit],
+			})}. ${t("Three-card support is not required.")}`;
+		case "short-suit":
+			return t("at most {max} {suit} after the transfer was doubled", {
+				max: shape.max,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
 		case "relay":
@@ -823,7 +828,7 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 }
 
 /** For example "15–17 HCP, balanced". */
-function meaningText(
+export function meaningText(
 	meaning: CallMeaning,
 	system: PointSystem,
 	t: Translate,
@@ -863,9 +868,10 @@ function auctionView(
 	systems: BridgeState["systems"],
 	bots: ReadonlySet<Seat> | undefined,
 	t: Translate,
+	botSystem: PointSystem = "other",
 ): AuctionView {
 	const before = SEATS.indexOf(dealer);
-	const bySeat = seatSystems(systems, bots ?? []);
+	const bySeat = seatSystems(systems, bots ?? [], botSystem);
 	// A call of a system with rules gets its meaning, or "not in the guide"; a call of the other systems gets none.
 	const meaning = (index: number): string | undefined => {
 		const system = bySeat[seatAfter(dealer, index)];
@@ -1340,7 +1346,14 @@ export function tableView(input: TableViewInput): TableView {
 		details: t("Dealer: {dealer}", { dealer: t(SEAT_NAMES[view.dealer]) }),
 		vulnerability: vulnerabilityLines(view.vulnerability, t),
 		seats,
-		auction: auctionView(view.dealer, view.calls, state.systems, input.bots, t),
+		auction: auctionView(
+			view.dealer,
+			view.calls,
+			state.systems,
+			input.bots,
+			t,
+			"other",
+		),
 		contract: contract
 			? t("{contract} by {declarer}", {
 					contract: contractText(contract),
