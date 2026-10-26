@@ -167,9 +167,31 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	position: static;
 }
 
-/* The solo name field is as wide as a name field of the multiplayer seats. */
+/*
+ * The solo label, name field and button never wrap to a second row. The field is at most 20 characters wide and
+ * gives up its width first on a narrow screen; then the button text wraps.
+ */
+.create-solo-row {
+	flex-wrap: nowrap;
+}
+
+.create-solo-row label {
+	display: flex;
+	flex: 0 1 auto;
+	gap: 0.5rem;
+	align-items: center;
+	min-width: 0;
+	white-space: nowrap;
+}
+
 .create-solo-row input[type="text"] {
-	width: 12rem;
+	width: 20ch;
+	min-width: 5ch;
+	flex: 0 1 auto;
+}
+
+.create-solo-row button {
+	flex: 0 1 auto;
 }
 
 table {

@@ -218,17 +218,32 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 	const bidder = options.getByLabel("Bidding bot");
 	await expect(bidder.locator("option")).toHaveText(["BRL", "WBridge5"]);
 	await expect(options.locator('select[name="scoring"]')).toBeVisible();
-	// The solo name, its field and its button share one row.
+	// The solo label, its field and its button share one row, also on a narrow phone; the field is at most 20
+	// characters wide.
 	const soloRow = page.locator(".create-solo-row");
-	await expect(soloRow.locator('input[name="solo-name"]')).toHaveValue("Human");
+	const soloName = soloRow.locator('input[name="solo-name"]');
+	await expect(soloName).toHaveValue("Human");
 	await expect(soloRow.getByTestId("create-solo")).toBeVisible();
-	const [field, start] = await Promise.all([
-		soloRow.locator('input[name="solo-name"]').boundingBox(),
-		soloRow.getByTestId("create-solo").boundingBox(),
-	]);
-	expect(Math.abs((field?.y ?? 0) - (start?.y ?? 100))).toBeLessThan(
-		start?.height ?? 0,
-	);
+	const fieldWidth = await soloName.evaluate((field) => {
+		const probe = document.createElement("span");
+		probe.textContent = "0".repeat(20);
+		probe.style.font = getComputedStyle(field).font;
+		document.body.append(probe);
+		const limit = probe.getBoundingClientRect().width;
+		probe.remove();
+		return { width: field.getBoundingClientRect().width, limit };
+	});
+	expect(fieldWidth.width).toBeLessThanOrEqual(fieldWidth.limit + 1);
+	for (const width of [1280, 320]) {
+		await page.setViewportSize({ width, height: 800 });
+		const centres = await Promise.all(
+			["label", "input", "button"].map(async (selector) => {
+				const box = await soloRow.locator(selector).first().boundingBox();
+				return (box?.y ?? 0) + (box?.height ?? 0) / 2;
+			}),
+		);
+		expect(Math.max(...centres) - Math.min(...centres)).toBeLessThan(2);
+	}
 
 	const name = (seat: string) => page.locator(`input[name="name-${seat}"]`);
 	const bot = (seat: string) => page.locator(`input[name="bot-${seat}"]`);
