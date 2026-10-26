@@ -185,6 +185,7 @@ export class HostEngine {
 			APPLICATION_FEATURES.bridgeUndo,
 			APPLICATION_FEATURES.bridgeClaim,
 			APPLICATION_FEATURES.bridgeClaimNone,
+			APPLICATION_FEATURES.bridgeClaimAnyTurn,
 			APPLICATION_FEATURES.bridgeReset,
 		]);
 		this.#connected.add(deps.self);

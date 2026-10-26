@@ -1029,7 +1029,6 @@ function claimPanelView(
 				state.undo === null &&
 				state.claimResult === null &&
 				status?.phase === "play" &&
-				status.actor === seat &&
 				status.contract.declarer === seat,
 			maxTricks: remaining,
 			choosable,
@@ -1181,10 +1180,14 @@ export function tableView(input: TableViewInput): TableView {
 			totals: sums,
 		};
 
+	// While a claim waits, the defenders who decide it see every hand; the declarer and dummy see the defenders'
+	// hands only when the claim is accepted.
 	const revealedSeats = state.claimResult
 		? SEATS
 		: state.claim
-			? [state.claim.requester]
+			? state.claim.required.includes(seat)
+				? SEATS
+				: [state.claim.requester]
 			: [];
 	const rawView = viewForPlayer(board, seat, revealedSeats);
 	const rawCompletedView = state.claimResult

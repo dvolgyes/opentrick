@@ -21,6 +21,7 @@ import {
 	type JsonObject,
 	type RoomConfig,
 	SEAT_NAMES,
+	SEATS,
 	type Seat,
 } from "../../src/protocol";
 import type { RosterRow } from "../../src/ui/model";
@@ -171,16 +172,32 @@ describe("text", () => {
 });
 
 describe("table layout", () => {
-	it("enables claims for declarer on their turn and dummy's turn", () => {
-		expect(view("N", NORTH_DECLARER_BOARD).claim.canRequest).toBe(false);
-		expect(view("N", NORTH_DUMMY_TURN).claim.canRequest).toBe(true);
-		expect(view("N", NORTH_OWN_TURN).claim.canRequest).toBe(true);
-		expect(view("E", NORTH_DUMMY_TURN).claim.canRequest).toBe(false);
+	it("enables claims for the declarer at every turn of the play, and for nobody else", () => {
+		// West, a defender, is to play the third card of the first trick.
+		const westTurn = playing(NORTH_DECLARER_BOARD, "S7 S4");
+		expect(boardStatus(westTurn).actor).toBe("W");
+		expect(view("N", bidding(BOARD, "1C P P")).claim.canRequest).toBe(false);
+		for (const board of [
+			NORTH_DECLARER_BOARD,
+			NORTH_DUMMY_TURN,
+			westTurn,
+			NORTH_OWN_TURN,
+		]) {
+			expect(view("N", board).claim.canRequest).toBe(true);
+			for (const seat of ["E", "S", "W"] as const)
+				expect(view(seat, board).claim.canRequest).toBe(false);
+		}
+		// The trick in progress is one of the tricks to claim.
+		expect(view("N", westTurn).claim.maxTricks).toBe(13);
 	});
 
 	it("lets a player ask to undo their last action while another player is to act", () => {
 		expect(view("N", bidding(BOARD, "1C")).undo.canRequest).toBe(true);
 		expect(view("E", LED).undo.canRequest).toBe(true);
+		// The declarer played dummy's card; a defender is to play.
+		expect(
+			view("N", playing(NORTH_DECLARER_BOARD, "S7 S4")).undo.canRequest,
+		).toBe(true);
 	});
 
 	it("offers the trick count choice only when five tricks or fewer remain", () => {
@@ -249,6 +266,44 @@ describe("table layout", () => {
 			canVote: false,
 			message: "player1 claims 3 tricks. Waiting for player3 to decide.",
 		});
+	});
+
+	it("shows every hand to the defenders while a claim waits, and to the declarer and dummy once it is accepted", () => {
+		const claim = {
+			id: "claim-1",
+			board: 1,
+			requester: "N" as const,
+			tricks: 3,
+			required: ["E", "W"] as const,
+			approved: [],
+		};
+		const pending = { state: { ...tableState(NORTH_OWN_TURN), claim } };
+		const visibleSeats = (viewer: Seat, overrides: Partial<TableViewInput>) =>
+			view(viewer, BOARD, overrides)
+				.seats.filter((item) => item.hand.visible)
+				.map((item) => item.seat)
+				.sort();
+		for (const defender of ["E", "W"] as const)
+			expect(visibleSeats(defender, pending)).toEqual(["E", "N", "S", "W"]);
+		for (const side of ["N", "S"] as const)
+			expect(visibleSeats(side, pending)).toEqual(["N", "S"]);
+
+		// The result is display data here; its score does not decide which hands are shown.
+		const result = {
+			number: 1,
+			contract: boardStatus(NORTH_OWN_TURN).contract ?? null,
+			declarerTricks: 3,
+			scoreNS: -200,
+		};
+		const accepted = {
+			state: {
+				...tableState(NORTH_OWN_TURN),
+				results: [result],
+				claimResult: { ...claim, result },
+			},
+		};
+		for (const seat of SEATS)
+			expect(visibleSeats(seat, accepted)).toEqual(["E", "N", "S", "W"]);
 	});
 
 	it("puts the turn pill on the seat to call or play, and marks it as the viewer's when the viewer acts", () => {
