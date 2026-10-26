@@ -1939,6 +1939,26 @@ describe("round trip on the video tile", () => {
 		expect(bar.height).toBeGreaterThan(bar.width);
 	});
 
+	it("keeps the bars of both right-hand tiles inside the felt", () => {
+		const good = {
+			text: "Network: good",
+			title: "Roundtrip: 0.20sec",
+			quality: "good",
+		} as const;
+		const root = withRoundTrips({ S: good, W: good });
+		const felt = root.querySelector(".felt")?.getBoundingClientRect();
+		expect(felt).toBeDefined();
+		for (const seat of ["S", "W"] as const) {
+			const bar = badge(root, seat)?.getBoundingClientRect();
+			expect(bar?.width ?? 0, seat).toBeGreaterThan(0);
+			if (felt === undefined || bar === undefined) return;
+			// At least half a bar of felt to the right of the bars.
+			expect(felt.right - bar.right, seat).toBeGreaterThanOrEqual(
+				bar.width / 2,
+			);
+		}
+	});
+
 	it("shows five grey bars while the host has not measured the player yet", () => {
 		const root = withRoundTrips({
 			E: { text: "Network: measuring…", quality: "pending" },

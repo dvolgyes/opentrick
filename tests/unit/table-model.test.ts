@@ -728,14 +728,41 @@ describe("round trips", () => {
 				roundTrips: [{ seat: "E", ms: 40 }],
 			});
 			expect(seatView(table, "E").roundTrip?.quality).toBe("excellent");
-			// The host (North) has no round trip, a bot is not measured, and West is not connected to the host.
-			expect(seatView(table, "N").roundTrip).toBeUndefined();
+			// A bot is not measured, and West is not connected to the host.
 			expect(seatView(table, "S").roundTrip).toBeUndefined();
 			expect(seatView(table, "W").roundTrip).toBeUndefined();
 			expect(seatView(view("E", board), "W").roundTrip).toEqual({
 				text: "Network: measuring…",
 				quality: "pending",
 			});
+		}
+	});
+
+	it("shows a guest its own round trip beside the host's tile, and the host none of its own", () => {
+		const roundTrips = [
+			{ seat: "E", ms: 250 },
+			{ seat: "S", ms: 900 },
+		] as const;
+		for (const board of [null, BOARD]) {
+			// The host (North) measured East: the round trip is the same in both directions.
+			expect(seatView(view("E", board, { roundTrips }), "N").roundTrip).toEqual(
+				{
+					text: "Network: good",
+					title: "Roundtrip: 0.25sec",
+					quality: "good",
+				},
+			);
+			expect(
+				seatView(view("S", board, { roundTrips }), "N").roundTrip?.quality,
+			).toBe("poor");
+			// Before the host measured the guest, and on the host's own page.
+			expect(seatView(view("E", board), "N").roundTrip).toEqual({
+				text: "Network: measuring…",
+				quality: "pending",
+			});
+			expect(
+				seatView(view("N", board, { roundTrips }), "N").roundTrip,
+			).toBeUndefined();
 		}
 	});
 });

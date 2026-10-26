@@ -3731,13 +3731,14 @@ main:has(> .room[data-form="compact"]) {
 	left: 20px;
 }
 
+/* The right-hand windows stand 0.75rem further in, so the network bars beside them stay on the felt. */
 .room[data-form="desktop"] .video-top {
 	top: 20px;
-	right: 20px;
+	right: calc(20px + 0.75rem);
 }
 
 .room[data-form="desktop"] .video-right {
-	right: 20px;
+	right: calc(20px + 0.75rem);
 	bottom: 40px;
 }
 

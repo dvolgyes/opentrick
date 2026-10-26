@@ -230,9 +230,10 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 		for (const button of await own.all()) dealt.push(await cardOf(button));
 	}
 	expect(new Set(dealt).size).toBe(52);
-	// The host (West) measures the round trip to each guest and reports it to every page; its own seat has none.
+	// The host (West) measures the round trip to each guest and reports it to every page. A guest sees its own round
+	// trip beside the host's tile.
 	for (const seat of SEATS) {
-		for (const other of SEATS.filter((item) => item !== seat && item !== "W")) {
+		for (const other of SEATS.filter((item) => item !== seat)) {
 			const quality = tab[seat].getByTestId(`round-trip-${other}`);
 			await expect(quality).toBeVisible();
 			await expect(quality).toHaveAttribute(
@@ -240,7 +241,6 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 				/^Network: (?:excellent|good|average|poor|breaking up)\nRoundtrip: >?\d+\.\d\dsec$/,
 			);
 		}
-		await expect(tab[seat].getByTestId("round-trip-W")).toBeHidden();
 	}
 });
 

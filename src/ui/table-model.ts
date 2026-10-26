@@ -224,7 +224,7 @@ export interface SeatView {
  * The network quality for the video tile, such as "Network: good", with the round trip as `title`. The quality
  * follows the shown hundredths: excellent up to 0.10 s, good up to 0.30 s, average up to 0.60 s, poor below 2.00 s,
  * and breaking up from 2.00 s. A ping without an echo is breaking up too. A connected player whom the host has not
- * measured yet shows "Network: measuring…" and has no round trip.
+ * measured yet shows "Network: measuring…" and has no round trip. A guest sees its own round trip beside the host.
  */
 export interface RoundTripView {
 	readonly text: string;
@@ -561,11 +561,14 @@ function roundTripView(
 	owner: Seat,
 	t: Translate,
 ): RoundTripView | undefined {
-	const measured = input.roundTrips?.find((row) => row.seat === owner);
+	// The host does not measure itself, but a guest's round trip to the host is the same in both directions.
+	const guestToHost = owner === input.hostSeat && owner !== input.seat;
+	const measuredSeat = guestToHost ? input.seat : owner;
+	const measured = input.roundTrips?.find((row) => row.seat === measuredSeat);
 	if (measured === undefined) {
-		// The host measures every other connected player, but not itself or its bots.
+		// The host measures every other connected player, but not its bots.
 		const measurable =
-			owner !== input.hostSeat &&
+			(owner !== input.hostSeat || guestToHost) &&
 			input.present.has(owner) &&
 			!(input.bots?.has(owner) ?? false);
 		return measurable
