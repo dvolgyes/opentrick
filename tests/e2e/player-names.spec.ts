@@ -122,19 +122,27 @@ test("South hosts a compass layout and an unnamed entrant edits a persistent nam
 		await guestPage.reload();
 		await expect(guestPage).toHaveTitle(/Céline \(E\)$/);
 		await expect(guestPage.getByTestId("name-entry")).toHaveCount(0);
+		// One Save at the bottom saves the changed names and closes the editor.
 		const editor = await editNames(page);
+		await expect(editor.getByRole("button", { name: /^Save/ })).toHaveCount(1);
 		await editor.getByTestId("rename-E").fill("Dana");
-		await editor
-			.locator('[data-seat="E"]')
-			.getByRole("button", { name: "Save name" })
-			.click();
+		await editor.getByRole("button", { name: "Save", exact: true }).click();
+		await expect(editor).toBeHidden();
 		await expect(guestPage).toHaveTitle(/Dana \(E\)$/);
 		expect(
 			await guestPage.evaluate(() =>
 				localStorage.getItem("opentrick.player-name"),
 			),
 		).toBe("Céline");
-		await editor.getByRole("button", { name: "Close", exact: true }).click();
+		// Cancel closes the editor and saves nothing.
+		await editNames(page);
+		await editor.getByTestId("rename-E").fill("Zed");
+		await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(editor).toBeHidden();
+		await editNames(page);
+		await expect(editor.getByTestId("rename-E")).toHaveValue("Dana");
+		await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(guestPage).toHaveTitle(/Dana \(E\)$/);
 		await page.reload();
 		await expect(page.getByTestId("roster")).toContainText("Dana");
 		await guestPage.goto("/");
@@ -143,6 +151,61 @@ test("South hosts a compass layout and an unnamed entrant edits a persistent nam
 		);
 	} finally {
 		await guest.close();
+	}
+});
+
+test("the player name editor shows each name beside its label, and one Save and one Cancel below the seats", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.locator('input[name="name-S"]').fill("Host");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	for (const width of [1280, 360]) {
+		await page.setViewportSize({ width, height: 800 });
+		const editor = await editNames(page);
+		const grid = await editor.getByTestId("seat-grid").boundingBox();
+		for (const name of ["Save", "Cancel"]) {
+			const action = editor.getByRole("button", { name, exact: true });
+			await expect(action).toHaveCount(1);
+			expect((await action.boundingBox())?.y ?? 0).toBeGreaterThan(
+				(grid?.y ?? 0) + (grid?.height ?? 0),
+			);
+		}
+		await expect(editor.getByText("Save name")).toHaveCount(0);
+		for (const seat of ["N", "E", "S", "W"]) {
+			const card = editor.locator(`[data-seat="${seat}"]`);
+			await expect(
+				card.getByText("Ask the player for a name", { exact: true }),
+			).toBeVisible();
+			const field = card.getByTestId(`rename-${seat}`);
+			const label = await card.getByText("Name", { exact: true }).boundingBox();
+			const box = await field.boundingBox();
+			expect(
+				Math.abs(
+					(label?.y ?? 0) +
+						(label?.height ?? 0) / 2 -
+						(box?.y ?? 0) -
+						(box?.height ?? 0) / 2,
+				),
+			).toBeLessThan(2);
+			const fieldWidth = await field.evaluate((input) => {
+				const probe = document.createElement("span");
+				probe.textContent = "0".repeat(20);
+				probe.style.font = getComputedStyle(input).font;
+				document.body.append(probe);
+				const limit = probe.getBoundingClientRect().width;
+				probe.remove();
+				return { width: input.getBoundingClientRect().width, limit };
+			});
+			expect(fieldWidth.width).toBeLessThanOrEqual(fieldWidth.limit + 1);
+		}
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth <= innerWidth,
+			),
+		).toBe(true);
+		await editor.getByRole("button", { name: "Cancel", exact: true }).click();
 	}
 });
 
@@ -176,11 +239,18 @@ test("preassigned names join directly and a host can open a bot seat for a named
 			.locator("[data-phase]")
 			.getAttribute("data-at");
 		const editor = await editNames(page);
-		await editor
+		const openSeat = editor
 			.locator('[data-seat="E"]')
-			.getByRole("button", { name: "Open seat for a new player" })
-			.click();
-		await editor.getByRole("button", { name: "Close", exact: true }).click();
+			.getByRole("button", { name: "Open seat for a new player" });
+		// Cancel drops an opened seat with the other changes.
+		await openSeat.click();
+		await expect(editor.getByTestId("rename-E")).toHaveValue("player");
+		await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+		await editNames(page);
+		await expect(editor.getByTestId("rename-E")).toHaveValue("bot");
+		await openSeat.click();
+		await editor.getByRole("button", { name: "Save", exact: true }).click();
+		await expect(editor).toBeHidden();
 		const second = await Player.open(browser, baseURL, "replacement-guest");
 		const secondPage = await second.page(baseURL);
 		try {

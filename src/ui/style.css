@@ -211,13 +211,80 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	margin-left: 0;
 }
 
+/*
+ * The player name editor: the seats scroll inside the screen, and Save and Cancel stay below them. Each card has the
+ * label and the name field in one row, the field at most 20 characters wide.
+ */
+.player-editor[open] {
+	display: flex;
+	padding: 0;
+	overflow: hidden;
+}
+
+.player-editor form {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.player-editor h2 {
+	margin: 0;
+	padding: 1rem 1rem 0;
+}
+
+.player-editor .seat-grid {
+	min-height: 0;
+	overflow-y: auto;
+	margin: 0;
+	padding: 0.7rem 1rem;
+}
+
+.player-editor h3 {
+	margin: 0 0 0.4rem;
+	font-size: 1em;
+}
+
+.player-editor [role="status"] {
+	margin: 0.3rem 0 0;
+}
+
+.player-editor [role="status"]:empty {
+	display: none;
+}
+
+.player-editor-open {
+	margin-top: 0.4rem;
+}
+
+.seat-card .player-editor-name {
+	display: flex;
+	gap: 0.4rem;
+	align-items: center;
+	white-space: nowrap;
+}
+
+.player-editor-name input[type="text"] {
+	width: 20ch;
+	min-width: 5ch;
+	flex: 0 1 auto;
+}
+
+.player-editor-actions {
+	display: flex;
+	flex: none;
+	gap: 0.4rem;
+	padding: 0.6rem 1rem 1rem;
+	border-top: 1px solid var(--muted);
+}
+
 /* On a phone the north and south cards are as wide as the west and east cards, so that each card keeps one row. */
 @media (max-width: 600px) {
-	.create .seat-card {
+	:is(.create, .player-editor) .seat-card {
 		padding: 0.5rem;
 	}
 
-	.create .seat-card:is([data-seat="N"], [data-seat="S"]) {
+	:is(.create, .player-editor) .seat-card:is([data-seat="N"], [data-seat="S"]) {
 		width: calc(50% - 0.35rem);
 	}
 }
