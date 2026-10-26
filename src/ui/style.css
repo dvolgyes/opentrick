@@ -139,8 +139,25 @@ label {
 	font-size: 0.9rem;
 }
 
-body:has(.language-control) main:not([data-screen="table"]) {
+body:has(> .language-control) main:not([data-screen="table"]) {
 	padding-top: 3.5rem;
+}
+
+/* The bidding engine and the language share one row below the title of the create screen. */
+.create-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.create-options label {
+	margin: 0;
+}
+
+.create-options .language-control {
+	position: static;
 }
 
 table {

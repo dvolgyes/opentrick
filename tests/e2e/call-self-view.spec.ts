@@ -89,10 +89,7 @@ test("the desktop call box: three rows outside the call, and in the call a tile 
 		await host.addInitScript(installCallProbe);
 		const page = await host.page("./");
 		await passingBots(page);
-		for (const seat of ["N", "E", "S"])
-			await page.locator(`input[name="bot-${seat}"]`).check();
-
-		await createRoom(page);
+		await createRoom(page, ["N", "E", "S"]);
 		await expect(page.getByTestId("table")).toHaveAttribute(
 			"data-phase",
 			"auction",

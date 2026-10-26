@@ -203,3 +203,63 @@ test("preassigned names join directly and a host can open a bot seat for a named
 		await guest.close();
 	}
 });
+
+test("the create screen keeps bots out of the host seat, names each bot bot, and refuses contradictions", async ({
+	page,
+}) => {
+	await page.goto("/");
+	// The bidding engine and the language share one row below the title; no picker stays in the corner.
+	const options = page.locator(".create-options");
+	await expect(options.locator('select[name="bot-bidder"]')).toBeVisible();
+	await expect(options.getByLabel("Language")).toBeVisible();
+	await expect(page.locator("body > .language-control")).toHaveCount(0);
+	await expect(page.locator('input[name="solo-name"]')).toHaveValue("Human");
+
+	const name = (seat: string) => page.locator(`input[name="name-${seat}"]`);
+	const bot = (seat: string) => page.locator(`input[name="bot-${seat}"]`);
+	const host = (seat: string) =>
+		page.locator(`input[name="me"][value="${seat}"]`);
+	for (const seat of ["N", "E", "S", "W"]) {
+		await expect(name(seat)).toHaveValue("");
+		await expect(bot(seat)).not.toBeChecked();
+	}
+	await expect(host("S")).toBeChecked();
+	await expect(bot("S")).toBeDisabled();
+
+	await bot("N").check();
+	await expect(name("N")).toHaveValue("bot");
+	await expect(host("N")).toBeDisabled();
+	await name("N").fill("Nora");
+	await expect(bot("N")).not.toBeChecked();
+	await expect(host("N")).toBeEnabled();
+	await bot("E").check();
+	await bot("E").uncheck();
+	await expect(name("E")).toHaveValue("");
+
+	await name("W").fill("bot");
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("errors")).toHaveText(
+		"South: enter a name.West: only a bot can have the name “bot”.",
+	);
+	await expect(page.getByTestId("room-controls")).toHaveCount(0);
+});
+
+test("a solo game seats the saved name at South as host against three bots", async ({
+	page,
+}) => {
+	await page.addInitScript(() =>
+		localStorage.setItem("opentrick.player-name", "Céline"),
+	);
+	await page.goto("/");
+	await expect(page.locator('input[name="solo-name"]')).toHaveValue("Céline");
+	await expect(page.locator('input[name="name-S"]')).toHaveValue("Céline");
+	await page.getByTestId("create-solo").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	await expect(page).toHaveTitle(/Céline \(S\)$/);
+	const params = new URL(page.url()).searchParams;
+	expect(
+		["north", "east", "south", "west", "host", "bot_seats"].map((key) =>
+			params.get(key),
+		),
+	).toEqual(["bot", "bot", "Céline", "bot", "south", "N,E,W"]);
+});

@@ -61,7 +61,15 @@ export interface CreateFields {
 	readonly names: Readonly<Record<Seat, string>>;
 	/** The creator's own seat; its browser hosts first. */
 	readonly seat: string;
+	/** The seats that the host's browser plays. */
+	readonly bots: readonly Seat[];
 }
+
+/** The fixed name of an automated player; a human seat cannot use it. */
+export const BOT_NAME = "bot";
+
+export const isBotName = (name: string): boolean =>
+	name.trim().toLowerCase() === BOT_NAME;
 
 export type CreateCheck =
 	| { readonly ok: true; readonly config: RoomConfig; readonly seat: Seat }
@@ -77,7 +85,22 @@ export function checkCreateFields(
 	for (const seat of SEATS) {
 		const name = fields.names[seat].trim().normalize("NFC");
 		const length = Array.from(name).length;
-		if (seat === fields.seat && unnamedPlayer(name))
+		const bot = fields.bots.includes(seat);
+		if (bot && seat === fields.seat)
+			errors.push(
+				t("{seat}: a bot cannot host the game.", { seat: SEAT_NAMES[seat] }),
+			);
+		else if (bot && !isBotName(name))
+			errors.push(
+				t("{seat}: a bot has the name “bot”.", { seat: SEAT_NAMES[seat] }),
+			);
+		else if (!bot && isBotName(name))
+			errors.push(
+				t("{seat}: only a bot can have the name “bot”.", {
+					seat: SEAT_NAMES[seat],
+				}),
+			);
+		else if (seat === fields.seat && unnamedPlayer(name))
 			errors.push(t("{seat}: enter a name.", { seat: SEAT_NAMES[seat] }));
 		else if (length > MAX_NAME_LENGTH)
 			errors.push(
@@ -88,7 +111,11 @@ export function checkCreateFields(
 			);
 		else if (length > 0 && !playerName(name))
 			errors.push(t("{seat}: enter a name.", { seat: SEAT_NAMES[seat] }));
-		names[seat] = unnamedPlayer(name) ? "player" : (playerName(name) ?? name);
+		names[seat] = bot
+			? BOT_NAME
+			: unnamedPlayer(name)
+				? "player"
+				: (playerName(name) ?? name);
 	}
 	if (!isSeat(fields.seat)) errors.push(t("Choose your seat."));
 	if (errors.length > 0 || !isSeat(fields.seat)) return { ok: false, errors };
@@ -105,6 +132,7 @@ export function checkCreateFields(
 export const DEFAULT_CREATE_FIELDS: CreateFields = {
 	names: DEFAULT_NAMES,
 	seat: "S",
+	bots: [],
 };
 
 // ---------------------------------------------------------------------------------------------------------------

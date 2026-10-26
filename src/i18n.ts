@@ -80,8 +80,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Three-card support is not required.":
 			"Drei Karten zur Unterstützung sind nicht erforderlich.",
 		"at most {max} {suit} after the transfer was doubled":
-			"höchstens {max} {suit}, nachdem der Transfer kontriert wurde",
-		"Local bidding runs in your browser. Learned conventions can differ from SAYC.":
 			"Das lokale Bietprogramm läuft im Browser. Erlernte Konventionen können von SAYC abweichen.",
 		"Optional automated players": "Optionale automatisierte Spieler",
 		"Bidding engine": "Bietprogramm",
@@ -715,8 +713,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Three-card support is not required.":
 			"Nem szükséges háromlapos támogatás.",
 		"at most {max} {suit} after the transfer was doubled":
-			"legfeljebb {max} {suit}, miután a transzfert kontrázták",
-		"Local bidding runs in your browser. Learned conventions can differ from SAYC.":
 			"A helyi licitálás a böngészőben fut. A tanult konvenciók eltérhetnek a SAYC-től.",
 		"Optional automated players": "Opcionális automatizált játékosok",
 		"Bidding engine": "Licitáló motor",
@@ -1341,8 +1337,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Den lokale boten feilet. Start botene igjen for å prøve på nytt.",
 		"Three-card support is not required.": "Trekortsstøtte er ikke nødvendig.",
 		"at most {max} {suit} after the transfer was doubled":
-			"høyst {max} {suit} etter at overføringen ble doblet",
-		"Local bidding runs in your browser. Learned conventions can differ from SAYC.":
 			"Lokal melding kjører i nettleseren. Innlærte konvensjoner kan avvike fra SAYC.",
 		"Optional automated players": "Valgfrie automatiske spillere",
 		"Bidding engine": "Meldemotor",

@@ -34,10 +34,7 @@ test("the host copies a debug export with each player's page report, and reloads
 		await host.grantPermissions(["clipboard-read", "clipboard-write"]);
 		const hostPage = await host.page("./");
 		await passingBots(hostPage);
-		for (const seat of ["E", "S"])
-			await hostPage.locator(`input[name="bot-${seat}"]`).check();
-
-		const link = await createRoom(hostPage);
+		const link = await createRoom(hostPage, ["E", "S"]);
 		const guestPage = await guest.page(link);
 		await pick(guestPage, "N");
 		for (const page of [hostPage, guestPage])

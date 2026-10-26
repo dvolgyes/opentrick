@@ -43,10 +43,7 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 	try {
 		const page = await host.page("./");
 		await mockBots(page);
-		for (const seat of ["N", "E", "S"])
-			await page.locator(`input[name="bot-${seat}"]`).check();
-
-		await createRoom(page);
+		await createRoom(page, ["N", "E", "S"]);
 		const table = page.getByTestId("table");
 		await expect(table).toHaveAttribute("data-phase", "auction", {
 			timeout: CONNECT_MS,
@@ -124,10 +121,7 @@ test("the stored settings turn off the bid turn text and frame, and keep the pla
 			localStorage.setItem("opentrick.settings.bid-turn-text", "0");
 			localStorage.setItem("opentrick.settings.bid-turn-frame", "0");
 		});
-		for (const seat of ["N", "E", "S"])
-			await page.locator(`input[name="bot-${seat}"]`).check();
-
-		await createRoom(page);
+		await createRoom(page, ["N", "E", "S"]);
 		const table = page.getByTestId("table");
 		const own = page.getByTestId("hand-W");
 		await expect(own).toHaveAttribute("data-turn", "true", {

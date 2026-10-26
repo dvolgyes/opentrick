@@ -20,13 +20,11 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 	});
 	try {
 		const page = await player.page("./");
-		await namePlayers(page);
+		await namePlayers(page, "W", ["N", "E", "S"]);
 
 		await mockBotBidding(page, (position) => {
 			return position.calls.length === 0 ? "1NT" : "P";
 		});
-		for (const seat of ["N", "E", "S", "W"])
-			await page.locator(`input[name="bot-${seat}"]`).check({ force: true });
 
 		await page
 			.getByTestId("create")

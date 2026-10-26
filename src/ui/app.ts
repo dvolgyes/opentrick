@@ -20,7 +20,7 @@ import { languageControl } from "./language-control";
  * the next table starts.
  */
 export function startApp(root: HTMLElement, deps: AppDeps): void {
-	root.before(languageControl(deps));
+	const corner = languageControl(deps);
 	let dispose: Dispose | undefined;
 	const navigation: Navigation = {
 		createNew: () => {
@@ -56,6 +56,9 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 		dispose?.();
 		dispose = undefined;
 		const target = parseRoute(location.hash);
+		// The create screen shows the language picker in its own options row.
+		if (target.kind === "create") corner.remove();
+		else if (!corner.isConnected) root.before(corner);
 		switch (target.kind) {
 			case "create":
 				dispose = showCreate(

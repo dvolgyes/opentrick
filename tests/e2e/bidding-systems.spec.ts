@@ -39,10 +39,7 @@ test("each player sees the others' bidding systems, the Vienna calls get only th
 		);
 		const hostPage = await host.page("./");
 		await passingBots(hostPage);
-		for (const seat of ["E", "S"])
-			await hostPage.locator(`input[name="bot-${seat}"]`).check();
-
-		const link = await createRoom(hostPage);
+		const link = await createRoom(hostPage, ["E", "S"]);
 		const guestPage = await guest.page(link);
 		await pick(guestPage, "N");
 		for (const page of [hostPage, guestPage])
@@ -113,10 +110,7 @@ test("Settings shows or hides the points and the turn text at once, also without
 	try {
 		const page = await host.page("./");
 		await passingBots(page);
-		for (const seat of ["N", "E", "S"])
-			await page.locator(`input[name="bot-${seat}"]`).check();
-
-		await createRoom(page);
+		await createRoom(page, ["N", "E", "S"]);
 		await expect(page.getByTestId("table")).toHaveAttribute(
 			"data-phase",
 			"auction",

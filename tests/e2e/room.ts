@@ -51,22 +51,31 @@ export const hostRows = (page: Page): Locator =>
 const TABLE_LINK =
 	/^http:\/\/localhost:\d+\/?\?.*#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
 
-/** Names all fixture players and explicitly chooses the host required by the scenario. */
+/**
+ * Names all fixture players and explicitly chooses the host required by the scenario. The host comes first, because
+ * the host seat cannot be a bot; the bots come last, because a name edit clears the bot flag and a bot is named "bot".
+ */
 export async function namePlayers(
 	page: Page,
 	host: SeatKey = "W",
+	bots: readonly SeatKey[] = [],
 ): Promise<void> {
+	await page.locator(`input[name="me"][value="${host}"]`).check();
 	for (const [seat, name] of Object.entries(NAME))
 		await page.locator(`input[name="name-${seat}"]`).fill(name);
-	await page.locator(`input[name="me"][value="${host}"]`).check();
+	for (const seat of bots)
+		await page.locator(`input[name="bot-${seat}"]`).check();
 }
 
 /**
- * Creates a table with the fixture names. The creator sits West and enters the game directly.
- * Returns the unselected room URL that all players share.
+ * Creates a table with the fixture names and the given bot seats. The creator sits West and enters the game
+ * directly. Returns the unselected room URL that all players share.
  */
-export async function createRoom(page: Page): Promise<string> {
-	await namePlayers(page);
+export async function createRoom(
+	page: Page,
+	bots: readonly SeatKey[] = [],
+): Promise<string> {
+	await namePlayers(page, "W", bots);
 	// Chrome's mobile emulation reports the form below the screenshot viewport; activate its native submit control.
 	await page
 		.getByTestId("create")

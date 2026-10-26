@@ -18,19 +18,17 @@ test("host bots play two consecutive boards from auction through the final trick
 
 	await page.goto("/");
 	await page.locator('input[name="me"][value="W"]').check();
-	for (const [seat, name] of [
-		["N", "robot north"],
-		["E", "bot east"],
-		["S", "robot south"],
-		["W", "robot west"],
-	] as const) {
-		await page.locator(`input[name="name-${seat}"]`).fill(name);
-	}
-	for (const seat of ["N", "E", "S", "W"])
+	await page.locator('input[name="name-W"]').fill("host west");
+	for (const seat of ["N", "E", "S"])
 		await page.locator(`input[name="bot-${seat}"]`).check();
 
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
+	// A bot cannot host: the host hands its own seat to the bot after the table exists.
+	await page.getByTestId("host-autoplay-toggle").click();
+	await expect(page.getByTestId("host-autoplay-toggle")).toHaveText(
+		"👱 Disable autoplay",
+	);
 	const roomUrl = new URL(page.url());
 	expect(roomUrl.searchParams.get("bot_seats")).toBe("N,E,S,W");
 	expect(roomUrl.searchParams.get("bot_bidder")).toBe("rl-fsp");
@@ -92,13 +90,11 @@ test("a bot bids and plays when the site is served below a path, as on GitHub Pa
 	await page.goto("/opentrick/");
 	await page.locator('input[name="me"][value="W"]').check();
 	await page.locator('input[name="name-W"]').fill("host west");
-	for (const seat of ["N", "E", "S"]) {
-		await page.locator(`input[name="name-${seat}"]`).fill(`bot ${seat}`);
+	for (const seat of ["N", "E", "S"])
 		await page.locator(`input[name="bot-${seat}"]`).check();
-	}
-	await page.locator('input[name="bot-W"]').check();
 
 	await page.getByTestId("create").click();
+	await page.getByTestId("host-autoplay-toggle").click();
 	// Board 1: North deals, so the North bot bids first.
 	await expect(page.getByTestId("bid-history")).toContainText("1NT", {
 		timeout: CONNECT_MS,

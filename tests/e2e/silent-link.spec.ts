@@ -38,10 +38,7 @@ test("the host closes the link of a paused player after 15 s of silence, and the
 			localStorage.setItem("opentrick.settings.relay-checks", "1"),
 		);
 		await passingBots(hostPage);
-		for (const seat of ["E", "S"])
-			await hostPage.locator(`input[name="bot-${seat}"]`).check();
-
-		const link = await createRoom(hostPage);
+		const link = await createRoom(hostPage, ["E", "S"]);
 		const guestPage = await guest.page(link);
 		await pick(guestPage, "N");
 		for (const page of [hostPage, guestPage])

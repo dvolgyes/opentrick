@@ -44,14 +44,6 @@ const rows: readonly TranslationRow[] = [
 		"hoogstens {max} {suit} nadat de transfer is gedoubleerd",
 	],
 	[
-		"Local bidding runs in your browser. Learned conventions can differ from SAYC.",
-		"La subasta local funciona en tu navegador. Las convenciones aprendidas pueden diferir de SAYC.",
-		"O leilão local funciona no navegador. As convenções aprendidas podem diferir do SAYC.",
-		"Les enchères locales s’exécutent dans votre navigateur. Les conventions apprises peuvent différer du SAYC.",
-		"La dichiarazione locale viene eseguita nel browser. Le convenzioni apprese possono differire dal SAYC.",
-		"Lokaal bieden werkt in je browser. Aangeleerde conventies kunnen van SAYC afwijken.",
-	],
-	[
 		"Bidding engine",
 		"Motor de subasta",
 		"Motor de leilão",

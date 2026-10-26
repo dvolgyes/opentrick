@@ -131,6 +131,39 @@ describe("checkCreateFields", () => {
 			errors: ["South: enter a name."],
 		});
 	});
+
+	it("names each bot seat bot and keeps the host human", () => {
+		const result = checkCreateFields({
+			names: { N: "bot", E: " Bot ", S: "Alice", W: "" },
+			seat: "S",
+			bots: ["N", "E"],
+		});
+		expect(result).toEqual({
+			ok: true,
+			config: {
+				scoring: "duplicate",
+				names: { N: "bot", E: "bot", S: "Alice", W: "player" },
+			},
+			seat: "S",
+		});
+	});
+
+	it("refuses a bot host, a bot with another name, and a human named bot", () => {
+		expect(
+			checkCreateFields({
+				names: { N: "Bob", E: "bot", S: "bot", W: "Wendy" },
+				seat: "S",
+				bots: ["N", "S"],
+			}),
+		).toEqual({
+			ok: false,
+			errors: [
+				"North: a bot has the name “bot”.",
+				"East: only a bot can have the name “bot”.",
+				"South: a bot cannot host the game.",
+			],
+		});
+	});
 });
 
 describe("banner", () => {

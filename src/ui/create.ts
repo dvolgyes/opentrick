@@ -14,10 +14,28 @@ import {
 import type { Bookmark } from "./bookmark";
 import type { AppDeps, Dispose } from "./deps";
 import { el } from "./dom";
-import { checkCreateFields, DEFAULT_CREATE_FIELDS, storageText } from "./model";
+import { languageControl } from "./language-control";
+import {
+	BOT_NAME,
+	type CreateFields,
+	checkCreateFields,
+	DEFAULT_CREATE_FIELDS,
+	isBotName,
+	storageText,
+} from "./model";
 import { readPersonalName, savePersonalName } from "./personal-name";
 import { seatGrid } from "./seat-grid";
 import { readSettings } from "./settings";
+
+/** A solo game: the creator hosts at South against three bots. */
+const SOLO_HOST: Seat = "S";
+
+/** One way to start a game: its button and the list that explains a refusal. */
+interface CreateTarget {
+	readonly submit: HTMLButtonElement;
+	readonly errors: HTMLElement;
+	readonly label: string;
+}
 
 /**
  * The create screen, prefilled from a bookmark (names and the creator's seat). Calls `onCreated` with the table key,
@@ -39,6 +57,10 @@ export function showCreate(
 	const meChoices = {} as Record<Seat, HTMLInputElement>;
 	const botChoices = {} as Record<Seat, HTMLInputElement>;
 	const host = prefill.host ?? DEFAULT_CREATE_FIELDS.seat;
+	// A bookmark from before the host rule can name the creator's seat a bot; the creator stays human.
+	const prefillBots = (prefill.botSetup ?? DEFAULT_BOT_SETUP).seats.filter(
+		(seat) => seat !== host,
+	);
 	const rows = SEATS.map((seat) => {
 		const name = el("input", {
 			attrs: {
@@ -49,11 +71,12 @@ export function showCreate(
 				"aria-label": `${deps.t(SEAT_NAMES[seat])} ${deps.t("Name").toLowerCase()}`,
 			},
 		});
-		name.value =
-			prefill.names[seat] ??
-			(seat === host
-				? readPersonalName(deps.browser)
-				: DEFAULT_CREATE_FIELDS.names[seat]);
+		name.value = prefillBots.includes(seat)
+			? BOT_NAME
+			: (prefill.names[seat] ??
+				(seat === host
+					? readPersonalName(deps.browser)
+					: DEFAULT_CREATE_FIELDS.names[seat]));
 		nameFields[seat] = name;
 		const me = el("input", {
 			attrs: { type: "radio", name: "me", value: seat },
@@ -62,7 +85,7 @@ export function showCreate(
 			attrs: { type: "checkbox", name: `bot-${seat}`, value: seat },
 		});
 		me.checked = seat === host;
-		bot.checked = (prefill.botSetup ?? DEFAULT_BOT_SETUP).seats.includes(seat);
+		bot.checked = prefillBots.includes(seat);
 		meChoices[seat] = me;
 		botChoices[seat] = bot;
 		me.setAttribute(
@@ -81,6 +104,29 @@ export function showCreate(
 			),
 		};
 	});
+
+	// The host seat cannot be a bot, and a bot seat cannot host.
+	const syncChoices = (): void => {
+		for (const seat of SEATS) {
+			botChoices[seat].disabled = meChoices[seat].checked;
+			meChoices[seat].disabled = botChoices[seat].checked;
+		}
+	};
+	for (const seat of SEATS) {
+		nameFields[seat].addEventListener("input", () => {
+			if (!botChoices[seat].checked) return;
+			botChoices[seat].checked = false;
+			syncChoices();
+		});
+		botChoices[seat].addEventListener("change", () => {
+			const name = nameFields[seat];
+			if (botChoices[seat].checked) name.value = BOT_NAME;
+			else if (isBotName(name.value)) name.value = "";
+			syncChoices();
+		});
+		meChoices[seat].addEventListener("change", syncChoices);
+	}
+	syncChoices();
 
 	const scoring = el(
 		"select",
@@ -116,14 +162,43 @@ export function showCreate(
 		),
 	);
 	bidder.value = setup.bidder;
-	const errors = el("ul", {
-		className: "errors",
-		attrs: { role: "alert", "data-testid": "errors" },
+
+	const errorList = (testId: string): HTMLElement =>
+		el("ul", {
+			className: "errors",
+			attrs: { role: "alert", "data-testid": testId },
+		});
+	const solo: CreateTarget = {
+		submit: el(
+			"button",
+			{ attrs: { type: "submit", "data-testid": "create-solo" } },
+			deps.t("Start solo game"),
+		),
+		errors: errorList("solo-errors"),
+		label: deps.t("Start solo game"),
+	};
+	const multiplayer: CreateTarget = {
+		submit: el(
+			"button",
+			{ attrs: { type: "submit", "data-testid": "create" } },
+			deps.t("Create game"),
+		),
+		errors: errorList("errors"),
+		label: deps.t("Create game"),
+	};
+	const targets = [solo, multiplayer];
+
+	const defaultSoloName = deps.t("Human");
+	const soloName = el("input", {
+		attrs: { type: "text", name: "solo-name", autocomplete: "off" },
 	});
-	const submit = el(
-		"button",
-		{ attrs: { type: "submit", "data-testid": "create" } },
-		deps.t("Create game"),
+	soloName.value = readPersonalName(deps.browser) || defaultSoloName;
+	const soloForm = el(
+		"form",
+		{ className: "create" },
+		el("label", {}, deps.t("Your name"), soloName),
+		solo.errors,
+		solo.submit,
 	);
 	const form = el(
 		"form",
@@ -135,68 +210,95 @@ export function showCreate(
 			deps.t("Leave a name blank or use player to ask the person joining."),
 		),
 		el("label", {}, `${deps.t("Scoring")}: `, scoring),
-		errors,
-		submit,
-		el(
-			"fieldset",
-			{},
-			el("legend", {}, deps.t("Optional automated players")),
-			el("label", {}, deps.t("Bidding engine"), bidder),
-			el(
-				"p",
-				{},
-				deps.t(
-					"Local bidding runs in your browser. Learned conventions can differ from SAYC.",
-				),
-			),
-		),
+		multiplayer.errors,
+		multiplayer.submit,
 	);
 
-	const showErrors = (messages: readonly string[]): void => {
-		errors.replaceChildren(...messages.map((text) => el("li", {}, text)));
+	const showErrors = (
+		target: CreateTarget,
+		messages: readonly string[],
+	): void => {
+		target.errors.replaceChildren(
+			...messages.map((text) => el("li", {}, text)),
+		);
 	};
 
 	// Only a browser that keeps data can hold the first copy of the table (plan §4.3).
-	if (!deps.storage.persistent) {
-		showErrors([deps.t(CANNOT_STORE)]);
-		submit.disabled = true;
-	}
+	if (!deps.storage.persistent)
+		for (const target of targets) {
+			showErrors(target, [deps.t(CANNOT_STORE)]);
+			target.submit.disabled = true;
+		}
 
-	form.addEventListener("submit", (event) => {
-		event.preventDefault();
-		const names = {} as Record<Seat, string>;
-		for (const seat of SEATS) names[seat] = nameFields[seat].value;
-		const seat = SEATS.find((choice) => meChoices[choice].checked) ?? "";
-		const check = checkCreateFields({ names, seat }, deps.t);
+	const start = (
+		target: CreateTarget,
+		fields: CreateFields,
+		rememberName: boolean,
+	): void => {
+		for (const other of targets) showErrors(other, []);
+		const check = checkCreateFields(fields, deps.t);
 		if (!check.ok) {
-			showErrors(check.errors.map((error) => deps.t(error)));
+			showErrors(
+				target,
+				check.errors.map((error) => deps.t(error)),
+			);
 			return;
 		}
-		const botSeats = SEATS.filter((item) => botChoices[item].checked);
 		const botSetup = parseBotSetup({
-			seats: botSeats,
+			seats: fields.bots,
 			bidder: bidder.value,
 		});
 		if (botSetup === undefined) {
-			showErrors([deps.t("Check the bidding engine.")]);
+			showErrors(target, [deps.t("Check the bidding engine.")]);
 			return;
 		}
 		const config: RoomConfig = { ...check.config, botSetup };
-		savePersonalName(deps.browser, config.names[check.seat]);
+		if (rememberName) savePersonalName(deps.browser, config.names[check.seat]);
 		const hostBotSettings =
-			botSeats.length > 0
+			fields.bots.length > 0
 				? {
 						bidder: botSetup.bidder,
 						playTimeMs: readSettings(deps.browser).playTimeMs,
 					}
 				: undefined;
-		showErrors([]);
-		submit.disabled = true;
-		submit.textContent = deps.t("Creating…");
-		void create(config, check.seat, hostBotSettings);
+		for (const other of targets) other.submit.disabled = true;
+		target.submit.textContent = deps.t("Creating…");
+		void create(target, config, check.seat, hostBotSettings);
+	};
+
+	soloForm.addEventListener("submit", (event) => {
+		event.preventDefault();
+		const names = {} as Record<Seat, string>;
+		for (const seat of SEATS)
+			names[seat] = seat === SOLO_HOST ? soloName.value : BOT_NAME;
+		start(
+			solo,
+			{
+				names,
+				seat: SOLO_HOST,
+				bots: SEATS.filter((seat) => seat !== SOLO_HOST),
+			},
+			soloName.value.trim() !== defaultSoloName,
+		);
+	});
+
+	form.addEventListener("submit", (event) => {
+		event.preventDefault();
+		const names = {} as Record<Seat, string>;
+		for (const seat of SEATS) names[seat] = nameFields[seat].value;
+		start(
+			multiplayer,
+			{
+				names,
+				seat: SEATS.find((choice) => meChoices[choice].checked) ?? "",
+				bots: SEATS.filter((item) => botChoices[item].checked),
+			},
+			true,
+		);
 	});
 
 	async function create(
+		target: CreateTarget,
 		config: RoomConfig,
 		seat: Seat,
 		hostBotSettings?: HostBotSettings,
@@ -217,11 +319,13 @@ export function showCreate(
 		});
 		if (disposed) return;
 		if (!created.ok) {
-			showErrors([
+			showErrors(target, [
 				`${deps.t("Could not create the game")}: ${storageText(created.code, deps.t)}`,
 			]);
-			submit.disabled = false;
-			submit.textContent = deps.t("Create game");
+			for (const other of targets) {
+				other.submit.disabled = false;
+				other.submit.textContent = other.label;
+			}
 			return;
 		}
 		void deps.persist();
@@ -234,13 +338,30 @@ export function showCreate(
 			{ className: "create-screen" },
 			el("h1", {}, deps.t("Create game")),
 			el(
-				"p",
-				{},
-				deps.t(
-					"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.",
-				),
+				"div",
+				{ className: "create-options" },
+				el("label", {}, `${deps.t("Bidding engine")} `, bidder),
+				languageControl(deps),
 			),
-			form,
+			el(
+				"section",
+				{ className: "create-mode" },
+				el("h2", {}, deps.t("Solo game")),
+				soloForm,
+			),
+			el(
+				"section",
+				{ className: "create-mode" },
+				el("h2", {}, deps.t("Multiplayer game")),
+				el(
+					"p",
+					{},
+					deps.t(
+						"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.",
+					),
+				),
+				form,
+			),
 		),
 	);
 	return () => {
