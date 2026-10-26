@@ -675,44 +675,51 @@ describe("round trips", () => {
 
 	it("names the network quality from the round trip shown in the hint, with two decimals", () => {
 		expect(measured(100)).toEqual({
-			text: "(Network: excellent)",
+			text: "Network: excellent",
 			title: "Roundtrip: 0.10sec",
 			quality: "excellent",
 		});
 		// The quality follows the shown hundredths, so 0.104 s shows as "0.10sec" and is still excellent.
 		expect(measured(104)?.quality).toBe("excellent");
 		expect(measured(105)).toEqual({
-			text: "(Network: good)",
+			text: "Network: good",
 			title: "Roundtrip: 0.11sec",
 			quality: "good",
 		});
 		expect(measured(300)?.quality).toBe("good");
 		expect(measured(305)).toEqual({
-			text: "(Network: average)",
+			text: "Network: average",
 			title: "Roundtrip: 0.31sec",
 			quality: "average",
 		});
 		expect(measured(600)?.quality).toBe("average");
 		expect(measured(605)).toEqual({
-			text: "(Network: poor)",
+			text: "Network: poor",
 			title: "Roundtrip: 0.61sec",
 			quality: "poor",
 		});
 		expect(measured(1234)?.title).toBe("Roundtrip: 1.23sec");
+		// 1.994 s shows as "1.99sec" and is still poor; from 2.00 s the connection is breaking up.
+		expect(measured(1994)?.quality).toBe("poor");
+		expect(measured(1995)).toEqual({
+			text: "Network: breaking up",
+			title: "Roundtrip: 2.00sec",
+			quality: "breaking-up",
+		});
 	});
 
-	it("names an unanswered probe a connection issue, and shows its lower bound with >", () => {
+	it("names an unanswered probe breaking up, and shows its lower bound with >", () => {
 		const table = view("N", null, {
 			roundTrips: [{ seat: "S", ms: 5000, lower: true }],
 		});
 		expect(seatView(table, "S").roundTrip).toEqual({
-			text: "(Network: connection issues)",
+			text: "Network: breaking up",
 			title: "Roundtrip: >5.00sec",
-			quality: "poor",
+			quality: "breaking-up",
 		});
 	});
 
-	it("shows (ping) for a connected player whom the host has not measured yet", () => {
+	it("shows the measuring state for a connected player whom the host has not measured yet", () => {
 		const absentWest = new Set<Seat>(["N", "E", "S"]);
 		for (const board of [null, BOARD]) {
 			const table = view("E", board, {
@@ -726,7 +733,7 @@ describe("round trips", () => {
 			expect(seatView(table, "S").roundTrip).toBeUndefined();
 			expect(seatView(table, "W").roundTrip).toBeUndefined();
 			expect(seatView(view("E", board), "W").roundTrip).toEqual({
-				text: "(ping)",
+				text: "Network: measuring…",
 				quality: "pending",
 			});
 		}

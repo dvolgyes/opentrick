@@ -1293,19 +1293,15 @@ describe("turn marks and network quality from the settings", () => {
 			...base,
 			seats: base.seats.map((player) => ({
 				...player,
-				roundTrip: { text: "(ping)", quality: "pending" },
+				roundTrip: { text: "Network: measuring…", quality: "pending" },
 			})),
 		};
 		const shown = (options: TableOptions) =>
-			renderView(
-				view,
-				"desktop",
-				undefined,
-				undefined,
-				options,
-			).root.querySelector("[data-testid='tile-E'] .tile-caption")?.textContent;
-		expect(shown(marks({}))).toBe("E - playerE (ping)");
-		expect(shown(marks({ networkQuality: false }))).toBe("E - playerE");
+			renderView(view, "desktop", undefined, undefined, options)
+				.root.querySelector("[data-testid='tile-E'] .network-bars")
+				?.checkVisibility() ?? false;
+		expect(shown(marks({}))).toBe(true);
+		expect(shown(marks({ networkQuality: false }))).toBe(false);
 	});
 });
 
@@ -1852,9 +1848,6 @@ describe("compact play controls", () => {
 });
 
 describe("round trip on the video tile", () => {
-	const rgb = (element: Element | null) =>
-		element === null ? "" : getComputedStyle(element).color;
-
 	const withRoundTrips = (
 		roundTrips: Partial<Record<Seat, RoundTripView>>,
 	): HTMLElement => {
@@ -1877,50 +1870,81 @@ describe("round trip on the video tile", () => {
 	const badge = (root: HTMLElement, seat: Seat) =>
 		root.querySelector<HTMLElement>(`[data-testid='round-trip-${seat}']`);
 
-	it("shows each player's network quality beside the name, in its colour, with the round trip as the hint", () => {
-		const excellent = {
-			text: "(Network: excellent)",
-			title: "Roundtrip: 0.05sec",
-			quality: "excellent",
-		} as const;
+	const bars = (root: HTMLElement, seat: Seat) =>
+		badge(root, seat)?.querySelectorAll<HTMLElement>(".network-bar") ?? [];
+	// The colour of each bar from the bottom; a bar that is not lit is grey.
+	const lit = (root: HTMLElement, seat: Seat) =>
+		[...bars(root, seat)]
+			.map(
+				(bar) =>
+					[
+						bar.getBoundingClientRect().bottom,
+						getComputedStyle(bar).backgroundColor,
+					] as const,
+			)
+			.sort((a, b) => b[0] - a[0])
+			.map(([, colour]) => colour);
+	const GREY = "rgb(124, 140, 130)";
+	const GREEN = "rgb(46, 204, 64)";
+
+	it("shows each player's network quality as five bars beside the video tile, with the text as the hint", () => {
+		const cases = [
+			["excellent", "0.05", [GREEN, GREEN, GREEN, GREEN, GREEN]],
+			["good", "0.20", [GREEN, GREEN, GREEN, GREEN, GREY]],
+			[
+				"average",
+				"0.40",
+				Array(3).fill("rgb(253, 216, 53)").concat(GREY, GREY),
+			],
+			[
+				"poor",
+				"1.50",
+				Array(2).fill("rgb(255, 152, 0)").concat(GREY, GREY, GREY),
+			],
+			["breaking-up", "2.50", ["rgb(229, 57, 53)", GREY, GREY, GREY, GREY]],
+		] as const;
+		for (const [quality, seconds, colours] of cases) {
+			const text = `Network: ${quality.replace("-", " ")}`;
+			const root = withRoundTrips({
+				E: { text, title: `Roundtrip: ${seconds}sec`, quality },
+			});
+			expect(lit(root, "E"), quality).toEqual(colours);
+			expect(badge(root, "E")?.title).toBe(`${text}\nRoundtrip: ${seconds}sec`);
+			expect(badge(root, "E")?.getAttribute("aria-label")).toBe(
+				`${text}, Roundtrip: ${seconds}sec`,
+			);
+			expect(caption(root, "E")?.textContent).toBe("E - playerE");
+		}
+	});
+
+	it("stands the bars outside the tile's right edge, level with its bottom", () => {
 		const root = withRoundTrips({
 			E: {
-				text: "(Network: good)",
+				text: "Network: good",
 				title: "Roundtrip: 0.20sec",
 				quality: "good",
 			},
-			S: {
-				text: "(Network: average)",
-				title: "Roundtrip: 0.40sec",
-				quality: "average",
-			},
-			W: {
-				text: "(Network: poor)",
-				title: "Roundtrip: >5.00sec",
-				quality: "poor",
-			},
 		});
-		expect(caption(root, "E")?.textContent).toBe("E - playerE (Network: good)");
-		expect(badge(root, "W")?.title).toBe("Roundtrip: >5.00sec");
-		const colours = (["E", "S", "W"] as const).map((seat) =>
-			rgb(badge(root, seat)),
-		);
-		colours.unshift(rgb(badge(withRoundTrips({ E: excellent }), "E")));
-		expect(colours).toEqual([
-			"rgb(126, 224, 138)",
-			"rgb(212, 225, 87)",
-			"rgb(255, 179, 71)",
-			"rgb(255, 138, 128)",
-		]);
+		const tile = root
+			.querySelector("[data-testid='tile-E']")
+			?.getBoundingClientRect();
+		const bar = badge(root, "E")?.getBoundingClientRect();
+		expect(tile).toBeDefined();
+		expect(bar).toBeDefined();
+		if (tile === undefined || bar === undefined) return;
+		expect(bar.width).toBeGreaterThan(0);
+		expect(bar.left).toBeGreaterThanOrEqual(tile.right);
+		expect(bar.left - tile.right).toBeLessThan(8);
+		expect(Math.abs(bar.bottom - tile.bottom)).toBeLessThan(1);
+		expect(bar.height).toBeGreaterThan(bar.width);
 	});
 
-	it("shows (ping) in the caption colour and with no hint before the host measured the player", () => {
+	it("shows five grey bars while the host has not measured the player yet", () => {
 		const root = withRoundTrips({
-			E: { text: "(ping)", quality: "pending" },
+			E: { text: "Network: measuring…", quality: "pending" },
 		});
-		expect(caption(root, "E")?.textContent).toBe("E - playerE (ping)");
-		expect(badge(root, "E")?.hasAttribute("title")).toBe(false);
-		expect(rgb(badge(root, "E"))).toBe(rgb(caption(root, "E")));
+		expect(lit(root, "E")).toEqual(Array(5).fill(GREY));
+		expect(badge(root, "E")?.title).toBe("Network: measuring…");
 	});
 
 	it("shows nothing for a seat that the host does not measure", () => {
@@ -1928,7 +1952,7 @@ describe("round trip on the video tile", () => {
 		expect(
 			root.querySelector("[data-testid='tile-E'] .tile-caption")?.textContent,
 		).toBe("E - playerE");
-		expect(root.querySelector(".round-trip")).toBeNull();
+		expect(badge(root, "E")?.checkVisibility() ?? false).toBe(false);
 	});
 });
 

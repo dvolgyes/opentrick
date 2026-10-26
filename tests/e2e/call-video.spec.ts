@@ -5,6 +5,7 @@ import {
 	confirmCamera,
 	counts,
 	directions,
+	exactCaption,
 	expectAudioArrives,
 	expectNoteOffScreen,
 	installCallProbe,
@@ -20,7 +21,6 @@ import {
 	setCallSendDelay,
 	setSwitches,
 	toggle,
-	withRoundTrip,
 } from "./call-probe";
 import { type ContextOptions, Player, reportNetwork } from "./player";
 import { createRoom, pick, type SeatKey, seatLabel } from "./room";
@@ -303,12 +303,12 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 	const record = async (state: string): Promise<void> => {
 		boxes.push({ state, box: await tile.boundingBox() });
 	};
-	await expect(caption(tab.W, "N")).toHaveText(withRoundTrip(seatLabel("N")));
+	await expect(caption(tab.W, "N")).toHaveText(exactCaption(seatLabel("N")));
 	await record("outside");
 
 	await joinWith(tab.W, MODE_LABELS.both);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Not in call`),
+		exactCaption(`${seatLabel("N")} · Not in call`),
 	);
 	await record("Not in call");
 
@@ -317,12 +317,12 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 	await setCallSendDelay(tab.W, 4_000);
 	await joinWith(tab.N, MODE_LABELS.audio);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Connecting`),
+		exactCaption(`${seatLabel("N")} · Connecting`),
 	);
 	await record("Connecting");
 	await setCallSendDelay(tab.W, 0);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio only`),
+		exactCaption(`${seatLabel("N")} · Audio only`),
 	);
 	await expect(tile).toHaveAttribute("data-video", "off");
 	await record("Audio only");
@@ -334,7 +334,7 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 		"on",
 	);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio + video`),
+		exactCaption(`${seatLabel("N")} · Audio + video`),
 	);
 	await expect(tile).toHaveAttribute("data-video", "on");
 	await expect(tab.W.getByTestId("video-N")).toHaveAttribute(
@@ -393,7 +393,7 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 
 	await toggle(tab.W, "See cameras: receive video").click();
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Video reception off`),
+		exactCaption(`${seatLabel("N")} · Video reception off`),
 	);
 	await expect(tile).toHaveAttribute("data-video", "off");
 	expect(await hasSource(tab.W, "N")).toBe(false);
@@ -412,7 +412,7 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 
 	await toggle(tab.W, "See cameras: receive video").click();
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio + video`),
+		exactCaption(`${seatLabel("N")} · Audio + video`),
 	);
 });
 
@@ -457,7 +457,7 @@ test("3: with the camera blocked, the preview says so, Cancel joins without the 
 			arriving: ["N"],
 		});
 	await expect(caption(tab.W, "E")).toHaveText(
-		withRoundTrip(`${seatLabel("E")} · Audio only`),
+		exactCaption(`${seatLabel("E")} · Audio only`),
 	);
 	await expect
 		.poll(() => videoFlow(tab.N))
@@ -534,7 +534,7 @@ test("5: a seat that turns off See cameras gets no video from its partners, and 
 
 	await toggle(tab.E, "See cameras: receive video").click();
 	await expect(caption(tab.E, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Video reception off`),
+		exactCaption(`${seatLabel("N")} · Video reception off`),
 	);
 	// The sender side: North's sender to East has no track and sends nothing; its sender to West goes on.
 	await expect
@@ -675,7 +675,7 @@ test("8: the phone leaves with its icon: its microphone and connections end, and
 		.toEqual({ openPeers: 0, liveTracks: 0 });
 	for (const seat of DESKTOPS) {
 		await expect(caption(tab[seat], "S")).toHaveText(
-			withRoundTrip(`${seatLabel("S")} · Not in call`),
+			exactCaption(`${seatLabel("S")} · Not in call`),
 		);
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
 	}

@@ -518,17 +518,11 @@ export const caption = (page: Page, seat: SeatKey): Locator =>
 	page.getByTestId(`tile-${seat}`).locator(".tile-caption");
 
 /**
- * A caption `text`, "label" or "label · status", with or without the network quality that the host measures for
- * a guest and shows after the label (src/ui/table.ts). The call tests check the label and the status; the quality
- * changes with each measurement.
+ * Exactly the caption `text`, "label" or "label · status". The network quality is not in the caption: it is a bar
+ * beside the tile (src/ui/table.ts).
  */
-export function withRoundTrip(text: string): RegExp {
-	const at = text.indexOf(" · ");
-	const label = at < 0 ? text : text.slice(0, at);
-	const status = at < 0 ? "" : text.slice(at);
-	return new RegExp(
-		`^${escapeRegExp(label)}(?: \\((?:ping|Network: (?:excellent|good|average|poor|connection issues))\\))?${escapeRegExp(status)}$`,
-	);
+export function exactCaption(text: string): RegExp {
+	return new RegExp(`^${escapeRegExp(text)}$`);
 }
 
 const escapeRegExp = (text: string): string =>

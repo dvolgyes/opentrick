@@ -130,6 +130,8 @@ interface CallSpot {
 	readonly botArtwork: HTMLImageElement;
 	readonly botFallback: HTMLElement;
 	readonly callPresence: HTMLElement;
+	/** The network quality: five bars beside the tile, lit from the bottom. */
+	readonly networkBars: HTMLElement;
 	readonly botControl: HTMLButtonElement;
 	/** Compact: the status beside the seat's name. */
 	readonly state: HTMLElement;
@@ -269,6 +271,34 @@ function turnPillText(pill: TurnPill, seat: Seat, t: Translate): string {
 /** The card back of a board: red on odd boards and before the first deal, blue on even boards. */
 function cardBackFor(board: number): string {
 	return board >= 2 && board % 2 === 0 ? cardBackBlue : cardBackRed;
+}
+
+/** The lit bars of each network quality; none is lit before the host measured the player. */
+const NETWORK_BARS: Readonly<Record<RoundTripView["quality"], number>> = {
+	excellent: 5,
+	good: 4,
+	average: 3,
+	poor: 2,
+	"breaking-up": 1,
+	pending: 0,
+};
+
+/** Lights the bars of `roundTrip` from the bottom, with its text and round trip as the hint; hidden without one. */
+function showNetworkBars(
+	bars: HTMLElement,
+	roundTrip: RoundTripView | undefined,
+): void {
+	bars.hidden = roundTrip === undefined;
+	if (roundTrip === undefined) return;
+	const lines =
+		roundTrip.title === undefined
+			? [roundTrip.text]
+			: [roundTrip.text, roundTrip.title];
+	bars.dataset.quality = roundTrip.quality;
+	bars.title = lines.join("\n");
+	bars.setAttribute("aria-label", lines.join(", "));
+	for (const [index, bar] of [...bars.children].entries())
+		bar.toggleAttribute("data-lit", index < NETWORK_BARS[roundTrip.quality]);
 }
 
 /** Left and right hands are vertical stacks; the top and bottom hands are horizontal fans. */
@@ -1243,6 +1273,17 @@ export function tableSection(
 			attrs: { role: "img", "data-testid": `call-presence-${seat}` },
 		});
 		callPresence.hidden = true;
+		const networkBars = el(
+			"span",
+			{
+				className: "network-bars",
+				attrs: { role: "img", "data-testid": `round-trip-${seat}` },
+			},
+			...Array.from({ length: NETWORK_BARS.excellent }, () =>
+				el("span", { className: "network-bar" }),
+			),
+		);
+		networkBars.hidden = true;
 		const tile = el(
 			"div",
 			{
@@ -1262,6 +1303,7 @@ export function tableSection(
 			botOverlay,
 			callPresence,
 			caption,
+			networkBars,
 			botControl,
 		);
 		const state = el("span", {
@@ -1277,6 +1319,7 @@ export function tableSection(
 			botArtwork: botArtworkImage,
 			botFallback,
 			callPresence,
+			networkBars,
 			botControl,
 			state,
 			shown: undefined,
@@ -1361,27 +1404,9 @@ export function tableSection(
 			spot.shown = shown;
 			spot.caption.replaceChildren(
 				label,
-				...(roundTrip === undefined
-					? []
-					: [
-							" ",
-							el(
-								"span",
-								{
-									className: "round-trip",
-									attrs: {
-										"data-quality": roundTrip.quality,
-										"data-testid": `round-trip-${seat}`,
-										...(roundTrip.title === undefined
-											? {}
-											: { title: roundTrip.title }),
-									},
-								},
-								roundTrip.text,
-							),
-						]),
 				...(status?.text === undefined ? [] : [` · ${status.text}`]),
 			);
+			showNetworkBars(spot.networkBars, roundTrip);
 			spot.state.hidden = status?.text === undefined;
 			spot.state.replaceChildren(
 				icon("phone", !status?.connected),

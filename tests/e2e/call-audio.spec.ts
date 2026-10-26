@@ -6,6 +6,7 @@ import {
 	counts,
 	cutGameLinks,
 	directions,
+	exactCaption,
 	expectAudioArrives,
 	expectNoteOffScreen,
 	installCallProbe,
@@ -25,7 +26,6 @@ import {
 	setSwitches,
 	timeWhen,
 	toggle,
-	withRoundTrip,
 } from "./call-probe";
 import { type ContextOptions, Player, reportNetwork } from "./player";
 import {
@@ -194,7 +194,7 @@ test("1: without Join, the table makes no call activity", async () => {
 		"data-phase",
 		"auction",
 	);
-	await expect(caption(tab.W, "N")).toHaveText(withRoundTrip(seatLabel("N")));
+	await expect(caption(tab.W, "N")).toHaveText(exactCaption(seatLabel("N")));
 	// The absence of activity needs time to show: the game links carry beats meanwhile.
 	await tab.W.waitForTimeout(4_000);
 	for (const seat of SEATS) {
@@ -228,10 +228,10 @@ test("2: two seats on Audio only hear each other, and the call stores only its s
 	await expect(note(tab.W)).toHaveText(/Connected to North\./);
 	await expect(note(tab.N)).toHaveText(/Connected to West\./);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio only`),
+		exactCaption(`${seatLabel("N")} · Audio only`),
 	);
 	await expect(caption(tab.N, "W")).toHaveText(
-		withRoundTrip(`${seatLabel("W")} · Audio only`),
+		exactCaption(`${seatLabel("W")} · Audio only`),
 	);
 	await expect(toggle(tab.W, "Send mic audio")).toHaveAttribute(
 		"data-actual",
@@ -276,7 +276,7 @@ test("3: Send off and Hear off change one direction, and each side shows the res
 		"false",
 	);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Mic off`),
+		exactCaption(`${seatLabel("N")} · Mic off`),
 	);
 	await toggle(tab.N, "Send mic audio").click();
 	await expect(toggle(tab.N, "Send mic audio")).toHaveAttribute(
@@ -284,7 +284,7 @@ test("3: Send off and Hear off change one direction, and each side shows the res
 		"true",
 	);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio only`),
+		exactCaption(`${seatLabel("N")} · Audio only`),
 	);
 
 	await toggle(tab.W, "Hear others: receive audio").click();
@@ -297,7 +297,7 @@ test("3: Send off and Hear off change one direction, and each side shows the res
 		"off",
 	);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio reception off`),
+		exactCaption(`${seatLabel("N")} · Audio reception off`),
 	);
 	await toggle(tab.W, "Hear others: receive audio").click();
 	await expect(tab.W.getByTestId("audio-N")).toHaveAttribute(
@@ -305,7 +305,7 @@ test("3: Send off and Hear off change one direction, and each side shows the res
 		"playing",
 	);
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio only`),
+		exactCaption(`${seatLabel("N")} · Audio only`),
 	);
 	await expectAudioArrives(tab.W);
 });
@@ -316,10 +316,10 @@ test("4: Listen only needs no microphone, and a refused microphone stays out of 
 		/Connected to (North, West|West, North)\./,
 	);
 	await expect(caption(tab.E, "W")).toHaveText(
-		withRoundTrip(`${seatLabel("W")} · Audio only`),
+		exactCaption(`${seatLabel("W")} · Audio only`),
 	);
 	await expect(caption(tab.W, "E")).toHaveText(
-		withRoundTrip(`${seatLabel("E")} · Mic off`),
+		exactCaption(`${seatLabel("E")} · Mic off`),
 	);
 	await expectAudioArrives(tab.E);
 	expect((await counts(tab.E)).captures).toBe(0);
@@ -335,7 +335,7 @@ test("4: Listen only needs no microphone, and a refused microphone stays out of 
 	expect((await counts(tab.E)).captures).toBe(1);
 	// The others still reach East; only East's sending failed.
 	await expect(caption(tab.W, "E")).toHaveText(
-		withRoundTrip(`${seatLabel("E")} · Mic off`),
+		exactCaption(`${seatLabel("E")} · Mic off`),
 	);
 	await expectAudioArrives(tab.E);
 });
@@ -351,10 +351,10 @@ test("5: Leave stops the microphone and the connections, and the others see Not 
 		})
 		.toEqual({ openPeers: 0, liveTracks: 0 });
 	await expect(caption(tab.W, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Not in call`),
+		exactCaption(`${seatLabel("N")} · Not in call`),
 	);
 	await expect(caption(tab.E, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Not in call`),
+		exactCaption(`${seatLabel("N")} · Not in call`),
 	);
 	await expect(note(tab.W)).toHaveText(/Connected to East\./);
 });
@@ -367,7 +367,7 @@ test("6: after East's game links and relays are cut for longer than 10 s, the ca
 	expect(await cutGameLinks(tab.E)).toBe(3);
 	// Without game links East is offline for the others; after 10 s each side drops the call link.
 	await expect(caption(tab.W, "E")).toHaveText(
-		withRoundTrip(`${seatLabel("E")} · Not in call`),
+		exactCaption(`${seatLabel("E")} · Not in call`),
 		{
 			timeout: 30_000,
 		},
@@ -384,10 +384,10 @@ test("6: after East's game links and relays are cut for longer than 10 s, the ca
 		`cut: the call came back ${Date.now() - cut} ms after the relays returned`,
 	);
 	await expect(caption(tab.W, "E")).toHaveText(
-		withRoundTrip(`${seatLabel("E")} · Mic off`),
+		exactCaption(`${seatLabel("E")} · Mic off`),
 	);
 	await expect(caption(tab.E, "W")).toHaveText(
-		withRoundTrip(`${seatLabel("W")} · Audio only`),
+		exactCaption(`${seatLabel("W")} · Audio only`),
 	);
 	await expectAudioArrives(tab.E);
 });
@@ -427,7 +427,7 @@ test("8: a reload joins the call again with the stored switches; a page outside 
 		timeout: 30_000,
 	});
 	await expect(caption(tab.E, "W")).toHaveText(
-		withRoundTrip(`${seatLabel("W")} · Audio only`),
+		exactCaption(`${seatLabel("W")} · Audio only`),
 	);
 	await expectAudioArrives(tab.E);
 	expect(await counts(tab.W)).toMatchObject({ captures: 1, liveTracks: 1 });
@@ -516,10 +516,10 @@ test("10: when one seat stops hearing, the other seats still hear each other", a
 	}
 	// The label names the viewer's own reception; West still hears South.
 	await expect(caption(tab.S, "W")).toHaveText(
-		withRoundTrip(`${seatLabel("W")} · Audio reception off`),
+		exactCaption(`${seatLabel("W")} · Audio reception off`),
 	);
 	await expect(caption(tab.W, "S")).toHaveText(
-		withRoundTrip(`${seatLabel("S")} · Audio only`),
+		exactCaption(`${seatLabel("S")} · Audio only`),
 	);
 	await expect
 		.poll(() => directions(tab.S, "audio"))
@@ -589,14 +589,14 @@ test("11: Send off while the microphone request is pending stops the late track 
 	expect((await counts(tab.E)).liveTracks).toBe(0);
 	await expect(send).toHaveAttribute("data-actual", "off");
 	await expect(caption(tab.W, "E")).toHaveText(
-		withRoundTrip(`${seatLabel("E")} · Mic off`),
+		exactCaption(`${seatLabel("E")} · Mic off`),
 	);
 
 	await setCaptureDelay(tab.E, 0);
 	await send.click();
 	await expect(send).toHaveAttribute("data-actual", "on");
 	await expect(caption(tab.W, "E")).toHaveText(
-		withRoundTrip(`${seatLabel("E")} · Audio only`),
+		exactCaption(`${seatLabel("E")} · Audio only`),
 	);
 	expect((await counts(tab.E)).liveTracks).toBe(1);
 });
@@ -631,7 +631,7 @@ test("12: rapid toggles at two seats at once end in each seat's last choice", as
 			openPeers: 3,
 		});
 		await expect(caption(tab.E, seat)).toHaveText(
-			withRoundTrip(`${seatLabel(seat)} · Mic off`),
+			exactCaption(`${seatLabel(seat)} · Mic off`),
 		);
 	}
 	// West still hears East and South, and nothing from North, whose microphone is off.
@@ -646,7 +646,7 @@ test("12: rapid toggles at two seats at once end in each seat's last choice", as
 			"on",
 		);
 		await expect(caption(tab.E, seat)).toHaveText(
-			withRoundTrip(`${seatLabel(seat)} · Audio only`),
+			exactCaption(`${seatLabel(seat)} · Audio only`),
 		);
 		expect((await counts(tab[seat])).liveTracks).toBe(1);
 	}
@@ -705,7 +705,7 @@ test("13: a reload joins the call again, and the peers drop the old link at once
 		const log = await peerLog(tab[seat]);
 		expect(log.filter((peer) => peer.closedAt === null)).toHaveLength(3);
 		await expect(caption(tab[seat], "N")).toHaveText(
-			withRoundTrip(`${seatLabel("N")} · Audio only`),
+			exactCaption(`${seatLabel("N")} · Audio only`),
 		);
 	}
 	expect(await counts(tab.N)).toMatchObject({
@@ -742,7 +742,7 @@ test("14: a tab that vanishes without leaving is out of the call 10 s after its 
 	);
 	const gone = await timeWhen(
 		async () =>
-			withRoundTrip(`${seatLabel("S")} · Not in call`).test(
+			exactCaption(`${seatLabel("S")} · Not in call`).test(
 				(await caption(tab.W, "S").textContent()) ?? "",
 			),
 		30_000,
@@ -753,7 +753,7 @@ test("14: a tab that vanishes without leaving is out of the call 10 s after its 
 	expect(gone - offline).toBeLessThanOrEqual(10_000 + 1_500);
 	for (const seat of ["W", "N", "E"] as const) {
 		await expect(caption(tab[seat], "S")).toHaveText(
-			withRoundTrip(`${seatLabel("S")} · Not in call`),
+			exactCaption(`${seatLabel("S")} · Not in call`),
 		);
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
 	}

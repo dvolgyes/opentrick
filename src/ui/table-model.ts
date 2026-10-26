@@ -221,15 +221,21 @@ export interface SeatView {
 }
 
 /**
- * The network quality for the video tile, such as "(Network: good)", with the round trip as the hint. The quality
- * follows the shown hundredths: excellent up to 0.10 s, good up to 0.30 s, average up to 0.60 s, poor above it. A
- * ping without an echo shows "(Network: connection issues)" in the poor colour. A connected player whom the host
- * has not measured yet shows "(ping)" and has no hint.
+ * The network quality for the video tile, such as "Network: good", with the round trip as `title`. The quality
+ * follows the shown hundredths: excellent up to 0.10 s, good up to 0.30 s, average up to 0.60 s, poor below 2.00 s,
+ * and breaking up from 2.00 s. A ping without an echo is breaking up too. A connected player whom the host has not
+ * measured yet shows "Network: measuring…" and has no round trip.
  */
 export interface RoundTripView {
 	readonly text: string;
 	readonly title?: string;
-	readonly quality: "excellent" | "good" | "average" | "poor" | "pending";
+	readonly quality:
+		| "excellent"
+		| "good"
+		| "average"
+		| "poor"
+		| "breaking-up"
+		| "pending";
 }
 
 export interface PlayedCard {
@@ -562,25 +568,29 @@ function roundTripView(
 			owner !== input.hostSeat &&
 			input.present.has(owner) &&
 			!(input.bots?.has(owner) ?? false);
-		return measurable ? { text: t("(ping)"), quality: "pending" } : undefined;
+		return measurable
+			? { text: t("Network: measuring…"), quality: "pending" }
+			: undefined;
 	}
 	// The quality follows the shown hundredths, so 0.104 s shows as "0.10sec" and is excellent.
 	const hundredths = Math.round(measured.ms / 10);
 	const seconds = (hundredths / 100).toFixed(2);
 	if (measured.lower)
 		return {
-			text: t("(Network: connection issues)"),
+			text: t("Network: breaking up"),
 			title: t("Roundtrip: >{seconds}sec", { seconds }),
-			quality: "poor",
+			quality: "breaking-up",
 		};
 	const title = t("Roundtrip: {seconds}sec", { seconds });
 	if (hundredths <= 10)
-		return { text: t("(Network: excellent)"), title, quality: "excellent" };
+		return { text: t("Network: excellent"), title, quality: "excellent" };
 	if (hundredths <= 30)
-		return { text: t("(Network: good)"), title, quality: "good" };
+		return { text: t("Network: good"), title, quality: "good" };
 	if (hundredths <= 60)
-		return { text: t("(Network: average)"), title, quality: "average" };
-	return { text: t("(Network: poor)"), title, quality: "poor" };
+		return { text: t("Network: average"), title, quality: "average" };
+	if (hundredths < 200)
+		return { text: t("Network: poor"), title, quality: "poor" };
+	return { text: t("Network: breaking up"), title, quality: "breaking-up" };
 }
 
 function payloadBoard(payload: unknown): number {

@@ -2,6 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
 	caption,
 	counts,
+	exactCaption,
 	expectAudioArrives,
 	installCallProbe,
 	joinWith,
@@ -11,7 +12,6 @@ import {
 	requestsFor,
 	SEAT_NAMES,
 	toggle,
-	withRoundTrip,
 } from "./call-probe";
 import { Player, reportNetwork } from "./player";
 import {
@@ -81,7 +81,7 @@ async function expectStatuses(seats: readonly SeatKey[]): Promise<void> {
 		for (const other of seats)
 			if (other !== viewer)
 				await expect(caption(page, other)).toHaveText(
-					withRoundTrip(heard(viewer, other)),
+					exactCaption(heard(viewer, other)),
 					{
 						timeout: CONNECT_MS,
 					},
@@ -181,7 +181,7 @@ test("2: a player whose tab crashes comes back in the call with its switches, an
 	const others = ["W", "E", "S"] as const;
 	for (const seat of others)
 		await expect(caption(tab[seat], "N")).toHaveText(
-			withRoundTrip(`${seatLabel("N")} · Not in call`),
+			exactCaption(`${seatLabel("N")} · Not in call`),
 			{
 				timeout: GONE_MS,
 			},
@@ -202,7 +202,7 @@ test("3: the host's tab crashes; the call goes on, another player becomes the ho
 	const others = ["N", "E", "S"] as const;
 	for (const seat of others)
 		await expect(caption(tab[seat], "W")).toHaveText(
-			withRoundTrip(`${seatLabel("W")} · Not in call`),
+			exactCaption(`${seatLabel("W")} · Not in call`),
 			{
 				timeout: GONE_MS,
 			},
@@ -245,7 +245,7 @@ test("4: a browser that must ask for the microphone again offers Rejoin the call
 	expect(await requestsFor(tab.S, "audio")).toBe(0);
 	for (const seat of ["W", "N", "E"] as const)
 		await expect(caption(tab[seat], "S")).toHaveText(
-			withRoundTrip(`${seatLabel("S")} · Not in call`),
+			exactCaption(`${seatLabel("S")} · Not in call`),
 			{
 				timeout: GONE_MS,
 			},

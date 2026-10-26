@@ -3,10 +3,10 @@ import {
 	type CallProbe,
 	caption,
 	counts,
+	exactCaption,
 	installCallProbe,
 	joinWith,
 	leaveButton,
-	withRoundTrip,
 } from "./call-probe";
 import { Player, reportNetwork } from "./player";
 import {
@@ -129,7 +129,7 @@ test("South's video reaches East without a gap while the host North reloads", as
 		"playing",
 	);
 	await expect(caption(tab.E, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio only`),
+		exactCaption(`${seatLabel("N")} · Audio only`),
 		{ timeout: CONNECT_MS },
 	);
 
@@ -155,7 +155,7 @@ test("South's video reaches East without a gap while the host North reloads", as
 	});
 	await expect(leaveButton(tab.N)).toBeVisible({ timeout: CONNECT_MS });
 	await expect(caption(tab.E, "N")).toHaveText(
-		withRoundTrip(`${seatLabel("N")} · Audio only`),
+		exactCaption(`${seatLabel("N")} · Audio only`),
 		{ timeout: CONNECT_MS },
 	);
 	// East built a new media connection to the reloaded North; the one to South stayed.

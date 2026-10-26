@@ -22,11 +22,12 @@
 	--call-orange: #c75b00;
 	--tile-bg: #2f5f47;
 	--tile-caption-bg: #1d3a2c;
-	/* Network quality on the dark tile caption. */
-	--round-trip-excellent: #7ee08a;
-	--round-trip-good: #d4e157;
-	--round-trip-average: #ffb347;
-	--round-trip-poor: #ff8a80;
+	/* The network quality bars beside a video tile; a bar that is not lit is grey. */
+	--network-green: #2ecc40;
+	--network-yellow: #fdd835;
+	--network-orange: #ff9800;
+	--network-red: #e53935;
+	--network-off: #7c8c82;
 	color-scheme: light;
 }
 
@@ -1065,20 +1066,49 @@ main:has(> .room) {
 	white-space: nowrap;
 }
 
-.round-trip[data-quality="excellent"] {
-	color: var(--round-trip-excellent);
+/* Five bars outside the tile's right edge, level with its bottom; the first bar is the lowest. */
+.network-bars {
+	position: absolute;
+	bottom: 0;
+	left: calc(100% + 0.2rem);
+	display: flex;
+	flex-direction: column-reverse;
+	gap: 0.15rem;
+	padding: 0.15rem;
+	border-radius: 0.2rem;
+	background: var(--tile-caption-bg);
+	--network-lit: var(--network-off);
 }
 
-.round-trip[data-quality="good"] {
-	color: var(--round-trip-good);
+.network-bars[hidden] {
+	display: none;
 }
 
-.round-trip[data-quality="average"] {
-	color: var(--round-trip-average);
+.network-bars:is([data-quality="excellent"], [data-quality="good"]) {
+	--network-lit: var(--network-green);
 }
 
-.round-trip[data-quality="poor"] {
-	color: var(--round-trip-poor);
+.network-bars[data-quality="average"] {
+	--network-lit: var(--network-yellow);
+}
+
+.network-bars[data-quality="poor"] {
+	--network-lit: var(--network-orange);
+}
+
+.network-bars[data-quality="breaking-up"] {
+	--network-lit: var(--network-red);
+}
+
+.network-bar {
+	width: 0.75rem;
+	height: 0.7rem;
+	border-radius: 0.1rem;
+	background: var(--network-off);
+}
+
+.network-bar[data-lit] {
+	background: var(--network-lit);
 }
 
 .tile-bot-control {
