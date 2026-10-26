@@ -40,7 +40,7 @@ Bots use the bidding policy and play settings chosen in the create screen and th
 5. Each friend opens the link and selects one of the available seats.
    If only one seat remains, OpenTrick takes it automatically.
 
-![The create screen lets the table creator name the four seats and choose their own seat.](docs/images/create-room.png)
+![The create screen offers a solo game and a multiplayer table, where the creator names the four seats and chooses their own seat.](docs/images/create-room.png)
 
 The room link is the invitation key.
 Room discovery can announce that a room exists, but a person still needs the complete link to join because the room password is carried in the link fragment.
@@ -89,6 +89,10 @@ The **BRL SL (WBridge5 imitation)** option is the default, because human partner
 BRL's RL/FSP learned system remains available for bot partnerships and future work.
 Both policies run entirely in a browser worker, with no Python runtime or API key.
 Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
+The **Guide** button in the bid box opens the bidding guide for the bidding system chosen in Settings.
+
+![The bidding guide dialog, opened from the Guide button, lists the opening, response, and rebid ranges of the chosen system.](docs/images/bidding-guide.png)
+
 All bots use a local bridge engine for card play.
 The card engine samples possible hidden hands, respects shown voids and auction meanings, and evaluates legal cards with the [DDS double-dummy solver](https://github.com/bookchris/bridge-dds-js) compiled to WebAssembly.
 It sees only its own hand, exposed dummy, and public play and auction history.
@@ -123,11 +127,14 @@ Use **Copy link** in the table if you need to share the invitation again.
 ## Settings
 
 Open **Settings** to change these options.
+
+![The settings dialog lists the language, bidding system, bidding bot, appearance, colour theme, and turn display options.](docs/images/settings.png)
+
 The page language can be one of English, German, Spanish, French, Hungarian, Italian, Norwegian, Dutch, or Portuguese.
+The bidding system sets the point count and the bidding guide.
 The colour theme can be Selenized, Normal, Solarized, or Gruvbox, each with a light and a dark palette.
-The palette can also follow your system's light or dark preference.
-Display options include the point system, card points, turn markers, and the mobile view for portrait windows.
-Bot play time is also set here.
+The appearance can also follow your system's light or dark preference.
+Turn display, card points, the mobile view for portrait windows, and bot play time are also set here.
 Settings are kept in this browser and are never sent to the table.
 
 ## Development
