@@ -69,6 +69,14 @@ async function seatOffered(
 	return Date.now() - since;
 }
 
+/** Waits until a thawed tab whose seat another device holds now shows the seat page instead of the table. */
+async function expectSeatTaken(page: Page): Promise<void> {
+	await expect(
+		page.getByText("Another player took this seat. Choose another one."),
+	).toBeVisible({ timeout: CONNECT_MS });
+	await expect(page.getByTestId("table")).toHaveCount(0);
+}
+
 test.beforeAll(async ({ browser, baseURL }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
 	const open = async (name: string): Promise<Player> => {
@@ -137,11 +145,7 @@ test("a frozen player's seat shows offline, frees after the timeout, and the tha
 	tab.N = page;
 
 	await thaw();
-	await expectBanner(old, "superseded");
-	await expect(old.getByTestId("banner")).toContainText(
-		"another device holds this seat now",
-	);
-	await expect(old.getByTestId("send")).toBeDisabled();
+	await expectSeatTaken(old);
 	await expect(rosterSeat(tab.W, "N")).toHaveAttribute("data-state", "online");
 });
 
@@ -171,8 +175,7 @@ test("a frozen host is replaced; its seat frees after the timeout; the thawed ol
 	tab.W = page;
 
 	await thaw();
-	await expectBanner(old, "superseded");
-	await expect(old.getByTestId("send")).toBeDisabled();
+	await expectSeatTaken(old);
 
 	// The new host orders the new West's message.
 	await sendDraft(tab.W);

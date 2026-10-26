@@ -77,7 +77,10 @@ export function showTable(
 	let notice: string | undefined;
 	/** The lobby as last built: an equal lobby only updates its status line and the network panel. */
 	let shown: string | undefined;
-	/** True once this page has taken the last free seat, so a refusal does not repeat the take. */
+	/**
+	 * True once this page has taken the last free seat, so a refusal does not repeat the take. Also true after another
+	 * device took this page's seat: its player is probably at that device now, so the page takes no seat that frees later.
+	 */
 	let autoTook = false;
 
 	const status = el("p", {
@@ -131,6 +134,18 @@ export function showTable(
 		});
 	};
 
+	/** Another device holds this page's seat now: the page shows the seat page as a visitor, with the reason. */
+	const leaveTakenSeat = (): void => {
+		leaveRoom();
+		stopController();
+		seatHint = null;
+		autoTook = true;
+		navigation.forgetSeat();
+		notice = seatText("taken", deps.t);
+		showConnecting();
+		void open(false);
+	};
+
 	async function open(
 		asCreator: boolean,
 		then?: (table: TableController) => Promise<void>,
@@ -181,7 +196,11 @@ export function showTable(
 		if (disposed || opening || !table) return;
 		const view = table.view();
 		if (room !== undefined) {
-			// The room renders itself. It goes only when the host refused or dropped the seat.
+			// The room renders itself. It goes only when the host refused or dropped the seat, or another device took it.
+			if (view.status === "superseded" && view.supersededBy === "seat") {
+				leaveTakenSeat();
+				return;
+			}
 			if (view.seat === roomSeat || KEEP_ROOM.has(view.status)) return;
 			leaveRoom();
 		}
