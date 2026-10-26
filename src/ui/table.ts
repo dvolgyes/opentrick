@@ -726,7 +726,7 @@ export function tableSection(
 	mobileReload.append(icon("reload"));
 	const mobileExit = button("", handlers.exit, {
 		className: "icon-button mobile-auction-exit",
-		attrs: { "aria-label": t("Exit"), title: t("Exit") },
+		attrs: { "aria-label": t("New table"), title: t("New table") },
 	});
 	mobileExit.append(icon("exit"));
 	const mobileShareStatus = el("span", {
@@ -2080,16 +2080,27 @@ export function tableSection(
 		setCountdown(view.countdown);
 	}
 
-	/** The system below a player's name opens its guide in the viewer's language; the guides do not describe "other". */
-	function systemLabel(system: PointSystem | undefined): HTMLElement[] {
+	/**
+	 * The system below a player's name opens its guide in the viewer's language; the guides do not describe "other".
+	 * A bot's system is only assumed, so a superscript asterisk marks it.
+	 */
+	function systemLabel(
+		system: PointSystem | undefined,
+		bot: boolean,
+	): HTMLElement[] {
 		if (system === undefined) return [];
 		const text = t(SYSTEM_LABELS[system]);
 		if (system === "other")
 			return [el("span", { className: "auction-system" }, text)];
 		const open = button(text, () => guide.open(system), {
 			className: "auction-system",
-			attrs: { title: t("Bidding guide") },
+			attrs: {
+				title: bot
+					? `${t("Bidding guide")}. * ${t("A bot does not strictly follow this system.")}`
+					: t("Bidding guide"),
+			},
 		});
+		if (bot) open.append(el("sup", {}, "*"));
 		open.disabled = guideBlocked;
 		return [open];
 	}
@@ -2156,7 +2167,7 @@ export function tableSection(
 							"th",
 							{ attrs: { scope: "col", title: player } },
 							el("span", { className: "auction-player" }, player),
-							...systemLabel(grid.systems[index]),
+							...systemLabel(grid.systems[index], grid.bots.includes(seat)),
 						);
 					}),
 				),

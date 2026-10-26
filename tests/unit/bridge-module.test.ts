@@ -829,13 +829,13 @@ describe("bidding systems at the table", () => {
 		});
 	});
 
-	it("marks learned bot systems as other and preserves each human's system", () => {
+	it("assumes corrected HCP for bot seats and preserves each human's system", () => {
 		const systems = { N: "vienna", E: "other", W: "reith" } as const;
 		expect(seatSystems(systems, ["W", "S"])).toEqual({
 			N: "vienna",
 			E: "other",
-			S: "other",
-			W: "other",
+			S: "hcp-corrected",
+			W: "hcp-corrected",
 		});
 		expect(seatSystems(systems, [])).toEqual(systems);
 	});

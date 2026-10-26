@@ -188,12 +188,15 @@ export function parseBridgeState(
 	};
 }
 
-/** The system that every bot bids with: its prompt tells it to count Milton Work points (src/bot/strategy.ts). */
-export const BOT_SYSTEM: PointSystem = "other";
+/**
+ * The system that the table assumes for every bot. A learned bot does not strictly follow it: the auction marks it
+ * (src/ui/table.ts), and the bots' own play reads no guide meanings from the calls (src/bot/host-runner.ts).
+ */
+export const BOT_SYSTEM: PointSystem = "hcp-corrected";
 
 /**
- * The system of each seat: learned bots use BOT_SYSTEM, whatever an earlier player of their seat sent, and a human seat
- * uses the system it sent, if any.
+ * The system of each seat: bots use BOT_SYSTEM, whatever an earlier player of their seat sent, and a human seat uses
+ * the system it sent, if any.
  */
 export function seatSystems(
 	systems: Partial<Record<Seat, PointSystem>>,

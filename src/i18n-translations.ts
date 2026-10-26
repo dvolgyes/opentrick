@@ -916,7 +916,6 @@ const rows: readonly TranslationRow[] = [
 		"Inserisci i quattro giocatori e scegli il tuo posto. Il tuo browser farà da host; chiunque al tavolo potrà subentrare.",
 		"Vul de vier spelers in en kies je plaats. Je browser is eerst de host; iedereen aan tafel kan die rol overnemen.",
 	],
-	["Exit", "Salir", "Sair", "Quitter", "Esci", "Afsluiten"],
 	[
 		"Fallback",
 		"Alternativa",

@@ -119,6 +119,7 @@ function playView(): TableView {
 			seats: ["N", "E", "S", "W"],
 			rows: [["1♣", "Pass", "Pass", "Pass"]],
 			systems: [],
+			bots: [],
 			calls: ["1C", "P", "P", "P"],
 			meanings: [],
 		},
@@ -790,6 +791,7 @@ describe("desktop auction", () => {
 				seats: ["N", "E", "S", "W"],
 				rows: [["1♣", "Pass"]],
 				systems: [],
+				bots: [],
 				calls: ["1C", "P"],
 				meanings: [],
 			},
@@ -923,6 +925,7 @@ describe("undo request off turn", () => {
 					seats: ["N", "E", "S", "W"],
 					rows: [["1♣"]],
 					systems: [],
+					bots: [],
 					calls: ["1C"],
 					meanings: [],
 				},
@@ -984,6 +987,7 @@ describe("bid box under a held press", () => {
 			seats: ["N", "E", "S", "W"],
 			rows: [],
 			systems: [],
+			bots: [],
 			calls: [],
 			meanings: [],
 		},
@@ -2359,7 +2363,7 @@ describe("mobile top bar and round status", () => {
 		expect(records(root)).toEqual(["O-W: +2 (1250P)", "N-S: -2 (1000P)"]);
 	});
 
-	it("puts Reload beside Exit, and each button calls its own handler", () => {
+	it("puts Reload beside New table, and each button calls its own handler", () => {
 		const { root, handlers } = renderMobile(roundView());
 		const topbar = root.querySelector<HTMLElement>(".mobile-auction-topbar");
 		const named = (name: string) =>
@@ -2370,7 +2374,7 @@ describe("mobile top bar and round status", () => {
 		named("Reload")?.click();
 		expect(handlers.reload).toHaveBeenCalledOnce();
 		expect(handlers.exit).not.toHaveBeenCalled();
-		named("Exit")?.click();
+		named("New table")?.click();
 		expect(handlers.exit).toHaveBeenCalledOnce();
 		expect(handlers.reload).toHaveBeenCalledOnce();
 	});
@@ -2996,6 +3000,7 @@ describe("bidding guide", () => {
 				seats: ["N", "E", "S", "W"],
 				rows: [["1♣"]],
 				systems: ["hcp-corrected", "vienna", undefined, "other"],
+				bots: [],
 				calls: ["1C"],
 				meanings: [],
 			},
@@ -3036,6 +3041,43 @@ describe("bidding guide", () => {
 		await loaded(root).toBe("Reizleitfaden: Wiener Punkte (7-5-3-1)");
 	});
 
+	it("marks a bot's assumed system with a superscript asterisk, and still opens its guide", async () => {
+		const view: TableView = {
+			...auction(),
+			auction: {
+				seats: ["N", "E", "S", "W"],
+				rows: [["1♣"]],
+				systems: ["hcp-corrected", undefined, undefined, "hcp-corrected"],
+				bots: ["W"],
+				calls: ["1C"],
+				meanings: [],
+			},
+		};
+		const { root } = renderView(view, "desktop", undefined, translator("de"), {
+			locale: "de",
+			pointSystem: () => "reith",
+		});
+		const systems = [
+			...root.querySelectorAll<HTMLElement>(
+				"[data-testid='auction'] thead .auction-system",
+			),
+		];
+		expect(systems.map((system) => system.textContent)).toEqual([
+			"korr. HCP",
+			"korr. HCP*",
+		]);
+		const bot = systems[1];
+		if (!(bot instanceof HTMLButtonElement))
+			throw new Error("the bot's system is not a button");
+		expect(bot.querySelector("sup")?.textContent).toBe("*");
+		expect(systems[0]?.querySelector("sup")).toBeNull();
+		expect(bot.title).toContain(
+			"Ein Bot hält sich nicht streng an dieses System.",
+		);
+		bot.click();
+		await loaded(root).toBe("Reizleitfaden: korrigierte Milton HCP");
+	});
+
 	it("shows the guide and its calls in the language of the table", async () => {
 		const { root } = renderView(
 			auction(),
@@ -3064,6 +3106,7 @@ describe("bidding guide", () => {
 					seats: ["N", "E", "S", "W"],
 					rows: [["1♣"]],
 					systems: ["hcp-corrected", "vienna", undefined, "other"],
+					bots: [],
 					calls: ["1C"],
 					meanings: [],
 				},
@@ -3112,6 +3155,7 @@ describe("call meanings in the auction", () => {
 			seats: ["N", "E", "S", "W"],
 			rows: [["—", "1NT", "Pass", last]],
 			systems: [undefined, "hcp", undefined, "four-aces"],
+			bots: [],
 			calls: ["1NT", "P", "X"],
 			meanings: [
 				[0, 1, 2, 3].map((index) => (index === at ? meaning : undefined)),
@@ -3252,6 +3296,7 @@ describe("convention hint", () => {
 				seats: ["N", "E", "S", "W"],
 				rows: [],
 				systems: [],
+				bots: [],
 				calls,
 				meanings: [],
 			},

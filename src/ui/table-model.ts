@@ -263,6 +263,8 @@ export interface AuctionView {
 	readonly rows: readonly (readonly string[])[];
 	/** The bidding system of each seat, in `seats` order; undefined when the seat's player has sent none. */
 	readonly systems: readonly (PointSystem | undefined)[];
+	/** The seats that bots hold: their system is assumed, and they do not strictly follow it. */
+	readonly bots: readonly Seat[];
 	/** The calls so far, in order, for the bidding guide. */
 	readonly calls: readonly Call[];
 	/**
@@ -868,10 +870,9 @@ function auctionView(
 	systems: BridgeState["systems"],
 	bots: ReadonlySet<Seat> | undefined,
 	t: Translate,
-	botSystem: PointSystem = "other",
 ): AuctionView {
 	const before = SEATS.indexOf(dealer);
-	const bySeat = seatSystems(systems, bots ?? [], botSystem);
+	const bySeat = seatSystems(systems, bots ?? []);
 	// A call of a system with rules gets its meaning, or "not in the guide"; a call of the other systems gets none.
 	const meaning = (index: number): string | undefined => {
 		const system = bySeat[seatAfter(dealer, index)];
@@ -899,6 +900,7 @@ function auctionView(
 		seats: SEATS,
 		rows,
 		systems: SEATS.map((seat) => bySeat[seat]),
+		bots: SEATS.filter((seat) => bots?.has(seat) === true),
 		calls,
 		meanings: meaningRows,
 	};
@@ -1346,14 +1348,7 @@ export function tableView(input: TableViewInput): TableView {
 		details: t("Dealer: {dealer}", { dealer: t(SEAT_NAMES[view.dealer]) }),
 		vulnerability: vulnerabilityLines(view.vulnerability, t),
 		seats,
-		auction: auctionView(
-			view.dealer,
-			view.calls,
-			state.systems,
-			input.bots,
-			t,
-			"other",
-		),
+		auction: auctionView(view.dealer, view.calls, state.systems, input.bots, t),
 		contract: contract
 			? t("{contract} by {declarer}", {
 					contract: contractText(contract),

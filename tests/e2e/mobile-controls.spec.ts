@@ -45,10 +45,10 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await expect(
 			page.getByRole("button", { name: /Switch to player$/ }).first(),
 		).toBeVisible();
-		// During the auction the top bar holds the only Reload, Exit and Share URL; Settings holds the key and the models.
+		// During the auction the top bar holds the only Reload, New table and Share URL; Settings holds the key and the models.
 		for (const [name, count] of [
 			["Reload", 1],
-			["Exit", 1],
+			["New table", 1],
 			["Share URL", 1],
 			["Copy link", 0],
 			["Set API key", 0],

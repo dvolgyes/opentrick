@@ -45,11 +45,13 @@ for (const [form, options] of Object.entries(FORMS)) {
 			await expect.poll(() => hasMark(page)).toBe(false);
 			expect(page.url()).toBe(tableUrl);
 			await expect(
-				page.getByRole("button", { name: "Exit", exact: true }),
+				page.getByRole("button", { name: "New table", exact: true }),
 			).toBeVisible();
 
 			await markDocument(page);
-			await page.getByRole("button", { name: "Exit", exact: true }).click();
+			await page
+				.getByRole("button", { name: "New table", exact: true })
+				.click();
 			await expect(page).toHaveURL(new URL("./", baseURL).toString());
 			await expect(page.getByTestId("create")).toBeVisible();
 			expect(await hasMark(page)).toBe(false);

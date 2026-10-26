@@ -56,7 +56,9 @@ test("each player sees the others' bidding systems, the Vienna calls get only th
 			await expect(systemOf(page, "N")).toHaveText("HCP", {
 				timeout: CONNECT_MS,
 			});
-			await expect(systemOf(page, "E")).toHaveText("Other");
+			// A bot is assumed to bid corrected HCP; the asterisk says that it does not strictly follow it.
+			await expect(systemOf(page, "E")).toHaveText("corr. HCP*");
+			await expect(systemOf(page, "E").locator("sup")).toHaveText("*");
 		}
 
 		await guestPage

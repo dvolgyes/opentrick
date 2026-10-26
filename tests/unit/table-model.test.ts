@@ -416,6 +416,7 @@ describe("auction", () => {
 			seats: ["N", "E", "S", "W"],
 			rows: [["—", "1♣", "Double", "Pass"]],
 			systems: [undefined, undefined, undefined, undefined],
+			bots: [],
 			calls: ["1C", "X", "P"],
 			meanings: [[undefined, undefined, undefined, undefined]],
 		});
@@ -429,14 +430,22 @@ describe("auction", () => {
 		]);
 	});
 
-	it("names each seat's bidding system and marks learned bots as other", () => {
+	it("names each seat's bidding system and assumes corrected HCP for a bot seat", () => {
 		const state = {
 			...tableState(bidding(BOARD, "1C")),
 			systems: { N: "vienna", E: "other", W: "reith" },
 		} as const;
-		expect(
-			view("S", null, { state, bots: new Set<Seat>(["W"]) }).auction?.systems,
-		).toEqual(["vienna", "other", undefined, "other"]);
+		const auction = view("S", null, {
+			state,
+			bots: new Set<Seat>(["W"]),
+		}).auction;
+		expect(auction?.systems).toEqual([
+			"vienna",
+			"other",
+			undefined,
+			"hcp-corrected",
+		]);
+		expect(auction?.bots).toEqual(["W"]);
 	});
 
 	it("explains each described call by its caller's system, in the cell of the call", () => {
@@ -457,10 +466,11 @@ describe("auction", () => {
 			],
 			[undefined],
 		]);
+		// A bot's call reads by corrected HCP, whatever system an earlier player of its seat sent.
 		expect(
 			view("N", null, { state, bots: new Set<Seat>(["E"]) }).auction
 				?.meanings[0]?.[1],
-		).toBeUndefined();
+		).toBe("15–17 corrected HCP, balanced");
 	});
 
 	it("explains an overcall, marks a call that the guide does not describe, and gives no meaning to a scale with only a guide", () => {

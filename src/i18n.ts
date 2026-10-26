@@ -529,7 +529,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Cancel reset": "Zurücksetzen abbrechen",
 		Cancel: "Abbrechen",
 		"Create game": "Spiel erstellen",
-		Exit: "Beenden",
 		Reset: "Zurücksetzen",
 		"Copy table link": "Tischlink kopieren",
 
@@ -751,7 +750,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Pause bots": "Botok felfüggesztése",
 		"Resume bots": "Botok folytatása",
 		Reset: "Nullázás",
-		Exit: "Kilépés",
 		Players: "Játékosok",
 		Messages: "Üzenetek",
 		"Claim …": "További ütések …",
@@ -1367,7 +1365,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Pause bots": "Sett botene på pause",
 		"Resume bots": "Fortsett med botene",
 		Reset: "Nullstill",
-		Exit: "Avslutt",
 		Players: "Spillere",
 		Messages: "Meldinger",
 		"Claim …": "Krev …",

@@ -928,7 +928,7 @@ export function showRoom(
 	const reload = button(deps.t("Reload"), handlers.reload, {
 		className: "sidebar-reload",
 	});
-	const exit = button(deps.t("Exit"), handlers.createNew, {
+	const exit = button(deps.t("New table"), handlers.createNew, {
 		className: "sidebar-exit",
 	});
 	const pauseBots = button(deps.t("Pause bots"), () => {
