@@ -194,6 +194,34 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	flex: 0 1 auto;
 }
 
+/* A create seat card shows the name field without a label, and the host and bot choices in one row under it. */
+.seat-roles {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 0.8rem;
+	margin-top: 0.4rem;
+}
+
+.seat-roles label {
+	margin: 0;
+	white-space: nowrap;
+}
+
+.seat-roles input {
+	margin-left: 0;
+}
+
+/* On a phone the north and south cards are as wide as the west and east cards, so that each card keeps one row. */
+@media (max-width: 600px) {
+	.create .seat-card {
+		padding: 0.5rem;
+	}
+
+	.create .seat-card:is([data-seat="N"], [data-seat="S"]) {
+		width: calc(50% - 0.35rem);
+	}
+}
+
 table {
 	border-collapse: collapse;
 	width: 100%;

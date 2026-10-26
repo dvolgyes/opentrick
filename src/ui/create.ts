@@ -99,9 +99,13 @@ export function showCreate(
 				"section",
 				{},
 				el("h2", {}, deps.t(SEAT_NAMES[seat])),
-				el("label", {}, deps.t("Name"), name),
-				el("label", {}, me, ` ${deps.t("Host")}`),
-				el("label", {}, bot, ` ${deps.t("Bot")}`),
+				name,
+				el(
+					"div",
+					{ className: "seat-roles" },
+					el("label", {}, me, ` ${deps.t("Host")}`),
+					el("label", {}, bot, ` ${deps.t("Bot")}`),
+				),
 			),
 		};
 	});

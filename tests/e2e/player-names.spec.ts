@@ -244,6 +244,20 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 		);
 		expect(Math.max(...centres) - Math.min(...centres)).toBeLessThan(2);
 	}
+	// A seat card shows its name field without a "Name" label, and its host and bot choices in one row, also on a
+	// phone.
+	await page.setViewportSize({ width: 360, height: 800 });
+	for (const seat of ["N", "E", "S", "W"]) {
+		const card = page.getByTestId("seat-grid").locator(`[data-seat="${seat}"]`);
+		await expect(card.getByText("Name", { exact: true })).toHaveCount(0);
+		const [hostChoice, botChoice] = await Promise.all([
+			card.locator('input[name="me"]').boundingBox(),
+			card.locator(`input[name="bot-${seat}"]`).boundingBox(),
+		]);
+		expect(Math.abs((hostChoice?.y ?? 0) - (botChoice?.y ?? 100))).toBeLessThan(
+			2,
+		);
+	}
 
 	const name = (seat: string) => page.locator(`input[name="name-${seat}"]`);
 	const bot = (seat: string) => page.locator(`input[name="bot-${seat}"]`);
