@@ -788,10 +788,11 @@ test("4: the call controls have names that spell out the way and the medium, and
 });
 
 for (const viewport of [
+	{ width: 1920, height: 1080 },
 	{ width: 1440, height: 900 },
 	{ width: 1280, height: 720 },
 ]) {
-	test(`the bot picture of a tile stays above the bot's name at ${viewport.width}×${viewport.height}`, async ({
+	test(`the bot picture fills the tile above the bot's name at ${viewport.width}×${viewport.height}`, async ({
 		page,
 	}) => {
 		await page.setViewportSize(viewport);
@@ -799,21 +800,24 @@ for (const viewport of [
 		await page.getByTestId("create-solo").click();
 		for (const seat of ["N", "E", "W"]) {
 			const tile = page.getByTestId(`tile-${seat}`);
-			const picture = tile
-				.locator(".bot-artwork, .bot-overlay-fallback")
-				.filter({ visible: true });
+			const picture = tile.locator(".bot-artwork");
 			await expect(picture).toBeVisible({ timeout: CONNECT_MS });
-			const [art, caption] = await Promise.all([
+			const [art, frame, caption] = await Promise.all([
 				picture.boundingBox(),
+				tile.boundingBox(),
 				tile.locator(".tile-caption").boundingBox(),
 			]);
-			expect(art?.y ?? 0).toBeGreaterThanOrEqual(
-				(await tile.boundingBox())?.y ?? 0,
-			);
-			// A clear gap, because the artwork glows to the edge of its box.
-			expect((art?.y ?? 0) + (art?.height ?? 0)).toBeLessThanOrEqual(
-				(caption?.y ?? 0) - 4,
-			);
+			if (!art || !frame || !caption)
+				throw new Error(`the picture, the tile and the name of ${seat}`);
+			expect(Math.abs(art.x - frame.x)).toBeLessThanOrEqual(1);
+			expect(Math.abs(art.y - frame.y)).toBeLessThanOrEqual(1);
+			expect(Math.abs(art.width - frame.width)).toBeLessThanOrEqual(1);
+			expect(art.y + art.height).toBeLessThanOrEqual(caption.y + 0.5);
+			expect(art.y + art.height).toBeGreaterThanOrEqual(caption.y - 1);
+			// Stretched to the frame: the drawn picture has no empty bars.
+			expect(
+				await picture.evaluate((image) => getComputedStyle(image).objectFit),
+			).toBe("fill");
 		}
 	});
 }
