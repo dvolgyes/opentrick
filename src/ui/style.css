@@ -3241,10 +3241,7 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-round-status {
-	display: flex;
 	flex: none;
-	justify-content: space-between;
-	gap: 0.5rem;
 	padding: 0.15rem 0.35rem;
 	border: 1px solid var(--line);
 	border-radius: 0.35rem;
@@ -3252,8 +3249,40 @@ main:has(> .room[data-form="compact"]) {
 	color: var(--sheet-fg);
 	font-size: 1.08rem;
 	line-height: 1.2;
+}
+
+/* The round line opens and folds the previous game statistics; the mark before it shows which. */
+.mobile-round-status > summary {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.5rem;
 	white-space: nowrap;
 	align-items: center;
+	cursor: pointer;
+}
+
+.mobile-round-status > summary::before {
+	content: "▸";
+	font-size: 0.7em;
+}
+
+.mobile-round-status[open] > summary::before {
+	content: "▾";
+}
+
+.mobile-round-number .strain.red {
+	color: var(--red-suit);
+}
+
+.mobile-round-status .scores {
+	width: 100%;
+	margin: 0.3rem 0 0.1rem;
+	font-size: 0.9rem;
+}
+
+.mobile-round-record[data-own-side="true"] .mobile-round-label {
+	font-weight: 700;
+	text-decoration: underline;
 }
 
 /* The points of one side, and below them whether that side is vulnerable. */
@@ -3476,8 +3505,10 @@ main:has(> .room[data-form="compact"]) {
 	font-size: 0.8rem;
 }
 
+/* The contract is large; a tight line keeps it in the row of the counts, below their labels. */
 .mobile-tricks .tricks-counts .bid {
-	font-size: 1.2rem;
+	font-size: 2.4rem;
+	line-height: 1;
 }
 
 .mobile-auction-bids .history-panel {

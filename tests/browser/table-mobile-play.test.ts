@@ -1568,6 +1568,19 @@ describe("compact play controls", () => {
 		expect(row?.hidden).toBe(false);
 		expect(row.textContent).toBe("2♣Our tricks2Target8Opponents'3");
 		expectTwoRows(row);
+		// The contract is twice the size of the earlier 1.2rem, larger than the trick counts.
+		const bid = row.querySelector<HTMLElement>(".bid");
+		const ours = row.querySelector<HTMLElement>(".count strong");
+		if (!bid || !ours) throw new Error("the contract and a count");
+		const rem = Number.parseFloat(
+			getComputedStyle(document.documentElement).fontSize,
+		);
+		expect(Number.parseFloat(getComputedStyle(bid).fontSize)).toBeCloseTo(
+			2.4 * rem,
+		);
+		expect(Number.parseFloat(getComputedStyle(bid).fontSize)).toBeGreaterThan(
+			Number.parseFloat(getComputedStyle(ours).fontSize),
+		);
 		expect(row.querySelector(".tricks-needed")).toBeNull();
 		const board = root.querySelector(".mobile-auction-board");
 		const controls = root.querySelector(".mobile-auction-controls");
@@ -2312,7 +2325,7 @@ describe("mobile top bar and round status", () => {
 	it("shows the points of each side after the won and lost balance", () => {
 		const { root } = renderMobile(roundView());
 		expect(root.querySelector(".mobile-round-number")?.textContent).toBe(
-			"Round 3",
+			"Round 3: 2♣",
 		);
 		expect(records(root)).toEqual(["E-W: +2 (1250p)", "N-S: -2 (1000p)"]);
 	});
@@ -2361,6 +2374,75 @@ describe("mobile top bar and round status", () => {
 			translator("de"),
 		);
 		expect(records(root)).toEqual(["O-W: +2 (1250P)", "N-S: -2 (1000P)"]);
+	});
+
+	it("shows the contract after the round number while a contract exists", () => {
+		const number = (view: TableView) =>
+			renderMobile(view).root.querySelector(".mobile-round-number")
+				?.textContent;
+		expect(number(roundView())).toBe("Round 3: 2♣");
+		const doubled = roundView();
+		expect(
+			number({
+				...doubled,
+				header: doubled.header && { ...doubled.header, doubling: "X" },
+			}),
+		).toBe("Round 3: 2♣X");
+		expect(
+			number({ ...roundView(), phase: "auction", header: undefined }),
+		).toBe("Round 3");
+	});
+
+	it("marks the side of the viewer bold and underlined", () => {
+		const { root } = renderMobile(roundView());
+		const marks = [
+			...root.querySelectorAll<HTMLElement>(".mobile-round-label"),
+		].map((label) => {
+			const style = getComputedStyle(label);
+			return [
+				label.textContent,
+				Number(style.fontWeight) >= 700,
+				style.textDecorationLine,
+			];
+		});
+		expect(marks).toEqual([
+			["E-W", false, "none"],
+			["N-S", true, "underline"],
+		]);
+	});
+
+	it("folds the previous game statistics under the round line, and a click opens and folds them", () => {
+		const { root } = renderMobile(roundView());
+		const status = root.querySelector<HTMLDetailsElement>(
+			'[data-testid="mobile-round-status"]',
+		);
+		const table = root.querySelector<HTMLElement>(
+			'[data-testid="mobile-scores"]',
+		);
+		const line = status?.querySelector<HTMLElement>(":scope > summary");
+		if (!status || !table || !line)
+			throw new Error("the round status, its line and its table");
+		expect(line.querySelector(".mobile-round-number")).not.toBeNull();
+		expect(table.checkVisibility()).toBe(false);
+		line.click();
+		expect(table.checkVisibility()).toBe(true);
+		expect(table.querySelector("caption")?.textContent).toBe(
+			"Previous game statistics",
+		);
+		expect(
+			[...table.querySelectorAll("tr")].map((row) =>
+				[...row.children].map((cell) => cell.textContent),
+			),
+		).toEqual([
+			["", "E-W", "N-S"],
+			["Deals won", "3", "1"],
+			["Deals lost", "1", "3"],
+			["Total score", "1250", "1000"],
+		]);
+		const total = table.querySelector<HTMLElement>("tr:last-child th");
+		expect(total && Number(getComputedStyle(total).fontWeight)).toBe(700);
+		line.click();
+		expect(table.checkVisibility()).toBe(false);
 	});
 
 	it("puts Reload beside New table, and each button calls its own handler", () => {

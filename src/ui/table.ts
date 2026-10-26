@@ -762,10 +762,21 @@ export function tableSection(
 		mobileExit,
 		mobileShareStatus,
 	);
-	const mobileRoundStatus = el("div", {
-		className: "mobile-round-status",
-		attrs: { "data-testid": "mobile-round-status", "aria-live": "polite" },
+	// The round line opens the previous game statistics, as the desktop sidebar shows them.
+	const mobileRoundLine = el("summary", { attrs: { "aria-live": "polite" } });
+	const mobileScores = el("table", {
+		className: "scores",
+		attrs: { "data-testid": "mobile-scores" },
 	});
+	const mobileRoundStatus = el(
+		"details",
+		{
+			className: "mobile-round-status",
+			attrs: { "data-testid": "mobile-round-status" },
+		},
+		mobileRoundLine,
+		mobileScores,
+	);
 	// On a phone the history folds away when play starts; its title opens and folds it again.
 	const mobileBidsTitle = el("summary", {}, t("Bidding history"));
 	const mobileBidsFold = el(
@@ -2266,7 +2277,8 @@ export function tableSection(
 						"data-result": net > 0 ? "positive" : net < 0 ? "negative" : "zero",
 					},
 				},
-				`${label}: `,
+				el("span", { className: "mobile-round-label" }, label),
+				": ",
 				el("strong", {}, net > 0 ? `+${net}` : String(net)),
 				` (${t("{points}p", { points: stats.total })})`,
 			);
@@ -2292,11 +2304,12 @@ export function tableSection(
 					: []),
 			);
 		};
-		mobileRoundStatus.replaceChildren(
+		mobileRoundLine.replaceChildren(
 			el(
 				"strong",
 				{ className: "mobile-round-number" },
 				`${t("Round")} ${view.board}`,
+				...(view.header ? [": ", contractBid(view.header)] : []),
 			),
 			side("ew", t("E-W")),
 			side("ns", t("N-S")),
@@ -2313,7 +2326,8 @@ export function tableSection(
 
 	/**
 	 * The "Previous game statistics" panel. Its counters are per deal, so the rows say "Deals"; the product has not
-	 * yet chosen a game unit (bridge-auction-screen, Previous game statistics).
+	 * yet chosen a game unit (bridge-auction-screen, Previous game statistics). The phone shows the same table when its
+	 * round line opens.
 	 */
 	function renderScores(view: TableView): void {
 		const { ns, ew } = view.statistics;
@@ -2322,7 +2336,7 @@ export function tableSection(
 			[t("Deals lost"), ew.lost, ns.lost, false],
 			[t("Total score"), ew.total, ns.total, true],
 		];
-		scores.replaceChildren(
+		const parts = (): HTMLElement[] => [
 			el("caption", {}, t("Previous game statistics")),
 			el(
 				"thead",
@@ -2348,7 +2362,9 @@ export function tableSection(
 					),
 				),
 			),
-		);
+		];
+		scores.replaceChildren(...parts());
+		mobileScores.replaceChildren(...parts());
 	}
 
 	function actionItem(
