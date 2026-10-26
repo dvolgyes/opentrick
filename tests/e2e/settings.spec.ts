@@ -27,13 +27,24 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
 	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Automatic", { exact: true })).toBeChecked();
-	await expect(dialog.getByLabel("Normal", { exact: true })).toBeChecked();
-	await expect(page.locator("body")).toHaveCSS("color", "rgb(29, 29, 27)");
+	await expect(dialog.getByLabel("Selenized", { exact: true })).toBeChecked();
+	// The text takes the --fg token of the palette in use, so the check reads that token rather than a fixed colour.
+	// Polls, because the page applies a change of the system preference a moment after emulateMedia returns.
+	const showsInk = () =>
+		page.evaluate(() => {
+			const probe = document.createElement("span");
+			probe.style.color = "var(--fg)";
+			document.body.append(probe);
+			const ink = getComputedStyle(probe).color;
+			probe.remove();
+			return getComputedStyle(document.body).color === ink;
+		});
+	await expect.poll(showsInk).toBe(true);
 	// Automatic follows the system preference at once, without a reload.
 	await page.emulateMedia({ colorScheme: "dark" });
-	await expect(page.locator("body")).toHaveCSS("color", "rgb(230, 230, 225)");
+	await expect.poll(showsInk).toBe(true);
 	await page.emulateMedia({ colorScheme: "light" });
-	await expect(page.locator("body")).toHaveCSS("color", "rgb(29, 29, 27)");
+	await expect.poll(showsInk).toBe(true);
 	for (const flag of [
 		"Show the points next to the cards",
 		"Frame the player whose turn it is to bid",
@@ -238,8 +249,8 @@ test("the page starts in the saved theme before its script runs, as the app show
 }) => {
 	await page.goto("/");
 	const cases = [
-		[{}, "light", "normal", "light"],
-		[{}, "dark", "normal", "dark"],
+		[{}, "light", "selenized", "light"],
+		[{}, "dark", "selenized", "dark"],
 		[
 			{ "theme-style": "solarized", scheme: "auto" },
 			"dark",
@@ -253,7 +264,7 @@ test("the page starts in the saved theme before its script runs, as the app show
 			"light",
 		],
 		[{ "theme-style": "normal", scheme: "dark" }, "light", "normal", "dark"],
-		[{ "theme-style": "<b>x</b>", scheme: "dim" }, "dark", "normal", "dark"],
+		[{ "theme-style": "<b>x</b>", scheme: "dim" }, "dark", "selenized", "dark"],
 	] as const;
 	for (const [stored, system, theme, scheme] of cases) {
 		await page.emulateMedia({ colorScheme: system });

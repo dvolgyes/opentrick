@@ -28,7 +28,7 @@ describe("player settings", () => {
 			playTimeMs: 5000,
 			pointSystem: "hcp",
 			cardPoints: true,
-			theme: "normal",
+			theme: "selenized",
 			scheme: "auto",
 			bidTurnFrame: true,
 			playTurnFrame: true,
@@ -83,13 +83,13 @@ describe("player settings", () => {
 		for (const earlier of ["light", "warm", "solarized", "dark", "auto"]) {
 			storage.setItem("opentrick.settings.theme", earlier);
 			expect(readSettings(storage)).toMatchObject({
-				theme: "normal",
+				theme: "selenized",
 				scheme: "auto",
 			});
 		}
 		writeSettings(storage, DEFAULT_SETTINGS);
 		expect(storage.getItem("opentrick.settings.theme")).toBeNull();
-		expect(storage.getItem("opentrick.settings.theme-style")).toBe("normal");
+		expect(storage.getItem("opentrick.settings.theme-style")).toBe("selenized");
 		expect(storage.getItem("opentrick.settings.scheme")).toBe("auto");
 	});
 

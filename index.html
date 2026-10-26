@@ -21,7 +21,7 @@
 				};
 				const root = document.documentElement;
 				const scheme = read("scheme", ["auto", "light", "dark"]);
-				root.dataset.theme = read("theme-style", ["normal", "solarized", "selenized", "gruvbox"]);
+				root.dataset.theme = read("theme-style", ["selenized", "normal", "solarized", "gruvbox"]);
 				root.dataset.scheme =
 					scheme !== "auto"
 						? scheme

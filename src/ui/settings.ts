@@ -11,8 +11,11 @@ import {
 } from "../protocol";
 import type { MaybeStorage } from "../session";
 
-/** The colour themes of themes.css; each has a light and a dark palette. */
-export const THEMES = ["normal", "solarized", "selenized", "gruvbox"] as const;
+/**
+ * The colour themes of themes.css; each has a light and a dark palette. The first one is the default, which the page
+ * script of index.html also reads.
+ */
+export const THEMES = ["selenized", "normal", "solarized", "gruvbox"] as const;
 export type Theme = (typeof THEMES)[number];
 
 /** The palette of the theme: "auto" follows the light or dark preference of the browser. */
@@ -52,7 +55,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	playTimeMs: DEFAULT_PLAY_TIME_MS,
 	pointSystem: "hcp",
 	cardPoints: true,
-	theme: "normal",
+	theme: "selenized",
 	scheme: "auto",
 	bidTurnFrame: true,
 	playTurnFrame: true,
