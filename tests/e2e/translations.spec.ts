@@ -48,7 +48,7 @@ const ENGLISH_FRAGMENTS = [
 
 /** Common English words, and the English side names, that no Hungarian text of the page uses. */
 const ENGLISH_WORDS =
-	/(?<![\p{L}\p{N}])(the|to|your|you|for|and|of|with|from|waiting|turn|play|bid|call|level|pass|confirm|clubs|diamonds|hearts|spades|trump|double|redouble|asking|attempt|seconds|retrying|tricks|dealer|vulnerable|board|by|auction|n-s|e-w)(?![\p{L}\p{N}])/iu;
+	/(?<![\p{L}\p{N}])(the|to|your|you|for|and|of|with|from|player|waiting|turn|play|bid|call|level|pass|confirm|clubs|diamonds|hearts|spades|trump|double|redouble|asking|attempt|seconds|retrying|tricks|dealer|vulnerable|board|by|auction|n-s|e-w)(?![\p{L}\p{N}])/iu;
 
 /** The visible texts of the page, and the labels and titles of its visible elements. */
 async function shownTexts(page: Page): Promise<string[]> {
@@ -142,6 +142,7 @@ for (const form of FORMS) {
 			const page = await context.newPage();
 			await mockBots(page);
 			await page.goto("/");
+			await expect(page.getByTestId("create")).toBeVisible();
 			await check(page, "create");
 			for (const [seat, name] of Object.entries(NAMES))
 				await page.locator(`input[name="name-${seat}"]`).fill(name);

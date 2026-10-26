@@ -30,11 +30,11 @@ test("a page without a host shows the tracker, relay and connection counts in th
 		});
 		await expect(page.getByTestId("table-status")).not.toBeEmpty();
 		await expect(page.getByTestId("connection-summary")).toHaveText(SUMMARY);
-		// The seat page opens its Network panel, so each tracker and relay line shows without a click.
-		await expect(page.getByTestId("network")).toHaveAttribute("open", "");
-		await expect(
-			page.getByTestId("network").getByText("Trackers reachable"),
-		).toBeVisible();
+		// The Network panel of the seat page starts closed; a click shows each tracker and relay line.
+		const network = page.getByTestId("network");
+		await expect(network).not.toHaveAttribute("open");
+		await network.locator("summary").click();
+		await expect(network.getByText("Trackers reachable")).toBeVisible();
 
 		await pick(page, "N");
 		await expect(page.getByTestId("banner")).toBeVisible({

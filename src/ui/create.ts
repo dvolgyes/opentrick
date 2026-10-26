@@ -16,6 +16,7 @@ import type { AppDeps, Dispose } from "./deps";
 import { el } from "./dom";
 import { languageControl } from "./language-control";
 import {
+	BIDDER_NAMES,
 	BOT_NAME,
 	type CreateFields,
 	checkCreateFields,
@@ -67,7 +68,7 @@ export function showCreate(
 				type: "text",
 				name: `name-${seat}`,
 				autocomplete: "off",
-				placeholder: "player",
+				placeholder: deps.t("player"),
 				"aria-label": `${deps.t(SEAT_NAMES[seat])} ${deps.t("Name").toLowerCase()}`,
 			},
 		});
@@ -149,16 +150,9 @@ export function showCreate(
 	};
 	const bidder = el(
 		"select",
-		{ attrs: { name: "bot-bidder", "aria-label": deps.t("Bidding engine") } },
-		el(
-			"option",
-			{ attrs: { value: "sl" } },
-			deps.t("Local · WBridge5 imitation"),
-		),
-		el(
-			"option",
-			{ attrs: { value: "rl-fsp" } },
-			deps.t("Local · RL/FSP learned system"),
+		{ attrs: { name: "bot-bidder", "aria-label": deps.t("Bidding bot") } },
+		...Object.entries(BIDDER_NAMES).map(([value, label]) =>
+			el("option", { attrs: { value } }, label),
 		),
 	);
 	bidder.value = setup.bidder;
@@ -196,9 +190,13 @@ export function showCreate(
 	const soloForm = el(
 		"form",
 		{ className: "create" },
-		el("label", {}, deps.t("Your name"), soloName),
+		el(
+			"div",
+			{ className: "create-solo-row" },
+			el("label", {}, `${deps.t("Your name")} `, soloName),
+			solo.submit,
+		),
 		solo.errors,
-		solo.submit,
 	);
 	const form = el(
 		"form",
@@ -207,9 +205,8 @@ export function showCreate(
 		el(
 			"p",
 			{ className: "note" },
-			deps.t("Leave a name blank or use player to ask the person joining."),
+			deps.t("Leave a name blank to ask the person joining."),
 		),
-		el("label", {}, `${deps.t("Scoring")}: `, scoring),
 		multiplayer.errors,
 		multiplayer.submit,
 	);
@@ -336,12 +333,17 @@ export function showCreate(
 		el(
 			"section",
 			{ className: "create-screen" },
-			el("h1", {}, deps.t("Create game")),
+			el(
+				"div",
+				{ className: "create-header" },
+				el("h1", {}, deps.t("Create game")),
+				languageControl(deps),
+			),
 			el(
 				"div",
 				{ className: "create-options" },
-				el("label", {}, `${deps.t("Bidding engine")} `, bidder),
-				languageControl(deps),
+				el("label", {}, `${deps.t("Bidding bot")}: `, bidder),
+				el("label", {}, `${deps.t("Scoring")}: `, scoring),
 			),
 			el(
 				"section",
@@ -357,7 +359,7 @@ export function showCreate(
 					"p",
 					{},
 					deps.t(
-						"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.",
+						"Enter the players. Choose your seat. Start the game. Share the link.",
 					),
 				),
 				form,

@@ -82,9 +82,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"at most {max} {suit} after the transfer was doubled":
 			"Das lokale Bietprogramm läuft im Browser. Erlernte Konventionen können von SAYC abweichen.",
 		"Optional automated players": "Optionale automatisierte Spieler",
-		"Bidding engine": "Bietprogramm",
-		"Local · WBridge5 imitation": "Lokal · WBridge5-Nachahmung",
-		"Local · RL/FSP learned system": "Lokal · erlerntes RL/FSP-System",
 
 		Seat: "Platz",
 		Name: "Name",
@@ -96,8 +93,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Chicago (later)": "Chicago (später)",
 		"Rubber (later)": "Rubber (später)",
 
-		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
-			"Gib die vier Spielernamen ein und wähle deinen Platz. Dein Browser hostet zuerst; alle am Tisch können übernehmen.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
 			"Dieser Link gehört zu einer anderen App-Version. Lade die Seite neu oder bitte den Ersteller um einen neuen Link.",
 		"This link is not valid. Check that you copied all of it.":
@@ -714,9 +709,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"at most {max} {suit} after the transfer was doubled":
 			"A helyi licitálás a böngészőben fut. A tanult konvenciók eltérhetnek a SAYC-től.",
 		"Optional automated players": "Opcionális automatizált játékosok",
-		"Bidding engine": "Licitáló motor",
-		"Local · WBridge5 imitation": "Helyi · WBridge5 utánzása",
-		"Local · RL/FSP learned system": "Helyi · tanult RL/FSP-rendszer",
 
 		Seat: "Hely",
 		Name: "Név",
@@ -728,8 +720,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Chicago (later)": "Chicago (később)",
 		"Rubber (later)": "Gumi (később)",
 
-		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
-			"Add meg a négy játékos nevét, majd válassz helyet. A böngésződ lesz először a host; bárki átveheti az asztalnál.",
 		"This link is for another version of the app. Reload the page, or ask the table creator for a new link.":
 			"Ez a hivatkozás az alkalmazás másik verziójához tartozik. Töltsd újra az oldalt, vagy kérj új hivatkozást a létrehozótól.",
 		"This link is not valid. Check that you copied all of it.":
@@ -1337,9 +1327,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"at most {max} {suit} after the transfer was doubled":
 			"Lokal melding kjører i nettleseren. Innlærte konvensjoner kan avvike fra SAYC.",
 		"Optional automated players": "Valgfrie automatiske spillere",
-		"Bidding engine": "Meldemotor",
-		"Local · WBridge5 imitation": "Lokal · WBridge5-etterligning",
-		"Local · RL/FSP learned system": "Lokal · innlært RL/FSP-system",
 
 		Seat: "Plass",
 		Name: "Navn",
@@ -1696,9 +1683,6 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Tilkoblingen mislyktes: de andre spillerne ble funnet, men ingen direkte tilkobling fungerer. Prøv et annet nettverk.",
 		"Could not share the board URL.": "Kunne ikke dele URL-en til bordet.",
 		"Current trick": "Pågående stikk",
-
-		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.":
-			"Skriv inn de fire spillerne. Velg plassen din. Nettleseren din er vert først; hvem som helst ved bordet kan ta over.",
 
 		"No direct connection to {names}.": "Ingen direkte tilkobling til {names}.",
 		"Nobody is at this table right now. Keep this page open":

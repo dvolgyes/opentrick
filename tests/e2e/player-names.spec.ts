@@ -208,12 +208,27 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 	page,
 }) => {
 	await page.goto("/");
-	// The bidding engine and the language share one row below the title; no picker stays in the corner.
-	const options = page.locator(".create-options");
-	await expect(options.locator('select[name="bot-bidder"]')).toBeVisible();
-	await expect(options.getByLabel("Language")).toBeVisible();
+	// The build date and the language share the title row; the bidding bot and the scoring share the next row.
+	const header = page.locator(".create-header");
+	await expect(header.getByRole("heading", { level: 1 })).toBeVisible();
+	await expect(header.getByTestId("build-version")).toBeVisible();
+	await expect(header.getByLabel("Language")).toBeVisible();
 	await expect(page.locator("body > .language-control")).toHaveCount(0);
-	await expect(page.locator('input[name="solo-name"]')).toHaveValue("Human");
+	const options = page.locator(".create-options");
+	const bidder = options.getByLabel("Bidding bot");
+	await expect(bidder.locator("option")).toHaveText(["BRL", "WBridge5"]);
+	await expect(options.locator('select[name="scoring"]')).toBeVisible();
+	// The solo name, its field and its button share one row.
+	const soloRow = page.locator(".create-solo-row");
+	await expect(soloRow.locator('input[name="solo-name"]')).toHaveValue("Human");
+	await expect(soloRow.getByTestId("create-solo")).toBeVisible();
+	const [field, start] = await Promise.all([
+		soloRow.locator('input[name="solo-name"]').boundingBox(),
+		soloRow.getByTestId("create-solo").boundingBox(),
+	]);
+	expect(Math.abs((field?.y ?? 0) - (start?.y ?? 100))).toBeLessThan(
+		start?.height ?? 0,
+	);
 
 	const name = (seat: string) => page.locator(`input[name="name-${seat}"]`);
 	const bot = (seat: string) => page.locator(`input[name="bot-${seat}"]`);

@@ -25,6 +25,7 @@ import { playerName, unnamedPlayer } from "../players";
 import {
 	isObject,
 	isSeat,
+	type LocalBidder,
 	MAX_NAME_LENGTH,
 	type RoomConfig,
 	SEAT_NAMES,
@@ -70,6 +71,12 @@ export const BOT_NAME = "bot";
 
 export const isBotName = (name: string): boolean =>
 	name.trim().toLowerCase() === BOT_NAME;
+
+/** The names of the bidding bots, in the order of the create screen; they are names, so no language changes them. */
+export const BIDDER_NAMES: Readonly<Record<LocalBidder, string>> = {
+	"rl-fsp": "BRL",
+	sl: "WBridge5",
+};
 
 export type CreateCheck =
 	| { readonly ok: true; readonly config: RoomConfig; readonly seat: Seat }

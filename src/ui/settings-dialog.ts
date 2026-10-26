@@ -3,6 +3,7 @@ import { LOCAL_BIDDERS, type LocalBidder } from "../protocol";
 import type { AppDeps } from "./deps";
 import { button, el } from "./dom";
 import { languageSelect, saveLanguage } from "./language-control";
+import { BIDDER_NAMES } from "./model";
 import {
 	readSettings,
 	SCHEMES,
@@ -102,10 +103,12 @@ export function settingsDialog(
 		POINT_SYSTEMS,
 		POINT_SYSTEM_LABELS,
 	);
-	const engine = radios("settings-bidder", "Bidding engine", LOCAL_BIDDERS, {
-		sl: "Local · WBridge5 imitation",
-		"rl-fsp": "Local · RL/FSP learned system",
-	});
+	const engine = radios(
+		"settings-bidder",
+		"Bidding bot",
+		LOCAL_BIDDERS,
+		BIDDER_NAMES,
+	);
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
 	points.element.append(
 		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),

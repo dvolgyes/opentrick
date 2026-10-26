@@ -101,8 +101,7 @@ export function showTable(
 		{ className: "note", attrs: { "data-testid": "keep-open" } },
 		deps.t(TEXT.keepOpen),
 	);
-	// Open on the seat page, where a page that cannot find the host shows why.
-	const network = networkPanel(deps.t, true);
+	const network = networkPanel(deps.t);
 	// A phone that sleeps on the seat page stops the page, and the host cannot reach it. The room holds its own lock.
 	const wakeLock = new WakeLockPolicy(screenWakeLock);
 

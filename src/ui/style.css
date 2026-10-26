@@ -143,21 +143,33 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	padding-top: 3.5rem;
 }
 
-/* The bidding engine and the language share one row below the title of the create screen. */
-.create-options {
+/* The build date and the language share the title row of the create screen; the bidding bot and the scoring share the next row. */
+.create-header,
+.create-options,
+.create-solo-row {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem 1rem;
 	align-items: center;
+}
+
+.create-header {
 	justify-content: space-between;
 }
 
-.create-options label {
+.create-header h1,
+.create-options label,
+.create-solo-row label {
 	margin: 0;
 }
 
-.create-options .language-control {
+.create-header .language-control {
 	position: static;
+}
+
+/* The solo name field is as wide as a name field of the multiplayer seats. */
+.create-solo-row input[type="text"] {
+	width: 12rem;
 }
 
 table {

@@ -43,30 +43,6 @@ const rows: readonly TranslationRow[] = [
 		"al massimo {max} {suit} dopo il contro al transfer",
 		"hoogstens {max} {suit} nadat de transfer is gedoubleerd",
 	],
-	[
-		"Bidding engine",
-		"Motor de subasta",
-		"Motor de leilão",
-		"Moteur d'enchères",
-		"Motore di dichiarazione",
-		"Biedprogramma",
-	],
-	[
-		"Local · WBridge5 imitation",
-		"Local · imitación de WBridge5",
-		"Local · imitação do WBridge5",
-		"Local · imitation de WBridge5",
-		"Locale · imitazione di WBridge5",
-		"Lokaal · WBridge5-imitatie",
-	],
-	[
-		"Local · RL/FSP learned system",
-		"Local · sistema aprendido RL/FSP",
-		"Local · sistema aprendido RL/FSP",
-		"Local · système appris RL/FSP",
-		"Locale · sistema appreso RL/FSP",
-		"Lokaal · aangeleerd RL/FSP-systeem",
-	],
 
 	[
 		"Camera preview",
@@ -908,14 +884,6 @@ const rows: readonly TranslationRow[] = [
 		"Automatisch spelen (bot) aanzetten",
 	],
 
-	[
-		"Enter the four players. Choose your seat. Your browser hosts first; anyone at the table can take over.",
-		"Introduce los cuatro jugadores y elige tu asiento. Tu navegador será el anfitrión; cualquier jugador podrá asumir ese papel.",
-		"Introduza os quatro jogadores e escolha o seu lugar. O seu navegador será o anfitrião; qualquer pessoa à mesa poderá assumir esse papel.",
-		"Saisissez les quatre joueurs et choisissez votre place. Votre navigateur sera l'hôte ; un autre joueur pourra prendre le relais.",
-		"Inserisci i quattro giocatori e scegli il tuo posto. Il tuo browser farà da host; chiunque al tavolo potrà subentrare.",
-		"Vul de vier spelers in en kies je plaats. Je browser is eerst de host; iedereen aan tafel kan die rol overnemen.",
-	],
 	[
 		"Fallback",
 		"Alternativa",
