@@ -1196,6 +1196,7 @@ main:has(> .room) {
 }
 
 .room-bot-controls {
+	flex-wrap: wrap;
 	justify-content: space-between;
 }
 
@@ -1412,7 +1413,6 @@ dialog {
 	flex-wrap: wrap;
 	justify-content: center;
 	column-gap: 0.4rem;
-	min-width: 0;
 	margin-right: auto;
 	margin-left: auto;
 }
