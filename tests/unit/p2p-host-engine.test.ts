@@ -317,6 +317,21 @@ describe("host-local bots", () => {
 		expect(rig.log.entries.at(-1)).toMatchObject({ seat: "E", kind: "cmd" });
 	});
 
+	it("keeps the bots' seats taken while the host's timer is throttled, as in a background tab", async () => {
+		const rig = await new Rig().create();
+		expect(await rig.host.activateBots(["E"])).toBe(true);
+		// Chrome runs the timers of a hidden tab about once a minute, so no tick runs in this time.
+		rig.clock.now += HOST_LOST_MS + SEAT_GRACE_MS;
+		await rig.hello(SOUTH, CLIENT_S);
+		const lobby = rig.to(SOUTH).findLast((message) => message.k === "lobby");
+		expect(lobby?.k === "lobby" && lobby.seats[1]).toMatchObject({
+			seat: "E",
+			available: false,
+			online: true,
+			mine: false,
+		});
+	});
+
 	it("takes back a saved autoplay request after a reload only for a seat that its bot plays", async () => {
 		const rig = await new Rig().create();
 		await rig.seat(EAST, CLIENT_E, "E");
