@@ -258,13 +258,9 @@ function samePartnership(a: Seat, b: Seat): boolean {
 
 function claimApprovers(board: Board, requester: Seat): Seat[] | undefined {
 	const status = boardStatus(board);
-	if (
-		status.phase !== "play" ||
-		status.actor !== requester ||
-		status.contract.declarer !== requester
-	)
+	if (status.phase !== "play" || status.contract.declarer !== requester)
 		return undefined;
-	// The declarer controls both their own turn and dummy's turn; both defenders decide.
+	// The declarer can claim at any turn of the play; both defenders decide.
 	return SEATS.filter((seat) => !samePartnership(seat, requester));
 }
 
@@ -843,8 +839,7 @@ function applyClaimRequest(
 	if (typeof payload.tricks !== "number")
 		return reject("claim has no trick count");
 	const required = claimApprovers(board, context.seat);
-	if (!required)
-		return reject("the declarer can claim only on their turn or dummy's turn");
+	if (!required) return reject("only the declarer can claim");
 	const result = claimedResult(board, context.seat, payload.tricks);
 	if (!result) return reject("you cannot claim that many tricks now");
 	const waiting = absence(required, context.present);
@@ -862,6 +857,18 @@ function applyClaimRequest(
 	)
 		return reject(
 			"all players must use a version that supports claiming no tricks",
+		);
+	// An older page refuses a claim made while a defender is to play.
+	if (
+		boardStatus(board).actor !== context.seat &&
+		!SEATS.every((seat) =>
+			context.features
+				?.get(seat)
+				?.includes(APPLICATION_FEATURES.bridgeClaimAnyTurn),
+		)
+	)
+		return reject(
+			"all players must use a version that supports claiming on a defender's turn",
 		);
 	const claim: ClaimRequest = {
 		id: context.commandId,

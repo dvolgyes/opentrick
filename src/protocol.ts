@@ -6,6 +6,8 @@ export const APPLICATION_FEATURES = {
 	bridgeClaim: "bridge-claim-v1",
 	/** The page reads a claim of no tricks, which gives the defenders every remaining trick. */
 	bridgeClaimNone: "bridge-claim-none-v1",
+	/** The page reads a claim made while a defender is to play. */
+	bridgeClaimAnyTurn: "bridge-claim-any-turn-v1",
 	bridgeReset: "bridge-reset-v1",
 } as const;
 
