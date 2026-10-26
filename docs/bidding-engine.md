@@ -34,6 +34,8 @@ No rules or network weights were tuned after this comparison.
 **Local · WBridge5 imitation** uses BRL's supervised policy (`sl`).
 **Local · RL/FSP learned system** uses its reinforcement-learning policy (`rl-fsp`).
 All host-managed bots at a table use the selected policy.
+The host can view and change the engine in **Settings**.
+The browser remembers the choice for new tables; an explicit engine in a saved link takes priority.
 The selection is retained in room links as `bot_bidder`.
 
 Recommendations use explicit convention rules, independently of the selected bot.

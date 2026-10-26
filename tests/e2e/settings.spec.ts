@@ -79,6 +79,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).toEqual([
 		"opentrick.settings.bid-turn-frame",
 		"opentrick.settings.bid-turn-text",
+		"opentrick.settings.bidder",
 		"opentrick.settings.card-points",
 		"opentrick.settings.landscape-desktop",
 		"opentrick.settings.network-quality",

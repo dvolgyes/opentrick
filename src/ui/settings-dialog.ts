@@ -1,4 +1,5 @@
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
+import { LOCAL_BIDDERS, type LocalBidder } from "../protocol";
 import type { AppDeps } from "./deps";
 import { button, el } from "./dom";
 import { languageSelect, saveLanguage } from "./language-control";
@@ -51,13 +52,15 @@ export interface SettingsDialog {
 	readonly element: HTMLDialogElement;
 	/** Shows the stored settings. */
 	open(): void;
+	refreshBidding(): void;
 }
 
-/** Local display preferences; a language change reloads the page. */
+/** Local display and bot preferences; a language change reloads the page. */
 export function settingsDialog(
 	deps: AppDeps,
 	reload: () => void,
-	saved: () => void = () => {},
+	saved: (bidder?: LocalBidder) => void = () => {},
+	bidding?: () => { readonly bidder: LocalBidder; readonly editable: boolean },
 ): SettingsDialog {
 	const { t } = deps;
 	const element = el("dialog", {
@@ -99,6 +102,10 @@ export function settingsDialog(
 		POINT_SYSTEMS,
 		POINT_SYSTEM_LABELS,
 	);
+	const engine = radios("settings-bidder", "Bidding engine", LOCAL_BIDDERS, {
+		sl: "Local · WBridge5 imitation",
+		"rl-fsp": "Local · RL/FSP learned system",
+	});
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
 	points.element.append(
 		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),
@@ -137,6 +144,7 @@ export function settingsDialog(
 		el("h2", { attrs: { id: "settings-title" } }, t("Settings")),
 		el("label", { className: "settings-row" }, `${t("Language")} `, language),
 		points.element,
+		engine.element,
 		scheme.element,
 		theme.element,
 		el(
@@ -202,7 +210,9 @@ export function settingsDialog(
 	});
 
 	function saveSettings(): void {
+		const editable = bidding?.().editable ?? true;
 		const settings: Settings = {
+			bidder: editable ? engine.value() : readSettings(deps.browser).bidder,
 			playTimeMs: readSettings(deps.browser).playTimeMs,
 			pointSystem: points.value(),
 			cardPoints: cardPoints.checked,
@@ -234,14 +244,20 @@ export function settingsDialog(
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
+		saved(editable ? settings.bidder : undefined);
 		if (languageChanged) reload();
-		else saved();
 	}
 
 	return {
 		element,
+		refreshBidding() {
+			engine.element.disabled = !(bidding?.().editable ?? true);
+		},
 		open() {
 			const settings = readSettings(deps.browser);
+			const bot = bidding?.() ?? { bidder: settings.bidder, editable: true };
+			engine.set(bot.bidder);
+			engine.element.disabled = !bot.editable;
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
 			cardPoints.checked = settings.cardPoints;

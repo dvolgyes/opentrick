@@ -83,7 +83,10 @@ export function showCreate(
 			deps.t("Rubber (later)"),
 		),
 	);
-	const setup = prefill.botSetup ?? DEFAULT_BOT_SETUP;
+	const setup = prefill.botSetup ?? {
+		...DEFAULT_BOT_SETUP,
+		bidder: readSettings(deps.browser).bidder,
+	};
 	const bidder = el(
 		"select",
 		{ attrs: { name: "bot-bidder", "aria-label": deps.t("Bidding engine") } },

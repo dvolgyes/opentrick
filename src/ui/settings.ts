@@ -4,6 +4,11 @@ import {
 	playTimeMs,
 } from "../bot/play-budget";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
+import {
+	DEFAULT_BOT_SETUP,
+	LOCAL_BIDDERS,
+	type LocalBidder,
+} from "../protocol";
 import type { MaybeStorage } from "../session";
 
 /** The colour themes of themes.css; each has a light and a dark palette. */
@@ -19,6 +24,7 @@ export type Scheme = (typeof SCHEMES)[number];
  * The language keeps its own storage name.
  */
 export interface Settings {
+	readonly bidder: LocalBidder;
 	/** Local card-search target; a future settings control can edit the persisted value. */
 	readonly playTimeMs: number;
 	readonly pointSystem: PointSystem;
@@ -42,6 +48,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+	bidder: DEFAULT_BOT_SETUP.bidder,
 	playTimeMs: DEFAULT_PLAY_TIME_MS,
 	pointSystem: "hcp",
 	cardPoints: true,
@@ -100,6 +107,7 @@ export function readSettings(storage: MaybeStorage): Settings {
 		]),
 	) as Record<keyof typeof FLAGS, boolean>;
 	return {
+		bidder: readChoice(read("bidder"), LOCAL_BIDDERS, DEFAULT_SETTINGS.bidder),
 		playTimeMs: isPlayTimeMs(storedPlayTime)
 			? storedPlayTime
 			: DEFAULT_PLAY_TIME_MS,
@@ -119,10 +127,13 @@ export function readSettings(storage: MaybeStorage): Settings {
 	};
 }
 
-/** Saves local preferences independently of the table's bidding policy. */
+/** Saves this browser's display and bot preferences. */
 export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
 	const budget = playTimeMs(settings.playTimeMs);
+	if (!LOCAL_BIDDERS.includes(settings.bidder))
+		throw new Error("unknown bidding engine");
+	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);
 	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");

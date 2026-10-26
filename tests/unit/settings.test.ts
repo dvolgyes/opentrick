@@ -24,6 +24,7 @@ function memoryStorage(): Storage {
 describe("player settings", () => {
 	it("uses HCP, the normal theme in the automatic scheme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
+			bidder: "rl-fsp",
 			playTimeMs: 5000,
 			pointSystem: "hcp",
 			cardPoints: true,
@@ -45,6 +46,7 @@ describe("player settings", () => {
 	it("reads back what it stores, under the opentrick prefix", () => {
 		const storage = memoryStorage();
 		const settings = {
+			bidder: "sl",
 			playTimeMs: 150,
 			pointSystem: "vienna",
 			cardPoints: false,
@@ -68,6 +70,7 @@ describe("player settings", () => {
 
 	it("replaces each unknown or malformed stored value with its default", () => {
 		const storage = memoryStorage();
+		storage.setItem("opentrick.settings.bidder", "../../private");
 		storage.setItem("opentrick.settings.points", "goren");
 		storage.setItem("opentrick.settings.theme-style", "<b>solarized</b>");
 		storage.setItem("opentrick.settings.scheme", "auto ");

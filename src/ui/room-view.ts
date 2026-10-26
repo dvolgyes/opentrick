@@ -36,6 +36,7 @@ import type { TableController, TableStatus } from "../p2p/table";
 import {
 	DEFAULT_BOT_SETUP,
 	type JsonObject,
+	type LocalBidder,
 	type RoomConfig,
 	SEATS,
 	type Seat,
@@ -292,7 +293,7 @@ export function showRoom(
 			return "disabled";
 		}
 		botSettings ??= settingsFor(
-			controller.view().table?.config,
+			fallbackConfig ?? controller.view().table?.config,
 			readSettings(deps.browser).playTimeMs,
 		);
 		const enabledSeat = await controller.setBotSeat(targetSeat, true);
@@ -335,15 +336,35 @@ export function showRoom(
 		className: "bot-status",
 		attrs: { role: "status", "data-testid": "bot-status" },
 	});
-	const settings = settingsDialog(deps, handlers.reload, applySettings);
+	const settings = settingsDialog(deps, handlers.reload, applySettings, () => ({
+		bidder: (
+			botSettings ??
+			settingsFor(fallbackConfig ?? controller.view().table?.config)
+		).bidder,
+		editable: controller.view().hosting,
+	}));
 
-	function applySettings(): void {
+	function applySettings(bidder?: LocalBidder): void {
+		if (bidder !== undefined && controller.view().hosting) {
+			botSettings = {
+				...(botSettings ?? settingsFor(controller.view().table?.config)),
+				bidder,
+			};
+			const query = new URLSearchParams(location.search);
+			query.set("bot_bidder", bidder);
+			history.replaceState(
+				null,
+				"",
+				`${location.pathname}?${query}${location.hash}`,
+			);
+		}
 		if (botSettings) {
 			botSettings = {
 				...botSettings,
 				playTimeMs: readSettings(deps.browser).playTimeMs,
 			};
 			botRunner?.updateSettings(botSettings);
+			if (botRunner && !botsPaused) botStatus.textContent = runningBotStatus();
 		}
 		// A new orientation choice changes the view at once.
 		deviceWatch.check();
@@ -1065,7 +1086,10 @@ export function showRoom(
 			);
 			return false;
 		}
-		botSettings ??= settingsFor(config, readSettings(deps.browser).playTimeMs);
+		botSettings ??= settingsFor(
+			fallbackConfig ?? config,
+			readSettings(deps.browser).playTimeMs,
+		);
 		botStarting = true;
 		botAutoAttempted = true;
 		const runner = new HostBotRunner(controller, botSettings, () => {
@@ -1214,6 +1238,7 @@ export function showRoom(
 	function render(): void {
 		if (disposed) return;
 		const view = controller.view();
+		settings.refreshBidding();
 		const botConfig = view.table?.config ?? fallbackConfig;
 		if (!view.hosting) {
 			botSeatOverrides.clear();
