@@ -2359,6 +2359,29 @@ describe("approval of an undo or a claim", () => {
 		expect(notice.contains(hit)).toBe(false);
 	});
 
+	it("names the players and their seats that the host waits for, in the viewer's language", () => {
+		renderView(
+			{
+				...playView(),
+				actions: [
+					{
+						id: "local-1",
+						text: "Ansage 1♠",
+						state: "pending",
+						reason: "Waiting for East and West to come back",
+					},
+				],
+			},
+			"desktop",
+			undefined,
+			translator("de"),
+		);
+		expect(
+			document.querySelector("[data-testid='table-actions'] .status")
+				?.textContent,
+		).toBe("Warten auf die Rückkehr von playerE (O) und playerW (W)");
+	});
+
 	it("shows no waiting notice while nobody is absent", async () => {
 		await resizeTo(1280, 800);
 		expect(

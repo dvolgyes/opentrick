@@ -118,22 +118,41 @@ export function commandText(payload: unknown, t: Translate = english): string {
 }
 
 /**
- * "Waiting for East, South and West to come back", in the viewer's language, when seats of `needed` are not
- * present; undefined when all are. The host refuses the action with the same English text (`waitingText`).
+ * "Waiting for David (E) and West to come back", in the viewer's language: each seat by its player's name and its
+ * letter, or by its direction while it has no player. Undefined for no seats.
+ */
+export function comeBackText(
+	seats: readonly Seat[],
+	names: Readonly<Partial<Record<Seat, string>>>,
+	t: Translate,
+): string | undefined {
+	const players = seats.map((seat) => {
+		const name = names[seat];
+		return name ? `${name} (${t(seat)})` : t(SEAT_NAMES[seat]);
+	});
+	const last = players.pop();
+	if (last === undefined) return undefined;
+	return t("Waiting for {players} to come back", {
+		players:
+			players.length > 0 ? `${players.join(", ")} ${t("and")} ${last}` : last,
+	});
+}
+
+/**
+ * The text of `comeBackText` when seats of `needed` are not present; undefined when all are. The host refuses the
+ * action with the same text in English, by direction only (`waitingText`).
  */
 function waitingFor(
 	needed: readonly Seat[],
 	present: readonly Seat[],
+	names: Readonly<Record<Seat, string>>,
 	t: Translate,
 ): string | undefined {
-	const names = needed
-		.filter((seat) => !present.includes(seat))
-		.map((seat) => t(SEAT_NAMES[seat]));
-	const last = names.pop();
-	if (last === undefined) return undefined;
-	const players =
-		names.length > 0 ? `${names.join(", ")} ${t("and")} ${last}` : last;
-	return t("Waiting for {players} to come back", { players });
+	return comeBackText(
+		needed.filter((seat) => !present.includes(seat)),
+		names,
+		t,
+	);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1116,7 +1135,7 @@ export function tableView(input: TableViewInput): TableView {
 	// The host refuses each deal unless all four seats are present; in a board, only the seat to act must be
 	// (plan §12 R4).
 	const allPresent = [...input.present];
-	const dealWait = waitingFor(SEATS, allPresent, t);
+	const dealWait = waitingFor(SEATS, allPresent, config.names, t);
 	const nextBoard = (): NextBoard => {
 		const next = current + 1;
 		return {
@@ -1190,7 +1209,9 @@ export function tableView(input: TableViewInput): TableView {
 				? view.actor
 				: undefined;
 	const actionWait =
-		toAct === undefined ? undefined : waitingFor([toAct], allPresent, t);
+		toAct === undefined
+			? undefined
+			: waitingFor([toAct], allPresent, config.names, t);
 	const legal = canAct && actionWait === undefined ? view.legal : [];
 	const playable = new Set(
 		legal.flatMap((action: Action) =>

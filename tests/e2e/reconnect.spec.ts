@@ -12,6 +12,7 @@ import {
 	hostRows,
 	lines,
 	makeCall,
+	NAME,
 	pick,
 	pressOffScreen,
 	rosterSeat,
@@ -251,7 +252,7 @@ test("3: the host crashes mid-auction; a player clicks Make me the host, and the
 	await expectAt(1, 3);
 	for (const seat of openSeats()) {
 		await expect(prompt(tab[seat])).toHaveText(
-			"Waiting for West to come back",
+			`Waiting for ${NAME.W} (W) to come back`,
 			{ timeout: CONNECT_MS },
 		);
 		expect(await tab[seat].title()).not.toMatch(/^TURN - /);
@@ -293,7 +294,7 @@ test("4: dummy crashes during the play: declarer plays on; the next board waits 
 	// table with an empty seat.
 	for (const seat of openSeats())
 		await expect(tab[seat].getByTestId("waiting")).toHaveText(
-			"Waiting for South to come back",
+			`Waiting for ${NAME.S} (S) to come back`,
 			{ timeout: CONNECT_MS },
 		);
 	await expectAt(1, 56);

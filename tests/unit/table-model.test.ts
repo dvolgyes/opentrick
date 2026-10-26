@@ -518,7 +518,9 @@ describe("presence (plan §12 R4)", () => {
 	it("waits for every seat before a deal, and names the absent seats", () => {
 		const table = view("E", null, { present: without("N", "W") });
 		expect(table.nextBoard?.ready).toBe(false);
-		expect(table.prompt).toBe("Waiting for North and West to come back");
+		expect(table.prompt).toBe(
+			"Waiting for player1 (N) and player4 (W) to come back",
+		);
 	});
 
 	it("lets the seat to bid bid while the others are away, and waits only while that seat is away", () => {
@@ -526,7 +528,7 @@ describe("presence (plan §12 R4)", () => {
 		expect(north.bids).not.toEqual([]);
 		expect(north.prompt).toBe("North to bid");
 		const east = view("E", BOARD, { present: without("N") });
-		expect(east.prompt).toBe("Waiting for North to come back");
+		expect(east.prompt).toBe("Waiting for player1 (N) to come back");
 	});
 
 	it("lets declarer play from dummy while dummy and a defender are away", () => {
@@ -534,7 +536,7 @@ describe("presence (plan §12 R4)", () => {
 		expect(away.prompt).toBe("Your turn: play a card from dummy.");
 		expect(playableCards(seatView(away, "S").hand)).toEqual(["S4", "S3", "S2"]);
 		const declarerAway = view("E", LED, { present: without("N") });
-		expect(declarerAway.prompt).toBe("Waiting for North to come back");
+		expect(declarerAway.prompt).toBe("Waiting for player1 (N) to come back");
 	});
 
 	it("waits with the next board while dummy is away, and names dummy when the countdown ends", () => {
@@ -550,7 +552,7 @@ describe("presence (plan §12 R4)", () => {
 			present: without("S"),
 			scoringCountdown: 0,
 		});
-		expect(ended.waiting).toBe("Waiting for South to come back");
+		expect(ended.waiting).toBe("Waiting for player2 (S) to come back");
 		expect(view("N", done, { scoringCountdown: 0 }).nextBoard?.ready).toBe(
 			true,
 		);
@@ -560,12 +562,19 @@ describe("presence (plan §12 R4)", () => {
 		expect(view("E", null, { present: without("N") }).waiting).toBe("");
 		expect(view("N", BOARD, { present: without("S") }).waiting).toBe("");
 		expect(view("E", BOARD, { present: without("N") }).waiting).toBe(
-			"Waiting for North to come back",
+			"Waiting for player1 (N) to come back",
 		);
 		expect(view("N", BOARD).waiting).toBe("");
 		expect(view("N", LED, { present: without("S", "W") }).waiting).toBe("");
 		expect(view("W", LED, { present: without("N") }).waiting).toBe(
-			"Waiting for North to come back",
+			"Waiting for player1 (N) to come back",
+		);
+	});
+
+	it("names a seat without a player by its direction", () => {
+		const config = { ...CONFIG, names: { ...CONFIG.names, W: "" } };
+		expect(view("E", null, { config, present: without("N", "W") }).prompt).toBe(
+			"Waiting for player1 (N) and West to come back",
 		);
 	});
 });
@@ -631,11 +640,11 @@ describe("the viewer's language", () => {
 			...hu,
 			present: new Set<Seat>(["E", "S"]),
 		});
-		expect(away.prompt).toBe("Várakozás, hogy visszatérjenek: Észak");
-		expect(away.waiting).toBe("Várakozás, hogy visszatérjenek: Észak");
+		expect(away.prompt).toBe("Várakozás, hogy visszatérjenek: player1 (É)");
+		expect(away.waiting).toBe("Várakozás, hogy visszatérjenek: player1 (É)");
 		expect(
 			view("E", null, { ...hu, present: new Set<Seat>(["E", "S"]) }).prompt,
-		).toBe("Várakozás, hogy visszatérjenek: Észak és Nyugat");
+		).toBe("Várakozás, hogy visszatérjenek: player1 (É) és player4 (Ny)");
 	});
 
 	it("writes the loading and unreadable tables, the calls to confirm, and the sent call in Hungarian", () => {

@@ -10,7 +10,7 @@ import {
 import type { Call } from "../bridge/rules";
 import type { Layout } from "../call/device-class";
 import { englishTranslator, type Locale, type Translate } from "../i18n";
-import { SEAT_NAMES, type Seat } from "../protocol";
+import { SEAT_NAMES, SEATS, type Seat } from "../protocol";
 import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?url";
 import cardBackRed from "./assets/bridge-call-card-back-red.svg?url";
 import { guideDialog } from "./bidding-guide";
@@ -37,7 +37,7 @@ import type {
 	TrickView,
 	TurnPill,
 } from "./table-model";
-import { blackwoodHint } from "./table-model";
+import { blackwoodHint, comeBackText } from "./table-model";
 
 export interface TableHandlers {
 	exit(): void;
@@ -233,22 +233,26 @@ function suitMarked(text: string): (string | HTMLElement)[] {
 const WAITING_TEXT = "WAITING";
 const CONNECTING_TEXT = "CONNECTING TO HOST";
 
+const SEAT_OF_NAME = new Map(
+	SEATS.map((seat) => [SEAT_NAMES[seat], seat] as const),
+);
+
 /**
- * A reason from the host, in the viewer's language. The host names the seats it waits for in English
- * (`waitingText`), so the seat names are translated one by one.
+ * A reason from the host, in the viewer's language. The host names the seats it waits for by direction, in English
+ * (`waitingText`), so the table names them again with their players' `names`.
  */
-function translateHostReason(text: string, t: Translate): string {
+function translateHostReason(
+	text: string,
+	names: Readonly<Partial<Record<Seat, string>>>,
+	t: Translate,
+): string {
 	const waiting = /^Waiting for (.+) to come back$/.exec(text);
 	if (!waiting) return t(text);
-	const names = (waiting[1] as string).split(/, | and /).map((name) => t(name));
-	const last = names.pop();
-	const players =
-		last === undefined
-			? ""
-			: names.length === 0
-				? last
-				: `${names.join(", ")} ${t("and")} ${last}`;
-	return t("Waiting for {players} to come back", { players });
+	const seats = (waiting[1] as string)
+		.split(/, | and /)
+		.map((name) => SEAT_OF_NAME.get(name));
+	if (seats.some((seat) => seat === undefined)) return t(text);
+	return comeBackText(seats as Seat[], names, t) ?? t(text);
 }
 
 function turnPillText(pill: TurnPill, seat: Seat, t: Translate): string {
@@ -2180,12 +2184,19 @@ export function tableSection(
 		);
 	}
 
-	function actionItem(line: TableActionLine): HTMLElement {
+	function actionItem(
+		line: TableActionLine,
+		names: Readonly<Partial<Record<Seat, string>>>,
+	): HTMLElement {
 		// A pending action's reason says which players the host waits for.
 		const status =
 			line.state === "not-accepted"
-				? `${t(ACTION_STATUS[line.state])}: ${translateHostReason(line.reason ?? "rejected", t)}`
-				: translateHostReason(line.reason ?? ACTION_STATUS[line.state], t);
+				? `${t(ACTION_STATUS[line.state])}: ${translateHostReason(line.reason ?? "rejected", names, t)}`
+				: translateHostReason(
+						line.reason ?? ACTION_STATUS[line.state],
+						names,
+						t,
+					);
 		return el(
 			"li",
 			{ attrs: { "data-state": line.state } },
@@ -2349,7 +2360,12 @@ export function tableSection(
 			.join(" · ");
 		// The sidebar header and tricks panel show the contract and the tricks once play starts.
 		contract.hidden = contract.textContent === "" || view.header !== undefined;
-		actions.replaceChildren(...view.actions.map(actionItem));
+		const names = Object.fromEntries(
+			view.seats.map((seat) => [seat.seat, seat.name]),
+		);
+		actions.replaceChildren(
+			...view.actions.map((line) => actionItem(line, names)),
+		);
 		actions.hidden = view.actions.length === 0;
 		gameSlot.hidden = view.scoring !== undefined;
 		renderScoring(view.scoring);

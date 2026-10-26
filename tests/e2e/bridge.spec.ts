@@ -150,7 +150,7 @@ async function reloadKeepsTable(
 ): Promise<void> {
 	for (const seat of seats) {
 		const page = tab[seat];
-		// Just after the previous seat's reload, this page can still wait for that seat ("Waiting for South to
+		// Just after the previous seat's reload, this page can still wait for that seat ("Waiting for player2 (S) to
 		// come back"); compare the steady table, which needs all four seats online.
 		await expect(
 			page.getByTestId("roster").locator('li[data-state="online"]'),
