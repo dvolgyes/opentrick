@@ -72,8 +72,15 @@ For a permanent bot seat, select **Bot** for that seat while creating the table.
 For a temporary substitute, the host can enable the bot for the player's seat from the table controls, then turn it off when the player returns.
 The player keeps their seat and stays in the room call while the bot handles bridge actions.
 
+Bots use the selected language model for bidding and a local bridge engine for card play.
+The card engine samples possible hidden hands, respects shown voids and auction meanings, and evaluates legal cards with the [DDS double-dummy solver](https://github.com/bookchris/bridge-dds-js) compiled to WebAssembly.
+It sees only its own hand, exposed dummy, and public play and auction history.
+The host runs the search in a background worker, so the table remains responsive.
+Card play requires no model requests and has no API cost.
+See [the engine guide](docs/card-engine.md) for its budgets, verification, and strength limits.
+
 OpenRouter is a service that provides access to AI models from many providers through one API.
-Bot play can cost money because AI model requests may be billed; the table displays the accumulated OpenRouter cost as you play.
+Bot bidding can cost money because AI model requests may be billed; the table displays the accumulated OpenRouter cost as you play.
 Next to the cost, the host's table shows the OpenRouter balance, which it reads again at the start of each board that bots play.
 You bring your own [OpenRouter API key](https://openrouter.ai/).
 Enter the key in the create screen, also when no seat is a bot yet, or in the table's bot controls before enabling a substitute.

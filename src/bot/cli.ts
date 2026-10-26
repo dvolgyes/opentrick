@@ -27,8 +27,11 @@ import {
 } from "../protocol";
 import { type SeatLocks, SeatMemory } from "../session";
 import { parseRoomSetup } from "../ui/bookmark";
+import { DdsSolver } from "./dds-solver";
 import { OpenRouterStrategy } from "./node-openrouter";
 import { NODE_PROMPT_TEMPLATES } from "./node-prompts";
+import { analyzePlay } from "./play-engine";
+import { playPosition } from "./play-position";
 import { actionPositionKey, matchesActionPosition } from "./position";
 import {
 	type Decision,
@@ -146,6 +149,7 @@ async function run(options: Options): Promise<void> {
 				retryDelayMs: setup?.config.botSetup?.retryDelayMs,
 			})
 		: undefined;
+	let cardSolver: DdsSolver | undefined;
 	if (!options.random && strategy === undefined)
 		throw new Error("OPENROUTER_API_KEY is missing from .env");
 	const meshResult = readMeshConfig(process.env);
@@ -443,20 +447,30 @@ async function run(options: Options): Promise<void> {
 					)
 				: renderPlayPrompt(state.board, seat, actions, NODE_PROMPT_TEMPLATES);
 		try {
+			if (!options.random && kind === "play")
+				cardSolver ??= await DdsSolver.create();
 			const decision = options.random
 				? randomDecision(actions)
-				: await strategy?.choose(
-						kind,
-						prompt,
-						actions,
-						decisionState(
-							state.board,
-							seat,
+				: kind === "play" && cardSolver
+					? {
+							type: "play" as const,
+							card: analyzePlay(
+								playPosition(state.board, seat, systems),
+								cardSolver,
+							).card,
+						}
+					: await strategy?.choose(
 							kind,
-							NODE_PROMPT_TEMPLATES,
-							systems,
-						),
-					);
+							prompt,
+							actions,
+							decisionState(
+								state.board,
+								seat,
+								kind,
+								NODE_PROMPT_TEMPLATES,
+								systems,
+							),
+						);
 			if (!decision) throw new Error("bot strategy is not configured");
 			await sendAction(state, seat, actionKey, decision, controller.view());
 		} catch (error) {

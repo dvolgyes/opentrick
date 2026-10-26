@@ -9,6 +9,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	page,
 }) => {
 	let requests = 0;
+	let cardRequests = 0;
 	await mockOpenRouterKey(page);
 	await page.route("https://openrouter.ai/api/v1/responses", async (route) => {
 		if (route.request().method() === "OPTIONS") {
@@ -25,6 +26,7 @@ test("host bots play two consecutive boards from auction through the final trick
 		requests++;
 		const body = route.request().postDataJSON();
 		const kind = body.text.format.name === "bridge_call" ? "call" : "card";
+		if (kind === "card") cardRequests++;
 		const values = body.text.format.schema.properties[kind].enum as string[];
 		const choice =
 			kind === "call" && body.input.includes("No calls yet")
@@ -100,7 +102,11 @@ test("host bots play two consecutive boards from auction through the final trick
 			{ timeout: 110_000 },
 		)
 		.toEqual({ board: "2", phase: "complete" });
-	expect(requests).toBeGreaterThan(100);
+	// Four bids per board; all 104 card decisions run in the host's DDS worker.
+	expect(requests).toBeGreaterThanOrEqual(8);
+	expect(requests).toBeLessThan(12);
+	expect(cardRequests).toBe(0);
+	await expect(page.locator("[data-phase]")).toHaveAttribute("data-at", "56");
 });
 
 test("the create page stores the OpenRouter key also when no seat is a bot", async ({
@@ -146,7 +152,7 @@ test("the create page stores the OpenRouter key also when no seat is a bot", asy
 	).toHaveValue("later-key");
 });
 
-test("a bot bids when the site is served below a path, as on GitHub Pages", async ({
+test("a bot bids and plays when the site is served below a path, as on GitHub Pages", async ({
 	page,
 	baseURL,
 }) => {
@@ -186,7 +192,12 @@ test("a bot bids when the site is served below a path, as on GitHub Pages", asyn
 					{
 						type: "message",
 						role: "assistant",
-						content: [{ type: "output_text", text: '{"call":"P"}' }],
+						content: [
+							{
+								type: "output_text",
+								text: JSON.stringify({ call: requests === 1 ? "1NT" : "P" }),
+							},
+						],
 					},
 				],
 			}),
@@ -199,13 +210,24 @@ test("a bot bids when the site is served below a path, as on GitHub Pages", asyn
 		await page.locator(`input[name="name-${seat}"]`).fill(`bot ${seat}`);
 		await page.locator(`input[name="bot-${seat}"]`).check();
 	}
+	await page.locator('input[name="bot-W"]').check();
 	await page.locator('input[name="openrouter-key"]').fill("test-key");
 	await page.getByTestId("create").click();
 	// Board 1: North deals, so the North bot bids first.
-	await expect(page.getByTestId("bid-history")).toContainText("Pass", {
+	await expect(page.getByTestId("bid-history")).toContainText("1NT", {
 		timeout: CONNECT_MS,
 	});
 	expect(requests).toBeGreaterThan(0);
+	await expect
+		.poll(async () =>
+			Number(await page.locator("[data-phase]").getAttribute("data-at")),
+		)
+		.toBeGreaterThan(4);
+	await expect(page.locator("[data-phase]")).toHaveAttribute(
+		"data-phase",
+		"play",
+	);
+	expect(requests).toBe(4);
 });
 
 test("switching the current bidder to a bot starts it immediately", async ({

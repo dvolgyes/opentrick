@@ -17,8 +17,10 @@ import {
 	botRequestFailureMessage,
 	InsufficientBalanceError,
 } from "./browser-openrouter";
+import { BrowserPlayEngine, type PlayChooser } from "./browser-play";
 import { loadBrowserPromptTemplates } from "./browser-prompts";
 import { normalizeHostApiKey } from "./host-key";
+import { playPosition } from "./play-position";
 import { actionPositionKey } from "./position";
 import type { Decision } from "./strategy";
 import {
@@ -26,7 +28,6 @@ import {
 	BOT_MODEL,
 	decisionState,
 	renderBidPrompt,
-	renderPlayPrompt,
 } from "./strategy";
 
 export interface HostBotSettings {
@@ -58,6 +59,7 @@ export class HostBotRunner {
 	) => void;
 	readonly #onUsageCost: (cost: number) => void;
 	readonly #onStatus: SeatBotStatus;
+	readonly #playEngine: PlayChooser;
 	#requestAbort = new AbortController();
 	readonly #processed = new Set<string>();
 	#unsubscribe: (() => void) | undefined;
@@ -79,6 +81,7 @@ export class HostBotRunner {
 		) => void = () => {},
 		onUsageCost: (cost: number) => void = () => {},
 		onStatus: SeatBotStatus = () => {},
+		playEngine: PlayChooser = new BrowserPlayEngine(),
 	) {
 		const normalizedApiKey = normalizeHostApiKey(settings.apiKey);
 		if (!normalizedApiKey) throw new Error("OpenRouter API key is required");
@@ -87,6 +90,7 @@ export class HostBotRunner {
 		this.#onError = onError;
 		this.#onUsageCost = onUsageCost;
 		this.#onStatus = onStatus;
+		this.#playEngine = playEngine;
 	}
 
 	async start(requiredSeats: readonly Seat[] = []): Promise<boolean> {
@@ -107,6 +111,7 @@ export class HostBotRunner {
 		if (this.#stopped) return;
 		this.#stopped = true;
 		this.#requestAbort.abort();
+		this.#playEngine.stop();
 		this.#unsubscribe?.();
 	}
 
@@ -170,7 +175,10 @@ export class HostBotRunner {
 		} catch (error) {
 			// The key and upstream response are private. The room remains playable and the host can retry.
 			if (this.#stopped) return;
-			if (this.#paused && error instanceof BotRequestAbortedError) return;
+			if (error instanceof BotRequestAbortedError) {
+				this.#rerun = true;
+				return;
+			}
 			if (error instanceof InsufficientBalanceError) {
 				this.pause();
 				this.#onError("balance");
@@ -180,6 +188,7 @@ export class HostBotRunner {
 			this.#onError("failed", botRequestFailureMessage(error));
 		} finally {
 			this.#running = false;
+			if (this.#rerun && !this.#stopped && !this.#paused) this.#schedule();
 		}
 	}
 
@@ -238,48 +247,58 @@ export class HostBotRunner {
 			this.#processed.add(key);
 			const kind = actions[0]?.type;
 			if (!kind) return;
-			this.#templates ??= await loadBrowserPromptTemplates();
-			const prompt =
-				kind === "call"
-					? renderBidPrompt(
+			let decision: Decision;
+			try {
+				if (kind === "play") {
+					const analysis = await this.#playEngine.choose(
+						playPosition(state.board, seat, systems),
+						this.#requestAbort.signal,
+					);
+					decision = { type: "play", card: analysis.card };
+				} else {
+					this.#templates ??= await loadBrowserPromptTemplates();
+					const strategy = new BrowserOpenRouterStrategy(
+						this.#settings.apiKey,
+						{
+							model: this.#settings.model || BOT_MODEL,
+							fallbackModel: this.#settings.fallbackModel || BOT_FALLBACK_MODEL,
+							modelOrder: this.#settings.modelOrder,
+							retries: this.#settings.retries,
+							retryDelayMs: this.#settings.retryDelayMs,
+						},
+						this.#requestAbort.signal,
+						() => this.#onError("rate-limit"),
+						this.#onUsageCost,
+						(message, values) =>
+							this.#onStatus(config.names[seat], message, values),
+					);
+					decision = await strategy.choose(
+						kind,
+						renderBidPrompt(
 							state.board,
 							seat,
 							actions,
 							this.#templates,
 							systems,
-						)
-					: renderPlayPrompt(state.board, seat, actions, this.#templates);
-			const strategy = new BrowserOpenRouterStrategy(
-				this.#settings.apiKey,
-				{
-					model: this.#settings.model || BOT_MODEL,
-					fallbackModel: this.#settings.fallbackModel || BOT_FALLBACK_MODEL,
-					modelOrder: this.#settings.modelOrder,
-					retries: this.#settings.retries,
-					retryDelayMs: this.#settings.retryDelayMs,
-				},
-				this.#requestAbort.signal,
-				() => this.#onError("rate-limit"),
-				this.#onUsageCost,
-				(message, values) =>
-					this.#onStatus(config.names[seat], message, values),
-			);
-			let decision: Decision;
-			try {
-				decision = await strategy.choose(
-					kind,
-					prompt,
-					actions,
-					decisionState(state.board, seat, kind, this.#templates, systems),
-				);
+						),
+						actions,
+						decisionState(state.board, seat, kind, this.#templates, systems),
+					);
+				}
 			} catch (error) {
 				this.#processed.delete(key);
 				throw error;
 			}
-			if (this.#stopped) return;
+			if (this.#stopped || this.#paused || this.#requestAbort.signal.aborted) {
+				this.#processed.delete(key);
+				return;
+			}
 			const current = this.#controller.view();
 			const currentBots = current.roster?.bots ?? configuredBotSeats(config);
-			if (!this.#activeSeats(currentBots).includes(seat)) return;
+			if (!this.#activeSeats(currentBots).includes(seat)) {
+				this.#processed.delete(key);
+				return;
+			}
 			const currentState = current.table
 				? parseBridgeState(current.table.state, this.#controller.tableId)
 				: undefined;
