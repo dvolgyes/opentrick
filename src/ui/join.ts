@@ -188,7 +188,7 @@ export function showTable(
 				);
 				void table.prepareReload().then(() => {
 					if (disposed) return;
-					if (target) navigation.reload(date);
+					if (target) navigation.update(date);
 					else
 						root.replaceChildren(
 							message(

@@ -61,8 +61,13 @@ export interface AppDeps {
 export interface Navigation {
 	/** Loads the create screen at the site root from the server. Never reuses the current table or its setup query. */
 	createNew(): void;
-	/** Loads this page again from the server, so a new version of the site takes effect. */
-	reload(targetDate?: string): void;
+	/**
+	 * Loads this page again from the server, so a new version of the site takes effect. It takes no argument, so a
+	 * button can call it with its click event.
+	 */
+	reload(): void;
+	/** Loads this page with the update query for the build of `targetDate`, so a cached older build is skipped. */
+	update(targetDate: string): void;
 	/** Stores the seat choice in this page's URL without navigating. */
 	rememberSeat(seat: Seat): void;
 	/** Stores "no seat" (selected_player=none) in this page's URL without navigating, so a reload opens the seat page. */

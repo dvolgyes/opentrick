@@ -29,11 +29,10 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 			dispose = undefined;
 			location.assign(new URL("./", location.href).toString());
 		},
-		reload: (targetDate) => {
-			if (targetDate) {
-				const url = updateUrl(location.href, deps.build.date, targetDate);
-				if (url) location.replace(url);
-			} else location.reload();
+		reload: () => location.reload(),
+		update: (targetDate) => {
+			const url = updateUrl(location.href, deps.build.date, targetDate);
+			if (url) location.replace(url);
 		},
 		rememberSeat: (seat) => {
 			const query = selectedPlayerQuery(location.search, seat);
