@@ -243,6 +243,7 @@ async function waitForFullBoard(
 
 /** Local bidding is shared by the host and the three independent Node bots. */
 const SETUP_QUERY = new URLSearchParams({
+	host: "west",
 	bot_seats: "",
 	bot_bidder: "sl",
 }).toString();

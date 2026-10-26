@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
+import { namePlayers } from "./room";
 
 // A phone gets the compact table. The host plays West from the phone against three host bots, whose model this file mocks.
 const PHONES = [
@@ -74,6 +75,7 @@ for (const viewport of PHONES) {
 			const page = await context.newPage();
 			await mockBots(page);
 			await page.goto("/");
+			await namePlayers(page);
 			for (const seat of ["N", "E", "S"])
 				await page.locator(`input[name="bot-${seat}"]`).check();
 
@@ -240,6 +242,7 @@ test("a phone keeps its screen on in the lobby, while the host waits for the oth
 		const page = await context.newPage();
 		const { wake, hideAndShow } = await fakeWakeLock(page);
 		await page.goto("/");
+		await namePlayers(page);
 		await page.getByTestId("create").tap();
 
 		await expect.poll(() => phase(page), { timeout: 30_000 }).toBe("waiting");
@@ -267,6 +270,7 @@ test("a phone keeps its screen on during the bidding and the play, not on the st
 		const { wake, hideAndShow } = await fakeWakeLock(page);
 		await mockBots(page);
 		await page.goto("/");
+		await namePlayers(page);
 		for (const seat of ["N", "E", "S"])
 			await page.locator(`input[name="bot-${seat}"]`).check();
 
@@ -320,6 +324,7 @@ for (const locale of [
 			const page = await context.newPage();
 			await mockBots(page);
 			await page.goto("/");
+			await namePlayers(page);
 			for (const seat of ["N", "E", "S"])
 				await page.locator(`input[name="bot-${seat}"]`).check();
 

@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 /** Page helpers shared by the browser tests. They use only what a person sees and clicks. */
 
-/** The default player name of each seat. */
+/** The explicit player names used by the test fixtures. */
 export const NAME = {
 	W: "player4",
 	N: "player1",
@@ -51,14 +51,22 @@ export const hostRows = (page: Page): Locator =>
 const TABLE_LINK =
 	/^http:\/\/localhost:\d+\/?\?.*#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
 
+/** Names all fixture players and explicitly chooses the host required by the scenario. */
+export async function namePlayers(
+	page: Page,
+	host: SeatKey = "W",
+): Promise<void> {
+	for (const [seat, name] of Object.entries(NAME))
+		await page.locator(`input[name="name-${seat}"]`).fill(name);
+	await page.locator(`input[name="me"][value="${host}"]`).check();
+}
+
 /**
- * Creates a table with the default names. The creator sits West and enters the game directly.
+ * Creates a table with the fixture names. The creator sits West and enters the game directly.
  * Returns the unselected room URL that all players share.
  */
 export async function createRoom(page: Page): Promise<string> {
-	for (const [seat, name] of Object.entries(NAME))
-		await page.locator(`input[name="name-${seat}"]`).fill(name);
-	await page.locator('input[name="me"][value="W"]').check();
+	await namePlayers(page);
 	// Chrome's mobile emulation reports the form below the screenshot viewport; activate its native submit control.
 	await page
 		.getByTestId("create")

@@ -145,6 +145,7 @@ for (const form of FORMS) {
 			await check(page, "create");
 			for (const [seat, name] of Object.entries(NAMES))
 				await page.locator(`input[name="name-${seat}"]`).fill(name);
+			await page.locator('input[name="me"][value="W"]').check();
 			for (const seat of ["N", "E", "S"])
 				await page.locator(`input[name="bot-${seat}"]`).check();
 

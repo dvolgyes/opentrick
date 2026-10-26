@@ -7,7 +7,7 @@ test.describe.configure({ mode: "serial" });
 
 const BOOKMARK_QUERY = "east=zsdh&west=dvolgyes&host=east";
 const TABLE_LINK =
-	/^http:\/\/localhost:\d+\/\?north=player1&east=zsdh&south=player2&west=dvolgyes&host=east&bot_seats=&bot_bidder=rl-fsp&selected_player=none#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
+	/^http:\/\/localhost:\d+\/\?north=player1&east=zsdh&south=player&west=dvolgyes&host=east&bot_seats=&bot_bidder=rl-fsp&selected_player=none#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/;
 
 const players: Player[] = [];
 let owner: Player;
@@ -35,7 +35,7 @@ test("the create screen is prefilled from the bookmark, with the host seat chose
 	page = await owner.page(`./?${BOOKMARK_QUERY}`);
 	await expect(page.getByLabel("East name")).toHaveValue("zsdh");
 	await expect(page.getByLabel("West name")).toHaveValue("dvolgyes");
-	await expect(page.getByLabel("North name")).toHaveValue("player1");
+	await expect(page.getByLabel("North name")).toHaveValue("");
 	await expect(page.locator('input[name="me"][value="E"]')).toBeChecked();
 	for (const seat of ["N", "E", "S", "W"]) {
 		await expect(page.locator(`input[name="bot-${seat}"]`)).not.toBeChecked();
@@ -50,7 +50,7 @@ test("create opens the game and selects the host seat in the page URL", async ()
 	await page.getByTestId("create").click();
 	await expect(page).toHaveTitle("Bridge: zsdh (E)");
 	await expect(page).toHaveURL(
-		/\?north=player1&east=zsdh&south=player2&west=dvolgyes&host=east&bot_seats=&bot_bidder=rl-fsp&selected_player=E#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/,
+		/\?north=player1&east=zsdh&south=player&west=dvolgyes&host=east&bot_seats=&bot_bidder=rl-fsp&selected_player=E#v=p2p-v1&k=[A-Za-z0-9_-]{43}$/,
 	);
 	await expect(page.getByRole("textbox", { name: "Table link" })).toHaveCount(
 		0,

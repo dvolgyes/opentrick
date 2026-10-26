@@ -13,6 +13,7 @@ import {
 	CONNECT_MS,
 	expectSeat,
 	hostRows,
+	namePlayers,
 	pick,
 	type SeatKey,
 	seatLabel,
@@ -92,6 +93,7 @@ test.afterAll(async () => {
 test("South's video reaches East without a gap while the host North reloads", async () => {
 	test.setTimeout(180_000);
 	const north = await players.N.page("./?host=north");
+	await namePlayers(north, "N");
 	await north
 		.getByTestId("create")
 		.evaluate((button) => (button as HTMLButtonElement).click());

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
 
 import { Player } from "./player";
+import { namePlayers } from "./room";
 
 /*
  * A phone shows the compact table (src/ui/room-view.ts sets the form from the device class); phone.spec.ts plays a
@@ -19,6 +20,7 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 	});
 	try {
 		const page = await player.page("./");
+		await namePlayers(page);
 
 		await mockBotBidding(page, (position) => {
 			return position.calls.length === 0 ? "1NT" : "P";
