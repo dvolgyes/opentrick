@@ -106,6 +106,10 @@ The later no-trump run records all 24 attempts instead of stopping on an upstrea
 The new mixed suite was fixed before running and used fresh deals.
 The runs do not establish strength against expert humans or established commercial bridge programs.
 
+A separate [3NT test with 25–27 HCP](benchmarks/3nt-25-27.md) played 12 complete boards through the production browser worker.
+It records make rates by point total, double-dummy makeability, and every card played.
+Run it with `npm run --silent benchmark:3nt`; it requires no API key.
+
 ## Security and recovery
 
 The assets in this change are the host's API key, hidden cards, game authority, and browser responsiveness.
