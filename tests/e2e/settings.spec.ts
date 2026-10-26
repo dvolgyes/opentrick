@@ -38,7 +38,13 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	let dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
 	await expect(dialog.getByLabel("Corrected Milton HCP")).toBeChecked();
-	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
+	await expect(dialog.getByLabel("Automatic", { exact: true })).toBeChecked();
+	await expect(dialog.getByLabel("Normal", { exact: true })).toBeChecked();
+	await expect(page.locator("body")).toHaveCSS("color", "rgb(29, 29, 27)");
+	// Automatic follows the system preference at once, without a reload.
+	await page.emulateMedia({ colorScheme: "dark" });
+	await expect(page.locator("body")).toHaveCSS("color", "rgb(230, 230, 225)");
+	await page.emulateMedia({ colorScheme: "light" });
 	await expect(page.locator("body")).toHaveCSS("color", "rgb(29, 29, 27)");
 	for (const flag of [
 		"Show the points next to the cards",
@@ -69,6 +75,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 
 	await dialog.getByLabel("Vienna (7-5-3-1)").check();
 	await dialog.getByLabel("Dark", { exact: true }).check();
+	await dialog.getByLabel("Solarized", { exact: true }).check();
 	await dialog.getByLabel("Frame the player whose turn it is to bid").uncheck();
 	await dialog.getByLabel("Show the points next to the cards").uncheck();
 	await dialog.getByLabel("Show the network quality").uncheck();
@@ -86,8 +93,8 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	expect(order[1]).toBe(firstModel);
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
-	// The text turns bright at once.
-	await expect(page.locator("body")).toHaveCSS("color", "rgb(230, 230, 225)");
+	// The text turns to the bright base2 of Solarized dark at once, although the system prefers light.
+	await expect(page.locator("body")).toHaveCSS("color", "rgb(238, 232, 213)");
 	expect(openRouter.requests).toEqual([]);
 	expect(
 		await page.evaluate(() =>
@@ -107,16 +114,18 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.points",
 		"opentrick.settings.portrait-mobile",
 		"opentrick.settings.relay-checks",
-		"opentrick.settings.theme",
+		"opentrick.settings.scheme",
+		"opentrick.settings.theme-style",
 		"opentrick.settings.voicebox",
 	]);
 
 	await page.reload();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
-	await expect(page.locator("body")).toHaveCSS("color", "rgb(230, 230, 225)");
+	await expect(page.locator("body")).toHaveCSS("color", "rgb(238, 232, 213)");
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Dark", { exact: true })).toBeChecked();
+	await expect(dialog.getByLabel("Solarized", { exact: true })).toBeChecked();
 	await expect(
 		dialog.getByLabel("Show the points next to the cards"),
 	).not.toBeChecked();

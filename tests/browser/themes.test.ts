@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import "../../src/ui/style.css";
-import { THEMES, type Theme } from "../../src/ui/settings";
-import { applyTheme } from "../../src/ui/theme";
+import { type Scheme, THEMES, type Theme } from "../../src/ui/settings";
+import { applyTheme, watchTheme } from "../../src/ui/theme";
 
 /** The colour of a token in the current theme, as red, green and blue from 0 to 255. */
 function token(name: string, within: HTMLElement = document.body): number[] {
@@ -111,29 +111,52 @@ const SHEETS = [
 
 const rgb = (name: string) => `rgb(${token(name).join(", ")})`;
 
+/** Each theme in its light and its dark scheme. */
+const PALETTES = THEMES.flatMap((theme) =>
+	(["light", "dark"] as const).map((scheme) => [theme, scheme] as const),
+);
+
+/** The system preference of a test: a media query whose answer the test changes. */
+class SystemScheme extends EventTarget {
+	matches = false;
+	readonly queries: string[] = [];
+	matchMedia(query: string) {
+		this.queries.push(query);
+		return this;
+	}
+	change(dark: boolean): void {
+		this.matches = dark;
+		this.dispatchEvent(new Event("change"));
+	}
+}
+
 afterEach(() => {
-	applyTheme(document.documentElement, "light");
+	applyTheme(document.documentElement, "normal", "light", false);
 	document.body.replaceChildren();
 });
 
 describe("themes", () => {
-	it.each(THEMES)("%s keeps every text readable on its surface", (theme) => {
-		applyTheme(document.documentElement, theme);
-		const weak = PAIRS.filter(
-			([text, surface, least]) => contrast(text, surface) < least,
-		).map(
-			([text, surface]) =>
-				`${text} on ${surface}: ${contrast(text, surface).toFixed(2)}`,
-		);
-		expect(weak).toEqual([]);
-	});
+	it.each(PALETTES)(
+		"%s %s keeps every text readable on its surface",
+		(theme, scheme) => {
+			applyTheme(document.documentElement, theme, scheme, false);
+			const weak = PAIRS.filter(
+				([text, surface, least]) => contrast(text, surface) < least,
+			).map(
+				([text, surface]) =>
+					`${text} on ${surface}: ${contrast(text, surface).toFixed(2)}`,
+			);
+			expect(weak).toEqual([]);
+		},
+	);
 
-	it.each<Theme>(["solarized", "dark"])(
-		"%s turns the page dark, the text bright, the felt a darker green and the cards off-white",
+	it.each(THEMES)(
+		"%s dark turns the page dark, the text bright, the felt a darker green and the cards off-white",
 		(theme) => {
 			const felt = luminance(token("felt"));
-			applyTheme(document.documentElement, theme);
+			applyTheme(document.documentElement, theme, "dark", false);
 			expect(document.documentElement.dataset.theme).toBe(theme);
+			expect(document.documentElement.dataset.scheme).toBe("dark");
 			expect(getComputedStyle(document.documentElement).colorScheme).toBe(
 				"dark",
 			);
@@ -157,23 +180,73 @@ describe("themes", () => {
 		},
 	);
 
-	it("warm stays light with softer, warmer colours than light", () => {
-		const felt = saturation(token("felt"));
-		applyTheme(document.documentElement, "warm");
+	it("solarized light keeps a light page in the cream of solarized, with a green felt", () => {
+		const page = token("bg");
+		applyTheme(document.documentElement, "solarized", "light", false);
 		expect(getComputedStyle(document.documentElement).colorScheme).toBe(
 			"light",
 		);
 		const [red = 0, , blue = 0] = token("bg");
+		expect(token("bg")).not.toEqual(page);
 		expect(luminance(token("bg"))).toBeGreaterThan(0.8);
 		expect(red).toBeGreaterThan(blue);
-		expect(token("card-bg")).not.toEqual([255, 255, 255]);
-		expect(saturation(token("felt"))).toBeLessThan(felt);
+		expect(luminance(token("fg"))).toBeLessThan(0.1);
+		const [feltRed = 0, feltGreen = 0] = token("felt");
+		expect(feltGreen).toBeGreaterThan(feltRed);
+		expect(saturation(token("felt"))).toBeGreaterThan(0.2);
 	});
 
-	it.each(THEMES)(
-		"%s colours the cards, the sheets and the dialogs with their own ink",
-		(theme) => {
-			applyTheme(document.documentElement, theme);
+	it.each<[Scheme, boolean, string]>([
+		["auto", false, "light"],
+		["auto", true, "dark"],
+		["light", true, "light"],
+		["dark", false, "dark"],
+	])(
+		"the %s scheme with a dark system preference %s shows the %s palette",
+		(scheme, prefersDark, shown) => {
+			applyTheme(document.documentElement, "solarized", scheme, prefersDark);
+			expect(document.documentElement.dataset.scheme).toBe(shown);
+			expect(getComputedStyle(document.documentElement).colorScheme).toBe(
+				shown,
+			);
+		},
+	);
+
+	it("follows a change of the system preference only in the automatic scheme, and stops following", () => {
+		const root = document.documentElement;
+		const system = new SystemScheme();
+		let chosen: { theme: Theme; scheme: Scheme } = {
+			theme: "normal",
+			scheme: "auto",
+		};
+		const stop = watchTheme(root, system, () => chosen);
+		expect(system.queries).toEqual(["(prefers-color-scheme: dark)"]);
+		expect([root.dataset.theme, root.dataset.scheme]).toEqual([
+			"normal",
+			"light",
+		]);
+		system.change(true);
+		expect(root.dataset.scheme).toBe("dark");
+		chosen = { theme: "solarized", scheme: "light" };
+		system.change(false);
+		system.change(true);
+		expect([root.dataset.theme, root.dataset.scheme]).toEqual([
+			"solarized",
+			"light",
+		]);
+		chosen = { theme: "normal", scheme: "auto" };
+		stop();
+		system.change(false);
+		expect([root.dataset.theme, root.dataset.scheme]).toEqual([
+			"solarized",
+			"light",
+		]);
+	});
+
+	it.each(PALETTES)(
+		"%s %s colours the cards, the sheets and the dialogs with their own ink",
+		(theme, scheme) => {
+			applyTheme(document.documentElement, theme, scheme, false);
 			const wrong: string[] = [];
 			for (const card of [".face", ".played"]) {
 				const shown = place(card);

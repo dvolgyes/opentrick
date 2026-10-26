@@ -16,12 +16,14 @@ import {
 	type ModelSlot,
 	readSettings,
 	resolveModelOrder,
+	SCHEMES,
+	type Scheme,
 	type Settings,
 	THEMES,
 	type Theme,
 	writeSettings,
 } from "./settings";
-import { applyTheme } from "./theme";
+import { applyTheme, DARK_QUERY } from "./theme";
 
 const POINT_SYSTEM_LABELS: Readonly<Record<PointSystem, string>> = {
 	hcp: "Milton/HCP (4-3-2-1)",
@@ -32,11 +34,15 @@ const POINT_SYSTEM_LABELS: Readonly<Record<PointSystem, string>> = {
 	other: "Other",
 };
 
-const THEME_LABELS: Readonly<Record<Theme, string>> = {
+const SCHEME_LABELS: Readonly<Record<Scheme, string>> = {
+	auto: "Automatic",
 	light: "Light",
-	warm: "Warm light",
-	solarized: "Solarized dark",
 	dark: "Dark",
+};
+
+const THEME_LABELS: Readonly<Record<Theme, string>> = {
+	normal: "Normal",
+	solarized: "Solarized",
 };
 
 const FLAG_LABELS = {
@@ -124,6 +130,12 @@ export function settingsDialog(
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
 	points.element.append(
 		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),
+	);
+	const scheme = radios(
+		"settings-scheme",
+		"Appearance",
+		SCHEMES,
+		SCHEME_LABELS,
 	);
 	const theme = radios("settings-theme", "Theme", THEMES, THEME_LABELS);
 	const flags = Object.fromEntries(
@@ -243,6 +255,7 @@ export function settingsDialog(
 		el("h2", { attrs: { id: "settings-title" } }, t("Settings")),
 		el("label", { className: "settings-row" }, `${t("Language")} `, language),
 		points.element,
+		scheme.element,
 		theme.element,
 		el(
 			"fieldset",
@@ -348,6 +361,7 @@ export function settingsDialog(
 			pointSystem: points.value(),
 			cardPoints: cardPoints.checked,
 			theme: theme.value(),
+			scheme: scheme.value(),
 			bidTurnFrame: flags.bidTurnFrame.checked,
 			playTurnFrame: flags.playTurnFrame.checked,
 			bidTurnText: flags.bidTurnText.checked,
@@ -380,7 +394,13 @@ export function settingsDialog(
 			status.textContent = t("This browser could not store the settings.");
 			return;
 		}
-		applyTheme(element.ownerDocument.documentElement, settings.theme);
+		applyTheme(
+			element.ownerDocument.documentElement,
+			settings.theme,
+			settings.scheme,
+			element.ownerDocument.defaultView?.matchMedia(DARK_QUERY).matches ??
+				false,
+		);
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
@@ -401,6 +421,7 @@ export function settingsDialog(
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
 			cardPoints.checked = settings.cardPoints;
+			scheme.set(settings.scheme);
 			theme.set(settings.theme);
 			for (const field of Object.keys(
 				FLAG_LABELS,

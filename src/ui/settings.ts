@@ -2,9 +2,13 @@ import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import { BOT_MODELS, type BotModel } from "../protocol";
 import type { MaybeStorage } from "../session";
 
-/** The colour themes of themes.css. The earlier stored "auto" is no longer a theme, so it reads as the default. */
-export const THEMES = ["light", "warm", "solarized", "dark"] as const;
+/** The colour themes of themes.css; each has a light and a dark palette. */
+export const THEMES = ["normal", "solarized"] as const;
 export type Theme = (typeof THEMES)[number];
+
+/** The palette of the theme: "auto" follows the light or dark preference of the browser. */
+export const SCHEMES = ["auto", "light", "dark"] as const;
+export type Scheme = (typeof SCHEMES)[number];
 
 /** The place of the custom model in the model order. Model ids contain "/", so it cannot name a model. */
 export const CUSTOM_MODEL_SLOT = "custom";
@@ -19,6 +23,7 @@ export interface Settings {
 	/** The points of the hand next to the cards. */
 	readonly cardPoints: boolean;
 	readonly theme: Theme;
+	readonly scheme: Scheme;
 	readonly bidTurnFrame: boolean;
 	readonly playTurnFrame: boolean;
 	readonly bidTurnText: boolean;
@@ -41,7 +46,8 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
 	pointSystem: "hcp-corrected",
 	cardPoints: true,
-	theme: "light",
+	theme: "normal",
+	scheme: "auto",
 	bidTurnFrame: true,
 	playTurnFrame: true,
 	bidTurnText: true,
@@ -153,7 +159,9 @@ export function readSettings(storage: MaybeStorage): Settings {
 			read("card-points"),
 			storedPoints !== "none" && DEFAULT_SETTINGS.cardPoints,
 		),
-		theme: readChoice(read("theme"), THEMES, DEFAULT_SETTINGS.theme),
+		// The earlier "theme" name held a flat theme, such as "dark"; it is not read, so the choice starts again.
+		theme: readChoice(read("theme-style"), THEMES, DEFAULT_SETTINGS.theme),
+		scheme: readChoice(read("scheme"), SCHEMES, DEFAULT_SETTINGS.scheme),
 		...flags,
 		customModel,
 		modelOrder: resolveModelOrder(
@@ -168,7 +176,9 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);
 	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");
-	storage.setItem(`${PREFIX}theme`, settings.theme);
+	storage.setItem(`${PREFIX}theme-style`, settings.theme);
+	storage.setItem(`${PREFIX}scheme`, settings.scheme);
+	storage.removeItem(`${PREFIX}theme`);
 	for (const [field, name] of Object.entries(FLAGS))
 		storage.setItem(
 			PREFIX + name,

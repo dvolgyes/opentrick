@@ -28,11 +28,12 @@ function memoryStorage(): Storage {
 const CUSTOM = "anthropic/claude-sonnet-5.5";
 
 describe("player settings", () => {
-	it("uses corrected HCP, the light theme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
+	it("uses corrected HCP, the normal theme in the automatic scheme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
 			pointSystem: "hcp-corrected",
 			cardPoints: true,
-			theme: "light",
+			theme: "normal",
+			scheme: "auto",
 			bidTurnFrame: true,
 			playTurnFrame: true,
 			bidTurnText: true,
@@ -54,6 +55,7 @@ describe("player settings", () => {
 			pointSystem: "vienna",
 			cardPoints: false,
 			theme: "solarized",
+			scheme: "dark",
 			bidTurnFrame: false,
 			playTurnFrame: true,
 			bidTurnText: false,
@@ -79,7 +81,8 @@ describe("player settings", () => {
 	it("replaces each unknown or malformed stored value with its default", () => {
 		const storage = memoryStorage();
 		storage.setItem("opentrick.settings.points", "goren");
-		storage.setItem("opentrick.settings.theme", "<b>dark</b>");
+		storage.setItem("opentrick.settings.theme-style", "<b>solarized</b>");
+		storage.setItem("opentrick.settings.scheme", "auto ");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
 		storage.setItem("opentrick.settings.custom-model", "not a model");
 		storage.setItem(
@@ -96,12 +99,19 @@ describe("player settings", () => {
 		});
 	});
 
-	it("reads the earlier Automatic theme as the light theme, and keeps the dark theme", () => {
+	it("ignores the earlier flat theme, and removes it on the next save", () => {
 		const storage = memoryStorage();
-		storage.setItem("opentrick.settings.theme", "auto");
-		expect(readSettings(storage).theme).toBe("light");
-		storage.setItem("opentrick.settings.theme", "dark");
-		expect(readSettings(storage).theme).toBe("dark");
+		for (const earlier of ["light", "warm", "solarized", "dark", "auto"]) {
+			storage.setItem("opentrick.settings.theme", earlier);
+			expect(readSettings(storage)).toMatchObject({
+				theme: "normal",
+				scheme: "auto",
+			});
+		}
+		writeSettings(storage, DEFAULT_SETTINGS);
+		expect(storage.getItem("opentrick.settings.theme")).toBeNull();
+		expect(storage.getItem("opentrick.settings.theme-style")).toBe("normal");
+		expect(storage.getItem("opentrick.settings.scheme")).toBe("auto");
 	});
 
 	it("reads the earlier choice of no points as the default bidding system without card points", () => {

@@ -1,7 +1,8 @@
 /*
- * The colour themes. Every colour of the page is a token here, and style.css uses only these tokens, so a theme (and
- * later a skin) is one more block of the same tokens. Light is the default on :root; each other theme replaces the
- * tokens under :root[data-theme="…"], which the Theme setting sets.
+ * The colour themes. Every colour of the page is a token here, and style.css uses only these tokens, so a palette (and
+ * later a skin) is one more block of the same tokens. Each theme has a light and a dark palette: Normal light is the
+ * default on :root; each other palette replaces the tokens under :root[data-theme="…"][data-scheme="light|dark"],
+ * which src/ui/theme.ts sets from the Theme and Appearance settings.
  *
  * The surfaces: the page (--bg, --fg), the green felt (--felt, --felt-fg), the playing cards (--card-*), and the
  * sheets: the right panel, the call settings and the panels on the felt, such as the bidding history, the bid box and
@@ -101,81 +102,82 @@
 	color-scheme: light;
 }
 
-/* Warm light: the light layout in softer, less saturated, warmer colours. */
-:root[data-theme="warm"] {
-	--bg: #f6f1e7;
-	--fg: #3b352c;
-	--muted: #6f6656;
-	--line: #ddd3c2;
-	--panel: #fbf7ef;
-	--accent: #47705a;
-	--accent-fg: #fbf7ef;
-	--error: #a8453a;
-	--warn-bg: #f8ead0;
+/* Solarized light: the base3 page and sheets, base02 text, a teal-green felt, and the Solarized red, green and orange
+   darkened to stay readable on base3. */
+:root[data-theme="solarized"][data-scheme="light"] {
+	--bg: #fdf6e3;
+	--fg: #073642;
+	--muted: #586e75;
+	--line: #ddd6c1;
+	--panel: #fdf6e3;
+	--accent: #1f7a73;
+	--accent-fg: #fdf6e3;
+	--error: #c42a27;
+	--warn-bg: #f5e5b8;
 	--warn-fg: #5c4300;
-	--alert-bg: #a8453a;
+	--alert-bg: #c42a27;
 	--alert-fg: #ffffff;
-	--online: #4f9a68;
-	--offline: #b6ae9f;
-	--dialog-fg: #3b352c;
-	--dialog-line: #6f6656;
-	--shadow: rgb(59 53 44 / 25%);
-	--shadow-soft: rgb(59 53 44 / 18%);
-	--scrim: rgb(43 37 28 / 55%);
-	--scrim-strong: rgb(43 37 28 / 65%);
-	--frame-bg: #2b251c;
-	--felt: #4f6e55;
-	--felt-fg: #f6f1e7;
-	--label-frame: #f6f1e7;
-	--presence-online: #9fd9a8;
-	--waiting-line: #c4bba9;
-	--waiting-fg: #ece6d8;
-	--turn-hand-bg: #cfd8c4;
-	--turn-name: #d23a2a;
-	--trump-fg: #f3d27a;
-	--gold: #d4a93c;
-	--gold-fg: #2b251c;
-	--pill-bg: #fbf1d6;
-	--red-suit: #b0443c;
-	--call-green: #3f7a52;
-	--call-orange: #b8622a;
-	--card-bg: #fbf7ee;
-	--card-fg: #3b352c;
-	--card-muted: #6f6656;
-	--card-line: #ddd3c2;
-	--card-shadow: rgb(59 53 44 / 0.2);
-	--card-red: #b0443c;
-	--sheet-bg: #fbf7ef;
-	--sheet-fg: #3b352c;
-	--sheet-muted: #6f6656;
-	--sheet-line: #ddd3c2;
-	--sheet-cell: #efe8da;
-	--sheet-strike: #9a9182;
-	--sheet-red: #b0443c;
-	--sheet-call-green: #3f7a52;
-	--sheet-call-orange: #b8622a;
-	--sheet-success: #3f7a52;
-	--sheet-error: #a8453a;
-	--sheet-neutral: #2b251c;
-	--confirm-bg: #47705a;
-	--reject-bg: #b0443c;
-	--on-strong: #fffdf8;
-	--control-bg: #fbf7ef;
-	--control-fg: #2b251c;
-	--control-line: #fbf7ef;
-	--control-undo-line: #fbf7ef;
-	--control-disabled-bg: #ece5d6;
-	--control-disabled-fg: #a39a8a;
-	--join-fg: #3f6e4a;
-	--tile-bg: #46614c;
-	--tile-caption-bg: #33473a;
-	--video-bg: #2b251c;
-	--voice-off: #24382b;
+	--online: #859900;
+	--offline: #93a1a1;
+	--dialog-fg: #073642;
+	--dialog-line: #93a1a1;
+	--shadow: rgb(7 54 66 / 25%);
+	--shadow-soft: rgb(7 54 66 / 18%);
+	--scrim: rgb(0 43 54 / 55%);
+	--scrim-strong: rgb(0 43 54 / 65%);
+	--frame-bg: #002b36;
+	--felt: #3a7563;
+	--felt-fg: #fdf6e3;
+	--label-frame: #fdf6e3;
+	--presence-online: #b4d96a;
+	--waiting-line: #a8bdb4;
+	--waiting-fg: #e4ecdf;
+	--turn-hand-bg: #d5dfc6;
+	--turn-name: #dc322f;
+	--trump-fg: #f2cf5b;
+	--gold: #d9a91a;
+	--gold-fg: #002b36;
+	--pill-bg: #fdf6e3;
+	--red-suit: #c42a27;
+	--call-green: #6b7d00;
+	--call-orange: #b8460f;
+	--card-bg: #fdf6e3;
+	--card-fg: #073642;
+	--card-muted: #586e75;
+	--card-line: #ddd6c1;
+	--card-shadow: rgb(0 43 54 / 0.2);
+	--card-red: #c42a27;
+	--sheet-bg: #fdf6e3;
+	--sheet-fg: #073642;
+	--sheet-muted: #586e75;
+	--sheet-line: #ddd6c1;
+	--sheet-cell: #eee8d5;
+	--sheet-strike: #93a1a1;
+	--sheet-red: #c42a27;
+	--sheet-call-green: #6b7d00;
+	--sheet-call-orange: #b8460f;
+	--sheet-success: #6b7d00;
+	--sheet-error: #c42a27;
+	--sheet-neutral: #073642;
+	--confirm-bg: #2e7d57;
+	--reject-bg: #c42a27;
+	--on-strong: #ffffff;
+	--control-bg: #fdf6e3;
+	--control-fg: #073642;
+	--control-line: #fdf6e3;
+	--control-undo-line: #fdf6e3;
+	--control-disabled-bg: #eee8d5;
+	--control-disabled-fg: #93a1a1;
+	--join-fg: #6b7d00;
+	--tile-bg: #2f6555;
+	--tile-caption-bg: #1f4a3f;
+	--video-bg: #002b36;
+	--voice-off: #1c3d2f;
 	color-scheme: light;
 }
 
 /* Solarized dark: the base03 page, bright base2 text, a dark teal-green felt and base3 cards. */
-:root[data-theme="solarized"] {
+:root[data-theme="solarized"][data-scheme="dark"] {
 	--bg: #002b36;
 	--fg: #eee8d5;
 	--muted: #93a1a1;
@@ -247,8 +249,8 @@
 	color-scheme: dark;
 }
 
-/* Dark: a charcoal page with bright text, a dark green felt and ivory cards. */
-:root[data-theme="dark"] {
+/* Normal dark: a charcoal page with bright text, a dark green felt and ivory cards. */
+:root[data-theme="normal"][data-scheme="dark"] {
 	--bg: #15181c;
 	--fg: #e6e6e1;
 	--muted: #a3a39b;
