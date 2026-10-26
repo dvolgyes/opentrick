@@ -262,7 +262,7 @@ describe("claim requests", () => {
 		);
 		expect(defenderRequest).toMatchObject({
 			ok: false,
-			reason: "the declarer can claim only on their turn or dummy's turn",
+			reason: "only the declarer can claim",
 		});
 		table.playFirstLegal(1);
 		board = table.board();
@@ -358,6 +358,73 @@ describe("claim requests", () => {
 			claimResult: { id: pending.id, tricks: 0 },
 			results: [{ number: 1, declarerTricks: 0 }],
 		});
+	});
+
+	it("lets the declarer claim while a defender is to play, and counts the trick in progress", () => {
+		const table = fixtureTable();
+		table.calls("1C P P P");
+		// East led and dummy followed: West is to play the third card of the first trick.
+		table.playFirstLegal(2);
+		const board = table.board();
+		expect(boardStatus(board)).toMatchObject({
+			phase: "play",
+			actor: "W",
+			tricks: [],
+		});
+		expect(
+			table.send("N", claimRequestPayload(ROOM_ID, board.number, 14)),
+		).toMatchObject({
+			ok: false,
+			reason: "you cannot claim that many tricks now",
+		});
+		expect(
+			table.send("N", claimRequestPayload(ROOM_ID, board.number, 13)).ok,
+		).toBe(true);
+		const pending = parseBridgeState(table.state, ROOM_ID)?.claim;
+		if (!pending) throw new Error("claim request was not stored");
+		expect(pending.required).toEqual(["E", "W"]);
+		for (const seat of ["E", "W"] as const)
+			expect(
+				table.send(seat, claimVotePayload(ROOM_ID, pending.id, true)).ok,
+			).toBe(true);
+		expect(parseBridgeState(table.state, ROOM_ID)).toMatchObject({
+			claimResult: { id: pending.id, tricks: 13 },
+			results: [{ number: 1, declarerTricks: 13 }],
+		});
+	});
+
+	it("refuses a claim on a defender's turn while a seat's page cannot read it", () => {
+		const table = fixtureTable();
+		table.calls("1C P P P");
+		table.playFirstLegal(2);
+		const board = table.board();
+		// Dummy's page is old: it reads claims on the declarer's or dummy's turn only.
+		const old = context("N", table.events.length + 1);
+		const features = new Map(old.features);
+		features.set("S", [
+			APPLICATION_FEATURES.bridgeClaim,
+			APPLICATION_FEATURES.bridgeClaimNone,
+		]);
+		expect(
+			table.module.apply(
+				table.state,
+				{ ...old, features },
+				claimRequestPayload(ROOM_ID, board.number, 13),
+			),
+		).toMatchObject({
+			ok: false,
+			reason:
+				"all players must use a version that supports claiming on a defender's turn",
+		});
+		table.playFirstLegal(1);
+		expect(boardStatus(table.board()).actor).toBe("N");
+		expect(
+			table.module.apply(
+				table.state,
+				{ ...context("N", table.events.length + 1), features },
+				claimRequestPayload(ROOM_ID, board.number, 13),
+			).ok,
+		).toBe(true);
 	});
 
 	it("refuses a claim of no tricks while a seat's page cannot read it", () => {

@@ -1,6 +1,7 @@
 import { legalActions } from "../bridge/engine";
 import {
 	actionPayload,
+	type BridgeState,
 	claimVotePayload,
 	parseBridgeState,
 	resetVotePayload,
@@ -8,7 +9,13 @@ import {
 	undoVotePayload,
 } from "../game/bridge";
 import type { TableController } from "../p2p/table";
-import { type BotModel, type RoomConfig, SEATS, type Seat } from "../protocol";
+import {
+	type BotModel,
+	type JsonObject,
+	type RoomConfig,
+	SEATS,
+	type Seat,
+} from "../protocol";
 import {
 	type BotMessage,
 	BotRequestAbortedError,
@@ -294,13 +301,32 @@ export class HostBotRunner {
 					: item.type === "play" && item.card === decision.card,
 			);
 			if (!action) return;
-			await this.#send(
-				seat,
-				actionPayload(this.#controller.tableId, state.board, action),
-				view.seat,
-			);
+			// A player can ask for an undo, a claim or a reset while the bot waits for its model, and the host then
+			// refuses the bot's action. The bot answers that request first and then chooses again at this position.
+			const held =
+				requestWaiting(currentState) ||
+				!(
+					await this.#deliver(
+						seat,
+						actionPayload(this.#controller.tableId, state.board, action),
+						view.seat,
+					)
+				).ok;
+			if (held) {
+				if (!requestWaiting(this.#currentState()))
+					throw new Error("host rejected local bot action");
+				this.#processed.delete(key);
+			}
+			this.#rerun = true;
 			return;
 		}
+	}
+
+	#currentState(): BridgeState | undefined {
+		const table = this.#controller.view().table;
+		return table
+			? parseBridgeState(table.state, this.#controller.tableId)
+			: undefined;
 	}
 
 	async #send(
@@ -312,11 +338,23 @@ export class HostBotRunner {
 			| ReturnType<typeof resetVotePayload>,
 		hostSeat: Seat | null,
 	): Promise<void> {
-		const result =
-			seat === hostSeat
-				? await this.#controller.send(payload)
-				: await this.#controller.sendBot(seat, payload);
+		const result = await this.#deliver(seat, payload, hostSeat);
 		if (!result.ok) throw new Error("host rejected local bot action");
 		this.#rerun = true;
 	}
+
+	#deliver(
+		seat: Seat,
+		payload: JsonObject,
+		hostSeat: Seat | null,
+	): Promise<{ readonly ok: boolean }> {
+		return seat === hostSeat
+			? this.#controller.send(payload)
+			: this.#controller.sendBot(seat, payload);
+	}
+}
+
+/** True while an undo, a claim or a reset waits for answers; the host refuses calls and cards until then. */
+function requestWaiting(state: BridgeState | undefined): boolean {
+	return Boolean(state?.claim || state?.undo || state?.reset);
 }

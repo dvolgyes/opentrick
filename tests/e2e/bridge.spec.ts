@@ -333,6 +333,38 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	await expect(hand(tab.W, DUMMY).locator(`[data-card="${card}"]`)).toHaveCount(
 		0,
 	);
+
+	// West, a defender, is to play; the declarer can still ask to undo and claim, and the claim counts the trick in
+	// progress. While the claim waits, the defenders see every hand, and the declarer and dummy see only their own.
+	await expect(prompt(tab.N)).toHaveText("Waiting for West to play.");
+	await expect(tab.N.getByTestId("undo-request")).toBeEnabled();
+	await controls.getByRole("button", { name: "Claim all" }).click();
+	await expect(claims).toContainText(
+		"Confirm that you claim all 13 remaining tricks.",
+	);
+	await tab.N.getByTestId("claim-confirm").click();
+	const decision = tab.E.getByRole("dialog", { name: "Claim tricks" });
+	await expect(decision).toBeVisible();
+	for (const viewer of SEATS)
+		for (const owner of SEATS)
+			await expect(
+				hand(tab[viewer], owner),
+				`${viewer} sees ${owner}`,
+			).toHaveAttribute(
+				"data-visible",
+				String(
+					viewer === "E" || viewer === "W" || owner === "N" || owner === DUMMY,
+				),
+			);
+	// East rejects the claim, and each player again sees only the hands of the play.
+	await decision.getByTestId("approval-reject").click();
+	await expect(decision).toBeHidden();
+	for (const viewer of SEATS)
+		await expect(hand(tab[viewer], viewer === "W" ? "E" : "W")).toHaveAttribute(
+			"data-visible",
+			"false",
+		);
+	await expectAt(1, 6);
 });
 
 test("4: play to the end of trick 4; the host and declarer reload mid-play", async () => {
