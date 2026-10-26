@@ -9,6 +9,9 @@ import {
 } from "../game/bridge";
 import type { TableController } from "../p2p/table";
 import { type BotModel, type RoomConfig, SEATS, type Seat } from "../protocol";
+import type { LocalBidder } from "./bid-network";
+import { bidPosition } from "./bid-position";
+import { type BidChooser, BrowserBidder } from "./browser-bidder";
 import {
 	type BotMessage,
 	BotRequestAbortedError,
@@ -31,6 +34,7 @@ import {
 } from "./strategy";
 
 export interface HostBotSettings {
+	readonly bidder?: LocalBidder;
 	readonly apiKey: string;
 	readonly model: BotModel;
 	readonly fallbackModel: BotModel;
@@ -60,6 +64,7 @@ export class HostBotRunner {
 	readonly #onUsageCost: (cost: number) => void;
 	readonly #onStatus: SeatBotStatus;
 	readonly #playEngine: PlayChooser;
+	readonly #bidEngine: BidChooser;
 	#requestAbort = new AbortController();
 	readonly #processed = new Set<string>();
 	#unsubscribe: (() => void) | undefined;
@@ -82,15 +87,18 @@ export class HostBotRunner {
 		onUsageCost: (cost: number) => void = () => {},
 		onStatus: SeatBotStatus = () => {},
 		playEngine: PlayChooser = new BrowserPlayEngine(),
+		bidEngine: BidChooser = new BrowserBidder(),
 	) {
 		const normalizedApiKey = normalizeHostApiKey(settings.apiKey);
-		if (!normalizedApiKey) throw new Error("OpenRouter API key is required");
+		if (!normalizedApiKey && !settings.bidder)
+			throw new Error("OpenRouter API key is required");
 		this.#controller = controller;
 		this.#settings = { ...settings, apiKey: normalizedApiKey };
 		this.#onError = onError;
 		this.#onUsageCost = onUsageCost;
 		this.#onStatus = onStatus;
 		this.#playEngine = playEngine;
+		this.#bidEngine = bidEngine;
 	}
 
 	async start(requiredSeats: readonly Seat[] = []): Promise<boolean> {
@@ -112,6 +120,7 @@ export class HostBotRunner {
 		this.#stopped = true;
 		this.#requestAbort.abort();
 		this.#playEngine.stop();
+		this.#bidEngine.stop();
 		this.#unsubscribe?.();
 	}
 
@@ -135,6 +144,7 @@ export class HostBotRunner {
 	}
 
 	updateSettings(settings: HostBotSettings): void {
+		if (settings.bidder !== this.#settings.bidder) this.#bidEngine.stop();
 		this.#settings = {
 			...settings,
 			apiKey: normalizeHostApiKey(settings.apiKey),
@@ -207,7 +217,11 @@ export class HostBotRunner {
 		const seats = this.#activeSeats(bots);
 		const state = parseBridgeState(view.table.state, this.#controller.tableId);
 		if (!state) return;
-		const systems = seatSystems(state.systems, bots);
+		const systems = seatSystems(
+			state.systems,
+			bots,
+			this.#settings.bidder ? "other" : undefined,
+		);
 		for (const seat of seats) {
 			const voteKey =
 				state.claim?.required.includes(seat) &&
@@ -255,6 +269,13 @@ export class HostBotRunner {
 						this.#requestAbort.signal,
 					);
 					decision = { type: "play", card: analysis.card };
+				} else if (this.#settings.bidder) {
+					const analysis = await this.#bidEngine.choose(
+						bidPosition(state.board, seat),
+						this.#settings.bidder,
+						this.#requestAbort.signal,
+					);
+					decision = { type: "call", call: analysis.call };
 				} else {
 					this.#templates ??= await loadBrowserPromptTemplates();
 					const strategy = new BrowserOpenRouterStrategy(

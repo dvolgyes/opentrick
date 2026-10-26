@@ -1,0 +1,78 @@
+{
+	"schemaVersion": 1,
+	"scope": "Vendored code, model data, and the bundled bridge solver; npm dependency metadata remains in package-lock.json.",
+	"components": [
+		{
+			"id": "bridge-dds",
+			"name": "bridge-dds / DDS",
+			"version": "1.4.0",
+			"kind": "bundled JavaScript and WebAssembly",
+			"authors": ["Christopher Book", "Bo Haglund", "Soren Hein"],
+			"license": "Apache-2.0",
+			"homepage": "https://github.com/bookchris/bridge-dds-js",
+			"upstream": "https://github.com/dds-bridge/dds",
+			"licenseFile": "bridge-dds-LICENSE.txt",
+			"noticeFile": "bridge-dds-NOTICE.txt",
+			"usedBy": ["src/bot/dds-solver.ts"],
+			"modifications": "Upstream bundle unchanged; OpenTrick adds a separate validated adapter."
+		},
+		{
+			"id": "brl-models",
+			"name": "BRL bidding policies (SL and RL/FSP)",
+			"revision": "fdd958ff8adcb44844d70ea2e233bed18d5a7b70",
+			"kind": "model weights",
+			"authors": ["Haruka Kita", "Sotetsu Koyamada"],
+			"copyright": "Copyright 2024 Haruka Kita and Sotetsu Koyamada",
+			"license": "Apache-2.0",
+			"homepage": "https://github.com/harukaki/brl",
+			"licenseFile": "BRL-LICENSE.txt",
+			"noticeFile": "BRL-NOTICE.txt",
+			"usedBy": [
+				"public/bot-models/brl-sl.f32",
+				"public/bot-models/brl-rl-fsp.f32"
+			],
+			"distribution": {
+				"source": "https://github.com/brannondorsey/nickel-bridge",
+				"revision": "92a81b5e81cb7aac2eabc147e82f18e0040b512e",
+				"paths": ["packages/ai/models/sl.bin", "packages/ai/models/rl-fsp.bin"],
+				"note": "Numeric model data only; no Nickel Bridge application code."
+			},
+			"modifications": "Haiku tensors repacked as little-endian float32 arrays; numerical values unchanged."
+		},
+		{
+			"id": "pgx-bridge-encoding",
+			"name": "PGX bridge observation encoding",
+			"version": "1.4.0",
+			"kind": "adapted source",
+			"authors": ["The Pgx Authors"],
+			"copyright": "Copyright 2023 The Pgx Authors. All Rights Reserved.",
+			"license": "Apache-2.0",
+			"homepage": "https://github.com/sotetsuk/pgx",
+			"source": "https://github.com/sotetsuk/pgx/blob/v1.4.0/pgx/bridge_bidding.py",
+			"licenseFile": "PGX-LICENSE.txt",
+			"noticeFile": "BRL-NOTICE.txt",
+			"usedBy": ["src/bot/bid-position.ts"],
+			"modifications": "Ported Python/JAX observation layout to TypeScript with OpenTrick types and validation."
+		},
+		{
+			"id": "trystero-adapters",
+			"name": "Trystero signaling adapters",
+			"version": "0.26.0",
+			"kind": "adapted source",
+			"authors": ["Dan Motzenbecker"],
+			"copyright": "Copyright (c) 2021 Dan Motzenbecker",
+			"license": "MIT",
+			"homepage": "https://github.com/dmotz/trystero",
+			"licenseFile": "Trystero-LICENSE.txt",
+			"noticeFile": "Trystero-NOTICE.txt",
+			"usedBy": [
+				"src/p2p/torrent.ts",
+				"src/p2p/nostr.ts",
+				"src/p2p/mqtt.ts",
+				"src/p2p/relay-socket.ts",
+				"src/p2p/topic-mapping.ts"
+			],
+			"modifications": "Combined signaling strategy, configured endpoints, reconnection, and message validation; details in each file's header."
+		}
+	]
+}

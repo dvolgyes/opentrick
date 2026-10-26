@@ -198,9 +198,10 @@ export const BOT_SYSTEM: PointSystem = "hcp";
 export function seatSystems(
 	systems: Partial<Record<Seat, PointSystem>>,
 	bots: Iterable<Seat>,
+	botSystem: PointSystem = BOT_SYSTEM,
 ): Partial<Record<Seat, PointSystem>> {
 	const result = { ...systems };
-	for (const seat of bots) result[seat] = BOT_SYSTEM;
+	for (const seat of bots) result[seat] = botSystem;
 	return result;
 }
 

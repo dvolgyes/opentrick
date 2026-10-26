@@ -1,7 +1,7 @@
 # OpenTrick
 
 OpenTrick is a four-player contract bridge game that runs in the browser.
-It supports human players, optional voice and video calls, and AI players powered by OpenRouter.
+It supports human players, optional voice and video calls, and bots with local or OpenRouter bidding.
 The game handles bidding, trick play, duplicate scoring, undo requests, and claims with opponent approval.
 
 **Play:** [dvolgyes.github.io/opentrick](https://dvolgyes.github.io/opentrick/)
@@ -72,13 +72,18 @@ For a permanent bot seat, select **Bot** for that seat while creating the table.
 For a temporary substitute, the host can enable the bot for the player's seat from the table controls, then turn it off when the player returns.
 The player keeps their seat and stays in the room call while the bot handles bridge actions.
 
-Bots use the selected language model for bidding and a local bridge engine for card play.
+Bots can bid with a local neural engine or the selected OpenRouter language model.
+Choose **Bidding engine** when creating a table.
+The local WBridge5-imitation and RL/FSP policies run entirely in a browser worker, with no Python runtime or API key.
+Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
+All bots use a local bridge engine for card play.
 The card engine samples possible hidden hands, respects shown voids and auction meanings, and evaluates legal cards with the [DDS double-dummy solver](https://github.com/bookchris/bridge-dds-js) compiled to WebAssembly.
 It sees only its own hand, exposed dummy, and public play and auction history.
 The host runs the search in a background worker, so the table remains responsive.
 Card play requires no model requests and has no API cost.
 See [the engine guide](docs/card-engine.md) for its budgets, verification, and strength limits.
 
+With **OpenRouter** bidding selected, the following key and balance controls apply.
 OpenRouter is a service that provides access to AI models from many providers through one API.
 Bot bidding can cost money because AI model requests may be billed; the table displays the accumulated OpenRouter cost as you play.
 Next to the cost, the host's table shows the OpenRouter balance, which it reads again at the start of each board that bots play.
@@ -118,4 +123,5 @@ Use **Copy link** in the table if you need to share the invitation again.
 OpenTrick is all rights reserved, with free access to play the hosted game.
 The source code and original assets are not licensed for reuse or independent hosting.
 See [LICENSE](LICENSE) for the terms.
+Third-party engine components and vendored adaptations retain their own licenses, recorded in [the component inventory](public/licenses/components.json) with distributed license texts and notices.
 GitHub's terms still allow users to view and fork a public repository ([GitHub licensing documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository)).

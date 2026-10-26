@@ -105,6 +105,26 @@ export function showCreate(
 		apiKey.value = normalizeHostApiKey(apiKey.value);
 	});
 	const setup = prefill.botSetup ?? DEFAULT_BOT_SETUP;
+	const bidder = el(
+		"select",
+		{ attrs: { name: "bot-bidder", "aria-label": deps.t("Bidding engine") } },
+		el("option", { attrs: { value: "" } }, "OpenRouter"),
+		el(
+			"option",
+			{ attrs: { value: "sl" } },
+			deps.t("Local · WBridge5 imitation"),
+		),
+		el(
+			"option",
+			{ attrs: { value: "rl-fsp" } },
+			deps.t("Local · RL/FSP learned system"),
+		),
+	);
+	bidder.value = setup.bidder ?? "";
+	apiKey.disabled = Boolean(bidder.value);
+	bidder.addEventListener("change", () => {
+		apiKey.disabled = Boolean(bidder.value);
+	});
 	const modelPriority = modelPriorityControl(botModelOrder(setup), deps.t);
 	const retries = el("input", {
 		attrs: {
@@ -164,6 +184,14 @@ export function showCreate(
 			"fieldset",
 			{},
 			el("legend", {}, deps.t("Optional automated players")),
+			el("label", {}, deps.t("Bidding engine"), bidder),
+			el(
+				"p",
+				{},
+				deps.t(
+					"Local bidders need no API key. Their learned bidding can differ from the standard guide.",
+				),
+			),
 			el("label", {}, `${deps.t("OpenRouter API key")} `, apiKey),
 			el(
 				"p",
@@ -206,6 +234,7 @@ export function showCreate(
 		const botSeats = SEATS.filter((item) => botChoices[item].checked);
 		const botSetup = parseBotSetup({
 			seats: botSeats,
+			...(bidder.value ? { bidder: bidder.value } : {}),
 			model: modelPriority.value()[0],
 			fallbackModel: modelPriority.value()[1],
 			modelOrder: modelPriority.value(),
@@ -225,6 +254,7 @@ export function showCreate(
 			botSeats.length > 0
 				? {
 						apiKey: normalizedApiKey,
+						...(botSetup.bidder ? { bidder: botSetup.bidder } : {}),
 						model: botSetup.model,
 						fallbackModel: botSetup.fallbackModel,
 						modelOrder: botModelOrder(botSetup),
@@ -232,14 +262,14 @@ export function showCreate(
 						retryDelayMs: botSetup.retryDelayMs,
 					}
 				: undefined;
-		if (hostBotSettings && !hostBotSettings.apiKey) {
+		if (hostBotSettings && !hostBotSettings.apiKey && !hostBotSettings.bidder) {
 			showErrors([
 				deps.t("Enter an OpenRouter API key to run bot seats in this browser."),
 			]);
 			return;
 		}
 		// A key without bot seats is kept for the table's bot controls later.
-		if (normalizedApiKey !== "") {
+		if (normalizedApiKey !== "" && !botSetup.bidder) {
 			try {
 				writeHostApiKey(deps.browser, apiKey.value);
 			} catch {
@@ -251,7 +281,7 @@ export function showCreate(
 		}
 		showErrors([]);
 		submit.disabled = true;
-		if (normalizedApiKey === "") {
+		if (normalizedApiKey === "" || botSetup.bidder) {
 			submit.textContent = deps.t("Creating…");
 			void create(config, check.seat, hostBotSettings);
 			return;

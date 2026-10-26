@@ -320,7 +320,8 @@ export function showRoom(
 			return "disabled";
 		}
 		const apiKey = readHostApiKey(deps.browser);
-		if (!apiKey.trim()) return "unavailable";
+		if (!apiKey.trim() && !controller.view().table?.config.botSetup?.bidder)
+			return "unavailable";
 		botSettings ??= settingsFor(
 			controller.view().table?.config,
 			apiKey,
@@ -561,7 +562,11 @@ export function showRoom(
 	let sentSystem: PointSystem | undefined;
 
 	function manageBotSeat(targetSeat: Seat, enabled: boolean): void {
-		if (enabled && !readHostApiKey(deps.browser)) {
+		if (
+			enabled &&
+			!readHostApiKey(deps.browser) &&
+			!controller.view().table?.config.botSetup?.bidder
+		) {
 			pendingBotSeat = targetSeat;
 			botStatus.textContent = deps.t(
 				"Set an OpenRouter API key before switching a seat to a bot.",
@@ -641,7 +646,14 @@ export function showRoom(
 	 */
 	function readBotBalanceAtBoardStart(boardNumber: number): void {
 		const apiKey = readHostApiKey(deps.browser);
-		if (balanceReading || balanceBoard === boardNumber || !apiKey) return;
+		if (
+			botSettings?.bidder ||
+			controller.view().table?.config.botSetup?.bidder ||
+			balanceReading ||
+			balanceBoard === boardNumber ||
+			!apiKey
+		)
+			return;
 		balanceBoard = boardNumber;
 		balanceReading = true;
 		void readOpenRouterBalance(apiKey).then((result) => {
@@ -710,7 +722,9 @@ export function showRoom(
 			? deps.t("No bot seats are active.")
 			: deps.t("Running {count} bot seat(s) with {model}.", {
 					count,
-					model: botModelLabel(botSettings?.model ?? DEFAULT_BOT_SETUP.model),
+					model: botSettings?.bidder
+						? `Local BRL · ${botSettings.bidder}`
+						: botModelLabel(botSettings?.model ?? DEFAULT_BOT_SETUP.model),
 				});
 	}
 
@@ -1286,7 +1300,7 @@ export function showRoom(
 			readHostApiKey(deps.browser),
 			modelOrderFromUrl(),
 		);
-		if (!botSettings.apiKey.trim()) {
+		if (!botSettings.apiKey.trim() && !botSettings.bidder) {
 			botStatus.textContent = deps.t(
 				"Set an OpenRouter API key to run the bots.",
 			);
@@ -1514,7 +1528,7 @@ export function showRoom(
 			!botRestorePending &&
 			activeBots.length > 0 &&
 			view.hosting &&
-			readHostApiKey(deps.browser)
+			(readHostApiKey(deps.browser) || view.table?.config.botSetup?.bidder)
 		)
 			void startHostBots();
 		const terminal = view.seat !== seat || TERMINAL.has(view.status);
@@ -1720,7 +1734,9 @@ export function showRoom(
 		table.setBotControls(
 			view.hosting && !botRestorePending,
 			activeBots,
-			displayBotModel,
+			config.botSetup?.bidder
+				? `Local BRL · ${config.botSetup.bidder}`
+				: displayBotModel,
 		);
 		if (!view.hosting) delegatedBotSeats.clear();
 		const rosterHost = JSON.stringify(view.roster?.auth ?? null);

@@ -161,11 +161,14 @@ export function bookmarkQuery(
 		);
 		if (botSetup.modelOrder !== undefined)
 			pairs.push(["bot_models", botSetup.modelOrder.join(",")]);
+		if (botSetup.bidder !== undefined)
+			pairs.push(["bot_bidder", botSetup.bidder]);
 	}
 	return new URLSearchParams(pairs).toString();
 }
 
 const BOT_SETUP_PARAMS = [
+	"bot_bidder",
 	"bot_seats",
 	"bot_model",
 	"bot_fallback",
@@ -204,6 +207,7 @@ function parseBotSetupParams(params: URLSearchParams): BotSetup | undefined {
 	if (params.has("bot_models") && modelOrder === undefined) return undefined;
 	return parseBotSetup({
 		seats: seatList,
+		...(params.has("bot_bidder") ? { bidder: params.get("bot_bidder") } : {}),
 		model: params.get("bot_model") ?? DEFAULT_BOT_SETUP.model,
 		fallbackModel:
 			params.get("bot_fallback") ?? DEFAULT_BOT_SETUP.fallbackModel,

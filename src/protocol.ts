@@ -80,6 +80,8 @@ export function botModelLabel(model: BotModel): string {
 }
 
 export interface BotSetup {
+	/** Absent for the existing OpenRouter bidder. */
+	readonly bidder?: "sl" | "rl-fsp";
 	/** The bot seats when the room is first created. */
 	readonly seats: readonly Seat[];
 	readonly model: BotModel;
@@ -166,6 +168,12 @@ export function parseRoomConfig(value: unknown): RoomConfig | undefined {
 
 export function parseBotSetup(value: unknown): BotSetup | undefined {
 	if (!isObject(value)) return undefined;
+	if (
+		value.bidder !== undefined &&
+		value.bidder !== "sl" &&
+		value.bidder !== "rl-fsp"
+	)
+		return undefined;
 	const { seats, model, fallbackModel, modelOrder, retries, retryDelayMs } =
 		value;
 	const parsedModelOrder =
@@ -208,6 +216,7 @@ export function parseBotSetup(value: unknown): BotSetup | undefined {
 		return undefined;
 	return {
 		seats: [...seats],
+		...(value.bidder === undefined ? {} : { bidder: value.bidder }),
 		model: parsedModel,
 		fallbackModel: parsedFallbackModel,
 		...(parsedModelOrder === undefined

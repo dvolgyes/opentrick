@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { RTCPeerConnection as WeriftPeerConnection } from "werift";
 import { legalActions } from "../bridge/engine";
 import {
@@ -27,6 +28,8 @@ import {
 } from "../protocol";
 import { type SeatLocks, SeatMemory } from "../session";
 import { parseRoomSetup } from "../ui/bookmark";
+import { BidNetwork } from "./bid-network";
+import { bidPosition } from "./bid-position";
 import { DdsSolver } from "./dds-solver";
 import { OpenRouterStrategy } from "./node-openrouter";
 import { NODE_PROMPT_TEMPLATES } from "./node-prompts";
@@ -130,7 +133,11 @@ async function run(options: Options): Promise<void> {
 				: `no seat named ${options.username} was found in the room link`,
 		);
 	}
-	const apiKey = options.random ? undefined : process.env.OPENROUTER_API_KEY;
+	const localBidder = options.model
+		? undefined
+		: setup?.config.botSetup?.bidder;
+	const apiKey =
+		options.random || localBidder ? undefined : process.env.OPENROUTER_API_KEY;
 	const configuredModels = setup?.config.botSetup
 		? botModelOrder(setup.config.botSetup)
 		: botModelOrder(DEFAULT_BOT_SETUP);
@@ -150,7 +157,8 @@ async function run(options: Options): Promise<void> {
 			})
 		: undefined;
 	let cardSolver: DdsSolver | undefined;
-	if (!options.random && strategy === undefined)
+	let biddingNetwork: BidNetwork | undefined;
+	if (!options.random && !localBidder && strategy === undefined)
 		throw new Error("OPENROUTER_API_KEY is missing from .env");
 	const meshResult = readMeshConfig(process.env);
 	if (!meshResult.ok) throw new Error(meshResult.error);
@@ -431,11 +439,12 @@ async function run(options: Options): Promise<void> {
 		strategyKey = actionKey;
 		const kind = actions[0]?.type;
 		if (!kind) return;
-		// This bot bids with HCP like the host's bots, but the roster lists only the host's bots.
-		const systems = seatSystems(state.systems, [
-			seat,
-			...(view.roster?.bots ?? []),
-		]);
+		// The roster lists host-managed bots only; include this bot's bidding system explicitly.
+		const systems = seatSystems(
+			state.systems,
+			[seat, ...(view.roster?.bots ?? [])],
+			localBidder ? "other" : undefined,
+		);
 		const prompt =
 			kind === "call"
 				? renderBidPrompt(
@@ -447,30 +456,52 @@ async function run(options: Options): Promise<void> {
 					)
 				: renderPlayPrompt(state.board, seat, actions, NODE_PROMPT_TEMPLATES);
 		try {
+			if (
+				!options.random &&
+				kind === "call" &&
+				localBidder &&
+				!biddingNetwork
+			) {
+				const data = await readFile(
+					new URL(
+						`../../public/bot-models/brl-${localBidder}.f32`,
+						import.meta.url,
+					),
+				);
+				biddingNetwork = new BidNetwork(
+					data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+					localBidder,
+				);
+			}
 			if (!options.random && kind === "play")
 				cardSolver ??= await DdsSolver.create();
 			const decision = options.random
 				? randomDecision(actions)
-				: kind === "play" && cardSolver
+				: kind === "call" && biddingNetwork
 					? {
-							type: "play" as const,
-							card: analyzePlay(
-								playPosition(state.board, seat, systems),
-								cardSolver,
-							).card,
+							type: "call" as const,
+							call: biddingNetwork.choose(bidPosition(state.board, seat)).call,
 						}
-					: await strategy?.choose(
-							kind,
-							prompt,
-							actions,
-							decisionState(
-								state.board,
-								seat,
+					: kind === "play" && cardSolver
+						? {
+								type: "play" as const,
+								card: analyzePlay(
+									playPosition(state.board, seat, systems),
+									cardSolver,
+								).card,
+							}
+						: await strategy?.choose(
 								kind,
-								NODE_PROMPT_TEMPLATES,
-								systems,
-							),
-						);
+								prompt,
+								actions,
+								decisionState(
+									state.board,
+									seat,
+									kind,
+									NODE_PROMPT_TEMPLATES,
+									systems,
+								),
+							);
 			if (!decision) throw new Error("bot strategy is not configured");
 			await sendAction(state, seat, actionKey, decision, controller.view());
 		} catch (error) {

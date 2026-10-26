@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Reproducible, downloaded BRL weight assets (see scripts/prepare-bidder.ts).
+public/bot-models/*.f32
+
 # Build output
 dist/
 dist-ssr/

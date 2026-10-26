@@ -1,6 +1,6 @@
 # Local card engine
 
-Host-managed bots and the Node bot use the selected OpenRouter models for bidding.
+Host-managed bots and the Node bot can use OpenRouter or the [local bidding engine](bidding-engine.md) for bidding.
 They use a local single-dummy card engine for play.
 The browser runs this engine in a Web Worker.
 There is no new server and no change to the room protocol or stored boards.

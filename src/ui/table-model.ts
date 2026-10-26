@@ -863,9 +863,10 @@ function auctionView(
 	systems: BridgeState["systems"],
 	bots: ReadonlySet<Seat> | undefined,
 	t: Translate,
+	botSystem: PointSystem = "hcp",
 ): AuctionView {
 	const before = SEATS.indexOf(dealer);
-	const bySeat = seatSystems(systems, bots ?? []);
+	const bySeat = seatSystems(systems, bots ?? [], botSystem);
 	// A call of a system with rules gets its meaning, or "not in the guide"; a call of the other systems gets none.
 	const meaning = (index: number): string | undefined => {
 		const system = bySeat[seatAfter(dealer, index)];
@@ -1337,7 +1338,14 @@ export function tableView(input: TableViewInput): TableView {
 		details: t("Dealer: {dealer}", { dealer: t(SEAT_NAMES[view.dealer]) }),
 		vulnerability: vulnerabilityLines(view.vulnerability, t),
 		seats,
-		auction: auctionView(view.dealer, view.calls, state.systems, input.bots, t),
+		auction: auctionView(
+			view.dealer,
+			view.calls,
+			state.systems,
+			input.bots,
+			t,
+			config.botSetup?.bidder ? "other" : "hcp",
+		),
 		contract: contract
 			? t("{contract} by {declarer}", {
 					contract: contractText(contract),

@@ -2,6 +2,38 @@ type TranslationRow = readonly [string, string, string, string, string, string];
 
 const rows: readonly TranslationRow[] = [
 	[
+		"Bidding engine",
+		"Motor de subasta",
+		"Motor de leilão",
+		"Moteur d'enchères",
+		"Motore di dichiarazione",
+		"Biedprogramma",
+	],
+	[
+		"Local · WBridge5 imitation",
+		"Local · imitación de WBridge5",
+		"Local · imitação do WBridge5",
+		"Local · imitation de WBridge5",
+		"Locale · imitazione di WBridge5",
+		"Lokaal · WBridge5-imitatie",
+	],
+	[
+		"Local · RL/FSP learned system",
+		"Local · sistema aprendido RL/FSP",
+		"Local · sistema aprendido RL/FSP",
+		"Local · système appris RL/FSP",
+		"Locale · sistema appreso RL/FSP",
+		"Lokaal · aangeleerd RL/FSP-systeem",
+	],
+	[
+		"Local bidders need no API key. Their learned bidding can differ from the standard guide.",
+		"Los motores locales no necesitan una clave API. Su subasta aprendida puede diferir de la guía estándar.",
+		"Os motores locais não precisam de chave API. O leilão aprendido pode diferir do guia padrão.",
+		"Les moteurs locaux ne nécessitent pas de clé API. Leurs enchères apprises peuvent différer du guide standard.",
+		"I motori locali non richiedono una chiave API. La dichiarazione appresa può differire dalla guida standard.",
+		"Lokale biedprogramma's hebben geen API-sleutel nodig. Hun aangeleerde biedingen kunnen afwijken van de standaardgids.",
+	],
+	[
 		"Camera preview",
 		"Vista previa de cámara",
 		"Pré-visualização da câmara",
