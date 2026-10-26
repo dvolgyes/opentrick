@@ -74,7 +74,8 @@ The player keeps their seat and stays in the room call while the bot handles bri
 
 Bots bid with a local neural engine and play cards with a local DDS engine.
 Choose **Bidding engine** when creating a table.
-WBridge5 imitation is the default because it agreed with more of the tested SAYC positions than RL/FSP.
+BRL's RL/FSP learned system is the default.
+WBridge5 imitation remains available.
 Both policies run entirely in a browser worker, with no Python runtime or API key.
 Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
 All bots use a local bridge engine for card play.

@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("new tables default to local SL with no remote model controls", async ({
+test("new tables default to local RL/FSP with no remote model controls", async ({
 	page,
 }) => {
 	await page.goto("/");
-	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("sl");
+	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("rl-fsp");
 	await expect(page.locator('input[name="openrouter-key"]')).toHaveCount(0);
 	await expect(page.locator(".model-priority-list")).toHaveCount(0);
 	await expect(page.locator('input[name="bot-retries"]')).toHaveCount(0);

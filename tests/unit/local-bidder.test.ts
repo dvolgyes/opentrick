@@ -62,6 +62,11 @@ describe("local bidder integration", () => {
 		runner.stop();
 		expect(bidder.stop).toHaveBeenCalledOnce();
 	});
+	it("uses RL/FSP when a room setup or link omits the bidding policy", () => {
+		const setup = { seats: ["N"], bidder: "rl-fsp" };
+		expect(parseBotSetup({ seats: ["N"] })).toEqual(setup);
+		expect(parseBookmark("?bot_seats=N").botSetup).toEqual(setup);
+	});
 	it("preserves the selected policy in reusable room links", () => {
 		for (const bidder of ["sl", "rl-fsp"] as const) {
 			const setup = { ...DEFAULT_BOT_SETUP, bidder };

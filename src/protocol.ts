@@ -36,7 +36,7 @@ export interface BotSetup {
 
 export const DEFAULT_BOT_SETUP: BotSetup = {
 	seats: [],
-	bidder: "sl",
+	bidder: "rl-fsp",
 };
 
 export interface RoomConfig {

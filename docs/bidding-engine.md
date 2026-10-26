@@ -3,7 +3,8 @@
 Select a **Local** option in **Bidding engine** when creating a table.
 The host bids with TypeScript in a Web Worker and plays cards with the existing DDS engine.
 The game needs no Python runtime, model API, or additional server.
-WBridge5 imitation (`sl`) is the default, including links that omit a bidding policy.
+BRL's RL/FSP learned system (`rl-fsp`) is the default, including links that omit a bidding policy.
+WBridge5 imitation (`sl`) remains available.
 The retired remote model integration, credentials, billing controls, and SDK are removed.
 
 ## Options researched
@@ -103,9 +104,10 @@ npm run demo:bot -- --local-rl
 ```
 
 The demo opens a visible Chrome window at `http://localhost:5178`, temporarily enables West's autoplay to verify a full board, then returns West to human control.
+Without a policy flag, the demo uses the default RL/FSP policy.
 The other three bots stay active.
 Close the browser to stop the demo server.
-The standalone Node bot recognizes the local policy in a room link and otherwise uses SL.
+The standalone Node bot recognizes the local policy in a room link and otherwise uses RL/FSP.
 It uses the same own-hand projection and numerical inference as the browser.
 
 Python is only an optional numerical reference generator for developers.

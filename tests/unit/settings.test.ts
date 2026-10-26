@@ -140,7 +140,7 @@ describe("local bot migration", () => {
 		};
 		expect(discardLegacyBotSettings(storage)).toBe(false);
 	});
-	it("defaults to SL and discards retired credentials without changing display choices", () => {
+	it("defaults to RL/FSP and discards retired credentials without changing display choices", () => {
 		const storage = memoryStorage();
 		storage.setItem("opentrick.openrouter-api-key", "obsolete-test-key");
 		storage.setItem("opentrick.openrouter-spend-usd", "2");
@@ -158,6 +158,6 @@ describe("local bot migration", () => {
 			scheme: "dark",
 			playTimeMs: 250,
 		});
-		expect(DEFAULT_BOT_SETUP).toEqual({ seats: [], bidder: "sl" });
+		expect(DEFAULT_BOT_SETUP).toEqual({ seats: [], bidder: "rl-fsp" });
 	});
 });

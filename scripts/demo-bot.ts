@@ -1,7 +1,12 @@
 import { spawn } from "node:child_process";
 import { chromium } from "@playwright/test";
+import { DEFAULT_BOT_SETUP } from "../src/protocol";
 
-const policy = process.argv.includes("--local-rl") ? "rl-fsp" : "sl";
+const policy = process.argv.includes("--local-rl")
+	? "rl-fsp"
+	: process.argv.includes("--local")
+		? "sl"
+		: DEFAULT_BOT_SETUP.bidder;
 await import("./prepare-bidder");
 const port = "5178";
 const origin = `http://localhost:${port}`;
