@@ -342,6 +342,10 @@ describe("played card styles", () => {
 				expect(played.getBoundingClientRect().height).toBeGreaterThanOrEqual(
 					hand.getBoundingClientRect().height - 0.5,
 				);
+				expect(
+					played.getBoundingClientRect().width /
+						played.getBoundingClientRect().height,
+				).toBeCloseTo(5 / 7, 2);
 				const center = played.querySelector<HTMLElement>(".played-center-suit");
 				if (!center) throw new Error("missing central suit");
 				const suit = center.getBoundingClientRect();
@@ -390,6 +394,15 @@ describe("played card styles", () => {
 			];
 			expect(cards).toHaveLength(4);
 			expect(markers).toHaveLength(4);
+			for (const [index, card] of cards.entries()) {
+				for (const other of cards.slice(index + 1))
+					expect(
+						card.right <= other.left + 0.5 ||
+							card.left >= other.right - 0.5 ||
+							card.bottom <= other.top + 0.5 ||
+							card.top >= other.bottom - 0.5,
+					).toBe(true);
+			}
 			for (const marker of markers) {
 				const range = document.createRange();
 				range.selectNodeContents(marker);
@@ -463,7 +476,7 @@ describe("played card styles", () => {
 							text.left >= trick.right ||
 							text.bottom <= trick.top ||
 							text.top >= trick.bottom,
-						`${position} ${marker.textContent}`,
+						`${position} ${marker.textContent}: ${JSON.stringify({ text: text.toJSON(), trick: trick.toJSON(), bounds: bounds.toJSON(), row: row.getBoundingClientRect().toJSON(), card: marker.closest(".card")?.getBoundingClientRect().toJSON(), width: getComputedStyle(row).getPropertyValue("--card-w") })}`,
 					).toBe(true);
 					expect(text.left, marker.textContent ?? "").toBeGreaterThanOrEqual(
 						bounds.left - 0.5,

@@ -1085,18 +1085,32 @@ main:has(> .room) {
 	}
 
 	.mobile-board-center .trick {
-		--card-h: 3.1rem;
-		--card-w: 2.1rem;
 		--rank-size: 0.95rem;
+		--card-h: max(3.1rem, calc(var(--rank-size) * var(--suit-font-scale) * 3.5 + 0.16rem + 2px));
+		--card-w: calc(var(--card-h) * 5 / 7);
+		grid-template-columns: repeat(3, var(--card-w));
+		grid-template-rows: var(--card-h) 0 var(--card-h);
 	}
 
 	.bridge-table .mobile-board-center .played {
-		min-width: calc(1.3em + 0.2rem + 4px);
-		min-height: calc(2.2em + 0.1rem + 4px);
+		min-width: 0;
+		min-height: 0;
 	}
 
-	.bridge-table:is([data-played-card-style="corners-upright"], [data-played-card-style="corners-oriented"]) .mobile-board-center .played {
-		min-height: calc(3.5em + 0.16rem + 2px);
+	.mobile-auction-board {
+		--side-marker-width: calc(0.7rem * var(--suit-font-scale) * 1.3 + 0.2rem + 4px);
+		grid-template-columns: minmax(var(--side-marker-width), 1fr) max-content minmax(var(--side-marker-width), 1fr);
+	}
+
+	:is(.mobile-board-left, .mobile-board-right) .hand-stack {
+		--card-w: max(1.6rem, var(--side-marker-width));
+		width: 100%;
+		min-width: 0;
+	}
+
+	:is(.mobile-board-left, .mobile-board-right) .hand-stack .trump-label {
+		max-width: 100%;
+		overflow-wrap: anywhere;
 	}
 }
 
