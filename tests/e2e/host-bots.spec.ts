@@ -1,10 +1,45 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
 
-import { Player } from "./player";
-import { CONNECT_MS, createRoom, pick } from "./room";
+import { NetworkSwitch } from "./network";
+import { buildRelayUrls, Player } from "./player";
+import {
+	CONNECT_MS,
+	createRoom,
+	expectAllConnected,
+	hostRows,
+	makeCall,
+	pick,
+} from "./room";
 
 test.describe.configure({ mode: "serial" });
+
+test("a solo host reloads and plays with three local bots while the relays are offline", async ({
+	page,
+	context,
+}) => {
+	const network = await NetworkSwitch.install(context, buildRelayUrls());
+	await mockBotBidding(page, () => "P");
+	await page.goto("/");
+	await createRoom(page, ["N", "E", "S"]);
+	const table = page.getByTestId("table");
+	await expect(table).toHaveAttribute("data-at", "3");
+	await expect(hostRows(page)).toHaveAttribute("data-seat", "W");
+	await network.block();
+	await page.reload();
+	await expect(hostRows(page)).toHaveAttribute("data-seat", "W", {
+		timeout: 5_000,
+	});
+	await expect(table).toHaveAttribute("data-at", "3");
+	await expect(page.getByTestId("waiting")).toBeHidden();
+	await expectAllConnected(page, true);
+	await makeCall(page, "P");
+	await expect(table).toHaveAttribute("data-phase", "complete");
+	// The next board also needs all four seats, and the bots must still run without the relays.
+	await expect(table).toHaveAttribute("data-board", "2");
+	await expect(table).toHaveAttribute("data-at", "2");
+	await expect(page.getByTestId("waiting")).toBeHidden();
+});
 
 test("host bots play two consecutive boards from auction through the final trick", async ({
 	page,

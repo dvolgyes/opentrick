@@ -1017,6 +1017,57 @@ describe("resume and create (rules 10–11)", () => {
 		expect(page.state.resumePending).toBe(false);
 	});
 
+	it("resumes a solo host offline, but hosts only after its new incarnation is stored", () => {
+		const page = new Page(
+			{ ...facts(HOLDER_N, seating("N", { inc: 1 })), solo: true },
+			{ online: false },
+		);
+		const effects = page.run(TICK_MS);
+		expect(ofType(effects, "store")).toEqual([
+			{ type: "store", auth: RESUMED },
+		]);
+		expect(ofType(effects, "host")).toEqual([]);
+		expect(page.mode).toBe("claiming");
+		const stored = page.step({
+			type: "stored",
+			now: page.now,
+			auth: RESUMED,
+			ok: true,
+		});
+		expect(ofType(stored, "host")).toEqual([{ type: "host", auth: RESUMED }]);
+	});
+
+	it.each([
+		{ bound: false },
+		{ persistent: false },
+		{ writable: false },
+		{ inc: MAX_TERM },
+	])("does not bypass host eligibility for a solo table: %j", (overrides) => {
+		const page = new Page(
+			{
+				...facts(HOLDER_N, seating("N", { inc: 1, ...overrides })),
+				solo: true,
+			},
+			{ online: false },
+		);
+		expect(ofType(page.run(TICK_MS), "store")).toEqual([]);
+		expect(page.mode).toBe("idle");
+	});
+
+	it("does not resume a solo host over a better known authority", () => {
+		const page = new Page(
+			{ ...facts(HOLDER_N, seating("N", { inc: 1 })), solo: true },
+			{ online: false },
+		);
+		const effects = page.hear(
+			"pE",
+			followerBeat(HOLDER_E, "E", { report: hearsay(AUTH_2) }),
+		);
+		expect(ofType(effects, "store")).toEqual([]);
+		expect(page.mode).toBe("idle");
+		expect(page.state.resumePending).toBe(false);
+	});
+
 	it("does not resume after a freeze before RESUME_ONLINE_MS more online time", () => {
 		const page = host();
 		page.step({ type: "network", now: 0, online: true });

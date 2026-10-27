@@ -1,4 +1,4 @@
-import { botSeatClaims } from "../bot/seats";
+import { botSeatClaims, botSeatHolder } from "../bot/seats";
 import { type BuildInfo, isBuildDate, newerBuildDate } from "../build";
 import type { CallRoomSnapshot } from "../call/mesh";
 import type { CallTransport } from "../call/signaling";
@@ -340,6 +340,8 @@ export class TableController {
 	#publicAddress = false;
 	#unreachableSince: number | null = null;
 	#lastCleanup = 0;
+	/** Expected owners of host-local bot seats; compared with the saved table, never the setup URL. */
+	#botHolders: ReadonlyMap<Seat, string> = new Map();
 	#undone: Entry[] = [];
 	#failures: CommandFailure[] = [];
 	#seatError: SeatCode | null = null;
@@ -421,6 +423,14 @@ export class TableController {
 	async start(): Promise<void> {
 		if (this.#started) throw new Error("the table controller already started");
 		this.#started = true;
+		this.#botHolders = new Map(
+			await Promise.all(
+				SEATS.map(
+					async (seat) =>
+						[seat, await botSeatHolder(this.#tableId, seat)] as const,
+				),
+			),
+		);
 		const { storage, locks, memory, clock } = this.#deps;
 		const wall = clock.wall();
 		this.#lastCleanup = wall;
@@ -951,6 +961,12 @@ export class TableController {
 		return {
 			holder,
 			...shared,
+			solo: SEATS.every(
+				(seat) =>
+					seat === log.seat ||
+					table?.seats.find((other) => other.seat === seat)?.holder ===
+						this.#botHolders.get(seat),
+			),
 			seed:
 				candidate !== null &&
 				candidate.log.seat === log.seat &&

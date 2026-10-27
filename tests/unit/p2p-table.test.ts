@@ -3,13 +3,22 @@ import { chatModule, chatPayload } from "../../src/game/chat";
 import { newCommandId } from "../../src/ids";
 import { randomNonce } from "../../src/p2p/checks";
 import { deriveHolder, makeTag } from "../../src/p2p/keys";
-import { BEAT_MS, SEED_WAIT_MS, TICK_MS } from "../../src/p2p/limits";
+import {
+	BEAT_MS,
+	RESUME_ONLINE_MS,
+	SEED_WAIT_MS,
+	TICK_MS,
+} from "../../src/p2p/limits";
 import { LINK_VERSION } from "../../src/p2p/link";
 import { creationCommit, LocalLog } from "../../src/p2p/log";
 import type { MeshHandlers } from "../../src/p2p/mesh";
-import { TableController, type TableMesh } from "../../src/p2p/table";
+import {
+	createTable,
+	TableController,
+	type TableMesh,
+} from "../../src/p2p/table";
 import type { CtlMessage, Roster } from "../../src/p2p/wire";
-import { SEATS, type Seat } from "../../src/protocol";
+import { type RoomConfig, SEATS, type Seat } from "../../src/protocol";
 import type { HoldOptions, SeatLocks } from "../../src/session";
 import { settle, syncDigest, TestStorage, VirtualClock } from "./fake-mesh";
 import { CONFIG, DIAGNOSTICS, TABLE } from "./p2p-fixtures";
@@ -64,6 +73,9 @@ class Rig {
 	handlers: MeshHandlers | null = null;
 	/** The peers that the mesh has when the page starts. */
 	peers: string[] = [];
+	online = true;
+	creator = true;
+	config: RoomConfig = CONFIG;
 	/** Every control message that the page sent, with its receiver. */
 	readonly sentTo: {
 		readonly to: string | null;
@@ -96,7 +108,7 @@ class Rig {
 			self: "self0000000000000000",
 			peers: () => this.peers,
 			connection: () => undefined,
-			online: () => true,
+			online: () => this.online,
 			diagnostics: () => DIAGNOSTICS,
 			ctl: (peer, message) => {
 				this.sentCtl.push(message);
@@ -135,9 +147,9 @@ class Rig {
 			},
 			newId: newCommandId,
 			nonce: randomNonce,
-			creator: true,
+			creator: this.creator,
 			preferredSeat: seat,
-			bootstrap: { config: CONFIG, host },
+			bootstrap: { config: this.config, host },
 		});
 		this.controller = controller;
 		await controller.start();
@@ -199,6 +211,91 @@ describe("table controller beats", () => {
 		const beats = rig.sentCtl.filter((message) => message.k === "beat");
 		expect(beats.length).toBeGreaterThan(0);
 		for (const beat of beats) expect(beat).toMatchObject({ pref: "S" });
+	});
+});
+
+describe("offline host recovery", () => {
+	async function save(bots: readonly Seat[]): Promise<void> {
+		rig.config = { ...CONFIG, botSetup: { seats: bots, bidder: "sl" } };
+		const holder = await deriveHolder(TABLE, CLIENT);
+		expect(
+			await createTable({
+				storage: rig.storage,
+				identity: { tableId: TABLE, client: CLIENT, holder },
+				seat: "N",
+				config: rig.config,
+				module: chatModule,
+				newId: newCommandId,
+				clock: rig.clock,
+				memory: { remember: () => {} },
+				hostBots: true,
+			}),
+		).toMatchObject({ ok: true });
+		rig.creator = false;
+		rig.online = false;
+	}
+
+	it("resumes its saved host and accepts actions without a relay when all other seats belong to local bots", async () => {
+		await save(["E", "S", "W"]);
+		const table = await rig.start("N");
+		await rig.advance(TICK_MS);
+		expect(table.view()).toMatchObject({
+			hosting: true,
+			hostSeat: "N",
+			ready: true,
+			allConnected: true,
+		});
+		expect(await table.send(chatPayload(TABLE, "offline"))).toMatchObject({
+			ok: true,
+		});
+		await settle();
+		expect(table.entries().at(-1)).toMatchObject({
+			kind: "cmd",
+			payload: chatPayload(TABLE, "offline"),
+		});
+	});
+
+	it("does not treat a multiplayer table as solo merely because its link names three bots", async () => {
+		await save(["E", "S"]);
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["E", "S", "W"], bidder: "sl" },
+		};
+		const table = await rig.start("N");
+		await rig.advance(RESUME_ONLINE_MS + TICK_MS);
+		expect(table.view().hosting).toBe(false);
+		rig.online = true;
+		await rig.advance(RESUME_ONLINE_MS + TICK_MS);
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("keeps multiplayer recovery when a bot plays a seat owned by another browser", async () => {
+		await save(["E", "S", "W"]);
+		const original = await rig.start("N");
+		await rig.advance(TICK_MS);
+		expect(await original.setBotSeat("W", false)).toBe(true);
+		const peer = "west0000000000000000";
+		rig.peers = [peer];
+		rig.handlers?.join(peer);
+		rig.handlers?.ctl(peer, {
+			k: "hello",
+			b: LINK_VERSION,
+			client: "clientW-0123456789abcd",
+			features: [],
+		});
+		await settle();
+		rig.handlers?.ctl(peer, { k: "claim-seat", req: 1, seat: "W" });
+		await settle();
+		expect(rig.sentTo).toContainEqual({
+			to: peer,
+			message: expect.objectContaining({ k: "seat-result", ok: true }),
+		});
+		expect(await original.setBotSeat("W", true)).toBe(true);
+		original.stop();
+		rig.peers = [];
+		const reopened = await rig.start("N");
+		await rig.advance(RESUME_ONLINE_MS + TICK_MS);
+		expect(reopened.view().hosting).toBe(false);
 	});
 });
 

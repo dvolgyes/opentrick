@@ -56,6 +56,8 @@ export interface SelfFacts {
 	readonly pref?: Seat;
 	/** The page may seed the table that its seat does not have yet (rule 14). */
 	readonly seed?: boolean;
+	/** Every other seat in the stored table belongs to a host-local bot, so resuming needs no network. */
+	readonly solo?: boolean;
 }
 
 interface Heard {
@@ -424,7 +426,11 @@ function considerClaim(
 		return startClaim(done, newAuthority(done), over.source, effects);
 	}
 	if (state.resumePending) {
-		if (!state.online || state.onlineMs < RESUME_ONLINE_MS) return state;
+		if (
+			state.self.solo !== true &&
+			(!state.online || state.onlineMs < RESUME_ONLINE_MS)
+		)
+			return state;
 		const done = { ...state, resumePending: false };
 		const resume = resumeAuthority(done);
 		return resume ? startClaim(done, resume, null, effects) : done;

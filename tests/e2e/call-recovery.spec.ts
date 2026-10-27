@@ -119,17 +119,17 @@ async function reopen(seat: SeatKey): Promise<void> {
 	});
 }
 
-/** Each seat in `seats` names the same host. Returns its seat. */
-async function commonHost(seats: readonly SeatKey[]): Promise<string> {
-	const [first, ...others] = seats;
-	if (!first) throw new Error("no seat");
-	await expect(hostRows(tab[first])).toHaveCount(1, { timeout: CONNECT_MS });
-	const host = (await hostRows(tab[first]).getAttribute("data-seat")) ?? "";
-	for (const other of others)
-		await expect(hostRows(tab[other])).toHaveAttribute("data-seat", host, {
+/** Each seat in `seats` eventually names the expected host. */
+async function expectHost(
+	seats: readonly SeatKey[],
+	host: SeatKey,
+): Promise<void> {
+	for (const seat of seats) {
+		await expect(hostRows(tab[seat])).toHaveCount(1, { timeout: CONNECT_MS });
+		await expect(hostRows(tab[seat])).toHaveAttribute("data-seat", host, {
 			timeout: CONNECT_MS,
 		});
-	return host;
+	}
 }
 
 test.beforeAll(async ({ browser, baseURL }) => {
@@ -172,7 +172,7 @@ test("1: four browsers join the call; North turns its microphone off, and East s
 	await toggle(tab.E, "Hear others: receive audio").click();
 	await expectConnected(SEATS);
 	await expectStatuses(SEATS);
-	expect(await commonHost(SEATS)).toBe("W");
+	await expectHost(SEATS, "W");
 });
 
 test("2: a player whose tab crashes comes back in the call with its switches, and opens no microphone", async () => {
@@ -215,12 +215,14 @@ test("3: the host's tab crashes; the call goes on, another player becomes the ho
 	const become = tab.E.getByTestId("become-host");
 	await expect(become).toBeEnabled({ timeout: BUTTON_LATEST_MS });
 	await become.click();
-	expect(await commonHost(others)).toBe("E");
+	// East's claim triggers a handover to North: h=W orders the seats W, N, E, S (ADR 0007).
+	await expectHost(others, "N");
 	await expectConnected(others);
 	await expectStatuses(others);
 
 	await reopen("W");
-	expect(await commonHost(SEATS)).toBe("E");
+	// West has the highest priority and takes the host role back after syncing.
+	await expectHost(SEATS, "W");
 	await expectConnected(SEATS);
 	await expectStatuses(SEATS);
 	await expectAudioArrives(tab.W);

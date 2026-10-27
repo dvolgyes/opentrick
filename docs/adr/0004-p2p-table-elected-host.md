@@ -139,6 +139,8 @@ Host election (a pure reducer, `src/p2p/election.ts`):
 - Tiebreak: the higher term wins; for equal terms, the lower tag (holder and seat) wins; for equal tags, the higher incarnation wins.
   The entries of the losing host that the winner does not have are undone, and their senders see "Undone after a host change".
 - The creator hosts term 1 at once, and a host that reloads resumes its own term without a witness.
+  A saved host whose other three seats belong to host-local bots resumes without waiting for a relay or peer connection.
+  This uses the saved seat owners, not bot names or setup-link options; the seat lock, storage checks, and authority checks still apply.
 - Between pages whose links name the same host seat, ADR 0007 adds rules before the tiebreak: the order of priority from that seat, the handover to a page with a higher priority (rule 12), the merge of two tables by entries and then priority (rule 13), and the page that seeds (rule 14).
 
 Presence (owner requirement R4):
