@@ -136,6 +136,8 @@ The page language can be one of English, German, Spanish, French, Hungarian, Ita
 The bidding system sets the point count and the bidding guide.
 The colour theme can be Selenized, Normal, Solarized, or Gruvbox, each with a light and a dark palette.
 The appearance can also follow your system's light or dark preference.
+Suit and rank font sizes are S (75%), M (the original size), L (125%), XL (150%), XXL (175%), and XXXL (200%).
+The size applies to cards, bids, contracts, and notation in hints and guides.
 Turn display, card points, the mobile view for portrait windows, and bot play time are also set here.
 Settings are kept in this browser and are never sent to the table.
 

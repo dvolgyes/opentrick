@@ -40,6 +40,8 @@ const locale = savedLocale ?? detectedLocale;
 const t = translator(locale);
 document.documentElement.lang = locale;
 watchTheme(document.documentElement, window, () => readSettings(browser));
+document.documentElement.dataset.suitFontSize =
+	readSettings(browser).suitFontSize;
 
 const root = document.getElementById("app");
 if (!root) throw new Error("index.html must contain #app");

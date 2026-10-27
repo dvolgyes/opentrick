@@ -28,6 +28,9 @@ export type Theme = (typeof THEMES)[number];
 export const SCHEMES = ["auto", "light", "dark"] as const;
 export type Scheme = (typeof SCHEMES)[number];
 
+export const SUIT_FONT_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
+export type SuitFontSize = (typeof SUIT_FONT_SIZES)[number];
+
 /**
  * Display and bot choices of one player, kept in this browser's local storage and never sent to the table.
  * The language keeps its own storage name.
@@ -41,6 +44,8 @@ export interface Settings extends BotTiming {
 	readonly cardPoints: boolean;
 	readonly theme: Theme;
 	readonly scheme: Scheme;
+	/** Size of suit and rank notation relative to its original size (M). */
+	readonly suitFontSize: SuitFontSize;
 	readonly bidTurnFrame: boolean;
 	readonly playTurnFrame: boolean;
 	readonly bidTurnText: boolean;
@@ -64,6 +69,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	cardPoints: true,
 	theme: "selenized",
 	scheme: "auto",
+	suitFontSize: "M",
 	bidTurnFrame: true,
 	playTurnFrame: true,
 	bidTurnText: true,
@@ -146,6 +152,11 @@ export function readSettings(storage: MaybeStorage): Settings {
 		// The earlier "theme" name held a flat theme, such as "dark"; it is not read, so the choice starts again.
 		theme: readChoice(read("theme-style"), THEMES, DEFAULT_SETTINGS.theme),
 		scheme: readChoice(read("scheme"), SCHEMES, DEFAULT_SETTINGS.scheme),
+		suitFontSize: readChoice(
+			read("suit-font-size"),
+			SUIT_FONT_SIZES,
+			DEFAULT_SETTINGS.suitFontSize,
+		),
 		...flags,
 	};
 }
@@ -157,6 +168,8 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	const timing = botTiming(settings);
 	if (!LOCAL_BIDDERS.includes(settings.bidder))
 		throw new Error("unknown bidding engine");
+	if (!SUIT_FONT_SIZES.includes(settings.suitFontSize))
+		throw new Error("unknown suit and rank font size");
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
 	for (const [field, name] of Object.entries(TIMING_KEYS))
@@ -165,6 +178,7 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");
 	storage.setItem(`${PREFIX}theme-style`, settings.theme);
 	storage.setItem(`${PREFIX}scheme`, settings.scheme);
+	storage.setItem(`${PREFIX}suit-font-size`, settings.suitFontSize);
 	storage.removeItem(`${PREFIX}theme`);
 	for (const [field, name] of Object.entries(FLAGS))
 		storage.setItem(

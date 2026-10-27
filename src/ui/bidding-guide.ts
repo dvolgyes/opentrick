@@ -1,6 +1,7 @@
 import { SUIT_SYMBOLS } from "../bridge/cards";
 import type { PointSystem } from "../bridge/hand-points";
 import type { Locale, Translate } from "../i18n";
+import { cardNotation } from "./card-notation";
 import { button, el } from "./dom";
 
 /**
@@ -113,8 +114,10 @@ export function renderGuide(
 	t: Translate,
 ): HTMLElement[] {
 	const content = (parts: readonly GuidePart[]): (Node | string)[] =>
-		parts.map((part) =>
-			part.kind === "text" ? part.text : bidElement(part.call, t),
+		parts.flatMap((part) =>
+			part.kind === "text"
+				? cardNotation(part.text)
+				: [bidElement(part.call, t)],
 		);
 	const nodes: HTMLElement[] = [];
 	let list: HTMLUListElement | undefined;

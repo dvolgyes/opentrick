@@ -7,6 +7,7 @@ import type { Call } from "../../src/bridge/rules";
 import type { Form, Layout } from "../../src/call/device-class";
 import { type Locale, type Translate, translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
+import { parseGuide, renderGuide } from "../../src/ui/bidding-guide";
 import { pageReport } from "../../src/ui/page-report";
 import { DEFAULT_SETTINGS } from "../../src/ui/settings";
 import {
@@ -300,6 +301,138 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"scales card ranks, suits, bids and contracts exactly once (%s)",
+		(layout) => {
+			renderView(sideHandView(), layout, "corners-upright");
+			const selectors = [
+				".face .rank",
+				".face .pip",
+				".rank-corner",
+				".played-center-suit",
+				".auction .bid-mark",
+				".contract-head .bid",
+				".contract-head .bid .strain",
+				".tricks-counts .bid",
+				".tricks-counts .bid .strain",
+			];
+			const nodes = selectors.map((selector) => {
+				const node = document.body.querySelector<HTMLElement>(selector);
+				if (!node) throw new Error(`missing ${selector}`);
+				return node;
+			});
+			const sizes = () =>
+				nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize));
+			document.documentElement.dataset.suitFontSize = "M";
+			const medium = sizes();
+			try {
+				for (const [size, scale] of [
+					["S", 0.75],
+					["M", 1],
+					["L", 1.25],
+					["XL", 1.5],
+					["XXL", 1.75],
+					["XXXL", 2],
+				] as const) {
+					document.documentElement.dataset.suitFontSize = size;
+					for (const [index, actual] of sizes().entries())
+						expect(actual, `${selectors[index]} at ${size}`).toBeCloseTo(
+							(medium[index] ?? 0) * scale,
+							3,
+						);
+					for (const marker of document.querySelectorAll<HTMLElement>(
+						".face .rank, .face .pip",
+					)) {
+						if (!marker.checkVisibility()) continue;
+						const face = marker.parentElement;
+						if (!face) throw new Error("no card face");
+						const box = marker.getBoundingClientRect();
+						const outer = face.getBoundingClientRect();
+						expect(box.right, `${size}: marker right edge`).toBeLessThanOrEqual(
+							outer.right + 1,
+						);
+						expect(
+							box.bottom,
+							`${size}: marker bottom edge`,
+						).toBeLessThanOrEqual(outer.bottom + 1);
+					}
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
+
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"scales bid selection buttons without scaling ordinary controls (%s)",
+		(layout) => {
+			const { root } = renderView(
+				{
+					...playView(),
+					phase: "auction",
+					bids: [
+						{ call: "1C", text: "1♣" },
+						{ call: "P", text: "Pass" },
+					],
+				},
+				layout,
+			);
+			const nodes = [
+				".bid-levels .level",
+				".bid-calls .strain",
+				".bid-calls .pass",
+			].map((selector) => {
+				const node = root.querySelector<HTMLElement>(selector);
+				if (!node) throw new Error(`missing ${selector}`);
+				return node;
+			});
+			const sizes = () =>
+				nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize));
+			const medium = sizes();
+			try {
+				document.documentElement.dataset.suitFontSize = "XXXL";
+				expect(sizes()).toEqual(
+					medium.map((size, index) => size * (index === 2 ? 1 : 2)),
+				);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
+
+	it("scales notation in guides, keeps prose unchanged and treats HTML as text", () => {
+		const text = "Play A♠ or ♣10 after [3NT]; NT, ♥ and <img src=x> stay text.";
+		const nodes = renderGuide(parseGuide(text), translator("en"));
+		document.body.append(...nodes);
+		const paragraph = document.querySelector("p");
+		if (!paragraph) throw new Error("missing guide paragraph");
+		const markers = [
+			...paragraph.querySelectorAll<HTMLElement>(".card-notation, .guide-bid"),
+		];
+		expect(markers.map((node) => node.textContent)).toEqual([
+			"A♠",
+			"♣10",
+			"3NT",
+			"NT",
+			"♥",
+		]);
+		expect(paragraph.textContent).toBe(text.replace("[3NT]", "3NT"));
+		expect(paragraph.querySelector("img")).toBeNull();
+		const base = Number.parseFloat(getComputedStyle(paragraph).fontSize);
+		try {
+			document.documentElement.dataset.suitFontSize = "XXXL";
+			for (const marker of markers)
+				expect(Number.parseFloat(getComputedStyle(marker).fontSize)).toBe(
+					base * 2,
+				);
+			expect(Number.parseFloat(getComputedStyle(paragraph).fontSize)).toBe(
+				base,
+			);
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+		}
+	});
+
 	it("uses the seat-oriented four-corner design by default", () => {
 		const { root } = renderView(playView(), "desktop");
 		expect(root.dataset.playedCardStyle).toBe("corners-oriented");

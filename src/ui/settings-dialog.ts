@@ -10,6 +10,7 @@ import {
 	SCHEMES,
 	type Scheme,
 	type Settings,
+	SUIT_FONT_SIZES,
 	THEMES,
 	type Theme,
 	writeSettings,
@@ -80,6 +81,7 @@ export function settingsDialog(
 		legend: string,
 		choices: readonly T[],
 		labels: Readonly<Record<T, string>>,
+		translateLabels = true,
 	): { element: HTMLFieldSetElement; value(): T; set(value: T): void } => {
 		const inputs = choices.map((choice) =>
 			el("input", { attrs: { type: "radio", name, value: choice } }),
@@ -90,7 +92,12 @@ export function settingsDialog(
 				{},
 				el("legend", {}, t(legend)),
 				...inputs.map((input, index) =>
-					el("label", {}, input, ` ${t(labels[choices[index] as T])}`),
+					el(
+						"label",
+						{},
+						input,
+						` ${translateLabels ? t(labels[choices[index] as T]) : labels[choices[index] as T]}`,
+					),
 				),
 			),
 			value: () =>
@@ -157,6 +164,13 @@ export function settingsDialog(
 		SCHEME_LABELS,
 	);
 	const theme = radios("settings-theme", "Theme", THEMES, THEME_LABELS);
+	const suitFontSize = radios(
+		"settings-suit-font-size",
+		"Suit and rank font size",
+		SUIT_FONT_SIZES,
+		{ S: "S", M: "M", L: "L", XL: "XL", XXL: "XXL", XXXL: "XXXL" },
+		false,
+	);
 	const flags = Object.fromEntries(
 		Object.keys(FLAG_LABELS).map((field) => [
 			field,
@@ -200,6 +214,7 @@ export function settingsDialog(
 		),
 		scheme.element,
 		theme.element,
+		suitFontSize.element,
 		el(
 			"fieldset",
 			{},
@@ -279,6 +294,7 @@ export function settingsDialog(
 			cardPoints: cardPoints.checked,
 			theme: theme.value(),
 			scheme: scheme.value(),
+			suitFontSize: suitFontSize.value(),
 			bidTurnFrame: flags.bidTurnFrame.checked,
 			playTurnFrame: flags.playTurnFrame.checked,
 			bidTurnText: flags.bidTurnText.checked,
@@ -302,6 +318,8 @@ export function settingsDialog(
 			element.ownerDocument.defaultView?.matchMedia(DARK_QUERY).matches ??
 				false,
 		);
+		element.ownerDocument.documentElement.dataset.suitFontSize =
+			settings.suitFontSize;
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
@@ -326,6 +344,7 @@ export function settingsDialog(
 			cardPoints.checked = settings.cardPoints;
 			scheme.set(settings.scheme);
 			theme.set(settings.theme);
+			suitFontSize.set(settings.suitFontSize);
 			for (const field of Object.keys(
 				FLAG_LABELS,
 			) as (keyof typeof FLAG_LABELS)[])

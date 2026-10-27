@@ -4,6 +4,7 @@ import { discardLegacyBotSettings } from "../../src/ui/legacy-bot-settings";
 import {
 	DEFAULT_SETTINGS,
 	readSettings,
+	SUIT_FONT_SIZES,
 	writeSettings,
 } from "../../src/ui/settings";
 
@@ -41,6 +42,7 @@ describe("player settings", () => {
 			cardPoints: true,
 			theme: "selenized",
 			scheme: "auto",
+			suitFontSize: "M",
 			bidTurnFrame: true,
 			playTurnFrame: true,
 			bidTurnText: true,
@@ -66,6 +68,7 @@ describe("player settings", () => {
 			cardPoints: false,
 			theme: "solarized",
 			scheme: "dark",
+			suitFontSize: "XL",
 			bidTurnFrame: false,
 			playTurnFrame: true,
 			bidTurnText: false,
@@ -88,9 +91,20 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.points", "goren");
 		storage.setItem("opentrick.settings.theme-style", "<b>solarized</b>");
 		storage.setItem("opentrick.settings.scheme", "auto ");
+		storage.setItem("opentrick.settings.suit-font-size", "200%; color: red");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
 		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
 	});
+
+	it.each(["S", "M", "L", "XL", "XXL", "XXXL"] as const)(
+		"persists suit and rank font size %s",
+		(suitFontSize) => {
+			const storage = memoryStorage();
+			expect(SUIT_FONT_SIZES).toContain(suitFontSize);
+			writeSettings(storage, { ...DEFAULT_SETTINGS, suitFontSize });
+			expect(readSettings(storage).suitFontSize).toBe(suitFontSize);
+		},
+	);
 
 	it("ignores the earlier flat theme, and removes it on the next save", () => {
 		const storage = memoryStorage();

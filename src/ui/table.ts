@@ -21,6 +21,7 @@ import {
 	remoteCallStatus,
 } from "./call-model";
 import { type CallHandlers, callControls, retryButton } from "./call-panel";
+import { cardNotation } from "./card-notation";
 import { button, el, placeChildren } from "./dom";
 import { icon } from "./icons";
 import { play } from "./remote-audio";
@@ -1786,6 +1787,7 @@ export function tableSection(
 			},
 			{ className: "confirm", attrs: { "data-call": chosen ?? "" } },
 		);
+		confirm.replaceChildren(...cardNotation(confirm.textContent ?? ""));
 		const hint = conventionHint(shownPointSystem, view, chosen, t);
 		if (hint !== undefined)
 			confirm.append(
@@ -1797,7 +1799,7 @@ export function tableSection(
 							? "convention-hint convention-lines"
 							: "convention-hint",
 					},
-					hint,
+					...cardNotation(hint),
 				),
 			);
 		confirm.disabled = chosen === undefined || !legal.has(chosen);
@@ -1855,7 +1857,9 @@ export function tableSection(
 						className: "bid-explanation",
 						attrs: { "data-testid": "transfer-explanation" },
 					},
-					`${callText(transfer.call)}: ${meaningText(transfer.meaning, shownPointSystem, t)}`,
+					...cardNotation(
+						`${callText(transfer.call)}: ${meaningText(transfer.meaning, shownPointSystem, t)}`,
+					),
 				)
 			: undefined;
 		bidBox.replaceChildren(
@@ -2112,7 +2116,7 @@ export function tableSection(
 							`${t("Contract")} `,
 							el(
 								"strong",
-								{},
+								{ className: "bid" },
 								String(contract.level),
 								el(
 									"span",
@@ -2179,7 +2183,7 @@ export function tableSection(
 		const shown = el(
 			"span",
 			{ className: "call-meaning", attrs: { popover: "auto" } },
-			meaning,
+			...cardNotation(meaning),
 		);
 		const call = el(
 			"button",
@@ -2448,7 +2452,7 @@ export function tableSection(
 		return el(
 			"li",
 			{ attrs: { "data-state": line.state } },
-			el("span", { className: "text" }, line.text),
+			el("span", { className: "text" }, ...cardNotation(line.text)),
 			el("span", { className: "status" }, status),
 		);
 	}
@@ -2604,9 +2608,11 @@ export function tableSection(
 		renderCallStates();
 		renderAuction(view);
 		showTrick(view);
-		contract.textContent = [view.contract, view.tricks]
-			.filter((part) => part !== "")
-			.join(" · ");
+		contract.replaceChildren(
+			...cardNotation(
+				[view.contract, view.tricks].filter((part) => part !== "").join(" · "),
+			),
+		);
 		// The sidebar header and tricks panel show the contract and the tricks once play starts.
 		contract.hidden = contract.textContent === "" || view.header !== undefined;
 		const names = Object.fromEntries(

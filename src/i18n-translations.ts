@@ -1636,6 +1636,14 @@ const rows: readonly TranslationRow[] = [
 	["Dark", "Oscuro", "Escuro", "Sombre", "Scuro", "Donker"],
 	["Appearance", "Apariencia", "Aparência", "Apparence", "Aspetto", "Weergave"],
 	["Theme", "Tema", "Tema", "Thème", "Tema", "Thema"],
+	[
+		"Suit and rank font size",
+		"Tamaño de los símbolos de palo y valor",
+		"Tamanho dos símbolos de naipe e valor",
+		"Taille des symboles de couleur et de valeur",
+		"Dimensione dei simboli di seme e valore",
+		"Lettergrootte van kaartsymbolen en waarden",
+	],
 	["Normal", "Normal", "Normal", "Normal", "Normale", "Normaal"],
 	[
 		"Solarized",

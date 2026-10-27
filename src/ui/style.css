@@ -1,5 +1,23 @@
 @import "./themes.css";
 
+/* One scale for suit and rank notation; M preserves each display's original font size. */
+:root {
+	--suit-font-scale: 1;
+}
+:root[data-suit-font-size="S"] { --suit-font-scale: 0.75; }
+:root[data-suit-font-size="L"] { --suit-font-scale: 1.25; }
+:root[data-suit-font-size="XL"] { --suit-font-scale: 1.5; }
+:root[data-suit-font-size="XXL"] { --suit-font-scale: 1.75; }
+:root[data-suit-font-size="XXXL"] { --suit-font-scale: 2; }
+
+.bid,
+.auction .bid-mark,
+.card-notation,
+.guide-bid:not(.call-pass, .call-double, .call-redouble),
+.suit-mark {
+	font-size: calc(1em * var(--suit-font-scale));
+}
+
 .seat-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1003,7 +1021,7 @@ main:has(> .room) {
 	border-radius: 0.35rem;
 	background: var(--card-bg);
 	box-shadow: -1px 0 2px var(--card-shadow);
-	font-size: var(--rank-size);
+	font-size: calc(var(--rank-size) * var(--suit-font-scale));
 	font-weight: 700;
 	line-height: 1.1;
 	letter-spacing: -0.04em;
@@ -1020,6 +1038,36 @@ main:has(> .room) {
 .hand-row .face {
 	width: var(--card-w);
 	height: var(--card-h);
+}
+
+/* Larger markers need a larger visible strip and face. Scroll long hands instead of covering their ranks. */
+:root:is([data-suit-font-size="L"], [data-suit-font-size="XL"], [data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) {
+	.hand:not(.backs) {
+		min-width: 0;
+		max-width: 100%;
+		overflow: auto;
+	}
+
+	.hand .card {
+		--marker-w: calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.4rem + 2px);
+		--marker-h: calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.2rem + 2px);
+		min-width: var(--marker-w);
+		min-height: var(--marker-h);
+	}
+
+	.card .face {
+		min-width: var(--marker-w);
+		min-height: var(--marker-h);
+	}
+
+	.played {
+		min-width: calc(1.3em + 0.4rem + 2px);
+		min-height: calc(2em + 0.2rem + 2px);
+	}
+
+	.bridge-table:is([data-played-card-style="corners-upright"], [data-played-card-style="corners-oriented"]) .played {
+		min-height: calc(3.5em + 0.3rem + 2px);
+	}
 }
 
 /* Side hands: the rank sits above the suit symbol on one vertical axis, in a card as narrow as the marker. */
@@ -1719,7 +1767,7 @@ dialog {
 
 /* The bid mark stays clear while the history uses a compact, scrollable viewport. */
 .bridge-table .auction .bid-mark {
-	font-size: 1.25em;
+	font-size: calc(1.25em * var(--suit-font-scale));
 	line-height: 1;
 }
 
@@ -1781,7 +1829,7 @@ dialog {
 	background: var(--card-bg);
 	color: var(--card-fg);
 	font-weight: 700;
-	font-size: var(--rank-size);
+	font-size: calc(var(--rank-size) * var(--suit-font-scale));
 	line-height: 1;
 }
 
@@ -1804,7 +1852,7 @@ dialog {
 
 .rank-corner {
 	position: absolute;
-	font-size: var(--rank-size);
+	font-size: calc(var(--rank-size) * var(--suit-font-scale));
 }
 
 .played[data-suit="H"] .rank-corner,
@@ -1868,12 +1916,12 @@ dialog {
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	font-size: calc(var(--rank-size) * 1.5);
+	font-size: calc(var(--rank-size) * 1.5 * var(--suit-font-scale));
 	transform: translate(-50%, -50%);
 }
 
 .bridge-table[data-played-card-style="classic-large"] .played {
-	font-size: calc(var(--rank-size) * 1.5);
+	font-size: calc(var(--rank-size) * 1.5 * var(--suit-font-scale));
 }
 
 .bridge-table[data-played-card-style="corners-upright"] .played-legacy,
@@ -2360,7 +2408,12 @@ button.call-join[data-in-call="true"] {
 }
 
 .bid-box button {
-	font-size: 1.15rem;
+	font-size: calc(1.15rem * var(--bid-symbol-scale, 1));
+}
+
+.bid-levels .level,
+.bid-calls .strain {
+	--bid-symbol-scale: var(--suit-font-scale);
 }
 
 /*
@@ -2822,7 +2875,7 @@ button.call-join[data-in-call="true"] {
 }
 
 .tricks-counts .bid {
-	font-size: 1.5rem;
+	font-size: calc(1.5rem * var(--suit-font-scale));
 	font-weight: 700;
 	white-space: nowrap;
 }
@@ -3614,7 +3667,7 @@ main:has(> .room[data-form="compact"]) {
 
 /* The contract is large; a tight line keeps it in the row of the counts, below their labels. */
 .mobile-tricks .tricks-counts .bid {
-	font-size: 2.4rem;
+	font-size: calc(2.4rem * var(--suit-font-scale));
 	line-height: 1;
 }
 
@@ -3695,7 +3748,7 @@ main:has(> .room[data-form="compact"]) {
 .mobile-auction-controls .bid-actions button {
 	min-height: 2.15rem;
 	padding: 0.15rem;
-	font-size: 0.9rem;
+	font-size: calc(0.9rem * var(--bid-symbol-scale, 1));
 }
 
 .mobile-auction-controls .bid-actions .confirm,
@@ -4172,7 +4225,7 @@ main[data-screen="table"][data-layout="sideways"] .bid-row > .bid-box {
 	button {
 	min-height: 1.9rem;
 	padding: 0.1rem;
-	font-size: 0.85rem;
+	font-size: calc(0.85rem * var(--bid-symbol-scale, 1));
 }
 
 .room[data-layout="sideways"] .table-sidebar {

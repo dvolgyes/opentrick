@@ -105,6 +105,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.portrait-mobile",
 		"opentrick.settings.relay-checks",
 		"opentrick.settings.scheme",
+		"opentrick.settings.suit-font-size",
 		"opentrick.settings.theme-style",
 		"opentrick.settings.voicebox",
 	]);
@@ -143,6 +144,40 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByRole("button", { name: "Cancel" }).click();
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
+});
+
+test("suit and rank size offers all six labels, applies on Save and survives reload", async ({
+	page,
+}) => {
+	await openTable(page);
+	let dialog = await openSettings(page);
+	const group = dialog.getByRole("group", {
+		name: "Suit and rank font size",
+		exact: true,
+	});
+	await expect(group.getByRole("radio")).toHaveCount(6);
+	for (const label of ["S", "M", "L", "XL", "XXL", "XXXL"])
+		await expect(group.getByLabel(label, { exact: true })).toBeVisible();
+	await expect(group.getByLabel("M", { exact: true })).toBeChecked();
+	await group.getByLabel("XXXL", { exact: true }).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-suit-font-size",
+		"XXXL",
+	);
+	await page.reload();
+	dialog = await openSettings(page);
+	await expect(dialog.getByLabel("XXXL", { exact: true })).toBeChecked();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-suit-font-size",
+		"XXXL",
+	);
+	await dialog.getByLabel("S", { exact: true }).check();
+	await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-suit-font-size",
+		"XXXL",
+	);
 });
 
 test("a new language in Settings reloads the page in that language", async ({
