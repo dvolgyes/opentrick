@@ -9,8 +9,6 @@ import {
 
 /** 16 bytes of 0xfb, encoded by Node's own base64url encoder. */
 const KEY = "-_v7-_v7-_v7-_v7-_v7-w";
-/** The key of an earlier link: 32 bytes of 0xfb. */
-const LEGACY_KEY = "-_v7-_v7-_v7-_v7-_v7-_v7-_v7-_v7-_v7-_v7-_s";
 
 describe("newTableKey", () => {
 	it("encodes 16 random bytes as 22 base64url characters", () => {
@@ -33,13 +31,10 @@ describe("newTableKey", () => {
 });
 
 describe("isTableKey", () => {
-	it("accepts the key of an earlier link as well", () => {
-		expect(isTableKey(LEGACY_KEY)).toBe(true);
-	});
-
 	it.each([
 		["21 characters", KEY.slice(0, 21)],
 		["23 characters", `${KEY}A`],
+		["the 32-byte key of an earlier link", `${KEY}${KEY.slice(0, 21)}`],
 		["standard base64", `${KEY.slice(0, 21)}+`],
 		["padding", `${KEY.slice(0, 21)}=`],
 		// The last character carries 2 unused bits; "x" sets one, so the text is not the canonical encoding.
@@ -63,14 +58,7 @@ describe("parseRoute", () => {
 		expect(parseRoute(new URL(link).hash)).toEqual({ kind: "table", key: KEY });
 	});
 
-	it("reads the link of an earlier version, with its 32-byte key", () => {
-		expect(parseRoute(`#v=p2p-v1&k=${LEGACY_KEY}`)).toEqual({
-			kind: "table",
-			key: LEGACY_KEY,
-		});
-	});
-
-	it("does not read the version of a link, which the wire protocol checks", () => {
+	it("ignores a version parameter: the wire protocol checks the version", () => {
 		expect(parseRoute(`#v=p2p-v9&k=${KEY}`)).toEqual({
 			kind: "table",
 			key: KEY,
@@ -79,6 +67,7 @@ describe("parseRoute", () => {
 
 	it.each([
 		["no key", "#v=p2p-v1"],
+		["an earlier link key", `#v=p2p-v1&k=${KEY}${KEY.slice(0, 21)}`],
 		["a short key", "#k=abc"],
 		["a non-canonical key", `#k=${KEY.slice(0, 21)}x`],
 		["two keys", `#k=${KEY}&k=${KEY}`],

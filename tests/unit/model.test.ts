@@ -306,7 +306,7 @@ describe("lobbyScreen", () => {
 		});
 	});
 
-	it("with selected_player=none, takes the only free seat of the host's lobby, but not the seat that this browser held", () => {
+	it("with the none flag, takes the only free seat of the host's lobby, but not the seat that this browser held", () => {
 		const only = (seat: Seat, mine: boolean): Lobby => ({
 			...LOBBY,
 			seats: LOBBY.seats.map((row) => ({
@@ -356,7 +356,7 @@ describe("lobbyScreen", () => {
 		}
 	});
 
-	it("when no host is found, offers the setup's seats, and takes the last one only without selected_player=none", () => {
+	it("when no host is found, offers the setup's seats, and takes the last one only without the none flag", () => {
 		const setup = { setup: { config: CONFIG }, lobby: null };
 		const waited = lobby({
 			...setup,

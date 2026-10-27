@@ -36,7 +36,7 @@ A discovery spike gave this evidence (its code is no longer kept):
 
 Link and identity:
 
-- The link is `<page>#k=<K>`, where K is 16 bytes from the platform CSPRNG in base64url (amended 2026-10-27; earlier links had `v=p2p-v1` and 32 bytes, and still parse).
+- The link is `<page>#k=<K>`, where K is 16 bytes from the platform CSPRNG in base64url (amended 2026-10-27; links of earlier versions, with `v=p2p-v1` and a 32-byte key, are no longer valid).
   The version is no longer in the link: peers check `LINK_VERSION` in the `hello` message.
   The fragment never reaches the web server, and the code never logs K.
 - The table identifier is the first 22 characters of base64url(SHA-256("opentrick|table|" + K)).

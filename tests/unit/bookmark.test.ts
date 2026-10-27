@@ -44,15 +44,6 @@ describe("parseBookmark", () => {
 		});
 	});
 
-	it("still reads the names and the host seat of earlier links", () => {
-		expect(
-			parseBookmark("?north=ann&east=zsdh&south=bo&west=dvolgyes&host=west"),
-		).toEqual({
-			names: { N: "ann", E: "zsdh", S: "bo", W: "dvolgyes" },
-			host: "W",
-		});
-	});
-
 	it("trims names and drops empty ones", () => {
 		expect(parseBookmark("?e=%20%20zsdh%20&w=%20")).toEqual({
 			names: { E: "zsdh" },
@@ -94,16 +85,6 @@ describe("bookmarkQuery", () => {
 		expect(params.get("pl")).toBe("W");
 		expect(params.get("n")).toBe("North");
 		expect(params.has("autoplay_seats")).toBe(false);
-	});
-
-	it("replaces the bot seats of an earlier link with the letter form", () => {
-		const query = botSeatsQuery("?north=N&bot_seats=N&bot_bidder=rl-fsp", [
-			"S",
-		]);
-		const params = new URLSearchParams(query);
-		expect(params.get("b")).toBe("S");
-		expect(params.has("bot_seats")).toBe(false);
-		expect(params.get("bot_bidder")).toBe("rl-fsp");
 	});
 
 	it("keeps the bot seats whose players asked for autoplay, among the bot seats only", () => {
@@ -150,14 +131,6 @@ describe("bookmarkQuery", () => {
 		});
 	});
 
-	it("reads the bot setup of an earlier link", () => {
-		expect(
-			parseRoomSetup(
-				"?north=a&east=b&south=c&west=d&host=west&bot_seats=E,S,W&bot_bidder=sl",
-			)?.config.botSetup,
-		).toEqual({ seats: ["E", "S", "W"], bidder: "sl" });
-	});
-
 	it("round-trips through parseBookmark, including characters that need escaping", () => {
 		const names = { N: "a&b=c", E: "x y", S: "é+ü", W: "#1" };
 		expect(parseBookmark(`?${bookmarkQuery(names, "S")}`)).toEqual({
@@ -168,10 +141,10 @@ describe("bookmarkQuery", () => {
 });
 
 describe("the pl parameter", () => {
-	it("reads a seat, and reads no seat as null", () => {
+	it("reads a seat, and reads no pl as undefined, which reopens the remembered seat", () => {
 		expect(parseSelectedPlayer("pl=W")).toBe("W");
-		expect(parseSelectedPlayer("")).toBeNull();
-		expect(parseSelectedPlayer("n=a&h=W")).toBeNull();
+		expect(parseSelectedPlayer("")).toBeUndefined();
+		expect(parseSelectedPlayer("n=a&h=W")).toBeUndefined();
 	});
 
 	it("reads anything else as no choice", () => {
@@ -179,18 +152,10 @@ describe("the pl parameter", () => {
 			expect(parseSelectedPlayer(search), search).toBeUndefined();
 	});
 
-	it("still reads the selected_player of earlier links, where none means no seat", () => {
-		expect(parseSelectedPlayer("selected_player=W")).toBe("W");
-		expect(parseSelectedPlayer("selected_player=none")).toBeNull();
-		expect(parseSelectedPlayer("selected_player=none&selected_player=W")).toBe(
-			undefined,
-		);
-	});
-
 	it("is left out of a shared query, which keeps every other value", () => {
 		expect(sharedQuery("n=a&h=W&pl=W&b=N")).toBe("n=a&h=W&b=N");
 		expect(sharedQuery("n=a")).toBe("n=a");
-		expect(parseSelectedPlayer(sharedQuery("pl=E"))).toBeNull();
+		expect(parseSelectedPlayer(sharedQuery("pl=E"))).toBeUndefined();
 	});
 
 	it("is replaced by the seat of the page", () => {

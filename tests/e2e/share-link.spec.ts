@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { Player } from "./player";
-import { CONNECT_MS, createRoom } from "./room";
+import { CONNECT_MS, createRoom, expectSeat } from "./room";
 
 /*
- * The copied table link has no pl, so no browser takes a seat by itself from it: not even the
- * creator's browser, which remembers its seat for each room (src/session.ts). Taking a seat names it in the URL.
+ * The copied table link has no pl. A browser that opens it reopens the seat that it remembers for the room, so the
+ * creator's browser comes back to its own seat. Taking a seat names it in the URL.
  */
 
-test("Copy link copies a link without a seat, and the creator's browser opens that link without taking its seat", async ({
+test("Copy link copies a link without a seat, and the creator's browser reopens its own seat from it", async ({
 	browser,
 	baseURL,
 }) => {
@@ -29,14 +29,7 @@ test("Copy link copies a link without a seat, and the creator's browser opens th
 
 		await page.close();
 		const again = await host.page(link);
-		await expect(again.getByTestId("pick-W")).toBeVisible({
-			timeout: CONNECT_MS,
-		});
-		await expect(again).toHaveTitle("Bridge");
-		expect(new URL(again.url()).searchParams.has("pl")).toBe(false);
-		await again.getByTestId("pick-W").click();
-		await expect(again).toHaveTitle(/player4 \(W\)$/);
-		expect(new URL(again.url()).searchParams.get("pl")).toBe("W");
+		await expectSeat(again, "W", { timeout: CONNECT_MS });
 		expect(host.errors).toEqual([]);
 	} finally {
 		await host.close();

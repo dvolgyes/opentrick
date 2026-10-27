@@ -15,11 +15,11 @@ test("an unnamed creator from a reusable setup link names themselves before seed
 	if (!baseURL) throw new Error("baseURL missing");
 	const url = new URL(baseURL);
 	url.search = new URLSearchParams({
-		north: "player",
-		east: "player",
-		south: "player",
-		west: "player",
-		host: "south",
+		n: "player",
+		e: "player",
+		s: "player",
+		w: "player",
+		h: "S",
 		pl: "S",
 	}).toString();
 	url.hash = `k=${randomBytes(16).toString("base64url")}`;

@@ -1,6 +1,6 @@
 # ADR 0005: Reusable room links bootstrap an expired room
 
-Status: accepted (2026-10-20). Amended 2026-10-27: the seat parameter is `pl`, and a URL without `pl` takes no seat.
+Status: accepted (2026-10-20). Amended 2026-10-27: the seat parameter is `pl`, the shared link carries no `pl`, and a page without `pl` reopens the remembered seat. Earlier link names (`selected_player`, `none`, long seat names, `host`, `bot_seats`, `bot_bidder`) are no longer read.
 The page that seeds is amended by [ADR 0007](0007-host-priority-by-link-seat.md) (2026-10-25).
 
 ## Context
@@ -28,13 +28,13 @@ So a page whose peers with the table all left does not wait for a host until a r
 Until then, the seat waits for a host like any other seat.
 Other pages can select seats and wait for that host.
 The table link carries no `pl`; a player's own URL keeps the player's seat for reload.
-Without `pl`, a page does not reopen a seat that the browser remembers. This replaces the earlier rule, in which an absent `selected_player` reopened the remembered seat (amended 2026-10-27).
+Without `pl`, a page reopens the seat that this browser remembers, so a shared link restores a player's seat after the tab closes. The earlier `selected_player=none` shared link is no longer read.
 Until 2026-10-26, it also did not take the last free seat.
 Now, at the owner's request, it takes the only free seat of the host's lobby by itself, unless the lobby shows that this browser held that seat.
-Before the host's lobby arrives, a page without `pl` takes no seat by itself.
+Before the host's lobby arrives, a page without `pl` waits for the lobby before it takes a free seat by itself.
 The seat page lists all four seats.
 A seat that the page cannot take is disabled and says why: the host's seat, a bot's seat, a seat in another tab of this browser, or a taken seat.
-The shared link and the seat page are the only places that set or clear `pl`; the seat of a page is never restored from the remembered seat by a missing `pl`.
+The seat page writes `pl`; the shared link never carries it. A seat-holding browser that opens the shared link therefore reopens its own seat, not the seat it was shared for (accepted 2026-10-27, to keep the shared link short).
 
 ## Consequences
 

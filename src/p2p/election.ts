@@ -52,7 +52,7 @@ export interface SelfFacts {
 	readonly seating: Seating | null;
 	/** An automated client that cannot deal a board sets this to false. */
 	readonly hostEligible?: boolean;
-	/** The host seat that this page's setup link names (`host=`), if any. */
+	/** The host seat that this page's setup link names (`h=`), if any. */
 	readonly pref?: Seat;
 	/** The page may seed the table that its seat does not have yet (rule 14). */
 	readonly seed?: boolean;

@@ -11,7 +11,7 @@ When the groups meet, the authority tiebreak (higher term, then lower tag) chose
 So a table with a real game could lose to a table with no entries, and the entries of the losing group were undone.
 The owner asked on 2026-10-25 whether two tables can always become one.
 
-Every setup link names a host seat (`host=` in the query, ADR 0005).
+Every setup link names a host seat (`h=` in the query, ADR 0005).
 The owner proposed that this seat sets an order of priority, clockwise:
 
 > If S is the host in the link, and W and N find each other, then W becomes the host.
@@ -27,7 +27,7 @@ The owner made these choices on 2026-10-25:
 ## Decision
 
 The order of priority starts at the link's host seat and goes clockwise in the order N, E, S, W.
-With `host=S`, the order is S, W, N, E (`priorityOrder` in `src/p2p/election.ts`).
+With `h=S`, the order is S, W, N, E (`priorityOrder` in `src/p2p/election.ts`).
 Each beat carries the host seat of its page's link (`pref`).
 The rules below apply only between pages whose links name the same host seat.
 A page whose link names another host seat, or none, follows the rules of ADR 0004.

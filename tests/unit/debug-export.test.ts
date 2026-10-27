@@ -56,9 +56,7 @@ describe("the host's debug export", () => {
 
 	it("names the page without its fragment, which holds the table key, or its query", () => {
 		expect(
-			pageAddress(
-				"https://example.test/opentrick/?north=Ann&bot_seats=E#v=p2p-v1&k=secret",
-			),
+			pageAddress("https://example.test/opentrick/?n=Ann&b=E#k=secret"),
 		).toBe("https://example.test/opentrick/");
 	});
 });

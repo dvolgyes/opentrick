@@ -65,7 +65,7 @@ describe("local bidder integration", () => {
 	it("uses the WBridge5 imitation when a room setup or link omits the bidding policy", () => {
 		const setup = { seats: ["N"], bidder: "sl" };
 		expect(parseBotSetup({ seats: ["N"] })).toEqual(setup);
-		expect(parseBookmark("?bot_seats=N").botSetup).toEqual(setup);
+		expect(parseBookmark("?b=N").botSetup).toEqual(setup);
 	});
 	it("preserves the selected policy in reusable room links", () => {
 		for (const bidder of ["sl", "rl-fsp"] as const) {
@@ -75,9 +75,7 @@ describe("local bidder integration", () => {
 			);
 			expect(parsed.botSetup).toEqual(setup);
 		}
-		expect(
-			parseBookmark("?bot_bidder=sl&bot_bidder=rl-fsp").botSetup,
-		).toBeUndefined();
+		expect(parseBookmark("?r=sl&r=rl-fsp").botSetup).toBeUndefined();
 		expect(
 			parseBotSetup({ ...DEFAULT_BOT_SETUP, bidder: "../../private" }),
 		).toBeUndefined();

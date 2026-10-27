@@ -311,7 +311,7 @@ test("with four seats, a player volunteers about 30 s after the host leaves; the
 		await expect(texts(page)).toHaveText([MESSAGE.W]);
 });
 
-/** A setup link with host=south and a new key: nobody has this table yet. Returns the link of `seat`. */
+/** A setup link with h=S and a new key: nobody has this table yet. Returns the link of `seat`. */
 function setupLink(): (seat: SeatKey) => string {
 	const key = randomBytes(16).toString("base64url");
 	const names = `n=${NAME.N}&e=${NAME.E}&s=${NAME.S}&w=${NAME.W}`;

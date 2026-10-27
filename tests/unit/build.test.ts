@@ -22,15 +22,14 @@ describe("reconnect update", () => {
 	it("keeps the origin, room fragment, setup and selected seat, with one attempt per newer date", () => {
 		const local = "2026-10-24T12:00:00Z";
 		const remote = "2026-10-25T12:00:00Z";
-		const page =
-			"https://example.org/opentrick/?host=south&selected_player=S#v=p2p-v1&k=secret";
+		const page = "https://example.org/opentrick/?h=S&pl=S#k=secret";
 		const updated = updateUrl(page, local, remote);
 		expect(updated).toBeDefined();
 		const url = new URL(updated ?? "");
 		expect(url.origin).toBe("https://example.org");
 		expect(url.pathname).toBe("/opentrick/");
-		expect(url.hash).toBe("#v=p2p-v1&k=secret");
-		expect(url.searchParams.get("selected_player")).toBe("S");
+		expect(url.hash).toBe("#k=secret");
+		expect(url.searchParams.get("pl")).toBe("S");
 		expect(updateUrl(url.toString(), local, remote)).toBeUndefined();
 		expect(updateUrl(page, remote, local)).toBeUndefined();
 	});

@@ -83,7 +83,7 @@ describe("the Node bot command", () => {
 	it("exits on SIGTERM while its relay socket is open", async () => {
 		const { key, cert, certPath } = certificate();
 		const { url, connected } = await relay(key, cert);
-		const link = `http://localhost:4173/?north=cli+north&east=cli+east&south=cli+south&west=host+west&host=west#v=p2p-v1&k=${randomBytes(32).toString("base64url")}`;
+		const link = `http://localhost:4173/?n=cli+north&e=cli+east&s=cli+south&w=host+west&h=W#k=${randomBytes(16).toString("base64url")}`;
 		const child = spawn(
 			process.execPath,
 			[
