@@ -44,6 +44,7 @@ import {
 	type Seat,
 } from "../protocol";
 import { AuctionPause } from "./auction-pause";
+import { watchBiddingViewport } from "./bidding-viewport";
 import {
 	bidderQuery,
 	botSeatsQuery,
@@ -1066,6 +1067,7 @@ export function showRoom(
 			form,
 		),
 	);
+	const biddingViewport = watchBiddingViewport(room, table.element);
 	// The device class sets the layout: a desktop shows the scaled Full HD room, a phone held upright the compact table,
 	// and a phone held sideways the desktop table at the size of its screen, without videos.
 	// The page root carries the layout too, so that only a desktop page becomes the fixed Full HD canvas.
@@ -1585,6 +1587,7 @@ export function showRoom(
 		if (tableKey !== shownTable) {
 			shownTable = tableKey;
 			table.render(tableModel);
+			biddingViewport.update();
 			if (tableModel.board !== 0) firstDealSent = false;
 			const first = tableModel.nextBoard;
 			if (view.hosting && first?.board === 1 && first.ready && !firstDealSent) {
@@ -1637,6 +1640,7 @@ export function showRoom(
 		botRunner?.stop();
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
 		deviceWatch.stop();
+		biddingViewport.dispose();
 		window.removeEventListener("resize", updateRoomCanvasScale);
 		root.style.removeProperty("--room-canvas-scale");
 		delete root.dataset.form;

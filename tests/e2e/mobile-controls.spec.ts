@@ -4,6 +4,51 @@ import { mockBotBidding } from "./bot-mock";
 import { Player } from "./player";
 import { namePlayers } from "./room";
 
+for (const size of ["M", "XXXL"] as const) {
+	test(`keeps the bottom of the phone board visible while bidding changes at ${size}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 500 });
+		await page.addInitScript(
+			(value) =>
+				localStorage.setItem("opentrick.settings.suit-font-size", value),
+			size,
+		);
+		await mockBotBidding(page, (position) =>
+			position.calls.length === 0 ? "1NT" : "P",
+		);
+		await page.goto("/");
+		await namePlayers(page, "W", ["N", "E", "S"]);
+		await page.getByTestId("create").click();
+		await expect(page.getByTestId("table")).toHaveAttribute(
+			"data-phase",
+			"auction",
+		);
+		const board = page.locator(".mobile-auction-board");
+		const bottomVisible = () =>
+			board.evaluate((element) => {
+				const viewport = window.visualViewport;
+				const bottom =
+					(viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight);
+				const edge = element.getBoundingClientRect().bottom;
+				return edge >= (viewport?.offsetTop ?? 0) - 1 && edge <= bottom + 1;
+			});
+		await expect.poll(bottomVisible).toBe(true);
+		await page.locator(".mobile-round-status > summary").click();
+		await expect.poll(bottomVisible).toBe(true);
+		await page.evaluate(
+			(value) => {
+				document.documentElement.dataset.suitFontSize = value;
+			},
+			size === "M" ? "XXXL" : "M",
+		);
+		await expect.poll(bottomVisible).toBe(true);
+		await page.setViewportSize({ width: 390, height: 420 });
+		await expect.poll(bottomVisible).toBe(true);
+		await expect(page.getByTestId("bid-box")).toBeVisible();
+	});
+}
+
 /*
  * A phone shows the compact table (src/ui/room-view.ts sets the form from the device class); phone.spec.ts plays a
  * board on it, and layout.spec.ts checks it at several phone sizes. This test checks the host bot controls on a phone.
