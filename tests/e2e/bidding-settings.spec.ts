@@ -9,8 +9,10 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	for (const seat of ["N", "E", "S", "W"] as const)
 		await page.locator(`input[name="name-${seat}"]`).fill(`Player ${seat}`);
 	await page.locator('input[name="me"][value="W"]').check();
-	for (const seat of ["N", "E", "S"] as const)
+	for (const seat of ["N", "E", "S"] as const) {
+		await page.locator(`input[name="name-${seat}"]`).fill("");
 		await page.locator(`input[name="bot-${seat}"]`).check();
+	}
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	await page.getByRole("button", { name: "Pause bots", exact: true }).click();

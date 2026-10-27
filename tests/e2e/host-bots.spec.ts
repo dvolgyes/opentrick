@@ -369,8 +369,10 @@ async function westDeclaresAgainstBots(page: Page): Promise<Locator> {
 	}))
 		await page.locator(`input[name="name-${seat}"]`).fill(name);
 	await page.locator('input[name="me"][value="W"]').check();
-	for (const seat of ["N", "E", "S"])
+	for (const seat of ["N", "E", "S"]) {
+		await page.locator(`input[name="name-${seat}"]`).fill("");
 		await page.locator(`input[name="bot-${seat}"]`).check();
+	}
 
 	await page.getByTestId("create").click();
 	const phase = page.locator("[data-phase]").first();

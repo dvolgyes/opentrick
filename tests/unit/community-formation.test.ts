@@ -21,6 +21,39 @@ function group(id: string, seats: readonly Seat[]): Group {
 }
 
 describe("community seating", () => {
+	it("preserves per-seat online and bot constraints through rotations and rejects conflicting vacancies", () => {
+		const a: Group = {
+			...group("group_aaa", ["N"]),
+			open: { E: "online", S: "both", W: "bot" },
+		};
+		const b: Group = {
+			...group("group_bbb", ["N"]),
+			open: { E: "bot", S: "both", W: "both" },
+		};
+		const merge = proposeMerge("merge_new", a, b);
+		expect(merge?.result.members.map((row) => row.seat)).toEqual(["N", "S"]);
+		expect(merge?.result.open).toEqual({ E: "online", W: "bot" });
+		if (!merge) throw new Error("compatible parties must merge");
+		expect(
+			validMerge({
+				...merge,
+				result: { ...merge.result, open: { E: "both", W: "both" } },
+			}),
+		).toBe(false);
+		const humansOnly: Group = {
+			...b,
+			open: { E: "online", S: "online", W: "online" },
+		};
+		expect(placements(a, humansOnly)).toEqual([]);
+	});
+	it("uses an explicitly open neighbouring seat when a solo's opposite seat is bot-only", () => {
+		const a: Group = {
+			...group("group_aaa", ["N"]),
+			open: { E: "both", S: "bot", W: "bot" },
+		};
+		const merge = proposeMerge("merge_new", a, group("group_bbb", ["N"]));
+		expect(merge?.result.members.map((row) => row.seat)).toEqual(["N", "E"]);
+	});
 	it("checks all concrete layouts against an independent occupancy search", () => {
 		for (let a = 1; a < 15; a++)
 			for (let b = 1; b < 15; b++) {

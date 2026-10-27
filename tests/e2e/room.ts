@@ -52,7 +52,7 @@ const TABLE_LINK = /^http:\/\/localhost:\d+\/?\?.*#k=[A-Za-z0-9_-]{22}$/;
 
 /**
  * Names all fixture players and explicitly chooses the host required by the scenario. The host comes first, because
- * the host seat cannot be a bot; the bots come last, because a name edit clears the bot flag and a bot is named "bot".
+ * the host seat cannot be a bot; bot seats stay unnamed in the form and receive the name "bot" when the game starts.
  */
 export async function namePlayers(
 	page: Page,
@@ -62,8 +62,10 @@ export async function namePlayers(
 	await page.locator(`input[name="me"][value="${host}"]`).check();
 	for (const [seat, name] of Object.entries(NAME))
 		await page.locator(`input[name="name-${seat}"]`).fill(name);
-	for (const seat of bots)
+	for (const seat of bots) {
+		await page.locator(`input[name="name-${seat}"]`).fill("");
 		await page.locator(`input[name="bot-${seat}"]`).check();
+	}
 }
 
 /**

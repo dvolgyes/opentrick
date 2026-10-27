@@ -31,14 +31,14 @@ test("an unnamed creator from a reusable setup link names themselves before seed
 	await expect(page.getByTestId("host-controls")).toBeVisible();
 });
 
-test("the creation and seating crosses fit a phone without changing compass directions", async ({
+test("the creation presets and private seat picker fit a phone with their specified seat order", async ({
 	page,
 	browser,
 	baseURL,
 }) => {
 	if (!baseURL) throw new Error("baseURL missing");
 	await page.setViewportSize({ width: 360, height: 780 });
-	const checkCross = async (current: Page) => {
+	const checkCross = async (current: Page, creation: boolean) => {
 		const boxes = await current
 			.getByTestId("seat-grid")
 			.locator("[data-seat]")
@@ -52,7 +52,8 @@ test("the creation and seating crosses fit a phone without changing compass dire
 			);
 		expect(boxes.N?.y).toBeLessThan(boxes.E?.y ?? 0);
 		expect(boxes.S?.y).toBeGreaterThan(boxes.W?.y ?? 0);
-		expect(boxes.W?.x).toBeLessThan(boxes.E?.x ?? 0);
+		if (creation) expect(boxes.E?.x).toBeLessThan(boxes.W?.x ?? 0);
+		else expect(boxes.W?.x).toBeLessThan(boxes.E?.x ?? 0);
 		expect(
 			await current.evaluate(
 				() => document.documentElement.scrollWidth <= innerWidth,
@@ -60,7 +61,7 @@ test("the creation and seating crosses fit a phone without changing compass dire
 		).toBe(true);
 	};
 	await page.goto("/");
-	await checkCross(page);
+	await checkCross(page, true);
 	await page.locator('input[name="name-S"]').fill("Host");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
@@ -71,13 +72,13 @@ test("the creation and seating crosses fit a phone without changing compass dire
 		const other = await guest.page(url.toString());
 		await other.setViewportSize({ width: 360, height: 780 });
 		await expect(other.getByTestId("pick-N")).toBeEnabled();
-		await checkCross(other);
+		await checkCross(other, false);
 	} finally {
 		await guest.close();
 	}
 });
 
-test("South hosts a compass layout and an unnamed entrant edits a persistent name suggestion", async ({
+test("South hosts the creation layout and an unnamed entrant edits a persistent name suggestion", async ({
 	page,
 	browser,
 	baseURL,
@@ -94,7 +95,7 @@ test("South hosts a compass layout and an unnamed entrant edits a persistent nam
 	expect(north && south && west && east).toBeTruthy();
 	expect(north?.y).toBeLessThan(west?.y ?? 0);
 	expect(south?.y).toBeGreaterThan(east?.y ?? 0);
-	expect(west?.x).toBeLessThan(east?.x ?? 0);
+	expect(east?.x).toBeLessThan(west?.x ?? 0);
 	await page.locator('input[name="name-S"]').fill("Alice");
 	await page.getByTestId("create").click();
 	await expect(page).toHaveTitle(/Alice \(S\)$/);
@@ -224,7 +225,6 @@ test("preassigned names join directly and a host can open a bot seat for a named
 	await page.goto("/");
 	await page.locator('input[name="name-S"]').fill("Host");
 	await page.locator('input[name="name-N"]').fill("North friend");
-	await page.locator('input[name="name-E"]').fill("Bridge bot");
 	await page.locator('input[name="bot-E"]').check();
 	await page.locator('input[name="bot-W"]').check();
 	await page.getByTestId("create").click();
@@ -297,8 +297,7 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 		"BRL SL (WBridge5 imitation)",
 	]);
 	await expect(options.locator('select[name="scoring"]')).toBeVisible();
-	// The solo label, its field and its button share one row, also on a narrow phone; the field is at most 20
-	// characters wide.
+	// The name field remains compact; the two solo actions wrap on a narrow phone.
 	const soloRow = page.locator(".create-solo-row");
 	const soloName = soloRow.locator('input[name="solo-name"]');
 	await expect(soloName).toHaveValue("Human");
@@ -315,27 +314,21 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 	expect(fieldWidth.width).toBeLessThanOrEqual(fieldWidth.limit + 1);
 	for (const width of [1280, 320]) {
 		await page.setViewportSize({ width, height: 800 });
-		const centres = await Promise.all(
-			["label", "input", "button"].map(async (selector) => {
-				const box = await soloRow.locator(selector).first().boundingBox();
-				return (box?.y ?? 0) + (box?.height ?? 0) / 2;
-			}),
-		);
-		expect(Math.max(...centres) - Math.min(...centres)).toBeLessThan(2);
+		await expect(soloRow.getByTestId("join-online")).toBeVisible();
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth <= innerWidth,
+			),
+		).toBe(true);
 	}
-	// A seat card shows its name field without a "Name" label, and its host and bot choices in one row, also on a
-	// phone.
+	// Each narrow seat card exposes all three choices without clipping them.
 	await page.setViewportSize({ width: 360, height: 800 });
 	for (const seat of ["N", "E", "S", "W"]) {
 		const card = page.getByTestId("seat-grid").locator(`[data-seat="${seat}"]`);
 		await expect(card.getByText("Name", { exact: true })).toHaveCount(0);
-		const [hostChoice, botChoice] = await Promise.all([
-			card.locator('input[name="me"]').boundingBox(),
-			card.locator(`input[name="bot-${seat}"]`).boundingBox(),
-		]);
-		expect(Math.abs((hostChoice?.y ?? 0) - (botChoice?.y ?? 100))).toBeLessThan(
-			2,
-		);
+		await expect(card.locator('input[name="me"]')).toBeVisible();
+		await expect(card.locator(`input[name="bot-${seat}"]`)).toBeVisible();
+		await expect(card.locator(`input[name="online-${seat}"]`)).toBeVisible();
 	}
 
 	const name = (seat: string) => page.locator(`input[name="name-${seat}"]`);
@@ -350,7 +343,7 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 	await expect(bot("S")).toBeDisabled();
 
 	await bot("N").check();
-	await expect(name("N")).toHaveValue("bot");
+	await expect(name("N")).toHaveValue("");
 	await expect(host("N")).toBeDisabled();
 	await name("N").fill("Nora");
 	await expect(bot("N")).not.toBeChecked();

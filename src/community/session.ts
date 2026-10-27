@@ -4,6 +4,8 @@ import {
 	isObject,
 	isPlayerName,
 	isSeat,
+	type LocalBidder,
+	parseBotSetup,
 	parseRoomConfig,
 	type RoomConfig,
 	SEATS,
@@ -19,10 +21,14 @@ import {
 	type Group,
 	MAX_WAIT_MS,
 	type Merge,
+	type OpenSeats,
+	openSeats,
+	permits,
 	placements,
 	proposeMerge,
 	sameGroup,
 	validId,
+	validOpen,
 } from "./formation";
 import { parseGroup, parseMerge, TransferJournal } from "./journal";
 import {
@@ -38,6 +44,7 @@ export interface GameStart {
 }
 
 export interface CommunitySaved {
+	readonly bidder?: LocalBidder;
 	readonly self: string;
 	readonly name: string;
 	readonly key: string;
@@ -50,9 +57,13 @@ export interface CommunitySaved {
 	readonly waitedMs: number;
 	readonly start?: GameStart;
 	readonly playing?: boolean;
+	readonly open?: OpenSeats;
+	readonly preferredSeat?: Seat;
+	readonly names?: Readonly<Partial<Record<Seat, string>>>;
 }
 
 interface Presence {
+	readonly bidder: LocalBidder;
 	readonly receivedAt: number;
 	readonly id: string;
 	readonly name: string;
@@ -63,6 +74,7 @@ interface Presence {
 	readonly waitedMs: number;
 	readonly groupId?: string;
 	readonly revision?: number;
+	readonly preferredSeat?: Seat;
 }
 
 interface Pending {
@@ -114,6 +126,8 @@ function parsePresence(value: unknown, now: number): Presence | undefined {
 		!validId(value.id) ||
 		!isPlayerName(value.name) ||
 		!isHolder(value.holder) ||
+		(value.bidder !== undefined &&
+			!parseBotSetup({ seats: [], bidder: value.bidder })) ||
 		typeof value.ready !== "boolean" ||
 		typeof value.allowBots !== "boolean" ||
 		typeof value.waitMs !== "number" ||
@@ -128,6 +142,10 @@ function parsePresence(value: unknown, now: number): Presence | undefined {
 		return undefined;
 	return {
 		receivedAt: now,
+		bidder: parseBotSetup({ seats: [], bidder: value.bidder })?.bidder ?? "sl",
+		...(isSeat(value.preferredSeat)
+			? { preferredSeat: value.preferredSeat }
+			: {}),
 		id: value.id,
 		name: value.name,
 		holder: value.holder,
@@ -182,7 +200,16 @@ export function readCommunity(
 	if (
 		(raw.group !== undefined && !group) ||
 		(raw.start !== undefined && !start) ||
-		(raw.playing === true && !start)
+		(raw.playing === true && !start) ||
+		(raw.bidder !== undefined &&
+			!parseBotSetup({ seats: [], bidder: raw.bidder })) ||
+		(raw.open !== undefined && !validOpen(raw.open)) ||
+		(raw.preferredSeat !== undefined && !isSeat(raw.preferredSeat)) ||
+		(raw.names !== undefined &&
+			(!isObject(raw.names) ||
+				Object.entries(raw.names).some(
+					([seat, name]) => !isSeat(seat) || !isPlayerName(name),
+				)))
 	)
 		return undefined;
 	return {
@@ -198,6 +225,12 @@ export function readCommunity(
 		...(group ? { group } : {}),
 		...(start ? { start } : {}),
 		...(raw.playing === true ? { playing: true } : {}),
+		bidder: parseBotSetup({ seats: [], bidder: raw.bidder })?.bidder ?? "sl",
+		...(validOpen(raw.open) ? { open: raw.open } : {}),
+		...(isSeat(raw.preferredSeat) ? { preferredSeat: raw.preferredSeat } : {}),
+		...(isObject(raw.names)
+			? { names: raw.names as Partial<Record<Seat, string>> }
+			: {}),
 	};
 }
 
@@ -289,6 +322,7 @@ export class CommunitySession {
 					revision: 0,
 					host: this.#saved.self,
 					members: [{ id: this.#saved.self, name: this.#saved.name, seat }],
+					...(this.#saved.open === undefined ? {} : { open: this.#saved.open }),
 				},
 			};
 		}
@@ -393,6 +427,7 @@ export class CommunitySession {
 				this.#search();
 			}
 		}
+		if (this.#pending && !this.accepted) this.accept();
 		this.#deps.change();
 	}
 
@@ -433,8 +468,10 @@ export class CommunitySession {
 			holder: target ? this.#targetHolder : this.#holder,
 			ready: saved.ready,
 			allowBots: saved.allowBots,
+			bidder: saved.bidder ?? "sl",
 			waitMs: saved.waitMs,
 			waitedMs: saved.waitedMs,
+			...(saved.preferredSeat ? { preferredSeat: saved.preferredSeat } : {}),
 			...(saved.group
 				? { groupId: saved.group.id, revision: saved.group.revision }
 				: {}),
@@ -556,6 +593,13 @@ export class CommunitySession {
 	}
 
 	#allAllowBots(): boolean {
+		const group = this.#saved.group;
+		if (!group) return false;
+		const vacant = SEATS.filter(
+			(seat) => !group.members.some((member) => member.seat === seat),
+		);
+		const choices = openSeats(group);
+		if (!vacant.every((seat) => permits(choices[seat], "bot"))) return false;
 		return Boolean(
 			this.#saved.group?.members.every((member) => {
 				const row =
@@ -863,7 +907,9 @@ export class CommunitySession {
 		)
 			return;
 		const seat = this.#saved.expected.find(
-			(choice) => !group.members.some((member) => member.seat === choice),
+			(choice) =>
+				(!row.preferredSeat || choice === row.preferredSeat) &&
+				!group.members.some((member) => member.seat === choice),
 		);
 		if (!seat) return;
 		this.#saved = {
@@ -961,6 +1007,11 @@ export class CommunitySession {
 	#gameConfig(): RoomConfig | undefined {
 		const group = this.#saved.group;
 		if (!group) return undefined;
+		const host =
+			group.host === this.#saved.self
+				? this.#own()
+				: [...this.#presence.values()].find((row) => row.id === group.host);
+		if (!host) return undefined;
 		const names = {} as Record<Seat, string>;
 		const holders: Partial<Record<Seat, string>> = {};
 		const bots: Seat[] = [];
@@ -982,7 +1033,7 @@ export class CommunitySession {
 		return parseRoomConfig({
 			names,
 			scoring: "duplicate",
-			botSetup: { seats: bots, bidder: "sl" },
+			botSetup: { seats: bots, bidder: host.bidder },
 			community: { v: 1, holders },
 		});
 	}

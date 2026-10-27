@@ -1,6 +1,8 @@
 import { updateUrl } from "../build";
-import { parseCommunityRoute } from "../community/link";
-import { parseRoute, tableFragment } from "../p2p/link";
+import { parseCommunityRoute, partyFragment } from "../community/link";
+import { newCommandId } from "../ids";
+import { newTableKey, parseRoute, tableFragment } from "../p2p/link";
+import { SEATS } from "../protocol";
 import {
 	bookmarkQuery,
 	parseBookmark,
@@ -61,9 +63,12 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 	const route = (): void => {
 		dispose?.();
 		dispose = undefined;
-		const target = parseRoute(location.hash);
 		const community = parseCommunityRoute(location.hash);
-		if (community) {
+		const target =
+			community?.kind === "create"
+				? { kind: "create" as const }
+				: parseRoute(location.hash);
+		if (community && community.kind !== "create") {
 			if (!corner.isConnected) root.before(corner);
 			dispose = showCommunity(root, deps, community, navigation);
 			return;
@@ -103,6 +108,60 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 							undefined,
 							autoCopy,
 							hostBots,
+						);
+					},
+					(setup) => {
+						const self = newCommandId();
+						const key = newTableKey();
+						const expected = [
+							setup.seat,
+							...SEATS.filter(
+								(seat) => seat !== setup.seat && setup.open[seat] === undefined,
+							),
+						];
+						const minutes = Number(
+							deps.browser?.getItem("opentrick.community.wait-minutes") ?? "2",
+						);
+						const waitMs = !Object.values(setup.open).includes("both")
+							? 0
+							: Number.isFinite(minutes) && minutes >= 0 && minutes <= 60
+								? minutes * 60_000
+								: 120_000;
+						const party = { open: setup.open, names: setup.names, waitMs };
+						history.replaceState(
+							null,
+							"",
+							`${location.pathname}${partyFragment(key, self, expected, party)}`,
+						);
+						dispose?.();
+						dispose = showCommunity(
+							root,
+							deps,
+							{
+								kind: "party",
+								key,
+								owner: self,
+								seats: expected,
+								setup: party,
+							},
+							navigation,
+							{
+								self,
+								bidder: setup.bidder,
+								name: setup.name,
+								key,
+								owner: self,
+								expected,
+								preferredSeat: setup.seat,
+								ready: true,
+								allowBots: Object.values(setup.open).some(
+									(choice) => choice !== "online",
+								),
+								waitMs,
+								waitedMs: 0,
+								open: setup.open,
+								names: setup.names,
+							},
 						);
 					},
 				);

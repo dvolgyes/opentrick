@@ -30,3 +30,28 @@ it("rejects ambiguous modes, duplicate seats, invalid identities and extra crede
 	])
 		expect(parseCommunityRoute(hash)).toEqual({ kind: "invalid" });
 });
+
+it("preserves friend names and seat choices in invitations and rejects choices on a reserved seat", () => {
+	const setup = {
+		names: { N: "Alice", S: "Bob" },
+		open: { E: "bot", W: "both" } as const,
+		waitMs: 120_000,
+	};
+	expect(
+		parseCommunityRoute(partyFragment(key, "member_aaa", ["N", "S"], setup)),
+	).toEqual({
+		kind: "party",
+		key,
+		owner: "member_aaa",
+		seats: ["N", "S"],
+		setup,
+	});
+	expect(
+		parseCommunityRoute(
+			partyFragment(key, "member_aaa", ["N", "S"], {
+				...setup,
+				open: { N: "bot" },
+			}),
+		),
+	).toEqual({ kind: "invalid" });
+});

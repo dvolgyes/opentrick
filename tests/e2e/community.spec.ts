@@ -55,17 +55,110 @@ async function enter(
 	page: Page,
 	name: string,
 	shape = "0",
-	link = "/#community",
+	link = "/",
+	mode = "both",
+	bidder = "sl",
 ): Promise<void> {
 	await page.goto(link);
-	await page.getByTestId("community-name").fill(name);
-	const select = page.getByTestId("community-shape");
-	if (await select.count()) await select.selectOption(shape);
-	await page.getByTestId("community-ready").check();
-	await page.getByTestId("community-enter").click();
+	if (link.includes("#community=")) {
+		await page.getByTestId("community-name").fill(name);
+		await page.getByTestId("community-enter").click();
+		return;
+	}
+	await page.locator('input[name="name-N"]').fill(name);
+	await page.locator('input[name="me"][value="N"]').check();
+	if (shape === "1")
+		await page
+			.locator('input[name="name-S"]')
+			.fill(name === "Alice" ? "Bob" : "Dan");
+	await page.getByTestId(`preset-${mode}`).click();
+	await page.locator('select[name="bot-bidder"]').selectOption(bidder);
+	await page.getByTestId("create").click();
 }
 
-test("two solos agree to merge, unanimously fill with bots, and reload into the reserved game", async ({
+async function setWait(page: Page, minutes: string): Promise<void> {
+	await page.getByText("Bot wait", { exact: true }).click();
+	await page.getByTestId("community-wait").fill(minutes);
+	await page.getByTestId("community-wait").press("Tab");
+}
+
+test("centre presets preserve named friends, configure both checkboxes, and fit a phone", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto("/");
+	await page.locator('input[name="name-S"]').fill("Alice");
+	await page.locator('input[name="name-N"]').fill("Bob");
+	for (const [preset, bot, online] of [
+		["bots", true, false],
+		["online", false, true],
+		["both", true, true],
+	] as const) {
+		await page.getByTestId(`preset-${preset}`).click();
+		for (const seat of ["E", "W"]) {
+			await expect(page.locator(`input[name="bot-${seat}"]`)).toBeChecked({
+				checked: bot,
+			});
+			await expect(page.locator(`input[name="online-${seat}"]`)).toBeChecked({
+				checked: online,
+			});
+			await expect(
+				page.locator(`input[name="me"][value="${seat}"]`),
+			).toBeDisabled();
+		}
+		for (const seat of ["N", "S"]) {
+			await expect(page.locator(`input[name="bot-${seat}"]`)).not.toBeChecked();
+			await expect(
+				page.locator(`input[name="online-${seat}"]`),
+			).not.toBeChecked();
+		}
+	}
+	await page.locator('input[name="name-E"]').fill("Carol");
+	await expect(page.locator('input[name="bot-E"]')).not.toBeChecked();
+	await expect(page.locator('input[name="online-E"]')).not.toBeChecked();
+	await expect(page.locator('input[name="me"][value="E"]')).toBeEnabled();
+	const grid = page.getByTestId("seat-grid");
+	const east = await grid.locator('[data-seat="E"]').boundingBox();
+	const west = await grid.locator('[data-seat="W"]').boundingBox();
+	const center = await page.getByTestId("preset-both").boundingBox();
+	if (!east || !west || !center) throw new Error("seat grid missing");
+	expect(east.x + east.width).toBeLessThanOrEqual(center.x);
+	expect(center.x + center.width).toBeLessThanOrEqual(west.x);
+	for (const seat of ["N", "S"]) {
+		const box = await grid.locator(`[data-seat="${seat}"]`).boundingBox();
+		expect(Math.abs((box?.width ?? 0) - east.width)).toBeLessThan(1);
+	}
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth <= innerWidth,
+		),
+	).toBe(true);
+	await page.screenshot({
+		path: "/tmp/community-create-mobile.png",
+		fullPage: true,
+	});
+});
+
+test("solo online entry starts searching without a separate community setup form", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.locator('input[name="solo-name"]').fill("Alice");
+	await expect(page.getByTestId("create-solo")).toHaveText(
+		"Start solo game (with bots)",
+	);
+	await page.getByTestId("join-online").click();
+	await expect(page.getByTestId("community-status")).toHaveText(
+		"Searching for compatible players…",
+	);
+	await expect(page.getByTestId("community-name")).toHaveCount(0);
+	await expect(page.getByTestId("community-ready")).toHaveCount(0);
+	await expect(
+		page.getByTestId("community-members").locator('[data-seat="S"]'),
+	).toContainText("Alice");
+});
+
+test("two solos merge automatically, wait for both bot timers, and reload into the reserved game", async ({
 	browser,
 	baseURL,
 }) => {
@@ -74,28 +167,21 @@ test("two solos agree to merge, unanimously fill with bots, and reload into the 
 	try {
 		const [a, b] = pages;
 		if (!a || !b) throw new Error("players missing");
-		await enter(a, "Alice");
-		await enter(b, "Bob");
-		await expect
-			.poll(
-				async () =>
-					(await a.getByTestId("community-accept").count()) +
-					(await b.getByTestId("community-accept").count()),
+		await enter(a, "Alice", "0", "/", "both", "rl-fsp");
+		await enter(b, "Bob", "0", "/", "both", "rl-fsp");
+		for (const page of pages) {
+			await expect(page.getByTestId("community-members")).toContainText(
+				"Alice",
 				{ timeout: 45_000 },
-			)
-			.toBe(1);
-		for (const page of pages)
-			if (await page.getByTestId("community-accept").count())
-				await page.getByTestId("community-accept").click();
-		for (const page of pages)
-			await expect(
-				page.getByTestId("community-members").locator("li"),
-			).toHaveCount(2, { timeout: 45_000 });
-		await a.getByTestId("community-wait").fill("0");
-		await a.getByTestId("community-bots").check();
+			);
+			await expect(page.getByTestId("community-members")).toContainText("Bob", {
+				timeout: 45_000,
+			});
+			await expect(page.getByTestId("community-accept")).toHaveCount(0);
+		}
+		await setWait(a, "0");
 		await expect(a.getByTestId("table")).toBeHidden();
-		await b.getByTestId("community-wait").fill("0");
-		await b.getByTestId("community-bots").check();
+		await setWait(b, "0");
 		for (const page of pages)
 			await expect(page.getByTestId("table")).toHaveAttribute(
 				"data-board",
@@ -103,6 +189,18 @@ test("two solos agree to merge, unanimously fill with bots, and reload into the 
 				{ timeout: 45_000 },
 			);
 		const keyA = new URL(a.url()).hash;
+		for (const page of pages) {
+			await page.getByRole("button", { name: "Settings", exact: true }).click();
+			await expect(
+				page
+					.getByTestId("settings-dialog")
+					.getByLabel("BRL RL/FSP", { exact: true }),
+			).toBeChecked();
+			await page
+				.getByTestId("settings-dialog")
+				.getByRole("button", { name: "Cancel", exact: true })
+				.click();
+		}
 		expect(new URL(b.url()).hash === keyA).toBe(true);
 		await a.reload();
 		await expect(a.getByTestId("table")).toHaveAttribute("data-board", "1", {
@@ -123,9 +221,9 @@ test("friends confirm an opposite pair before it appears in discovery", async ({
 	try {
 		const [a, b] = pages;
 		if (!a || !b) throw new Error("players missing");
-		await enter(a, "Alice", "1");
+		await enter(a, "Alice", "1", "/", "online");
 		await expect(a.getByTestId("community-status")).toHaveText(
-			"Waiting for your group to be ready.",
+			"Waiting for invited players…",
 		);
 		await enter(b, "Bob", "0", a.url());
 		for (const page of pages) {
@@ -134,14 +232,14 @@ test("friends confirm an opposite pair before it appears in discovery", async ({
 				{ timeout: 45_000 },
 			);
 			await expect(
-				page.getByTestId("community-members").locator("li"),
-			).toHaveCount(2);
+				page.getByTestId("community-members").locator(".seat-card"),
+			).toHaveCount(4);
 			await expect(
 				page.getByTestId("community-members").locator('[data-seat="N"]'),
-			).toHaveText("North: Alice");
+			).toContainText("Alice");
 			await expect(
 				page.getByTestId("community-members").locator('[data-seat="S"]'),
-			).toHaveText("South: Bob");
+			).toContainText("Bob");
 		}
 		expect(errors).toEqual([]);
 	} finally {
@@ -165,8 +263,7 @@ test("an absent player gets bot cover for the board and returns to the reserved 
 				"Searching for compatible players…",
 				{ timeout: 45_000 },
 			);
-			await page.getByTestId("community-wait").fill("0");
-			await page.getByTestId("community-bots").check();
+			await setWait(page, "0");
 		}
 		for (const page of pages)
 			await expect(page.getByTestId("table")).toHaveAttribute(
@@ -216,21 +313,10 @@ test("two opposite pairs merge into a four-human game and play after leaving dis
 	try {
 		const [a, b, c, d] = pages;
 		if (!a || !b || !c || !d) throw new Error("players missing");
-		await enter(a, "Alice", "1");
+		await enter(a, "Alice", "1", "/", "online");
 		await enter(b, "Bob", "0", a.url());
-		await enter(c, "Carol", "1");
+		await enter(c, "Carol", "1", "/", "online");
 		await enter(d, "Dan", "0", c.url());
-		await expect
-			.poll(
-				async () =>
-					(await a.getByTestId("community-accept").count()) +
-					(await c.getByTestId("community-accept").count()),
-				{ timeout: 45_000 },
-			)
-			.toBe(1);
-		for (const page of [a, c])
-			if (await page.getByTestId("community-accept").count())
-				await page.getByTestId("community-accept").click();
 		for (const page of pages) {
 			await expect(page.getByTestId("table")).toHaveAttribute(
 				"data-board",

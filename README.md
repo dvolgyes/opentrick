@@ -23,7 +23,7 @@ The game deals the cards, guides the auction and card play, and keeps the duplic
 ### Play a solo game
 
 1. Open [OpenTrick](https://dvolgyes.github.io/opentrick/) and enter your name in the **Solo game** section.
-2. Select **Start solo game**.
+2. Select **Start solo game (with bots)**.
    You take the South seat, and bots take North, East, and West.
 3. Play the board with the bots, using the same auction and card play as a table.
 
@@ -51,21 +51,30 @@ Do not post it publicly.
 
 ### Find community players
 
-Select **Find community players** to enter public matchmaking without a password prompt.
-Enter alone, or create a group for an opposite pair, an adjacent pair, three friends, or four friends.
-For a group, use **Copy group invitation** to bring the friends together first.
-Each member must select **Ready for compatible table merges** before the group advertises.
+Select **Join an online table** beside the solo-game button to enter public matchmaking.
+For a group, use the regular four-seat creation form.
+The centre buttons, **Bots**, **Online players**, and **Both**, preset the two checkboxes on unnamed seats.
+A name reserves that seat for a human friend and clears both checkboxes.
+The presets leave named seats and the creator's seat unchanged.
+Each unnamed seat can also be configured separately; neither checkbox selected reserves it for an invited friend.
+Only a human seat can be the creator's host seat.
+Select **Create game**, then use **Copy group invitation** to bring reserved friends to their chosen seats.
+Matching starts automatically after the invited group has assembled.
 
 Every waiting browser endorses its own group in the shared discovery room.
-Hosts propose compatible merges and the receiving host accepts or declines.
+Compatible groups merge automatically without an extra readiness or acceptance step.
 The larger group keeps its room; a stable identifier breaks equal-size ties.
+The resulting game uses the surviving host's selected bidding engine.
 Compatible choices and seat rotations are randomized, while existing relative seating is preserved.
-Two solos become an opposite pair.
+Two solos become an opposite pair when their seat choices permit it; an explicitly restricted layout can require adjacent seats instead.
 Opposite pairs can combine with opposite pairs, adjacent pairs with adjacent pairs, and three players with a solo.
 Opposite and adjacent pairs cannot combine without changing their existing seating.
 
-Each player can allow bots after a chosen wait of 0–60 minutes.
-Empty seats fill only when every human agrees and every human's own wait has elapsed.
+Both seat choices are checked during every merge, including the remaining empty seats.
+An online-only seat never becomes a bot, and a bot-only seat never receives an online player.
+Choosing **Both** allows bot fallback after a default two-minute search.
+The **Bot wait** control can adjust this to 0–60 minutes.
+Empty seats fill only when every human's seat choices permit bots and every human's own wait has elapsed.
 Time waiting for invited friends does not count; accumulated search time survives merges and reloads.
 With four humans, or unanimous bot fallback, the group starts a game and leaves discovery after game admission.
 The first deal waits for all agreed seats.
@@ -163,9 +172,8 @@ The compact form can still send the camera, but it does not show video tiles.
 The call is separate from bridge actions, so using autoplay does not make the player leave the call.
 The call has no kibitz or spectator access.
 
-OpenTrick does not currently provide matchmaking or a way to find random players online.
-You need to invite people yourself and share the room link with them.
-Random-player discovery may be added in the future.
+Private games use invitation links and support calls.
+Community matchmaking finds other waiting players and disables calls.
 
 ### Save and reuse a room link
 

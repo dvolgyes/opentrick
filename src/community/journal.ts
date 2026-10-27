@@ -36,6 +36,7 @@ export function parseGroup(value: unknown): Group | undefined {
 		revision: value.revision,
 		host: value.host,
 		members,
+		...(value.open === undefined ? {} : { open: value.open }),
 	} as Group;
 	return validGroup(group) ? group : undefined;
 }

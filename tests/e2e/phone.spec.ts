@@ -75,9 +75,7 @@ for (const viewport of PHONES) {
 			const page = await context.newPage();
 			await mockBots(page);
 			await page.goto("/");
-			await namePlayers(page);
-			for (const seat of ["N", "E", "S"])
-				await page.locator(`input[name="bot-${seat}"]`).check();
+			await namePlayers(page, "W", ["N", "E", "S"]);
 
 			await page.getByTestId("create").tap();
 			const auction = page.getByTestId("mobile-auction");
@@ -270,9 +268,7 @@ test("a phone keeps its screen on from the start page through the bidding and th
 		const { wake, hideAndShow } = await fakeWakeLock(page);
 		await mockBots(page);
 		await page.goto("/");
-		await namePlayers(page);
-		for (const seat of ["N", "E", "S"])
-			await page.locator(`input[name="bot-${seat}"]`).check();
+		await namePlayers(page, "W", ["N", "E", "S"]);
 
 		await expect.poll(wake).toEqual({ requests: 1, held: 1 });
 		await page.getByTestId("create").tap();
@@ -324,9 +320,7 @@ for (const locale of [
 			const page = await context.newPage();
 			await mockBots(page);
 			await page.goto("/");
-			await namePlayers(page);
-			for (const seat of ["N", "E", "S"])
-				await page.locator(`input[name="bot-${seat}"]`).check();
+			await namePlayers(page, "W", ["N", "E", "S"]);
 
 			await page.getByTestId("create").tap();
 			const topbar = page.locator(".mobile-auction-topbar");

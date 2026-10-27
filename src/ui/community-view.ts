@@ -1,5 +1,5 @@
 import { cryptoRandomBelow } from "../bridge/deal";
-import { MAX_WAIT_MS } from "../community/formation";
+import { MAX_WAIT_MS, openSeats } from "../community/formation";
 import {
 	type CommunityRoute,
 	communityGameFragment,
@@ -12,27 +12,20 @@ import {
 } from "../community/session";
 import { bridgeModule } from "../game/bridge";
 import { newCommandId } from "../ids";
-import { newTableKey } from "../p2p/link";
 import { createTable, tableIdentity } from "../p2p/table";
-import { isPlayerName, SEAT_NAMES, type Seat } from "../protocol";
+import { isPlayerName, isSeat, SEAT_NAMES, SEATS } from "../protocol";
 import type { AppDeps, Dispose, Navigation } from "./deps";
 import { button, copyToClipboard, el } from "./dom";
 import { showTable } from "./join";
 import { readPersonalName, savePersonalName } from "./personal-name";
-
-const SHAPES: readonly { label: string; seats: readonly Seat[] }[] = [
-	{ label: "Solo player", seats: ["N"] },
-	{ label: "Opposite pair", seats: ["N", "S"] },
-	{ label: "Adjacent pair", seats: ["N", "E"] },
-	{ label: "Three players", seats: ["N", "E", "S"] },
-	{ label: "Four players", seats: ["N", "E", "S", "W"] },
-];
+import { seatGrid } from "./seat-grid";
 
 export function showCommunity(
 	root: HTMLElement,
 	deps: AppDeps,
 	route: CommunityRoute,
 	navigation: Navigation,
+	initial?: CommunitySaved,
 ): Dispose {
 	let disposed = false;
 	let session: CommunitySession | undefined;
@@ -42,16 +35,9 @@ export function showCommunity(
 	const status = el("p", {
 		attrs: { role: "status", "data-testid": "community-status" },
 	});
-	const members = el("ul", { attrs: { "data-testid": "community-members" } });
-	const offers = el("p", { attrs: { "data-testid": "community-offers" } });
-	const proposal = el("section", {
-		attrs: { "data-testid": "community-proposal" },
-	});
-	const ready = el("input", {
-		attrs: { type: "checkbox", "data-testid": "community-ready" },
-	});
-	const bots = el("input", {
-		attrs: { type: "checkbox", "data-testid": "community-bots" },
+	const members = el("div", {
+		className: "community-table",
+		attrs: { "data-testid": "community-members" },
 	});
 	const wait = el("input", {
 		attrs: {
@@ -72,13 +58,25 @@ export function showCommunity(
 		},
 	});
 	name.value = readPersonalName(deps.browser);
-	const shape = el(
+	name.addEventListener("input", () => name.setCustomValidity(""));
+	const seatChoice = el(
 		"select",
-		{ attrs: { "data-testid": "community-shape" } },
-		...SHAPES.map((item, index) =>
-			el("option", { attrs: { value: String(index) } }, deps.t(item.label)),
+		{ attrs: { "data-testid": "community-seat" } },
+		...(route.kind === "party" ? route.seats.slice(1) : []).map((seat) =>
+			el(
+				"option",
+				{ attrs: { value: seat } },
+				`${deps.t(SEAT_NAMES[seat])}${route.kind === "party" && route.setup?.names[seat] ? `: ${route.setup.names[seat]}` : ""}`,
+			),
 		),
 	);
+	const fillReservedName = (): void => {
+		if (route.kind === "party" && isSeat(seatChoice.value))
+			name.value =
+				route.setup?.names[seatChoice.value] ?? readPersonalName(deps.browser);
+	};
+	seatChoice.addEventListener("change", fillReservedName);
+	fillReservedName();
 	const apply = (): void => {
 		const minutes = Number(wait.value);
 		if (!Number.isFinite(minutes) || minutes < 0 || minutes > 60) {
@@ -88,29 +86,18 @@ export function showCommunity(
 		}
 		wait.setCustomValidity("");
 		deps.browser?.setItem("opentrick.community.wait-minutes", wait.value);
-		session?.setPreferences(ready.checked, bots.checked, minutes * 60_000);
+		if (session)
+			session.setPreferences(true, session.saved.allowBots, minutes * 60_000);
 	};
-	ready.addEventListener("change", apply);
-	bots.addEventListener("change", apply);
 	wait.addEventListener("change", apply);
 	const preferences = el(
-		"div",
+		"details",
 		{},
+		el("summary", {}, deps.t("Bot wait")),
 		el(
 			"p",
 			{},
-			el("label", {}, ready, ` ${deps.t("Ready for compatible table merges")}`),
-		),
-		el(
-			"p",
-			{},
-			el(
-				"label",
-				{},
-				bots,
-				` ${deps.t("Allow bots after waiting (minutes)")} `,
-				wait,
-			),
+			el("label", {}, `${deps.t("Allow bots after waiting (minutes)")} `, wait),
 		),
 		el(
 			"p",
@@ -128,59 +115,56 @@ export function showCommunity(
 				: "forming";
 		status.textContent = deps.t(
 			session.problem ??
-				(session.prepared
-					? "Recovering the agreed table…"
+				(session.proposal || saved.start
+					? "Joining table…"
 					: session.searching
 						? "Searching for compatible players…"
-						: "Waiting for your group to be ready."),
+						: "Waiting for invited players…"),
 		);
 		members.replaceChildren(
-			...(saved.group?.members ?? []).map((member) =>
-				el(
-					"li",
-					{ attrs: { "data-seat": member.seat } },
-					`${deps.t(SEAT_NAMES[member.seat])}: ${member.name}`,
-				),
+			seatGrid(
+				SEATS.map((seat) => {
+					const member = saved.group?.members.find(
+						(member) => member.seat === seat,
+					);
+					const choice = saved.group
+						? openSeats(saved.group)[seat]
+						: saved.open?.[seat];
+					const label =
+						member?.name ??
+						(choice === "bot"
+							? deps.t("Bot")
+							: choice === "online"
+								? deps.t("Online player")
+								: choice === "both"
+									? deps.t("Bot or online player")
+									: (saved.names?.[seat] ?? deps.t("Reserved for a friend")));
+					return {
+						seat,
+						element: el(
+							"section",
+							{},
+							el("h2", {}, deps.t(SEAT_NAMES[seat])),
+							el("p", {}, label),
+							...(!member && saved.expected.includes(seat)
+								? [
+										el(
+											"p",
+											{ className: "note" },
+											deps.t("Waiting for your friend"),
+										),
+									]
+								: []),
+						),
+					};
+				}),
+				status,
 			),
 		);
-		offers.textContent = deps.t("Discovery: {count} group(s) visible.", {
-			count: session.waitingGroups.length,
-		});
-		ready.disabled =
-			bots.disabled =
-			wait.disabled =
-				session.proposal !== undefined || saved.start !== undefined;
-		const merge = session.proposal;
-		proposal.replaceChildren();
-		if (merge) {
-			proposal.append(
-				el("p", {}, deps.t("Merge these players into one table?")),
-				el(
-					"p",
-					{},
-					merge.result.members
-						.map(
-							(member) => `${deps.t(SEAT_NAMES[member.seat])}: ${member.name}`,
-						)
-						.join(" · "),
-				),
-			);
-			if (
-				[merge.source.host, merge.destination.host].includes(saved.self) &&
-				!session.accepted
-			)
-				proposal.append(
-					button(deps.t("Accept merge"), () => session?.accept(), {
-						attrs: { "data-testid": "community-accept" },
-					}),
-				);
-			if (!session.prepared)
-				proposal.append(
-					button(deps.t("Decline merge"), () => session?.decline(), {
-						attrs: { "data-testid": "community-decline" },
-					}),
-				);
-		}
+		wait.disabled = session.proposal !== undefined || saved.start !== undefined;
+		preferences.hidden = !Object.values(
+			saved.group ? openSeats(saved.group) : (saved.open ?? {}),
+		).includes("both");
 	};
 	const begin = async (saved: CommunitySaved): Promise<void> => {
 		if (disposed) return;
@@ -192,8 +176,6 @@ export function showCommunity(
 		}
 		const store = deps.browser;
 		const open = deps.openCommunity;
-		ready.checked = saved.ready;
-		bots.checked = saved.allowBots;
 		wait.value = String(saved.waitMs / 60_000);
 		const run = async (): Promise<void> => {
 			if (disposed) return;
@@ -272,14 +254,13 @@ export function showCommunity(
 						});
 					},
 				},
-				saved,
+				{ ...saved, ready: true },
 			);
 			root.replaceChildren(
 				el(
 					"section",
 					{ className: "create", attrs: { "data-testid": "community" } },
 					el("h1", {}, deps.t("Community game")),
-					status,
 					members,
 					preferences,
 					button(
@@ -293,6 +274,23 @@ export function showCommunity(
 								current.key,
 								current.owner,
 								current.expected,
+								current.open
+									? {
+											open: current.group
+												? openSeats(current.group)
+												: current.open,
+											names: Object.fromEntries(
+												current.expected.flatMap((seat) => {
+													const name =
+														current.group?.members.find(
+															(member) => member.seat === seat,
+														)?.name ?? current.names?.[seat];
+													return name ? [[seat, name]] : [];
+												}),
+											),
+											waitMs: current.waitMs,
+										}
+									: undefined,
 							);
 							void copyToClipboard(url.href).then((text) => {
 								status.textContent = deps.t(text);
@@ -300,8 +298,6 @@ export function showCommunity(
 						},
 						{ attrs: { "data-testid": "community-invite" } },
 					),
-					offers,
-					proposal,
 					el(
 						"p",
 						{},
@@ -353,7 +349,7 @@ export function showCommunity(
 		}
 		return saved;
 	};
-	const saved = load();
+	const saved = initial ?? load();
 	root.replaceChildren(
 		el(
 			"section",
@@ -373,14 +369,18 @@ export function showCommunity(
 			"form",
 			{ className: "create" },
 			el("label", {}, `${deps.t("Your name")} `, name),
-			...(route.kind === "create"
-				? [el("label", {}, ` ${deps.t("Group seating")} `, shape)]
-				: []),
-			preferences,
+			el("label", {}, `${deps.t("Choose your seat.")} `, seatChoice),
+			el(
+				"p",
+				{},
+				deps.t(
+					"Your seat is reserved. Joining starts automatic matching for the open seats.",
+				),
+			),
 			el(
 				"button",
 				{ attrs: { type: "submit", "data-testid": "community-enter" } },
-				deps.t("Find players"),
+				deps.t("Join table"),
 			),
 		);
 		form.addEventListener("submit", (event) => {
@@ -396,16 +396,14 @@ export function showCommunity(
 			if (!Number.isFinite(minutes) || minutes < 0 || minutes > 60) return;
 			savePersonalName(deps.browser, player);
 			const self = newCommandId();
-			const key = route.kind === "party" ? route.key : newTableKey();
-			const owner = route.kind === "party" ? route.owner : self;
-			const expected =
-				route.kind === "party"
-					? route.seats
-					: (SHAPES[Number(shape.value)]?.seats ?? ["N"]);
+			if (route.kind !== "party" || !isSeat(seatChoice.value)) return;
+			const key = route.key;
+			const owner = route.owner;
+			const expected = route.seats;
 			history.replaceState(
 				null,
 				"",
-				`${location.pathname}${partyFragment(key, owner, expected)}`,
+				`${location.pathname}${partyFragment(key, owner, expected, route.setup)}`,
 			);
 			void begin({
 				self,
@@ -413,10 +411,18 @@ export function showCommunity(
 				key,
 				owner,
 				expected,
-				ready: ready.checked,
-				allowBots: bots.checked,
-				waitMs: minutes * 60_000,
+				ready: true,
+				preferredSeat: seatChoice.value,
+				allowBots: route.setup
+					? Object.values(route.setup.open).some(
+							(choice) => choice !== "online",
+						)
+					: true,
+				waitMs: route.setup?.waitMs ?? minutes * 60_000,
 				waitedMs: 0,
+				...(route.setup
+					? { open: route.setup.open, names: route.setup.names }
+					: {}),
 			});
 		});
 		root.append(form);
