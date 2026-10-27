@@ -559,7 +559,8 @@ describe("played card styles", () => {
 	it.each([
 		["L", 1.1],
 		["XL", 1.2],
-		["XXL", 1.3],
+		["XXL", 1.2],
+		["XXXL", 1.2],
 	] as const)("adds %s vertical board space", async (size, multiplier) => {
 		await page.viewport(320, 568);
 		document.documentElement.dataset.suitFontSize = size;

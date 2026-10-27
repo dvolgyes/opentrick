@@ -12,7 +12,7 @@
 
 :root[data-suit-font-size="L"] { --mobile-board-growth: 1.1; }
 :root[data-suit-font-size="XL"] { --mobile-board-growth: 1.2; }
-:root:is([data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) { --mobile-board-growth: 1.3; }
+:root:is([data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) { --mobile-board-growth: 1.2; }
 
 .bid,
 .auction .bid-mark,
