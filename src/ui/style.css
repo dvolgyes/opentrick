@@ -1097,6 +1097,10 @@ main:has(> .room) {
 		line-height: 1.25;
 	}
 
+	.auction-scroll .auction {
+		min-width: calc(13em * var(--suit-font-scale));
+	}
+
 	.mobile-board-center .trick {
 		--rank-size: 0.95rem;
 		--card-h: max(3.1rem, calc(var(--rank-size) * var(--suit-font-scale) * 3.5 + 0.16rem + 2px));
@@ -1810,6 +1814,17 @@ dialog {
 	font: inherit;
 	text-decoration: underline dotted;
 	cursor: pointer;
+}
+
+/* The level and strain scale independently of the button, so underline their own text baseline. */
+.auction button.auction-call:has(.bid-mark, .call-pass) {
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.auction button.auction-call :is(.bid-mark, .call-pass) {
+	text-decoration: underline dotted;
+	text-underline-position: under;
 }
 
 /* The meaning of a call, under the call; placeMeaning in table.ts sets its place and width. */

@@ -3440,6 +3440,15 @@ describe("mobile folds", () => {
 					const rows = [
 						...window.querySelectorAll<HTMLTableRowElement>("tbody tr"),
 					];
+					if (size === "XXXL" && window.scrollWidth > window.clientWidth) {
+						window.scrollLeft = window.scrollWidth;
+						const lastCell =
+							rows[0]?.querySelector<HTMLElement>("td:last-child");
+						if (!lastCell) throw new Error("missing last bidding cell");
+						expect(lastCell.getBoundingClientRect().right).toBeLessThanOrEqual(
+							window.getBoundingClientRect().right + 1,
+						);
+					}
 					for (const [index, row] of rows.entries()) {
 						const next = rows[index + 1];
 						if (!next) continue;
@@ -4515,6 +4524,107 @@ describe("bidding guide", () => {
 });
 
 describe("call meanings in the auction", () => {
+	it("keeps oversized phone history inside the page and scrolls to all four bids", async () => {
+		await page.viewport(320, 568);
+		document.documentElement.dataset.suitFontSize = "XXXL";
+		try {
+			const base = playView();
+			if (!base.auction) throw new Error("missing auction");
+			const { root } = renderMobile({
+				...base,
+				phase: "auction",
+				auction: {
+					...base.auction,
+					rows: [["1NT", "2♥", "Pass", "Double"]],
+					meanings: [["opening", "hearts", "pass", "double"]],
+				},
+			});
+			const history = root.querySelector<HTMLElement>(".auction-scroll");
+			if (!history) throw new Error("missing history");
+			expect(history.scrollWidth).toBeGreaterThan(history.clientWidth);
+			expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+				document.documentElement.clientWidth + 1,
+			);
+			history.scrollLeft = history.scrollWidth;
+			const last = history.querySelector<HTMLElement>(
+				"tbody td:last-child .auction-call",
+			);
+			if (!last) throw new Error("missing final call");
+			expect(last.getBoundingClientRect().right).toBeLessThanOrEqual(
+				history.getBoundingClientRect().right + 1,
+			);
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+			await page.viewport(414, 896);
+		}
+	});
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"places dotted underlines on the scaled suit and NT bid text (%s)",
+		(layout) => {
+			const base = playView();
+			if (!base.auction) throw new Error("missing auction");
+			const { root } = renderView(
+				{
+					...base,
+					phase: "auction",
+					auction: {
+						...base.auction,
+						rows: [["1NT", "2♥", "Pass", "Double"]],
+						meanings: [["opening", "hearts", "pass", "double"]],
+					},
+				},
+				layout,
+			);
+			const calls = [...root.querySelectorAll<HTMLElement>(".auction-call")];
+			expect(calls).toHaveLength(4);
+			try {
+				for (const size of ["S", "M", "L", "XL", "XXL", "XXXL"]) {
+					document.documentElement.dataset.suitFontSize = size;
+					for (const call of calls.slice(0, 2)) {
+						expect(getComputedStyle(call).textDecorationLine).toBe("none");
+						const marks = [...call.querySelectorAll<HTMLElement>(".bid-mark")];
+						expect(marks).toHaveLength(2);
+						const cell = call.closest("td");
+						if (!cell) throw new Error("missing bid cell");
+						const [level, strain] = marks.map((mark) =>
+							mark.getBoundingClientRect(),
+						);
+						if (!level || !strain) throw new Error("missing bid marks");
+						const strainText = document.createRange();
+						const strainMark = marks[1];
+						if (!strainMark) throw new Error("missing strain text");
+						strainText.selectNodeContents(strainMark);
+						expect(strainText.getClientRects().length, size).toBe(1);
+						expect(strain.top, size).toBeCloseTo(level.top, 0);
+						expect(strain.right, size).toBeLessThanOrEqual(
+							cell.getBoundingClientRect().right + 0.5,
+						);
+						for (const mark of marks) {
+							expect(getComputedStyle(mark).textDecorationLine, size).toBe(
+								"underline",
+							);
+							expect(getComputedStyle(mark).textDecorationStyle, size).toBe(
+								"dotted",
+							);
+						}
+					}
+					const pass = calls[2];
+					const passText = pass?.querySelector<HTMLElement>(".call-pass");
+					const double = calls[3];
+					if (!pass || !passText || !double)
+						throw new Error("missing pass or double");
+					expect(getComputedStyle(pass).textDecorationLine).toBe("none");
+					expect(getComputedStyle(passText).textDecorationLine).toBe(
+						"underline",
+					);
+					expect(getComputedStyle(passText).textDecorationStyle).toBe("dotted");
+					expect(getComputedStyle(double).textDecorationLine).toBe("underline");
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
 	const WEAK_TWO =
 		"3½–7½ Four-Aces-Punkte, schwache Zwei, eine gute ♠-Farbe mit 6 Karten";
 	const meaningView = (
