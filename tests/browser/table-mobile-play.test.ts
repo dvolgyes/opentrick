@@ -301,6 +301,57 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it.each(["L", "XL", "XXL"])(
+		"centres the top and bottom phone hands at %s",
+		async (size) => {
+			await page.viewport(320, 568);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const { root } = renderMobile(playView());
+				for (const selector of [
+					".mobile-board-top .hand-row",
+					".mobile-auction-hand .hand-row",
+				]) {
+					const row = root.querySelector<HTMLElement>(selector);
+					const card = row?.querySelector<HTMLElement>(".card, .back");
+					if (!row || !card) throw new Error(`missing ${selector}`);
+					const last = row?.querySelectorAll<HTMLElement>(".card, .back");
+					const right = last?.[last.length - 1]?.getBoundingClientRect().right;
+					if (right === undefined) throw new Error("missing last card");
+					expect((card.getBoundingClientRect().left + right) / 2).toBeCloseTo(
+						(row.getBoundingClientRect().left +
+							row.getBoundingClientRect().right) /
+							2,
+						0,
+					);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
+
+	it.each([
+		["L", 1.1],
+		["XL", 1.2],
+		["XXL", 1.3],
+	] as const)("adds %s vertical board space", async (size, multiplier) => {
+		await page.viewport(320, 568);
+		document.documentElement.dataset.suitFontSize = size;
+		try {
+			const { root } = renderMobile(sideHandView());
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			if (!board) throw new Error("missing board");
+			const actual = board.getBoundingClientRect().height;
+			board.style.height = "auto";
+			const natural = board.getBoundingClientRect().height;
+			expect(actual / natural).toBeCloseTo(multiplier, 2);
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+			await page.viewport(414, 896);
+		}
+	});
 	it("brings the side-hand suit closer to the rank by a quarter of the font size", () => {
 		renderView(sideHandView(), "compact");
 		const face = document.querySelector<HTMLElement>(
@@ -387,6 +438,16 @@ describe("played card styles", () => {
 			const cards = [
 				...root.querySelectorAll<HTMLElement>(".mobile-board-center .played"),
 			].map((card) => card.getBoundingClientRect());
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			if (!board) throw new Error("missing board");
+			const boardBounds = board.getBoundingClientRect();
+			for (const face of root.querySelectorAll<HTMLElement>(
+				".mobile-board-top .card .face, .mobile-auction-hand .card .face, .mobile-board-center .played",
+			)) {
+				const bounds = face.getBoundingClientRect();
+				expect(bounds.top).toBeGreaterThanOrEqual(boardBounds.top - 0.5);
+				expect(bounds.bottom).toBeLessThanOrEqual(boardBounds.bottom + 0.5);
+			}
 			const markers = [
 				...root.querySelectorAll<HTMLElement>(
 					".mobile-board-left .suit-row .card:last-child .pip",

@@ -10,6 +10,10 @@
 :root[data-suit-font-size="XXL"] { --suit-font-scale: 1.75; }
 :root[data-suit-font-size="XXXL"] { --suit-font-scale: 2; }
 
+:root[data-suit-font-size="L"] { --mobile-board-growth: 1.1; }
+:root[data-suit-font-size="XL"] { --mobile-board-growth: 1.2; }
+:root:is([data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) { --mobile-board-growth: 1.3; }
+
 .bid,
 .auction .bid-mark,
 .card-notation,
@@ -1100,6 +1104,10 @@ main:has(> .room) {
 	.mobile-auction-board {
 		--side-marker-width: calc(0.7rem * var(--suit-font-scale) * 1.3 + 0.2rem + 4px);
 		grid-template-columns: minmax(var(--side-marker-width), 1fr) max-content minmax(var(--side-marker-width), 1fr);
+	}
+
+	:is(.mobile-board-top, .mobile-auction-hand) .hand-row:not(.backs) {
+		min-height: max(3.2rem, calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.7rem + 4px));
 	}
 
 	:is(.mobile-board-left, .mobile-board-right) .hand-stack {
@@ -3535,10 +3543,18 @@ main:has(> .room[data-form="compact"]) {
 	align-items: center;
 	gap: 0.2rem 0.25rem;
 	min-height: 0;
+	height: calc-size(auto, size * var(--mobile-board-growth, 1));
 	padding: 0.2rem;
 	border-radius: 0.45rem;
 	background: var(--felt);
 	color: var(--felt-fg);
+}
+
+/* On browsers without intrinsic-size calculations, add proportional room using the phone width. */
+@supports not (height: calc-size(auto, size * 1.1)) {
+	.mobile-auction-board {
+		padding-block: calc(0.2rem + 50vw * (var(--mobile-board-growth, 1) - 1));
+	}
 }
 
 .mobile-board-top {
@@ -3557,6 +3573,7 @@ main:has(> .room[data-form="compact"]) {
 	--back-step: calc((100% - var(--back-card-w)) / 12);
 	--suit-gap: 0.9rem;
 	width: 100%;
+	justify-content: safe center;
 }
 
 .mobile-board-top .hand-row > .back:last-child {
@@ -3873,6 +3890,7 @@ main:has(> .room[data-form="compact"]) {
 	--suit-gap: 0.9rem;
 	box-sizing: border-box;
 	width: 100%;
+	justify-content: safe center;
 	min-height: 3.2rem;
 	overflow: visible;
 }
