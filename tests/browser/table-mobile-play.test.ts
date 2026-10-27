@@ -3332,6 +3332,71 @@ describe("mobile folds", () => {
 	const shown = (root: HTMLElement, selector: string) =>
 		root.querySelector<HTMLElement>(selector)?.checkVisibility() ?? false;
 
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"scales the scrollable bidding history height with the suit font (%s)",
+		(layout) => {
+			const base = playView();
+			if (!base.auction) throw new Error("missing auction");
+			renderView(
+				{
+					...base,
+					phase: "auction",
+					auction: {
+						...base.auction,
+						rows: Array.from({ length: 12 }, () => [
+							"1♣",
+							"Pass",
+							"2♦",
+							"Pass",
+						]),
+					},
+				},
+				layout,
+			);
+			const window = document.querySelector<HTMLElement>(".auction-scroll");
+			if (!window) throw new Error("missing bidding history");
+			try {
+				document.documentElement.dataset.suitFontSize = "M";
+				const medium = window.getBoundingClientRect().height;
+				expect(window.scrollHeight).toBeGreaterThan(window.clientHeight);
+				for (const [size, scale] of [
+					["S", 0.75],
+					["M", 1],
+					["L", 1.25],
+					["XL", 1.5],
+					["XXL", 1.75],
+					["XXXL", 2],
+				] as const) {
+					document.documentElement.dataset.suitFontSize = size;
+					expect(window.getBoundingClientRect().height, size).toBeCloseTo(
+						medium * scale,
+						0,
+					);
+					if (layout === "compact" && scale <= 1) continue;
+					const rows = [
+						...window.querySelectorAll<HTMLTableRowElement>("tbody tr"),
+					];
+					for (const [index, row] of rows.entries()) {
+						const next = rows[index + 1];
+						if (!next) continue;
+						for (const mark of row.querySelectorAll<HTMLElement>(
+							".bid-mark, .call-pass",
+						)) {
+							const text = document.createRange();
+							text.selectNodeContents(mark);
+							expect(
+								text.getBoundingClientRect().bottom,
+								`${layout} ${size}`,
+							).toBeLessThanOrEqual(next.getBoundingClientRect().top + 1);
+						}
+					}
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
+
 	it.each<[number, number, string]>([
 		[320, 568, "M"],
 		[390, 844, "XXXL"],

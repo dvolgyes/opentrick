@@ -1093,6 +1093,10 @@ main:has(> .room) {
 		grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(max-content, 1fr);
 	}
 
+	.mobile-auction-bids .auction .bid-mark {
+		line-height: 1.25;
+	}
+
 	.mobile-board-center .trick {
 		--rank-size: 0.95rem;
 		--card-h: max(3.1rem, calc(var(--rank-size) * var(--suit-font-scale) * 3.5 + 0.16rem + 2px));
@@ -2887,7 +2891,7 @@ button.call-join[data-in-call="true"] {
 }
 
 .auction-scroll {
-	max-height: 8rem;
+	max-height: calc(8rem * var(--suit-font-scale));
 	overflow-y: auto;
 	overscroll-behavior: contain;
 }
@@ -3819,7 +3823,7 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-auction-bids .auction-scroll {
-	max-height: 6.2rem;
+	max-height: calc(6.2rem * var(--suit-font-scale));
 }
 
 [data-form="compact"]
@@ -3849,7 +3853,7 @@ main:has(> .room[data-form="compact"]) {
 	line-height: 1;
 }
 
-/* The larger bid mark takes the cell's line height and its top, so the two font sizes do not raise the line. */
+/* At the original size, the larger bid mark stays within the compact cell. */
 [data-form="compact"] .mobile-auction-bids .auction .bid-mark {
 	line-height: 0.8;
 	vertical-align: top;
