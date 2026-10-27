@@ -50,6 +50,7 @@
 	/* The suits and calls on the page and the sheets. */
 	--red-suit: #c0262d;
 	--call-green: #1f7a46;
+	--bid-nt: #398300;
 	--call-orange: #c75b00;
 	--card-bg: #ffffff;
 	--card-fg: #1d1d1b;
@@ -100,6 +101,10 @@
 	--voice-frame: rgb(46 204 64 / 35%);
 	--voice-off: #173a26;
 	color-scheme: light;
+}
+
+:root[data-scheme="dark"] {
+	--bid-nt: #a7e845;
 }
 
 /* Solarized light: the base3 page and sheets, base02 text, a teal-green felt, and the Solarized red, green and orange

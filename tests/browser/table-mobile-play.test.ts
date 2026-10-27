@@ -302,6 +302,36 @@ afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
 	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"shows the NT bid level and strain in the same bright green (%s)",
+		(layout) => {
+			const base = playView();
+			if (!base.auction) throw new Error("missing auction");
+			const { root } = renderView(
+				{
+					...base,
+					phase: "auction",
+					bids: [
+						{ call: "1NT", text: "1NT" },
+						{ call: "P", text: "Pass" },
+					],
+					auction: { ...base.auction, rows: [["1NT", "Pass"]] },
+				},
+				layout,
+			);
+			const marks = [
+				...document.querySelectorAll<HTMLElement>(
+					".auction .bid-mark.strain-NT",
+				),
+			];
+			const control = root.querySelector<HTMLElement>(".bid-calls .strain-NT");
+			if (!control || marks.length !== 2) throw new Error("missing NT bid");
+			const color = getComputedStyle(control).color;
+			for (const mark of marks)
+				expect(getComputedStyle(mark).color).toBe(color);
+			expect(color).toBe("rgb(57, 131, 0)");
+		},
+	);
+	it.each<Layout>(["desktop", "sideways", "compact"])(
 		"keeps a ten visible before the next card at XXL (%s)",
 		(layout) => {
 			const base = playView();
@@ -3320,7 +3350,7 @@ describe("bidding guide", () => {
 			if (!bid) throw new Error(`no ${selector} in the guide`);
 			return [bid.textContent, getComputedStyle(bid).color];
 		};
-		expect(color(".guide-bid.strain-NT")).toEqual(["1NT", "rgb(31, 122, 70)"]);
+		expect(color(".guide-bid.strain-NT")).toEqual(["1NT", "rgb(57, 131, 0)"]);
 		expect(color(".guide-bid.strain-H")).toEqual([
 			expect.stringMatching(/^[1-7]♥$/),
 			"rgb(192, 38, 45)",

@@ -1608,7 +1608,7 @@ dialog {
 }
 
 .guide-bid.strain-NT {
-	color: var(--call-green);
+	color: var(--bid-nt);
 }
 
 .guide-bid.call-double {
@@ -1782,8 +1782,8 @@ dialog {
 	color: var(--red-suit);
 }
 
-.bridge-table .auction .bid-mark.strain-NT {
-	color: var(--call-green);
+.auction .bid-mark.strain-NT {
+	color: var(--bid-nt);
 }
 
 .bridge-table .auction .call-double {
@@ -2373,7 +2373,7 @@ button.call-join[data-in-call="true"] {
 }
 
 .bid-calls .strain-NT {
-	color: var(--call-green);
+	color: var(--bid-nt);
 }
 
 .bid-calls .double {
