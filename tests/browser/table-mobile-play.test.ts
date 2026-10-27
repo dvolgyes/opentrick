@@ -301,6 +301,33 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("keeps the marker text aligned to the same left inset at every size", () => {
+		renderView(playView(), "desktop");
+		const markers = [
+			...document.querySelectorAll<HTMLElement>(".face .rank, .face .pip"),
+		];
+		if (markers.length === 0) throw new Error("missing card markers");
+		const offsets = () =>
+			markers.map((marker) => {
+				if (!marker.parentElement) throw new Error("missing card face");
+				const range = document.createRange();
+				range.selectNodeContents(marker);
+				return (
+					range.getBoundingClientRect().left -
+					marker.parentElement.getBoundingClientRect().left
+				);
+			});
+		const original = offsets();
+		try {
+			for (const size of ["S", "M", "L", "XL", "XXL", "XXXL"]) {
+				document.documentElement.dataset.suitFontSize = size;
+				for (const [index, offset] of offsets().entries())
+					expect(offset).toBeCloseTo(original[index] ?? 0, 1);
+			}
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+		}
+	});
 	it("keeps the played card size when enlarged markers fit", () => {
 		renderView(playView(), "desktop", "corners-upright");
 		const card = document.querySelector<HTMLElement>(".played");

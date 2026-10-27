@@ -1027,12 +1027,12 @@ main:has(> .room) {
 	letter-spacing: -0.04em;
 }
 
-/* The rank and the suit share one centre line: each sits in a box of the same width, with its text centred. The glyph side-bearings then no longer shift the suit. */
+/* Keep the text origin at the same inset as the font size changes. */
 .face > .rank,
 .face > .pip {
 	display: block;
 	width: 1.3em;
-	text-align: center;
+	text-align: left;
 }
 
 .hand-row .face {
