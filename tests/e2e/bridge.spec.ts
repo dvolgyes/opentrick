@@ -420,13 +420,13 @@ test("5: the board is played out; the result and the duplicate score agree in ev
 		// The finished board shows the whole deal, and nothing can be played.
 		for (const other of SEATS)
 			await expect(cards(hand(page, other))).toHaveCount(13);
-		// Every hand shows its corrected HCP, "corrected HCP: 15 (13 +2)"; the HCP before the correction add up to 40.
+		// The default point system shows standard HCP for every hand; the whole deal adds up to 40.
 		const pills = await page.locator(".hcp-pill").allInnerTexts();
 		expect(pills).toHaveLength(4);
 		const hcp = pills.map((pill) => {
-			const match = /^corrected HCP: (\d+)(?: \((\d+) [+-]\d+\))?$/.exec(pill);
+			const match = /^HCP: (\d+)$/.exec(pill);
 			if (!match) throw new Error(`not a points pill: ${pill}`);
-			return Number(match[2] ?? match[1]);
+			return Number(match[1]);
 		});
 		expect(hcp.reduce((sum, points) => sum + points, 0)).toBe(40);
 		await expect(playable(page)).toHaveCount(0);
