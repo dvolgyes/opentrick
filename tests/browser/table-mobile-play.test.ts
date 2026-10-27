@@ -301,6 +301,85 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it.each<["left" | "right", number, number]>([
+		["left", 320, 568],
+		["right", 320, 568],
+		["left", 390, 844],
+		["right", 390, 844],
+	])(
+		"shows all four suits of a %s dummy at XXXL on a %i × %i phone",
+		async (position, width, height) => {
+			await page.viewport(width, height);
+			document.documentElement.dataset.suitFontSize = "XXXL";
+			try {
+				const base = sideHandView();
+				const dummy = base.seats.find((player) => player.position === "left");
+				if (!dummy) throw new Error("missing dummy");
+				const view = {
+					...base,
+					trick: base.trick && {
+						...base.trick,
+						cards: base.trick.cards.map((item) => ({ ...item, position })),
+					},
+					seats: base.seats.map((player) =>
+						player.position === position
+							? { ...player, hand: dummy.hand, tags: ["Dummy"] }
+							: player.position === "left"
+								? { ...player, hand: { visible: false as const, count: 13 } }
+								: player,
+					),
+				};
+				const { root } = renderMobile(view);
+				const column = root.querySelector<HTMLElement>(
+					`.mobile-board-${position}`,
+				);
+				const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+				if (!column || !board) throw new Error("missing mobile board");
+				const rows = [...column.querySelectorAll<HTMLElement>(".suit-row")];
+				expect(rows).toHaveLength(4);
+				for (const row of rows) {
+					const marker = row.querySelector<HTMLElement>(
+						".card:last-child .pip",
+					);
+					if (!marker) throw new Error("missing suit marker");
+					const range = document.createRange();
+					range.selectNodeContents(marker);
+					const text = range.getBoundingClientRect();
+					const bounds = column.getBoundingClientRect();
+					const played = root.querySelector<HTMLElement>(
+						".mobile-board-center .played",
+					);
+					if (!played) throw new Error("missing played card");
+					const trick = played.getBoundingClientRect();
+					expect(
+						text.right <= trick.left ||
+							text.left >= trick.right ||
+							text.bottom <= trick.top ||
+							text.top >= trick.bottom,
+						`${position} ${marker.textContent}`,
+					).toBe(true);
+					expect(text.left, marker.textContent ?? "").toBeGreaterThanOrEqual(
+						bounds.left - 0.5,
+					);
+					expect(text.right, marker.textContent ?? "").toBeLessThanOrEqual(
+						bounds.right + 0.5,
+					);
+					expect(text.top, marker.textContent ?? "").toBeGreaterThanOrEqual(
+						bounds.top - 0.5,
+					);
+					expect(text.bottom, marker.textContent ?? "").toBeLessThanOrEqual(
+						bounds.bottom + 0.5,
+					);
+					expect(text.bottom, marker.textContent ?? "").toBeLessThanOrEqual(
+						board.getBoundingClientRect().bottom + 0.5,
+					);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
 	it.each<Layout>(["desktop", "sideways"])(
 		"keeps both sidebar contracts the same size as the trick labels (%s)",
 		(layout) => {

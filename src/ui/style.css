@@ -1055,7 +1055,7 @@ main:has(> .room) {
 :root:is([data-suit-font-size="L"], [data-suit-font-size="XL"], [data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) {
 	/* Each side-hand strip must expose both lines before the next suit row starts. */
 	.hand-stack .suit-row .card {
-		min-height: calc(var(--rank-size) * var(--suit-font-scale) * 2.1 + 0.1rem + 1px);
+		min-height: calc(var(--rank-size) * var(--suit-font-scale) * 2.1 + 0.1rem + 4px);
 	}
 
 	.card .face {
