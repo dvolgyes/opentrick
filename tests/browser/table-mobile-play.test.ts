@@ -303,6 +303,70 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it.each(["L", "XL", "XXL", "XXXL"])(
+		"keeps the phone bidding board content-sized at %s",
+		async (size) => {
+			await page.viewport(390, 844);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const { root } = renderMobile({ ...playView(), phase: "auction" });
+				const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+				if (!board) throw new Error("missing bidding board");
+				const shown = board.getBoundingClientRect().height;
+				board.style.height = "auto";
+				expect(shown).toBeCloseTo(board.getBoundingClientRect().height, 0);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
+	it.each<["auction" | "play", string]>([
+		...["auction", "play"].flatMap((phase) =>
+			["M", "L", "XL", "XXL", "XXXL"].map(
+				(size) =>
+					[phase as "auction" | "play", size] as ["auction" | "play", string],
+			),
+		),
+	])(
+		"keeps the phone card hands near the board edges in %s at %s",
+		async (phase, size) => {
+			await page.viewport(390, 844);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const base = playView();
+				const { root } = renderMobile({ ...base, phase });
+				const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+				const top = root.querySelector<HTMLElement>(".mobile-board-top .hand");
+				const name = root.querySelector<HTMLElement>(
+					".mobile-board-top .mobile-board-name",
+				);
+				const bottom = root.querySelector<HTMLElement>(
+					".mobile-auction-hand .hand",
+				);
+				if (!board || !top || !bottom || !name)
+					throw new Error("missing board hands");
+				expect(
+					name.getBoundingClientRect().top - board.getBoundingClientRect().top,
+				).toBeLessThan(12);
+				const gaps = () => ({
+					top:
+						top.getBoundingClientRect().top - board.getBoundingClientRect().top,
+					bottom:
+						board.getBoundingClientRect().bottom -
+						bottom.getBoundingClientRect().bottom,
+				});
+				const expanded = gaps();
+				board.style.height = "auto";
+				const natural = gaps();
+				expect(expanded.top).toBeCloseTo(natural.top, 0);
+				expect(expanded.bottom).toBeCloseTo(natural.bottom, 0);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
 	it("centres the bottom hand and its pills in the phone result screen", async () => {
 		await page.viewport(390, 844);
 		try {

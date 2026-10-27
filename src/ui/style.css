@@ -3584,10 +3584,15 @@ main:has(> .room[data-form="compact"]) {
 	color: var(--felt-fg);
 }
 
-/* On browsers without intrinsic-size calculations, add proportional room using the phone width. */
+/* The bidding overlay already determines the space it needs. */
+.bridge-table[data-phase="auction"] .mobile-auction-board {
+	--mobile-board-growth: 1;
+}
+
+/* On browsers without intrinsic-size calculations, put the extra room in the middle row. */
 @supports not (height: calc-size(auto, size * 1.1)) {
-	.mobile-auction-board {
-		padding-block: calc(0.2rem + 50vw * (var(--mobile-board-growth, 1) - 1));
+	.mobile-board-center {
+		padding-block: calc(50vw * (var(--mobile-board-growth, 1) - 1));
 	}
 }
 
