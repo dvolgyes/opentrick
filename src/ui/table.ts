@@ -193,9 +193,10 @@ const MARK_STRAIN: ReadonlyMap<string, string> = new Map([
 
 /**
  * One cell of the bidding history. A bid such as "1♠" becomes a level and a suit mark, each large and in the strain's
- * colour; Double and Redouble get their own colours; anything else (Pass, a dash) stays plain text.
+ * colour; Double and Redouble get their own colours, and Pass follows the bid font size.
  */
 function auctionCell(text: string, t: Translate): (string | HTMLElement)[] {
+	if (text === "Pass") return [el("span", { className: "call-pass" }, t(text))];
 	if (text === "Double")
 		return [el("span", { className: "call-double" }, t(text))];
 	if (text === "Redouble") {
@@ -1787,7 +1788,12 @@ export function tableSection(
 			},
 			{ className: "confirm", attrs: { "data-call": chosen ?? "" } },
 		);
-		confirm.replaceChildren(...cardNotation(confirm.textContent ?? ""));
+		if (chosen === "P" && chosenText !== undefined)
+			confirm.replaceChildren(
+				`${t("Confirm")} `,
+				el("span", { className: "card-notation" }, chosenText),
+			);
+		else confirm.replaceChildren(...cardNotation(confirm.textContent ?? ""));
 		const hint = conventionHint(shownPointSystem, view, chosen, t);
 		if (hint !== undefined)
 			confirm.append(

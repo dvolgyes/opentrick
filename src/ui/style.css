@@ -13,7 +13,8 @@
 .bid,
 .auction .bid-mark,
 .card-notation,
-.guide-bid:not(.call-pass, .call-double, .call-redouble),
+.guide-bid:not(.call-double, .call-redouble),
+.auction .call-pass,
 .suit-mark {
 	font-size: calc(1em * var(--suit-font-scale));
 }
@@ -921,6 +922,11 @@ main:has(> .room) {
 	height: var(--card-h);
 }
 
+/* A ten needs a wide enough exposed strip to show both digits before the next card. */
+.hand-row .card[data-card$="T"] {
+	min-width: calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 1px);
+}
+
 .hand-row .back {
 	width: var(--back-step);
 	height: var(--card-h);
@@ -1054,6 +1060,14 @@ main:has(> .room) {
 
 	.bridge-table:is([data-played-card-style="corners-upright"], [data-played-card-style="corners-oriented"]) .played {
 		min-height: calc(1.5em + 6px);
+	}
+
+	.bid-calls {
+		grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(max-content, 1fr);
+	}
+
+	.mobile-auction-controls .bid-calls {
+		grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(max-content, 1fr);
 	}
 }
 
@@ -2399,7 +2413,8 @@ button.call-join[data-in-call="true"] {
 }
 
 .bid-levels .level,
-.bid-calls .strain {
+.bid-calls .strain,
+.bid-calls .pass {
 	--bid-symbol-scale: var(--suit-font-scale);
 }
 

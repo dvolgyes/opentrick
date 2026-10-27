@@ -301,6 +301,55 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"keeps a ten visible before the next card at XXL (%s)",
+		(layout) => {
+			const base = playView();
+			const ten = { ...card("ST"), rank: "10" };
+			const hand = {
+				visible: true as const,
+				suits: [
+					{
+						suit: "S" as const,
+						symbol: "♠",
+						trump: false,
+						cards: [ten, card("S9")],
+					},
+				],
+			};
+			renderView(
+				{
+					...base,
+					seats: base.seats.map((player) =>
+						player.position === "bottom" || player.position === "left"
+							? { ...player, hand }
+							: player,
+					),
+				},
+				layout,
+			);
+			try {
+				document.documentElement.dataset.suitFontSize = "XXL";
+				const tens = [
+					...document.querySelectorAll<HTMLElement>(
+						'.hand .card[data-card="ST"]',
+					),
+				];
+				expect(tens.length).toBeGreaterThan(0);
+				for (const card of tens) {
+					const rank = card.querySelector(".rank");
+					if (!rank) throw new Error("missing ten");
+					const text = document.createRange();
+					text.selectNodeContents(rank);
+					expect(text.getBoundingClientRect().right).toBeLessThanOrEqual(
+						card.getBoundingClientRect().right,
+					);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
 	it("keeps the marker text aligned to the same left inset at every size", () => {
 		renderView(playView(), "desktop");
 		const markers = [
@@ -352,6 +401,7 @@ describe("played card styles", () => {
 				".rank-corner",
 				".played-center-suit",
 				".auction .bid-mark",
+				".auction .call-pass",
 				".contract-head .bid",
 				".contract-head .bid .strain",
 				".tricks-counts .bid",
@@ -405,7 +455,7 @@ describe("played card styles", () => {
 	);
 
 	it.each<Layout>(["desktop", "sideways", "compact"])(
-		"scales bid selection buttons without scaling ordinary controls (%s)",
+		"scales bid selection buttons including Pass (%s)",
 		(layout) => {
 			const { root } = renderView(
 				{
@@ -432,8 +482,16 @@ describe("played card styles", () => {
 			const medium = sizes();
 			try {
 				document.documentElement.dataset.suitFontSize = "XXXL";
-				expect(sizes()).toEqual(
-					medium.map((size, index) => size * (index === 2 ? 1 : 2)),
+				expect(sizes()).toEqual(medium.map((size) => size * 2));
+				const pass = nodes[2];
+				if (!pass) throw new Error("missing Pass button");
+				const text = document.createRange();
+				text.selectNodeContents(pass);
+				expect(text.getBoundingClientRect().right).toBeLessThanOrEqual(
+					pass.getBoundingClientRect().right,
+				);
+				expect(text.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+					pass.getBoundingClientRect().left,
 				);
 			} finally {
 				delete document.documentElement.dataset.suitFontSize;
