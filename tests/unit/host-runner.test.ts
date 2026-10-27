@@ -16,6 +16,8 @@ import {
 	claimRequestPayload,
 	createBridgeModule,
 	parseBridgeState,
+	resetRequestPayload,
+	resetVotePayload,
 	undoRequestPayload,
 } from "../../src/game/bridge";
 import type { TableController } from "../../src/p2p/table";
@@ -309,6 +311,95 @@ describe("host bot votes", () => {
 });
 
 describe("bot pacing", () => {
+	it("discards an old-hand decision when a reset redeals the same board number", async () => {
+		let finishOld: (() => void) | undefined;
+		let decisions = 0;
+		const host = liveHost(
+			tableState([]),
+			{ choose: vi.fn(), stop: () => {} },
+			{
+				choose: async () => {
+					decisions += 1;
+					if (decisions === 1) {
+						await new Promise<void>((resolve) => {
+							finishOld = resolve;
+						});
+						return { call: "1C", policy: "sl", candidates: [] };
+					}
+					return { call: "P", policy: "sl", candidates: [] };
+				},
+				stop: () => {},
+			},
+		);
+		host.runner.setSeatEnabled("E", false);
+		host.runner.setSeatEnabled("W", false);
+		await host.runner.start(["N"]);
+		const oldDeal = host.state()?.board?.deal;
+		expect(host.deliver("S", resetRequestPayload(ROOM_ID))).toEqual({
+			ok: true,
+		});
+		const request = host.state()?.reset;
+		if (!request) throw new Error("no reset request");
+		// Players can approve a reset themselves while their autoplay decision is still running.
+		for (const seat of ["E", "W", "N"] as const)
+			expect(
+				host.deliver(seat, resetVotePayload(ROOM_ID, request.id, true)),
+			).toEqual({ ok: true });
+		expect(host.state()?.board?.number).toBe(1);
+		expect(host.state()?.board?.deal).not.toEqual(oldDeal);
+		if (!finishOld) throw new Error("no pending decision");
+		finishOld();
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(host.state()?.board?.calls).toEqual(["P"]);
+		expect(host.onError).not.toHaveBeenCalled();
+		host.runner.stop();
+	});
+
+	it.each(["undo", "reset"] as const)(
+		"bids again when %s returns to an earlier position",
+		async (operation) => {
+			const host = liveHost(
+				tableState([act(call("1C"))]),
+				{ choose: vi.fn(), stop: () => {} },
+				{
+					choose: async () => ({ call: "P", policy: "sl", candidates: [] }),
+					stop: () => {},
+				},
+			);
+			await host.runner.start();
+			await vi.advanceTimersByTimeAsync(3000);
+			expect(host.state()?.board?.calls).toEqual(["1C", "P"]);
+			expect(
+				host.deliver(
+					"N",
+					operation === "undo"
+						? undoRequestPayload(ROOM_ID, 1)
+						: resetRequestPayload(ROOM_ID),
+				),
+			).toEqual({ ok: true });
+			await vi.advanceTimersByTimeAsync(0);
+			if (operation === "reset") {
+				const request = host.state()?.reset;
+				if (!request) throw new Error("no reset request");
+				expect(
+					host.deliver("S", resetVotePayload(ROOM_ID, request.id, true)),
+				).toEqual({ ok: true });
+			}
+			expect(host.state()?.board?.calls).toEqual([]);
+			const board = host.state()?.board;
+			if (!board) throw new Error("no board after request");
+			expect(
+				host.deliver("N", actionPayload(ROOM_ID, board, call("1C"))),
+			).toEqual({ ok: true });
+			await vi.advanceTimersByTimeAsync(2999);
+			expect(host.state()?.board?.calls).toEqual(["1C"]);
+			await vi.advanceTimersByTimeAsync(1);
+			expect(host.state()?.board?.calls).toEqual(["1C", "P"]);
+			expect(host.onError).not.toHaveBeenCalled();
+			host.runner.stop();
+		},
+	);
+
 	function cardHost(steps = 2, calculationMs = 0) {
 		const state = tableState([
 			...OPENING,

@@ -48,6 +48,7 @@ export class HostBotRunner {
 	readonly #bidEngine: BidChooser;
 	#requestAbort = new AbortController();
 	readonly #processed = new Set<string>();
+	#position: string | undefined;
 	#unsubscribe: (() => void) | undefined;
 	#running = false;
 	#rerun = false;
@@ -146,7 +147,17 @@ export class HostBotRunner {
 	}
 
 	#schedule(): void {
-		if (this.#stopped || this.#paused) return;
+		if (this.#stopped) return;
+		const board = this.#currentState()?.board;
+		const position = board ? actionPositionKey(board) : undefined;
+		if (position !== this.#position) {
+			// Undo and reset can revisit an earlier position. Deduplicate only until the board moves.
+			this.#position = position;
+			this.#processed.clear();
+			this.#requestAbort.abort();
+			this.#requestAbort = new AbortController();
+		}
+		if (this.#paused) return;
 		if (this.#running) {
 			this.#rerun = true;
 			return;
