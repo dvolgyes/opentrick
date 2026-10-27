@@ -195,6 +195,140 @@ class Rig {
 	}
 }
 
+describe("community admission", () => {
+	it("persists temporary bot cover without replacing the human seat, including host restart", async () => {
+		const config = {
+			...CONFIG,
+			community: {
+				v: 1 as const,
+				holders: {
+					N: await deriveHolder(TABLE, CLIENT_N),
+					E: await deriveHolder(TABLE, CLIENT_E),
+					S: await deriveHolder(TABLE, CLIENT_S),
+					W: await deriveHolder(TABLE, "clientW-0123456789abcd"),
+				},
+			},
+		};
+		const rig = await new Rig().create(config);
+		const gen = await rig.seat(EAST, CLIENT_E, "E", ["community-v1"]);
+		const holder = rig.row("E")?.holder;
+		rig.host.leave(EAST);
+		await rig.from(HOST, { k: "release", req: 91, seat: "E" });
+		expect(rig.row("E")).toMatchObject({ holder, gen });
+		expect(await rig.host.setCommunityCover("E", 1)).toBe(true);
+		expect(rig.row("E")).toMatchObject({ holder, gen, coverBoard: 1 });
+		rig.host.stop();
+		rig.start();
+		expect(rig.host.roster()?.bots).toContain("E");
+		await rig.hello(EAST, CLIENT_E, { seat: "E", gen }, ["community-v1"]);
+		await rig.from(EAST, { k: "autoplay-request", req: 1, enabled: false });
+		expect(rig.autoplayRequests).toEqual([]);
+		expect(
+			rig
+				.to(EAST)
+				.some(
+					(message) =>
+						message.k === "autoplay-result" && message.status === "failed",
+				),
+		).toBe(true);
+		await rig.command(EAST, 711, gen);
+		expect(
+			rig
+				.to(EAST)
+				.some(
+					(message) => message.k === "result" && message.status === "rejected",
+				),
+		).toBe(true);
+		expect(await rig.host.setCommunityCover("E", null)).toBe(true);
+		expect(rig.row("E")).toEqual({ seat: "E", holder, gen });
+		await rig.command(EAST, 712, gen);
+		expect(
+			rig
+				.to(EAST)
+				.some(
+					(message) => message.k === "result" && message.status === "accepted",
+				),
+		).toBe(true);
+		// The covered seat can itself become host. It still uses the bot actor until the boundary.
+		expect(await rig.host.setCommunityCover("N", 1)).toBe(true);
+		rig.host.stop();
+		rig.start();
+		expect(
+			await rig.host.localCommand(
+				"N",
+				commandId(713),
+				chatPayload(TABLE, "covered host"),
+			),
+		).toMatchObject({ ok: true });
+		await rig.command(HOST, 714, rig.row("N")?.gen ?? 0);
+		expect(
+			rig
+				.to(HOST)
+				.some(
+					(message) => message.k === "result" && message.status === "rejected",
+				),
+		).toBe(true);
+		expect(await rig.host.setCommunityCover("N", null)).toBe(true);
+		expect(
+			await rig.host.localCommand(
+				"N",
+				commandId(715),
+				chatPayload(TABLE, "stale bot"),
+			),
+		).toMatchObject({ ok: false });
+	});
+	it("admits only the assigned holder and keeps an absent player's reservation beyond the grace period", async () => {
+		const config = {
+			...CONFIG,
+			community: {
+				v: 1 as const,
+				holders: {
+					N: await deriveHolder(TABLE, CLIENT_N),
+					E: await deriveHolder(TABLE, CLIENT_E),
+					S: await deriveHolder(TABLE, CLIENT_S),
+					W: await deriveHolder(TABLE, "clientW-0123456789abcd"),
+				},
+			},
+		};
+		const rig = await new Rig().create(config);
+		await rig.seat(EAST, CLIENT_E, "E", ["community-v1"]);
+		rig.host.leave(EAST);
+		rig.clock.now += SEAT_GRACE_MS + HOST_LOST_MS + 1;
+		await rig.hello(EAST2, CLIENT_S, null, ["community-v1"]);
+		await rig.from(EAST2, { k: "claim-seat", req: 2, seat: "E" });
+		expect(
+			rig
+				.to(EAST2)
+				.some((message) => message.k === "seat-result" && message.ok),
+		).toBe(false);
+		expect(rig.row("E")?.holder).toBe(await deriveHolder(TABLE, CLIENT_E));
+	});
+	it("rejects a client that cannot enforce community rules", async () => {
+		const config = {
+			...CONFIG,
+			community: {
+				v: 1 as const,
+				holders: {
+					N: await deriveHolder(TABLE, CLIENT_N),
+					E: await deriveHolder(TABLE, CLIENT_E),
+					S: await deriveHolder(TABLE, CLIENT_S),
+					W: await deriveHolder(TABLE, "clientW-0123456789abcd"),
+				},
+			},
+		};
+		const rig = await new Rig().create(config);
+		await rig.hello(EAST, CLIENT_E);
+		expect(
+			rig
+				.to(EAST)
+				.some(
+					(message) =>
+						message.k === "welcome" && message.status === "incompatible",
+				),
+		).toBe(true);
+	});
+});
+
 describe("test kit", () => {
 	it("the synchronous digest gives the same holder as Web Crypto", async () => {
 		const spied = await deriveHolder(TABLE, CLIENT_E);

@@ -1,4 +1,5 @@
 import { updateUrl } from "../build";
+import { parseCommunityRoute } from "../community/link";
 import { parseRoute, tableFragment } from "../p2p/link";
 import {
 	bookmarkQuery,
@@ -8,6 +9,7 @@ import {
 	selectedPlayerQuery,
 	sharedQuery,
 } from "./bookmark";
+import { showCommunity } from "./community-view";
 import { showCreate } from "./create";
 import type { AppDeps, Dispose, Navigation } from "./deps";
 import { copyToClipboard } from "./dom";
@@ -60,6 +62,12 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 		dispose?.();
 		dispose = undefined;
 		const target = parseRoute(location.hash);
+		const community = parseCommunityRoute(location.hash);
+		if (community) {
+			if (!corner.isConnected) root.before(corner);
+			dispose = showCommunity(root, deps, community, navigation);
+			return;
+		}
 		// The create screen shows the language picker in its own options row.
 		if (target.kind === "create") corner.remove();
 		else if (!corner.isConnected) root.before(corner);

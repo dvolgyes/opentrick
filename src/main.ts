@@ -1,6 +1,7 @@
 import "./ui/style.css";
 import type { BuildInfo } from "./build";
 import { parseStunUrls, rtcConfiguration } from "./call/ice";
+import { communityTransport } from "./community/transport";
 import { detectLocale, translator } from "./i18n";
 import { readMeshConfig } from "./p2p/config";
 import type { Clock } from "./p2p/ports";
@@ -274,8 +275,10 @@ async function main(root: HTMLElement): Promise<void> {
 		memory,
 		browser,
 		clock,
-		openMesh: (tableId, key) =>
+		openCommunity: communityTransport(config),
+		openMesh: (tableId, key, community) =>
 			trysteroMesh(tableId, key, config, clock, {
+				community,
 				relayChecks: () => readSettings(browser).relayChecks,
 			}),
 		call: callSupport(import.meta.env.VITE_STUN_URLS),

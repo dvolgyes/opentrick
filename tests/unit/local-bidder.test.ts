@@ -16,59 +16,81 @@ afterEach(() => {
 });
 
 describe("local bidder integration", () => {
-	it("bids for the host without a key, prompt fetch, or model API", async () => {
-		vi.useFakeTimers({
-			toFake: ["Date", "performance", "setTimeout", "clearTimeout"],
-		});
-		const network = vi.fn(() => {
-			throw new Error("unexpected network request");
-		});
-		vi.stubGlobal("fetch", network);
-		const state = {
-			...createBridgeModule(randomBelowFrom(() => 0)).initialState(
-				ROOM_ID,
-				CONFIG,
-			),
-			board: createBoard(1, DEAL),
-		};
-		const send = vi.fn(async () => ({ ok: true }));
-		const controller = {
-			tableId: ROOM_ID,
-			view: () => ({
-				hosting: true,
-				ready: true,
-				seat: "N",
-				table: { config: CONFIG, state },
-				roster: { bots: ["N"] },
-			}),
-			onChange: () => () => {},
-			activateBots: async () => true,
-			send,
-		} as unknown as TableController;
-		const bidder: BidChooser = {
-			choose: vi.fn(async () => ({
-				call: "1NT" as const,
-				policy: "sl" as const,
-				candidates: [],
-			})),
-			stop: vi.fn(),
-		};
-		const errors = vi.fn();
-		const runner = new HostBotRunner(
-			controller,
-			{ bidder: "sl" },
-			errors,
-			undefined,
-			bidder,
-		);
-		await runner.start(["N"]);
-		await vi.advanceTimersByTimeAsync(3000);
-		expect(send).toHaveBeenCalledOnce();
-		expect(network).not.toHaveBeenCalled();
-		expect(errors).not.toHaveBeenCalled();
-		runner.stop();
-		expect(bidder.stop).toHaveBeenCalledOnce();
-	});
+	it.each([false, true])(
+		"bids locally through the correct host actor (community cover: %s)",
+		async (covered) => {
+			vi.useFakeTimers({
+				toFake: ["Date", "performance", "setTimeout", "clearTimeout"],
+			});
+			const network = vi.fn(() => {
+				throw new Error("unexpected network request");
+			});
+			vi.stubGlobal("fetch", network);
+			const state = {
+				...createBridgeModule(randomBelowFrom(() => 0)).initialState(
+					ROOM_ID,
+					CONFIG,
+				),
+				board: createBoard(1, DEAL),
+			};
+			const send = vi.fn(async () => ({ ok: true }));
+			const sendBot = vi.fn(async () => ({ ok: true }));
+			const controller = {
+				tableId: ROOM_ID,
+				view: () => ({
+					hosting: true,
+					ready: true,
+					seat: "N",
+					table: {
+						config: {
+							...CONFIG,
+							...(covered
+								? { community: { v: 1, holders: { N: "abcdefghijklmnop" } } }
+								: {}),
+						},
+						state,
+						seats: [
+							{
+								seat: "N",
+								holder: "abcdefghijklmnop",
+								gen: 1,
+								...(covered ? { coverBoard: 1 } : {}),
+							},
+						],
+					},
+					roster: { bots: ["N"] },
+				}),
+				onChange: () => () => {},
+				activateBots: async () => true,
+				send,
+				sendBot,
+			} as unknown as TableController;
+			const bidder: BidChooser = {
+				choose: vi.fn(async () => ({
+					call: "1NT" as const,
+					policy: "sl" as const,
+					candidates: [],
+				})),
+				stop: vi.fn(),
+			};
+			const errors = vi.fn();
+			const runner = new HostBotRunner(
+				controller,
+				{ bidder: "sl" },
+				errors,
+				undefined,
+				bidder,
+			);
+			await runner.start(["N"]);
+			await vi.advanceTimersByTimeAsync(3000);
+			expect(covered ? sendBot : send).toHaveBeenCalledOnce();
+			expect(covered ? send : sendBot).not.toHaveBeenCalled();
+			expect(network).not.toHaveBeenCalled();
+			expect(errors).not.toHaveBeenCalled();
+			runner.stop();
+			expect(bidder.stop).toHaveBeenCalledOnce();
+		},
+	);
 	it("uses the WBridge5 imitation when a room setup or link omits the bidding policy", () => {
 		const setup = { seats: ["N"], bidder: "sl" };
 		expect(parseBotSetup({ seats: ["N"] })).toEqual(setup);

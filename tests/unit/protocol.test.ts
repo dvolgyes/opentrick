@@ -3,6 +3,30 @@ import { envelopeEvent, parseRoomConfig, seatLabel } from "../../src/protocol";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
 describe("parseRoomConfig", () => {
+	it("preserves community admission and rejects incomplete or overlapping seat assignments", () => {
+		const community = {
+			v: 1,
+			holders: { N: "abcdefghijklmnop", S: "ponmlkjihgfedcba" },
+		};
+		const botSetup = { seats: ["E", "W"], bidder: "sl" };
+		const config = { ...CONFIG, community, botSetup };
+		expect(parseRoomConfig(config)).toEqual(config);
+		expect(
+			parseRoomConfig({ ...config, community: { ...community, v: 2 } }),
+		).toBeUndefined();
+		expect(
+			parseRoomConfig({
+				...config,
+				botSetup: { ...botSetup, seats: ["N", "E", "W"] },
+			}),
+		).toBeUndefined();
+		expect(
+			parseRoomConfig({
+				...config,
+				community: { v: 1, holders: { N: "abcdefghijklmnop" } },
+			}),
+		).toBeUndefined();
+	});
 	it("accepts a complete configuration", () => {
 		expect(parseRoomConfig(structuredClone(CONFIG))).toEqual(CONFIG);
 	});

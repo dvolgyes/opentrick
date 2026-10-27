@@ -401,6 +401,7 @@ export class Follower {
 			b: LINK_VERSION,
 			client: this.#deps.client,
 			features: [
+				APPLICATION_FEATURES.community,
 				APPLICATION_FEATURES.bridgeUndo,
 				APPLICATION_FEATURES.bridgeClaim,
 				APPLICATION_FEATURES.bridgeClaimNone,

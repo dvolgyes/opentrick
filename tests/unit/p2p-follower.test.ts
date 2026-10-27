@@ -233,6 +233,7 @@ describe("joining", () => {
 					b: LINK_VERSION,
 					client: CLIENT_E,
 					features: [
+						"community-v1",
 						"bridge-undo-v1",
 						"bridge-claim-v1",
 						"bridge-claim-none-v1",
@@ -276,6 +277,7 @@ describe("joining", () => {
 				b: LINK_VERSION,
 				client: CLIENT_E,
 				features: [
+					"community-v1",
 					"bridge-undo-v1",
 					"bridge-claim-v1",
 					"bridge-claim-none-v1",

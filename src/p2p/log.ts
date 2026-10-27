@@ -202,6 +202,17 @@ export function seatsAfter(
 	const rows = new Map(seats.map((row) => [row.seat, row]));
 	for (const entry of entries) {
 		if (entry.kind !== "seat" || entry.op.type === "rename") continue;
+		if (entry.op.type === "cover") {
+			const row = rows.get(entry.seat);
+			if (row && row.holder !== null && row.gen === entry.gen)
+				rows.set(entry.seat, {
+					seat: row.seat,
+					holder: row.holder,
+					gen: row.gen,
+					...(entry.op.board === null ? {} : { coverBoard: entry.op.board }),
+				});
+			continue;
+		}
 		const holder = entry.op.type === "claim" ? entry.op.holder : null;
 		rows.set(entry.seat, { seat: entry.seat, holder, gen: entry.gen });
 	}
@@ -244,7 +255,7 @@ export function seatEvent(
 	seq: number,
 	id: string,
 	seat: Seat,
-	change: "claim" | "release" | "rename",
+	change: "claim" | "release" | "rename" | "cover",
 	by: Seat = seat,
 ): JsonObject {
 	return envelopeEvent(

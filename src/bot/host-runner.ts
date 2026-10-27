@@ -361,7 +361,13 @@ export class HostBotRunner {
 		payload: JsonObject,
 		hostSeat: Seat | null,
 	): Promise<{ readonly ok: boolean }> {
-		return seat === hostSeat
+		const table = this.#controller.view().table;
+		const covered =
+			table?.config.community !== undefined &&
+			table.seats.some(
+				(row) => row.seat === seat && row.coverBoard !== undefined,
+			);
+		return seat === hostSeat && !covered
 			? this.#controller.send(payload)
 			: this.#controller.sendBot(seat, payload);
 	}

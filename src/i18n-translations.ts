@@ -1,3 +1,4 @@
+import { communityCatalogs } from "./i18n-community";
 import { playerCatalogs } from "./i18n-players";
 
 type TranslationRow = readonly [string, string, string, string, string, string];
@@ -3503,6 +3504,7 @@ export const additionalCatalogs: Readonly<
 		{
 			...Object.fromEntries(rows.map((row) => [row[0], row[index]])),
 			...playerCatalogs[locale as NewLocale],
+			...communityCatalogs[locale as NewLocale],
 		},
 	]),
 ) as Readonly<Record<NewLocale, Readonly<Record<string, string>>>>;

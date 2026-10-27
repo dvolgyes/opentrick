@@ -2,6 +2,7 @@
 
 export const PROTOCOL_VERSION = 1;
 export const APPLICATION_FEATURES = {
+	community: "community-v1",
 	bridgeUndo: "bridge-undo-v1",
 	bridgeClaim: "bridge-claim-v1",
 	/** The page reads a claim of no tricks, which gives the defenders every remaining trick. */
@@ -56,6 +57,11 @@ export interface RoomConfig {
 	readonly scoring: Scoring;
 	/** Optional for rooms created by older app versions. */
 	readonly botSetup?: BotSetup;
+	/** Fixed admissions agreed during community formation. Missing seats are the agreed initial bots. */
+	readonly community?: {
+		readonly v: 1;
+		readonly holders: Readonly<Partial<Record<Seat, string>>>;
+	};
 }
 
 export type JsonObject = { [key: string]: unknown };
@@ -95,10 +101,37 @@ export function parseRoomConfig(value: unknown): RoomConfig | undefined {
 		if (parsedBotSetup === undefined) return undefined;
 		botSetup = parsedBotSetup;
 	}
+	let community: RoomConfig["community"];
+	if (Object.hasOwn(value, "community")) {
+		const raw = value.community;
+		if (!isObject(raw) || raw.v !== 1 || !isObject(raw.holders))
+			return undefined;
+		const holders: Partial<Record<Seat, string>> = {};
+		for (const seat of SEATS) {
+			const holder = raw.holders[seat];
+			const bot = botSetup?.seats.includes(seat) ?? false;
+			if (holder === undefined) {
+				if (!bot) return undefined;
+			} else {
+				if (
+					bot ||
+					typeof holder !== "string" ||
+					!/^[A-Za-z0-9_-]{16}$/.test(holder)
+				)
+					return undefined;
+				holders[seat] = holder;
+			}
+		}
+		const assigned = Object.values(holders);
+		if (assigned.length === 0 || new Set(assigned).size !== assigned.length)
+			return undefined;
+		community = { v: 1, holders };
+	}
 	return {
 		names: names as Record<Seat, string>,
 		scoring,
 		...(botSetup === undefined ? {} : { botSetup }),
+		...(community === undefined ? {} : { community }),
 	};
 }
 

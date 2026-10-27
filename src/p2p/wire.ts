@@ -244,6 +244,8 @@ export interface SeatHolder {
 	readonly holder: string | null;
 	/** 0 before the first claim; each claim and release adds 1. */
 	readonly gen: number;
+	/** Community autoplay covers this board while preserving the human's reservation. */
+	readonly coverBoard?: number;
 }
 
 export interface RosterSeat extends SeatHolder {
@@ -369,6 +371,7 @@ export type CtlMessage =
 	| PeerRoundTrips;
 
 export type SeatOp =
+	| { readonly type: "cover"; readonly board: number | null }
 	| { readonly type: "claim"; readonly holder: string; readonly name?: string }
 	| { readonly type: "release"; readonly by: Seat }
 	| {
@@ -613,7 +616,20 @@ function parseSeatHolder(item: JsonObject): SeatHolder | undefined {
 	const { seat, holder, gen } = item;
 	if (!isSeat(seat) || !isSeatGeneration(gen)) return undefined;
 	if (holder !== null && !isHolder(holder)) return undefined;
-	return { seat, holder, gen };
+	if (
+		item.coverBoard !== undefined &&
+		(holder === null ||
+			!isIntegerIn(item.coverBoard, 1, Number.MAX_SAFE_INTEGER))
+	)
+		return undefined;
+	return {
+		seat,
+		holder,
+		gen,
+		...(item.coverBoard === undefined
+			? {}
+			: { coverBoard: item.coverBoard as number }),
+	};
 }
 
 /** The holder and generation of each seat, in `SEATS` order. */
@@ -689,6 +705,11 @@ function parseBindings(
 
 function parseSeatOp(value: unknown): SeatOp | undefined {
 	if (!isObject(value)) return undefined;
+	if (value.type === "cover")
+		return value.board === null ||
+			isIntegerIn(value.board, 1, Number.MAX_SAFE_INTEGER)
+			? { type: "cover", board: value.board as number | null }
+			: undefined;
 	if (value.type === "claim") {
 		if (value.name !== undefined && playerName(value.name) !== value.name)
 			return undefined;

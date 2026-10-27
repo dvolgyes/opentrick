@@ -105,6 +105,7 @@ const CLOSING = 2;
 const CLOSED = 3;
 
 export interface MeshDeps {
+	readonly community?: boolean;
 	readonly tableId: string;
 	/** The link key K, used as the room password. Never logged. */
 	readonly key: string;
@@ -300,7 +301,7 @@ export class Mesh implements Send {
 		this.#handlers = handlers;
 		const { config } = deps;
 		const roomConfig: SignalingRoomConfig = {
-			appId: APP_ID,
+			appId: deps.community ? `${APP_ID}/community-game-v1` : APP_ID,
 			password: deps.key,
 			rtcConfig: config.rtc,
 			trackerUrls: config.trackers,

@@ -370,6 +370,15 @@ export function showCreate(
 				),
 				form,
 			),
+			el(
+				"p",
+				{},
+				el(
+					"a",
+					{ attrs: { href: "#community", "data-testid": "community-link" } },
+					deps.t("Find community players"),
+				),
+			),
 		),
 	);
 	return () => {

@@ -223,6 +223,15 @@ export class Replication {
 		return this.#engine?.setBotSeat(seat, enabled) ?? Promise.resolve(false);
 	}
 
+	setCommunityCover(
+		seat: import("../protocol").Seat,
+		board: number | null,
+	): Promise<boolean> {
+		return (
+			this.#engine?.setCommunityCover(seat, board) ?? Promise.resolve(false)
+		);
+	}
+
 	restoreAutoplay(seat: import("../protocol").Seat): boolean {
 		return this.#engine?.restoreAutoplay(seat) ?? false;
 	}

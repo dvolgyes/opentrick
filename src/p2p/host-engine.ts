@@ -135,6 +135,8 @@ export class HostEngine {
 	readonly #visitors = new Set<string>();
 	/** Monotonic time of the last message from each seat's bound peer. */
 	readonly #seen = new Map<Seat, number>();
+	readonly #humanSeen = new Map<string, number>();
+	readonly #quietHumans = new Set<string>();
 	/** Bound seats that the last roster check found quiet; a change sends the roster again. */
 	readonly #quiet = new Set<Seat>();
 	readonly #acked = new Map<Seat, number>();
@@ -166,6 +168,14 @@ export class HostEngine {
 		for (const seat of SEATS) {
 			if (table.config.botSetup?.seats.includes(seat) === true)
 				this.#localBots.add(seat);
+			const row = seatRow(table, seat);
+			if (table.config.community && row.coverBoard !== undefined) {
+				this.#localBots.add(seat);
+				const peer = this.#localPeer(seat);
+				this.#bindings.set(peer, { seat, gen: row.gen });
+				this.#connected.add(peer);
+				this.#features.set(peer, Object.values(APPLICATION_FEATURES));
+			}
 		}
 		const now = deps.clock.monotonic();
 		// No seat times out because of a host change (rule 9).
@@ -174,6 +184,7 @@ export class HostEngine {
 		}
 		this.#holders.set(deps.self, own.holder);
 		this.#features.set(deps.self, [
+			APPLICATION_FEATURES.community,
 			APPLICATION_FEATURES.bridgeUndo,
 			APPLICATION_FEATURES.bridgeClaim,
 			APPLICATION_FEATURES.bridgeClaimNone,
@@ -251,6 +262,43 @@ export class HostEngine {
 	async drain(): Promise<void> {
 		await this.#queue;
 		await this.#deps.log.drain();
+	}
+
+	/** Persist cover independently of the browser running its bot. A new host restores it from the seat log. */
+	setCommunityCover(seat: Seat, board: number | null): Promise<boolean> {
+		const run = async (): Promise<boolean> => {
+			const table = this.#table();
+			if (
+				this.#stopped ||
+				!table?.config.community?.holders[seat] ||
+				table.rev >= MAX_LOG_ENTRIES ||
+				(board !== null && (!Number.isSafeInteger(board) || board < 1))
+			)
+				return false;
+			const row = seatRow(table, seat);
+			if (row.holder === null) return false;
+			if ((row.coverBoard ?? null) !== board) {
+				const id = this.#deps.newId();
+				const entry: Entry = {
+					seq: table.rev + 1,
+					auth: this.#deps.auth,
+					prevAuth: table.lastAuth,
+					id,
+					seat,
+					gen: row.gen,
+					kind: "seat",
+					op: { type: "cover", board },
+					event: seatEvent(this.#tableId, table.rev + 1, id, seat, "cover"),
+				};
+				const done = await this.#commit(entry, table.state);
+				if (!done.ok) return false;
+				this.#broadcast(entry);
+			}
+			return this.setBotSeat(seat, board !== null);
+		};
+		const pending = this.#queue.then(run);
+		this.#queue = pending.then(() => {});
+		return pending;
 	}
 
 	/** Activates configured bot seats as private host-local actors. Empty seats are claimed for the bot. */
@@ -360,7 +408,7 @@ export class HostEngine {
 				this.#broadcast(entry);
 			}
 			this.#localBots.add(seat);
-			if (seat !== this.#deps.log.seat) {
+			if (seat !== this.#deps.log.seat || row.coverBoard !== undefined) {
 				const peer = this.#localPeer(seat);
 				this.#connected.add(peer);
 				this.#bindings.set(peer, { seat, gen: seatRow(table, seat).gen });
@@ -436,6 +484,8 @@ export class HostEngine {
 
 	leave(peer: string): void {
 		if (peer === this.#deps.self) return;
+		this.#humanSeen.delete(peer);
+		this.#quietHumans.delete(peer);
 		this.#connected.delete(peer);
 		this.#holders.delete(peer);
 		this.#features.delete(peer);
@@ -488,6 +538,18 @@ export class HostEngine {
 		if (this.#stopped) return;
 		for (const seat of this.#localBots) this.#seen.set(seat, now);
 		this.#watchQuiet(now);
+		if (this.#table()?.config.community) {
+			for (const [peer] of this.#bindings) {
+				if (peer === this.#deps.self || peer.startsWith("opentrick-host-bot:"))
+					continue;
+				const quiet =
+					now - (this.#humanSeen.get(peer) ?? -Infinity) >= HOST_LOST_MS;
+				if (quiet === this.#quietHumans.has(peer)) continue;
+				if (quiet) this.#quietHumans.add(peer);
+				else this.#quietHumans.delete(peer);
+				this.#markRoster();
+			}
+		}
 		if (this.#rosterDue !== null && now >= this.#rosterDue) {
 			const roster = this.roster();
 			if (roster) {
@@ -522,7 +584,14 @@ export class HostEngine {
 				([peer, bound]) =>
 					this.#connected.has(peer) &&
 					this.#current(table, bound) &&
-					this.#heard(bound.seat),
+					this.#heard(bound.seat) &&
+					(!table.config.community ||
+						seatRow(table, bound.seat).coverBoard === undefined ||
+						peer === this.#deps.self ||
+						peer.startsWith("opentrick-host-bot:") ||
+						this.#deps.clock.monotonic() -
+							(this.#humanSeen.get(peer) ?? -Infinity) <
+							HOST_LOST_MS),
 			)
 			.map(([peer, bound]) => ({ peer, seat: bound.seat, gen: bound.gen }));
 		return {
@@ -614,6 +683,7 @@ export class HostEngine {
 			!this.#connected.has(peer) ||
 			!bound ||
 			!table ||
+			table.config.community !== undefined ||
 			!this.#current(table, bound)
 		) {
 			this.#deps.send.ctl(peer, {
@@ -693,12 +763,26 @@ export class HostEngine {
 		}
 		const table = this.#table();
 		if (!table) return;
+		if (
+			table.config.community &&
+			!hello.features?.includes(APPLICATION_FEATURES.community)
+		) {
+			send.ctl(peer, { k: "welcome", status: "incompatible", auth });
+			return;
+		}
 		if (this.#isExpired(table)) {
 			send.ctl(peer, { k: "welcome", status: "expired", auth });
 			await this.#expire();
 			return;
 		}
 		const holder = await deriveHolder(this.#tableId, hello.client);
+		if (
+			table.config.community &&
+			!Object.values(table.config.community.holders).includes(holder)
+		) {
+			send.ctl(peer, { k: "welcome", status: "superseded", auth });
+			return;
+		}
 		this.#holders.set(peer, holder);
 		this.#features.set(peer, hello.features ?? []);
 		if (hello.seat !== undefined) {
@@ -848,6 +932,8 @@ export class HostEngine {
 		if (this.#stopped) return reply("not_host");
 		const table = this.#table();
 		if (!table) return reply("not_host");
+		// Community admission is fixed for the game. Releasing a seat would strand its bot cover.
+		if (table.config.community) return reply("invalid");
 		const bound = this.#bindings.get(peer);
 		if (!bound || !this.#current(table, bound)) return reply("unseated");
 		if (this.#isExpired(table)) return this.#expire();
@@ -919,11 +1005,14 @@ export class HostEngine {
 		// 1. The seat and generation come from the binding, never from the message.
 		const bound = this.#bindings.get(peer);
 		if (!bound) return this.#result(peer, id, "busy");
+		if (fromLocalBot && !this.#localBots.has(bound.seat))
+			return this.#result(peer, id, "rejected", "bot seat is not active");
 		if (bound.gen !== command.gen || !this.#current(table, bound))
 			return this.#result(peer, id, "superseded");
 		if (
 			this.#localBots.has(bound.seat) &&
-			bound.seat !== this.#deps.log.seat &&
+			(bound.seat !== this.#deps.log.seat ||
+				seatRow(table, bound.seat).coverBoard !== undefined) &&
 			!fromLocalBot
 		)
 			return this.#result(
@@ -1133,6 +1222,7 @@ export class HostEngine {
 		const bound = this.#bindings.get(peer);
 		const table = this.#deps.log.table;
 		if (bound && table && this.#current(table, bound)) {
+			this.#humanSeen.set(peer, this.#deps.clock.monotonic());
 			this.#seen.set(bound.seat, this.#deps.clock.monotonic());
 		}
 	}
@@ -1144,6 +1234,7 @@ export class HostEngine {
 
 	/** Binds `peer`; another peer bound to the seat is superseded. */
 	#bind(peer: string, seat: Seat, gen: number): void {
+		this.#humanSeen.set(peer, this.#deps.clock.monotonic());
 		const botPeer = this.#localBots.has(seat)
 			? this.#localPeer(seat)
 			: undefined;
@@ -1248,6 +1339,11 @@ export class HostEngine {
 	 * another holder, also before the bot starts.
 	 */
 	#available(table: TableRecord, seat: Seat, holder: string): boolean {
+		if (
+			table.config.community &&
+			table.config.community.holders[seat] !== holder
+		)
+			return false;
 		const row = seatRow(table, seat);
 		if (this.#localBots.has(seat) && row.holder !== holder) return false;
 		return (

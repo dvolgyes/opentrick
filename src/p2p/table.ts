@@ -170,6 +170,7 @@ export type TableMesh = Pick<
 >;
 
 export interface TableDeps {
+	readonly community?: boolean;
 	readonly buildDate?: string;
 	readonly onNewerBuild?: (date: string) => void;
 	readonly identity: TableIdentity;
@@ -376,7 +377,9 @@ export class TableController {
 			bindings: () => this.#bindings(),
 			connected: () => (this.#closed() ? [] : (this.#mesh?.peers() ?? [])),
 			self: () => this.#callSelf(),
-			send: (peer, frame) => this.#mesh?.call(peer, frame),
+			send: (peer, frame) => {
+				if (!this.#deps.community) this.#mesh?.call(peer, frame);
+			},
 		});
 	}
 
@@ -496,7 +499,8 @@ export class TableController {
 				if (!this.#terminal) this.#replication?.receiveLog(peer, message);
 			},
 			call: (peer, frame) => {
-				if (!this.#closed()) this.#call.receive(peer, frame);
+				if (!this.#closed() && !this.#deps.community)
+					this.#call.receive(peer, frame);
 			},
 			change: () => this.#notify(),
 		});
@@ -644,6 +648,13 @@ export class TableController {
 	setBotSeat(seat: Seat, enabled: boolean): Promise<boolean> {
 		if (this.#closed() || !this.#replication) return Promise.resolve(false);
 		return this.#replication.setBotSeat(seat, enabled);
+	}
+
+	setCommunityCover(seat: Seat, board: number | null): Promise<boolean> {
+		return this.#closed()
+			? Promise.resolve(false)
+			: (this.#replication?.setCommunityCover(seat, board) ??
+					Promise.resolve(false));
 	}
 
 	renameSeat(

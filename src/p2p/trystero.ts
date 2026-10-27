@@ -15,6 +15,7 @@ import { stunProbe } from "./stun-probe";
 import { webRtcCheck } from "./webrtc-check";
 
 export interface TrysteroMeshOptions {
+	readonly community?: boolean;
 	/** A Node-compatible WebRTC implementation; browsers use their global constructor. */
 	readonly rtcPolyfill?: typeof RTCPeerConnection;
 	/**
@@ -30,12 +31,13 @@ export function trysteroMesh(
 	key: string,
 	config: MeshConfig,
 	clock: Clock,
-	{ rtcPolyfill, relayChecks }: TrysteroMeshOptions = {},
+	{ rtcPolyfill, relayChecks, community }: TrysteroMeshOptions = {},
 ): (handlers: MeshHandlers) => Mesh {
 	return (handlers) =>
 		new Mesh(
 			{
 				tableId,
+				community,
 				key,
 				config,
 				rtcPolyfill,

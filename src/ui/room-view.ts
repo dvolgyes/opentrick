@@ -17,6 +17,8 @@ import {
 	watchDeviceClass,
 } from "../call/device-class";
 import { createCallSignaling } from "../call/signaling";
+import { CommunityCover } from "../community/cover";
+import { communityGameFragment } from "../community/link";
 import {
 	actionPayload,
 	claimRequestPayload,
@@ -114,6 +116,11 @@ function roomShareLink(
 	players?: PlayerProfiles,
 ): string {
 	const page = new URL(pageUrl);
+	if (page.hash.startsWith("#community-game=")) {
+		page.search = "";
+		page.hash = communityGameFragment(key);
+		return page.toString();
+	}
 	page.search = sharedQuery(page.search, players);
 	return tableLink(page.toString(), key);
 }
@@ -164,7 +171,15 @@ export function showRoom(
 	// The call is optional and separate from the game: it reads the table, and its actions never send a command.
 	const deviceLayout = layout(readSignals(window), readSettings(deps.browser));
 	const deviceForm = formOf(deviceLayout);
-	const support = deps.call;
+	const community =
+		(controller.view().table?.config ?? fallbackConfig)?.community !==
+		undefined;
+	const support = community
+		? {
+				available: false as const,
+				reason: "Calls are available in invite-only games.",
+			}
+		: deps.call;
 	const camera = support.available
 		? cameraSetup({
 				devices: support.cameras,
@@ -204,6 +219,8 @@ export function showRoom(
 	let currentTurnKey: string | undefined;
 	let alertedTurn: string | undefined;
 	let botRunner: HostBotRunner | undefined;
+	const coverPolicy = new CommunityCover();
+	let coverChanging = false;
 	const delegatedBotSeats = new Set<Seat>();
 	/** A bot that the host chose plays this page's seat. */
 	let botHoldsSeat = false;
@@ -565,6 +582,7 @@ export function showRoom(
 	}
 
 	function rememberBotSeats(bots: readonly Seat[]): void {
+		if (community) return;
 		const query = botSeatsQuery(
 			location.search,
 			bots,
@@ -1244,7 +1262,7 @@ export function showRoom(
 		item.append(
 			el("span", { className: "state" }, deps.t(STATE_TEXT[row.state])),
 		);
-		if (!row.releasable) return item;
+		if (community || !row.releasable) return item;
 		if (confirming === row.seat) {
 			item.append(
 				button(deps.t("Confirm release"), () => release(row.seat), {
@@ -1315,7 +1333,11 @@ export function showRoom(
 			botSeatOverrides.clear();
 			botRestoreStarted = false;
 			botRestorePending = false;
-		} else if (!botRestoreStarted && fallbackConfig?.botSetup !== undefined) {
+		} else if (
+			!community &&
+			!botRestoreStarted &&
+			fallbackConfig?.botSetup !== undefined
+		) {
 			botRestoreStarted = true;
 			botRestorePending = true;
 			void restoreBotSeats(fallbackConfig.botSetup.seats);
@@ -1572,7 +1594,10 @@ export function showRoom(
 			t: deps.t,
 		});
 		shownModel = tableModel;
-		table.setBotControls(view.hosting && !botRestorePending, activeBots);
+		table.setBotControls(
+			view.hosting && !botRestorePending && !community,
+			activeBots,
+		);
 		if (!view.hosting) delegatedBotSeats.clear();
 		const rosterHost = JSON.stringify(view.roster?.auth ?? null);
 		if (rosterHost !== playerAutoplayHost) {
@@ -1593,7 +1618,7 @@ export function showRoom(
 			playerAutoplayStatus = deps.t("Autoplay stopped by the host.");
 		}
 		table.setPlayerAutoplay(
-			!view.hosting && view.roster?.autoplay === true,
+			!community && !view.hosting && view.roster?.autoplay === true,
 			playerAutoplayWasEnabled || rosterAutoplay,
 			playerAutoplayPending,
 			playerAutoplayStatus,
@@ -1625,12 +1650,20 @@ export function showRoom(
 			biddingViewport.update();
 			if (tableModel.board !== 0) firstDealSent = false;
 			const first = tableModel.nextBoard;
-			if (view.hosting && first?.board === 1 && first.ready && !firstDealSent) {
+			if (
+				view.hosting &&
+				first?.board === 1 &&
+				first.ready &&
+				!firstDealSent &&
+				!coverChanging
+			) {
 				firstDealSent = true;
 				dealBoard(1);
 			}
 		}
 		table.setCountdown(tableModel.scoring?.countdown);
+		// Restore a returned human before a completed board can advance.
+		void updateCommunityCover();
 		const boardToDeal = autoDealBoard(
 			view.hosting,
 			tableModel.board,
@@ -1638,7 +1671,7 @@ export function showRoom(
 			tableModel.nextBoard,
 			autoDealtBoard,
 		);
-		if (boardToDeal !== undefined) {
+		if (boardToDeal !== undefined && !coverChanging) {
 			autoDealtBoard = boardToDeal;
 			dealBoard(boardToDeal, () => {
 				autoDealtBoard = undefined;
@@ -1650,6 +1683,53 @@ export function showRoom(
 			sendError ??
 			(model.send.hint === undefined ? "" : deps.t(model.send.hint));
 	}
+
+	async function updateCommunityCover(): Promise<void> {
+		if (disposed || coverChanging || !community) return;
+		const view = controller.view();
+		if (!view.hosting || !view.ready || !view.table?.config.community) {
+			coverPolicy.reset();
+			return;
+		}
+		const state = parseBridgeState(view.table.state, tableId);
+		if (!state?.board) return;
+		const online = new Set<Seat>(
+			view.roster?.peers.map((peer) => peer.seat) ?? [],
+		);
+		if (view.seat !== null) online.add(view.seat);
+		const changes = coverPolicy.changes({
+			now: deps.clock.monotonic(),
+			board: state.board.number,
+			complete:
+				boardStatus(state.board).phase === "complete" ||
+				state.claimResult !== null,
+			humans: SEATS.filter(
+				(seat) => view.table?.config.community?.holders[seat] !== undefined,
+			),
+			online,
+			seats: view.table.seats,
+		});
+		if (changes.length === 0) return;
+		coverChanging = true;
+		try {
+			for (const change of changes) {
+				if (change.board === null)
+					botRunner?.setSeatEnabled(change.seat, false);
+				if (!(await controller.setCommunityCover(change.seat, change.board)))
+					continue;
+				botSeatOverrides.set(change.seat, change.board !== null);
+				botRunner?.setSeatEnabled(change.seat, change.board !== null);
+				if (change.board !== null && !botRunner)
+					await startHostBots(change.seat);
+			}
+		} finally {
+			coverChanging = false;
+		}
+		render();
+	}
+	const coverTimer = community
+		? setInterval(() => void updateCommunityCover(), 500)
+		: undefined;
 
 	// A gesture lets the browser start remote audio and the voice box that its autoplay rule blocked.
 	const onGesture = (): void => {
@@ -1672,6 +1752,7 @@ export function showRoom(
 
 	return () => {
 		disposed = true;
+		if (coverTimer !== undefined) clearInterval(coverTimer);
 		callPresence.stop();
 		botRunner?.stop();
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);

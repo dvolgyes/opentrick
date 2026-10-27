@@ -1,3 +1,4 @@
+import { communityCatalogs } from "./i18n-community";
 import { playerCatalogs } from "./i18n-players";
 import { additionalCatalogs } from "./i18n-translations";
 
@@ -2015,7 +2016,11 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 const catalogs = Object.fromEntries(
 	Object.entries(baseCatalogs).map(([locale, catalog]) => [
 		locale,
-		{ ...catalog, ...playerCatalogs[locale as Exclude<Locale, "en">] },
+		{
+			...catalog,
+			...playerCatalogs[locale as Exclude<Locale, "en">],
+			...communityCatalogs[locale as Exclude<Locale, "en">],
+		},
 	]),
 ) as Readonly<Record<Exclude<Locale, "en">, Catalog>>;
 

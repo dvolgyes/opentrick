@@ -49,6 +49,55 @@ Do not post it publicly.
 
 ![The table lobby shows the room call, player seats, bot controls, and Copy link button.](docs/images/room-created.png)
 
+### Find community players
+
+Select **Find community players** to enter public matchmaking without a password prompt.
+Enter alone, or create a group for an opposite pair, an adjacent pair, three friends, or four friends.
+For a group, use **Copy group invitation** to bring the friends together first.
+Each member must select **Ready for compatible table merges** before the group advertises.
+
+Every waiting browser endorses its own group in the shared discovery room.
+Hosts propose compatible merges and the receiving host accepts or declines.
+The larger group keeps its room; a stable identifier breaks equal-size ties.
+Compatible choices and seat rotations are randomized, while existing relative seating is preserved.
+Two solos become an opposite pair.
+Opposite pairs can combine with opposite pairs, adjacent pairs with adjacent pairs, and three players with a solo.
+Opposite and adjacent pairs cannot combine without changing their existing seating.
+
+Each player can allow bots after a chosen wait of 0–60 minutes.
+Empty seats fill only when every human agrees and every human's own wait has elapsed.
+Time waiting for invited friends does not count; accumulated search time survives merges and reloads.
+With four humans, or unanimous bot fallback, the group starts a game and leaves discovery after game admission.
+The first deal waits for all agreed seats.
+Discovery does not list games already in progress or recruit replacements automatically.
+
+Community games disable audio and video calls.
+After a human is disconnected for the recovery grace period, the host runs a temporary bot for that seat.
+The returning player keeps the reservation and resumes control at a board boundary.
+Community seat reservations remain assigned to the original browser identity for the game; a fresh browser cannot take one through a copied game link.
+Private invitation games retain their existing call and autoplay controls.
+
+Matchmaking progress and transfer votes are saved locally before they are acknowledged.
+Reload the same browser to recover a pending merge or game.
+A saved merge vote cannot expire into a competing table: if another participant is unreachable, recovery can wait for that participant.
+An absent member of a forming group remains reserved, including its host.
+The remaining members wait for that browser to return rather than silently excluding it.
+Clearing site data loses these reservations and recovery records.
+
+This first community version targets small, casual groups.
+Discovery refreshes every five seconds and expires announcements after twenty seconds.
+It keeps at most twelve advertisements and leaves discovery if more than eleven remote peers connect.
+This is a local limit, not a globally enforced lobby capacity or a hard limit on pending WebRTC connections.
+The browser test exercises twelve local browser contexts with real WebRTC and simulated relays; it does not establish cross-network or mobile capacity.
+As with private games, each seated browser receives the full bridge state, so community play is not cheat-resistant.
+
+Community formation uses its own versioned messages and game namespace.
+Public advertisements contain membership and seating, but no game key; invitations are sent only to proposed participants.
+Messages have size and rate limits, and receivers validate membership, revisions, consent and seat assignments before acting.
+Transfer records are separate from the bridge log so a game host election cannot roll back a room transfer.
+Only the community admission configuration and temporary-cover seat event extend the game protocol.
+Older clients cannot join community rooms; returning to an older build leaves existing private-game behavior intact but cannot continue a community game.
+
 ### Take a seat and play
 
 The room opens at a seat-selection screen when more than one seat is free.

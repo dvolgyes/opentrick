@@ -63,6 +63,8 @@ export function showTable(
 	bootstrap?: RoomSetup,
 	autoCopy?: Promise<string>,
 	hostBots?: HostBotSettings,
+	community = false,
+	onView?: (view: TableView) => void,
 ): Dispose {
 	let disposed = false;
 	const turnAlert = turnSound();
@@ -169,6 +171,7 @@ export function showTable(
 			}
 		}
 		const table = new TableController({
+			community,
 			buildDate: deps.build.date,
 			onNewerBuild: (date) => {
 				if (updating || disposed) return;
@@ -206,7 +209,7 @@ export function showTable(
 				const timer = setInterval(run, ms);
 				return () => clearInterval(timer);
 			},
-			openMesh: deps.openMesh(identity.tableId, key),
+			openMesh: deps.openMesh(identity.tableId, key, community),
 			newId: newCommandId,
 			nonce: randomNonce,
 			creator: asCreator,
@@ -265,6 +268,7 @@ export function showTable(
 		const table = controller;
 		if (disposed || updating || opening || !table) return;
 		const view = table.view();
+		onView?.(view);
 		if (
 			view.seat === null &&
 			view.seatError === "name_required" &&
