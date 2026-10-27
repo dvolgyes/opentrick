@@ -1,4 +1,5 @@
 import type { HostBotSettings } from "../bot/host-runner";
+import { botTiming } from "../bot/timing";
 import { bridgeModule } from "../game/bridge";
 import { newCommandId } from "../ids";
 import { newTableKey } from "../p2p/link";
@@ -260,6 +261,7 @@ export function showCreate(
 				? {
 						bidder: botSetup.bidder,
 						playTimeMs: readSettings(deps.browser).playTimeMs,
+						...botTiming(readSettings(deps.browser)),
 					}
 				: undefined;
 		for (const other of targets) other.submit.disabled = true;

@@ -137,6 +137,31 @@ const BOARD = createBoard(1, DEAL);
 /** 1♠ by North; East has led the ♠7, so declarer plays next from dummy (South). */
 const LED = playing(bidding(BOARD, "1S P P P"), "S7");
 const NORTH_DECLARER_BOARD = bidding(BOARD, "1C P P P");
+
+it("keeps the final auction visible with no playable cards or turn prompt during its pause", () => {
+	const held = view("E", NORTH_DECLARER_BOARD, { auctionPauseSeconds: 3 });
+	const ready = view("E", NORTH_DECLARER_BOARD, { auctionPauseSeconds: 0 });
+	const paused = view("E", NORTH_DECLARER_BOARD, { auctionPauseSeconds: 1 });
+	for (const model of [held, paused]) {
+		expect(model.phase).toBe("auction");
+		expect(model.auction).toEqual(ready.auction);
+		expect(model.yourTurn).toBe(false);
+		expect(model.bids).toEqual([]);
+		expect(model.seats.every((player) => player.turnPill === undefined)).toBe(
+			true,
+		);
+		for (const player of model.seats)
+			if (player.hand.visible)
+				expect(
+					player.hand.suits
+						.flatMap((suit) => suit.cards)
+						.every((card) => !card.playable),
+				).toBe(true);
+	}
+	expect(held.prompt).toBe("Play starts in 3 seconds.");
+	expect(ready.phase).toBe("play");
+	expect(ready.yourTurn).toBe(true);
+});
 const NORTH_DUMMY_TURN = playing(NORTH_DECLARER_BOARD, "S7");
 const NORTH_OWN_TURN = playing(NORTH_DECLARER_BOARD, "S7 S4 H3");
 

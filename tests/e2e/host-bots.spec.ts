@@ -44,6 +44,8 @@ test("a solo host reloads and plays with three local bots while the relays are o
 test("host bots play two consecutive boards from auction through the final trick", async ({
 	page,
 }) => {
+	// Two full boards now include 104 minimum one-second card turns, plus bids, auction pauses and scoring.
+	test.setTimeout(240_000);
 	let requests = 0;
 
 	await mockBotBidding(page, (position) => {
@@ -90,7 +92,7 @@ test("host bots play two consecutive boards from auction through the final trick
 					board: element.getAttribute("data-board"),
 					phase: element.getAttribute("data-phase"),
 				})),
-			{ timeout: 110_000 },
+			{ timeout: 220_000 },
 		)
 		.toEqual({ board: "2", phase: "complete" });
 	// Four bids per board; all 104 card decisions run in the host's DDS worker.

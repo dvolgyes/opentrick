@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { BidChooser } from "../../src/bot/browser-bidder";
 import type { PlayChooser } from "../../src/bot/browser-play";
 import { HostBotRunner } from "../../src/bot/host-runner";
 import type { PlayAnalysis } from "../../src/bot/play-engine";
@@ -106,8 +107,13 @@ function hostAt(state: JsonObject) {
  * A host page at North whose bots sit East and West, on a table that applies each message with the bridge module
  * and refuses what the module refuses.
  */
-function liveHost(state: JsonObject, playEngine: PlayChooser) {
+function liveHost(
+	state: JsonObject,
+	playEngine: PlayChooser,
+	bidEngine?: BidChooser,
+) {
 	let current = state;
+	let hosting = true;
 	let beforeBot: (() => void) | undefined;
 	let seq = 1000;
 	const listeners = new Set<() => void>();
@@ -122,7 +128,7 @@ function liveHost(state: JsonObject, playEngine: PlayChooser) {
 	const controller = {
 		tableId: ROOM_ID,
 		view: () => ({
-			hosting: true,
+			hosting,
 			ready: true,
 			seat: "N",
 			table: { config: CONFIG, state: current },
@@ -143,7 +149,16 @@ function liveHost(state: JsonObject, playEngine: PlayChooser) {
 	} as unknown as TableController;
 	const onError = vi.fn();
 	return {
-		runner: new HostBotRunner(controller, SETTINGS, onError, playEngine),
+		runner: new HostBotRunner(
+			controller,
+			SETTINGS,
+			onError,
+			playEngine,
+			bidEngine,
+		),
+		loseHost: () => {
+			hosting = false;
+		},
 		onError,
 		deliver,
 		/** `message` reaches the host just before the next bot message. */
@@ -165,7 +180,13 @@ function playReply(card: Card): PlayAnalysis {
 	};
 }
 
+beforeEach(() =>
+	vi.useFakeTimers({
+		toFake: ["Date", "performance", "setTimeout", "clearTimeout"],
+	}),
+);
 afterEach(() => {
+	vi.useRealTimers();
 	vi.unstubAllGlobals();
 });
 
@@ -192,7 +213,7 @@ describe("host bot play", () => {
 		};
 		const host = liveHost(start, chooser);
 		expect(await host.runner.start()).toBe(true);
-		await vi.waitFor(() => expect(answerFirst).toBeDefined());
+		expect(answerFirst).toBeDefined();
 
 		// While East's bot waits for its answer, declarer North claims every trick.
 		expect(host.deliver("N", claimRequestPayload(ROOM_ID, 1, 13)).ok).toBe(
@@ -201,9 +222,8 @@ describe("host bot play", () => {
 		answerFirst?.();
 
 		// A bot rejects the claim, and East then leads; the bots keep running.
-		await vi.waitFor(() =>
-			expect(host.state()?.board?.cards).toEqual([lead.card]),
-		);
+		await vi.advanceTimersByTimeAsync(6000);
+		expect(host.state()?.board?.cards).toEqual([lead.card]);
 		host.runner.stop();
 		expect(host.state()).toMatchObject({ claim: null, claimResult: null });
 		expect(host.onError).not.toHaveBeenCalled();
@@ -233,9 +253,8 @@ describe("host bot play, refused", () => {
 			);
 		});
 		expect(await host.runner.start()).toBe(true);
-		await vi.waitFor(() =>
-			expect(host.state()?.board?.cards).toEqual([lead.card]),
-		);
+		await vi.advanceTimersByTimeAsync(6000);
+		expect(host.state()?.board?.cards).toEqual([lead.card]);
 		host.runner.stop();
 		expect(host.state()).toMatchObject({ claim: null, claimResult: null });
 		expect(host.onError).not.toHaveBeenCalled();
@@ -286,5 +305,91 @@ describe("host bot votes", () => {
 				requestId: undo?.id,
 				approve: true,
 			});
+	});
+});
+
+describe("bot pacing", () => {
+	function cardHost(steps = 2, calculationMs = 0) {
+		const state = tableState([
+			...OPENING,
+			...Array.from({ length: steps }, () => act()),
+		]);
+		const board = parseBridgeState(state, ROOM_ID)?.board;
+		const actor = board && boardStatus(board).actor;
+		const action = board && actor && legalActions(board, actor)[0];
+		if (action?.type !== "play") throw new Error("no card to play");
+		const choose = vi.fn<PlayChooser["choose"]>(async () => {
+			if (calculationMs)
+				await new Promise((resolve) => setTimeout(resolve, calculationMs));
+			return playReply(action.card);
+		});
+		return { ...liveHost(state, { choose, stop: () => {} }), choose };
+	}
+
+	it("holds a fast card for one second, and does not add another second to a slow decision", async () => {
+		for (const calculationMs of [0, 2000]) {
+			const host = cardHost(2, calculationMs);
+			await host.runner.start();
+			await vi.advanceTimersByTimeAsync(Math.max(1000, calculationMs) - 1);
+			expect(host.state()?.board?.cards).toHaveLength(2);
+			await vi.advanceTimersByTimeAsync(1);
+			expect(host.state()?.board?.cards).toHaveLength(3);
+			host.runner.stop();
+		}
+	});
+
+	it("holds the opening lead for the auction pause", async () => {
+		const host = cardHost(0);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(2999);
+		expect(host.state()?.board?.cards).toHaveLength(0);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(host.state()?.board?.cards).toHaveLength(1);
+		host.runner.stop();
+	});
+
+	it("holds a quick bid for three seconds", async () => {
+		const host = liveHost(
+			tableState([act(call("1C"))]),
+			{ choose: vi.fn(), stop: () => {} },
+			{
+				choose: async () => ({ call: "P", policy: "sl", candidates: [] }),
+				stop: () => {},
+			},
+		);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(2999);
+		expect(host.state()?.board?.calls).toEqual(["1C"]);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(host.state()?.board?.calls).toEqual(["1C", "P"]);
+		host.runner.stop();
+	});
+
+	it("cancels a queued card on pause or host loss, and resumes with the current settings", async () => {
+		const host = cardHost();
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(500);
+		host.runner.pause();
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		host.runner.updateSettings({
+			...SETTINGS,
+			botCardDelayMs: 2000,
+			playTimeMs: 7000,
+		});
+		host.runner.resume();
+		await vi.advanceTimersByTimeAsync(1999);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(host.state()?.board?.cards).toHaveLength(3);
+		expect(host.choose.mock.calls.at(-1)?.[2]).toBe(7000);
+		host.runner.stop();
+		const former = cardHost();
+		await former.runner.start();
+		await vi.advanceTimersByTimeAsync(500);
+		former.loseHost();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(former.state()?.board?.cards).toHaveLength(2);
+		former.runner.stop();
 	});
 });

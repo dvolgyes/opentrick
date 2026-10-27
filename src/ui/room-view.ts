@@ -3,6 +3,7 @@ import {
 	HostBotRunner,
 	type HostBotSettings,
 } from "../bot/host-runner";
+import { botTiming } from "../bot/timing";
 import { type Board, boardStatus } from "../bridge/engine";
 import type { PointSystem } from "../bridge/hand-points";
 import { type BuildInfo, formatBuildDate } from "../build";
@@ -42,6 +43,7 @@ import {
 	SEATS,
 	type Seat,
 } from "../protocol";
+import { AuctionPause } from "./auction-pause";
 import {
 	bidderQuery,
 	botSeatsQuery,
@@ -83,7 +85,7 @@ import { pageTitle } from "./page-title";
 import { playerEditor } from "./player-editor";
 import { qualityMatrix } from "./quality-matrix";
 import { remoteAudio } from "./remote-audio";
-import { readSettings } from "./settings";
+import { readSettings, type Settings } from "./settings";
 import { settingsDialog } from "./settings-dialog";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
@@ -115,9 +117,13 @@ function roomShareLink(
 
 function settingsFor(
 	config: RoomConfig | undefined,
-	playTimeMs?: number,
+	settings?: Settings,
 ): HostBotSettings {
-	return { bidder: (config?.botSetup ?? DEFAULT_BOT_SETUP).bidder, playTimeMs };
+	return {
+		bidder: (config?.botSetup ?? DEFAULT_BOT_SETUP).bidder,
+		playTimeMs: settings?.playTimeMs,
+		...botTiming(settings),
+	};
 }
 
 /** After these, the room stays on the screen but can no longer act. */
@@ -220,6 +226,7 @@ export function showRoom(
 	let playerAutoplayAnswerRoster: unknown;
 	let playerAutoplayHost = "";
 	let shownModel: ReturnType<typeof tableView> | undefined;
+	const auctionPause = new AuctionPause();
 
 	function tableFacts(): TableFacts | null {
 		if (!shownModel) return null;
@@ -304,7 +311,7 @@ export function showRoom(
 		}
 		botSettings ??= settingsFor(
 			fallbackConfig ?? controller.view().table?.config,
-			readSettings(deps.browser).playTimeMs,
+			readSettings(deps.browser),
 		);
 		const enabledSeat = await controller.setBotSeat(targetSeat, true);
 		if (!enabledSeat) return "failed";
@@ -367,9 +374,11 @@ export function showRoom(
 			);
 		}
 		if (botSettings) {
+			const settings = readSettings(deps.browser);
 			botSettings = {
 				...botSettings,
-				playTimeMs: readSettings(deps.browser).playTimeMs,
+				playTimeMs: settings.playTimeMs,
+				...botTiming(settings),
 			};
 			botRunner?.updateSettings(botSettings);
 			if (botRunner && !botsPaused) botStatus.textContent = runningBotStatus();
@@ -1117,7 +1126,7 @@ export function showRoom(
 		}
 		botSettings ??= settingsFor(
 			fallbackConfig ?? config,
-			readSettings(deps.browser).playTimeMs,
+			readSettings(deps.browser),
 		);
 		botStarting = true;
 		botAutoAttempted = true;
@@ -1504,6 +1513,11 @@ export function showRoom(
 			bots: new Set(activeBots),
 			hostSeat: view.hostSeat,
 			scoringCountdown,
+			auctionPauseSeconds: auctionPause.remaining(
+				state?.board,
+				readSettings(deps.browser).auctionPauseMs,
+				performance.now(),
+			),
 			outbox: view.outbox,
 			failures: view.failures,
 			undone: view.undone,

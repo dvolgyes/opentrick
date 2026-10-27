@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlayChooser } from "../../src/bot/browser-play";
 import { BotRequestAbortedError } from "../../src/bot/errors";
 import { HostBotRunner } from "../../src/bot/host-runner";
@@ -52,7 +52,15 @@ function host(chooser: PlayChooser) {
 	};
 }
 
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() =>
+	vi.useFakeTimers({
+		toFake: ["Date", "performance", "setTimeout", "clearTimeout"],
+	}),
+);
+afterEach(() => {
+	vi.unstubAllGlobals();
+	vi.useRealTimers();
+});
 
 describe("host card engine integration", () => {
 	it("restarts a pending decision with a changed search budget", async () => {
@@ -68,9 +76,10 @@ describe("host card engine integration", () => {
 		const stop = vi.fn(() => rejectFirst?.(new BotRequestAbortedError()));
 		const { runner, sendBot, onError } = host({ choose, stop });
 		await runner.start();
-		await vi.waitFor(() => expect(choose).toHaveBeenCalledOnce());
+		expect(choose).toHaveBeenCalledOnce();
 		runner.updateSettings({ bidder: "sl", playTimeMs: 250 });
-		await vi.waitFor(() => expect(sendBot).toHaveBeenCalledOnce());
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(sendBot).toHaveBeenCalledOnce();
 		expect(choose.mock.calls.map((call) => call[2])).toEqual([5000, 250]);
 		expect(stop).toHaveBeenCalledOnce();
 		expect(onError).not.toHaveBeenCalled();
@@ -89,13 +98,15 @@ describe("host card engine integration", () => {
 		};
 		const { runner, sendBot, onError } = host({ choose, stop: () => {} });
 		await runner.start();
-		await vi.waitFor(() => expect(answer).toBeDefined());
+		expect(answer).toBeDefined();
 		runner.setSeatEnabled("E", false);
 		answer?.(ANALYSIS);
-		await new Promise((resolve) => setTimeout(resolve, 0));
+		await vi.advanceTimersByTimeAsync(0);
 		expect(sendBot).not.toHaveBeenCalled();
 		runner.setSeatEnabled("E", true);
-		await vi.waitFor(() => expect(sendBot).toHaveBeenCalledOnce());
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(sendBot).toHaveBeenCalledOnce();
+		expect(requests).toBe(2);
 		expect(onError).not.toHaveBeenCalled();
 		runner.stop();
 	});
@@ -107,7 +118,8 @@ describe("host card engine integration", () => {
 		const chooser = { choose: vi.fn(async () => ANALYSIS), stop: vi.fn() };
 		const { runner, sendBot, onError } = host(chooser);
 		await runner.start();
-		await vi.waitFor(() => expect(sendBot).toHaveBeenCalledOnce());
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(sendBot).toHaveBeenCalledOnce();
 		expect(network).not.toHaveBeenCalled();
 		expect(onError).not.toHaveBeenCalled();
 		expect(chooser.choose.mock.calls).toHaveLength(1);
@@ -134,10 +146,11 @@ describe("host card engine integration", () => {
 		};
 		const { runner, sendBot, onError } = host({ choose, stop: () => {} });
 		await runner.start();
-		await vi.waitFor(() => expect(requests).toBe(1));
+		expect(requests).toBe(1);
 		runner.pause();
 		runner.resume();
-		await vi.waitFor(() => expect(sendBot).toHaveBeenCalledOnce());
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(sendBot).toHaveBeenCalledOnce();
 		expect(requests).toBe(2);
 		expect(onError).not.toHaveBeenCalled();
 		runner.stop();

@@ -50,6 +50,15 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Round trips (seconds): row → column":
 			"Umlaufzeiten (Sekunden): Zeile → Spalte",
 		"No measurement": "Keine Messung",
+		"Bot timing": "Bot-Zeiten",
+		"Minimum card time (seconds)": "Mindestzeit pro Karte (Sekunden)",
+		"Minimum bid time (seconds)": "Mindestzeit pro Gebot (Sekunden)",
+		"Pause after auction (seconds)": "Pause nach dem Reizen (Sekunden)",
+		"Card thinking budget (seconds)": "Denkzeitbudget für Karten (Sekunden)",
+		"Thinking time counts toward the minimum delay. Bot settings apply when this browser runs the bots.":
+			"Die Denkzeit zählt zur Mindestwartezeit. Bot-Einstellungen gelten, wenn dieser Browser die Bots ausführt.",
+		"Play starts in {seconds} seconds.":
+			"Das Spiel beginnt in {seconds} Sekunden.",
 		"Waiting for {players} to come back":
 			"Warten auf die Rückkehr von {players}",
 		"The first board is dealt now.": "Das erste Board wird jetzt gegeben.",
@@ -675,6 +684,16 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Round trips (seconds): row → column":
 			"Oda-vissza idők (másodperc): sor → oszlop",
 		"No measurement": "Nincs mérés",
+		"Bot timing": "Botok időzítése",
+		"Minimum card time (seconds)": "Kijátszás minimális ideje (másodperc)",
+		"Minimum bid time (seconds)": "Licit minimális ideje (másodperc)",
+		"Pause after auction (seconds)": "Szünet a licit után (másodperc)",
+		"Card thinking budget (seconds)":
+			"Kártyajáték gondolkodási kerete (másodperc)",
+		"Thinking time counts toward the minimum delay. Bot settings apply when this browser runs the bots.":
+			"A gondolkodási idő beleszámít a minimális várakozási időbe. A botbeállítások akkor érvényesek, amikor ez a böngésző futtatja a botokat.",
+		"Play starts in {seconds} seconds.":
+			"A játék {seconds} másodperc múlva kezdődik.",
 		"Waiting for {players} to come back":
 			"Várakozás, hogy visszatérjenek: {players}",
 		"The first board is dealt now.": "Az első leosztás most következik.",
@@ -1290,6 +1309,15 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Round trips (seconds): row → column":
 			"Tur-retur-tider (sekunder): rad → kolonne",
 		"No measurement": "Ingen måling",
+		"Bot timing": "Tidsinnstillinger for boter",
+		"Minimum card time (seconds)": "Minstetid per kort (sekunder)",
+		"Minimum bid time (seconds)": "Minstetid per melding (sekunder)",
+		"Pause after auction (seconds)": "Pause etter meldingsforløpet (sekunder)",
+		"Card thinking budget (seconds)": "Tenketid for kortspill (sekunder)",
+		"Thinking time counts toward the minimum delay. Bot settings apply when this browser runs the bots.":
+			"Tenketiden regnes med i minste ventetid. Botinnstillingene gjelder når denne nettleseren kjører botene.",
+		"Play starts in {seconds} seconds.":
+			"Spillet starter om {seconds} sekunder.",
 		"Waiting for {players} to come back":
 			"Venter på at {players} kommer tilbake",
 		"The first board is dealt now.": "Den første given deles ut nå.",

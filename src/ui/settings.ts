@@ -3,6 +3,12 @@ import {
 	isPlayTimeMs,
 	playTimeMs,
 } from "../bot/play-budget";
+import {
+	type BotTiming,
+	botTiming,
+	DEFAULT_BOT_TIMING,
+	isBotTimingMs,
+} from "../bot/timing";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import {
 	DEFAULT_BOT_SETUP,
@@ -26,9 +32,9 @@ export type Scheme = (typeof SCHEMES)[number];
  * Display and bot choices of one player, kept in this browser's local storage and never sent to the table.
  * The language keeps its own storage name.
  */
-export interface Settings {
+export interface Settings extends BotTiming {
 	readonly bidder: LocalBidder;
-	/** Local card-search target; a future settings control can edit the persisted value. */
+	/** Local card-search target, separate from the minimum time between visible actions. */
 	readonly playTimeMs: number;
 	readonly pointSystem: PointSystem;
 	/** The points of the hand next to the cards. */
@@ -51,6 +57,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+	...DEFAULT_BOT_TIMING,
 	bidder: DEFAULT_BOT_SETUP.bidder,
 	playTimeMs: DEFAULT_PLAY_TIME_MS,
 	pointSystem: "hcp",
@@ -69,6 +76,11 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 const PREFIX = "opentrick.settings.";
+const TIMING_KEYS = {
+	botCardDelayMs: "bot-card-delay-ms",
+	botBidDelayMs: "bot-bid-delay-ms",
+	auctionPauseMs: "auction-pause-ms",
+} as const;
 const FLAGS = {
 	bidTurnFrame: "bid-turn-frame",
 	playTurnFrame: "play-turn-frame",
@@ -103,6 +115,13 @@ export function readSettings(storage: MaybeStorage): Settings {
 	// An earlier version stored "none" for no points: no system preference, so the default system without card points.
 	const storedPoints = read("points");
 	const storedPlayTime = Number(read("play-time-ms"));
+	const timing = Object.fromEntries(
+		Object.entries(TIMING_KEYS).map(([field, name]) => {
+			const minimum = DEFAULT_BOT_TIMING[field as keyof BotTiming];
+			const value = Number(read(name));
+			return [field, isBotTimingMs(value, minimum) ? value : minimum];
+		}),
+	) as unknown as BotTiming;
 	const flags = Object.fromEntries(
 		Object.entries(FLAGS).map(([field, name]) => [
 			field,
@@ -110,6 +129,7 @@ export function readSettings(storage: MaybeStorage): Settings {
 		]),
 	) as Record<keyof typeof FLAGS, boolean>;
 	return {
+		...timing,
 		bidder: readChoice(read("bidder"), LOCAL_BIDDERS, DEFAULT_SETTINGS.bidder),
 		playTimeMs: isPlayTimeMs(storedPlayTime)
 			? storedPlayTime
@@ -134,10 +154,13 @@ export function readSettings(storage: MaybeStorage): Settings {
 export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
 	const budget = playTimeMs(settings.playTimeMs);
+	const timing = botTiming(settings);
 	if (!LOCAL_BIDDERS.includes(settings.bidder))
 		throw new Error("unknown bidding engine");
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
+	for (const [field, name] of Object.entries(TIMING_KEYS))
+		storage.setItem(PREFIX + name, String(timing[field as keyof BotTiming]));
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);
 	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");
 	storage.setItem(`${PREFIX}theme-style`, settings.theme);

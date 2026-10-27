@@ -1,3 +1,4 @@
+import { DEFAULT_BOT_TIMING } from "../bot/timing";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import { LOCAL_BIDDERS, type LocalBidder } from "../protocol";
 import type { AppDeps } from "./deps";
@@ -111,6 +112,40 @@ export function settingsDialog(
 		LOCAL_BIDDERS,
 		BIDDER_NAMES,
 	);
+	const timeInput = (label: string, name: string, minimum: number) => {
+		const input = el("input", {
+			attrs: {
+				type: "number",
+				name,
+				min: String(minimum / 1000),
+				max: "60",
+				step: "0.001",
+				required: "",
+			},
+		});
+		return {
+			input,
+			element: el("label", { className: "settings-row" }, label, input),
+		};
+	};
+	const timing = {
+		botCardDelayMs: timeInput(
+			t("Minimum card time (seconds)"),
+			"bot-card-delay",
+			DEFAULT_BOT_TIMING.botCardDelayMs,
+		),
+		botBidDelayMs: timeInput(
+			t("Minimum bid time (seconds)"),
+			"bot-bid-delay",
+			DEFAULT_BOT_TIMING.botBidDelayMs,
+		),
+		auctionPauseMs: timeInput(
+			t("Pause after auction (seconds)"),
+			"auction-pause",
+			DEFAULT_BOT_TIMING.auctionPauseMs,
+		),
+		playTimeMs: timeInput(t("Card thinking budget (seconds)"), "play-time", 1),
+	};
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
 	points.element.append(
 		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),
@@ -150,6 +185,19 @@ export function settingsDialog(
 		el("label", { className: "settings-row" }, `${t("Language")} `, language),
 		points.element,
 		engine.element,
+		el(
+			"fieldset",
+			{},
+			el("legend", {}, t("Bot timing")),
+			...Object.values(timing).map((control) => control.element),
+			el(
+				"p",
+				{ className: "settings-hint" },
+				t(
+					"Thinking time counts toward the minimum delay. Bot settings apply when this browser runs the bots.",
+				),
+			),
+		),
 		scheme.element,
 		theme.element,
 		el(
@@ -215,10 +263,18 @@ export function settingsDialog(
 	});
 
 	function saveSettings(): void {
+		for (const { input } of Object.values(timing))
+			if (!input.reportValidity()) return;
+		const times = Object.fromEntries(
+			Object.entries(timing).map(([field, control]) => [
+				field,
+				Math.round(control.input.valueAsNumber * 1000),
+			]),
+		) as Pick<Settings, keyof typeof timing>;
 		const editable = bidding?.().editable ?? true;
 		const settings: Settings = {
+			...times,
 			bidder: editable ? engine.value() : readSettings(deps.browser).bidder,
-			playTimeMs: readSettings(deps.browser).playTimeMs,
 			pointSystem: points.value(),
 			cardPoints: cardPoints.checked,
 			theme: theme.value(),
@@ -260,6 +316,8 @@ export function settingsDialog(
 		},
 		open() {
 			const settings = readSettings(deps.browser);
+			for (const field of Object.keys(timing) as (keyof typeof timing)[])
+				timing[field].input.value = String(settings[field] / 1000);
 			const bot = bidding?.() ?? { bidder: settings.bidder, editable: true };
 			engine.set(bot.bidder);
 			engine.element.disabled = !bot.editable;

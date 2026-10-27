@@ -450,6 +450,8 @@ export interface TableViewInput {
 	readonly hostSeat: Seat | null;
 	/** Seconds until the next board is dealt after scoring. */
 	readonly scoringCountdown?: number;
+	/** Keeps the final auction visible with no play controls until this local countdown ends. */
+	readonly auctionPauseSeconds?: number;
 	/** This seat's commands that are not in the log. */
 	readonly outbox: readonly OutboxItem[];
 	readonly failures: readonly CommandFailure[];
@@ -1251,7 +1253,12 @@ export function tableView(input: TableViewInput): TableView {
 		toAct === undefined
 			? undefined
 			: waitingFor([toAct], allPresent, config.names, t);
-	const legal = canAct && actionWait === undefined ? view.legal : [];
+	const auctionPaused =
+		view.phase === "play" &&
+		board.cards.length === 0 &&
+		(input.auctionPauseSeconds ?? 0) > 0;
+	const legal =
+		canAct && actionWait === undefined && !auctionPaused ? view.legal : [];
 	const playable = new Set(
 		legal.flatMap((action: Action) =>
 			action.type === "play" ? [action.card] : [],
@@ -1378,6 +1385,21 @@ export function tableView(input: TableViewInput): TableView {
 		totals: sums,
 		statistics: sideStats(state.results),
 	};
+	if (auctionPaused) {
+		return {
+			...common,
+			phase: "auction",
+			heading: t("AUCTION"),
+			seats: seats.map((player) => ({
+				...player,
+				turn: false,
+				turnPill: undefined,
+			})),
+			prompt: t("Play starts in {seconds} seconds.", {
+				seconds: input.auctionPauseSeconds ?? 0,
+			}),
+		};
+	}
 
 	if (view.phase === "complete") {
 		const result = state.results.find((item) => item.number === board.number);

@@ -10,10 +10,16 @@ import { bookmarkQuery, parseBookmark } from "../../src/ui/bookmark";
 import { DEAL } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+	vi.unstubAllGlobals();
+	vi.useRealTimers();
+});
 
 describe("local bidder integration", () => {
 	it("bids for the host without a key, prompt fetch, or model API", async () => {
+		vi.useFakeTimers({
+			toFake: ["Date", "performance", "setTimeout", "clearTimeout"],
+		});
 		const network = vi.fn(() => {
 			throw new Error("unexpected network request");
 		});
@@ -56,7 +62,8 @@ describe("local bidder integration", () => {
 			bidder,
 		);
 		await runner.start(["N"]);
-		await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(send).toHaveBeenCalledOnce();
 		expect(network).not.toHaveBeenCalled();
 		expect(errors).not.toHaveBeenCalled();
 		runner.stop();

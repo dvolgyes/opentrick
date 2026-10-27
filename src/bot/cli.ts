@@ -29,6 +29,7 @@ import { DdsSolver } from "./dds-solver";
 import { analyzePlay } from "./play-engine";
 import { playPosition } from "./play-position";
 import { actionPositionKey, matchesActionPosition } from "./position";
+import { DEFAULT_BOT_TIMING, minimumActionMs, waitForMinimum } from "./timing";
 
 interface Options {
 	readonly url: URL;
@@ -162,6 +163,7 @@ async function run(options: Options): Promise<void> {
 		nonce: randomNonce,
 	});
 	let stopped = false;
+	const actionAbort = new AbortController();
 	let choosing = false;
 	let requestedSeat: Seat | undefined;
 	let strategyKey: string | undefined;
@@ -180,6 +182,7 @@ async function run(options: Options): Promise<void> {
 	const stop = async (error?: Error): Promise<void> => {
 		if (stopped) return;
 		stopped = true;
+		actionAbort.abort();
 		if (startupTimer) clearTimeout(startupTimer);
 		removeListener();
 		controller.stop();
@@ -401,6 +404,7 @@ async function run(options: Options): Promise<void> {
 			"other",
 		);
 		const policy = (view.table?.config.botSetup ?? DEFAULT_BOT_SETUP).bidder;
+		const startedAt = performance.now();
 		try {
 			let decision: Action;
 			if (options.random) {
@@ -438,8 +442,15 @@ async function run(options: Options): Promise<void> {
 					).card,
 				};
 			}
-			await sendAction(state, seat, actionKey, decision, controller.view());
+			await waitForMinimum(
+				startedAt,
+				minimumActionMs(state.board, kind, DEFAULT_BOT_TIMING),
+				actionAbort.signal,
+			);
+			if (!stopped)
+				await sendAction(state, seat, actionKey, decision, controller.view());
 		} catch (error) {
+			if (stopped) return;
 			await stop(new Error(describeFailure(error, [route.key])));
 		}
 	};

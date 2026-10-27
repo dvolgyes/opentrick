@@ -23,8 +23,14 @@ import { BotRequestAbortedError } from "./errors";
 import { playTimeMs } from "./play-budget";
 import { playPosition } from "./play-position";
 import { actionPositionKey } from "./position";
+import {
+	type BotTiming,
+	botTiming,
+	minimumActionMs,
+	waitForMinimum,
+} from "./timing";
 
-export interface HostBotSettings {
+export interface HostBotSettings extends Partial<BotTiming> {
 	readonly bidder: LocalBidder;
 	readonly playTimeMs?: number;
 }
@@ -36,7 +42,7 @@ export function configuredBotSeats(config: RoomConfig): Seat[] {
 /** Runs host-managed bot decisions in the page that currently owns the host. */
 export class HostBotRunner {
 	readonly #controller: TableController;
-	#settings: HostBotSettings;
+	#settings: Required<HostBotSettings>;
 	readonly #onError: () => void;
 	readonly #playEngine: PlayChooser;
 	readonly #bidEngine: BidChooser;
@@ -59,6 +65,7 @@ export class HostBotRunner {
 		this.#controller = controller;
 		this.#settings = {
 			...settings,
+			...botTiming(settings),
 			playTimeMs: playTimeMs(settings.playTimeMs),
 		};
 		this.#onError = onError;
@@ -103,14 +110,29 @@ export class HostBotRunner {
 
 	updateSettings(settings: HostBotSettings): void {
 		const budget = playTimeMs(settings.playTimeMs);
+		const timing = botTiming(settings);
+		if (
+			settings.bidder !== this.#settings.bidder ||
+			budget !== this.#settings.playTimeMs ||
+			(Object.keys(timing) as (keyof BotTiming)[]).some(
+				(key) => timing[key] !== this.#settings[key],
+			)
+		) {
+			this.#requestAbort.abort();
+			this.#requestAbort = new AbortController();
+		}
 		if (settings.bidder !== this.#settings.bidder) this.#bidEngine.stop();
 		if (budget !== this.#settings.playTimeMs) this.#playEngine.stop();
-		this.#settings = { ...settings, playTimeMs: budget };
+		this.#settings = { ...settings, ...timing, playTimeMs: budget };
 		this.#schedule();
 	}
 
 	setSeatEnabled(seat: Seat, enabled: boolean): void {
 		this.#seatOverrides.set(seat, enabled);
+		if (!enabled) {
+			this.#requestAbort.abort();
+			this.#requestAbort = new AbortController();
+		}
 		this.#schedule();
 	}
 
@@ -209,12 +231,14 @@ export class HostBotRunner {
 			this.#processed.add(key);
 			const kind = actions[0]?.type;
 			if (!kind) return;
+			const startedAt = performance.now();
+			const signal = this.#requestAbort.signal;
 			let decision: Action;
 			try {
 				if (kind === "play") {
 					const analysis = await this.#playEngine.choose(
 						playPosition(state.board, seat, systems),
-						this.#requestAbort.signal,
+						signal,
 						this.#settings.playTimeMs,
 					);
 					decision = { type: "play", card: analysis.card };
@@ -222,19 +246,28 @@ export class HostBotRunner {
 					const analysis = await this.#bidEngine.choose(
 						bidPosition(state.board, seat),
 						this.#settings.bidder,
-						this.#requestAbort.signal,
+						signal,
 					);
 					decision = { type: "call", call: analysis.call };
 				}
+				await waitForMinimum(
+					startedAt,
+					minimumActionMs(state.board, kind, this.#settings),
+					signal,
+				);
 			} catch (error) {
 				this.#processed.delete(key);
 				throw error;
 			}
-			if (this.#stopped || this.#paused || this.#requestAbort.signal.aborted) {
+			if (this.#stopped || this.#paused || signal.aborted) {
 				this.#processed.delete(key);
 				return;
 			}
 			const current = this.#controller.view();
+			if (!current.hosting || !current.ready || current.seat !== view.seat) {
+				this.#processed.delete(key);
+				return;
+			}
 			const currentBots = current.roster?.bots ?? configuredBotSeats(config);
 			if (!this.#activeSeats(currentBots).includes(seat)) {
 				this.#processed.delete(key);

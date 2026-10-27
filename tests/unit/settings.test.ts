@@ -22,10 +22,21 @@ function memoryStorage(): Storage {
 }
 
 describe("player settings", () => {
+	it("defaults to readable bot pacing and a separate five-second thinking budget", () => {
+		expect(readSettings(undefined)).toMatchObject({
+			botCardDelayMs: 1000,
+			botBidDelayMs: 3000,
+			auctionPauseMs: 3000,
+			playTimeMs: 5000,
+		});
+	});
 	it("uses HCP, the normal theme in the automatic scheme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
 			bidder: "sl",
 			playTimeMs: 5000,
+			botCardDelayMs: 1000,
+			botBidDelayMs: 3000,
+			auctionPauseMs: 3000,
 			pointSystem: "hcp",
 			cardPoints: true,
 			theme: "selenized",
@@ -48,6 +59,9 @@ describe("player settings", () => {
 		const settings = {
 			bidder: "sl",
 			playTimeMs: 150,
+			botCardDelayMs: 2000,
+			botBidDelayMs: 4000,
+			auctionPauseMs: 5000,
 			pointSystem: "vienna",
 			cardPoints: false,
 			theme: "solarized",
@@ -108,6 +122,26 @@ describe("player settings", () => {
 		expect(() => writeSettings(undefined, DEFAULT_SETTINGS)).toThrow(
 			"local storage is not available",
 		);
+	});
+	it("validates each persisted timing floor and rejects invalid writes before changing storage", () => {
+		const storage = memoryStorage();
+		for (const [field, key, floor] of [
+			["botCardDelayMs", "bot-card-delay-ms", 1000],
+			["botBidDelayMs", "bot-bid-delay-ms", 3000],
+			["auctionPauseMs", "auction-pause-ms", 3000],
+		] as const) {
+			for (const value of ["0", String(floor - 1), "60001", "NaN", "1000.5"]) {
+				storage.setItem(`opentrick.settings.${key}`, value);
+				expect(readSettings(storage)[field]).toBe(floor);
+			}
+			storage.setItem(`opentrick.settings.${key}`, "60000");
+			expect(readSettings(storage)[field]).toBe(60000);
+			storage.clear();
+			expect(() =>
+				writeSettings(storage, { ...DEFAULT_SETTINGS, [field]: floor - 1 }),
+			).toThrow(/milliseconds/);
+			expect(storage.length).toBe(0);
+		}
 	});
 	it("validates persisted search budgets and rejects an invalid budget before saving", () => {
 		const storage = memoryStorage();
