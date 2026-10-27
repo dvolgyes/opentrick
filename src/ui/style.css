@@ -1891,9 +1891,9 @@ dialog {
 	bottom: 0;
 }
 
-/* A phone's played cards are small: two ranks read better than four, so only top-left and bottom-right show. */
-[data-form="compact"] .rank-corner.top-right,
-[data-form="compact"] .rank-corner.bottom-left {
+/* Show the two diagonal rank markers on every table layout. */
+.rank-corner.top-right,
+.rank-corner.bottom-left {
 	display: none;
 }
 
@@ -1901,23 +1901,19 @@ dialog {
  * Each oriented card shows its rank in the top-left and bottom-right corners on screen. The bottom card is mirrored, so
  * these are its top-right and bottom-left elements.
  */
-[data-form="compact"]
-	.bridge-table[data-played-card-style="corners-oriented"]
+.bridge-table[data-played-card-style="corners-oriented"]
 	.played.pos-bottom
 	.rank-corner.top-right,
-[data-form="compact"]
-	.bridge-table[data-played-card-style="corners-oriented"]
+.bridge-table[data-played-card-style="corners-oriented"]
 	.played.pos-bottom
 	.rank-corner.bottom-left {
 	display: block;
 }
 
-[data-form="compact"]
-	.bridge-table[data-played-card-style="corners-oriented"]
+.bridge-table[data-played-card-style="corners-oriented"]
 	.played.pos-bottom
 	.rank-corner.top-left,
-[data-form="compact"]
-	.bridge-table[data-played-card-style="corners-oriented"]
+.bridge-table[data-played-card-style="corners-oriented"]
 	.played.pos-bottom
 	.rank-corner.bottom-right {
 	display: none;

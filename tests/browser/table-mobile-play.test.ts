@@ -631,22 +631,29 @@ describe("played card styles", () => {
 		}
 	});
 
-	it("uses the seat-oriented four-corner design by default", () => {
+	it("uses the seat-oriented corner design by default", () => {
 		const { root } = renderView(playView(), "desktop");
 		expect(root.dataset.playedCardStyle).toBe("corners-oriented");
 	});
 
-	const ALL_CORNERS = ["top-left", "top-right", "bottom-left", "bottom-right"];
-	// On a phone, each card shows its rank in the top-left and bottom-right corners on screen. The side cards keep their
-	// marks upright, like the top and bottom cards.
-	it.each<[Form, Record<"top" | "left" | "bottom" | "right", string[]>]>([
+	// Each card shows the same diagonal on screen, including the mirrored bottom card.
+	it.each<[Layout, Record<"top" | "left" | "bottom" | "right", string[]>]>([
 		[
 			"desktop",
 			{
-				top: ALL_CORNERS,
-				left: ALL_CORNERS,
-				bottom: ALL_CORNERS,
-				right: ALL_CORNERS,
+				top: ["top-left", "bottom-right"],
+				left: ["top-left", "bottom-right"],
+				bottom: ["top-left", "bottom-right"],
+				right: ["top-left", "bottom-right"],
+			},
+		],
+		[
+			"sideways",
+			{
+				top: ["top-left", "bottom-right"],
+				left: ["top-left", "bottom-right"],
+				bottom: ["top-left", "bottom-right"],
+				right: ["top-left", "bottom-right"],
 			},
 		],
 		[
@@ -772,9 +779,11 @@ describe("played card styles", () => {
 		};
 		for (const [position, transform] of Object.entries(rotations)) {
 			for (const mark of [".rank-corner", ".played-center-suit"]) {
-				const marker = root.querySelector<HTMLElement>(
-					`.played.pos-${position} ${mark}`,
-				);
+				const marker = [
+					...root.querySelectorAll<HTMLElement>(
+						`.played.pos-${position} ${mark}`,
+					),
+				].find((node) => getComputedStyle(node).display !== "none");
 				if (!marker) throw new Error(`${position} ${mark} is missing`);
 				// The center suit is also moved to the middle of the card, so only the linear part is compared.
 				const linear = getComputedStyle(marker).transform.replace(
