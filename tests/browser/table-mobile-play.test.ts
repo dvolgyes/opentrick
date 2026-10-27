@@ -301,6 +301,20 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("keeps the played card size when enlarged markers fit", () => {
+		renderView(playView(), "desktop", "corners-upright");
+		const card = document.querySelector<HTMLElement>(".played");
+		if (!card) throw new Error("missing played card");
+		const original = card.getBoundingClientRect();
+		try {
+			document.documentElement.dataset.suitFontSize = "L";
+			const enlarged = card.getBoundingClientRect();
+			expect(enlarged.width).toBeCloseTo(original.width, 1);
+			expect(enlarged.height).toBeCloseTo(original.height, 1);
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+		}
+	});
 	it.each<Layout>(["desktop", "sideways", "compact"])(
 		"scales card ranks, suits, bids and contracts exactly once (%s)",
 		(layout) => {

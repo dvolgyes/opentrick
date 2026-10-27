@@ -1040,33 +1040,20 @@ main:has(> .room) {
 	height: var(--card-h);
 }
 
-/* Larger markers need a larger visible strip and face. Scroll long hands instead of covering their ranks. */
+/* Grow a card only when its markers need more space, with 3px at the far edge. */
 :root:is([data-suit-font-size="L"], [data-suit-font-size="XL"], [data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) {
-	.hand:not(.backs) {
-		min-width: 0;
-		max-width: 100%;
-		overflow: auto;
-	}
-
-	.hand .card {
-		--marker-w: calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.4rem + 2px);
-		--marker-h: calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.2rem + 2px);
-		min-width: var(--marker-w);
-		min-height: var(--marker-h);
-	}
-
 	.card .face {
-		min-width: var(--marker-w);
-		min-height: var(--marker-h);
+		min-width: calc(1.3em + 0.2rem + 4px);
+		min-height: calc(2.2em + 0.1rem + 4px);
 	}
 
 	.played {
-		min-width: calc(1.3em + 0.4rem + 2px);
-		min-height: calc(2em + 0.2rem + 2px);
+		min-width: calc(1.5em + 6px);
+		min-height: calc(2em + 6px);
 	}
 
 	.bridge-table:is([data-played-card-style="corners-upright"], [data-played-card-style="corners-oriented"]) .played {
-		min-height: calc(3.5em + 0.3rem + 2px);
+		min-height: calc(1.5em + 6px);
 	}
 }
 
