@@ -281,7 +281,7 @@ test("4: dummy crashes during the play: declarer plays on; the next board waits 
 	// Each page shows the result from its own side; North declares, so North's line is the declarers' line.
 	await expect(scoringLine(tab.N)).toBeVisible();
 	const declarers = (await scoringLine(tab.N).innerText()).trim();
-	expect(declarers).toMatch(/^(?:WON: Made (?:contract|\+\d)|LOST: Down \d+)$/);
+	expect(declarers).toMatch(/^(?:WON: Made: 1♣(?: \+ \d)?|LOST: Down \d+)$/);
 	for (const seat of openSeats()) {
 		await expect(table(tab[seat])).toHaveAttribute("data-phase", "complete");
 		await expectContract(tab[seat], "1♣", "North");

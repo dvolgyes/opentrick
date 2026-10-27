@@ -721,13 +721,17 @@ main:has(> .room) {
 	font-weight: 600;
 }
 
-.scoring-contract .strain-H,
-.scoring-contract .strain-D {
+.scoring .strain-H,
+.scoring .strain-D {
 	color: var(--red-suit);
 }
 
-.scoring-contract .strain-NT {
+.scoring .strain-NT {
 	color: var(--call-green);
+}
+
+.scoring-inline-contract :is(.strain-S, .strain-C) {
+	color: var(--sheet-fg);
 }
 
 .scoring-result {
@@ -3288,6 +3292,19 @@ main:has(> .room[data-form="compact"]) {
 	width: 100%;
 }
 
+[data-form="compact"] .bridge-table[data-phase="complete"] .place-bottom .hand-row {
+	justify-content: safe center;
+}
+
+[data-form="compact"] .bridge-table[data-phase="complete"] .place-bottom .seat-label {
+	justify-content: center;
+}
+
+[data-form="compact"] .bridge-table[data-phase="complete"] .place-bottom .hcp-pill {
+	left: 50%;
+	transform: translateX(-50%);
+}
+
 [data-form="compact"] .seat-label {
 	gap: 0.15rem 0.25rem;
 	font-size: 0.7rem;
@@ -3362,7 +3379,7 @@ main:has(> .room[data-form="compact"]) {
 }
 
 [data-form="compact"] .scoring {
-	width: 100%;
+	width: 80%;
 	padding: 0.35rem 0.5rem;
 }
 

@@ -394,7 +394,7 @@ test("5: the board is played out; the result and the duplicate score agree in ev
 	// Each page shows the result from its own side; North declares, so North's line is the declarers' line.
 	await expect(scoringLine(tab.N)).toBeVisible();
 	const declarers = (await scoringLine(tab.N).innerText()).trim();
-	const scored = /^(?:WON: Made (?:contract|\+(\d))|LOST: Down (\d+))$/.exec(
+	const scored = /^(?:WON: Made: 1♣(?: \+ (\d))?|LOST: Down (\d+))$/.exec(
 		declarers,
 	);
 	expect(scored, declarers).not.toBeNull();

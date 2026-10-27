@@ -1432,17 +1432,26 @@ export function tableView(input: TableViewInput): TableView {
 			contract !== null &&
 			(seat === "N" || seat === "S") ===
 				(contract.declarer === "N" || contract.declarer === "S");
+		const contractText = contract
+			? `${contract.level}${contract.strain === "NT" ? "NT" : SUIT_SYMBOLS[contract.strain]}${contract.doubling}`
+			: "";
 		const compactDetail = contract
 			? viewerIsDeclarerSide
 				? declarerMade
 					? margin === 0
-						? t("Made contract")
-						: t("Made +{margin}", { margin })
+						? t("Made: {contract}", { contract: contractText })
+						: t("Made: {contract} + {margin}", {
+								contract: contractText,
+								margin,
+							})
 					: t("Down {margin}", { margin })
 				: declarerMade
 					? margin === 0
-						? t("Opponents made contract")
-						: t("Opponents made +{margin}", { margin })
+						? t("Opponents made: {contract}", { contract: contractText })
+						: t("Opponents made: {contract} + {margin}", {
+								contract: contractText,
+								margin,
+							})
 					: t("Opponents down {margin}", { margin })
 			: "";
 		const countdown = input.scoringCountdown ?? 10;

@@ -158,16 +158,16 @@ export async function expectContract(
 	);
 }
 
-/** The result line of a finished board, from this page's side: "WON: Made +1", "LOST: Opponents down 2". */
+/** The result line of a finished board, from this page's side: "WON: Made: 4♠ + 1", "LOST: Opponents down 2". */
 export const scoringLine = (page: Page): Locator =>
 	page.getByTestId("scoring").locator(".scoring-result");
 
 /**
  * The defenders' result line for the declarer side's line: the outcome flips, and the detail names the
- * opponents ("WON: Made +1" becomes "LOST: Opponents made +1").
+ * opponents ("WON: Made: 4♠ + 1" becomes "LOST: Opponents made: 4♠ + 1").
  */
 export function defendersLine(declarers: string): string {
-	const parts = /^(WON|LOST): (Made|Down) (.+)$/.exec(declarers);
+	const parts = /^(WON|LOST): (Made:|Down) (.+)$/.exec(declarers);
 	if (!parts) throw new Error(`not a declarer result line: ${declarers}`);
 	const outcome = parts[1] === "WON" ? "LOST" : "WON";
 	return `${outcome}: Opponents ${parts[2]?.toLowerCase()} ${parts[3]}`;

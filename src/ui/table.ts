@@ -2147,6 +2147,37 @@ export function tableSection(
 			scoring.replaceChildren();
 			return;
 		}
+		const contract = view.contract;
+		const symbol =
+			contract === undefined
+				? ""
+				: contract.strain === "NT"
+					? "NT"
+					: SUIT_SYMBOLS[contract.strain];
+		const notation =
+			contract === undefined
+				? ""
+				: `${contract.level}${symbol}${contract.doubling}`;
+		const position =
+			notation === "" ? -1 : view.compactDetail.indexOf(notation);
+		const detail =
+			position < 0 || contract === undefined
+				? [view.compactDetail]
+				: [
+						view.compactDetail.slice(0, position),
+						el(
+							"span",
+							{ className: "scoring-inline-contract" },
+							String(contract.level),
+							el(
+								"span",
+								{ className: `strain strain-${contract.strain}` },
+								symbol,
+							),
+							contract.doubling,
+						),
+						view.compactDetail.slice(position + notation.length),
+					];
 		if (compact) {
 			scoring.replaceChildren(
 				el(
@@ -2159,19 +2190,12 @@ export function tableSection(
 				),
 				...(view.compactDetail === ""
 					? []
-					: [
-							el(
-								"p",
-								{ className: "mobile-scoring-detail" },
-								view.compactDetail,
-							),
-						]),
+					: [el("p", { className: "mobile-scoring-detail" }, ...detail)]),
 				scoringCountdown,
 			);
 			setCountdown(view.countdown);
 			return;
 		}
-		const contract = view.contract;
 		scoring.replaceChildren(
 			...(contract
 				? [
@@ -2202,7 +2226,7 @@ export function tableSection(
 					attrs: { "data-outcome": view.compactOutcome },
 				},
 				el("strong", {}, `${t(view.compactOutcome)}:`),
-				...(view.compactDetail === "" ? [] : [` ${view.compactDetail}`]),
+				...(view.compactDetail === "" ? [] : [" ", ...detail]),
 			),
 			scoringCountdown,
 		);

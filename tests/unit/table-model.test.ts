@@ -1129,12 +1129,41 @@ describe("dealing and scores", () => {
 		expect(view("S", done).scoring).toMatchObject({
 			contract: { level: 1, strain: "S", doubling: "" },
 			compactOutcome: "WON",
-			compactDetail: "Made +6",
+			compactDetail: "Made: 1♠ + 6",
 		});
 		expect(view("W", done).scoring).toMatchObject({
 			compactOutcome: "LOST",
-			compactDetail: "Opponents made +6",
+			compactDetail: "Opponents made: 1♠ + 6",
 		});
+		const exactlyMade = {
+			...tableState(done),
+			results: tableState(done).results.map((result) => ({
+				...result,
+				declarerTricks: 7,
+			})),
+		};
+		expect(view("S", done, { state: exactlyMade }).scoring?.compactDetail).toBe(
+			"Made: 1♠",
+		);
+		expect(view("W", done, { state: exactlyMade }).scoring?.compactDetail).toBe(
+			"Opponents made: 1♠",
+		);
+		const doubledNoTrump = {
+			...tableState(done),
+			results: tableState(done).results.map((result) => ({
+				...result,
+				contract: result.contract && {
+					...result.contract,
+					level: 3 as const,
+					strain: "NT" as const,
+					doubling: "XX" as const,
+				},
+				declarerTricks: 10,
+			})),
+		};
+		expect(
+			view("S", done, { state: doubledNoTrump }).scoring?.compactDetail,
+		).toBe("Made: 3NTXX + 1");
 		const defendersWon = {
 			...tableState(done),
 			results: tableState(done).results.map((result) => ({
@@ -1191,7 +1220,7 @@ describe("dealing and scores", () => {
 		expect(table.scoring).toEqual({
 			contract: { level: 1, strain: "S", doubling: "", declarer: "N" },
 			compactOutcome: "WON",
-			compactDetail: "Made +6",
+			compactDetail: "Made: 1♠ + 6",
 			countdown: 10,
 		});
 		expect(table.scores).toEqual([

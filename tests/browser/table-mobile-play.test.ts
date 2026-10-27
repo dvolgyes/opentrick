@@ -303,6 +303,145 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("centres the bottom hand and its pills in the phone result screen", async () => {
+		await page.viewport(390, 844);
+		try {
+			const base = playView();
+			const fullHand = {
+				visible: true as const,
+				suits: [
+					{
+						suit: "S" as const,
+						symbol: "♠",
+						trump: false,
+						cards: [card("SA"), card("SK"), card("SQ")],
+					},
+					{
+						suit: "H" as const,
+						symbol: "♥",
+						trump: false,
+						cards: [card("HA"), card("HK"), card("HQ"), card("H9")],
+					},
+					{
+						suit: "D" as const,
+						symbol: "♦",
+						trump: false,
+						cards: [card("DA"), card("DK"), card("DQ")],
+					},
+					{
+						suit: "C" as const,
+						symbol: "♣",
+						trump: false,
+						cards: [card("CA"), card("CK"), card("CQ")],
+					},
+				],
+			};
+			const { root } = renderMobile({
+				...base,
+				phase: "complete",
+				seats: base.seats.map((player) =>
+					player.position === "bottom"
+						? {
+								...player,
+								hand: fullHand,
+								tags: ["Host", "Dummy"],
+								pointCards: ["SA"],
+							}
+						: player,
+				),
+				scoring: {
+					contract: { level: 4, strain: "H", doubling: "" },
+					compactOutcome: "WON",
+					compactDetail: "Made: 4♥ + 1",
+					countdown: 1,
+				},
+			});
+			const board = root.querySelector<HTMLElement>(".felt");
+			const hand = root.querySelector<HTMLElement>(".place-bottom .hand");
+			const label = root.querySelector<HTMLElement>(
+				".place-bottom .seat-label",
+			);
+			const points = root.querySelector<HTMLElement>(".place-bottom .hcp-pill");
+			const first = hand?.querySelector<HTMLElement>(".card");
+			const cards = hand?.querySelectorAll<HTMLElement>(".card");
+			const last = cards?.[cards.length - 1];
+			if (!board || !hand || !label || !points || !first || !last)
+				throw new Error("missing result hand or pills");
+			const centre = (node: HTMLElement) => {
+				const rect = node.getBoundingClientRect();
+				return (rect.left + rect.right) / 2;
+			};
+			expect(
+				(first.getBoundingClientRect().left +
+					last.getBoundingClientRect().right) /
+					2,
+			).toBeCloseTo(centre(board), 0);
+			expect(centre(label)).toBeCloseTo(centre(board), 0);
+			expect(centre(points)).toBeCloseTo(centre(board), 0);
+			const result = root.querySelector<HTMLElement>(".scoring");
+			const parent = result?.parentElement;
+			if (!result || !parent) throw new Error("missing scoring panel");
+			expect(
+				result.getBoundingClientRect().width /
+					parent.getBoundingClientRect().width,
+			).toBeCloseTo(0.8, 2);
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
+	it.each<Layout>(["desktop", "compact"])(
+		"shows the made contract and coloured suit in the %s result",
+		(layout) => {
+			const base = playView();
+			const { root } = renderView(
+				{
+					...base,
+					phase: "complete",
+					scoring: {
+						contract: { level: 4, strain: "H", doubling: "X" },
+						compactOutcome: "WON",
+						compactDetail: "Made: 4♥X + 1",
+						countdown: 1,
+					},
+				},
+				layout,
+			);
+			const detail = root.querySelector<HTMLElement>(
+				layout === "compact" ? ".mobile-scoring-detail" : ".scoring-result",
+			);
+			const suit = detail?.querySelector<HTMLElement>(".strain-H");
+			if (!detail || !suit) throw new Error("missing result contract suit");
+			expect(detail.textContent).toContain("Made: 4♥X + 1");
+			expect(getComputedStyle(suit).color).toBe("rgb(192, 38, 45)");
+		},
+	);
+
+	it.each([
+		["C", "♣", "rgb(29, 29, 27)"],
+		["D", "♦", "rgb(192, 38, 45)"],
+		["H", "♥", "rgb(192, 38, 45)"],
+		["S", "♠", "rgb(29, 29, 27)"],
+		["NT", "NT", "rgb(31, 122, 70)"],
+	] as const)("colours the %s result strain", (strain, symbol, color) => {
+		const base = playView();
+		const { root } = renderMobile({
+			...base,
+			phase: "complete",
+			scoring: {
+				contract: { level: 4, strain, doubling: "" },
+				compactOutcome: "WON",
+				compactDetail: `Made: 4${symbol} + 1`,
+				countdown: 1,
+			},
+		});
+		const mark = root.querySelector<HTMLElement>(
+			`.mobile-scoring-detail .strain-${strain}`,
+		);
+		if (!mark) throw new Error(`missing ${strain} result marker`);
+		expect(mark.textContent).toBe(symbol);
+		expect(getComputedStyle(mark).color).toBe(color);
+	});
 	it("confirms the host's own switch in the phone bot controls", () => {
 		const base = playView();
 		const view = {
@@ -2379,7 +2518,7 @@ describe("compact play controls", () => {
 				scoring: {
 					contract: { level: 4, strain: "H", doubling: "" },
 					compactOutcome: "WON",
-					compactDetail: "Made +1",
+					compactDetail: "Made: 4♥ + 1",
 					countdown: 1,
 				},
 				nextBoard: { board: 2, ready: false },
@@ -2389,7 +2528,7 @@ describe("compact play controls", () => {
 		const scoring = root.querySelector<HTMLElement>("[data-testid='scoring']");
 		if (!scoring) throw new Error("desktop scoring panel is missing");
 		expect(scoring.textContent).toBe(
-			"Contract 4♥WON: Made +1Next board 2 in 1 second",
+			"Contract 4♥WON: Made: 4♥ + 1Next board 2 in 1 second",
 		);
 		expect(scoring.textContent).not.toContain("Deal Board");
 		expect(scoring.textContent).not.toContain("playerN");
@@ -2409,7 +2548,7 @@ describe("compact play controls", () => {
 				scoring: {
 					contract: { level: 2, strain: "D", doubling: "" },
 					compactOutcome: "WON",
-					compactDetail: "Made +1",
+					compactDetail: "Made: 2♦ + 1",
 					countdown: 1,
 				},
 				nextBoard: { board: 2, ready: false },
@@ -2426,7 +2565,7 @@ describe("compact play controls", () => {
 				scoring: {
 					contract: { level: 3, strain: "NT", doubling: "" },
 					compactOutcome: "LOST",
-					compactDetail: "Opponents made +1",
+					compactDetail: "Opponents made: 3NT + 1",
 					countdown: 1,
 				},
 				nextBoard: { board: 2, ready: false },
