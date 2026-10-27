@@ -14,14 +14,14 @@ import {
 	resetRequestPayload,
 } from "../../src/game/bridge";
 import { chatPayload } from "../../src/game/chat";
-import type { ApplyResult } from "../../src/game/module";
+import type { ApplyContext, ApplyResult } from "../../src/game/module";
 import {
 	APPLICATION_FEATURES,
 	type JsonObject,
 	SEATS,
 	type Seat,
 } from "../../src/protocol";
-import { bidding, call, DEAL } from "./bridge-fixtures";
+import { bidding, call, DEAL, playing } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
 // Plan §12 R4: each deal needs every seat at the table, a player or a robot, so the bidding never starts at a table
@@ -40,6 +40,7 @@ function send(
 	seat: Seat,
 	payload: JsonObject,
 	present: readonly Seat[],
+	control: Pick<ApplyContext, "bots" | "autoplaySeats"> = {},
 ): ApplyResult {
 	return module.apply(
 		state,
@@ -51,6 +52,7 @@ function send(
 			commandId: "cmd-1",
 			seq: 1,
 			present,
+			...control,
 			features: new Map(
 				SEATS.map((seat) => [seat, Object.values(APPLICATION_FEATURES)]),
 			),
@@ -99,6 +101,50 @@ function finished(board: Board): JsonObject {
 }
 
 describe("the presence rule for game actions", () => {
+	it.each(["S", "N"] as const)(
+		"lets human dummy select a card from %s when declarer is a robot",
+		(hand) => {
+			const board = playing(contract(), hand === "S" ? "S7" : "S7 S2 C2");
+			expect(boardStatus(board).turn).toBe(hand);
+			const action = legalActions(board, "N")[0];
+			if (!action) throw new Error("no card to play");
+			const payload = actionPayload(ROOM_ID, board, action);
+			const state = stateWith(board);
+			const control = { bots: ["N"] as Seat[] };
+			expect(send(state, "S", payload, ["S"], control).ok).toBe(true);
+			expect(
+				send(
+					state,
+					"S",
+					{ ...payload, card: hand === "S" ? "H6" : "HA" },
+					SEATS,
+					control,
+				),
+			).toMatchObject({
+				ok: false,
+				reason: expect.stringContaining("does not follow suit"),
+			});
+			expect(
+				send(state, "S", { ...payload, card: "S7" }, SEATS, control).ok,
+			).toBe(false);
+			// A human declarer still controls a robot dummy.
+			expect(send(state, "N", payload, SEATS, { bots: ["S"] }).ok).toBe(true);
+			for (const other of ["N", "E", "W"] as const)
+				expect(send(state, other, payload, SEATS, control).ok).toBe(false);
+			// Sender-controlled fields cannot grant card control.
+			expect(send(state, "S", { ...payload, bots: ["N"] }, SEATS).ok).toBe(
+				false,
+			);
+			for (const autoplay of [
+				{ bots: ["N", "S"] as Seat[] },
+				{ bots: ["N"] as Seat[], autoplaySeats: ["N"] as Seat[] },
+			]) {
+				expect(send(state, "S", payload, SEATS, autoplay).ok).toBe(false);
+				expect(send(state, "N", payload, SEATS, autoplay).ok).toBe(true);
+			}
+		},
+	);
+
 	it("deals only when all four players are present", () => {
 		expect(
 			send(stateWith(null), "N", dealPayload(ROOM_ID, 1), without("W")),

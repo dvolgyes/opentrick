@@ -524,7 +524,8 @@ main:has(> .room) {
 	white-space: nowrap;
 }
 
-:is(.table-vulnerability, .mobile-round-status) [data-vulnerable="true"] {
+:is(.table-vulnerability, .mobile-round-status) [data-vulnerable="true"],
+.auction-player[data-vulnerable="true"] {
 	color: var(--red-suit);
 	font-weight: 700;
 }

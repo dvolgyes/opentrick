@@ -2209,8 +2209,13 @@ export function tableSection(
 		}
 		const rows = grid.rows;
 		const names = new Map(view.seats.map((seat) => [seat.seat, seat.name]));
-		// A rebuild closes an open meaning, so draw only when the auction or a name changed.
-		const key = JSON.stringify([grid, [...names], guideBlocked]);
+		// A rebuild closes an open meaning, so draw only when the auction, names, vulnerability or guide state changed.
+		const key = JSON.stringify([
+			grid,
+			[...names],
+			view.vulnerability,
+			guideBlocked,
+		]);
 		if (key === drawnAuction) return;
 		drawnAuction = key;
 		const meanings: HTMLElement[] = [];
@@ -2223,10 +2228,21 @@ export function tableSection(
 					{},
 					...grid.seats.map((seat, index) => {
 						const player = `${names.get(seat) || t(seat)} (${t(seat)})`;
+						const side = seat === "N" || seat === "S" ? "ns" : "ew";
+						const vulnerable = view.vulnerability.some(
+							(line) => line.side === side && line.vulnerable,
+						);
 						return el(
 							"th",
 							{ attrs: { scope: "col", title: player } },
-							el("span", { className: "auction-player" }, player),
+							el(
+								"span",
+								{
+									className: "auction-player",
+									attrs: { "data-vulnerable": String(vulnerable) },
+								},
+								player,
+							),
 							...systemLabel(grid.systems[index], grid.bots.includes(seat)),
 						);
 					}),

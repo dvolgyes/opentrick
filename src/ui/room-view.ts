@@ -1517,6 +1517,7 @@ export function showRoom(
 			present,
 			roster: model.roster,
 			bots: new Set(activeBots),
+			autoplaySeats: new Set(view.roster?.autoplaySeats ?? []),
 			hostSeat: view.hostSeat,
 			scoringCountdown,
 			auctionPauseSeconds: auctionPause.remaining(

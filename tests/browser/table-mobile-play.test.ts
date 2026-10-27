@@ -826,6 +826,48 @@ describe("desktop auction", () => {
 		(hit as HTMLElement).click();
 	}
 
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"marks vulnerable bidding names red without changing green-table names (%s)",
+		(layout) => {
+			const view = undoOpenView({});
+			const { root, section } = renderView(view, layout);
+			const tableNameColors = () =>
+				[...root.querySelectorAll(".seat-label .name, .mobile-board-name")].map(
+					(name) => getComputedStyle(name).color,
+				);
+			const originalColors = tableNameColors();
+			for (const vulnerableSides of [
+				[true, false],
+				[false, true],
+				[true, true],
+				[false, false],
+			]) {
+				section.render({
+					...view,
+					vulnerability: NS_VULNERABLE.map((line, index) => ({
+						...line,
+						vulnerable: vulnerableSides[index] ?? false,
+					})),
+				});
+				const names = [
+					...root.querySelectorAll<HTMLElement>(".auction-player"),
+				];
+				expect(names).toHaveLength(4);
+				for (const [index, name] of names.entries()) {
+					const vulnerable = vulnerableSides[index % 2];
+					const probe = document.createElement("span");
+					probe.style.color = `var(--${vulnerable ? "sheet-red" : "sheet-fg"})`;
+					name.append(probe);
+					expect(getComputedStyle(name).color).toBe(
+						getComputedStyle(probe).color,
+					);
+					probe.remove();
+				}
+				expect(tableNameColors()).toEqual(originalColors);
+			}
+		},
+	);
+
 	it.each<Layout>(["desktop", "sideways"])(
 		"shows the vulnerability of each side in two lines right of the heading, together as tall as the heading (%s)",
 		(layout) => {

@@ -27,6 +27,8 @@ import {
 	type BridgeState,
 	isTableCommand,
 	seatSystems,
+	tableActor,
+	tableLegalActions,
 	totals,
 } from "../game/bridge";
 import { englishTranslator as english, type Translate } from "../i18n";
@@ -446,6 +448,7 @@ export interface TableViewInput {
 	readonly roster: readonly RosterRow[];
 	/** Bot-controlled seats from the shared table roster. */
 	readonly bots?: ReadonlySet<Seat>;
+	readonly autoplaySeats?: ReadonlySet<Seat>;
 	/** The host's seat, or null while the host is not known. */
 	readonly hostSeat: Seat | null;
 	/** Seconds until the next board is dealt after scoring. */
@@ -1205,7 +1208,11 @@ export function tableView(input: TableViewInput): TableView {
 				? SEATS
 				: [state.claim.requester]
 			: [];
-	const rawView = viewForPlayer(board, seat, revealedSeats);
+	const rawView = {
+		...viewForPlayer(board, seat, revealedSeats),
+		actor: tableActor(board, input.bots, input.autoplaySeats),
+		legal: tableLegalActions(board, seat, input.bots, input.autoplaySeats),
+	};
 	const rawCompletedView = state.claimResult
 		? (() => {
 				const status = boardStatus(board);
@@ -1242,7 +1249,7 @@ export function tableView(input: TableViewInput): TableView {
 					) as typeof rawCompletedView.hands,
 				}
 			: rawCompletedView;
-	// Only the seat to act must be present. During play, declarer plays dummy's cards, so dummy may be away.
+	// Only the controller must be present, including human dummy when the partner is a robot.
 	const toAct =
 		view.phase === "auction"
 			? view.turn
@@ -1483,7 +1490,8 @@ export function tableView(input: TableViewInput): TableView {
 		prompt = t("Waiting for {seat} to play from dummy.", {
 			seat: t(SEAT_NAMES[actor]),
 		});
-	else prompt = t("Waiting for {seat} to play.", { seat: t(SEAT_NAMES[turn]) });
+	else
+		prompt = t("Waiting for {seat} to play.", { seat: t(SEAT_NAMES[actor]) });
 	return {
 		...common,
 		phase: "play",

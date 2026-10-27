@@ -970,6 +970,8 @@ export class HostEngine {
 				holder,
 				commandId: id,
 				seq,
+				bots: [...this.#localBots],
+				autoplaySeats: this.roster()?.autoplaySeats ?? [],
 				present: SEATS.filter(
 					(seat) => seat === this.#deps.log.seat || this.#online(table, seat),
 				),

@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { dealPayload } from "../../src/game/bridge";
+import { randomBelowFrom } from "../../src/bridge/deal";
+import { createBoard, legalActions } from "../../src/bridge/engine";
+import {
+	actionPayload,
+	createBridgeModule,
+	dealPayload,
+	parseBridgeState,
+} from "../../src/game/bridge";
 import { chatModule, chatPayload } from "../../src/game/chat";
+import type { GameModule } from "../../src/game/module";
 import type { Authority } from "../../src/p2p/authority";
 import { HostEngine, type HostStop } from "../../src/p2p/host-engine";
 import { deriveHolder, makeTag } from "../../src/p2p/keys";
@@ -21,7 +29,8 @@ import {
 	type Entry,
 	type EntryMessage,
 } from "../../src/p2p/wire";
-import type { RoomConfig, Seat } from "../../src/protocol";
+import type { JsonObject, RoomConfig, Seat } from "../../src/protocol";
+import { bidding, DEAL, playing } from "./bridge-fixtures";
 import {
 	overTheWire,
 	peerId,
@@ -60,8 +69,12 @@ class Rig {
 	autoplayRequests: { seat: Seat; enabled: boolean }[] = [];
 	reportChanges = 0;
 	#next = 100;
+	constructor(readonly module: GameModule = chatModule) {}
 
-	async create(config: RoomConfig = CONFIG): Promise<this> {
+	async create(
+		config: RoomConfig = CONFIG,
+		state: JsonObject = this.module.initialState(TABLE, config),
+	): Promise<this> {
 		const holder = await deriveHolder(TABLE, CLIENT_N);
 		this.auth = { term: 1, tag: makeTag(holder, "N"), inc: 1 };
 		const written = await this.log.write(() =>
@@ -70,7 +83,7 @@ class Rig {
 				seat: "N",
 				holder,
 				config,
-				state: chatModule.initialState(TABLE, CONFIG),
+				state,
 				auth: this.auth,
 				id: commandId(1),
 				now: this.clock.wall(),
@@ -87,7 +100,7 @@ class Rig {
 			log: this.log,
 			auth: this.auth,
 			self: HOST,
-			module: chatModule,
+			module: this.module,
 			send: this.sent,
 			clock: this.clock,
 			newId: () => commandId(this.#next++),
@@ -193,6 +206,46 @@ describe("test kit", () => {
 });
 
 describe("host-local bots", () => {
+	it.each(["S2", "S2 C2 SA"])(
+		"accepts remote human dummy's card with robot declarer after %s",
+		async (cards) => {
+			const module = createBridgeModule(randomBelowFrom(() => 0));
+			const board = playing(bidding(createBoard(1, DEAL), "P 1C P P P"), cards);
+			const rig = await new Rig(module).create(CONFIG, {
+				...module.initialState(TABLE, CONFIG),
+				board,
+			});
+			const gen = await rig.seat(EAST, CLIENT_E, "W");
+			expect(await rig.host.activateBots(["E"])).toBe(true);
+			const action = legalActions(board, "E")[0];
+			if (action?.type !== "play") throw new Error("no card to play");
+			const payload = actionPayload(TABLE, board, action);
+			expect(
+				(await rig.host.localCommand("E", commandId(50), payload)).ok,
+			).toBe(false);
+			await rig.from(HOST, {
+				k: "cmd",
+				id: commandId(51),
+				gen: rig.row("N")?.gen ?? 0,
+				payload,
+			});
+			expect(rig.to(HOST)).toContainEqual(
+				expect.objectContaining({ id: commandId(51), status: "rejected" }),
+			);
+			await rig.from(EAST, { k: "cmd", id: commandId(52), gen, payload });
+			expect(rig.to(EAST)).toContainEqual(
+				expect.objectContaining({ id: commandId(52), status: "accepted" }),
+			);
+			const state = rig.log.table?.state;
+			if (!state) throw new Error("no table state");
+			expect(parseBridgeState(state, TABLE)?.board?.cards).toEqual([
+				...board.cards,
+				action.card,
+			]);
+			expect(rig.log.entries.at(-1)).toMatchObject({ seat: "W", kind: "cmd" });
+		},
+	);
+
 	it("rejects autoplay without an authenticated current seat and ignores duplicate requests", async () => {
 		const rig = await new Rig().create();
 		await rig.hello(EAST, CLIENT_E);

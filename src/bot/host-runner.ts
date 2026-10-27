@@ -1,4 +1,4 @@
-import { type Action, legalActions } from "../bridge/engine";
+import type { Action } from "../bridge/engine";
 import {
 	actionPayload,
 	type BridgeState,
@@ -6,6 +6,7 @@ import {
 	parseBridgeState,
 	resetVotePayload,
 	seatSystems,
+	tableLegalActions,
 	undoVotePayload,
 } from "../game/bridge";
 import type { TableController } from "../p2p/table";
@@ -234,8 +235,12 @@ export class HostBotRunner {
 		}
 		if (state.claim || state.undo || state.reset || !state.board) return;
 		for (const seat of seats) {
-			// legalActions assigns dummy's turn to declarer, so only declarer can choose a dummy card.
-			const actions = legalActions(state.board, seat);
+			const actions = tableLegalActions(
+				state.board,
+				seat,
+				seats,
+				view.roster?.autoplaySeats,
+			);
 			if (actions.length === 0) continue;
 			const key = `${state.board.number}:${actionPositionKey(state.board)}:${seat}`;
 			if (this.#processed.has(key)) continue;
@@ -292,6 +297,17 @@ export class HostBotRunner {
 				actionPositionKey(currentState.board) !== actionPositionKey(state.board)
 			)
 				return;
+			if (
+				tableLegalActions(
+					currentState.board,
+					seat,
+					this.#activeSeats(currentBots),
+					current.roster?.autoplaySeats,
+				).length === 0
+			) {
+				this.#processed.delete(key);
+				return;
+			}
 			const action = actions.find((item) =>
 				decision.type === "call"
 					? item.type === "call" && item.call === decision.call

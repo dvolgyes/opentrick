@@ -13,6 +13,9 @@ export interface ApplyContext {
 	readonly seq: number;
 	/** Seats at the table now: the host's own seat and each seat whose current peer is connected to the host. */
 	readonly present: readonly Seat[];
+	/** Robot seats and requested autoplay, from the host's current roster, never from the payload. */
+	readonly bots?: readonly Seat[];
+	readonly autoplaySeats?: readonly Seat[];
 	/** Features reported by each currently bound seat; used only to avoid incompatible shared workflows. */
 	readonly features?: ReadonlyMap<Seat, readonly string[]>;
 }

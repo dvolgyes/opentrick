@@ -113,15 +113,22 @@ function liveHost(
 	state: JsonObject,
 	playEngine: PlayChooser,
 	bidEngine?: BidChooser,
+	initialBots: readonly Seat[] = ["E", "W"],
 ) {
 	let current = state;
+	let bots = initialBots;
+	let autoplaySeats: readonly Seat[] = [];
 	let hosting = true;
 	let beforeBot: (() => void) | undefined;
 	let seq = 1000;
 	const listeners = new Set<() => void>();
 	const deliver = (seat: Seat, payload: JsonObject) => {
 		seq += 1;
-		const result = MODULE.apply(current, contextFor(seat, seq), payload);
+		const result = MODULE.apply(
+			current,
+			{ ...contextFor(seat, seq), bots, autoplaySeats },
+			payload,
+		);
 		if (!result.ok) return { ok: false as const, reason: result.reason };
 		current = result.state;
 		for (const listener of listeners) listener();
@@ -134,7 +141,7 @@ function liveHost(
 			ready: true,
 			seat: "N",
 			table: { config: CONFIG, state: current },
-			roster: { bots: ["E", "W"] },
+			roster: { bots, autoplaySeats },
 		}),
 		onChange: (listener: () => void) => {
 			listeners.add(listener);
@@ -163,6 +170,11 @@ function liveHost(
 		},
 		onError,
 		deliver,
+		setControl: (nextBots: readonly Seat[], autoplay: readonly Seat[] = []) => {
+			bots = nextBots;
+			autoplaySeats = autoplay;
+			for (const listener of listeners) listener();
+		},
 		/** `message` reaches the host just before the next bot message. */
 		beforeNextBot: (message: () => void) => {
 			beforeBot = message;
@@ -193,6 +205,47 @@ afterEach(() => {
 });
 
 describe("host bot play", () => {
+	it("waits for human dummy, resumes on autoplay, and discards a late choice when autoplay stops", async () => {
+		const start = tableState([
+			...["P", "P", "1C", "P", "P", "P"].map((text) => act(call(text))),
+			act(),
+		]);
+		const board = parseBridgeState(start, ROOM_ID)?.board;
+		if (!board) throw new Error("no board");
+		expect(boardStatus(board)).toMatchObject({
+			dummy: "N",
+			actor: "S",
+			turn: "N",
+		});
+		const action = legalActions(board, "S")[0];
+		if (action?.type !== "play") throw new Error("no dummy card");
+		let answer: (() => void) | undefined;
+		const choose = vi.fn(async () => {
+			await new Promise<void>((resolve) => {
+				answer = resolve;
+			});
+			return playReply(action.card);
+		});
+		const host = liveHost(start, { choose, stop: () => {} }, undefined, ["S"]);
+		expect(await host.runner.start()).toBe(true);
+		await vi.advanceTimersByTimeAsync(6000);
+		expect(choose).not.toHaveBeenCalled();
+		host.setControl(["N", "S"], ["N"]);
+		expect(choose).toHaveBeenCalledTimes(1);
+		host.setControl(["S"]);
+		answer?.();
+		await vi.advanceTimersByTimeAsync(6000);
+		expect(host.state()?.board?.cards).toEqual(board.cards);
+		expect(host.onError).not.toHaveBeenCalled();
+		// Resuming at the same position must not be blocked by the discarded choice.
+		host.setControl(["N", "S"], ["N"]);
+		expect(choose).toHaveBeenCalledTimes(2);
+		answer?.();
+		await vi.advanceTimersByTimeAsync(6000);
+		expect(host.state()?.board?.cards).toEqual([...board.cards, action.card]);
+		host.runner.stop();
+	});
+
 	it("decides a claim made while it chooses a card, then plays at the same position", async () => {
 		// North declares 1C, and East, a bot, is to lead.
 		const start = tableState(OPENING);

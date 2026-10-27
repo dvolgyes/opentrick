@@ -6,6 +6,7 @@ import {
 	type BoardResult,
 	boardStatus,
 	createBoard,
+	legalActions,
 	parseAction,
 	parseBoard,
 	parseBoardResult,
@@ -35,6 +36,35 @@ import {
 } from "../protocol";
 import { checkMessageText } from "./chat";
 import type { ApplyContext, ApplyResult, GameModule } from "./module";
+
+/** The human partner controls a robot declarer's two hands unless autoplay controls that pair. */
+export function tableActor(
+	board: Board,
+	bots: Iterable<Seat> = [],
+	autoplaySeats: Iterable<Seat> = [],
+): Seat | undefined {
+	const status = boardStatus(board);
+	if (status.phase !== "play" || status.actor !== status.contract.declarer)
+		return status.actor;
+	const automated = new Set(bots);
+	return automated.has(status.contract.declarer) &&
+		!automated.has(status.dummy) &&
+		!new Set(autoplaySeats).has(status.contract.declarer)
+		? status.dummy
+		: status.actor;
+}
+
+/** Legal bridge actions assigned to the table's current human or robot controller. */
+export function tableLegalActions(
+	board: Board,
+	seat: Seat,
+	bots: Iterable<Seat> = [],
+	autoplaySeats: Iterable<Seat> = [],
+): Action[] {
+	if (tableActor(board, bots, autoplaySeats) !== seat) return [];
+	const actor = boardStatus(board).actor;
+	return actor === undefined ? [] : legalActions(board, actor);
+}
 
 /**
  * Milestone 2: one bridge table with duplicate scoring, plus the chat of milestone 1.
@@ -652,8 +682,21 @@ function applyTableAction(
 		return reject(
 			payload.type === "call" ? "not a valid call" : "not a valid card",
 		);
-	const { turn: hand } = boardStatus(board);
-	const applied = applyAction(board, context.seat, action);
+	const { turn: hand, actor } = boardStatus(board);
+	const controller = tableActor(board, context.bots, context.autoplaySeats);
+	if (
+		action.type === "play" &&
+		controller !== actor &&
+		controller !== context.seat
+	)
+		return reject("it is not your turn");
+	const applied = applyAction(
+		board,
+		action.type === "play" && controller !== actor && actor !== undefined
+			? actor
+			: context.seat,
+		action,
+	);
 	if (!applied.ok) return reject(applied.reason);
 	const next = applied.board;
 	const result = scoreBoard(next);

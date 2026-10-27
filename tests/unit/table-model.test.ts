@@ -572,6 +572,37 @@ describe("play", () => {
 		expect(table.need?.remaining).toBe(13);
 	});
 
+	it.each(["S7", "S7 S2 C2"])(
+		"lets human dummy choose both hands when declarer is a robot after %s",
+		(cards) => {
+			const board = playing(bidding(createBoard(1, DEAL), "1S P P P"), cards);
+			const south = view("S", board, { bots: new Set(["N"]) });
+			expect(south.yourTurn).toBe(true);
+			expect(south.seats.find((seat) => seat.turn)?.turnPill?.yours).toBe(true);
+			const playable = south.seats.flatMap((seat) =>
+				seat.hand.visible
+					? seat.hand.suits.flatMap((suit) =>
+							suit.cards.filter((card) => card.playable),
+						)
+					: [],
+			);
+			expect(playable.map((card) => card.card)).toEqual(
+				legalActions(board, "N").flatMap((action) =>
+					action.type === "play" ? [action.card] : [],
+				),
+			);
+			expect(view("S", board, { bots: new Set(["N", "S"]) }).yourTurn).toBe(
+				false,
+			);
+			expect(
+				view("S", board, {
+					bots: new Set(["N"]),
+					autoplaySeats: new Set(["N"]),
+				}).yourTurn,
+			).toBe(false);
+		},
+	);
+
 	it("lets declarer play from dummy, and shows dummy to everyone after the lead", () => {
 		const north = view("N", LED);
 		expect(north.phase).toBe("play");

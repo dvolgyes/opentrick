@@ -59,8 +59,10 @@ Reopening the link in the same browser normally restores that browser's seat.
 When all four seats are ready, the table deals a board automatically, then players bid in turn.
 The final contract names a trump suit (or no trump), a level, and a declarer.
 After the opening lead, declarer's partner becomes the dummy: their hand is shown on the table, and declarer plays both hands.
+In a human–robot partnership, the human selects cards from both hands, even when the human is dummy, unless autoplay is enabled.
 The defenders play together to stop the contract, while declarer tries to make it.
 The table records tricks and duplicate scores as the hand finishes.
+Vulnerable partnerships and their player names in the bidding history are red.
 
 ![A bot-played auction in progress, with the bidding history and a player's hand visible.](docs/images/gameplay-auction.png)
 
