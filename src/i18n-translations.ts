@@ -4,6 +4,22 @@ type TranslationRow = readonly [string, string, string, string, string, string];
 
 const rows: readonly TranslationRow[] = [
 	[
+		"Round trips (seconds): row → column",
+		"Tiempos de ida y vuelta (segundos): fila → columna",
+		"Tempos de ida e volta (segundos): linha → coluna",
+		"Temps aller-retour (secondes) : ligne → colonne",
+		"Tempi di andata e ritorno (secondi): riga → colonna",
+		"Heen-en-terugtijden (seconden): rij → kolom",
+	],
+	[
+		"No measurement",
+		"Sin medición",
+		"Sem medição",
+		"Aucune mesure",
+		"Nessuna misurazione",
+		"Geen meting",
+	],
+	[
 		"Check the bidding engine.",
 		"Comprueba el motor de subasta.",
 		"Verifique o motor de leilão.",

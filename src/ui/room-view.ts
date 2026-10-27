@@ -81,6 +81,7 @@ import { networkPanel } from "./network";
 import { pageReport, type TableFacts } from "./page-report";
 import { pageTitle } from "./page-title";
 import { playerEditor } from "./player-editor";
+import { qualityMatrix } from "./quality-matrix";
 import { remoteAudio } from "./remote-audio";
 import { readSettings } from "./settings";
 import { settingsDialog } from "./settings-dialog";
@@ -887,6 +888,7 @@ export function showRoom(
 	const players = playerEditor(deps, controller, (target) =>
 		manageBotSeat(target, false),
 	);
+	const quality = qualityMatrix(deps.t);
 	const hostControls = el(
 		"dialog",
 		{
@@ -913,6 +915,7 @@ export function showRoom(
 			),
 		),
 		debugStatus,
+		quality.element,
 		el(
 			"div",
 			{ className: "host-controls-close" },
@@ -1298,6 +1301,7 @@ export function showRoom(
 		)
 			rememberBotSeats(activeBots);
 		openHostControls.hidden = !view.hosting;
+		quality.update(view.qualityMatrix, new Set(view.roster?.bots ?? []));
 		if (!view.hosting && hostControls.open) hostControls.close();
 		if (!view.hosting && players.element.open) players.element.close();
 		if (view.hosting) showPlayerBuilds(view.roster?.bots ?? []);
@@ -1504,6 +1508,9 @@ export function showRoom(
 			failures: view.failures,
 			undone: view.undone,
 			roundTrips: view.roundTrips,
+			qualityPeers: new Set(
+				view.peers.flatMap((peer) => (peer.seat === null ? [] : [peer.seat])),
+			),
 			t: deps.t,
 		});
 		shownModel = tableModel;

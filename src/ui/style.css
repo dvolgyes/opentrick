@@ -1300,19 +1300,19 @@ main:has(> .room) {
 	display: none;
 }
 
-.network-bars:is([data-quality="excellent"], [data-quality="good"]) {
+:is(.network-bars, .quality-matrix td):is([data-quality="excellent"], [data-quality="good"]) {
 	--network-lit: var(--network-green);
 }
 
-.network-bars[data-quality="average"] {
+:is(.network-bars, .quality-matrix td)[data-quality="average"] {
 	--network-lit: var(--network-yellow);
 }
 
-.network-bars[data-quality="poor"] {
+:is(.network-bars, .quality-matrix td)[data-quality="poor"] {
 	--network-lit: var(--network-orange);
 }
 
-.network-bars[data-quality="breaking-up"] {
+:is(.network-bars, .quality-matrix td)[data-quality="breaking-up"] {
 	--network-lit: var(--network-red);
 }
 
@@ -1321,6 +1321,28 @@ main:has(> .room) {
 	height: 0.7rem;
 	border-radius: 0.1rem;
 	background: var(--network-off);
+}
+
+.quality-matrix {
+	width: 100%;
+	margin-block: 1rem;
+	border-spacing: 0.35rem;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+}
+
+.quality-matrix caption {
+	margin-bottom: 0.5rem;
+}
+
+.quality-matrix td {
+	width: 20%;
+	height: 2rem;
+	border-bottom: 0.3rem solid var(--network-lit, var(--network-off));
+}
+
+.quality-matrix td:empty {
+	border-color: transparent;
 }
 
 .network-bar[data-lit] {

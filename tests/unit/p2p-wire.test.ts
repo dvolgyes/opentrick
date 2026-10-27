@@ -219,16 +219,23 @@ const CTL: Case[] = [
 		["status", "auth"],
 	],
 	[
-		"round-trips",
+		"peer-round-trips",
 		{
-			k: "round-trips",
+			k: "peer-round-trips",
 			auth: AUTH,
+			gen: 1,
 			seats: [
-				{ seat: "E", ms: 180 },
-				{ seat: "W", ms: 5000, lower: true },
+				{ seat: "E", peer: PEER, gen: 1, ms: 180 },
+				{
+					seat: "W",
+					peer: "ABCDEFGHIJKLMNOPQRST",
+					gen: 2,
+					ms: 5000,
+					lower: true,
+				},
 			],
 		},
-		["auth", "seats"],
+		["auth", "gen", "seats"],
 	],
 ];
 
@@ -689,11 +696,29 @@ describe("message rules", () => {
 		["a time above a minute", [{ seat: "E", ms: 60_001 }]],
 		["a false lower bound", [{ seat: "E", ms: 1, lower: false }]],
 		[
-			"more rows than seats",
-			["N", "E", "S", "W", "N"].map((seat) => ({ seat, ms: 1 })),
+			"more than three destinations",
+			["N", "E", "S", "W"].map((seat) => ({ seat, ms: 1 })),
 		],
-	])("round-trips rejects %s", (_label, seats) => {
-		malformed(parseCtl, { k: "round-trips", auth: AUTH, seats });
+		["an empty peer", [{ seat: "E", ms: 1, peer: "" }]],
+		["a negative generation", [{ seat: "E", ms: 1, gen: -1 }]],
+		[
+			"a repeated peer",
+			[
+				{ seat: "E", ms: 1, peer: PEER },
+				{ seat: "S", ms: 1, peer: PEER },
+			],
+		],
+	])("peer-round-trips rejects %s", (_label, seats) => {
+		malformed(parseCtl, {
+			k: "peer-round-trips",
+			auth: AUTH,
+			gen: 1,
+			seats: seats.map((sample, index) => ({
+				peer: String(index).repeat(20),
+				gen: 1,
+				...sample,
+			})),
+		});
 	});
 
 	it.each([

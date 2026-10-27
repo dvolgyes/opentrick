@@ -51,6 +51,7 @@ import {
 import { creationCommit, LocalLog, openLog } from "./log";
 import type { Mesh, MeshDiagnostics, MeshHandlers } from "./mesh";
 import type { FailedStatus, OutboxItem, SubmitResult } from "./outbox";
+import { PeerQuality, type QualityRow } from "./peer-quality";
 import type { Clock } from "./ports";
 import type { TableRecord } from "./records";
 import { seatRendezvous } from "./rendezvous";
@@ -243,8 +244,10 @@ export interface TableView {
 	readonly table: TableRecord | null;
 	readonly lobby: Lobby | null;
 	readonly roster: Roster | null;
-	/** The host's latest round trip to each other player's page; none for the host's own seat or a bot. */
+	/** This page's latest round trip to each connected human peer. */
 	readonly roundTrips: readonly SeatRoundTrip[];
+	/** Directed rows, collected only by the current host. */
+	readonly qualityMatrix: readonly QualityRow[];
 	/** Own commands reach a host now. */
 	readonly ready: boolean;
 	readonly outbox: readonly OutboxItem[];
@@ -297,6 +300,7 @@ export class TableController {
 	readonly #deps: TableDeps;
 	readonly #tableId: string;
 	readonly #checks: ConnectionChecks;
+	readonly #quality: PeerQuality;
 	readonly #listeners = new Set<() => void>();
 	readonly #paths = new Map<string, PathTypes | null>();
 	readonly #call: MeshCallTransport;
@@ -353,6 +357,12 @@ export class TableController {
 	constructor(deps: TableDeps) {
 		this.#deps = deps;
 		this.#tableId = deps.identity.tableId;
+		this.#quality = new PeerQuality({
+			now: () => deps.clock.monotonic(),
+			nonce: deps.nonce,
+			ping: (peer, message) => this.#mesh?.ctl(peer, message),
+			report: (peer, message) => this.#mesh?.ctl(peer, message),
+		});
 		this.#checks = new ConnectionChecks({
 			ping: (peer, message) => this.#mesh?.ctl(peer, message),
 			clock: deps.clock,
@@ -793,11 +803,8 @@ export class TableController {
 			table: rawTable ? { ...rawTable, config: playerConfig(rawTable) } : null,
 			lobby: replication?.follower.lobby ?? null,
 			roster,
-			roundTrips: hosting
-				? engine.roundTrips()
-				: live
-					? (replication?.follower.roundTrips ?? [])
-					: [],
+			roundTrips: live ? this.#quality.local() : [],
+			qualityMatrix: hosting ? this.#quality.matrix() : [],
 			ready: live && (hosting || replication?.follower.ready === true),
 			outbox: replication?.outbox?.items ?? [],
 			undone: [...this.#undone],
@@ -932,7 +939,6 @@ export class TableController {
 				clock,
 				module,
 				newId,
-				nonce: this.#deps.nonce,
 				onEvent: (event) =>
 					queueMicrotask(() => {
 						if (this.#session === session) this.#replicationEvent(event);
@@ -1208,9 +1214,14 @@ export class TableController {
 				this.#mesh?.ctl(peer, ConnectionChecks.echoOf(message));
 				return;
 			case "echo":
-				// The host engine also gets the echo: it measures the round trips of the player pages.
 				this.#checks.echo(peer, message);
-				break;
+				this.#syncQuality();
+				if (this.#quality.echo(peer, message.n)) this.#notify();
+				return;
+			case "peer-round-trips":
+				this.#syncQuality();
+				if (this.#quality.receive(peer, message)) this.#notify();
+				return;
 			case "gone":
 				if (message.reason === "full") {
 					this.#full = true;
@@ -1250,6 +1261,8 @@ export class TableController {
 		this.#seedWhenAlone();
 		this.#replication?.tick();
 		this.#checks.tick();
+		this.#syncQuality();
+		this.#quality.tick();
 		mesh.seek(this.#missingSeats(mesh));
 		mesh.tick();
 		const network = mesh.diagnostics();
@@ -1320,6 +1333,21 @@ export class TableController {
 		return this.#deps.clock.monotonic();
 	}
 
+	#syncQuality(): void {
+		const engine = this.#replication?.engine;
+		const hosting = engine !== undefined && engine !== null && !engine.stopped;
+		this.#quality.update({
+			self: this.#mesh?.self ?? "",
+			hosting,
+			roster: this.#closed()
+				? null
+				: hosting
+					? engine.roster()
+					: (this.#replication?.follower.roster ?? null),
+			connected: this.#mesh?.peers() ?? [],
+		});
+	}
+
 	// -------------------------------------------------------------------------------------------------------
 	// End
 
@@ -1378,6 +1406,7 @@ export class TableController {
 		this.#notifyQueued = true;
 		queueMicrotask(() => {
 			this.#notifyQueued = false;
+			this.#syncQuality();
 			for (const listener of this.#listeners) listener();
 		});
 	}

@@ -82,7 +82,6 @@ class Sim {
 	readonly #random: () => number;
 	readonly #seed: number;
 	#ids = 0;
-	#nonces = 0;
 
 	constructor(seed: number) {
 		this.#seed = seed;
@@ -182,7 +181,6 @@ class Sim {
 				clock: this.mesh.clock,
 				module: this.#module(),
 				newId: () => this.#newId(),
-				nonce: () => `nonce-${String(++this.#nonces).padStart(6, "0")}`,
 				onEvent: (event) => {
 					events.push(event);
 					if (page) this.#replicationEvent(page, event);

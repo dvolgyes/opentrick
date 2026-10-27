@@ -299,7 +299,7 @@ function cardBackFor(board: number): string {
 /** The segments of the voice box columns: a taller middle column between two shorter ones, as on KITT. */
 const VOICE_COLUMNS = [7, 11, 7] as const;
 
-/** The lit bars of each network quality; none is lit before the host measured the player. */
+/** The lit bars of each network quality; none is lit before this page measured the player. */
 const NETWORK_BARS: Readonly<Record<RoundTripView["quality"], number>> = {
 	excellent: 5,
 	good: 4,

@@ -31,7 +31,6 @@ import { LINK_VERSION } from "./link";
 import { appendCommit, type LocalLog, seatEvent } from "./log";
 import type { Clock, Send } from "./ports";
 import type { TableRecord } from "./records";
-import { RoundTripProbes } from "./round-trips";
 import {
 	type AutoplayRequest,
 	type AutoplayStatus,
@@ -47,12 +46,9 @@ import {
 	type Release,
 	type ReleaseCode,
 	type Report,
-	ROUND_TRIP_FEATURE,
 	type Roster,
-	type RoundTripReport,
 	type SeatCode,
 	type SeatHolder,
-	type SeatRoundTrip,
 	withinDepth,
 } from "./wire";
 
@@ -80,15 +76,11 @@ export interface HostDeps {
 	readonly send: Send;
 	readonly clock: Clock;
 	readonly newId: () => string;
-	/** Round-trip ping nonces. */
-	readonly nonce: () => string;
 	/** Called once, when the engine stops on its own. */
 	readonly onStop: (reason: HostStop) => void;
 	readonly autoplay?: (seat: Seat, enabled: boolean) => Promise<AutoplayStatus>;
 	/** Called when a player's report is stored. */
 	readonly onReport?: () => void;
-	/** Called when a round trip changed. */
-	readonly onRoundTrip?: () => void;
 }
 
 /** The latest report of a seated player's page. */
@@ -157,7 +149,6 @@ export class HostEngine {
 		string,
 		(result: LocalCommandResult) => void
 	>();
-	readonly #roundTrips: RoundTripProbes;
 	#rosterDue: number | null = null;
 	#lobbyAt = 0;
 	#queue: Promise<void> = Promise.resolve();
@@ -172,11 +163,6 @@ export class HostEngine {
 		if (own.holder === null) throw new Error("the host holds no seat");
 		this.#deps = deps;
 		this.#tableId = deps.log.tableId;
-		this.#roundTrips = new RoundTripProbes({
-			now: () => deps.clock.monotonic(),
-			nonce: deps.nonce,
-			ping: (peer, message) => deps.send.ctl(peer, message),
-		});
 		for (const seat of SEATS) {
 			if (table.config.botSetup?.seats.includes(seat) === true)
 				this.#localBots.add(seat);
@@ -456,9 +442,7 @@ export class HostEngine {
 		this.#autoplayRequests.delete(peer);
 		this.#reports.delete(peer);
 		this.#visitors.delete(peer);
-		const measured = this.#roundTrips.forget(peer);
 		if (this.#bindings.delete(peer)) this.#markRoster();
-		if (measured && !this.#stopped) this.#roundTripChanged();
 	}
 
 	/** Stops ordering; queued requests get `not_host`. */
@@ -493,10 +477,6 @@ export class HostEngine {
 			case "report":
 				this.#report(peer, message);
 				return;
-			case "echo":
-				if (!this.#stopped && this.#roundTrips.echo(peer, message.n))
-					this.#roundTripChanged();
-				return;
 			default:
 				return;
 		}
@@ -508,8 +488,6 @@ export class HostEngine {
 		if (this.#stopped) return;
 		for (const seat of this.#localBots) this.#seen.set(seat, now);
 		this.#watchQuiet(now);
-		if (this.#roundTrips.tick(this.#measured().map(([peer]) => peer)))
-			this.#roundTripChanged();
 		if (this.#rosterDue !== null && now >= this.#rosterDue) {
 			const roster = this.roster();
 			if (roster) {
@@ -529,21 +507,6 @@ export class HostEngine {
 	 * Current seats with acknowledgements, and the connected peers bound to their current generation that were heard
 	 * from within HOST_LOST_MS. A frozen page can keep its WebRTC link, so the link alone does not make it present.
 	 */
-	/** The latest round trip of each measured seat, in seat order. */
-	roundTrips(): SeatRoundTrip[] {
-		const rows: SeatRoundTrip[] = [];
-		for (const [peer, seat] of this.#measured()) {
-			const trip = this.#roundTrips.get(peer);
-			if (trip)
-				rows.push({
-					seat,
-					ms: trip.ms,
-					...(trip.lower ? { lower: true } : {}),
-				});
-		}
-		return rows.sort((a, b) => SEATS.indexOf(a.seat) - SEATS.indexOf(b.seat));
-	}
-
 	roster(): Roster | null {
 		const table = this.#deps.log.table;
 		if (!table) return null;
@@ -1162,39 +1125,6 @@ export class HostEngine {
 		if (!table) return;
 		this.#deps.send.log(null, { k: "entry", e: entry, state: table.state });
 		this.#markRoster();
-		for (const [peer] of this.#measured()) this.#roundTrips.probe(peer);
-	}
-
-	/** Another person's connected page bound to the current generation of its seat, with its seat. */
-	#measured(): [string, Seat][] {
-		const table = this.#deps.log.table;
-		if (!table) return [];
-		return [...this.#bindings]
-			.filter(
-				([peer, bound]) =>
-					peer !== this.#deps.self &&
-					!peer.startsWith("opentrick-host-bot:") &&
-					this.#connected.has(peer) &&
-					this.#current(table, bound),
-			)
-			.map(([peer, bound]) => [peer, bound.seat]);
-	}
-
-	/** Sends the round trips to the pages that show them; the report itself is not measured. */
-	#roundTripChanged(): void {
-		const report: RoundTripReport = {
-			k: "round-trips",
-			auth: this.#deps.auth,
-			seats: this.roundTrips(),
-		};
-		for (const peer of this.#connected) {
-			if (
-				peer !== this.#deps.self &&
-				(this.#features.get(peer) ?? []).includes(ROUND_TRIP_FEATURE)
-			)
-				this.#deps.send.ctl(peer, report);
-		}
-		this.#deps.onRoundTrip?.();
 	}
 
 	#touch(peer: string): void {

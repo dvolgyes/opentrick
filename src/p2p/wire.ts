@@ -327,21 +327,19 @@ export interface Reload {
 	readonly k: "reload";
 }
 
-/** A hello feature: the page shows the host's round-trip reports. */
-export const ROUND_TRIP_FEATURE = "round-trip-v1";
-
-/** The host's latest round trip to a seat's page; `lower`: no echo came within the time, so it is at least `ms`. */
+/** A local round trip to a seat's page; `lower`: no echo came within the time, so it is at least `ms`. */
 export interface SeatRoundTrip {
 	readonly seat: Seat;
 	readonly ms: number;
 	readonly lower?: true;
 }
 
-/** The host sends the round trips to the pages with ROUND_TRIP_FEATURE after each measurement; it pings no page for it. */
-export interface RoundTripReport {
-	readonly k: "round-trips";
+/** A page reports its own directed measurements to the host, scoped to the current seat bindings. */
+export interface PeerRoundTrips {
+	readonly k: "peer-round-trips";
 	readonly auth: Authority;
-	readonly seats: readonly SeatRoundTrip[];
+	readonly gen: number;
+	readonly seats: readonly (SeatRoundTrip & Binding)[];
 }
 
 export type CtlMessage =
@@ -368,7 +366,7 @@ export type CtlMessage =
 	| Report
 	| ReportRequest
 	| Reload
-	| RoundTripReport;
+	| PeerRoundTrips;
 
 export type SeatOp =
 	| { readonly type: "claim"; readonly holder: string; readonly name?: string }
@@ -1126,18 +1124,29 @@ function parseSeatRoundTrip(value: unknown): SeatRoundTrip | undefined {
 	};
 }
 
-const parseRoundTripReport: Parser<RoundTripReport> = (value) => {
+const parsePeerRoundTrips: Parser<PeerRoundTrips> = (value) => {
 	const auth = parseAuthority(value.auth);
-	if (!auth || !Array.isArray(value.seats) || value.seats.length > SEATS.length)
+	if (
+		!auth ||
+		!isGeneration(value.gen) ||
+		!Array.isArray(value.seats) ||
+		value.seats.length >= SEATS.length
+	)
 		return undefined;
-	const seats: SeatRoundTrip[] = [];
+	const seats: (SeatRoundTrip & Binding)[] = [];
 	for (const raw of value.seats) {
 		const row = parseSeatRoundTrip(raw);
-		if (!row || seats.some((other) => other.seat === row.seat))
+		if (
+			!row ||
+			!isObject(raw) ||
+			!isPeerId(raw.peer) ||
+			!isGeneration(raw.gen) ||
+			seats.some((other) => other.seat === row.seat || other.peer === raw.peer)
+		)
 			return undefined;
-		seats.push(row);
+		seats.push({ ...row, peer: raw.peer, gen: raw.gen });
 	}
-	return { k: "round-trips", auth, seats };
+	return { k: "peer-round-trips", auth, gen: value.gen, seats };
 };
 
 const parseEntryMessage: Parser<EntryMessage> = (value) => {
@@ -1228,7 +1237,7 @@ const CTL_PARSERS = new Map<string, Parser<CtlMessage>>([
 	["report", parseReport],
 	["report-request", parseReportRequest],
 	["reload", parseReload],
-	["round-trips", parseRoundTripReport],
+	["peer-round-trips", parsePeerRoundTrips],
 ]);
 
 const LOG_PARSERS = new Map<string, Parser<LogMessage>>([

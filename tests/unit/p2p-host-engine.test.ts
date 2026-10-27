@@ -9,7 +9,6 @@ import {
 	LOBBY_REFRESH_MS,
 	MAX_PENDING_PER_SEAT,
 	ROSTER_COALESCE_MS,
-	ROUND_TRIP_IDLE_MS,
 	SEAT_GRACE_MS,
 	TABLE_IDLE_MS,
 } from "../../src/p2p/limits";
@@ -21,7 +20,6 @@ import {
 	type CtlMessage,
 	type Entry,
 	type EntryMessage,
-	ROUND_TRIP_FEATURE,
 } from "../../src/p2p/wire";
 import type { RoomConfig, Seat } from "../../src/protocol";
 import {
@@ -61,9 +59,7 @@ class Rig {
 		async () => "unavailable";
 	autoplayRequests: { seat: Seat; enabled: boolean }[] = [];
 	reportChanges = 0;
-	roundTripChanges = 0;
 	#next = 100;
-	#nonce = 0;
 
 	async create(config: RoomConfig = CONFIG): Promise<this> {
 		const holder = await deriveHolder(TABLE, CLIENT_N);
@@ -95,7 +91,6 @@ class Rig {
 			send: this.sent,
 			clock: this.clock,
 			newId: () => commandId(this.#next++),
-			nonce: () => `nonce-${String(this.#nonce++).padStart(4, "0")}`,
 			autoplay: async (seat, enabled) => {
 				this.autoplayRequests.push({ seat, enabled });
 				return this.autoplay(seat, enabled);
@@ -103,9 +98,6 @@ class Rig {
 			onStop: (reason) => this.stops.push(reason),
 			onReport: () => {
 				this.reportChanges += 1;
-			},
-			onRoundTrip: () => {
-				this.roundTripChanges += 1;
 			},
 		});
 		return this.engine;
@@ -167,20 +159,12 @@ class Rig {
 		});
 	}
 
-	/**
-	 * Messages sent to `peer` (null: to everyone) since the last call, in order. Round-trip pings follow each
-	 * broadcast; they are left out here, and "round trips" checks them with `sent.of("ping")`.
-	 */
+	/** Messages sent to `peer` (null: to everyone) since the last call, in order. */
 	to(peer: string | null): CtlMessage[] {
 		const all = this.sent.take();
 		this.sent.sent = all.filter((item) => item.to !== peer);
 		return all
-			.filter(
-				(item) =>
-					item.to === peer &&
-					item.channel === "ctl" &&
-					item.message.k !== "ping",
-			)
+			.filter((item) => item.to === peer && item.channel === "ctl")
 			.map((item) => item.message as CtlMessage);
 	}
 
@@ -582,65 +566,16 @@ describe("player reports", () => {
 });
 
 describe("round trips", () => {
-	const ROUND_TRIPS = [ROUND_TRIP_FEATURE];
-
-	it("pings each seated player page after a broadcast, and sends the round trip to the pages that understand it", async () => {
+	it("leaves measurement to each page instead of probing or distributing quality during replication", async () => {
 		const rig = await new Rig().create();
-		const east = await rig.seat(EAST, CLIENT_E, "E", ROUND_TRIPS);
+		const east = await rig.seat(EAST, CLIENT_E, "E", ["round-trip-v1"]);
 		await rig.seat(SOUTH, CLIENT_S, "S");
 		expect(await rig.host.setBotSeat("W", true)).toBe(true);
 		rig.sent.take();
 
 		await rig.command(EAST, 2, east);
-		const pings = rig.sent.of("ping");
-		expect(pings.map((item) => item.to)).toEqual([EAST, SOUTH]);
-		rig.sent.take();
-
-		rig.clock.now += 180;
-		const ping = pings[0]?.message;
-		if (!ping) throw new Error("no ping");
-		await rig.from(EAST, { k: "echo", n: ping.n });
-		const report = {
-			k: "round-trips",
-			auth: rig.auth,
-			seats: [{ seat: "E", ms: 180 }],
-		};
-		// The report is not measured: no ping follows it.
-		expect(rig.sent.take().map((item) => [item.to, item.message])).toEqual([
-			[EAST, report],
-		]);
-		expect(rig.host.roundTrips()).toEqual([{ seat: "E", ms: 180 }]);
-		expect(rig.roundTripChanges).toBe(1);
-	});
-
-	it("pings a quiet player page every ROUND_TRIP_IDLE_MS, and drops the seat of a page that leaves", async () => {
-		const rig = await new Rig().create();
-		await rig.seat(EAST, CLIENT_E, "E", ROUND_TRIPS);
-		await rig.seat(SOUTH, CLIENT_S, "S", ROUND_TRIPS);
-		rig.host.tick();
-		rig.sent.take();
-
-		rig.clock.now += ROUND_TRIP_IDLE_MS - 1;
 		rig.host.tick();
 		expect(rig.sent.of("ping")).toEqual([]);
-		rig.clock.now += 1;
-		rig.host.tick();
-		const pings = rig.sent.of("ping");
-		expect(pings.map((item) => item.to)).toEqual([EAST, SOUTH]);
-		rig.clock.now += 40;
-		for (const { to, message } of pings)
-			if (to) await rig.from(to, { k: "echo", n: message.n });
-		expect(rig.host.roundTrips()).toEqual([
-			{ seat: "E", ms: 40 },
-			{ seat: "S", ms: 40 },
-		]);
-		rig.sent.take();
-
-		rig.host.leave(SOUTH);
-		expect(rig.to(EAST)).toEqual([
-			{ k: "round-trips", auth: rig.auth, seats: [{ seat: "E", ms: 40 }] },
-		]);
-		expect(rig.host.roundTrips()).toEqual([{ seat: "E", ms: 40 }]);
 	});
 });
 

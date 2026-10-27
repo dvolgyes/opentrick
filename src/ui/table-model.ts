@@ -216,15 +216,15 @@ export interface SeatView {
 	readonly turnPill: TurnPill | undefined;
 	/** The cards to count the points of: a hand the viewer can see during the auction, or every hand once the board is over. */
 	readonly pointCards: readonly Card[] | undefined;
-	/** The network quality from the host's last round trip to this seat's player; undefined for a seat the host does not measure. */
+	/** This page's network quality to the seat's player; undefined for self, bots and disconnected seats. */
 	readonly roundTrip: RoundTripView | undefined;
 }
 
 /**
  * The network quality for the video tile, such as "Network: good", with the round trip as `title`. The quality
  * follows the shown hundredths: excellent up to 0.10 s, good up to 0.30 s, average up to 0.60 s, poor below 2.00 s,
- * and breaking up from 2.00 s. A ping without an echo is breaking up too. A connected player whom the host has not
- * measured yet shows "Network: measuring…" and has no round trip. A guest sees its own round trip beside the host.
+ * and breaking up from 2.00 s. A ping without an echo is breaking up too. A connected player whom this page has not
+ * measured yet shows "Network: measuring…" and has no round trip.
  */
 export interface RoundTripView {
 	readonly text: string;
@@ -454,8 +454,9 @@ export interface TableViewInput {
 	readonly outbox: readonly OutboxItem[];
 	readonly failures: readonly CommandFailure[];
 	readonly undone: readonly Entry[];
-	/** The host's last round trip to each measured seat. */
+	/** This page's last round trip to each directly connected human seat. */
 	readonly roundTrips?: readonly SeatRoundTrip[];
+	readonly qualityPeers?: ReadonlySet<Seat>;
 	readonly t?: Translate;
 }
 
@@ -569,20 +570,25 @@ function roundTripView(
 	owner: Seat,
 	t: Translate,
 ): RoundTripView | undefined {
-	// The host does not measure itself, but a guest's round trip to the host is the same in both directions.
-	const guestToHost = owner === input.hostSeat && owner !== input.seat;
-	const measuredSeat = guestToHost ? input.seat : owner;
-	const measured = input.roundTrips?.find((row) => row.seat === measuredSeat);
-	if (measured === undefined) {
-		// The host measures every other connected player, but not its bots.
-		const measurable =
-			(owner !== input.hostSeat || guestToHost) &&
-			input.present.has(owner) &&
-			!(input.bots?.has(owner) ?? false);
-		return measurable
-			? { text: t("Network: measuring…"), quality: "pending" }
-			: undefined;
-	}
+	if (
+		owner === input.seat ||
+		!(input.qualityPeers ?? input.present).has(owner) ||
+		input.bots?.has(owner) ||
+		input.bots?.has(input.seat)
+	)
+		return undefined;
+	return qualityView(
+		input.roundTrips?.find((row) => row.seat === owner),
+		t,
+	);
+}
+
+/** Shared thresholds and text for local indicators and directed matrix cells. */
+export function qualityView(
+	measured: SeatRoundTrip | undefined,
+	t: Translate,
+): RoundTripView {
+	if (!measured) return { text: t("Network: measuring…"), quality: "pending" };
 	// The quality follows the shown hundredths, so 0.104 s shows as "0.10sec" and is excellent.
 	const hundredths = Math.round(measured.ms / 10);
 	const seconds = (hundredths / 100).toFixed(2);

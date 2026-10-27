@@ -827,16 +827,20 @@ describe("round trips", () => {
 		});
 	});
 
-	it("shows the measuring state for a connected player whom the host has not measured yet", () => {
+	it("shows the measuring state for a locally connected human, and hides self, bots and absent peers", () => {
 		const absentWest = new Set<Seat>(["N", "E", "S"]);
 		for (const board of [null, BOARD]) {
 			const table = view("E", board, {
 				present: absentWest,
 				bots: new Set<Seat>(["S"]),
-				roundTrips: [{ seat: "E", ms: 40 }],
+				roundTrips: [
+					{ seat: "E", ms: 40 },
+					{ seat: "S", ms: 30 },
+					{ seat: "W", ms: 20 },
+				],
 			});
-			expect(seatView(table, "E").roundTrip?.quality).toBe("excellent");
-			// A bot is not measured, and West is not connected to the host.
+			expect(seatView(table, "E").roundTrip).toBeUndefined();
+			// Even stale samples cannot show an indicator for self, a bot or a disconnected peer.
 			expect(seatView(table, "S").roundTrip).toBeUndefined();
 			expect(seatView(table, "W").roundTrip).toBeUndefined();
 			expect(seatView(view("E", board), "W").roundTrip).toEqual({
@@ -846,13 +850,14 @@ describe("round trips", () => {
 		}
 	});
 
-	it("shows a guest its own round trip beside the host's tile, and the host none of its own", () => {
+	it("shows only local measurements to other seats, without substituting a host measurement", () => {
 		const roundTrips = [
-			{ seat: "E", ms: 250 },
+			{ seat: "N", ms: 250 },
+			{ seat: "E", ms: 40 },
 			{ seat: "S", ms: 900 },
 		] as const;
 		for (const board of [null, BOARD]) {
-			// The host (North) measured East: the round trip is the same in both directions.
+			// East measured North and South independently. A stale self sample is never displayed.
 			expect(seatView(view("E", board, { roundTrips }), "N").roundTrip).toEqual(
 				{
 					text: "Network: good",
@@ -861,9 +866,12 @@ describe("round trips", () => {
 				},
 			);
 			expect(
-				seatView(view("S", board, { roundTrips }), "N").roundTrip?.quality,
+				seatView(view("E", board, { roundTrips }), "S").roundTrip?.quality,
 			).toBe("poor");
-			// Before the host measured the guest, and on the host's own page.
+			expect(
+				seatView(view("E", board, { roundTrips }), "E").roundTrip,
+			).toBeUndefined();
+			// Before the local page measured the host, and on the host's own page.
 			expect(seatView(view("E", board), "N").roundTrip).toEqual({
 				text: "Network: measuring…",
 				quality: "pending",

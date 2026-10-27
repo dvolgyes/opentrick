@@ -239,7 +239,6 @@ describe("joining", () => {
 						"bridge-claim-any-turn-v1",
 						"bridge-reset-v1",
 						"client-report-v1",
-						"round-trip-v1",
 					],
 				},
 			],
@@ -283,7 +282,6 @@ describe("joining", () => {
 					"bridge-claim-any-turn-v1",
 					"bridge-reset-v1",
 					"client-report-v1",
-					"round-trip-v1",
 				],
 				seat: "E",
 				gen: 1,
@@ -455,20 +453,6 @@ describe("live entries", () => {
 		rig.ctl(HOST, { k: "report-request" });
 		rig.ctl(HOST, { k: "reload" });
 		expect(rig.types()).toEqual(["report-request", "reload"]);
-	});
-
-	it("takes round trips only from the followed host with its authority, and drops them at a host change", async () => {
-		const rig = await Rig.synced();
-		const seats = [{ seat: "S" as const, ms: 180 }];
-		rig.ctl(OTHER, { k: "round-trips", auth: AUTH_1, seats });
-		rig.ctl(HOST, { k: "round-trips", auth: AUTH_2, seats });
-		expect(rig.follower.roundTrips).toEqual([]);
-		expect(rig.types()).toEqual([]);
-		rig.ctl(HOST, { k: "round-trips", auth: AUTH_1, seats });
-		expect(rig.follower.roundTrips).toEqual(seats);
-		expect(rig.types()).toEqual(["round-trips"]);
-		rig.follower.follow(SECOND);
-		expect(rig.follower.roundTrips).toEqual([]);
 	});
 
 	it("drops entries from any peer but the followed host, and of another authority", async () => {

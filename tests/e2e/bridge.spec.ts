@@ -230,8 +230,7 @@ test("1: four browsers sit down; North deals board 1 and each sees only their ow
 		for (const button of await own.all()) dealt.push(await cardOf(button));
 	}
 	expect(new Set(dealt).size).toBe(52);
-	// The host (West) measures the round trip to each guest and reports it to every page. A guest sees its own round
-	// trip beside the host's tile.
+	// Each page measures every directly connected player independently.
 	for (const seat of SEATS) {
 		for (const other of SEATS.filter((item) => item !== seat)) {
 			const quality = tab[seat].getByTestId(`round-trip-${other}`);

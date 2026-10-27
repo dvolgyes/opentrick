@@ -2,9 +2,8 @@ import { MAX_OPEN_PINGS, PING_TIMEOUT_MS, ROUND_TRIP_IDLE_MS } from "./limits";
 import type { Ping } from "./wire";
 
 /**
- * The host's round-trip measurement of each player page. The host pings a page after each broadcast and when the
- * page had no ping for ROUND_TRIP_IDLE_MS; every page answers a ping with an echo at once. The data channel is
- * ordered, so the echo of a ping sent after an entry also tells that the entry arrived.
+ * Each page measures its direct peers independently. A peer with no ping for ROUND_TRIP_IDLE_MS gets a new
+ * probe; every page answers a ping with an echo at once.
  */
 
 /** The latest round trip of a page; `lower`: a ping had no echo within PING_TIMEOUT_MS, so it is at least `ms`. */

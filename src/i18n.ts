@@ -47,6 +47,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Network: breaking up": "Netzwerk: Verbindung bricht ab",
 		"Roundtrip: {seconds}sec": "Umlaufzeit: {seconds} s",
 		"Roundtrip: >{seconds}sec": "Umlaufzeit: >{seconds} s",
+		"Round trips (seconds): row → column":
+			"Umlaufzeiten (Sekunden): Zeile → Spalte",
+		"No measurement": "Keine Messung",
 		"Waiting for {players} to come back":
 			"Warten auf die Rückkehr von {players}",
 		"The first board is dealt now.": "Das erste Board wird jetzt gegeben.",
@@ -669,6 +672,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Network: breaking up": "Hálózat: akadozik",
 		"Roundtrip: {seconds}sec": "Oda-vissza: {seconds} mp",
 		"Roundtrip: >{seconds}sec": "Oda-vissza: >{seconds} mp",
+		"Round trips (seconds): row → column":
+			"Oda-vissza idők (másodperc): sor → oszlop",
+		"No measurement": "Nincs mérés",
 		"Waiting for {players} to come back":
 			"Várakozás, hogy visszatérjenek: {players}",
 		"The first board is dealt now.": "Az első leosztás most következik.",
@@ -1281,6 +1287,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Network: breaking up": "Nettverk: faller ut",
 		"Roundtrip: {seconds}sec": "Tur-retur: {seconds} s",
 		"Roundtrip: >{seconds}sec": "Tur-retur: >{seconds} s",
+		"Round trips (seconds): row → column":
+			"Tur-retur-tider (sekunder): rad → kolonne",
+		"No measurement": "Ingen måling",
 		"Waiting for {players} to come back":
 			"Venter på at {players} kommer tilbake",
 		"The first board is dealt now.": "Den første given deles ut nå.",
