@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { botSeatHolder } from "../../src/bot/seats";
 import { chatModule, chatPayload } from "../../src/game/chat";
 import { newCommandId } from "../../src/ids";
 import { randomNonce } from "../../src/p2p/checks";
@@ -352,6 +353,25 @@ describe("table controller seat lock", () => {
 });
 
 describe("table controller seeding from the setup link", () => {
+	it("recreates the configured local bot seats together with the human host", async () => {
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["N", "E", "W"], bidder: "sl" },
+		};
+		const table = await rig.start("S");
+		await rig.advance(SEED_WAIT_MS + 2 * TICK_MS);
+		for (const seat of ["N", "E", "W"] as const)
+			expect(
+				table.view().table?.seats.find((row) => row.seat === seat)?.holder,
+			).toBe(await botSeatHolder(TABLE, seat));
+		expect(table.view()).toMatchObject({
+			hosting: true,
+			ready: true,
+			allConnected: true,
+			roster: { bots: ["N", "E", "W"] },
+		});
+	});
+
 	/** A beat of East's page, which has a replica of the table that North hosted. */
 	async function eastBeat(): Promise<void> {
 		const holder = await deriveHolder(TABLE, "clientE-0123456789abcd");

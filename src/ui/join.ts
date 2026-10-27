@@ -390,6 +390,9 @@ export function showTable(
 				return message(
 					el("h1", {}, deps.t(TEXT.expired)),
 					button(deps.t("Create new game"), navigation.createNew),
+					...(bootstrap
+						? [button(deps.t("Restart this game"), navigation.reload)]
+						: []),
 				);
 			case "problem":
 				return message(

@@ -4,6 +4,14 @@ type TranslationRow = readonly [string, string, string, string, string, string];
 
 const rows: readonly TranslationRow[] = [
 	[
+		"Restart this game",
+		"Reiniciar esta partida",
+		"Reiniciar este jogo",
+		"Recommencer cette partie",
+		"Ricomincia questa partita",
+		"Dit spel opnieuw starten",
+	],
+	[
 		"Bot timing",
 		"Tiempos de los bots",
 		"Tempos dos bots",

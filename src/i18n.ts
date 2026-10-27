@@ -83,6 +83,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Connecting: "Verbindung wird hergestellt",
 		"Choose your seat": "Wähle deinen Platz",
 		"Create new game": "Neues Spiel erstellen",
+		"Restart this game": "Dieses Spiel neu starten",
 		"Creating…": "Wird erstellt…",
 		"Check the bidding engine.": "Prüfe das Bietprogramm.",
 		"Autoplay uses the local bridge engine.":
@@ -719,6 +720,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Connecting: "Kapcsolódás",
 		"Choose your seat": "Válassz helyet",
 		"Create new game": "Új játék létrehozása",
+		"Restart this game": "Játék újraindítása",
 		"Create game": "Játék létrehozása",
 		"Creating…": "Létrehozás…",
 		"Check the bidding engine.": "Ellenőrizd a licitáló motort.",
@@ -1347,6 +1349,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Connecting: "Kobler til",
 		"Choose your seat": "Velg plass",
 		"Create new game": "Opprett nytt spill",
+		"Restart this game": "Start dette spillet på nytt",
 		"Create game": "Opprett spill",
 		"Creating…": "Oppretter…",
 		"Check the bidding engine.": "Kontroller meldemotoren.",

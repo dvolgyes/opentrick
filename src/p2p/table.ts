@@ -592,6 +592,13 @@ export class TableController {
 		if (!bootstrap || !this.#deps.storage.persistent) return false;
 		const { holder } = this.#deps.identity;
 		const auth = { term: 1, tag: makeTag(holder, seat), inc: 1 };
+		// Reopening a reusable link creates the same seat claims as the new-table form.
+		const botClaims = await botSeatClaims(
+			this.#tableId,
+			bootstrap.config,
+			this.#deps.newId,
+			seat,
+		);
 		const written = await seated.log.write(() =>
 			creationCommit({
 				tableId: this.#tableId,
@@ -602,6 +609,7 @@ export class TableController {
 				state: this.#deps.module.initialState(this.#tableId, bootstrap.config),
 				auth,
 				id: this.#deps.newId(),
+				botClaims,
 				now: this.#deps.clock.wall(),
 			}),
 		);

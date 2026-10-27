@@ -237,6 +237,9 @@ test("a table without activity for 8 h expires and stays expired", async () => {
 		page.getByRole("button", { name: "Create new game" }),
 	).toBeVisible();
 	// The table is deleted and a tombstone keeps the link expired.
+	await expect(
+		page.getByRole("button", { name: "Restart this game", exact: true }),
+	).toBeHidden();
 	await page.reload();
 	await expect(
 		page.getByRole("heading", {

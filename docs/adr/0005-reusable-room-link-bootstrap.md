@@ -40,6 +40,9 @@ The seat page writes `pl`; the shared link never carries it. A seat-holding brow
 
 The same room URL can start a fresh session after local expiry or data loss.
 The fresh session loses the old board, scores, and seat claims.
+The expired screen offers **Create new game**, and also **Restart this game** when the URL contains a complete room setup.
+Restart reloads the same URL and uses the normal room discovery and bootstrap process for both solo and multiplayer games.
+Bootstrap creates the configured local bot seat claims together with the human host, as the new-table form does.
 The room key remains a bearer capability, so anyone with the link can select the host seat and bootstrap the room.
 The existing trusted-player model and host-election tie-break govern simultaneous host attempts.
 The host bootstrap requires persistent browser storage.

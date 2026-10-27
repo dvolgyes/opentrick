@@ -48,6 +48,7 @@ import {
 	bidderQuery,
 	botSeatsQuery,
 	parseAutoplaySeats,
+	parseRoomSetup,
 	sharedQuery,
 	storedBotSeats,
 } from "./bookmark";
@@ -349,6 +350,7 @@ export function showRoom(
 		attrs: { "data-testid": "retry-seat" },
 	});
 	const createNew = button(deps.t("Create new game"), handlers.createNew);
+	const restart = button(deps.t("Restart this game"), handlers.reload);
 	const botStatus = el("p", {
 		className: "bot-status",
 		attrs: { role: "status", "data-testid": "bot-status" },
@@ -397,6 +399,7 @@ export function showRoom(
 		bannerHint,
 		retrySeat,
 		createNew,
+		restart,
 		bannerDetail,
 	);
 	const actionNote = el("p", {
@@ -1197,6 +1200,9 @@ export function showRoom(
 		bannerHint.textContent = host?.hint === undefined ? "" : deps.t(host.hint);
 		retrySeat.hidden = shown?.kind !== "superseded";
 		createNew.hidden = shown?.kind !== "expired";
+		restart.hidden =
+			shown?.kind !== "expired" ||
+			parseRoomSetup(new URL(deps.pageUrl()).search) === undefined;
 	}
 
 	function rosterItem(row: RosterRow): HTMLElement {
