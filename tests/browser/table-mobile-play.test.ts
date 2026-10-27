@@ -302,6 +302,63 @@ afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
 	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"keeps side-hand suit markers visible as font size grows (%s)",
+		(layout) => {
+			const base = sideHandView();
+			const left = base.seats.find((player) => player.position === "left");
+			if (!left) throw new Error("missing side hand");
+			renderView(
+				{
+					...base,
+					seats: base.seats.map((player) =>
+						player.position === "right"
+							? { ...player, hand: left.hand }
+							: player,
+					),
+				},
+				layout,
+			);
+			const cards = [
+				...document.querySelectorAll<HTMLElement>(
+					".hand-stack .suit-row:not(:last-child) .card",
+				),
+			];
+			expect(cards.length).toBeGreaterThan(0);
+			try {
+				for (const size of ["L", "XL", "XXL", "XXXL"]) {
+					document.documentElement.dataset.suitFontSize = size;
+					for (const card of cards) {
+						const suit = card.querySelector<HTMLElement>(".pip");
+						if (!suit) throw new Error("missing suit marker");
+						expect(
+							suit.getBoundingClientRect().bottom,
+							size,
+						).toBeLessThanOrEqual(card.getBoundingClientRect().bottom + 0.1);
+						const column = card.closest<HTMLElement>(
+							".mobile-board-left, .mobile-board-right",
+						);
+						if (column) {
+							expect(
+								suit.getBoundingClientRect().top,
+								size,
+							).toBeGreaterThanOrEqual(
+								column.getBoundingClientRect().top - 0.1,
+							);
+							expect(
+								suit.getBoundingClientRect().bottom,
+								size,
+							).toBeLessThanOrEqual(
+								column.getBoundingClientRect().bottom + 0.1,
+							);
+						}
+					}
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
+	it.each<Layout>(["desktop", "sideways", "compact"])(
 		"shows the NT bid level and strain in the same bright green (%s)",
 		(layout) => {
 			const base = playView();
