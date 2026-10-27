@@ -238,6 +238,8 @@ function renderView(
 		undoCancel: vi.fn(),
 		claimRequest: vi.fn(),
 		claimVote: vi.fn(),
+		setBotSeat: vi.fn(),
+		requestAutoplay: vi.fn(),
 		call: {
 			join: vi.fn(),
 			leave: vi.fn(),
@@ -301,6 +303,228 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("confirms the host's own switch in the phone bot controls", () => {
+		const base = playView();
+		const view = {
+			...base,
+			seats: base.seats.map((player) =>
+				player.position === "bottom" ? { ...player, tags: ["Host"] } : player,
+			),
+		};
+		const { root, section, handlers } = renderMobile(view);
+		section.setBotControls(true, []);
+		const own = root.querySelector<HTMLButtonElement>(
+			'.mobile-player-control[data-seat="N"] button',
+		);
+		if (!own) throw new Error("missing host bot switch");
+		own.click();
+		const dialog = root.querySelector<HTMLDialogElement>(
+			'[data-testid="autoplay-confirm"]',
+		);
+		expect(dialog?.open).toBe(true);
+		expect(handlers.setBotSeat).not.toHaveBeenCalled();
+		dialog
+			?.querySelector<HTMLButtonElement>(
+				'[data-testid="autoplay-confirm-enable"]',
+			)
+			?.click();
+		expect(handlers.setBotSeat).toHaveBeenCalledExactlyOnceWith("N", true);
+	});
+	it("spreads hidden side cards into the added phone board height", async () => {
+		await page.viewport(390, 844);
+		document.documentElement.dataset.suitFontSize = "XXL";
+		try {
+			const { root } = renderMobile(playView());
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			const backs = [
+				...root.querySelectorAll<HTMLElement>(
+					".mobile-board-right .back .face",
+				),
+			];
+			if (!board || backs.length !== 13)
+				throw new Error("missing board or side cards");
+			const span = () =>
+				(backs.at(-1)?.getBoundingClientRect().top ?? 0) -
+				(backs[0]?.getBoundingClientRect().top ?? 0);
+			const expanded = span();
+			board.style.height = "auto";
+			expect(expanded).toBeGreaterThan(span());
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+			await page.viewport(414, 896);
+		}
+	});
+	it("keeps top and bottom hands at the board edges and spreads side suits into the added phone height", async () => {
+		await page.viewport(390, 844);
+		document.documentElement.dataset.suitFontSize = "XXL";
+		try {
+			const { root } = renderMobile(sideHandView());
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			const top = root.querySelector<HTMLElement>(".mobile-board-top");
+			const bottom = root.querySelector<HTMLElement>(".mobile-auction-hand");
+			const rows = [
+				...root.querySelectorAll<HTMLElement>(".mobile-board-left .suit-row"),
+			];
+			if (!board || !top || !bottom || rows.length !== 4)
+				throw new Error("missing board hands");
+			const geometry = () => ({
+				topGap:
+					top.getBoundingClientRect().top - board.getBoundingClientRect().top,
+				bottomGap:
+					board.getBoundingClientRect().bottom -
+					bottom.getBoundingClientRect().bottom,
+				spread:
+					(rows.at(-1)?.getBoundingClientRect().top ?? 0) -
+					(rows[0]?.getBoundingClientRect().top ?? 0),
+			});
+			const expanded = geometry();
+			board.style.height = "auto";
+			const natural = geometry();
+			expect(expanded.topGap).toBeCloseTo(natural.topGap, 0);
+			expect(expanded.bottomGap).toBeCloseTo(natural.bottomGap, 0);
+			expect(expanded.spread).toBeGreaterThan(natural.spread);
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+			await page.viewport(414, 896);
+		}
+	});
+	it.each(["desktop", "compact"] as const)(
+		"confirms guest autoplay locally and stops it without confirmation (%s)",
+		(layout) => {
+			const { root, section, handlers } = renderView(playView(), layout);
+			section.setPlayerAutoplay(true, false, false, "");
+			const selector =
+				layout === "compact"
+					? '[data-testid="mobile-player-autoplay-toggle"]'
+					: '[data-testid="player-autoplay-toggle"]';
+			const toggle = root.querySelector<HTMLButtonElement>(selector);
+			if (!toggle) throw new Error("missing autoplay toggle");
+			toggle.click();
+			const dialog = root.querySelector<HTMLDialogElement>(
+				'[data-testid="autoplay-confirm"]',
+			);
+			expect(dialog?.open).toBe(true);
+			expect(handlers.requestAutoplay).not.toHaveBeenCalled();
+			dialog
+				?.querySelector<HTMLButtonElement>(
+					'[data-testid="autoplay-confirm-enable"]',
+				)
+				?.click();
+			expect(handlers.requestAutoplay).toHaveBeenCalledExactlyOnceWith(true);
+			section.setPlayerAutoplay(true, true, false, "");
+			root.querySelector<HTMLButtonElement>(selector)?.click();
+			expect(dialog?.open).toBe(false);
+			expect(handlers.requestAutoplay).toHaveBeenLastCalledWith(false);
+		},
+	);
+	it.each(["desktop", "compact"] as const)(
+		"confirms enabling the host's autoplay, but stops it immediately (%s)",
+		(layout) => {
+			const base = playView();
+			const view = {
+				...base,
+				seats: base.seats.map((player) =>
+					player.position === "bottom" ? { ...player, tags: ["Host"] } : player,
+				),
+			};
+			const { root, section, handlers } = renderView(view, layout);
+			section.setBotControls(true, []);
+			section.render(view);
+			const toggle = root.querySelector<HTMLButtonElement>(
+				".host-autoplay-toggle",
+			);
+			if (!toggle) throw new Error("missing host autoplay toggle");
+			toggle.click();
+			const dialog = root.querySelector<HTMLDialogElement>(
+				'[data-testid="autoplay-confirm"]',
+			);
+			expect(dialog?.open).toBe(true);
+			expect(handlers.setBotSeat).not.toHaveBeenCalled();
+			dialog
+				?.querySelector<HTMLButtonElement>('[data-testid="autoplay-cancel"]')
+				?.click();
+			expect(handlers.setBotSeat).not.toHaveBeenCalled();
+			toggle.click();
+			dialog
+				?.querySelector<HTMLButtonElement>(
+					'[data-testid="autoplay-confirm-enable"]',
+				)
+				?.click();
+			expect(handlers.setBotSeat).toHaveBeenCalledExactlyOnceWith("N", true);
+			section.setBotControls(true, ["N"]);
+			toggle.click();
+			expect(dialog?.open).toBe(false);
+			expect(handlers.setBotSeat).toHaveBeenLastCalledWith("N", false);
+		},
+	);
+	it.each(["M", "L", "XL", "XXL", "XXXL"])(
+		"matches hidden side-card long edges to the player's card at %s",
+		async (size) => {
+			await page.viewport(390, 844);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const { root } = renderMobile(playView());
+				const own = root.querySelector<HTMLElement>(
+					".mobile-auction-hand .card .face",
+				);
+				if (!own) throw new Error("missing own card");
+				for (const side of ["left", "right"]) {
+					const back = root.querySelector<HTMLElement>(
+						`.mobile-board-${side} .back .face`,
+					);
+					const column = root.querySelector<HTMLElement>(
+						`.mobile-board-${side}`,
+					);
+					if (!back) throw new Error(`missing ${side} back`);
+					if (!column) throw new Error(`missing ${side} column`);
+					expect(back.getBoundingClientRect().width).toBeCloseTo(
+						own.getBoundingClientRect().height,
+						0,
+					);
+					expect(back.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+						column.getBoundingClientRect().left - 0.5,
+					);
+					expect(back.getBoundingClientRect().right).toBeLessThanOrEqual(
+						column.getBoundingClientRect().right + 0.5,
+					);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
+
+	it("centres the top player label and bottom player and role pills on phones", async () => {
+		await page.viewport(390, 844);
+		try {
+			const base = playView();
+			const { root } = renderMobile({
+				...base,
+				seats: base.seats.map((player) =>
+					player.position === "bottom"
+						? { ...player, tags: ["Host", "Dummy"] }
+						: player,
+				),
+			});
+			for (const selector of [
+				".mobile-board-top .mobile-board-name",
+				".mobile-auction-hand .seat-label",
+			]) {
+				const label = root.querySelector<HTMLElement>(selector);
+				const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+				if (!label || !board) throw new Error(`missing ${selector}`);
+				const box = label.getBoundingClientRect();
+				const outer = board.getBoundingClientRect();
+				expect((box.left + box.right) / 2).toBeCloseTo(
+					(outer.left + outer.right) / 2,
+					0,
+				);
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
 	it.each(["L", "XL", "XXL"])(
 		"centres the top and bottom phone hands at %s",
 		async (size) => {

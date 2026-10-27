@@ -17,6 +17,7 @@ test("the result of a board stays in the middle half of the felt, clear of the s
 	await page.goto("/");
 	await page.getByTestId("create-solo").click();
 	await page.getByTestId("host-autoplay-toggle").click();
+	await page.getByTestId("autoplay-confirm-enable").click();
 	const banner = page.getByTestId("scoring");
 	await expect(banner).toBeVisible({ timeout: 110_000 });
 	// The next board starts after a countdown, so the three sizes are measured while the result shows.

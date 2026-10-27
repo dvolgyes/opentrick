@@ -63,6 +63,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	// A bot cannot host: the host hands its own seat to the bot after the table exists.
 	await page.getByTestId("host-autoplay-toggle").click();
+	await page.getByTestId("autoplay-confirm-enable").click();
 	await expect(page.getByTestId("host-autoplay-toggle")).toHaveText(
 		"👱 Disable autoplay",
 	);
@@ -132,6 +133,7 @@ test("a bot bids and plays when the site is served below a path, as on GitHub Pa
 
 	await page.getByTestId("create").click();
 	await page.getByTestId("host-autoplay-toggle").click();
+	await page.getByTestId("autoplay-confirm-enable").click();
 	// Board 1: North deals, so the North bot bids first.
 	await expect(page.getByTestId("bid-history")).toContainText("1NT", {
 		timeout: CONNECT_MS,
@@ -293,6 +295,11 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		const autoplay = hostPage.getByTestId("host-autoplay-toggle");
 		await expect(autoplay).toHaveText("🤖 Enable autoplay (bot)");
 		await autoplay.click();
+		await expect(hostPage.getByTestId("autoplay-confirm")).toBeVisible();
+		await hostPage.getByTestId("autoplay-cancel").click();
+		await expect(autoplay).toHaveText("🤖 Enable autoplay (bot)");
+		await autoplay.click();
+		await hostPage.getByTestId("autoplay-confirm-enable").click();
 		await expect(autoplay).toHaveText("👱 Disable autoplay");
 		await southPage
 			.getByTestId("bid-box")
@@ -490,6 +497,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 			.getByRole("button", { name: "Switch to player" });
 		const autoplay = northPage.getByTestId("player-autoplay-toggle");
 		await autoplay.click();
+		await northPage.getByTestId("autoplay-confirm-enable").click();
 		await expect(autoplay).toHaveText("Stop autoplay", { timeout: CONNECT_MS });
 		await expect(botSwitch).toBeVisible();
 		await expect(hostPage.getByTestId("voicebox-N")).toBeVisible();
@@ -538,6 +546,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 
 		// When the host stops the bot instead, the player's page says so.
 		await autoplay.click();
+		await northPage.getByTestId("autoplay-confirm-enable").click();
 		await expect(autoplay).toHaveText("Stop autoplay", { timeout: CONNECT_MS });
 		await expect(botSwitch).toBeVisible();
 		// The host stops the bot at once, often before North's page gets a roster that shows it.

@@ -409,6 +409,52 @@ export function tableSection(
 		pointsLines,
 		button(t("OK"), () => pointsDialog.close(), { className: "points-ok" }),
 	);
+	let autoplayAction: (() => void) | undefined;
+	const autoplayDialog: HTMLDialogElement = el(
+		"dialog",
+		{
+			className: "autoplay-dialog",
+			attrs: {
+				"aria-labelledby": "autoplay-confirm-title",
+				"data-testid": "autoplay-confirm",
+			},
+		},
+		el(
+			"h3",
+			{ attrs: { id: "autoplay-confirm-title" } },
+			`${t("Enable autoplay (bot)")}?`,
+		),
+		el(
+			"div",
+			{ className: "autoplay-dialog-actions" },
+			button(
+				t("Cancel"),
+				() => {
+					autoplayAction = undefined;
+					autoplayDialog.close();
+				},
+				{ attrs: { "data-testid": "autoplay-cancel" } },
+			),
+			button(
+				t("Enable autoplay (bot)"),
+				() => {
+					const action = autoplayAction;
+					autoplayAction = undefined;
+					autoplayDialog.close();
+					action?.();
+				},
+				{ attrs: { "data-testid": "autoplay-confirm-enable" } },
+			),
+		),
+	);
+	autoplayDialog.addEventListener("cancel", () => {
+		autoplayAction = undefined;
+	});
+	function confirmAutoplay(action: () => void): void {
+		if (autoplayDialog.open) return;
+		autoplayAction = action;
+		autoplayDialog.showModal();
+	}
 	const heading = el("h3", {});
 	// The vulnerability of each side, one line each, right of the heading.
 	const vulnerability = el("div", {
@@ -960,6 +1006,7 @@ export function tableSection(
 		felt,
 		dock,
 		pointsDialog,
+		autoplayDialog,
 		call.invite,
 		guide.element,
 	);
@@ -1166,11 +1213,15 @@ export function tableSection(
 			const isBot = botControlSeats.includes(seat.seat);
 			hostAutoplayControl = button(
 				`${isBot ? "👱" : "🤖"} ${t(isBot ? "Disable autoplay" : "Enable autoplay (bot)")}`,
-				() =>
-					handlers.setBotSeat?.(
-						seat.seat,
-						!botControlSeats.includes(seat.seat),
-					),
+				() => {
+					if (botControlSeats.includes(seat.seat))
+						handlers.setBotSeat?.(seat.seat, false);
+					else
+						confirmAutoplay(() => {
+							if (!botControlSeats.includes(seat.seat))
+								handlers.setBotSeat?.(seat.seat, true);
+						});
+				},
 				{
 					className: "host-autoplay-toggle",
 					attrs: { "data-testid": "host-autoplay-toggle" },
@@ -1181,7 +1232,18 @@ export function tableSection(
 		if (seat.position === "bottom" && !seat.tags.includes("Host")) {
 			const autoplay = button(
 				t(playerAutoplayEnabled ? "Stop autoplay" : "Enable autoplay (bot)"),
-				() => handlers.requestAutoplay?.(!playerAutoplayEnabled),
+				() => {
+					if (playerAutoplayEnabled) handlers.requestAutoplay?.(false);
+					else
+						confirmAutoplay(() => {
+							if (
+								playerAutoplayAvailable &&
+								!playerAutoplayEnabled &&
+								!playerAutoplayPending
+							)
+								handlers.requestAutoplay?.(true);
+						});
+				},
 				{
 					className: "player-autoplay-toggle",
 					attrs: { "data-testid": "player-autoplay-toggle" },
@@ -2301,12 +2363,30 @@ export function tableSection(
 				const isBot = botControlSeats.includes(player.seat);
 				const toggle = button(
 					isBot ? `👱 ${t("Switch to player")}` : `🤖 ${t("Switch to bot")}`,
-					() => handlers.setBotSeat?.(player.seat, !isBot),
+					() => {
+						if (player.seat === own && !isBot)
+							confirmAutoplay(() => {
+								if (!botControlSeats.includes(player.seat))
+									handlers.setBotSeat?.(player.seat, true);
+							});
+						else handlers.setBotSeat?.(player.seat, !isBot);
+					},
 				);
 				toggle.hidden = !botControlHost;
 				const autoplay = button(
 					t(playerAutoplayEnabled ? "Stop autoplay" : "Enable autoplay (bot)"),
-					() => handlers.requestAutoplay?.(!playerAutoplayEnabled),
+					() => {
+						if (playerAutoplayEnabled) handlers.requestAutoplay?.(false);
+						else
+							confirmAutoplay(() => {
+								if (
+									playerAutoplayAvailable &&
+									!playerAutoplayEnabled &&
+									!playerAutoplayPending
+								)
+									handlers.requestAutoplay?.(true);
+							});
+					},
 					{
 						className: "player-autoplay-toggle",
 						attrs: { "data-testid": "mobile-player-autoplay-toggle" },
