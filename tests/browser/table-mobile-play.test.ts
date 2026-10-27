@@ -2674,6 +2674,31 @@ describe("mobile folds", () => {
 	const shown = (root: HTMLElement, selector: string) =>
 		root.querySelector<HTMLElement>(selector)?.checkVisibility() ?? false;
 
+	it("does not reserve a screen of empty space below the folded bot controls", () => {
+		const { root, section } = renderMobile(playView());
+		section.setBotControls(true, []);
+		const stage = root.closest<HTMLElement>(".stage");
+		const fold = root.querySelector<HTMLDetailsElement>(".mobile-bot-fold");
+		if (!stage || !fold)
+			throw new Error("missing mobile stage or bot controls");
+		expect(fold.open).toBe(false);
+		expect(
+			stage.getBoundingClientRect().bottom -
+				fold.getBoundingClientRect().bottom,
+		).toBeLessThan(24);
+		fold.open = true;
+		expect(shown(root, ".mobile-player-control button")).toBe(true);
+		expect(
+			stage.getBoundingClientRect().bottom -
+				fold.getBoundingClientRect().bottom,
+		).toBeLessThan(24);
+		fold.open = false;
+		expect(
+			stage.getBoundingClientRect().bottom -
+				fold.getBoundingClientRect().bottom,
+		).toBeLessThan(24);
+	});
+
 	it("folds the bidding history in play, and a click opens and folds it", () => {
 		const { root, section } = renderMobile({
 			...playView(),

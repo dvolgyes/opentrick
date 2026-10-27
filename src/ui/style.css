@@ -3126,6 +3126,11 @@ main:has(> .room[data-form="compact"]) {
 	height: 100dvh;
 }
 
+/* The mobile game is content-sized, so a folded control does not leave a viewport of blank space below it. */
+[data-form="compact"] .stage:has(.mobile-auction:not([hidden])) {
+	height: auto;
+}
+
 [data-form="compact"] .you {
 	margin: 0;
 	font-size: 0.85rem;
