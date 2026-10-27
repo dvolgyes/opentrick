@@ -835,11 +835,10 @@ export function tableSection(
 		{ className: "mobile-auction-bids" },
 		mobileBidsFold,
 	);
-	const mobileBidControls = el(
-		"section",
-		{ className: "mobile-auction-controls" },
-		bidBox,
-	);
+	const mobileBidControls = el("section", {
+		className: "mobile-auction-controls",
+	});
+	const mobileBidOverlay = el("section", { className: "mobile-bid-overlay" });
 	const mobileHand = el("section", {
 		className: "mobile-auction-hand",
 		attrs: { "aria-label": t("Your hand") },
@@ -870,6 +869,7 @@ export function tableSection(
 		mobileOpponentLeft,
 		mobileBoardCenter,
 		mobileOpponentRight,
+		mobileBidOverlay,
 		mobileHand,
 	);
 	const mobileTricks = el("section", {
@@ -1012,6 +1012,9 @@ export function tableSection(
 	);
 	let desktop = false;
 	let phase: TableView["phase"] = "waiting";
+	mobileBidsTitle.addEventListener("click", (event) => {
+		if (phase === "auction") event.preventDefault();
+	});
 	/** The desktop keeps board status in the sidebar; the lobby and compact layout show it above the felt. */
 	function placeStatus(): void {
 		const beside = desktop && phase !== "waiting";
@@ -2647,9 +2650,18 @@ export function tableSection(
 				mobileBidsPhase = view.phase;
 				mobileBidsFold.open = view.phase !== "play";
 			}
+			mobileBidsTitle.setAttribute(
+				"aria-disabled",
+				String(view.phase === "auction"),
+			);
+			placeChildren(
+				mobileBidOverlay,
+				...(view.phase === "auction" ? [bidBox] : []),
+			);
+			mobileBidOverlay.hidden = view.phase !== "auction";
 			placeChildren(
 				mobileBidControls,
-				...(view.phase === "auction" ? [bidBox] : [playControls, claimPanel]),
+				...(view.phase === "play" ? [playControls, claimPanel] : []),
 			);
 			renderMobileTricks(view);
 			renderMobileRoundStatus(view);
@@ -2750,11 +2762,11 @@ export function tableSection(
 		renderClaimPanel(view);
 		if (mobileGameActive)
 			mobileBidControls.hidden =
-				view.phase === "play" &&
-				!Array.from(playControls.children).some(
+				view.phase === "auction" ||
+				(!Array.from(playControls.children).some(
 					(control) => !control.hasAttribute("hidden"),
 				) &&
-				claimPanel.hidden;
+					claimPanel.hidden);
 		// The Undo button of the play controls asks for an undo; the panel shows only an open request or its outcome.
 		undoPanel.hidden =
 			compact ||

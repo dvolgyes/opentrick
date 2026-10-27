@@ -63,6 +63,7 @@
 .mobile-round-status,
 .mobile-auction-bids,
 .mobile-auction-controls,
+.mobile-bid-overlay,
 .mobile-tricks {
 	--fg: var(--sheet-fg);
 	--muted: var(--sheet-muted);
@@ -1088,8 +1089,8 @@ main:has(> .room) {
 		grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(max-content, 1fr);
 	}
 
-	.mobile-auction-controls .bid-calls {
-		grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(max-content, 1fr);
+	.mobile-bid-overlay .bid-calls {
+		grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(max-content, 1fr);
 	}
 
 	.mobile-board-center .trick {
@@ -3750,6 +3751,22 @@ main:has(> .room[data-form="compact"]) {
 	color: var(--sheet-fg);
 }
 
+/* The auction controls occupy the board's middle row, above the player's hand. */
+.mobile-bid-overlay {
+	grid-area: 2 / 1 / 3 / 4;
+	position: relative;
+	z-index: 4;
+	align-self: center;
+	justify-self: center;
+	width: min(100%, 30rem);
+	min-width: 0;
+	padding: 0.35rem;
+	border: 1px solid var(--line);
+	border-radius: 0.45rem;
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
+}
+
 .mobile-tricks {
 	flex: none;
 	padding: 0.25rem 0.35rem;
@@ -3793,6 +3810,10 @@ main:has(> .room[data-form="compact"]) {
 	cursor: pointer;
 }
 
+.mobile-bids-fold > summary[aria-disabled="true"] {
+	cursor: default;
+}
+
 .mobile-bids-fold[open] > summary {
 	margin-bottom: 0.2rem;
 }
@@ -3834,32 +3855,32 @@ main:has(> .room[data-form="compact"]) {
 	vertical-align: top;
 }
 
-.mobile-auction-controls .bid-box {
+.mobile-bid-overlay .bid-box {
 	gap: 0.2rem;
 	padding: 0;
 }
 
-.mobile-auction-controls .bid-levels {
+.mobile-bid-overlay .bid-levels {
 	grid-template-columns: repeat(7, minmax(0, 1fr));
 	gap: 0.2rem;
 }
 
-.mobile-auction-controls .bid-calls {
+.mobile-bid-overlay .bid-calls {
 	grid-template-columns: repeat(8, minmax(0, 1fr));
 	gap: 0.2rem;
 }
 
-.mobile-auction-controls .bid-guide button,
-.mobile-auction-controls .bid-levels button,
-.mobile-auction-controls .bid-calls button,
-.mobile-auction-controls .bid-actions button {
+.mobile-bid-overlay .bid-guide button,
+.mobile-bid-overlay .bid-levels button,
+.mobile-bid-overlay .bid-calls button,
+.mobile-bid-overlay .bid-actions button {
 	min-height: 2.15rem;
 	padding: 0.15rem;
 	font-size: calc(0.9rem * var(--bid-symbol-scale, 1));
 }
 
-.mobile-auction-controls .bid-actions .confirm,
-.mobile-auction-controls .bid-actions .undo-call {
+.mobile-bid-overlay .bid-actions .confirm,
+.mobile-bid-overlay .bid-actions .undo-call {
 	min-height: 2.3rem;
 }
 

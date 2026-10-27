@@ -3332,6 +3332,76 @@ describe("mobile folds", () => {
 	const shown = (root: HTMLElement, selector: string) =>
 		root.querySelector<HTMLElement>(selector)?.checkVisibility() ?? false;
 
+	it.each<[number, number, string]>([
+		[320, 568, "M"],
+		[390, 844, "XXXL"],
+	])(
+		"keeps the bid box on the phone board and the history open during bidding (%i × %i, %s)",
+		async (width, height, size) => {
+			await page.viewport(width, height);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const base = playView();
+				const view = {
+					...base,
+					phase: "auction" as const,
+					bids: [
+						{ call: "1C" as const, text: "1♣" },
+						{ call: "P" as const, text: "Pass" },
+					],
+				};
+				const { root, section, handlers } = renderMobile(view);
+				const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+				const hand = root.querySelector<HTMLElement>(".mobile-auction-hand");
+				const box = root.querySelector<HTMLElement>(".bid-box");
+				const history =
+					root.querySelector<HTMLDetailsElement>(".mobile-bids-fold");
+				if (!board || !hand || !box || !history)
+					throw new Error("missing mobile bidding elements");
+				expect(board.contains(box)).toBe(true);
+				const boardRect = board.getBoundingClientRect();
+				const boxRect = box.getBoundingClientRect();
+				expect((boxRect.left + boxRect.right) / 2).toBeCloseTo(
+					(boardRect.left + boardRect.right) / 2,
+					0,
+				);
+				expect(boxRect.top).toBeGreaterThanOrEqual(boardRect.top);
+				expect(boxRect.bottom).toBeLessThanOrEqual(
+					hand.getBoundingClientRect().top + 0.5,
+				);
+				for (const button of box.querySelectorAll<HTMLElement>(
+					".bid-levels button, .bid-calls button",
+				)) {
+					const rect = button.getBoundingClientRect();
+					expect(rect.left).toBeGreaterThanOrEqual(boxRect.left - 0.5);
+					expect(rect.right).toBeLessThanOrEqual(boxRect.right + 0.5);
+					const text = document.createRange();
+					text.selectNodeContents(button);
+					expect(
+						text.getBoundingClientRect().left,
+						button.textContent ?? "",
+					).toBeGreaterThanOrEqual(rect.left - 0.5);
+					expect(
+						text.getBoundingClientRect().right,
+						button.textContent ?? "",
+					).toBeLessThanOrEqual(rect.right + 0.5);
+				}
+				expect(history.open).toBe(true);
+				history.querySelector<HTMLElement>("summary")?.click();
+				expect(history.open).toBe(true);
+				box.querySelector<HTMLButtonElement>(".bid-calls .pass")?.click();
+				box.querySelector<HTMLButtonElement>(".confirm")?.click();
+				expect(handlers.act).toHaveBeenCalledWith({ type: "call", call: "P" });
+				section.render(base);
+				expect(history.open).toBe(false);
+				expect(board.querySelector(".bid-box")).toBeNull();
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
+
 	it("does not reserve a screen of empty space below the folded bot controls", () => {
 		const { root, section } = renderMobile(playView());
 		section.setBotControls(true, []);
