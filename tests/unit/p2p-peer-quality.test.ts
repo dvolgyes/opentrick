@@ -5,7 +5,14 @@ import {
 	QUALITY_REPORT_TTL_MS,
 	type QualityContext,
 } from "../../src/p2p/peer-quality";
-import type { Binding, PeerRoundTrips, Ping, Roster } from "../../src/p2p/wire";
+import {
+	type Binding,
+	frame,
+	type PeerRoundTrips,
+	type Ping,
+	parseCtl,
+	type Roster,
+} from "../../src/p2p/wire";
 import { SEATS, type Seat } from "../../src/protocol";
 
 const bindings: Binding[] = SEATS.map((seat) => ({
@@ -78,6 +85,25 @@ class Rig {
 }
 
 describe("directed peer quality", () => {
+	it("reports a valid timeout when an echo arrives after a suspended page resumes", () => {
+		const guest = new Rig("E");
+		guest.tick();
+		// Browser timers can be suspended while the echo remains queued for delivery.
+		guest.now = 90_000;
+		guest.echo("N");
+		guest.tick();
+		const message = guest.reports.at(-1)?.message;
+		if (!message) throw new Error("no quality report");
+		expect(parseCtl(frame("table", message), "table")).toEqual({
+			ok: true,
+			message,
+		});
+		expect(message?.seats.find((sample) => sample.seat === "N")).toMatchObject({
+			ms: PING_TIMEOUT_MS,
+			lower: true,
+		});
+	});
+
 	it("each guest probes the host and other guests, and reports only its own measurements to the host", () => {
 		const east = new Rig("E");
 		east.tick();

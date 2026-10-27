@@ -106,6 +106,25 @@ describe("RoundTripProbes", () => {
 		expect(rig.probes.echo(EAST, "nonce-0000")).toBe(false);
 	});
 
+	it.each([PING_TIMEOUT_MS - 1, PING_TIMEOUT_MS, 90_000])(
+		"applies the timeout at echo time after %i ms without a timer tick",
+		(elapsed) => {
+			const rig = new Rig();
+			rig.probes.probe(EAST);
+			rig.now = elapsed;
+			expect(rig.probes.echo(EAST, rig.last(EAST))).toBe(true);
+			expect(rig.probes.get(EAST)).toEqual({
+				ms: Math.min(elapsed, PING_TIMEOUT_MS),
+				lower: elapsed >= PING_TIMEOUT_MS,
+			});
+			// A new, timely echo replaces the timeout result.
+			rig.probes.probe(EAST);
+			rig.now += 40;
+			rig.probes.echo(EAST, rig.last(EAST));
+			expect(rig.probes.get(EAST)).toEqual({ ms: 40, lower: false });
+		},
+	);
+
 	it("keeps at most MAX_OPEN_PINGS open pings for a peer", () => {
 		const rig = new Rig();
 		for (let index = 0; index <= MAX_OPEN_PINGS; index += 1)

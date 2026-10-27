@@ -59,7 +59,12 @@ export class RoundTripProbes {
 		// An older ping without an echo is lost or late; this answer is the newer evidence.
 		for (const [nonce, at] of track.open)
 			if (at <= sentAt) track.open.delete(nonce);
-		track.result = { ms: Math.round(this.#deps.now() - sentAt), lower: false };
+		const elapsed = this.#deps.now() - sentAt;
+		// A suspended page can receive its queued echo before the timeout timer runs.
+		track.result =
+			elapsed >= PING_TIMEOUT_MS
+				? { ms: PING_TIMEOUT_MS, lower: true }
+				: { ms: Math.round(elapsed), lower: false };
 		return true;
 	}
 
