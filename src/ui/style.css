@@ -2897,6 +2897,12 @@ button.call-join[data-in-call="true"] {
 	overflow-wrap: break-word;
 }
 
+/* Both sidebar contracts match the trick labels and keep that size across font settings. */
+.table-sidebar .contract-head .bid,
+.table-sidebar .tricks-counts .bid {
+	font-size: 0.95rem;
+}
+
 .tricks-counts strong {
 	font-size: 2rem;
 }

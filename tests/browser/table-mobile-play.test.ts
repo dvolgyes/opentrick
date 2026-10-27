@@ -301,6 +301,32 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it.each<Layout>(["desktop", "sideways"])(
+		"keeps both sidebar contracts the same size as the trick labels (%s)",
+		(layout) => {
+			renderView(playView(), layout);
+			const selectors = [
+				".table-sidebar .contract-head .bid",
+				".table-sidebar .tricks-counts .bid",
+				".table-sidebar .tricks-counts .count-label",
+			];
+			const nodes = selectors.map((selector) => {
+				const node = document.querySelector<HTMLElement>(selector);
+				if (!node) throw new Error(`missing ${selector}`);
+				return node;
+			});
+			try {
+				for (const size of ["S", "M", "L", "XL", "XXL", "XXXL"]) {
+					document.documentElement.dataset.suitFontSize = size;
+					const values = nodes.map((node) => getComputedStyle(node).fontSize);
+					expect(values[0], size).toBe(values[2]);
+					expect(values[1], size).toBe(values[2]);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
 	it("halves the extra line spacing between rank and suit in side hands", () => {
 		renderView(sideHandView(), "desktop");
 		const face = document.querySelector<HTMLElement>(".hand-stack .face");
@@ -527,7 +553,8 @@ describe("played card styles", () => {
 					document.documentElement.dataset.suitFontSize = size;
 					for (const [index, actual] of sizes().entries())
 						expect(actual, `${selectors[index]} at ${size}`).toBeCloseTo(
-							(medium[index] ?? 0) * scale,
+							(medium[index] ?? 0) *
+								(nodes[index]?.closest(".table-sidebar .bid") ? 1 : scale),
 							3,
 						);
 					for (const marker of document.querySelectorAll<HTMLElement>(
