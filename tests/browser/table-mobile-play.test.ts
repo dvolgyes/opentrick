@@ -301,6 +301,18 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("halves the extra line spacing between rank and suit in side hands", () => {
+		renderView(sideHandView(), "desktop");
+		const face = document.querySelector<HTMLElement>(".hand-stack .face");
+		const suit = face?.querySelector<HTMLElement>(".pip");
+		if (!face || !suit) throw new Error("missing side hand marker");
+		const offset = () =>
+			suit.getBoundingClientRect().top - face.getBoundingClientRect().top;
+		const compactOffset = offset();
+		const fontSize = Number.parseFloat(getComputedStyle(face).fontSize);
+		face.style.lineHeight = "1.1";
+		expect(offset() - compactOffset).toBeCloseTo(fontSize * 0.05, 1);
+	});
 	it.each<Layout>(["desktop", "sideways", "compact"])(
 		"keeps side-hand suit markers visible as font size grows (%s)",
 		(layout) => {
