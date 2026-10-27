@@ -1051,11 +1051,15 @@ main:has(> .room) {
 	line-height: 1.05;
 }
 
+.hand-stack .face > .pip {
+	margin-top: -0.25em;
+}
+
 /* Grow a card only when its markers need more space, with 3px at the far edge. */
 :root:is([data-suit-font-size="L"], [data-suit-font-size="XL"], [data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) {
 	/* Each side-hand strip must expose both lines before the next suit row starts. */
 	.hand-stack .suit-row .card {
-		min-height: calc(var(--rank-size) * var(--suit-font-scale) * 2.1 + 0.1rem + 4px);
+		min-height: calc(var(--rank-size) * var(--suit-font-scale) * 1.85 + 0.1rem + 4px);
 	}
 
 	.card .face {
@@ -1078,6 +1082,21 @@ main:has(> .room) {
 
 	.mobile-auction-controls .bid-calls {
 		grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(max-content, 1fr);
+	}
+
+	.mobile-board-center .trick {
+		--card-h: 3.1rem;
+		--card-w: 2.1rem;
+		--rank-size: 0.95rem;
+	}
+
+	.bridge-table .mobile-board-center .played {
+		min-width: calc(1.3em + 0.2rem + 4px);
+		min-height: calc(2.2em + 0.1rem + 4px);
+	}
+
+	.bridge-table:is([data-played-card-style="corners-upright"], [data-played-card-style="corners-oriented"]) .mobile-board-center .played {
+		min-height: calc(3.5em + 0.16rem + 2px);
 	}
 }
 

@@ -301,6 +301,113 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("brings the side-hand suit closer to the rank by a quarter of the font size", () => {
+		renderView(sideHandView(), "compact");
+		const face = document.querySelector<HTMLElement>(
+			".mobile-board-left .hand-stack .face",
+		);
+		const suit = face?.querySelector<HTMLElement>(".pip");
+		if (!face || !suit) throw new Error("missing side-hand suit");
+		const font = Number.parseFloat(getComputedStyle(face).fontSize);
+		const top = suit.getBoundingClientRect().top;
+		suit.style.marginTop = "0px";
+		expect(suit.getBoundingClientRect().top - top).toBeCloseTo(font * 0.25, 1);
+	});
+
+	it.each(["L", "XL", "XXL", "XXXL"])(
+		"keeps played cards as readable as the own hand on phones at %s",
+		async (size) => {
+			await page.viewport(320, 568);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const { root } = renderMobile(sideHandView());
+				const played = root.querySelector<HTMLElement>(
+					".mobile-board-center .played",
+				);
+				const rank = played?.querySelector<HTMLElement>(".rank-corner");
+				const hand = root.querySelector<HTMLElement>(
+					".mobile-auction-hand .card .face",
+				);
+				const ownRank = hand?.querySelector<HTMLElement>(".rank");
+				if (!played || !rank || !hand || !ownRank)
+					throw new Error("missing played or hand card");
+				expect(
+					Number.parseFloat(getComputedStyle(rank).fontSize),
+				).toBeGreaterThanOrEqual(
+					Number.parseFloat(getComputedStyle(ownRank).fontSize) - 0.01,
+				);
+				expect(played.getBoundingClientRect().width).toBeGreaterThanOrEqual(
+					hand.getBoundingClientRect().width - 0.5,
+				);
+				expect(played.getBoundingClientRect().height).toBeGreaterThanOrEqual(
+					hand.getBoundingClientRect().height - 0.5,
+				);
+				const center = played.querySelector<HTMLElement>(".played-center-suit");
+				if (!center) throw new Error("missing central suit");
+				const suit = center.getBoundingClientRect();
+				for (const corner of played.querySelectorAll<HTMLElement>(
+					".rank-corner",
+				)) {
+					if (!corner.checkVisibility()) continue;
+					const box = corner.getBoundingClientRect();
+					expect(
+						box.right <= suit.left ||
+							box.left >= suit.right ||
+							box.bottom <= suit.top + 0.5 ||
+							box.top >= suit.bottom - 0.5,
+					).toBe(true);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
+
+	it("keeps a full XXXL trick clear of the side dummy on a narrow phone", async () => {
+		await page.viewport(320, 568);
+		document.documentElement.dataset.suitFontSize = "XXXL";
+		try {
+			const base = sideHandView();
+			const first = base.trick?.cards[0];
+			if (!base.trick || !first) throw new Error("missing trick");
+			const { root } = renderMobile({
+				...base,
+				trick: {
+					...base.trick,
+					cards: (["top", "left", "right", "bottom"] as const).map(
+						(position) => ({ ...first, position }),
+					),
+				},
+			});
+			const cards = [
+				...root.querySelectorAll<HTMLElement>(".mobile-board-center .played"),
+			].map((card) => card.getBoundingClientRect());
+			const markers = [
+				...root.querySelectorAll<HTMLElement>(
+					".mobile-board-left .suit-row .card:last-child .pip",
+				),
+			];
+			expect(cards).toHaveLength(4);
+			expect(markers).toHaveLength(4);
+			for (const marker of markers) {
+				const range = document.createRange();
+				range.selectNodeContents(marker);
+				const box = range.getBoundingClientRect();
+				for (const card of cards)
+					expect(
+						box.right <= card.left ||
+							box.left >= card.right ||
+							box.bottom <= card.top ||
+							box.top >= card.bottom,
+						marker.textContent ?? "",
+					).toBe(true);
+			}
+		} finally {
+			delete document.documentElement.dataset.suitFontSize;
+			await page.viewport(414, 896);
+		}
+	});
 	it.each<["left" | "right", number, number]>([
 		["left", 320, 568],
 		["right", 320, 568],
@@ -630,12 +737,19 @@ describe("played card styles", () => {
 					["XXXL", 2],
 				] as const) {
 					document.documentElement.dataset.suitFontSize = size;
-					for (const [index, actual] of sizes().entries())
+					for (const [index, actual] of sizes().entries()) {
+						// At L and above, phone played cards use the same base font as the own hand.
+						const phonePlayed =
+							layout === "compact" &&
+							scale > 1 &&
+							nodes[index]?.closest(".mobile-board-center .played");
 						expect(actual, `${selectors[index]} at ${size}`).toBeCloseTo(
 							(medium[index] ?? 0) *
-								(nodes[index]?.closest(".table-sidebar .bid") ? 1 : scale),
+								(nodes[index]?.closest(".table-sidebar .bid") ? 1 : scale) *
+								(phonePlayed ? 0.95 / 0.85 : 1),
 							3,
 						);
+					}
 					for (const marker of document.querySelectorAll<HTMLElement>(
 						".face .rank, .face .pip",
 					)) {
