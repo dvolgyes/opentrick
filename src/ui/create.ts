@@ -30,13 +30,14 @@ import {
 import { readPersonalName, savePersonalName } from "./personal-name";
 import { seatGrid } from "./seat-grid";
 import { readSettings } from "./settings";
+import { type EntryPage, sitePath } from "./site-path";
 
 /** A solo game: the creator hosts at South against three bots. */
 const SOLO_HOST: Seat = "S";
 
 /** One way to start a game: its button and the list that explains a refusal. */
 interface CreateTarget {
-	readonly submit: HTMLButtonElement;
+	readonly submit: HTMLButtonElement | HTMLAnchorElement;
 	readonly errors: HTMLElement;
 	readonly label: string;
 }
@@ -62,10 +63,13 @@ export function showCreate(
 		config: RoomConfig,
 		seat: Seat,
 		hostBots?: HostBotSettings,
+		entry?: "solo" | "create",
 	) => void,
-	onCommunity: (setup: CommunityCreation) => void,
+	onCommunity: (setup: CommunityCreation, entry?: "join" | "create") => void,
+	entry: EntryPage | "home" = "home",
 ): Dispose {
 	let disposed = false;
+	const pathname = new URL(deps.pageUrl()).pathname;
 	const nameFields = {} as Record<Seat, HTMLInputElement>;
 	const meChoices = {} as Record<Seat, HTMLInputElement>;
 	const botChoices = {} as Record<Seat, HTMLInputElement>;
@@ -222,15 +226,21 @@ export function showCreate(
 			className: "errors",
 			attrs: { role: "alert", "data-testid": testId },
 		});
-	const solo: CreateTarget = {
+	const solo = {
 		submit: el(
-			"button",
-			{ attrs: { type: "submit", "data-testid": "create-solo" } },
-			deps.t("Start solo game (with bots)"),
+			"a",
+			{
+				className: "button",
+				attrs: {
+					href: sitePath(pathname, "solo"),
+					"data-testid": "create-solo",
+				},
+			},
+			deps.t("Play with bots"),
 		),
 		errors: errorList("solo-errors"),
-		label: deps.t("Start solo game (with bots)"),
-	};
+		label: deps.t("Play with bots"),
+	} satisfies CreateTarget;
 	const multiplayer: CreateTarget = {
 		submit: el(
 			"button",
@@ -244,52 +254,81 @@ export function showCreate(
 
 	const defaultSoloName = deps.t("Human");
 	const soloName = el("input", {
-		attrs: { type: "text", name: "solo-name", autocomplete: "off" },
+		attrs: {
+			type: "text",
+			id: "solo-name",
+			name: "solo-name",
+			autocomplete: "off",
+		},
 	});
 	soloName.value = readPersonalName(deps.browser) || defaultSoloName;
+	const online = el(
+		"a",
+		{
+			className: "button",
+			attrs: {
+				href: sitePath(pathname, "join"),
+				"data-testid": "join-online",
+			},
+		},
+		deps.t("Online players"),
+	);
+	const follow = (link: HTMLAnchorElement, run: () => void): void => {
+		link.addEventListener("click", (event) => {
+			if (link.getAttribute("aria-disabled") === "true") {
+				event.preventDefault();
+				return;
+			}
+			if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+				if (soloName.value.trim() !== defaultSoloName)
+					savePersonalName(deps.browser, soloName.value);
+				return;
+			}
+			event.preventDefault();
+			run();
+		});
+	};
+	follow(online, () => {
+		const name = soloName.value.trim().normalize("NFC");
+		const check = checkCreateFields(
+			{
+				names: { N: "player", E: "player", S: name, W: "player" },
+				seat: SOLO_HOST,
+				bots: [],
+			},
+			deps.t,
+		);
+		if (!check.ok) {
+			showErrors(solo, check.errors);
+			return;
+		}
+		const botSetup = parseBotSetup({ seats: [], bidder: bidder.value });
+		if (!botSetup) {
+			showErrors(solo, [deps.t("Check the bidding engine.")]);
+			return;
+		}
+		savePersonalName(deps.browser, name);
+		onCommunity(
+			{
+				bidder: botSetup.bidder,
+				name,
+				seat: SOLO_HOST,
+				names: { S: name },
+				open: { N: "online", E: "online", W: "online" },
+			},
+			"join",
+		);
+	});
 	const soloForm = el(
 		"form",
 		{ className: "create" },
 		el(
 			"div",
 			{ className: "create-solo-row" },
-			el("label", {}, `${deps.t("Your name")} `, soloName),
+			el("label", { attrs: { for: "solo-name" } }, `${deps.t("Name")}:`),
+			soloName,
 			solo.submit,
-			button(
-				deps.t("Join an online table"),
-				() => {
-					const name = soloName.value.trim().normalize("NFC");
-					const fields = {
-						names: { N: "player", E: "player", S: name, W: "player" },
-						seat: SOLO_HOST,
-						bots: [],
-					};
-					const check = checkCreateFields(fields, deps.t);
-					if (!check.ok) {
-						showErrors(solo, check.errors);
-						return;
-					}
-					const botSetup = parseBotSetup({ seats: [], bidder: bidder.value });
-					if (!botSetup) {
-						showErrors(solo, [deps.t("Check the bidding engine.")]);
-						return;
-					}
-					savePersonalName(deps.browser, name);
-					onCommunity({
-						bidder: botSetup.bidder,
-						name,
-						seat: SOLO_HOST,
-						names: { S: name },
-						open: { N: "online", E: "online", W: "online" },
-					});
-				},
-				{
-					attrs: {
-						"data-testid": "join-online",
-						...(!deps.storage.persistent ? { disabled: "" } : {}),
-					},
-				},
-			),
+			online,
 		),
 		solo.errors,
 	);
@@ -316,19 +355,36 @@ export function showCreate(
 			...messages.map((text) => el("li", {}, text)),
 		);
 	};
+	const disable = (
+		control: HTMLButtonElement | HTMLAnchorElement,
+		value: boolean,
+	): void => {
+		if (control instanceof HTMLButtonElement) control.disabled = value;
+		else {
+			control.setAttribute("aria-disabled", String(value));
+			control.tabIndex = value ? -1 : 0;
+		}
+	};
 
 	// Only a browser that keeps data can hold the first copy of the table (plan §4.3).
-	if (!deps.storage.persistent)
+	if (!deps.storage.persistent) {
+		disable(online, true);
 		for (const target of targets) {
 			showErrors(target, [deps.t(CANNOT_STORE)]);
-			target.submit.disabled = true;
+			disable(target.submit, true);
 		}
+	}
 
 	const start = (
 		target: CreateTarget,
 		fields: CreateFields,
 		rememberName: boolean,
 	): void => {
+		if (
+			!deps.storage.persistent ||
+			solo.submit.getAttribute("aria-disabled") === "true"
+		)
+			return;
 		for (const other of targets) showErrors(other, []);
 		const check = checkCreateFields(fields, deps.t);
 		if (!check.ok) {
@@ -356,7 +412,8 @@ export function showCreate(
 						...botTiming(readSettings(deps.browser)),
 					}
 				: undefined;
-		for (const other of targets) other.submit.disabled = true;
+		for (const other of targets) disable(other.submit, true);
+		disable(online, true);
 		target.submit.textContent = deps.t("Creating…");
 		void create(target, config, check.seat, hostBotSettings);
 	};
@@ -376,6 +433,7 @@ export function showCreate(
 			soloName.value.trim() !== defaultSoloName,
 		);
 	});
+	follow(solo.submit, () => soloForm.requestSubmit());
 
 	form.addEventListener("submit", (event) => {
 		event.preventDefault();
@@ -456,13 +514,20 @@ export function showCreate(
 				`${deps.t("Could not create the game")}: ${storageText(created.code, deps.t)}`,
 			]);
 			for (const other of targets) {
-				other.submit.disabled = false;
+				disable(other.submit, false);
 				other.submit.textContent = other.label;
 			}
+			disable(online, false);
 			return;
 		}
 		void deps.persist();
-		onCreated(key, config, seat, hostBotSettings);
+		onCreated(
+			key,
+			config,
+			seat,
+			hostBotSettings,
+			target === solo ? "solo" : "create",
+		);
 	}
 
 	root.replaceChildren(
@@ -472,7 +537,16 @@ export function showCreate(
 			el(
 				"div",
 				{ className: "create-header" },
-				el("h1", {}, deps.t("Create game")),
+				el("a", { attrs: { href: sitePath(pathname, "home") } }, "OpenTrick"),
+				el(
+					"h1",
+					{},
+					el(
+						"a",
+						{ attrs: { href: sitePath(pathname, "create") } },
+						deps.t("Create game"),
+					),
+				),
 				languageControl(deps),
 			),
 			el(
@@ -481,12 +555,7 @@ export function showCreate(
 				el("label", {}, `${deps.t("Bidding bot")}: `, bidder),
 				el("label", {}, `${deps.t("Scoring")}: `, scoring),
 			),
-			el(
-				"section",
-				{ className: "create-mode" },
-				el("h2", {}, deps.t("Solo game")),
-				soloForm,
-			),
+			el("section", { className: "create-mode" }, soloForm),
 			el(
 				"section",
 				{ className: "create-mode" },
@@ -502,6 +571,10 @@ export function showCreate(
 			),
 		),
 	);
+	if (entry === "solo" || entry === "join")
+		queueMicrotask(() => {
+			if (!disposed) (entry === "solo" ? solo.submit : online).click();
+		});
 	return () => {
 		disposed = true;
 	};

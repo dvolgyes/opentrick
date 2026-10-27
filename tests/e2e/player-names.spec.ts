@@ -297,7 +297,7 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 		"BRL SL (WBridge5 imitation)",
 	]);
 	await expect(options.locator('select[name="scoring"]')).toBeVisible();
-	// The name field remains compact; the two solo actions wrap on a narrow phone.
+	// The name field remains compact, alongside the two solo actions on a narrow phone.
 	const soloRow = page.locator(".create-solo-row");
 	const soloName = soloRow.locator('input[name="solo-name"]');
 	await expect(soloName).toHaveValue("Human");

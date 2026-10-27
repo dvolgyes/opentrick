@@ -22,8 +22,8 @@ The game deals the cards, guides the auction and card play, and keeps the duplic
 
 ### Play a solo game
 
-1. Open [OpenTrick](https://dvolgyes.github.io/opentrick/) and enter your name in the **Solo game** section.
-2. Select **Start solo game (with bots)**.
+1. Open [OpenTrick](https://dvolgyes.github.io/opentrick/) and enter your name beside **Name:**.
+2. Select **Play with bots**.
    You take the South seat, and bots take North, East, and West.
 3. Play the board with the bots, using the same auction and card play as a table.
 
@@ -51,7 +51,12 @@ Do not post it publicly.
 
 ### Find community players
 
-Select **Join an online table** beside the solo-game button to enter public matchmaking.
+Use the compact **Name: [name] Play with bots / Online players** row to choose how to play alone.
+Select **Online players** to enter public matchmaking.
+The waiting page for a solo search offers **Create new game**; group invitations are available only for groups with reserved friends.
+Bookmark `/` for the site root, `/create` for table setup, `/solo` to start with bots, and `/join` to enter online matchmaking using the saved name.
+On a project site, these paths follow the deployment directory, for example `/opentrick/join`.
+The build includes static entry pages, so these bookmarks also work when opened directly on GitHub Pages.
 For a group, use the regular four-seat creation form.
 The centre buttons, **Bots**, **Online players**, and **Both**, preset the two checkboxes on unnamed seats.
 A name reserves that seat for a human friend and clears both checkboxes.
@@ -61,7 +66,7 @@ Only a human seat can be the creator's host seat.
 Select **Create game**, then use **Copy group invitation** to bring reserved friends to their chosen seats.
 Matching starts automatically after the invited group has assembled.
 Community players can use separate tabs in the same browser.
-Each player's address keeps their own seat and recovery record; use **Copy group invitation** to invite another player.
+Each player's game address keeps their own seat and recovery record; groups use **Copy group invitation** to invite their reserved friends.
 
 Every waiting browser endorses its own group in the shared discovery room.
 Compatible groups merge automatically without an extra readiness or acceptance step.

@@ -7,7 +7,7 @@ test.describe.configure({ mode: "serial" });
 
 const BOOKMARK_QUERY = "e=zsdh&w=dvolgyes&h=E";
 const TABLE_LINK =
-	/^http:\/\/localhost:\d+\/\?n=player1&e=zsdh&s=player&w=dvolgyes&h=E&b=#k=[A-Za-z0-9_-]{22}$/;
+	/^http:\/\/localhost:\d+\/create\/\?n=player1&e=zsdh&s=player&w=dvolgyes&h=E&b=#k=[A-Za-z0-9_-]{22}$/;
 
 const players: Player[] = [];
 let owner: Player;

@@ -3,6 +3,7 @@ import dgram from "node:dgram";
 import { playwright } from "@vitest/browser-playwright";
 import { configDefaults, defineConfig } from "vitest/config";
 import type { BrowserCommandContext } from "vitest/node";
+import { ENTRY_PAGES } from "./src/ui/site-path";
 
 // Only the public tracker, Nostr relay, MQTT broker and STUN lists may carry these prefixes, because Vite inlines them
 // into the bundle.
@@ -88,6 +89,29 @@ function chrome(fakeDevices = "--use-fake-device-for-media-stream") {
 
 export default defineConfig({
 	base: "./",
+	plugins: [
+		{
+			name: "static-entry-pages",
+			enforce: "post",
+			generateBundle: {
+				order: "post",
+				handler(_options, bundle) {
+					const index = bundle["index.html"];
+					if (index?.type !== "asset" || typeof index.source !== "string")
+						throw new Error("The entry pages need the built index.html.");
+					for (const page of ENTRY_PAGES)
+						this.emitFile({
+							type: "asset",
+							fileName: `${page}/index.html`,
+							source: index.source.replace(
+								'<base href="./">',
+								'<base href="../">',
+							),
+						});
+				},
+			},
+		},
+	],
 	// Discovering DDS during a browser test reloads Vite's harness; prepare it before tests start.
 	optimizeDeps: { include: ["bridge-dds"] },
 	envPrefix: ENV_PREFIXES,

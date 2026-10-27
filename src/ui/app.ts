@@ -17,14 +17,18 @@ import type { AppDeps, Dispose, Navigation } from "./deps";
 import { copyToClipboard } from "./dom";
 import { showLinkProblem, showTable } from "./join";
 import { languageControl } from "./language-control";
+import { siteLocation, sitePath } from "./site-path";
 import { screenWakeLock, WakeLockPolicy } from "./wake-lock";
 
 /**
- * Routes on the URL fragment: empty → create, `#k=<key>` → the table. The query prefills the create screen
- * and can select a seat in a table. Leaving a screen disposes it, so a previous table's mesh and timers stop before
+ * Room fragments take precedence over /create, /solo and /join, so reload resumes a table instead of starting another.
+ * The query prefills setup and can select a seat. Leaving a screen disposes it, so its mesh and timers stop before
  * the next table starts.
  */
 export function startApp(root: HTMLElement, deps: AppDeps): void {
+	// Relative bot-model URLs use the site root on both directory entry pages and the dev server's fallback.
+	const base = document.querySelector("base");
+	if (base) base.href = siteLocation(location.pathname).root;
 	// Every page keeps the screen on: a phone that sleeps stops the page, and then the other players cannot reach it.
 	const wakeLock = new WakeLockPolicy(screenWakeLock);
 	wakeLock.update(true);
@@ -33,10 +37,10 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 	let dispose: Dispose | undefined;
 	const navigation: Navigation = {
 		createNew: () => {
-			// Stop the table first, then load a new document: the site root has no setup query and no table link.
+			// Stop the table before opening a fresh setup page without its query or invitation key.
 			dispose?.();
 			dispose = undefined;
-			location.assign(new URL("./", location.href).toString());
+			location.assign(`${sitePath(location.pathname, "create")}/`);
 		},
 		reload: () => location.reload(),
 		update: (targetDate) => {
@@ -82,20 +86,22 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 					root,
 					deps,
 					parseBookmark(location.search),
-					(key, config, seat, hostBots) => {
+					(key, config, seat, hostBots, entry = "create") => {
+						const path = `${sitePath(location.pathname, entry)}/`;
 						// Keep setup data and the selected seat in the address; replaceState fires no hashchange.
 						const query = selectedPlayerQuery(
 							bookmarkQuery(config.names, seat, config.botSetup),
 							seat,
 						);
 						const sharedUrl = new URL(deps.pageUrl());
+						sharedUrl.pathname = path;
 						sharedUrl.search = sharedQuery(query);
 						sharedUrl.hash = tableFragment(key);
 						const autoCopy = copyToClipboard(sharedUrl.toString());
 						history.replaceState(
 							null,
 							"",
-							`${location.pathname}?${query}${tableFragment(key)}`,
+							`${path}?${query}${tableFragment(key)}`,
 						);
 						dispose?.();
 						dispose = showTable(
@@ -110,7 +116,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 							hostBots,
 						);
 					},
-					(setup) => {
+					(setup, entry = "create") => {
 						const self = newCommandId();
 						const key = newTableKey();
 						const expected = [
@@ -131,7 +137,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 						history.replaceState(
 							null,
 							"",
-							`${location.pathname}${partyFragment(key, self, expected, party, self)}`,
+							`${sitePath(location.pathname, entry)}/${partyFragment(key, self, expected, party, self)}`,
 						);
 						dispose?.();
 						dispose = showCommunity(
@@ -165,6 +171,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 							},
 						);
 					},
+					siteLocation(location.pathname).page,
 				);
 				return;
 			case "table": {

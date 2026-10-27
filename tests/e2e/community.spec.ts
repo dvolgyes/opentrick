@@ -150,9 +150,7 @@ test("solo online entry starts searching without a separate community setup form
 }) => {
 	await page.goto("/");
 	await page.locator('input[name="solo-name"]').fill("Alice");
-	await expect(page.getByTestId("create-solo")).toHaveText(
-		"Start solo game (with bots)",
-	);
+	await expect(page.getByTestId("create-solo")).toHaveText("Play with bots");
 	await page.getByTestId("join-online").click();
 	await expect(page.getByTestId("community-status")).toHaveText(
 		"Searching for compatible players…",
@@ -162,6 +160,45 @@ test("solo online entry starts searching without a separate community setup form
 	await expect(
 		page.getByTestId("community-members").locator('[data-seat="S"]'),
 	).toContainText("Alice");
+	await expect(page.getByTestId("community-invite")).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Reload", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Create new game", exact: true }),
+	).toBeVisible();
+});
+
+test("a join bookmark starts searching with only the new-game action, including after reload", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages } = await players(browser, baseURL, 1);
+	try {
+		const page = pages[0];
+		if (!page) throw new Error("page missing");
+		await page.goto("/join");
+		await expect(page.getByTestId("community-status")).toHaveText(
+			"Searching for compatible players…",
+		);
+		const reservation = page.url();
+		await page.reload();
+		await expect(page.getByTestId("community-status")).toHaveText(
+			"Searching for compatible players…",
+		);
+		expect(page.url()).toBe(reservation);
+		await expect(page.getByTestId("community").getByRole("button")).toHaveText([
+			"Create new game",
+		]);
+		await page
+			.getByRole("button", { name: "Create new game", exact: true })
+			.click();
+		await expect(page).toHaveURL(/\/create\/?$/);
+		await expect(page.getByTestId("create")).toBeVisible();
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
 });
 
 test("four players in one browser profile merge, start, and keep their seats on reload", async ({

@@ -48,7 +48,7 @@ export const hostRows = (page: Page): Locator =>
 		.locator("li")
 		.filter({ has: page.locator(".tag", { hasText: /^Host$/ }) });
 
-const TABLE_LINK = /^http:\/\/localhost:\d+\/?\?.*#k=[A-Za-z0-9_-]{22}$/;
+const TABLE_LINK = /^http:\/\/localhost:\d+\/create\/\?.*#k=[A-Za-z0-9_-]{22}$/;
 
 /**
  * Names all fixture players and explicitly chooses the host required by the scenario. The host comes first, because

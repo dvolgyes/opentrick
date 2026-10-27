@@ -279,41 +279,45 @@ export function showCommunity(
 					el("h1", {}, deps.t("Community game")),
 					members,
 					preferences,
-					button(
-						deps.t("Copy group invitation"),
-						() => {
-							const current = session?.saved;
-							if (!current) return;
-							const url = new URL(deps.pageUrl());
-							url.search = "";
-							url.hash = partyFragment(
-								current.key,
-								current.owner,
-								current.expected,
-								current.open
-									? {
-											open: current.group
-												? openSeats(current.group)
-												: current.open,
-											names: Object.fromEntries(
-												current.expected.flatMap((seat) => {
-													const name =
-														current.group?.members.find(
-															(member) => member.seat === seat,
-														)?.name ?? current.names?.[seat];
-													return name ? [[seat, name]] : [];
-												}),
-											),
-											waitMs: current.waitMs,
-										}
-									: undefined,
-							);
-							void copyToClipboard(url.href).then((text) => {
-								status.textContent = deps.t(text);
-							});
-						},
-						{ attrs: { "data-testid": "community-invite" } },
-					),
+					...(route.kind === "party" && route.seats.length > 1
+						? [
+								button(
+									deps.t("Copy group invitation"),
+									() => {
+										const current = session?.saved;
+										if (!current) return;
+										const url = new URL(deps.pageUrl());
+										url.search = "";
+										url.hash = partyFragment(
+											current.key,
+											current.owner,
+											current.expected,
+											current.open
+												? {
+														open: current.group
+															? openSeats(current.group)
+															: current.open,
+														names: Object.fromEntries(
+															current.expected.flatMap((seat) => {
+																const name =
+																	current.group?.members.find(
+																		(member) => member.seat === seat,
+																	)?.name ?? current.names?.[seat];
+																return name ? [[seat, name]] : [];
+															}),
+														),
+														waitMs: current.waitMs,
+													}
+												: undefined,
+										);
+										void copyToClipboard(url.href).then((text) => {
+											status.textContent = deps.t(text);
+										});
+									},
+									{ attrs: { "data-testid": "community-invite" } },
+								),
+							]
+						: []),
 					el(
 						"p",
 						{},
@@ -321,7 +325,6 @@ export function showCommunity(
 							"Community games have no audio or video calls. A bot covers an absent player until the board ends.",
 						),
 					),
-					button(deps.t("Reload"), navigation.reload),
 					button(deps.t("Create new game"), navigation.createNew),
 				),
 			);

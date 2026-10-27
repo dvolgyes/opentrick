@@ -128,7 +128,8 @@ h2 {
 	margin-top: 1.5rem;
 }
 
-button {
+button,
+a.button {
 	font: inherit;
 	padding: 0.35rem 0.8rem;
 	border: 1px solid var(--accent);
@@ -136,9 +137,11 @@ button {
 	background: var(--accent);
 	color: var(--accent-fg);
 	cursor: pointer;
+	text-decoration: none;
 }
 
-button:disabled {
+button:disabled,
+a.button[aria-disabled="true"] {
 	opacity: 0.45;
 	cursor: not-allowed;
 }
@@ -212,32 +215,39 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	margin: 0;
 }
 
+.create-header a {
+	color: inherit;
+}
+
 .create-header .language-control {
 	position: static;
 }
 
-/* The compact name field and the two solo actions wrap onto separate rows on a phone. */
+/* Keep the name and both bookmarkable actions on one compact row. */
 .create-solo-row {
-	flex-wrap: wrap;
+	display: grid;
+	grid-template-columns: auto minmax(3ch, 12ch) auto auto;
+	justify-content: start;
+	gap: 0.4rem;
 }
 
 .create-solo-row label {
-	display: flex;
-	flex: 0 1 auto;
-	gap: 0.5rem;
-	align-items: center;
-	min-width: 0;
 	white-space: nowrap;
 }
 
 .create-solo-row input[type="text"] {
-	width: 20ch;
-	min-width: 5ch;
-	flex: 0 1 auto;
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
 }
 
-.create-solo-row button {
-	flex: 0 1 auto;
+.create-solo-row .button {
+	white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+	.create-solo-row { font-size: clamp(0.65rem, 3.5vw, 0.85rem); gap: 0.3rem; }
+	.create-solo-row .button { padding: 0.35rem 0.4rem; }
 }
 
 /* Seat choices wrap beneath the name field when the centre controls leave narrow cards. */
