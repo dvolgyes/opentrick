@@ -5,7 +5,7 @@ import { MAX_OUTBOX, RESULT_TIMEOUT_MS, WAITING_RETRY_MS } from "./limits";
 import type { LocalLog } from "./log";
 import type { Clock, Send } from "./ports";
 import type { OutboxRecord } from "./records";
-import type { StorageCode, TableStorage } from "./storage";
+import type { StorageCode, StorageResult, TableStorage } from "./storage";
 import type { CommandResult, CommandStatus } from "./wire";
 
 /**
@@ -83,6 +83,7 @@ export class Outbox {
 	#target: Target | null = null;
 	#stopped = false;
 	#order: number;
+	#storing = 0;
 	readonly #writes = new Set<Promise<SubmitResult>>();
 
 	constructor(
@@ -134,15 +135,23 @@ export class Outbox {
 	}
 
 	async #submit(id: string, payload: JsonObject): Promise<SubmitResult> {
-		if (this.#items.size >= MAX_OUTBOX) return { ok: false, code: "full" };
+		if (this.#items.size + this.#storing >= MAX_OUTBOX)
+			return { ok: false, code: "full" };
 		const order = this.#order++;
-		const stored = await this.#deps.storage.putOutbox({
-			tableId: this.#log.tableId,
-			replica: this.#log.seat,
-			id,
-			order,
-			payload,
-		});
+		// Reserve capacity before yielding to storage; other submissions can arrive during the write.
+		this.#storing += 1;
+		let stored: StorageResult<void>;
+		try {
+			stored = await this.#deps.storage.putOutbox({
+				tableId: this.#log.tableId,
+				replica: this.#log.seat,
+				id,
+				order,
+				payload,
+			});
+		} finally {
+			this.#storing -= 1;
+		}
 		if (!stored.ok) return { ok: false, code: stored.code };
 		this.#items.set(id, {
 			id,

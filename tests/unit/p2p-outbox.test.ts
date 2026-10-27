@@ -208,6 +208,40 @@ describe("submit", () => {
 			() => new Rig(storage, log, [outboxRecord(1, { replica: "E" })]),
 		).toThrow("another partition");
 	});
+
+	it("counts concurrent storage writes against the queue limit", async () => {
+		const rig = await Rig.open();
+		const results = await Promise.all(
+			Array.from({ length: MAX_OUTBOX + 1 }, (_, n) =>
+				rig.outbox.submit(commandId(100 + n), { n }),
+			),
+		);
+		expect(results.filter((result) => result.ok)).toHaveLength(MAX_OUTBOX);
+		expect(results.at(-1)).toEqual({ ok: false, code: "full" });
+		expect(rig.outbox.items).toHaveLength(MAX_OUTBOX);
+		expect(await rig.stored()).toHaveLength(MAX_OUTBOX);
+	});
+
+	it("releases queue capacity when concurrent writes fail", async () => {
+		const rig = await Rig.open();
+		rig.storage.fail = true;
+		const submitBatch = () =>
+			Promise.all(
+				Array.from({ length: MAX_OUTBOX }, (_, n) =>
+					rig.outbox.submit(commandId(100 + n), { n }),
+				),
+			);
+		expect(await submitBatch()).toEqual(
+			Array.from({ length: MAX_OUTBOX }, () => ({
+				ok: false,
+				code: "storage",
+			})),
+		);
+		expect(rig.outbox.items).toHaveLength(0);
+		rig.storage.fail = false;
+		expect((await submitBatch()).every((result) => result.ok)).toBe(true);
+		expect(await rig.stored()).toHaveLength(MAX_OUTBOX);
+	});
 });
 
 describe("connect", () => {
