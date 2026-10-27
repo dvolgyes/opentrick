@@ -866,6 +866,35 @@ describe("played card styles", () => {
 });
 
 describe("turn pill", () => {
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"omits the viewer's turn pill and its empty row (%s)",
+		(layout) => {
+			const base = playView();
+			const view = {
+				...base,
+				seats: base.seats.map((player) =>
+					player.seat === "N"
+						? {
+								...player,
+								hand: {
+									...visibleHand,
+									suits: visibleHand.suits.map((suit) => ({
+										...suit,
+										trump: false,
+									})),
+								},
+							}
+						: player,
+				),
+			};
+			const { root } = renderView(view, layout);
+			const own = root.querySelector<HTMLElement>('[data-testid="hand-N"]');
+			if (!own) throw new Error("missing own hand");
+			expect(own.querySelector(".turn-pill")).toBeNull();
+			const row = own.querySelector<HTMLElement>(".seat-tags");
+			if (row) expect(getComputedStyle(row).display).toBe("none");
+		},
+	);
 	it.each<[Locale, string, string]>([
 		["en", "YOUR TURN TO BID", "East TO BID"],
 		["de", "DU BIST MIT BIETEN DRAN", "Osten IST MIT BIETEN DRAN"],
@@ -876,7 +905,7 @@ describe("turn pill", () => {
 		["fr", "À VOUS D'ENCHÉRIR", "À Est D'ENCHÉRIR"],
 		["it", "TOCCA A TE DICHIARARE", "TOCCA A Est DICHIARARE"],
 		["nl", "JOUW BEURT OM TE BIEDEN", "BEURT VAN Oost OM TE BIEDEN"],
-	])("names the seat to bid in %s", (locale, own, other) => {
+	])("names the seat to bid in %s", (locale, _own, other) => {
 		const base = playView();
 		const view: TableView = {
 			...base,
@@ -893,7 +922,7 @@ describe("turn pill", () => {
 		const pill = (seat: string) =>
 			root.querySelector(`[data-testid="hand-${seat}"] .turn-pill`)
 				?.textContent;
-		expect([pill("N"), pill("E")]).toEqual([own, other]);
+		expect([pill("N"), pill("E")]).toEqual([undefined, other]);
 	});
 
 	it.each<[Locale, string, string]>([
@@ -906,7 +935,7 @@ describe("turn pill", () => {
 		["fr", "À VOUS DE JOUER", "À Est DE JOUER"],
 		["it", "TOCCA A TE GIOCARE", "TOCCA A Est GIOCARE"],
 		["nl", "JOUW BEURT OM TE SPELEN", "BEURT VAN Oost OM TE SPELEN"],
-	])("names the seat to play in %s", (locale, own, other) => {
+	])("names the seat to play in %s", (locale, _own, other) => {
 		const base = playView();
 		const view: TableView = {
 			...base,
@@ -922,7 +951,7 @@ describe("turn pill", () => {
 		const pill = (seat: string) =>
 			root.querySelector(`[data-testid="hand-${seat}"] .turn-pill`)
 				?.textContent;
-		expect([pill("N"), pill("E")]).toEqual([own, other]);
+		expect([pill("N"), pill("E")]).toEqual([undefined, other]);
 	});
 
 	it.each<Form>(["desktop", "compact"])(
@@ -1001,7 +1030,7 @@ describe("turn pill", () => {
 			})),
 		};
 		const { root } = renderView(view, "desktop");
-		for (const seatName of ["N", "S"]) {
+		for (const seatName of ["S"]) {
 			const seat = root.querySelector<HTMLElement>(
 				`[data-testid="hand-${seatName}"]`,
 			);

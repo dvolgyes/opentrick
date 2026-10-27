@@ -284,13 +284,8 @@ function translateHostReason(
 
 function turnPillText(pill: TurnPill, seat: Seat, t: Translate): string {
 	const name = t(SEAT_NAMES[seat]);
-	if (pill.action === "bid")
-		return pill.yours
-			? t("YOUR TURN TO BID")
-			: t("{seat} TO BID", { seat: name });
-	return pill.yours
-		? t("YOUR TURN TO PLAY")
-		: t("{seat} TO PLAY", { seat: name });
+	if (pill.action === "bid") return t("{seat} TO BID", { seat: name });
+	return t("{seat} TO PLAY", { seat: name });
 }
 
 /** The card back of a board: red on odd boards and before the first deal, blue on even boards. */
@@ -1232,6 +1227,7 @@ export function tableSection(
 		// seat shows it flat above the name. The settings can turn it off for the auction or for the play.
 		const turnPill =
 			seat.turnPill &&
+			!seat.turnPill.yours &&
 			(seat.turnPill.action === "bid"
 				? shownMarks.bidTurnText
 				: shownMarks.playTurnText)
@@ -1258,6 +1254,7 @@ export function tableSection(
 					"data-testid": `hand-${seat.seat}`,
 					"data-visible": String(seat.hand.visible),
 					"data-turn": String(seat.turn),
+					"data-local-turn": String(seat.turnPill?.yours === true),
 					"data-turn-frame": String(turnFramed(seat)),
 					"data-presence": seat.presence,
 				},

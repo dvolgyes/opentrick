@@ -32,7 +32,7 @@ async function expectReachable(page: Page, control: Locator): Promise<void> {
 	expect(page.viewportSize()).toEqual({ width: 1920, height: 1080 });
 }
 
-test("a hosting declarer with three bots sees the turn pill and can reach the claim buttons", async ({
+test("a hosting declarer with three bots can play and reach the claim buttons", async ({
 	browser,
 	baseURL,
 }) => {
@@ -50,9 +50,13 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 		});
 
 		// North deals; the bots pass, West opens 1♣, and the bots pass it out, so West declares and East is dummy.
-		await expect(page.getByTestId("turn-pill")).toHaveText("YOUR TURN TO BID", {
-			timeout: CONNECT_MS,
-		});
+		await expect(page.getByTestId("hand-W")).toHaveAttribute(
+			"data-turn",
+			"true",
+			{
+				timeout: CONNECT_MS,
+			},
+		);
 		await makeCall(page, "1C");
 		await expect(table).toHaveAttribute("data-phase", "play", {
 			timeout: CONNECT_MS,
@@ -60,17 +64,16 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 
 		// North leads; West plays dummy's card, South follows, and West's own card is next.
 		const dummy = page.getByTestId("hand-E");
-		await expect(dummy.getByTestId("turn-pill")).toHaveText(
-			"YOUR TURN TO PLAY",
-			{ timeout: CONNECT_MS },
-		);
+		await expect(dummy.locator("button.card:enabled").first()).toBeVisible({
+			timeout: CONNECT_MS,
+		});
 		await dummy.locator("button.card:enabled").first().click();
 		const own = page.getByTestId("hand-W");
 		await expect(own).toHaveAttribute("data-turn", "true", {
 			timeout: CONNECT_MS,
 		});
-		await expect(own.getByTestId("turn-pill")).toHaveText("YOUR TURN TO PLAY");
-		await expect(page.getByTestId("turn-pill")).toHaveCount(1);
+		await expect(own.locator("button.card:enabled").first()).toBeVisible();
+		await expect(page.getByTestId("turn-pill")).toHaveCount(0);
 
 		// With 13 tricks to play only "Claim all" shows; "Claim …" waits until five tricks or fewer remain.
 		await expectReachable(
@@ -106,7 +109,7 @@ test("a hosting declarer with three bots sees the turn pill and can reach the cl
 	}
 });
 
-test("the stored settings turn off the bid turn text and frame, and keep the play turn text", async ({
+test("disabled bid turn marks still allow bidding and playing dummy", async ({
 	browser,
 	baseURL,
 }) => {
@@ -136,8 +139,8 @@ test("the stored settings turn off the bid turn text and frame, and keep the pla
 
 		await makeCall(page, "1C");
 		await expect(
-			page.getByTestId("hand-E").getByTestId("turn-pill"),
-		).toHaveText("YOUR TURN TO PLAY", { timeout: CONNECT_MS });
+			page.getByTestId("hand-E").locator("button.card:enabled").first(),
+		).toBeVisible({ timeout: CONNECT_MS });
 		expect(host.errors).toEqual([]);
 	} finally {
 		await host.close();

@@ -2689,14 +2689,15 @@ button.call-join[data-in-call="true"] {
 	margin-bottom: 0;
 }
 
-.seat-tags:empty {
-	display: none;
-}
-
-/* On the desktop the row keeps the pill's height, so the hand does not move when the turn comes or the trump is set. */
+/* On the desktop a populated row keeps the pill's height. */
 .room[data-form="desktop"] .seat-tags {
 	display: flex;
 	min-height: calc(1.2rem + 2px);
+}
+
+.room .seat.pos-bottom .seat-tags:empty,
+.room .seat[data-local-turn="true"] .seat-tags:empty {
+	display: none;
 }
 
 .play-controls {
