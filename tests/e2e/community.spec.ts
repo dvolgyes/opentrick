@@ -82,6 +82,12 @@ async function setWait(page: Page, minutes: string): Promise<void> {
 	await page.getByTestId("community-wait").press("Tab");
 }
 
+function gameKey(page: Page): string | null {
+	return new URLSearchParams(new URL(page.url()).hash.slice(1)).get(
+		"community-game",
+	);
+}
+
 test("centre presets preserve named friends, configure both checkboxes, and fit a phone", async ({
 	page,
 }) => {
@@ -158,6 +164,75 @@ test("solo online entry starts searching without a separate community setup form
 	).toContainText("Alice");
 });
 
+test("four players in one browser profile merge, start, and keep their seats on reload", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages, errors } = await players(browser, baseURL, 1);
+	const context = contexts[0];
+	if (!context) throw new Error("context missing");
+	const started = async () => {
+		await expect
+			.poll(
+				async () =>
+					Promise.all(
+						pages.map((page) =>
+							page.evaluate(() =>
+								document
+									.querySelector('[data-testid="table"]')
+									?.getAttribute("data-board") === "1"
+									? "1"
+									: document.body.innerText.slice(0, 1000),
+							),
+						),
+					),
+				{ timeout: 45_000 },
+			)
+			.toEqual(["1", "1", "1", "1"]);
+	};
+	try {
+		for (let index = 1; index < 4; index++) {
+			const page = await context.newPage();
+			pages.push(page);
+			page.on("pageerror", (error) => errors.push(error.message));
+			await mockBotBidding(page, () => "P");
+		}
+		for (const [index, page] of pages.entries()) {
+			await page.goto("/");
+			await page.locator('input[name="solo-name"]').fill(`Player ${index}`);
+			await page.getByTestId("join-online").click();
+		}
+		await test.step("all players enter board one", started);
+		const key = gameKey(pages[0] as Page);
+		expect(key).not.toBeNull();
+		expect(pages.map(gameKey)).toEqual([key, key, key, key]);
+		for (const [index, page] of pages.entries()) {
+			await expect(page).toHaveTitle(
+				new RegExp(`Player ${index} \\([NESW]\\)$`),
+			);
+		}
+		const seats = await Promise.all(
+			pages.map(async (page) => /\(([NESW])\)$/.exec(await page.title())?.[1]),
+		);
+		expect(new Set(seats).size).toBe(4);
+		await test.step("reload all four pages", async () => {
+			await Promise.all(
+				pages.map((page) => page.reload({ waitUntil: "domcontentloaded" })),
+			);
+		});
+		await test.step("all players return to board one", started);
+		for (const [index, page] of pages.entries()) {
+			await expect(page).toHaveTitle(
+				new RegExp(`Player ${index} \\(${seats[index]}\\)$`),
+			);
+		}
+		expect(errors).toEqual([]);
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
 test("two solos merge automatically, wait for both bot timers, and reload into the reserved game", async ({
 	browser,
 	baseURL,
@@ -188,7 +263,7 @@ test("two solos merge automatically, wait for both bot timers, and reload into t
 				"1",
 				{ timeout: 45_000 },
 			);
-		const keyA = new URL(a.url()).hash;
+		const keyA = gameKey(a);
 		for (const page of pages) {
 			await page.getByRole("button", { name: "Settings", exact: true }).click();
 			await expect(
@@ -201,7 +276,8 @@ test("two solos merge automatically, wait for both bot timers, and reload into t
 				.getByRole("button", { name: "Cancel", exact: true })
 				.click();
 		}
-		expect(new URL(b.url()).hash === keyA).toBe(true);
+		expect(keyA).toBeTruthy();
+		expect(gameKey(b)).toBe(keyA);
 		await a.reload();
 		await expect(a.getByTestId("table")).toHaveAttribute("data-board", "1", {
 			timeout: 45_000,
@@ -209,6 +285,56 @@ test("two solos merge automatically, wait for both bot timers, and reload into t
 		expect(errors).toEqual([]);
 	} finally {
 		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
+test("a copied invitation seats a friend separately in the same browser profile", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages, errors } = await players(browser, baseURL, 1);
+	const context = contexts[0];
+	const host = pages[0];
+	if (!context || !host) throw new Error("players missing");
+	try {
+		const friend = await context.newPage();
+		pages.push(friend);
+		friend.on("pageerror", (error) => errors.push(error.message));
+		await mockBotBidding(friend, () => "P");
+		await enter(host, "Alice", "1");
+		await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+		await host.getByTestId("community-invite").click();
+		const invitation = await host.evaluate(() =>
+			navigator.clipboard.readText(),
+		);
+		expect(
+			new URLSearchParams(new URL(invitation).hash.slice(1)).has("member"),
+		).toBe(false);
+		await enter(friend, "Bob", "0", invitation);
+		await expect(
+			host.getByTestId("community-members").locator('[data-seat="S"]'),
+		).toContainText("Bob");
+		await host.reload();
+		await expect(host.getByTestId("community-status")).toHaveText(
+			"Searching for compatible players…",
+		);
+		await setWait(host, "0");
+		await setWait(friend, "0");
+		await expect(host.getByTestId("table")).toHaveAttribute("data-board", "1", {
+			timeout: 45_000,
+		});
+		await expect(friend.getByTestId("table")).toHaveAttribute(
+			"data-board",
+			"1",
+			{ timeout: 45_000 },
+		);
+		await expect(host).toHaveTitle(/Alice \(N\)$/);
+		await expect(friend).toHaveTitle(/Bob \(S\)$/);
+		expect(errors).toEqual([]);
+	} finally {
+		for (const page of pages) await page.close();
+		await context.close();
 	}
 });
 
@@ -327,7 +453,8 @@ test("two opposite pairs merge into a four-human game and play after leaving dis
 				page.getByRole("button", { name: "Join call", exact: true }),
 			).toBeDisabled();
 		}
-		expect(new Set(pages.map((page) => new URL(page.url()).hash)).size).toBe(1);
+		expect(gameKey(a)).toBeTruthy();
+		expect(new Set(pages.map(gameKey)).size).toBe(1);
 		const seats = new Map<string, Page>();
 		for (const page of pages) {
 			const seat = /\(([NESW])\)$/.exec(await page.title())?.[1];

@@ -65,13 +65,14 @@ export function showTable(
 	hostBots?: HostBotSettings,
 	community = false,
 	onView?: (view: TableView) => void,
+	identityHint?: TableIdentity,
 ): Dispose {
 	let disposed = false;
 	const turnAlert = turnSound();
 	const unlockTurnAlert = (): void => turnAlert.unlock();
 	root.addEventListener("pointerdown", unlockTurnAlert);
 	root.addEventListener("keydown", unlockTurnAlert);
-	let identity: TableIdentity | undefined;
+	let identity = identityHint;
 	let controller: TableController | undefined;
 	let unsubscribe: (() => void) | undefined;
 	/** True while a controller starts; the screen shows "Connecting" until it is ready. */

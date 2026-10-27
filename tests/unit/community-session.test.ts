@@ -3,6 +3,7 @@ import {
 	type CommunitySaved,
 	CommunitySession,
 	type GameStart,
+	readCommunity,
 } from "../../src/community/session";
 import type {
 	ChannelHandlers,
@@ -85,7 +86,7 @@ class Network {
 				random: () => 0,
 				identity: async (key) => ({
 					tableId: `group_${key[0]}0`,
-					holder: self.padEnd(16, "x"),
+					holder: `${self}_${key[0]}`.padEnd(16, "x"),
 				}),
 				change: () => undefined,
 				play: async (key, start, self) => {
@@ -153,6 +154,65 @@ it("uses the surviving host's chosen bidder when tables merge", async () => {
 		);
 });
 
+it("starts after players move through successive destination rooms", async () => {
+	const net = new Network();
+	await net.add(3);
+	await net.add(2);
+	await net.advance(15_000, false);
+	expect(net.sessions[0]?.saved.group?.members).toHaveLength(2);
+	await net.add(1);
+	await net.advance(15_000, false);
+	expect(net.sessions[0]?.saved.group?.members).toHaveLength(3);
+	await net.add(0);
+	await net.advance(15_000, false);
+	expect(net.games).toHaveLength(4);
+});
+
+it("retries membership evidence with a pending proposal when a discovery offer was missed", async () => {
+	const net = new Network();
+	net.drop = (from, to, value) =>
+		from === "browser_0" &&
+		to === "browser_1" &&
+		(value as { k: string }).k === "offer";
+	const a = await net.add(0);
+	const b = await net.add(1);
+	await net.advance(5_000, false);
+	expect(a.proposal).toBeDefined();
+	expect(b.proposal).toBeUndefined();
+	net.drop = () => false;
+	await net.advance(10_000, false);
+	expect(a.saved.group?.members).toHaveLength(2);
+	expect(b.saved.group).toEqual(a.saved.group);
+});
+
+it("keeps each participant's recovery record when merged tabs share storage", async () => {
+	const net = new Network();
+	const a = await net.add(0);
+	const data = net.stores.get(0);
+	if (!data) throw new Error("store missing");
+	net.stores.set(1, data);
+	const b = await net.add(1);
+	const oldKeys = [a.saved.key, b.saved.key];
+	await net.advance(30_000, false);
+	expect(a.saved.group?.members).toHaveLength(2);
+	expect(a.saved.key).toBe(b.saved.key);
+	const store = {
+		getItem: (key: string) => data.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			data.set(key, value);
+		},
+	};
+	for (const [index, session] of [a, b].entries()) {
+		expect(
+			readCommunity(store, session.saved.key, session.saved.self)?.self,
+		).toBe(session.saved.self);
+		expect(
+			readCommunity(store, oldKeys[index] ?? "", session.saved.self)?.key,
+		).toBe(session.saved.key);
+	}
+	expect(readCommunity(store, a.saved.key, "missing_member")).toBeUndefined();
+});
+
 it("retransmits start votes while the game waits for a participant that missed a vote", async () => {
 	const net = new Network();
 	const a = await net.add(0, {
@@ -174,6 +234,69 @@ it("retransmits start votes while the game waits for a participant that missed a
 	net.drop = () => false;
 	await net.advance(10_000);
 	expect(net.games).toHaveLength(2);
+});
+
+it("keeps start acknowledgements alive until all four players have entered the game", async () => {
+	const net = new Network();
+	const expected = ["N", "E", "S", "W"] as const;
+	const host = await net.add(0, { expected });
+	for (let index = 1; index < 4; index++)
+		await net.add(index, {
+			key: host.saved.key,
+			owner: host.saved.self,
+			expected,
+		});
+	net.drop = (from, _to, value) =>
+		from === "browser_0" && (value as { k: string }).k === "start-vote";
+	await net.advance(30_000, false);
+	expect(net.games.map((game) => game.self)).toEqual([host.saved.self]);
+	net.drop = () => false;
+	await net.advance(15_000, false);
+	expect(net.games).toHaveLength(4);
+});
+
+it("announces a start before its vote so connected players can enter without a retry", async () => {
+	const net = new Network();
+	const expected = ["N", "E", "S", "W"] as const;
+	const host = await net.add(0, { expected });
+	for (let index = 1; index < 4; index++)
+		await net.add(index, {
+			key: host.saved.key,
+			owner: host.saved.self,
+			expected,
+		});
+	await net.flush();
+	host.tick();
+	await net.flush();
+	expect(net.games).toHaveLength(4);
+});
+
+it("resumes a saved start after the host reloads while another player is still entering", async () => {
+	const net = new Network();
+	const host = await net.add(0, {
+		expected: ["N", "S"],
+		allowBots: true,
+		waitMs: 0,
+	});
+	const guest = await net.add(1, {
+		key: host.saved.key,
+		owner: host.saved.self,
+		expected: ["N", "S"],
+		allowBots: true,
+		waitMs: 0,
+	});
+	net.drop = (from, _to, value) =>
+		from === "browser_0" && (value as { k: string }).k === "start-vote";
+	await net.advance(10_000, false);
+	expect(net.games.map((game) => game.self)).toEqual([host.saved.self]);
+	host.stop();
+	await net.flush();
+	net.drop = () => false;
+	await net.add(0, host.saved);
+	await net.advance(10_000, false);
+	expect(
+		net.games.filter((game) => game.self === guest.saved.self),
+	).toHaveLength(1);
 });
 
 it("a frozen party member cannot consent to a new bot start through stale presence", async () => {

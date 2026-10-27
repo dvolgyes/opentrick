@@ -83,18 +83,19 @@ const RELOAD_LOCK_POLL_MS = 50;
 
 export interface TableIdentity {
 	readonly tableId: string;
-	/** Random, per browser and table; only the followed host receives it. */
+	/** Random, per browser and table (and community participant); only the followed host receives it. */
 	readonly client: string;
 	readonly holder: string;
 }
 
-/** The table id from K, and this browser's client id (localStorage; per page without it) and holder. */
+/** The table id from K, and a stored client id. Community participants use separate client records in one browser. */
 export async function tableIdentity(
 	key: string,
 	browser: MaybeStorage,
+	participant?: string,
 ): Promise<TableIdentity> {
 	const tableId = await deriveTableId(key);
-	const name = CLIENT_PREFIX + tableId;
+	const name = CLIENT_PREFIX + tableId + (participant ? `.${participant}` : "");
 	const stored = browser?.getItem(name);
 	const client = isClientId(stored) ? stored : newClientId();
 	if (client !== stored) browser?.setItem(name, client);

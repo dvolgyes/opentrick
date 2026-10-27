@@ -44,6 +44,8 @@ export interface GameStart {
 }
 
 export interface CommunitySaved {
+	/** Legacy games retain their browser identity; new searches isolate each participant. */
+	readonly identityScope?: "member";
 	readonly bidder?: LocalBidder;
 	readonly self: string;
 	readonly name: string;
@@ -162,8 +164,11 @@ function parsePresence(value: unknown, now: number): Presence | undefined {
 export function readCommunity(
 	store: SessionDeps["store"],
 	key: string,
+	member?: string,
 ): CommunitySaved | undefined {
-	const text = store.getItem(prefix + key);
+	const text =
+		(member ? store.getItem(`${prefix}${key}.${member}`) : null) ??
+		store.getItem(prefix + key);
 	if (!text || text.length > 32_768) return undefined;
 	let raw: unknown;
 	try {
@@ -175,6 +180,8 @@ export function readCommunity(
 	if (
 		!isObject(raw) ||
 		!validId(raw.self) ||
+		(member !== undefined && raw.self !== member) ||
+		(raw.identityScope !== undefined && raw.identityScope !== "member") ||
 		!isPlayerName(raw.name) ||
 		!isTableKey(raw.key) ||
 		!validId(raw.owner) ||
@@ -214,6 +221,9 @@ export function readCommunity(
 		return undefined;
 	return {
 		self: raw.self,
+		...(raw.identityScope === "member"
+			? { identityScope: "member" as const }
+			: {}),
 		name: raw.name,
 		key: raw.key,
 		owner: raw.owner,
@@ -328,7 +338,10 @@ export class CommunitySession {
 		}
 		if (!this.#save()) return;
 		if (this.#saved.playing && this.#saved.start) {
+			this.#room = this.#openRoom(this.#saved.key, false);
+			this.#startVotes.add(this.#saved.self);
 			this.#play(this.#saved.start);
+			this.#refresh();
 			return;
 		}
 		this.#room = this.#openRoom(this.#saved.key, false);
@@ -396,8 +409,16 @@ export class CommunitySession {
 	}
 
 	tick(): void {
-		if (this.#stopped || this.#problem || this.#playing) return;
+		if (this.#stopped || this.#problem) return;
 		const now = this.#deps.now();
+		// Opening the bridge screen is not admission. Keep the agreed start alive until play() confirms the mesh.
+		if (this.#playing) {
+			if (now - this.#lastRefresh >= REFRESH_MS) {
+				this.#lastRefresh = now;
+				this.#refresh();
+			}
+			return;
+		}
 		for (const people of [this.#presence, this.#targetPresence])
 			for (const [peer, row] of people)
 				if (now - row.receivedAt >= OFFER_TTL_MS) people.delete(peer);
@@ -445,11 +466,14 @@ export class CommunitySession {
 			this.#saved.key,
 			...(previousKey ? [previousKey] : []),
 		])) {
-			this.#deps.store.setItem(prefix + key, text);
-			if (this.#deps.store.getItem(prefix + key) !== text) {
+			const name = `${prefix}${key}.${this.#saved.self}`;
+			this.#deps.store.setItem(name, text);
+			if (this.#deps.store.getItem(name) !== text) {
 				this.#fail("This browser could not save matchmaking progress.");
 				return false;
 			}
+			// Last-used fallback for old links. Another tab may legitimately replace it immediately.
+			this.#deps.store.setItem(prefix + key, text);
 		}
 		return true;
 	}
@@ -497,7 +521,7 @@ export class CommunitySession {
 	}
 
 	#refresh(): void {
-		if (this.#stopped || this.#playing) return;
+		if (this.#stopped) return;
 		this.#room?.send({ k: "hello", presence: this.#own() });
 		if (this.#target && this.#target !== this.#room)
 			this.#target.send({ k: "hello", presence: this.#own(true) });
@@ -515,7 +539,10 @@ export class CommunitySession {
 		}
 		if (this.#completeParty() && !this.#saved.start) {
 			this.#ensureLobby();
-			if (!this.#pending) this.#advertise();
+			// A proposal can arrive before a member's offer. Keep its evidence fresh for these participants only.
+			this.#advertise(
+				this.#pending ? [...this.#pending.peers.values()] : undefined,
+			);
 		}
 		if (this.#pending) {
 			const pending = this.#pending;
@@ -549,13 +576,13 @@ export class CommunitySession {
 		});
 	}
 
-	#advertise(): void {
+	#advertise(peers?: readonly string[]): void {
 		const group = this.#saved.group;
 		if (
 			!this.#lobby ||
 			!group ||
 			!this.#completeParty() ||
-			this.#pending ||
+			(this.#pending && peers === undefined) ||
 			this.#saved.start
 		)
 			return;
@@ -568,7 +595,10 @@ export class CommunitySession {
 			...(group.host === this.#saved.self ? { group } : {}),
 		};
 		this.#directory.receive(this.#lobby.self, offer, this.#deps.now());
-		this.#lobby.send(offer);
+		this.#lobby.send(
+			offer,
+			peers?.filter((peer) => peer !== this.#lobby?.self),
+		);
 	}
 
 	#completeParty(): boolean {
@@ -1066,13 +1096,14 @@ export class CommunitySession {
 		this.#saved = { ...this.#saved, start };
 		if (!this.#save()) return;
 		this.#startVotes.add(this.#saved.self);
+		// A vote received before the start is deliberately ignored. Announce first on the ordered channel.
+		if (first && start.group.host === this.#saved.self)
+			this.#room?.send({ k: "start", start });
 		this.#room?.send({
 			k: "start-vote",
 			id: start.id,
 			member: this.#saved.self,
 		});
-		if (first && start.group.host === this.#saved.self)
-			this.#room?.send({ k: "start", start });
 		this.#finishStart();
 	}
 	#finishStart(): void {

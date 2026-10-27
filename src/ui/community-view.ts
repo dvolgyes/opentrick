@@ -115,7 +115,7 @@ export function showCommunity(
 				: "forming";
 		status.textContent = deps.t(
 			session.problem ??
-				(session.proposal || saved.start
+				(session.proposal || saved.start || saved.group?.members.length === 4
 					? "Joining table…"
 					: session.searching
 						? "Searching for compatible players…"
@@ -176,6 +176,21 @@ export function showCommunity(
 		}
 		const store = deps.browser;
 		const open = deps.openCommunity;
+		const active = saved.start
+			? saved
+			: { ...saved, identityScope: "member" as const };
+		const identityFor = (key: string) =>
+			tableIdentity(
+				key,
+				store,
+				active.identityScope === "member" ? active.self : undefined,
+			);
+		if (route.kind === "party")
+			history.replaceState(
+				null,
+				"",
+				`${location.pathname}${partyFragment(route.key, route.owner, route.seats, route.setup, saved.self)}`,
+			);
 		wait.value = String(saved.waitMs / 60_000);
 		const run = async (): Promise<void> => {
 			if (disposed) return;
@@ -186,7 +201,7 @@ export function showCommunity(
 					now: deps.clock.monotonic,
 					id: newCommandId,
 					random: cryptoRandomBelow,
-					identity: (key) => tableIdentity(key, deps.browser),
+					identity: identityFor,
 					change: render,
 					play: async (key, start, self) => {
 						const member = start.group.members.find((row) => row.id === self);
@@ -194,7 +209,7 @@ export function showCommunity(
 							(row) => row.id === start.group.host,
 						);
 						if (!member || !host || disposed) return;
-						const identity = await tableIdentity(key, deps.browser);
+						const identity = await identityFor(key);
 						const existing = await deps.storage.load(
 							identity.tableId,
 							member.seat,
@@ -232,7 +247,7 @@ export function showCommunity(
 						history.replaceState(
 							null,
 							"",
-							`${location.pathname}${communityGameFragment(key)}`,
+							`${location.pathname}${communityGameFragment(key, self)}`,
 						);
 						delete root.dataset.communityPhase;
 						await new Promise<void>((resolve) => {
@@ -250,11 +265,12 @@ export function showCommunity(
 								(view) => {
 									if (view.ready && view.table && view.allConnected) resolve();
 								},
+								identity,
 							);
 						});
 					},
 				},
-				{ ...saved, ready: true },
+				{ ...active, ready: true },
 			);
 			root.replaceChildren(
 				el(
@@ -341,9 +357,16 @@ export function showCommunity(
 	const load = (): CommunitySaved | undefined => {
 		if (route.kind !== "game" && route.kind !== "party") return undefined;
 		if (!deps.browser) return undefined;
-		let saved = readCommunity(deps.browser, route.key);
+		let saved = readCommunity(deps.browser, route.key, route.member);
+		// New invitations omit the personal marker. A shared browser must still offer a friend their own seat.
+		if (
+			route.kind === "party" &&
+			!route.member &&
+			saved?.identityScope === "member"
+		)
+			return undefined;
 		for (let count = 0; saved && count < 4; count++) {
-			const next = readCommunity(deps.browser, saved.key);
+			const next = readCommunity(deps.browser, saved.key, saved.self);
 			if (!next || next.key === saved.key) break;
 			saved = next;
 		}
@@ -403,7 +426,7 @@ export function showCommunity(
 			history.replaceState(
 				null,
 				"",
-				`${location.pathname}${partyFragment(key, owner, expected, route.setup)}`,
+				`${location.pathname}${partyFragment(key, owner, expected, route.setup, self)}`,
 			);
 			void begin({
 				self,

@@ -19,6 +19,30 @@ it("keeps community party and game routes separate from private game links", () 
 	});
 });
 
+it("keeps a personal recovery marker in player URLs but out of invitations", () => {
+	const member = "member_aaa";
+	expect(
+		parseCommunityRoute(partyFragment(key, member, ["N"], undefined, member)),
+	).toMatchObject({ kind: "party", member });
+	expect(parseCommunityRoute(communityGameFragment(key, member))).toEqual({
+		kind: "game",
+		key,
+		member,
+	});
+	expect(parseCommunityRoute(partyFragment(key, member, ["N"]))?.kind).toBe(
+		"party",
+	);
+	expect(partyFragment(key, member, ["N"])).not.toContain("member=");
+	expect(
+		parseCommunityRoute(`${communityGameFragment(key)}&member=bad`),
+	).toEqual({ kind: "invalid" });
+	expect(
+		parseCommunityRoute(
+			`${communityGameFragment(key, member)}&member=${member}`,
+		),
+	).toEqual({ kind: "invalid" });
+});
+
 it("rejects ambiguous modes, duplicate seats, invalid identities and extra credentials", () => {
 	for (const hash of [
 		`#community-game=${key}&k=${key}`,

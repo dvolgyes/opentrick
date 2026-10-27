@@ -13,6 +13,7 @@ type Kind = "tracker" | "nostr" | "mqtt";
 
 interface Socket {
 	readonly label: string;
+	readonly relay: string;
 	readonly route: WebSocketRoute;
 	readonly openedAt: number;
 	/** A dead socket looks open to the page, but nothing passes in either direction (a half-open socket). */
@@ -75,6 +76,7 @@ export class RelayHub {
 	#accept(route: WebSocketRoute, label: string): void {
 		const socket: Socket = {
 			label,
+			relay: route.url(),
 			route,
 			openedAt: Date.now(),
 			dead: false,
@@ -93,7 +95,18 @@ export class RelayHub {
 			if (this.kind === "tracker") this.#tracker(socket, data);
 			else this.#nostr(socket, data);
 		});
-		route.onClose(() => this.#subscriptions.delete(socket));
+		route.onClose(() => this.#close(socket));
+	}
+
+	#close(socket: Socket): void {
+		socket.dead = true;
+		this.#subscriptions.delete(socket);
+		this.#topics.delete(socket);
+		for (const [hash, swarm] of this.#swarms) {
+			for (const [peer, active] of swarm)
+				if (active === socket) swarm.delete(peer);
+			if (swarm.size === 0) this.#swarms.delete(hash);
+		}
 	}
 
 	/**
@@ -129,7 +142,7 @@ export class RelayHub {
 				});
 			} else if (packet.cmd === "publish")
 				for (const [target, subscribed] of this.#topics)
-					if (subscribed.has(packet.topic))
+					if (target.relay === socket.relay && subscribed.has(packet.topic))
 						sendMqtt(target, {
 							cmd: "publish",
 							topic: packet.topic,
@@ -142,7 +155,7 @@ export class RelayHub {
 		socket.route.onMessage((message) => {
 			if (!socket.dead && typeof message !== "string") read.parse(message);
 		});
-		socket.route.onClose(() => this.#topics.delete(socket));
+		socket.route.onClose(() => this.#close(socket));
 	}
 
 	/** The WebTorrent announce: register the peer, reply, and pass each offer to another peer, each answer to its peer. */
@@ -151,8 +164,9 @@ export class RelayHub {
 		const hash = data.info_hash;
 		const peer = data.peer_id;
 		if (typeof hash !== "string" || typeof peer !== "string") return;
-		const swarm = this.#swarms.get(hash) ?? new Map<string, Socket>();
-		this.#swarms.set(hash, swarm);
+		const swarmKey = JSON.stringify([socket.relay, hash]);
+		const swarm = this.#swarms.get(swarmKey) ?? new Map<string, Socket>();
+		this.#swarms.set(swarmKey, swarm);
 		swarm.set(peer, socket);
 		if (data.answer !== undefined) {
 			const target = swarm.get(String(data.to_peer_id));
@@ -216,6 +230,7 @@ export class RelayHub {
 			for (const [target, list] of this.#subscriptions)
 				for (const [subId, filter] of list)
 					if (
+						target.relay === socket.relay &&
 						filter.kinds.includes(event.kind) &&
 						filter.topics.includes(topic)
 					)

@@ -131,7 +131,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 						history.replaceState(
 							null,
 							"",
-							`${location.pathname}${partyFragment(key, self, expected, party)}`,
+							`${location.pathname}${partyFragment(key, self, expected, party, self)}`,
 						);
 						dispose?.();
 						dispose = showCommunity(
@@ -143,6 +143,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 								owner: self,
 								seats: expected,
 								setup: party,
+								member: self,
 							},
 							navigation,
 							{

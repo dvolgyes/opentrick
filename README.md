@@ -60,6 +60,8 @@ Each unnamed seat can also be configured separately; neither checkbox selected r
 Only a human seat can be the creator's host seat.
 Select **Create game**, then use **Copy group invitation** to bring reserved friends to their chosen seats.
 Matching starts automatically after the invited group has assembled.
+Community players can use separate tabs in the same browser.
+Each player's address keeps their own seat and recovery record; use **Copy group invitation** to invite another player.
 
 Every waiting browser endorses its own group in the shared discovery room.
 Compatible groups merge automatically without an extra readiness or acceptance step.

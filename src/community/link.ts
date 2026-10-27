@@ -16,8 +16,9 @@ export type CommunityRoute =
 			readonly owner: string;
 			readonly seats: readonly Seat[];
 			readonly setup?: PartySetup;
+			readonly member?: string;
 	  }
-	| { readonly kind: "game"; readonly key: string }
+	| { readonly kind: "game"; readonly key: string; readonly member?: string }
 	| { readonly kind: "invalid" };
 
 /** Separate fragments make older clients refuse community rooms instead of joining under private-game rules. */
@@ -26,10 +27,13 @@ export function parseCommunityRoute(hash: string): CommunityRoute | undefined {
 	const params = new URLSearchParams(hash.replace(/^#/, ""));
 	if (!params.has("community") && !params.has("community-game"))
 		return undefined;
+	const member = params.get("member");
+	if (member !== null && !validId(member)) return { kind: "invalid" };
+	const personal = member === null ? {} : { member };
 	if (params.has("community-game")) {
 		const key = params.get("community-game");
-		return params.size === 1 && isTableKey(key)
-			? { kind: "game", key }
+		return params.size === (member === null ? 1 : 2) && isTableKey(key)
+			? { kind: "game", key, ...personal }
 			: { kind: "invalid" };
 	}
 	const key = params.get("community");
@@ -67,14 +71,21 @@ export function parseCommunityRoute(hash: string): CommunityRoute | undefined {
 			waitMs: raw.waitMs,
 		};
 	}
-	return params.size === (setup ? 4 : 3) &&
+	return params.size === (setup ? 4 : 3) + (member === null ? 0 : 1) &&
 		isTableKey(key) &&
 		validId(owner) &&
 		seats.length > 0 &&
 		seats.length <= 4 &&
 		seats.every(isSeat) &&
 		new Set(seats).size === seats.length
-		? { kind: "party", key, owner, seats, ...(setup ? { setup } : {}) }
+		? {
+				kind: "party",
+				key,
+				owner,
+				seats,
+				...(setup ? { setup } : {}),
+				...personal,
+			}
 		: { kind: "invalid" };
 }
 
@@ -83,10 +94,11 @@ export function partyFragment(
 	owner: string,
 	seats: readonly Seat[],
 	setup?: PartySetup,
+	member?: string,
 ): string {
-	return `#${new URLSearchParams({ community: key, owner, seats: seats.join(""), ...(setup ? { setup: JSON.stringify(setup) } : {}) })}`;
+	return `#${new URLSearchParams({ community: key, owner, seats: seats.join(""), ...(setup ? { setup: JSON.stringify(setup) } : {}), ...(member ? { member } : {}) })}`;
 }
 
-export function communityGameFragment(key: string): string {
-	return `#community-game=${key}`;
+export function communityGameFragment(key: string, member?: string): string {
+	return `#${new URLSearchParams({ "community-game": key, ...(member ? { member } : {}) })}`;
 }
