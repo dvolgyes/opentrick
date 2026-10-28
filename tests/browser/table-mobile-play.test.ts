@@ -2617,7 +2617,7 @@ describe("mobile board names", () => {
 });
 
 describe("mobile turn frame", () => {
-	const RED = "rgb(255, 120, 120)";
+	const RED = "rgb(255, 69, 69)";
 
 	it.each<[TableView["phase"], Seat]>([
 		["auction", "N"],
@@ -2661,6 +2661,53 @@ describe("mobile turn frame", () => {
 });
 
 describe("board depth and frame colours", () => {
+	const expectShadow = (element: HTMLElement, minimumOffset: number) => {
+		const shadow = getComputedStyle(element).boxShadow;
+		const match = /^rgba\(0, 0, 0, ([\d.]+)\) ([\d.]+)px ([\d.]+)px /.exec(
+			shadow,
+		);
+		if (!match) throw new Error(`missing dark shadow: ${shadow}`);
+		const [, opacity, x, y] = match;
+		const rem = Number.parseFloat(
+			getComputedStyle(document.documentElement).fontSize,
+		);
+		expect(Number(opacity)).toBeGreaterThanOrEqual(0.65);
+		expect(Number(x)).toBeGreaterThanOrEqual(rem * minimumOffset - 0.1);
+		expect(Number(y)).toBeCloseTo(Number(x), 1);
+	};
+
+	it.each(["desktop", "compact"] as const)(
+		"uses each theme's turn-frame red in %s",
+		(layout) => {
+			try {
+				for (const [theme, expected] of [
+					["normal", "rgb(255, 69, 69)"],
+					["solarized", "rgb(239, 75, 67)"],
+					["selenized", "rgb(242, 62, 56)"],
+					["gruvbox", "rgb(255, 120, 120)"],
+				] as const) {
+					for (const scheme of ["light", "dark"] as const) {
+						document.documentElement.dataset.theme = theme;
+						document.documentElement.dataset.scheme = scheme;
+						const { root } = renderView(playView(), layout);
+						const frame = root.querySelector<HTMLElement>(
+							layout === "compact"
+								? '.mobile-auction-hand .seat[data-turn-frame="true"] .hand'
+								: '.seat[data-turn-frame="true"]',
+						);
+						if (!frame) throw new Error("missing turn frame");
+						expect(
+							getComputedStyle(frame).outlineColor,
+							`${theme} ${scheme}`,
+						).toBe(expected);
+					}
+				}
+			} finally {
+				delete document.documentElement.dataset.theme;
+				delete document.documentElement.dataset.scheme;
+			}
+		},
+	);
 	it.each(["desktop", "sideways", "compact"] as const)(
 		"keeps the side dummy's trump frame gold in %s",
 		(layout) => {
@@ -2684,7 +2731,7 @@ describe("board depth and frame colours", () => {
 			const card = board?.querySelector<HTMLElement>(".played");
 			const trump = board?.querySelector<HTMLElement>(".suit-group.trump");
 			if (!card || !trump) throw new Error("missing played card or trump");
-			expect(getComputedStyle(card).boxShadow).not.toBe("none");
+			expectShadow(card, 0.3);
 			expect(getComputedStyle(trump).outlineColor).toBe("rgb(232, 185, 35)");
 			const before = card.getBoundingClientRect();
 			card.style.boxShadow = "none";
@@ -2700,13 +2747,12 @@ describe("board depth and frame colours", () => {
 		];
 		const call = felt?.querySelector<HTMLElement>(".call-panel");
 		if (!call || !videos.length) throw new Error("missing video or call box");
-		for (const box of [...videos, call])
-			expect(getComputedStyle(box).boxShadow).not.toBe("none");
+		for (const box of [...videos, call]) expectShadow(box, 0.45);
 	});
 });
 
 describe("turn marks and network quality from the settings", () => {
-	const RED = "rgb(255, 120, 120)";
+	const RED = "rgb(255, 69, 69)";
 	const marks = (changed: Partial<TableMarks>): TableOptions => ({
 		marks: () => ({ ...DEFAULT_SETTINGS, ...changed }),
 	});

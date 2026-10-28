@@ -40,6 +40,7 @@
 	--dialog-line: #000000;
 	--shadow: rgb(0 0 0 / 25%);
 	--shadow-soft: rgb(0 0 0 / 18%);
+	--board-object-shadow: rgb(0 0 0 / 70%);
 	--scrim: rgb(0 0 0 / 55%);
 	--scrim-strong: rgb(0 0 0 / 65%);
 	/* The black frame around the scaled desktop table. */
@@ -52,7 +53,7 @@
 	--waiting-fg: #e6e6e6;
 	--turn-hand-bg: #c8dccf;
 	--turn-name: #ff2a2a;
-	--turn-frame: #ff7878;
+	--turn-frame: #ff4545;
 	--trump-fg: #ffe14d;
 	/* The turn frame, the trump suit and a chosen call; the pills of the points and the turn. */
 	--gold: #e8b923;
@@ -118,6 +119,11 @@
 	--suit-ink-black: #ffffff;
 	--bid-nt: #a7e845;
 }
+
+/* The turn frame uses the red of each theme; Gruvbox retains its existing colour. */
+:root[data-theme="solarized"] { --turn-frame: #ef4b43; }
+:root[data-theme="selenized"] { --turn-frame: #f23e38; }
+:root[data-theme="gruvbox"] { --turn-frame: #ff7878; }
 
 /* Solarized light: the base3 page and sheets, base02 text, a teal-green felt, and the Solarized red, green and orange
    darkened to stay readable on base3. */

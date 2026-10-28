@@ -1246,7 +1246,7 @@ main:has(> .room) {
 }
 
 .felt :is(.video-row .tile, .call-panel) {
-	box-shadow: 0 0.35rem 0.8rem var(--shadow);
+	box-shadow: 0.55rem 0.55rem 0.8rem var(--board-object-shadow);
 }
 
 .avatar {
@@ -1902,7 +1902,7 @@ dialog {
 	border: 1px solid var(--line);
 	border-radius: 0.3rem;
 	background: var(--card-bg);
-	box-shadow: 0 0.2rem 0.45rem var(--shadow);
+	box-shadow: 0.35rem 0.35rem 0.45rem var(--board-object-shadow);
 	color: var(--card-fg);
 	font-weight: 700;
 	font-size: calc(var(--rank-size) * var(--suit-font-scale));
