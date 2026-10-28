@@ -1115,7 +1115,6 @@ main:has(> .room) {
 	}
 
 	:is(.mobile-board-left, .mobile-board-right) .hand-stack {
-		--card-w: max(1.6rem, var(--side-marker-width));
 		width: 100%;
 		min-width: 0;
 	}
@@ -3698,15 +3697,47 @@ main:has(> .room[data-form="compact"]) {
 }
 
 :is(.mobile-board-left, .mobile-board-right) .hand-stack {
-	--card-h: 2.6rem;
-	--card-w: 1.6rem;
 	--rank-size: 0.7rem;
+	--card-h: max(2.6rem, calc((var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px) * 7 / 5), calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.1rem + 4px));
+	--card-w: calc(var(--card-h) * 5 / 7);
 	--side-strip: calc(var(--rank-size) * 2.6);
+	justify-content: flex-start;
 	--card-step: min(
 		calc(var(--rank-size) * 1.2 + 0.3rem),
 		(100cqi - var(--card-w)) /
 		max(1, var(--longest-suit) - 1)
 	);
+}
+
+/* Keep a trump label with its row while sharing the remaining height between suit rows. */
+:is(.mobile-board-left, .mobile-board-right) .hand-stack > :is(.suit-row:not(.trump), .trump-label):not(:first-child) {
+	margin-top: auto;
+}
+
+:is(.mobile-board-left, .mobile-board-right) .hand-stack .suit-row .card {
+	overflow: visible;
+}
+
+/* Later rows cover earlier rows, including a trump row. */
+:is(.mobile-board-left, .mobile-board-right) .hand-stack .suit-row.trump {
+	z-index: auto;
+	outline: none;
+}
+
+:is(.mobile-board-left, .mobile-board-right) .hand-stack .suit-row.trump::after {
+	content: "";
+	position: absolute;
+	inset: 0 auto auto 0;
+	width: 100%;
+	height: var(--card-h);
+	outline: 2px solid var(--gold);
+	outline-offset: 3px;
+	border-radius: 0.4rem;
+	pointer-events: none;
+}
+
+:is(.mobile-board-left, .mobile-board-right) .hand-stack .trump-label {
+	position: relative;
 }
 
 .mobile-auction-bids {

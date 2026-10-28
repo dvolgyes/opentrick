@@ -1084,6 +1084,87 @@ describe("played card styles", () => {
 			}
 		},
 	);
+
+	it.each<["left" | "right", "M" | "XXXL"]>([
+		["left", "M"],
+		["right", "M"],
+		["left", "XXXL"],
+		["right", "XXXL"],
+	])(
+		"draws complete, correctly stacked side cards on mobile (%s, %s)",
+		async (position, size) => {
+			await page.viewport(390, 844);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const base = sideHandView();
+				const dummy = base.seats.find((player) => player.position === "left");
+				if (!dummy || !dummy.hand.visible)
+					throw new Error("missing visible dummy");
+				const [trump, ...others] = dummy.hand.suits;
+				if (!trump) throw new Error("missing trump suit");
+				const hand = {
+					...dummy.hand,
+					suits: [others[0], trump, ...others.slice(1)].filter(
+						(row) => row !== undefined,
+					),
+				};
+				const view = {
+					...base,
+					seats: base.seats.map((player) =>
+						player.position === position
+							? { ...player, hand }
+							: player.position === "left"
+								? { ...player, hand: { visible: false as const, count: 13 } }
+								: player,
+					),
+				};
+				const { root } = renderMobile(view);
+				const column = root.querySelector<HTMLElement>(
+					`.mobile-board-${position}`,
+				);
+				const stack = column?.querySelector<HTMLElement>(".hand-stack");
+				const label = stack?.querySelector<HTMLElement>(".trump-label");
+				const trumpRow = stack?.querySelector<HTMLElement>(".suit-row.trump");
+				const rows = [
+					...(stack?.querySelectorAll<HTMLElement>(".suit-row") ?? []),
+				];
+				if (!column || !stack || !label || !trumpRow || rows.length !== 4)
+					throw new Error("missing side-hand rows");
+				expect(
+					trumpRow.getBoundingClientRect().top -
+						label.getBoundingClientRect().bottom,
+				).toBeLessThanOrEqual(5);
+				for (const row of rows) {
+					for (const card of row.querySelectorAll<HTMLElement>(".card")) {
+						const face = card.querySelector<HTMLElement>(".face");
+						if (!face) throw new Error("missing card face");
+						const box = face.getBoundingClientRect();
+						expect(box.width / box.height).toBeCloseTo(5 / 7, 1);
+						expect(getComputedStyle(card).overflow).toBe("visible");
+					}
+				}
+				// Compress the rows to create a real overlap across the trump row.
+				stack.style.flex = "none";
+				stack.style.height = `${stack.getBoundingClientRect().height * 0.55}px`;
+				const below = rows[2];
+				const trumpFace = trumpRow.querySelector<HTMLElement>(".face");
+				const belowFace = below?.querySelector<HTMLElement>(".face");
+				if (!below || !trumpFace || !belowFace)
+					throw new Error("missing overlapping faces");
+				const top = trumpFace.getBoundingClientRect();
+				const lower = belowFace.getBoundingClientRect();
+				expect(lower.top).toBeLessThan(top.bottom);
+				const hit = document.elementFromPoint(
+					Math.max(top.left, lower.left) + 3,
+					lower.top + 3,
+				);
+				expect(hit?.closest(".suit-row")).toBe(below);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
 	it.each<Layout>(["desktop", "sideways", "compact"])(
 		"shows the NT bid level and strain in the same bright green (%s)",
 		(layout) => {
