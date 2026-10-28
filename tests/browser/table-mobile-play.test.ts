@@ -1027,6 +1027,59 @@ describe("played card styles", () => {
 		face.style.lineHeight = "1.1";
 		expect(offset() - compactOffset).toBeCloseTo(fontSize * 0.05, 1);
 	});
+	it.each<[Layout, "left" | "right"]>([
+		["desktop", "left"],
+		["desktop", "right"],
+		["sideways", "left"],
+		["sideways", "right"],
+	])("draws full side-hand faces on %s (%s)", (layout, position) => {
+		const base = sideHandView();
+		const dummy = base.seats.find((player) => player.position === "left");
+		if (!dummy) throw new Error("missing dummy");
+		const { root } = renderView(
+			{
+				...base,
+				seats: base.seats.map((player) =>
+					player.position === position
+						? { ...player, hand: dummy.hand }
+						: player,
+				),
+			},
+			layout,
+		);
+		const stack = root.querySelector<HTMLElement>(
+			`.place-${position} .hand-stack`,
+		);
+		if (!stack) throw new Error("missing side hand");
+		const rows = [...stack.querySelectorAll<HTMLElement>(".suit-row")];
+		expect(rows).toHaveLength(4);
+		const lastFace = rows.at(-1)?.querySelector<HTMLElement>(".face");
+		if (!lastFace) throw new Error("missing last face");
+		for (const row of rows) {
+			for (const card of row.querySelectorAll<HTMLElement>(".card")) {
+				const face = card.querySelector<HTMLElement>(".face");
+				if (!face) throw new Error("missing face");
+				expect(getComputedStyle(card).overflow).toBe("visible");
+				expect(face.getBoundingClientRect().height).toBeCloseTo(
+					lastFace.getBoundingClientRect().height,
+					0,
+				);
+			}
+		}
+		const top = rows[0]
+			?.querySelector<HTMLElement>(".face")
+			?.getBoundingClientRect();
+		const lower = rows[1]
+			?.querySelector<HTMLElement>(".face")
+			?.getBoundingClientRect();
+		if (!top || !lower) throw new Error("missing overlapping faces");
+		expect(lower.top).toBeLessThan(top.bottom);
+		const hit = document.elementFromPoint(
+			Math.max(top.left, lower.left) + 3,
+			lower.top + 3,
+		);
+		expect(hit?.closest(".suit-row")).toBe(rows[1]);
+	});
 	it.each<Layout>(["desktop", "sideways", "compact"])(
 		"keeps side-hand suit markers visible as font size grows (%s)",
 		(layout) => {

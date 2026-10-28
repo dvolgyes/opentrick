@@ -4139,6 +4139,32 @@ main:has(> .room[data-form="compact"]) {
 	align-items: flex-end;
 }
 
+/* Show full side-card faces; the later suit rows cover the earlier ones. */
+.room[data-form="desktop"] .hand-stack .suit-row .card {
+	overflow: visible;
+}
+
+.room[data-form="desktop"] .hand-stack .suit-row.trump {
+	z-index: auto;
+	outline: none;
+}
+
+.room[data-form="desktop"] .hand-stack .suit-row.trump::after {
+	content: "";
+	position: absolute;
+	inset: 0 auto auto 0;
+	width: 100%;
+	height: var(--card-h);
+	outline: 2px solid var(--gold);
+	outline-offset: 3px;
+	border-radius: 0.4rem;
+	pointer-events: none;
+}
+
+.room[data-form="desktop"] .hand-stack .trump-label {
+	position: relative;
+}
+
 .room[data-form="desktop"] .place-left .seat,
 .room[data-form="desktop"] .place-right .seat {
 	max-width: none;
