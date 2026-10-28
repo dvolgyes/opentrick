@@ -19,6 +19,8 @@ import {
 import { createCallSignaling } from "../call/signaling";
 import { CommunityCover } from "../community/cover";
 import { communityGameFragment } from "../community/link";
+import { communityNextBoardReady } from "../community/replacement";
+import { type CommunityChannel, DISCOVERY_ROOM } from "../community/transport";
 import {
 	actionPayload,
 	claimRequestPayload,
@@ -34,6 +36,7 @@ import {
 	undoVotePayload,
 } from "../game/bridge";
 import { chatPayload, checkMessageText } from "../game/chat";
+import { SEAT_GRACE_MS } from "../p2p/limits";
 import { tableLink } from "../p2p/link";
 import type { TableController, TableStatus } from "../p2p/table";
 import type { PlayerProfiles } from "../players";
@@ -42,6 +45,7 @@ import {
 	type JsonObject,
 	type LocalBidder,
 	type RoomConfig,
+	SEAT_NAMES,
 	SEATS,
 	type Seat,
 } from "../protocol";
@@ -61,7 +65,7 @@ import { CallPresenceTimeout } from "./call-presence";
 import { cameraSetup } from "./camera-setup";
 import { debugExport, pageAddress } from "./debug-export";
 import type { AppDeps, Dispose, Navigation } from "./deps";
-import { button, copyWhenReady, el } from "./dom";
+import { button, copyButton, copyWhenReady, el } from "./dom";
 import { languageControl } from "./language-control";
 import {
 	type Banner,
@@ -92,6 +96,7 @@ import { qualityMatrix } from "./quality-matrix";
 import { remoteAudio } from "./remote-audio";
 import { readSettings, type Settings } from "./settings";
 import { settingsDialog } from "./settings-dialog";
+import { sitePath } from "./site-path";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
 import type { TurnSound } from "./turn-sound";
@@ -123,6 +128,13 @@ function roomShareLink(
 	}
 	page.search = sharedQuery(page.search, players);
 	return tableLink(page.toString(), key);
+}
+
+function replacementLink(pageUrl: string, key: string, seat: Seat): string {
+	const page = new URL(pageUrl);
+	page.search = "";
+	page.hash = communityGameFragment(key, undefined, seat);
+	return page.toString();
 }
 
 function settingsFor(
@@ -481,6 +493,10 @@ export function showRoom(
 	let scoringTimer: number | undefined;
 	let autoDealtBoard: number | undefined;
 	let resetRequestId: string | undefined;
+	let replacementChannel: CommunityChannel | undefined;
+	let replacementBroadcastAt = -Infinity;
+	let onlyHostSince: number | undefined;
+	let startingFreshSearch = false;
 
 	/** Stores the command for sending; `onFail` gets the reason when this browser could not store it. */
 	const submit = (
@@ -933,6 +949,9 @@ export function showRoom(
 		manageBotSeat(target, false),
 	);
 	const quality = qualityMatrix(deps.t);
+	const communityManagement = el("section", {
+		attrs: { "data-testid": "community-management" },
+	});
 	const hostControls = el(
 		"dialog",
 		{
@@ -960,6 +979,7 @@ export function showRoom(
 		),
 		debugStatus,
 		quality.element,
+		communityManagement,
 		el(
 			"div",
 			{ className: "host-controls-close" },
@@ -1327,6 +1347,74 @@ export function showRoom(
 	function render(): void {
 		if (disposed) return;
 		const view = controller.view();
+		const communityRows = view.table?.config.community
+			? view.table.seats.filter(
+					(row) =>
+						view.table?.config.community?.holders[row.seat] !== undefined &&
+						(row.coverBoard !== undefined ||
+							row.recruiting !== undefined ||
+							row.communityBot === true),
+				)
+			: [];
+		communityManagement.hidden =
+			!community || !view.hosting || communityRows.length === 0;
+		communityManagement.replaceChildren(
+			...(communityManagement.hidden
+				? []
+				: [
+						el("h3", {}, deps.t("Missing community players")),
+						...communityRows.map((row) =>
+							el(
+								"p",
+								{},
+								`${deps.t(SEAT_NAMES[row.seat])}: `,
+								button(
+									deps.t(row.communityBot ? "Find player" : "Keep bot"),
+									() => {
+										void (async () => {
+											if (row.communityBot) {
+												const enabled = await controller.setCommunityBot(
+													row.seat,
+													false,
+												);
+												if (!enabled) return;
+												botSeatOverrides.set(row.seat, false);
+												botRunner?.setSeatEnabled(row.seat, false);
+												await controller.setCommunityRecruitment(
+													row.seat,
+													view.table?.config.community?.recruitment?.[
+														row.seat
+													] ?? "online",
+												);
+											} else {
+												if (!(await controller.setCommunityBot(row.seat, true)))
+													return;
+												await controller.setCommunityRecruitment(
+													row.seat,
+													null,
+												);
+												botSeatOverrides.set(row.seat, true);
+												botRunner?.setSeatEnabled(row.seat, true);
+												if (!botRunner) await startHostBots(row.seat);
+											}
+											render();
+										})();
+									},
+									{ attrs: { "data-seat": row.seat } },
+								),
+								...(row.recruiting === "invited"
+									? [
+											copyButton(
+												deps.t("Copy invitation link"),
+												replacementLink(deps.pageUrl(), key, row.seat),
+												`community-invitation-${row.seat}`,
+											),
+										]
+									: []),
+							),
+						),
+					]),
+		);
 		settings.refreshBidding();
 		const botConfig = view.table?.config ?? fallbackConfig;
 		if (!view.hosting) {
@@ -1568,7 +1656,7 @@ export function showRoom(
 			records: state?.media,
 			outbox: view.outbox.map((item) => item.payload),
 		});
-		const tableModel = tableView({
+		let tableModel = tableView({
 			config,
 			seat,
 			state,
@@ -1593,6 +1681,43 @@ export function showRoom(
 			),
 			t: deps.t,
 		});
+		if (config.community && tableModel.nextBoard) {
+			const onlineCommunitySeats = new Set<Seat>(
+				view.roster?.peers.map((peer) => peer.seat) ?? [],
+			);
+			if (view.seat !== null) onlineCommunitySeats.add(view.seat);
+			const absent = SEATS.filter(
+				(target) =>
+					config.community?.holders[target] !== undefined &&
+					!onlineCommunitySeats.has(target) &&
+					view.table?.seats.find((row) => row.seat === target)?.communityBot !==
+						true,
+			);
+			if (absent.length > 0)
+				tableModel = {
+					...tableModel,
+					...(tableModel.phase === "complete" &&
+					(tableModel.scoring?.countdown ?? 0) === 0
+						? {
+								waiting: deps.t("Waiting for {players} to come back", {
+									players: absent
+										.map((target) => deps.t(SEAT_NAMES[target]))
+										.join(", "),
+								}),
+							}
+						: {}),
+					nextBoard: {
+						...tableModel.nextBoard,
+						ready:
+							tableModel.nextBoard.ready &&
+							communityNextBoardReady(
+								config,
+								view.table?.seats ?? [],
+								onlineCommunitySeats,
+							),
+					},
+				};
+		}
 		shownModel = tableModel;
 		table.setBotControls(
 			view.hosting && !botRestorePending && !community,
@@ -1708,6 +1833,10 @@ export function showRoom(
 			),
 			online,
 			seats: view.table.seats,
+			permanentBots: new Set(
+				view.table.seats.flatMap((row) => (row.communityBot ? [row.seat] : [])),
+			),
+			recruitment: view.table.config.community.recruitment,
 		});
 		if (changes.length === 0) return;
 		coverChanging = true;
@@ -1717,18 +1846,116 @@ export function showRoom(
 					botRunner?.setSeatEnabled(change.seat, false);
 				if (!(await controller.setCommunityCover(change.seat, change.board)))
 					continue;
-				botSeatOverrides.set(change.seat, change.board !== null);
-				botRunner?.setSeatEnabled(change.seat, change.board !== null);
-				if (change.board !== null && !botRunner)
-					await startHostBots(change.seat);
+				if (change.recruitment !== undefined)
+					await controller.setCommunityRecruitment(
+						change.seat,
+						change.recruitment,
+					);
+				const enabled =
+					change.board !== null ||
+					view.table.seats.find((row) => row.seat === change.seat)
+						?.communityBot === true;
+				botSeatOverrides.set(change.seat, enabled);
+				botRunner?.setSeatEnabled(change.seat, enabled);
+				if (enabled && !botRunner) await startHostBots(change.seat);
 			}
 		} finally {
 			coverChanging = false;
 		}
 		render();
 	}
+	function updateCommunityDiscovery(): void {
+		if (disposed || !community) return;
+		const view = controller.view();
+		const table = view.table;
+		const config = table?.config;
+		const state = table ? parseBridgeState(table.state, tableId) : undefined;
+		if (
+			!view.hosting ||
+			!view.ready ||
+			!table ||
+			!config?.community ||
+			!state?.board
+		) {
+			if (replacementChannel) void replacementChannel.leave();
+			replacementChannel = undefined;
+			return;
+		}
+		const candidates = table.seats
+			.filter(
+				(row) =>
+					config.community?.holders[row.seat] !== undefined &&
+					row.recruiting === "online" &&
+					!row.communityBot &&
+					view.seat !== row.seat &&
+					!view.roster?.peers.some(
+						(peer) => peer.seat === row.seat && peer.gen === row.gen,
+					),
+			)
+			.slice(0, 1);
+		if (candidates.length === 0) {
+			if (replacementChannel) void replacementChannel.leave();
+			replacementChannel = undefined;
+			return;
+		}
+		const board = boardStatus(state.board);
+		const humanSeats = SEATS.filter(
+			(target) => config.community?.holders[target] !== undefined,
+		);
+		const onlineHumans = new Set(
+			view.roster?.peers.map((peer) => peer.seat) ?? [],
+		);
+		if (view.seat !== null) onlineHumans.add(view.seat);
+		const others = humanSeats.filter((target) => target !== view.seat);
+		if (
+			others.length > 0 &&
+			others.every((target) => !onlineHumans.has(target))
+		) {
+			onlyHostSince ??= deps.clock.monotonic();
+			if (
+				!startingFreshSearch &&
+				deps.clock.monotonic() - onlyHostSince >= SEAT_GRACE_MS &&
+				(board.phase === "complete" || state.claimResult !== null)
+			) {
+				startingFreshSearch = true;
+				location.assign(`${sitePath(location.pathname, "join")}/`);
+				return;
+			}
+		} else onlyHostSince = undefined;
+		const inReplacementWindow =
+			board.phase === "complete" ||
+			state.claimResult !== null ||
+			(board.phase === "play" && board.tricks.length >= 12);
+		if (!inReplacementWindow) return;
+		if (!replacementChannel) {
+			const discovery = deps.discovery;
+			if (!discovery) return;
+			discovery.start();
+			replacementChannel = discovery.open(DISCOVERY_ROOM, undefined, {
+				message: () => undefined,
+				join: () => undefined,
+				leave: () => undefined,
+				problem: () => {
+					replacementChannel = undefined;
+				},
+			});
+		}
+		if (deps.clock.monotonic() - replacementBroadcastAt < 5_000) return;
+		replacementBroadcastAt = deps.clock.monotonic();
+		const hostName = config.names[view.seat ?? seat];
+		for (const row of candidates)
+			replacementChannel.send({
+				k: "replacement-offer",
+				key,
+				seat: row.seat,
+				host: hostName,
+			});
+	}
 	const coverTimer = community
-		? setInterval(() => void updateCommunityCover(), 500)
+		? setInterval(() => {
+				void updateCommunityCover();
+				updateCommunityDiscovery();
+			}, 500)
 		: undefined;
 
 	// A gesture lets the browser start remote audio and the voice box that its autoplay rule blocked.
@@ -1752,6 +1979,8 @@ export function showRoom(
 
 	return () => {
 		disposed = true;
+		if (replacementChannel) void replacementChannel.leave();
+		replacementChannel = undefined;
 		if (coverTimer !== undefined) clearInterval(coverTimer);
 		callPresence.stop();
 		botRunner?.stop();

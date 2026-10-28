@@ -149,9 +149,24 @@ class Rig {
 		client: string,
 		seat: Seat,
 		features?: string[],
+		name?: string,
 	): Promise<number> {
 		await this.hello(peer, client, null, features);
-		await this.from(peer, { k: "claim-seat", req: 1, seat });
+		const lobby = this.to(peer).find((message) => message.k === "lobby");
+		const row =
+			lobby?.k === "lobby"
+				? lobby.seats.find((item) => item.seat === seat)
+				: undefined;
+		await this.from(peer, {
+			k: "claim-seat",
+			req: 1,
+			seat,
+			...(row?.gen === undefined ? {} : { gen: row.gen }),
+			...(row?.nameRevision === undefined
+				? {}
+				: { nameRevision: row.nameRevision }),
+			...(name === undefined ? {} : { name }),
+		});
 		const result = this.to(peer).find((message) => message.k === "seat-result");
 		if (result?.k !== "seat-result" || !result.ok)
 			throw new Error(`no seat: ${JSON.stringify(result)}`);
@@ -196,6 +211,106 @@ class Rig {
 }
 
 describe("community admission", () => {
+	it("admits a replacement only for the one host-opened vacancy and lets a returning holder win the race", async () => {
+		const config = {
+			...CONFIG,
+			community: {
+				v: 1 as const,
+				holders: {
+					N: await deriveHolder(TABLE, CLIENT_N),
+					E: await deriveHolder(TABLE, CLIENT_E),
+					S: await deriveHolder(TABLE, CLIENT_S),
+					W: await deriveHolder(TABLE, "clientW-0123456789abcd"),
+				},
+			},
+		};
+		const rig = await new Rig().create(config);
+		const originalGen = await rig.seat(EAST, CLIENT_E, "E", ["community-v1"]);
+		rig.host.leave(EAST);
+		rig.clock.now += SEAT_GRACE_MS + 1;
+		expect(await rig.host.setCommunityCover("E", 1)).toBe(true);
+		expect(await rig.host.setCommunityRecruitment("E", "online")).toBe(true);
+		await rig.hello(EAST2, "replace-0123456789abcd", null, ["community-v1"]);
+		expect(rig.to(EAST2)).toContainEqual(
+			expect.objectContaining({ k: "welcome", status: "unseated" }),
+		);
+		await rig.hello(EAST, CLIENT_E, { seat: "E", gen: originalGen }, [
+			"community-v1",
+		]);
+		await rig.from(EAST2, { k: "claim-seat", req: 1, seat: "E" });
+		expect(rig.to(EAST2)).toContainEqual(
+			expect.objectContaining({ k: "seat-result", ok: false, code: "taken" }),
+		);
+		expect(rig.row("E")?.holder).toBe(await deriveHolder(TABLE, CLIENT_E));
+	});
+
+	it("accepts the first replacement claim and closes that vacancy", async () => {
+		const config = {
+			...CONFIG,
+			community: {
+				v: 1 as const,
+				holders: {
+					N: await deriveHolder(TABLE, CLIENT_N),
+					E: await deriveHolder(TABLE, CLIENT_E),
+					S: await deriveHolder(TABLE, CLIENT_S),
+					W: await deriveHolder(TABLE, "clientW-0123456789abcd"),
+				},
+			},
+		};
+		const rig = await new Rig().create(config);
+		await rig.seat(EAST, CLIENT_E, "E", ["community-v1"]);
+		rig.host.leave(EAST);
+		rig.clock.now += SEAT_GRACE_MS + 1;
+		await rig.host.setCommunityCover("E", 1);
+		await rig.host.setCommunityRecruitment("E", "online");
+		expect(rig.row("E")).toMatchObject({ coverBoard: 1, recruiting: "online" });
+		const replacement = "replace-0123456789abcd";
+		const gen = await rig.seat(
+			EAST2,
+			replacement,
+			"E",
+			["community-v1"],
+			"Replacement",
+		);
+		expect(gen).toBe(2);
+		expect(rig.row("E")).toMatchObject({
+			holder: await deriveHolder(TABLE, replacement),
+			gen: 2,
+			coverBoard: 1,
+		});
+		expect(rig.row("E")?.recruiting).toBeUndefined();
+		expect(rig.host.roster()?.bots).toContain("E");
+		await rig.hello(EAST, CLIENT_E, { seat: "E", gen: 1 }, ["community-v1"]);
+		expect(rig.to(EAST)).toContainEqual(
+			expect.objectContaining({ k: "welcome", status: "superseded" }),
+		);
+		expect(await rig.host.setCommunityCover("E", null)).toBe(true);
+		expect(rig.host.roster()?.bots).not.toContain("E");
+	});
+
+	it("persists host approval for a permanent community bot across host reload", async () => {
+		const config = {
+			...CONFIG,
+			community: {
+				v: 1 as const,
+				holders: {
+					N: await deriveHolder(TABLE, CLIENT_N),
+					E: await deriveHolder(TABLE, CLIENT_E),
+					S: await deriveHolder(TABLE, CLIENT_S),
+					W: await deriveHolder(TABLE, "clientW-0123456789abcd"),
+				},
+			},
+		};
+		const rig = await new Rig().create(config);
+		await rig.seat(EAST, CLIENT_E, "E", ["community-v1"]);
+		rig.host.leave(EAST);
+		expect(await rig.host.setCommunityBot("E", true)).toBe(true);
+		expect(rig.row("E")?.communityBot).toBe(true);
+		rig.host.stop();
+		rig.start();
+		expect(rig.host.roster()?.bots).toContain("E");
+	});
+
 	it("persists temporary bot cover without replacing the human seat, including host restart", async () => {
 		const config = {
 			...CONFIG,

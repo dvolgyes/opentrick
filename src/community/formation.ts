@@ -5,6 +5,7 @@ export interface Member {
 	readonly id: string;
 	readonly name: string;
 	readonly seat: Seat;
+	readonly recruitment?: "invited" | "online";
 }
 
 export interface Group {
@@ -89,7 +90,12 @@ export function validGroup(group: Group): boolean {
 			group.members.length &&
 		group.members.every(
 			(member) =>
-				validId(member.id) && isPlayerName(member.name) && isSeat(member.seat),
+				validId(member.id) &&
+				isPlayerName(member.name) &&
+				isSeat(member.seat) &&
+				(member.recruitment === undefined ||
+					member.recruitment === "invited" ||
+					member.recruitment === "online"),
 		)
 	);
 }
@@ -277,7 +283,8 @@ export function sameGroup(a: Group, b: Group): boolean {
 			return (
 				other?.id === member.id &&
 				other.name === member.name &&
-				other.seat === member.seat
+				other.seat === member.seat &&
+				other.recruitment === member.recruitment
 			);
 		})
 	);

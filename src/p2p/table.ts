@@ -658,6 +658,23 @@ export class TableController {
 					Promise.resolve(false));
 	}
 
+	setCommunityBot(seat: Seat, enabled: boolean): Promise<boolean> {
+		return this.#closed()
+			? Promise.resolve(false)
+			: (this.#replication?.setCommunityBot(seat, enabled) ??
+					Promise.resolve(false));
+	}
+
+	setCommunityRecruitment(
+		seat: Seat,
+		kind: "invited" | "online" | null,
+	): Promise<boolean> {
+		return this.#closed()
+			? Promise.resolve(false)
+			: (this.#replication?.setCommunityRecruitment(seat, kind) ??
+					Promise.resolve(false));
+	}
+
 	renameSeat(
 		seat: Seat,
 		name: string,

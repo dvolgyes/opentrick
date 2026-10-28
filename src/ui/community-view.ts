@@ -41,6 +41,10 @@ export function showCommunity(
 		className: "community-table",
 		attrs: { "data-testid": "community-members" },
 	});
+	const replacements = el("div", {
+		className: "community-replacements",
+		attrs: { "data-testid": "community-replacements" },
+	});
 	const wait = el("input", {
 		attrs: {
 			type: "number",
@@ -163,6 +167,29 @@ export function showCommunity(
 				status,
 			),
 		);
+		replacements.hidden = session.replacementOffers.length === 0;
+		replacements.replaceChildren(
+			...(replacements.hidden
+				? []
+				: [
+						el("h2", {}, deps.t("Available player replacements")),
+						...session.replacementOffers.map((offer) =>
+							button(
+								deps.t("Join {host}'s table at {seat}", {
+									host: offer.host,
+									seat: deps.t(SEAT_NAMES[offer.seat]),
+								}),
+								() => {
+									location.hash = communityGameFragment(
+										offer.key,
+										undefined,
+										offer.seat,
+									);
+								},
+							),
+						),
+					]),
+		);
 		wait.disabled = session.proposal !== undefined || saved.start !== undefined;
 		preferences.hidden = !Object.values(
 			saved.group ? openSeats(saved.group) : (saved.open ?? {}),
@@ -282,6 +309,7 @@ export function showCommunity(
 					el("h1", {}, deps.t("Community game")),
 					discovery.element,
 					members,
+					replacements,
 					preferences,
 					...(route.kind === "party" && route.seats.length > 1
 						? [
@@ -390,7 +418,34 @@ export function showCommunity(
 		),
 	);
 	if (saved) void begin(saved);
-	else if (route.kind === "game" || route.kind === "invalid") {
+	else if (route.kind === "game") {
+		const member = route.member ?? newCommandId();
+		history.replaceState(
+			null,
+			"",
+			`${location.pathname}${communityGameFragment(route.key, member, route.seat)}`,
+		);
+		status.textContent = deps.t("Joining the replacement seat…");
+		void (async () => {
+			const identity = await tableIdentity(route.key, deps.browser, member);
+			if (disposed) return;
+			void deps.discovery?.stop();
+			game = showTable(
+				root,
+				deps,
+				route.key,
+				false,
+				navigation,
+				route.seat,
+				undefined,
+				undefined,
+				undefined,
+				true,
+				undefined,
+				identity,
+			);
+		})();
+	} else if (route.kind === "invalid") {
 		status.textContent = deps.t(
 			"This browser has no saved reservation for this community game.",
 		);

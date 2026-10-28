@@ -232,6 +232,22 @@ export class Replication {
 		);
 	}
 
+	setCommunityBot(seat: Seat, enabled: boolean): Promise<boolean> {
+		return (
+			this.#engine?.setCommunityBot(seat, enabled) ?? Promise.resolve(false)
+		);
+	}
+
+	setCommunityRecruitment(
+		seat: Seat,
+		kind: "invited" | "online" | null,
+	): Promise<boolean> {
+		return (
+			this.#engine?.setCommunityRecruitment(seat, kind) ??
+			Promise.resolve(false)
+		);
+	}
+
 	restoreAutoplay(seat: import("../protocol").Seat): boolean {
 		return this.#engine?.restoreAutoplay(seat) ?? false;
 	}

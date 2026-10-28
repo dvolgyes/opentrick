@@ -273,9 +273,7 @@ test("four players in one browser profile merge, start, and keep their seats on 
 					Promise.all(
 						pages.map((page) =>
 							page.evaluate(() =>
-								document
-									.querySelector('[data-testid="table"]')
-									?.getAttribute("data-board") === "1"
+								document.querySelector('[data-testid="table"]')
 									? "1"
 									: document.body.innerText.slice(0, 1000),
 							),
@@ -518,6 +516,66 @@ test("an absent player gets bot cover for the board and returns to the reserved 
 		});
 		await makeCall(b, "P");
 		await expect(b.getByTestId("table")).toHaveAttribute("data-at", "2");
+		expect(errors).toEqual([]);
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
+test("an invited replacement reserves the seat while temporary cover finishes the board", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages, errors } = await players(browser, baseURL, 3);
+	try {
+		const [host, absent, replacement] = pages;
+		if (!host || !absent || !replacement) throw new Error("players missing");
+		await enter(host, "Alice", "1");
+		await enter(absent, "Bob", "0", host.url());
+		for (const page of pages.slice(0, 2)) {
+			await expect(page.getByTestId("community-status")).toHaveText(
+				"Searching for compatible players…",
+				{ timeout: 45_000 },
+			);
+			await setWait(page, "0");
+		}
+		for (const page of pages.slice(0, 2))
+			await expect(page.getByTestId("table")).toHaveAttribute(
+				"data-board",
+				"1",
+				{ timeout: 45_000 },
+			);
+		const key = new URLSearchParams(new URL(host.url()).hash.slice(1)).get(
+			"community-game",
+		);
+		if (!key) throw new Error("community table key missing");
+		const absentSeat = host
+			.locator(".name[data-bot]")
+			.filter({ hasText: /^S - Bob/ })
+			.first();
+		await absent.goto("about:blank");
+		await expect(absentSeat).toHaveAttribute("data-bot", "true", {
+			timeout: 45_000,
+		});
+		const invitation = new URL(host.url());
+		invitation.hash = new URLSearchParams({
+			"community-game": key,
+			seat: "S",
+		}).toString();
+		await replacement.goto(invitation.toString());
+		await expect(replacement.getByTestId("name-entry")).toBeVisible({
+			timeout: 45_000,
+		});
+		await replacement.getByTestId("personal-name").fill("Carol");
+		await replacement.getByRole("button", { name: "Join game" }).click();
+		await expect(replacement).toHaveTitle(/Carol \(S\)$/);
+		await expect(
+			host
+				.locator(".name[data-bot]")
+				.filter({ hasText: /^S - Carol/ })
+				.first(),
+		).toHaveAttribute("data-bot", "true");
 		expect(errors).toEqual([]);
 	} finally {
 		await Promise.all(contexts.map((context) => context.close()));

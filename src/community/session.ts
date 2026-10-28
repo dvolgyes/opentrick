@@ -32,6 +32,11 @@ import {
 } from "./formation";
 import { parseGroup, parseMerge, TransferJournal } from "./journal";
 import {
+	parseReplacementOffer,
+	REPLACEMENT_OFFER_TTL_MS,
+	type ReplacementOffer,
+} from "./replacement";
+import {
 	type CommunityChannel,
 	DISCOVERY_ROOM,
 	type OpenCommunity,
@@ -112,6 +117,12 @@ export function parseStart(value: unknown): GameStart | undefined {
 		!group ||
 		!config?.community ||
 		group.members.some((member) => config.names[member.seat] !== member.name) ||
+		(config.community.recruitment !== undefined &&
+			group.members.some(
+				(member) =>
+					config.community?.recruitment?.[member.seat] !==
+					(member.recruitment ?? "online"),
+			)) ||
 		SEATS.some(
 			(seat) =>
 				Boolean(config.community?.holders[seat]) !==
@@ -252,6 +263,7 @@ export class CommunitySession {
 	readonly #presence = new Map<string, Presence>();
 	readonly #targetPresence = new Map<string, Presence>();
 	readonly #startVotes = new Set<string>();
+	readonly #replacementOffers = new Map<string, ReplacementOffer>();
 	#saved: CommunitySaved;
 	#room: CommunityChannel | undefined;
 	#lobby: CommunityChannel | undefined;
@@ -296,6 +308,9 @@ export class CommunitySession {
 			.groups(this.#deps.now())
 			.filter((item) => item.group.id !== this.#saved.group?.id);
 	}
+	get replacementOffers(): readonly ReplacementOffer[] {
+		return [...this.#replacementOffers.values()];
+	}
 	get searching(): boolean {
 		return this.#completeParty() && !this.#pending && !this.#saved.start;
 	}
@@ -331,7 +346,14 @@ export class CommunitySession {
 					id: identity.tableId,
 					revision: 0,
 					host: this.#saved.self,
-					members: [{ id: this.#saved.self, name: this.#saved.name, seat }],
+					members: [
+						{
+							id: this.#saved.self,
+							name: this.#saved.name,
+							seat,
+							recruitment: "online",
+						},
+					],
 					...(this.#saved.open === undefined ? {} : { open: this.#saved.open }),
 				},
 			};
@@ -422,6 +444,9 @@ export class CommunitySession {
 		for (const people of [this.#presence, this.#targetPresence])
 			for (const [peer, row] of people)
 				if (now - row.receivedAt >= OFFER_TTL_MS) people.delete(peer);
+		for (const [peer, offer] of this.#replacementOffers)
+			if (now - offer.receivedAt >= REPLACEMENT_OFFER_TTL_MS)
+				this.#replacementOffers.delete(peer);
 		const elapsed = Math.max(0, now - this.#lastTick);
 		this.#lastTick = now;
 		if (this.#completeParty())
@@ -568,7 +593,10 @@ export class CommunitySession {
 		this.#lobby = this.#deps.open(DISCOVERY_ROOM, undefined, {
 			message: (peer, value) => this.#public(peer, value),
 			join: () => this.#advertise(),
-			leave: (peer) => this.#directory.remove(peer),
+			leave: (peer) => {
+				this.#directory.remove(peer);
+				this.#replacementOffers.delete(peer);
+			},
 			problem: () =>
 				this.#fail(
 					"Discovery is busy or disconnected. Your group is saved; reload to retry.",
@@ -711,6 +739,12 @@ export class CommunitySession {
 
 	#public(peer: string, value: unknown): void {
 		if (this.#stopped || this.#problem || !isObject(value)) return;
+		const replacement = parseReplacementOffer(value, this.#deps.now());
+		if (replacement) {
+			this.#replacementOffers.set(peer, replacement);
+			this.#deps.change();
+			return;
+		}
 		if (value.k === "offer") {
 			this.#directory.receive(peer, value, this.#deps.now());
 			return;
@@ -947,7 +981,10 @@ export class CommunitySession {
 			group: {
 				...group,
 				revision: group.revision + 1,
-				members: [...group.members, { id: row.id, name: row.name, seat }],
+				members: [
+					...group.members,
+					{ id: row.id, name: row.name, seat, recruitment: "invited" },
+				],
 			},
 		};
 		if (this.#save()) this.#refresh();
@@ -1044,6 +1081,7 @@ export class CommunitySession {
 		if (!host) return undefined;
 		const names = {} as Record<Seat, string>;
 		const holders: Partial<Record<Seat, string>> = {};
+		const recruitment: Partial<Record<Seat, "invited" | "online">> = {};
 		const bots: Seat[] = [];
 		for (const seat of SEATS) {
 			const member = group.members.find((row) => row.seat === seat);
@@ -1059,12 +1097,13 @@ export class CommunitySession {
 			if (!presence) return undefined;
 			names[seat] = member.name;
 			holders[seat] = presence.holder;
+			recruitment[seat] = member.recruitment ?? "online";
 		}
 		return parseRoomConfig({
 			names,
 			scoring: "duplicate",
 			botSetup: { seats: bots, bidder: host.bidder },
-			community: { v: 1, holders },
+			community: { v: 1, holders, recruitment },
 		});
 	}
 	#offerStart(): void {

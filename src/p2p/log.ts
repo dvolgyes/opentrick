@@ -204,17 +204,44 @@ export function seatsAfter(
 		if (entry.kind !== "seat" || entry.op.type === "rename") continue;
 		if (entry.op.type === "cover") {
 			const row = rows.get(entry.seat);
-			if (row && row.holder !== null && row.gen === entry.gen)
-				rows.set(entry.seat, {
-					seat: row.seat,
-					holder: row.holder,
-					gen: row.gen,
-					...(entry.op.board === null ? {} : { coverBoard: entry.op.board }),
-				});
+			if (row && row.holder !== null && row.gen === entry.gen) {
+				const next = { ...row };
+				if (entry.op.board === null) delete next.coverBoard;
+				else next.coverBoard = entry.op.board;
+				rows.set(entry.seat, next);
+			}
+			continue;
+		}
+		if (entry.op.type === "community-bot") {
+			const row = rows.get(entry.seat);
+			if (row && row.holder !== null && row.gen === entry.gen) {
+				const next = { ...row };
+				if (entry.op.enabled) next.communityBot = true;
+				else delete next.communityBot;
+				rows.set(entry.seat, next);
+			}
+			continue;
+		}
+		if (entry.op.type === "recruit") {
+			const row = rows.get(entry.seat);
+			if (row && row.holder !== null && row.gen === entry.gen) {
+				const next = { ...row };
+				if (entry.op.kind === null) delete next.recruiting;
+				else next.recruiting = entry.op.kind;
+				rows.set(entry.seat, next);
+			}
 			continue;
 		}
 		const holder = entry.op.type === "claim" ? entry.op.holder : null;
-		rows.set(entry.seat, { seat: entry.seat, holder, gen: entry.gen });
+		const previous = rows.get(entry.seat);
+		rows.set(entry.seat, {
+			seat: entry.seat,
+			holder,
+			gen: entry.gen,
+			...(holder !== null && previous?.coverBoard !== undefined
+				? { coverBoard: previous.coverBoard }
+				: {}),
+		});
 	}
 	return SEATS.map((seat) => rows.get(seat) ?? { seat, holder: null, gen: 0 });
 }
@@ -255,7 +282,13 @@ export function seatEvent(
 	seq: number,
 	id: string,
 	seat: Seat,
-	change: "claim" | "release" | "rename" | "cover",
+	change:
+		| "claim"
+		| "release"
+		| "rename"
+		| "cover"
+		| "community-bot"
+		| "recruit",
 	by: Seat = seat,
 ): JsonObject {
 	return envelopeEvent(

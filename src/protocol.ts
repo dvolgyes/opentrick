@@ -61,6 +61,9 @@ export interface RoomConfig {
 	readonly community?: {
 		readonly v: 1;
 		readonly holders: Readonly<Partial<Record<Seat, string>>>;
+		readonly recruitment?: Readonly<
+			Partial<Record<Seat, "invited" | "online">>
+		>;
 	};
 }
 
@@ -125,7 +128,27 @@ export function parseRoomConfig(value: unknown): RoomConfig | undefined {
 		const assigned = Object.values(holders);
 		if (assigned.length === 0 || new Set(assigned).size !== assigned.length)
 			return undefined;
-		community = { v: 1, holders };
+		let recruitment: Partial<Record<Seat, "invited" | "online">> | undefined;
+		if (raw.recruitment !== undefined) {
+			if (
+				!isObject(raw.recruitment) ||
+				Object.keys(raw.recruitment).some((seat) => !isSeat(seat))
+			)
+				return undefined;
+			recruitment = {};
+			for (const seat of SEATS) {
+				const value = raw.recruitment[seat];
+				if (
+					holders[seat] === undefined
+						? value !== undefined
+						: value !== "invited" && value !== "online"
+				)
+					return undefined;
+				if (value === "invited" || value === "online")
+					recruitment[seat] = value;
+			}
+		}
+		community = { v: 1, holders, ...(recruitment ? { recruitment } : {}) };
 	}
 	return {
 		names: names as Record<Seat, string>,

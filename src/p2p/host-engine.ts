@@ -49,6 +49,7 @@ import {
 	type Roster,
 	type SeatCode,
 	type SeatHolder,
+	type SeatOp,
 	withinDepth,
 } from "./wire";
 
@@ -176,6 +177,13 @@ export class HostEngine {
 				this.#connected.add(peer);
 				this.#features.set(peer, Object.values(APPLICATION_FEATURES));
 			}
+			if (table.config.community && row.communityBot) {
+				this.#localBots.add(seat);
+				const peer = this.#localPeer(seat);
+				this.#bindings.set(peer, { seat, gen: row.gen });
+				this.#connected.add(peer);
+				this.#features.set(peer, Object.values(APPLICATION_FEATURES));
+			}
 		}
 		const now = deps.clock.monotonic();
 		// No seat times out because of a host change (rule 9).
@@ -294,7 +302,75 @@ export class HostEngine {
 				if (!done.ok) return false;
 				this.#broadcast(entry);
 			}
-			return this.setBotSeat(seat, board !== null);
+			return this.setBotSeat(seat, board !== null || row.communityBot === true);
+		};
+		const pending = this.#queue.then(run);
+		this.#queue = pending.then(() => {});
+		return pending;
+	}
+
+	setCommunityBot(seat: Seat, enabled: boolean): Promise<boolean> {
+		return this.#communitySeatUpdate(seat, { type: "community-bot", enabled });
+	}
+
+	setCommunityRecruitment(
+		seat: Seat,
+		kind: "invited" | "online" | null,
+	): Promise<boolean> {
+		return this.#communitySeatUpdate(seat, { type: "recruit", kind }).then(
+			async (ok) => {
+				if (!ok || kind === null) return ok;
+				const table = this.#table();
+				if (!table) return false;
+				const profile = playersFor(table)[seat];
+				if (profile.askOnEntry) return true;
+				const row = seatRow(table, seat);
+				return this.renameSeat(seat, profile.name, row.gen, profile.rev, true);
+			},
+		);
+	}
+
+	#communitySeatUpdate(
+		seat: Seat,
+		op: Extract<SeatOp, { type: "community-bot" | "recruit" }>,
+	): Promise<boolean> {
+		const run = async (): Promise<boolean> => {
+			const table = this.#table();
+			if (
+				this.#stopped ||
+				!table?.config.community?.holders[seat] ||
+				table.rev >= MAX_LOG_ENTRIES
+			)
+				return false;
+			const row = seatRow(table, seat);
+			if (row.holder === null) return false;
+			if (
+				(op.type === "community-bot" && row.communityBot === op.enabled) ||
+				(op.type === "recruit" && (row.recruiting ?? null) === op.kind)
+			)
+				return true;
+			const id = this.#deps.newId();
+			const entry: Entry = {
+				seq: table.rev + 1,
+				auth: this.#deps.auth,
+				prevAuth: table.lastAuth,
+				id,
+				seat,
+				gen: row.gen,
+				kind: "seat",
+				op,
+				event: seatEvent(this.#tableId, table.rev + 1, id, seat, op.type),
+			};
+			const done = await this.#commit(entry, table.state);
+			if (!done.ok) return false;
+			this.#broadcast(entry);
+			this.#lobbies();
+			if (op.type === "community-bot")
+				return this.setBotSeat(
+					seat,
+					op.enabled || row.coverBoard !== undefined,
+				);
+			return true;
 		};
 		const pending = this.#queue.then(run);
 		this.#queue = pending.then(() => {});
@@ -353,7 +429,11 @@ export class HostEngine {
 				gen: seatRow(table, seat).gen,
 			});
 			this.#features.set(peer, Object.values(APPLICATION_FEATURES));
-			this.#seen.set(seat, this.#deps.clock.monotonic());
+			if (
+				!table.config.community?.holders[seat] ||
+				seatRow(table, seat).communityBot
+			)
+				this.#seen.set(seat, this.#deps.clock.monotonic());
 		}
 		this.#markRoster();
 		this.#lobbies();
@@ -413,7 +493,11 @@ export class HostEngine {
 				this.#connected.add(peer);
 				this.#bindings.set(peer, { seat, gen: seatRow(table, seat).gen });
 				this.#features.set(peer, Object.values(APPLICATION_FEATURES));
-				this.#seen.set(seat, this.#deps.clock.monotonic());
+				if (
+					!table.config.community?.holders[seat] ||
+					seatRow(table, seat).communityBot
+				)
+					this.#seen.set(seat, this.#deps.clock.monotonic());
 			}
 		} else {
 			this.#localBots.delete(seat);
@@ -536,7 +620,13 @@ export class HostEngine {
 		const now = this.#deps.clock.monotonic();
 		this.#touch(this.#deps.self);
 		if (this.#stopped) return;
-		for (const seat of this.#localBots) this.#seen.set(seat, now);
+		const table = this.#table();
+		for (const seat of this.#localBots)
+			if (
+				!table?.config.community?.holders[seat] ||
+				seatRow(table, seat).communityBot
+			)
+				this.#seen.set(seat, now);
 		this.#watchQuiet(now);
 		if (this.#table()?.config.community) {
 			for (const [peer] of this.#bindings) {
@@ -778,7 +868,8 @@ export class HostEngine {
 		const holder = await deriveHolder(this.#tableId, hello.client);
 		if (
 			table.config.community &&
-			!Object.values(table.config.community.holders).includes(holder)
+			!Object.values(table.config.community.holders).includes(holder) &&
+			!table.seats.some((row) => row.recruiting !== undefined)
 		) {
 			send.ctl(peer, { k: "welcome", status: "superseded", auth });
 			return;
@@ -905,6 +996,7 @@ export class HostEngine {
 			if (done.code === "expired") return reply("expired");
 			return reply(done.code);
 		}
+		// Keep temporary cover active for the current board. The replacement owns the seat for the next board.
 		this.#bind(peer, claim.seat, entry.gen);
 		this.#deps.send.ctl(peer, {
 			k: "seat-result",
@@ -1313,6 +1405,12 @@ export class HostEngine {
 	 */
 	#gracePassed(table: TableRecord, seat: Seat): boolean {
 		const seen = this.#seen.get(seat);
+		if (table.config.community)
+			return (
+				!this.#seatPeerConnected(table, seat) &&
+				(seen === undefined ||
+					this.#deps.clock.monotonic() - seen >= SEAT_GRACE_MS)
+			);
 		return (
 			!this.#online(table, seat) &&
 			(seen === undefined ||
@@ -1339,13 +1437,21 @@ export class HostEngine {
 	 * another holder, also before the bot starts.
 	 */
 	#available(table: TableRecord, seat: Seat, holder: string): boolean {
+		const row = seatRow(table, seat);
 		if (
 			table.config.community &&
-			table.config.community.holders[seat] !== holder
+			table.config.community.holders[seat] !== holder &&
+			(row.recruiting === undefined ||
+				this.#seatPeerConnected(table, seat) ||
+				!this.#gracePassed(table, seat))
 		)
 			return false;
-		const row = seatRow(table, seat);
-		if (this.#localBots.has(seat) && row.holder !== holder) return false;
+		if (
+			this.#localBots.has(seat) &&
+			row.holder !== holder &&
+			row.recruiting === undefined
+		)
+			return false;
 		return (
 			row.holder === null ||
 			(row.holder === holder && !this.#seatPeerConnected(table, seat)) ||

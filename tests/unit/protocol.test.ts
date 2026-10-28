@@ -11,6 +11,23 @@ describe("parseRoomConfig", () => {
 		const botSetup = { seats: ["E", "W"], bidder: "sl" };
 		const config = { ...CONFIG, community, botSetup };
 		expect(parseRoomConfig(config)).toEqual(config);
+		const recruitment = { N: "online", S: "invited" };
+		expect(
+			parseRoomConfig({ ...config, community: { ...community, recruitment } })
+				?.community?.recruitment,
+		).toEqual(recruitment);
+		for (const invalid of [
+			{ N: "online" },
+			{ N: "online", S: "invited", E: "online" },
+			{ N: "online", S: "anyone" },
+			{ ...recruitment, X: "online" },
+		])
+			expect(
+				parseRoomConfig({
+					...config,
+					community: { ...community, recruitment: invalid },
+				}),
+			).toBeUndefined();
 		expect(
 			parseRoomConfig({ ...config, community: { ...community, v: 2 } }),
 		).toBeUndefined();

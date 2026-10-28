@@ -17,6 +17,13 @@ it("keeps community party and game routes separate from private game links", () 
 		kind: "game",
 		key,
 	});
+	expect(
+		parseCommunityRoute(communityGameFragment(key, undefined, "E")),
+	).toEqual({
+		kind: "game",
+		key,
+		seat: "E",
+	});
 });
 
 it("keeps a personal recovery marker in player URLs but out of invitations", () => {
@@ -29,6 +36,9 @@ it("keeps a personal recovery marker in player URLs but out of invitations", () 
 		key,
 		member,
 	});
+	expect(
+		parseCommunityRoute(communityGameFragment(key, "member_aaa", "S")),
+	).toEqual({ kind: "game", key, member: "member_aaa", seat: "S" });
 	expect(parseCommunityRoute(partyFragment(key, member, ["N"]))?.kind).toBe(
 		"party",
 	);

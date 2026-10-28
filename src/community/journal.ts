@@ -28,7 +28,14 @@ export function parseGroup(value: unknown): Group | undefined {
 		return undefined;
 	const members = value.members.map((member: unknown) => {
 		if (!isObject(member)) return undefined;
-		return { id: member.id, name: member.name, seat: member.seat };
+		return {
+			id: member.id,
+			name: member.name,
+			seat: member.seat,
+			...(member.recruitment === undefined
+				? {}
+				: { recruitment: member.recruitment }),
+		};
 	});
 	if (members.some((member) => member === undefined)) return undefined;
 	const group = {

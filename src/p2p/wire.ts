@@ -246,6 +246,10 @@ export interface SeatHolder {
 	readonly gen: number;
 	/** Community autoplay covers this board while preserving the human's reservation. */
 	readonly coverBoard?: number;
+	/** Host-approved replacement for this seat stays a bot after its current board. */
+	readonly communityBot?: true;
+	/** The host is looking for a replacement; `online` seats may be advertised in discovery. */
+	readonly recruiting?: "invited" | "online";
 }
 
 export interface RosterSeat extends SeatHolder {
@@ -372,6 +376,8 @@ export type CtlMessage =
 
 export type SeatOp =
 	| { readonly type: "cover"; readonly board: number | null }
+	| { readonly type: "community-bot"; readonly enabled: boolean }
+	| { readonly type: "recruit"; readonly kind: "invited" | "online" | null }
 	| { readonly type: "claim"; readonly holder: string; readonly name?: string }
 	| { readonly type: "release"; readonly by: Seat }
 	| {
@@ -622,6 +628,13 @@ function parseSeatHolder(item: JsonObject): SeatHolder | undefined {
 			!isIntegerIn(item.coverBoard, 1, Number.MAX_SAFE_INTEGER))
 	)
 		return undefined;
+	if (
+		(item.communityBot !== undefined && item.communityBot !== true) ||
+		(item.recruiting !== undefined &&
+			item.recruiting !== "invited" &&
+			item.recruiting !== "online")
+	)
+		return undefined;
 	return {
 		seat,
 		holder,
@@ -629,6 +642,10 @@ function parseSeatHolder(item: JsonObject): SeatHolder | undefined {
 		...(item.coverBoard === undefined
 			? {}
 			: { coverBoard: item.coverBoard as number }),
+		...(item.communityBot === true ? { communityBot: true } : {}),
+		...(item.recruiting === "invited" || item.recruiting === "online"
+			? { recruiting: item.recruiting }
+			: {}),
 	};
 }
 
@@ -709,6 +726,16 @@ function parseSeatOp(value: unknown): SeatOp | undefined {
 		return value.board === null ||
 			isIntegerIn(value.board, 1, Number.MAX_SAFE_INTEGER)
 			? { type: "cover", board: value.board as number | null }
+			: undefined;
+	if (value.type === "community-bot")
+		return typeof value.enabled === "boolean"
+			? { type: "community-bot", enabled: value.enabled }
+			: undefined;
+	if (value.type === "recruit")
+		return value.kind === null ||
+			value.kind === "invited" ||
+			value.kind === "online"
+			? { type: "recruit", kind: value.kind }
 			: undefined;
 	if (value.type === "claim") {
 		if (value.name !== undefined && playerName(value.name) !== value.name)

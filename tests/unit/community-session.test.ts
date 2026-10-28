@@ -139,7 +139,31 @@ it("merges four solos into one game, with partners preserved and no duplicate se
 			new Set(game.start.group.members.map((member) => member.seat)).size,
 		).toBe(4);
 		expect(game.start.config.botSetup?.seats).toEqual([]);
+		expect(game.start.config.community?.recruitment).toEqual({
+			N: "online",
+			E: "online",
+			S: "online",
+			W: "online",
+		});
 	}
+});
+
+it("shows fresh replacement offers from discovery and expires stale ones", async () => {
+	const net = new Network();
+	const session = await net.add(0);
+	const handler = net.rooms.get("waiting-v1")?.get("browser_0");
+	handler?.message("replacement-host", {
+		k: "replacement-offer",
+		key: "AAAAAAAAAAAAAAAAAAAAAA",
+		seat: "E",
+		host: "Alice",
+	});
+	expect(session.replacementOffers).toMatchObject([
+		{ key: "AAAAAAAAAAAAAAAAAAAAAA", seat: "E", host: "Alice" },
+	]);
+	net.now += 20_000;
+	session.tick();
+	expect(session.replacementOffers).toEqual([]);
 });
 
 it("uses the surviving host's chosen bidder when tables merge", async () => {
@@ -420,8 +444,14 @@ it("automatically merges into the online vacancy while retaining a mandatory bot
 	expect(a.saved.group?.open).toEqual({ E: "bot" });
 	await net.advance(120_000, false);
 	expect(net.games).toHaveLength(3);
-	for (const game of net.games)
+	for (const game of net.games) {
 		expect(game.start.config.botSetup?.seats).toEqual(["E"]);
+		expect(game.start.config.community?.recruitment).toEqual({
+			N: "online",
+			S: "invited",
+			W: "online",
+		});
+	}
 });
 
 it("assigns invited friends to the selected reserved seats, not arrival order", async () => {

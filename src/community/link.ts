@@ -18,7 +18,12 @@ export type CommunityRoute =
 			readonly setup?: PartySetup;
 			readonly member?: string;
 	  }
-	| { readonly kind: "game"; readonly key: string; readonly member?: string }
+	| {
+			readonly kind: "game";
+			readonly key: string;
+			readonly member?: string;
+			readonly seat?: Seat;
+	  }
 	| { readonly kind: "invalid" };
 
 /** Separate fragments make older clients refuse community rooms instead of joining under private-game rules. */
@@ -29,13 +34,17 @@ export function parseCommunityRoute(hash: string): CommunityRoute | undefined {
 		return undefined;
 	const member = params.get("member");
 	if (member !== null && !validId(member)) return { kind: "invalid" };
+	const seat = params.get("seat");
+	if (seat !== null && !isSeat(seat)) return { kind: "invalid" };
 	const personal = member === null ? {} : { member };
 	if (params.has("community-game")) {
 		const key = params.get("community-game");
-		return params.size === (member === null ? 1 : 2) && isTableKey(key)
-			? { kind: "game", key, ...personal }
+		return params.size ===
+			1 + (member === null ? 0 : 1) + (seat === null ? 0 : 1) && isTableKey(key)
+			? { kind: "game", key, ...personal, ...(seat === null ? {} : { seat }) }
 			: { kind: "invalid" };
 	}
+	if (seat !== null) return { kind: "invalid" };
 	const key = params.get("community");
 	const owner = params.get("owner");
 	const seats = [...(params.get("seats") ?? "")];
@@ -99,6 +108,10 @@ export function partyFragment(
 	return `#${new URLSearchParams({ community: key, owner, seats: seats.join(""), ...(setup ? { setup: JSON.stringify(setup) } : {}), ...(member ? { member } : {}) })}`;
 }
 
-export function communityGameFragment(key: string, member?: string): string {
-	return `#${new URLSearchParams({ "community-game": key, ...(member ? { member } : {}) })}`;
+export function communityGameFragment(
+	key: string,
+	member?: string,
+	seat?: Seat,
+): string {
+	return `#${new URLSearchParams({ "community-game": key, ...(member ? { member } : {}), ...(seat ? { seat } : {}) })}`;
 }
