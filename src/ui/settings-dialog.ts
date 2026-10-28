@@ -12,6 +12,7 @@ import {
 	SCHEMES,
 	type Scheme,
 	type Settings,
+	SHADOW_STRENGTHS,
 	SUIT_COLOR_SCHEMES,
 	SUIT_FONT_SIZES,
 	type SuitColorScheme,
@@ -242,6 +243,34 @@ export function settingsDialog(
 			paperValue,
 		),
 	);
+	const shadow = el("input", {
+		attrs: {
+			type: "range",
+			min: "0",
+			max: "4",
+			step: "1",
+			name: "settings-shadow-strength",
+		},
+	});
+	const shadowValue = el("output", {});
+	const updateShadowLabel = () => {
+		const label = `${shadow.valueAsNumber * 25}%`;
+		shadowValue.textContent = label;
+		shadow.setAttribute("aria-valuetext", label);
+	};
+	shadow.addEventListener("input", updateShadowLabel);
+	const shadowControl = el(
+		"fieldset",
+		{},
+		el("legend", {}, t("Shadows")),
+		el(
+			"label",
+			{ className: "settings-row" },
+			`${t("Shadow intensity and distance")} `,
+			shadow,
+			shadowValue,
+		),
+	);
 	const suitFontSize = radios(
 		"settings-suit-font-size",
 		"Suit and rank font size",
@@ -333,6 +362,7 @@ export function settingsDialog(
 		theme.element,
 		baizeControl,
 		paperControl,
+		shadowControl,
 		suitFontSize.element,
 		suitColors,
 		el(
@@ -430,6 +460,7 @@ export function settingsDialog(
 			scheme: scheme.value(),
 			baizeStrength: BAIZE_STRENGTHS[baize.valueAsNumber] ?? "medium",
 			paperStrength: PAPER_STRENGTHS[paper.valueAsNumber] ?? "medium",
+			shadowStrength: SHADOW_STRENGTHS[shadow.valueAsNumber] ?? "4",
 			suitFontSize: suitFontSize.value(),
 			suitColors:
 				SUIT_COLOR_SCHEMES.find(
@@ -468,6 +499,8 @@ export function settingsDialog(
 			settings.baizeStrength;
 		element.ownerDocument.documentElement.dataset.paperStrength =
 			settings.paperStrength;
+		element.ownerDocument.documentElement.dataset.shadowStrength =
+			settings.shadowStrength;
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
@@ -496,6 +529,8 @@ export function settingsDialog(
 			updateBaizeLabel();
 			paper.value = String(PAPER_STRENGTHS.indexOf(settings.paperStrength));
 			updatePaperLabel();
+			shadow.value = String(SHADOW_STRENGTHS.indexOf(settings.shadowStrength));
+			updateShadowLabel();
 			suitFontSize.set(settings.suitFontSize);
 			for (const { input } of suitColorInputs)
 				input.checked = input.value === settings.suitColors;

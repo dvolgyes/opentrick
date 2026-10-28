@@ -1663,7 +1663,7 @@ describe("played card styles", () => {
 		expect(root.dataset.playedCardStyle).toBe("corners-oriented");
 	});
 
-	// Each card shows the same diagonal on screen, including the mirrored bottom card.
+	// Each card shows the same diagonal on screen, with no mirrored cards.
 	it.each<[Layout, Record<"top" | "left" | "bottom" | "right", string[]>]>([
 		[
 			"desktop",
@@ -1772,9 +1772,7 @@ describe("played card styles", () => {
 			).toBeCloseTo(rankSize * 1.5, 1);
 		}
 
-		expect(getComputedStyle(marker).transform).toBe(
-			style === "corners-oriented" ? "matrix(1, 0, 0, 1, 0, 0)" : "none",
-		);
+		expect(getComputedStyle(marker).transform).toBe("none");
 	});
 
 	it("orients the marks for each seat in the oriented variant", () => {
@@ -1797,12 +1795,12 @@ describe("played card styles", () => {
 			},
 			"desktop",
 		);
-		// The bottom card is mirrored as a whole, and its mirrored marks read upright again; the side marks stay upright.
+		// The rank and suit stay upright for every seat.
 		const rotations: Record<string, string> = {
 			top: "matrix(1, 0, 0, 1, 0, 0)",
 			left: "matrix(1, 0, 0, 1, 0, 0)",
 			right: "matrix(1, 0, 0, 1, 0, 0)",
-			bottom: "matrix(-1, 0, 0, 1, 0, 0)",
+			bottom: "matrix(1, 0, 0, 1, 0, 0)",
 		};
 		for (const [position, transform] of Object.entries(rotations)) {
 			for (const mark of [".rank-corner", ".played-center-suit"]) {
@@ -1817,12 +1815,15 @@ describe("played card styles", () => {
 					/, [-\d.]+, [-\d.]+\)$/,
 					", 0, 0)",
 				);
-				expect(linear, `${position} ${mark}`).toBe(transform);
+				expect(
+					linear === "none" ? "matrix(1, 0, 0, 1, 0, 0)" : linear,
+					`${position} ${mark}`,
+				).toBe(transform);
 			}
 		}
 	});
 
-	it("flips the bottom card left to right, independent of the declarer", () => {
+	it("keeps top and bottom played cards unmirrored, independent of the declarer", () => {
 		const view = playView();
 		if (!view.trick) throw new Error("current trick is missing");
 		const firstPlayed = view.trick.cards[0];
@@ -1835,6 +1836,7 @@ describe("played card styles", () => {
 					...view.trick,
 					cards: [
 						{ ...firstPlayed, seat: "E", position: "left" },
+						{ ...firstPlayed, seat: "N", position: "top" },
 						{ ...firstPlayed, seat: "S", position: "bottom" },
 					],
 				},
@@ -1843,12 +1845,76 @@ describe("played card styles", () => {
 		);
 		const bottomCard = root.querySelector<HTMLElement>(".played.pos-bottom");
 		if (!bottomCard) throw new Error("bottom played card is missing");
-		expect(getComputedStyle(bottomCard).transform).toBe(
-			"matrix(-1, 0, 0, 1, 0, 0)",
-		);
+		expect(getComputedStyle(bottomCard).transform).toBe("none");
+		const topCard = root.querySelector<HTMLElement>(".played.pos-top");
+		if (!topCard) throw new Error("top played card is missing");
+		expect(getComputedStyle(topCard).transform).toBe("none");
 		const leftCard = root.querySelector<HTMLElement>(".played.pos-left");
 		if (!leftCard) throw new Error("left played card is missing");
 		expect(getComputedStyle(leftCard).transform).toBe("none");
+	});
+
+	it.each<[Layout, "7" | "Q"]>([
+		["desktop", "7"],
+		["desktop", "Q"],
+		["compact", "7"],
+		["compact", "Q"],
+	])("draws the %s bottom and left %s identically", (layout, rank) => {
+		const base = playView();
+		const first = base.trick?.cards[0];
+		if (!first) throw new Error("missing played card");
+		const card = { ...first, card: `S${rank}` as Card, rank, text: `♠${rank}` };
+		const { root } = renderView(
+			{
+				...base,
+				trick: {
+					cards: [
+						{ ...card, position: "left" },
+						{ ...card, position: "bottom" },
+					],
+					finished: false,
+				},
+			},
+			layout,
+		);
+		const cards = ["left", "bottom"].map((position) => {
+			const face = root.querySelector<HTMLElement>(`.played.pos-${position}`);
+			if (!face) throw new Error(`missing ${position} card`);
+			expect(getComputedStyle(face).transform).toBe("none");
+			const box = face.getBoundingClientRect();
+			return [
+				".rank-corner.top-left",
+				".rank-corner.bottom-right",
+				".played-center-suit",
+			].map((selector) => {
+				const mark = face.querySelector<HTMLElement>(selector);
+				if (!mark) throw new Error(`missing ${selector}`);
+				expect(mark.textContent).toBe(
+					selector === ".played-center-suit" ? "♠" : rank,
+				);
+				expect(getComputedStyle(mark).display).not.toBe("none");
+				const transform = new DOMMatrixReadOnly(
+					getComputedStyle(mark).transform === "none"
+						? undefined
+						: getComputedStyle(mark).transform,
+				);
+				expect([transform.a, transform.b, transform.c, transform.d]).toEqual([
+					1, 0, 0, 1,
+				]);
+				const bounds = mark.getBoundingClientRect();
+				return [
+					bounds.left - box.left,
+					bounds.top - box.top,
+					bounds.width,
+					bounds.height,
+				];
+			});
+		});
+		const [left, bottom] = cards;
+		if (!left || !bottom) throw new Error("missing comparison cards");
+		for (const [index, mark] of left.entries())
+			for (const [part, value] of mark.entries())
+				expect(value).toBeCloseTo(bottom[index]?.[part] ?? Number.NaN, 0);
 	});
 
 	it.each<Form>(["desktop", "compact"])(
@@ -2661,6 +2727,118 @@ describe("mobile turn frame", () => {
 });
 
 describe("board depth and frame colours", () => {
+	it.each(["desktop", "sideways", "compact"] as const)(
+		"keeps the top dealt hand upright in %s",
+		(layout) => {
+			const base = playView();
+			const selector =
+				layout === "compact" ? ".mobile-board-top .hand" : ".place-top .hand";
+			const visible = renderView(base, layout).root.querySelector<HTMLElement>(
+				`${selector} .card .face`,
+			);
+			if (!visible) throw new Error("missing top face-up card");
+			expect(getComputedStyle(visible).transform).toBe("none");
+			const hiddenView = {
+				...base,
+				seats: base.seats.map((player) =>
+					player.position === "top"
+						? { ...player, hand: { visible: false as const, count: 13 } }
+						: player,
+				),
+			};
+			const back = renderView(
+				hiddenView,
+				layout,
+			).root.querySelector<HTMLElement>(`${selector} .back .back-art`);
+			if (!back) throw new Error("missing top card back");
+			expect(getComputedStyle(back).transform).toBe("none");
+		},
+	);
+	it.each(["desktop", "compact"] as const)(
+		"scales board shadows and keeps every played-card shadow down and right in %s",
+		(layout) => {
+			const base = sideHandView();
+			const first = base.trick?.cards[0];
+			if (!first) throw new Error("missing played card");
+			const positions = ["top", "left", "right", "bottom"] as const;
+			const { root, section } = renderView(
+				{
+					...base,
+					trick: {
+						cards: positions.map((position) => ({ ...first, position })),
+						finished: false,
+					},
+				},
+				layout,
+				"corners-oriented",
+			);
+			section.setBotControls(true, ["E"]);
+			const board = root.querySelector<HTMLElement>(
+				layout === "desktop" ? ".felt" : ".mobile-auction-board",
+			);
+			if (!board) throw new Error("missing board");
+			for (const played of board.querySelectorAll<HTMLElement>(".played"))
+				expect(getComputedStyle(played).transform).toBe("none");
+			const elements = [
+				...board.querySelectorAll<HTMLElement>(".played"),
+				...board.querySelectorAll<HTMLElement>(".hand .card .face"),
+				...board.querySelectorAll<HTMLElement>(".hand .back .face"),
+				...board.querySelectorAll<HTMLElement>(
+					".seat-label .name, .seat-label .tag, .mobile-board-name",
+				),
+				...(layout === "desktop"
+					? board.querySelectorAll<HTMLElement>(
+							".video-row .tile, .call-panel, .tile-bot-control",
+						)
+					: []),
+				...(layout === "compact"
+					? root.querySelectorAll<HTMLElement>(".mobile-player-control button")
+					: []),
+			];
+			if (elements.length < 8) throw new Error("missing board elements");
+			const shadow = (element: HTMLElement) => {
+				const style = getComputedStyle(element);
+				const match =
+					/rgba\(0, 0, 0, ([\d.]+)\) (-?[\d.]+)px (-?[\d.]+)px/.exec(
+						style.boxShadow,
+					);
+				if (!match)
+					throw new Error(
+						`missing shadow on ${element.className}: ${style.boxShadow}`,
+					);
+				const matrix = new DOMMatrixReadOnly(
+					style.transform === "none" ? undefined : style.transform,
+				);
+				return {
+					alpha: Number(match[1]),
+					x: matrix.a * Number(match[2]) + matrix.c * Number(match[3]),
+					y: matrix.b * Number(match[2]) + matrix.d * Number(match[3]),
+				};
+			};
+			try {
+				document.documentElement.dataset.shadowStrength = "4";
+				const full = elements.map(shadow);
+				for (const item of full) {
+					expect(item.alpha).toBeGreaterThan(0);
+					expect(item.x).toBeGreaterThan(0);
+					expect(item.y).toBeGreaterThan(0);
+				}
+				for (let level = 0; level <= 4; level++) {
+					document.documentElement.dataset.shadowStrength = String(level);
+					for (const [index, element] of elements.entries()) {
+						const actual = shadow(element);
+						const reference = full[index];
+						if (!reference) throw new Error("missing full shadow");
+						expect(actual.alpha).toBeCloseTo((reference.alpha * level) / 4, 1);
+						expect(actual.x).toBeCloseTo((reference.x * level) / 4, 1);
+						expect(actual.y).toBeCloseTo((reference.y * level) / 4, 1);
+					}
+				}
+			} finally {
+				delete document.documentElement.dataset.shadowStrength;
+			}
+		},
+	);
 	const expectShadow = (element: HTMLElement, minimumOffset: number) => {
 		const shadow = getComputedStyle(element).boxShadow;
 		const match = /^rgba\(0, 0, 0, ([\d.]+)\) ([\d.]+)px ([\d.]+)px /.exec(

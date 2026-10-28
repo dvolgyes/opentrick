@@ -6,6 +6,7 @@ import {
 	DEFAULT_SETTINGS,
 	PAPER_STRENGTHS,
 	readSettings,
+	SHADOW_STRENGTHS,
 	SUIT_COLOR_SCHEMES,
 	SUIT_FONT_SIZES,
 	writeSettings,
@@ -49,6 +50,7 @@ describe("player settings", () => {
 			suitColors: "standard",
 			baizeStrength: "medium",
 			paperStrength: "medium",
+			shadowStrength: "4",
 			bidTurnFrame: true,
 			playTurnFrame: true,
 			bidTurnText: true,
@@ -78,6 +80,7 @@ describe("player settings", () => {
 			suitColors: "green-orange",
 			baizeStrength: "mild",
 			paperStrength: "mild",
+			shadowStrength: "2",
 			bidTurnFrame: false,
 			playTurnFrame: true,
 			bidTurnText: false,
@@ -104,8 +107,24 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.suit-colors", "invalid");
 		storage.setItem("opentrick.settings.baize-strength", "invalid");
 		storage.setItem("opentrick.settings.paper-strength", "invalid");
+		storage.setItem("opentrick.settings.shadow-strength", "invalid");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
 		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
+	});
+
+	it("stores the five shadow settings and rejects invalid values", () => {
+		const storage = memoryStorage();
+		expect(SHADOW_STRENGTHS).toEqual(["0", "1", "2", "3", "4"]);
+		for (const shadowStrength of SHADOW_STRENGTHS) {
+			writeSettings(storage, { ...DEFAULT_SETTINGS, shadowStrength });
+			expect(readSettings(storage).shadowStrength).toBe(shadowStrength);
+		}
+		expect(() =>
+			writeSettings(storage, {
+				...DEFAULT_SETTINGS,
+				shadowStrength: "invalid" as never,
+			}),
+		).toThrow("unknown shadow strength");
 	});
 
 	it("stores each card texture strength and rejects invalid values", () => {

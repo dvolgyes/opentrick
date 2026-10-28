@@ -40,7 +40,7 @@
 	--dialog-line: #000000;
 	--shadow: rgb(0 0 0 / 25%);
 	--shadow-soft: rgb(0 0 0 / 18%);
-	--board-object-shadow: rgb(0 0 0 / 70%);
+	--board-object-shadow: rgb(0 0 0 / calc(0.7 * var(--board-shadow-scale, 1)));
 	--scrim: rgb(0 0 0 / 55%);
 	--scrim-strong: rgb(0 0 0 / 65%);
 	/* The black frame around the scaled desktop table. */
@@ -68,7 +68,6 @@
 	--card-fg: #1d1d1b;
 	--card-muted: #66665f;
 	--card-line: #d6d6cf;
-	--card-shadow: rgb(0 0 0 / 0.2);
 	--card-red: #c0262d;
 	--sheet-bg: #ffffff;
 	--sheet-fg: #1d1d1b;
@@ -168,7 +167,6 @@
 	--card-fg: #073642;
 	--card-muted: #586e75;
 	--card-line: #ddd6c1;
-	--card-shadow: rgb(0 43 54 / 0.2);
 	--card-red: #c42a27;
 	--sheet-bg: #fdf6e3;
 	--sheet-fg: #073642;
@@ -244,7 +242,6 @@
 	--card-fg: #073642;
 	--card-muted: #586e75;
 	--card-line: #cbc1a5;
-	--card-shadow: rgb(0 0 0 / 0.35);
 	--card-red: #c0262d;
 	--sheet-bg: #073642;
 	--sheet-fg: #eee8d5;
@@ -318,7 +315,6 @@
 	--card-fg: #3a4d53;
 	--card-muted: #53676d;
 	--card-line: #d5cdb6;
-	--card-shadow: rgb(58 77 83 / 0.2);
 	--card-red: #cc1729;
 	--sheet-bg: #ece3cc;
 	--sheet-fg: #3a4d53;
@@ -394,7 +390,6 @@
 	--card-fg: #103c48;
 	--card-muted: #4a6870;
 	--card-line: #aebfc0;
-	--card-shadow: rgb(0 0 0 / 0.35);
 	--card-red: #c03a35;
 	--sheet-bg: #134250;
 	--sheet-fg: #cad8d9;
@@ -467,7 +462,6 @@
 	--card-fg: #3c3836;
 	--card-muted: #665c54;
 	--card-line: #d5c4a1;
-	--card-shadow: rgb(60 56 54 / 0.2);
 	--card-red: #9d0006;
 	--sheet-bg: #ebdbb2;
 	--sheet-fg: #3c3836;
@@ -540,7 +534,6 @@
 	--card-fg: #282828;
 	--card-muted: #665c54;
 	--card-line: #bdae93;
-	--card-shadow: rgb(0 0 0 / 0.35);
 	--card-red: #cc241d;
 	--sheet-bg: #32302f;
 	--sheet-fg: #ebdbb2;
@@ -613,7 +606,6 @@
 	--card-fg: #1d1d1b;
 	--card-muted: #5e5e57;
 	--card-line: #c9c3b3;
-	--card-shadow: rgb(0 0 0 / 0.4);
 	--card-red: #b8282e;
 	--sheet-bg: #1b1f23;
 	--sheet-fg: #e6e6e1;

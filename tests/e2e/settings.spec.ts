@@ -37,6 +37,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		"Theme",
 		"Board texture",
 		"Card texture",
+		"Shadows",
 		"Suit and rank font size",
 		"Suit colours",
 		"Screen orientation",
@@ -136,6 +137,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.portrait-mobile",
 		"opentrick.settings.relay-checks",
 		"opentrick.settings.scheme",
+		"opentrick.settings.shadow-strength",
 		"opentrick.settings.suit-colors",
 		"opentrick.settings.suit-font-size",
 		"opentrick.settings.theme-style",
@@ -282,6 +284,57 @@ for (const [layout, viewport] of [
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-paper-strength",
 			"off",
+		);
+	});
+
+	test(`shadow slider saves and restores five levels on ${layout}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await openTable(page);
+		let dialog = await openSettings(page);
+		let slider = dialog.getByRole("slider", {
+			name: "Shadow intensity and distance",
+		});
+		await expect(slider).toHaveValue("4");
+		await expect(slider).toHaveAttribute("aria-valuetext", "100%");
+		await slider.focus();
+		await page.keyboard.press("Home");
+		for (const value of ["0%", "25%", "50%", "75%", "100%"]) {
+			await expect(slider).toHaveAttribute("aria-valuetext", value);
+			if (value !== "100%") await page.keyboard.press("ArrowRight");
+		}
+		await page.keyboard.press("Home");
+		await page.keyboard.press("ArrowRight");
+		await page.keyboard.press("ArrowRight");
+		await dialog.getByRole("button", { name: "Save settings" }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-shadow-strength",
+			"2",
+		);
+		await page.reload();
+		dialog = await openSettings(page);
+		slider = dialog.getByRole("slider", {
+			name: "Shadow intensity and distance",
+		});
+		await expect(slider).toHaveValue("2");
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-shadow-strength",
+			"2",
+		);
+		dialog = await openSettings(page);
+		slider = dialog.getByRole("slider", {
+			name: "Shadow intensity and distance",
+		});
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await dialog.getByRole("button", { name: "Save settings" }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-shadow-strength",
+			"0",
 		);
 	});
 }

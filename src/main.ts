@@ -47,6 +47,8 @@ document.documentElement.dataset.baizeStrength =
 	readSettings(browser).baizeStrength;
 document.documentElement.dataset.paperStrength =
 	readSettings(browser).paperStrength;
+document.documentElement.dataset.shadowStrength =
+	readSettings(browser).shadowStrength;
 
 const root = document.getElementById("app");
 if (!root) throw new Error("index.html must contain #app");

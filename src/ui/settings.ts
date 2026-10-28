@@ -50,6 +50,9 @@ export type BaizeStrength = (typeof BAIZE_STRENGTHS)[number];
 export const PAPER_STRENGTHS = ["off", "mild", "medium", "strong"] as const;
 export type PaperStrength = (typeof PAPER_STRENGTHS)[number];
 
+export const SHADOW_STRENGTHS = ["0", "1", "2", "3", "4"] as const;
+export type ShadowStrength = (typeof SHADOW_STRENGTHS)[number];
+
 /**
  * Display and bot choices of one player, kept in this browser's local storage and never sent to the table.
  * The language keeps its own storage name.
@@ -68,6 +71,7 @@ export interface Settings extends BotTiming {
 	readonly suitColors: SuitColorScheme;
 	readonly baizeStrength: BaizeStrength;
 	readonly paperStrength: PaperStrength;
+	readonly shadowStrength: ShadowStrength;
 	readonly bidTurnFrame: boolean;
 	readonly playTurnFrame: boolean;
 	readonly bidTurnText: boolean;
@@ -95,6 +99,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	suitColors: "standard",
 	baizeStrength: "medium",
 	paperStrength: "medium",
+	shadowStrength: "4",
 	bidTurnFrame: true,
 	playTurnFrame: true,
 	bidTurnText: true,
@@ -199,6 +204,11 @@ export function readSettings(storage: MaybeStorage): Settings {
 			PAPER_STRENGTHS,
 			DEFAULT_SETTINGS.paperStrength,
 		),
+		shadowStrength: readChoice(
+			read("shadow-strength"),
+			SHADOW_STRENGTHS,
+			DEFAULT_SETTINGS.shadowStrength,
+		),
 		...flags,
 	};
 }
@@ -218,6 +228,8 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		throw new Error("unknown board texture strength");
 	if (!PAPER_STRENGTHS.includes(settings.paperStrength))
 		throw new Error("unknown card texture strength");
+	if (!SHADOW_STRENGTHS.includes(settings.shadowStrength))
+		throw new Error("unknown shadow strength");
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
 	for (const [field, name] of Object.entries(TIMING_KEYS))
@@ -230,6 +242,7 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	storage.setItem(`${PREFIX}suit-colors`, settings.suitColors);
 	storage.setItem(`${PREFIX}baize-strength`, settings.baizeStrength);
 	storage.setItem(`${PREFIX}paper-strength`, settings.paperStrength);
+	storage.setItem(`${PREFIX}shadow-strength`, settings.shadowStrength);
 	storage.removeItem(`${PREFIX}theme`);
 	for (const [field, name] of Object.entries(FLAGS))
 		storage.setItem(

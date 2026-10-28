@@ -8,7 +8,14 @@
 	--felt-texture: url("./assets/bridge-baize.webp");
 	--felt-texture-size: 384px;
 	--paper-texture: url("./assets/card-paper-visible.webp");
+	--board-shadow-scale: 1;
+	--board-card-shadow: calc(0.35rem * var(--board-shadow-scale)) calc(0.35rem * var(--board-shadow-scale)) calc(0.45rem * var(--board-shadow-scale)) var(--board-object-shadow);
+	--board-pill-shadow: calc(0.2rem * var(--board-shadow-scale)) calc(0.2rem * var(--board-shadow-scale)) calc(0.3rem * var(--board-shadow-scale)) var(--board-object-shadow);
 }
+:root[data-shadow-strength="0"] { --board-shadow-scale: 0; }
+:root[data-shadow-strength="1"] { --board-shadow-scale: 0.25; }
+:root[data-shadow-strength="2"] { --board-shadow-scale: 0.5; }
+:root[data-shadow-strength="3"] { --board-shadow-scale: 0.75; }
 :root[data-baize-strength="off"] { --felt-texture: none; }
 :root[data-baize-strength="mild"] { --felt-texture: url("./assets/bridge-baize-mild.webp"); }
 :root[data-baize-strength="strong"] { --felt-texture: url("./assets/bridge-baize-strong.webp"); }
@@ -1038,7 +1045,7 @@ main:has(> .room) {
 	border: 1px solid var(--line);
 	border-radius: 0.35rem;
 	background: var(--card-bg);
-	box-shadow: -1px 0 2px var(--card-shadow);
+	box-shadow: var(--board-card-shadow);
 	font-size: calc(var(--rank-size) * var(--suit-font-scale));
 	font-weight: 700;
 	line-height: 1.1;
@@ -1197,7 +1204,7 @@ main:has(> .room) {
 
 .hand .card:enabled .face {
 	border-color: var(--accent);
-	box-shadow: inset 0 0 0 1px var(--accent);
+	box-shadow: var(--board-card-shadow), inset 0 0 0 1px var(--accent);
 }
 
 .hand .card:focus-visible {
@@ -1246,7 +1253,7 @@ main:has(> .room) {
 }
 
 .felt :is(.video-row .tile, .call-panel) {
-	box-shadow: 0.55rem 0.55rem 0.8rem var(--board-object-shadow);
+	box-shadow: calc(0.55rem * var(--board-shadow-scale)) calc(0.55rem * var(--board-shadow-scale)) calc(0.8rem * var(--board-shadow-scale)) var(--board-object-shadow);
 }
 
 .avatar {
@@ -1902,7 +1909,7 @@ dialog {
 	border: 1px solid var(--line);
 	border-radius: 0.3rem;
 	background: var(--card-bg);
-	box-shadow: 0.35rem 0.35rem 0.45rem var(--board-object-shadow);
+	box-shadow: var(--board-card-shadow);
 	color: var(--card-fg);
 	font-weight: 700;
 	font-size: calc(var(--rank-size) * var(--suit-font-scale));
@@ -1957,28 +1964,6 @@ dialog {
 	display: none;
 }
 
-/*
- * Each oriented card shows its rank in the top-left and bottom-right corners on screen. The bottom card is mirrored, so
- * these are its top-right and bottom-left elements.
- */
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
-	.rank-corner.top-right,
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
-	.rank-corner.bottom-left {
-	display: block;
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
-	.rank-corner.top-left,
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
-	.rank-corner.bottom-right {
-	display: none;
-}
-
 .played-center-suit {
 	position: absolute;
 	top: 50%;
@@ -2003,31 +1988,6 @@ dialog {
 	display: block;
 }
 
-/* The marks of the side cards stand upright, as on the top card. */
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played:is(.pos-top, .pos-left, .pos-right)
-	.rank-corner {
-	transform: rotate(0deg);
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
-	.rank-corner {
-	transform: rotate(180deg) scaleY(-1);
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played:is(.pos-top, .pos-left, .pos-right)
-	.played-center-suit {
-	transform: translate(-50%, -50%) rotate(0deg);
-}
-
-.bridge-table[data-played-card-style="corners-oriented"]
-	.played.pos-bottom
-	.played-center-suit {
-	transform: translate(-50%, -50%) rotate(180deg) scaleY(-1);
-}
-
 .played.pos-top {
 	grid-area: top;
 }
@@ -2044,8 +2004,10 @@ dialog {
 	grid-area: bottom;
 }
 
-.bridge-table[data-played-card-style="corners-oriented"] .played.pos-bottom {
-	transform: scaleX(-1);
+/* Board labels and player switches cast the same adjustable shadow as the cards. */
+:is(.felt, .mobile-auction-board) :is(.seat-label .name, .seat-label .tag, .seat-label .host-autoplay-toggle, .seat-label .player-autoplay-toggle, .mobile-board-name, .hcp-pill, .turn-pill, .tile-bot-control),
+.mobile-player-control button {
+	box-shadow: var(--board-pill-shadow);
 }
 
 /* Dock: the call panel bottom-left, the game controls bottom-center. */
