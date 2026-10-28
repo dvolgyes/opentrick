@@ -101,12 +101,12 @@ const rows: readonly TranslationRow[] = [
 		"Het spelen begint over {seconds} seconden.",
 	],
 	[
-		"Round trips (seconds): row → column",
-		"Tiempos de ida y vuelta (segundos): fila → columna",
-		"Tempos de ida e volta (segundos): linha → coluna",
-		"Temps aller-retour (secondes) : ligne → colonne",
-		"Tempi di andata e ritorno (secondi): riga → colonna",
-		"Heen-en-terugtijden (seconden): rij → kolom",
+		"Roundtrip times [s] (Row sender, column responder)",
+		"Tiempos de ida y vuelta [s] (fila emisor, columna respondedor)",
+		"Tempos de ida e volta [s] (linha emissor, coluna respondente)",
+		"Temps aller-retour [s] (ligne émetteur, colonne répondeur)",
+		"Tempi di andata e ritorno [s] (riga mittente, colonna risponditore)",
+		"Heen-en-terugtijden [s] (rij verzender, kolom beantwoorder)",
 	],
 	[
 		"No measurement",

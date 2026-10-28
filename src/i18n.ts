@@ -48,8 +48,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Network: breaking up": "Netzwerk: Verbindung bricht ab",
 		"Roundtrip: {seconds}sec": "Umlaufzeit: {seconds} s",
 		"Roundtrip: >{seconds}sec": "Umlaufzeit: >{seconds} s",
-		"Round trips (seconds): row → column":
-			"Umlaufzeiten (Sekunden): Zeile → Spalte",
+		"Roundtrip times [s] (Row sender, column responder)":
+			"Umlaufzeiten [s] (Zeile Sender, Spalte Antwortender)",
 		"No measurement": "Keine Messung",
 		"Bot timing": "Bot-Zeiten",
 		"Minimum card time (seconds)": "Mindestzeit pro Karte (Sekunden)",
@@ -717,8 +717,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Network: breaking up": "Hálózat: akadozik",
 		"Roundtrip: {seconds}sec": "Oda-vissza: {seconds} mp",
 		"Roundtrip: >{seconds}sec": "Oda-vissza: >{seconds} mp",
-		"Round trips (seconds): row → column":
-			"Oda-vissza idők (másodperc): sor → oszlop",
+		"Roundtrip times [s] (Row sender, column responder)":
+			"Oda-vissza idők [s] (sor küldő, oszlop válaszoló)",
 		"No measurement": "Nincs mérés",
 		"Bot timing": "Botok időzítése",
 		"Minimum card time (seconds)": "Kijátszás minimális ideje (másodperc)",
@@ -1376,8 +1376,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Network: breaking up": "Nettverk: faller ut",
 		"Roundtrip: {seconds}sec": "Tur-retur: {seconds} s",
 		"Roundtrip: >{seconds}sec": "Tur-retur: >{seconds} s",
-		"Round trips (seconds): row → column":
-			"Tur-retur-tider (sekunder): rad → kolonne",
+		"Roundtrip times [s] (Row sender, column responder)":
+			"Tur-retur-tider [s] (rad avsender, kolonne svarer)",
 		"No measurement": "Ingen måling",
 		"Bot timing": "Tidsinnstillinger for boter",
 		"Minimum card time (seconds)": "Minstetid per kort (sekunder)",

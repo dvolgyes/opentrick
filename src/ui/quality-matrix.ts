@@ -4,13 +4,20 @@ import { SEATS, type Seat } from "../protocol";
 import { el } from "./dom";
 import { qualityView } from "./table-model";
 
-/** Rows are the measuring pages; columns are the destinations. Color is accompanied by a numeric value and hint. */
+/**
+ * Rows are the senders: each page pings the others and measures the round trip. Columns are the responders.
+ * Color is accompanied by a numeric value and hint.
+ */
 export function qualityMatrix(t: Translate) {
 	const table = el("table", {
 		className: "quality-matrix",
 		attrs: { "data-testid": "quality-matrix" },
 	});
-	const caption = el("caption", {}, t("Round trips (seconds): row → column"));
+	const caption = el(
+		"caption",
+		{},
+		t("Roundtrip times [s] (Row sender, column responder)"),
+	);
 	const headings = [
 		el("th", {}, ""),
 		...SEATS.map((seat) => el("th", { attrs: { scope: "col" } }, seat)),
