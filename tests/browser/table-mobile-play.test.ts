@@ -2965,7 +2965,7 @@ describe("board depth and frame colours", () => {
 			const { root, section } = renderView(playView(), layout);
 			section.renderCall({
 				available: false,
-				reason: "All present seats are controlled by bots.",
+				reason: "No other human players are present.",
 				botsOnly: true,
 			});
 			const panel = root.querySelector<HTMLElement>(".call-panel");

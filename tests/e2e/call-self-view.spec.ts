@@ -10,10 +10,10 @@ import {
 } from "./call-probe";
 
 import { Player } from "./player";
-import { CONNECT_MS, createRoom } from "./room";
+import { CONNECT_MS, createRoom, pick } from "./room";
 
 /**
- * The desktop call box (src/ui/call-panel.ts) on one Full HD page: West hosts, the bots hold the other seats.
+ * The desktop call box (src/ui/call-panel.ts) on one Full HD page: West hosts, North is human, and two seats are bots.
  * Outside the call it has three rows: the heading, the four switches as icons, and Join call. In the call it is a
  * tile of West's own camera, as large as the other tiles, with the switches in its caption bar and Leave call and
  * Mirror where the other tiles have Switch to player.
@@ -85,11 +85,13 @@ test("the desktop call box: three rows outside the call, and in the call a tile 
 		permissions: ["microphone", "camera"],
 		viewport: { width: 1920, height: 1080 },
 	});
+	const guest = await Player.open(browser, baseURL, "self-view-guest");
 	try {
 		await host.addInitScript(installCallProbe);
 		const page = await host.page("./");
 		await passingBots(page);
-		await createRoom(page, ["N", "E", "S"]);
+		const link = await createRoom(page, ["E", "S"]);
+		await pick(await guest.page(link), "N");
 		await expect(page.getByTestId("table")).toHaveAttribute(
 			"data-phase",
 			"auction",
@@ -243,6 +245,7 @@ test("the desktop call box: three rows outside the call, and in the call a tile 
 		await expect.poll(() => liveCameras(page)).toBe(0);
 		expect(host.errors).toEqual([]);
 	} finally {
+		await guest.close();
 		await host.close();
 	}
 });

@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
-import { createRoom } from "./room";
+import { Player } from "./player";
+import { createRoom, pick } from "./room";
 
 for (const layout of ["desktop", "compact"] as const) {
-	test(`disables the call only while every present seat is a bot (${layout})`, async ({
+	test(`disables the call when the other seats are bots (${layout})`, async ({
 		page,
 	}) => {
 		await page.setViewportSize(
@@ -11,6 +12,19 @@ for (const layout of ["desktop", "compact"] as const) {
 				? { width: 360, height: 800 }
 				: { width: 1280, height: 720 },
 		);
+		await page.addInitScript(() => {
+			let requests = 0;
+			const original = navigator.mediaDevices.getUserMedia.bind(
+				navigator.mediaDevices,
+			);
+			navigator.mediaDevices.getUserMedia = (constraints) => {
+				requests++;
+				return original(constraints);
+			};
+			Object.defineProperty(window, "callMediaRequests", {
+				get: () => requests,
+			});
+		});
 		await mockBotBidding(page, () => "P");
 		await page.goto("/");
 		await createRoom(page, ["N", "E", "S"]);
@@ -19,14 +33,17 @@ for (const layout of ["desktop", "compact"] as const) {
 				? page.locator('.icon-group[aria-label="Room call"]')
 				: page.getByTestId("call-panel");
 		const join = controls.getByRole("button", { name: "Join call" });
-		await expect(join).toBeEnabled();
-		if (layout === "desktop") {
-			await page.context().grantPermissions(["microphone"]);
-			await join.click();
-			await expect(
-				controls.getByRole("button", { name: "Leave call" }),
-			).toBeEnabled();
-		}
+		await expect(controls).toHaveAttribute("data-bots-only", "true");
+		await expect(join).toBeDisabled();
+		await expect(controls).toHaveCSS("filter", "grayscale(1) brightness(0.6)");
+		await join.evaluate((button) => (button as HTMLButtonElement).click());
+		expect(
+			await page.evaluate(
+				() =>
+					(window as unknown as { callMediaRequests: number })
+						.callMediaRequests,
+			),
+		).toBe(0);
 		await page.getByTestId("host-autoplay-toggle").click();
 		await page.getByTestId("autoplay-confirm-enable").click();
 		await expect(controls).toHaveAttribute("data-bots-only", "true");
@@ -41,8 +58,65 @@ for (const layout of ["desktop", "compact"] as const) {
 			).toHaveCount(0);
 		}
 		await page.getByTestId("host-autoplay-toggle").click();
-		await expect(controls).toHaveAttribute("data-bots-only", "false");
-		await expect(join).toBeEnabled();
+		await expect(controls).toHaveAttribute("data-bots-only", "true");
+		await expect(join).toBeDisabled();
+	});
+}
+
+for (const layout of ["desktop", "compact"] as const) {
+	test(`enables the call when another human joins and disables it when they are replaced (${layout})`, async ({
+		browser,
+		baseURL,
+	}) => {
+		if (!baseURL) throw new Error("missing base URL");
+		const host = await Player.open(browser, baseURL, `call-host-${layout}`, {
+			viewport:
+				layout === "compact"
+					? { width: 360, height: 800 }
+					: { width: 1280, height: 720 },
+		});
+		const guest = await Player.open(browser, baseURL, `call-guest-${layout}`);
+		try {
+			const page = await host.page("./");
+			await mockBotBidding(page, () => "P");
+			const link = await createRoom(page, ["E", "S"]);
+			const controls =
+				layout === "compact"
+					? page.locator('.icon-group[aria-label="Room call"]')
+					: page.getByTestId("call-panel");
+			await expect(controls).toHaveAttribute("data-bots-only", "true");
+			await pick(await guest.page(link), "N");
+			await expect(controls).toHaveAttribute("data-bots-only", "false");
+			const join = controls.getByRole("button", { name: "Join call" });
+			await expect(join).toBeEnabled();
+			if (layout === "desktop") {
+				await host.grantPermissions(["microphone"]);
+				await join.click();
+				await expect(
+					controls.getByRole("button", { name: "Leave call" }),
+				).toBeEnabled();
+				await page
+					.getByTestId("tile-N")
+					.getByRole("button", { name: "Switch to bot" })
+					.click();
+				await expect(
+					controls.getByRole("button", { name: "Leave call" }),
+				).toBeEnabled();
+				await expect(controls).toHaveAttribute("data-bots-only", "false");
+			} else {
+				await page.getByText("Optional automated players").click();
+				await page
+					.locator('.mobile-player-control[data-seat="N"] button')
+					.click();
+			}
+			await expect(controls).toHaveAttribute("data-bots-only", "true", {
+				timeout: 20_000,
+			});
+			await expect(join).toBeDisabled();
+		} finally {
+			await guest.close();
+			await host.close();
+		}
 	});
 }
 

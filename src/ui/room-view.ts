@@ -55,6 +55,7 @@ import {
 } from "./bookmark";
 import { CallMemory } from "./call-memory";
 import type { CallDisplay, RemoteCallPresence } from "./call-model";
+import { CallPresenceTimeout } from "./call-presence";
 import { cameraSetup } from "./camera-setup";
 import { debugExport, pageAddress } from "./debug-export";
 import type { AppDeps, Dispose, Navigation } from "./deps";
@@ -206,7 +207,13 @@ export function showRoom(
 	const delegatedBotSeats = new Set<Seat>();
 	/** A bot that the host chose plays this page's seat. */
 	let botHoldsSeat = false;
-	let noHumanPlayers = false;
+	let noOtherHumans = false;
+	const callPresence = new CallPresenceTimeout(() => {
+		if (!noOtherHumans || disposed) return;
+		call?.leave();
+		memory?.acted();
+		render();
+	});
 	let botStarting = false;
 	let botAutoAttempted = false;
 	let botRestoreStarted = false;
@@ -696,11 +703,11 @@ export function showRoom(
 			// Only these explicit actions change the stored call status.
 			call: {
 				join: (selection) => {
-					if (noHumanPlayers) return;
+					if (noOtherHumans) return;
 					if (selection.send.video && camera?.available !== false) {
 						void camera?.open().then((chosen) => {
 							if (chosen === undefined || call === undefined) return;
-							if (noHumanPlayers) {
+							if (noOtherHumans) {
 								if (chosen !== "cancelled") chosen.track.stop();
 								return;
 							}
@@ -1179,20 +1186,25 @@ export function showRoom(
 	}
 
 	function renderCall(): void {
-		const display: CallDisplay = noHumanPlayers
-			? {
-					available: false,
-					reason: "All present seats are controlled by bots.",
-					botsOnly: true,
-				}
-			: call === undefined
-				? { available: false, reason: support.available ? "" : support.reason }
-				: {
-						available: true,
-						view: call.view,
-						rejoin: memory?.rejoin,
-						cameraAvailable: camera?.available,
-					};
+		callPresence.update(!noOtherHumans, call?.view.requested.inCall === true);
+		const display: CallDisplay =
+			noOtherHumans && !call?.view.requested.inCall
+				? {
+						available: false,
+						reason: "No other human players are present.",
+						botsOnly: true,
+					}
+				: call === undefined
+					? {
+							available: false,
+							reason: support.available ? "" : support.reason,
+						}
+					: {
+							available: true,
+							view: call.view,
+							rejoin: memory?.rejoin,
+							cameraAvailable: camera?.available,
+						};
 		table.renderCall(display, remoteCallPresence, hostInCall);
 		audio.render(display.available ? display.view.remotes : []);
 	}
@@ -1359,14 +1371,17 @@ export function showRoom(
 		const inCallSeats = callSeats(view.hostSeat, view.roster);
 		const onlyBots =
 			view.roster !== null &&
-			![...inCallSeats].some(
-				(participant) => !view.roster?.bots.includes(participant),
-			);
-		if (onlyBots && !noHumanPlayers) call?.leave();
-		noHumanPlayers = onlyBots;
+			![...inCallSeats].some((participant) => participant !== seat);
+		noOtherHumans = onlyBots;
+		const inCall = call?.view.requested.inCall === true;
+		callPresence.update(!onlyBots, inCall);
 		const botAlone = botPlays(view.roster, seat);
 		const snapshot = controller.callSnapshot();
-		call?.update(botAlone || onlyBots ? { ...snapshot, self: null } : snapshot);
+		call?.update(
+			botAlone || (onlyBots && !inCall)
+				? { ...snapshot, self: null }
+				: snapshot,
+		);
 		if (botAlone !== botHoldsSeat) {
 			botHoldsSeat = botAlone;
 			if (!botAlone) memory?.seatReturned();
@@ -1657,6 +1672,7 @@ export function showRoom(
 
 	return () => {
 		disposed = true;
+		callPresence.stop();
 		botRunner?.stop();
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
 		deviceWatch.stop();
