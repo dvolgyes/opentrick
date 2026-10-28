@@ -135,7 +135,7 @@ export function playerEditor(
 				{ attrs: { id: "player-editor-title" } },
 				deps.t("Player names"),
 			),
-			seatGrid(cards),
+			seatGrid(cards, { bottom: view.seat ?? "S" }),
 			el(
 				"div",
 				{ className: "player-editor-actions" },

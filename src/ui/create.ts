@@ -337,7 +337,7 @@ export function showCreate(
 	const form = el(
 		"form",
 		{ className: "create" },
-		seatGrid(rows, presets),
+		seatGrid(rows, { center: presets }),
 		el(
 			"p",
 			{ className: "note" },

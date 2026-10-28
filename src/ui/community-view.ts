@@ -164,7 +164,15 @@ export function showCommunity(
 						),
 					};
 				}),
-				status,
+				{
+					center: status,
+					// Before the group forms, this browser's seat is the one it chose at creation.
+					bottom:
+						saved.group?.members.find((member) => member.id === saved.self)
+							?.seat ??
+						saved.preferredSeat ??
+						"S",
+				},
 			),
 		);
 		replacements.hidden = session.replacementOffers.length === 0;

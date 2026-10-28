@@ -43,7 +43,7 @@
 .seat-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	grid-template-areas: ". north ." "west . east" ". south .";
+	grid-template-areas: ". top ." "left . right" ". bottom .";
 	gap: 0.7rem;
 	margin: 1rem 0;
 }
@@ -52,19 +52,20 @@
 .seat-card h2 { margin: 0 0 0.4rem; font-size: 1rem; }
 .seat-card label { display: block; }
 .seat-card input[type="text"] { box-sizing: border-box; width: 100%; min-width: 0; }
-.seat-card[data-seat="N"] { grid-area: north; }
-.seat-card[data-seat="E"] { grid-area: east; }
-.seat-card[data-seat="S"] { grid-area: south; }
-.seat-card[data-seat="W"] { grid-area: west; }
-.seat-grid.with-center { grid-template-areas: ". north ." "west center east" ". south ."; }
+/* src/ui/seat-grid.ts puts the viewer's seat at the bottom and the next seats clockwise at the left, top and right. */
+.seat-card[data-position="top"] { grid-area: top; }
+.seat-card[data-position="right"] { grid-area: right; }
+.seat-card[data-position="bottom"] { grid-area: bottom; }
+.seat-card[data-position="left"] { grid-area: left; }
+.seat-grid.with-center { grid-template-areas: ". top ." "left center right" ". bottom ."; }
 .seat-center { grid-area: center; align-self: center; min-width: 0; }
 .seat-presets { display: flex; flex-direction: column; gap: 0.5rem; }
 .seat-presets button { width: 100%; overflow-wrap: anywhere; }
 .community-table .seat-card { min-height: 5rem; }
 @media (max-width: 600px) {
-	.seat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "north north" "west east" "south south"; }
-	.seat-grid:not(.with-center) .seat-card:is([data-seat="N"], [data-seat="S"]) { width: calc(50% - 1.75rem); justify-self: center; }
-	.seat-grid.with-center { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: ". north ." "west center east" ". south ."; gap: 0.35rem; }
+	.seat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "top top" "left right" "bottom bottom"; }
+	.seat-grid:not(.with-center) .seat-card:is([data-position="top"], [data-position="bottom"]) { width: calc(50% - 1.75rem); justify-self: center; }
+	.seat-grid.with-center { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: ". top ." "left center right" ". bottom ."; gap: 0.35rem; }
 	.seat-grid.with-center .seat-card { box-sizing: border-box; width: 100%; padding: 0.4rem; }
 	.seat-grid.with-center .seat-roles label { white-space: normal; }
 }
@@ -334,13 +335,13 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	border-top: 1px solid var(--muted);
 }
 
-/* On a phone the north and south cards are as wide as the west and east cards, so that each card keeps one row. */
+/* On a phone the top and bottom cards are as wide as the left and right cards, so that each card keeps one row. */
 @media (max-width: 600px) {
 	:is(.create, .player-editor) .seat-card {
 		padding: 0.5rem;
 	}
 
-	:is(.create, .player-editor) .seat-grid:not(.with-center) .seat-card:is([data-seat="N"], [data-seat="S"]) {
+	:is(.create, .player-editor) .seat-grid:not(.with-center) .seat-card:is([data-position="top"], [data-position="bottom"]) {
 		width: calc(50% - 0.35rem);
 	}
 }
