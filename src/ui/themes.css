@@ -223,10 +223,10 @@
 	--label-frame: #eee8d5;
 	--presence-online: #8fd16a;
 	--waiting-line: #5f7f7a;
-	--waiting-fg: #a8b7b7;
+	--waiting-fg: #b7c6c6;
 	--turn-hand-bg: #1d5a50;
 	--turn-name: #dc322f;
-	--trump-fg: #d9a91a;
+	--trump-fg: #e8b82b;
 	--gold: #d9a91a;
 	--gold-fg: #002b36;
 	--pill-bg: var(--card-bg);
@@ -369,11 +369,11 @@
 	--scrim-strong: rgb(0 20 26 / 80%);
 	--frame-bg: #0a2e38;
 	--felt: #1d5a4e;
-	--felt-fg: #cad8d9;
+	--felt-fg: #d7e5e6;
 	--label-frame: #cad8d9;
 	--presence-online: #84c747;
 	--waiting-line: #3f7c72;
-	--waiting-fg: #adbcbc;
+	--waiting-fg: #b7c6c6;
 	--turn-hand-bg: #2a6b5f;
 	--turn-name: #d03c34;
 	--trump-fg: #ebc13d;
@@ -519,7 +519,7 @@
 	--label-frame: #fbf1c7;
 	--presence-online: #b8bb26;
 	--waiting-line: #6b7d54;
-	--waiting-fg: #bdae93;
+	--waiting-fg: #cfbfa4;
 	--turn-hand-bg: #56673a;
 	--turn-name: #cc241d;
 	--trump-fg: #fabd2f;

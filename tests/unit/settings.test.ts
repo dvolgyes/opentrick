@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_BOT_SETUP } from "../../src/protocol";
 import { discardLegacyBotSettings } from "../../src/ui/legacy-bot-settings";
 import {
+	BAIZE_STRENGTHS,
 	DEFAULT_SETTINGS,
 	readSettings,
 	SUIT_COLOR_SCHEMES,
@@ -45,6 +46,7 @@ describe("player settings", () => {
 			scheme: "auto",
 			suitFontSize: "M",
 			suitColors: "standard",
+			baizeStrength: "strong",
 			bidTurnFrame: true,
 			playTurnFrame: true,
 			bidTurnText: true,
@@ -72,6 +74,7 @@ describe("player settings", () => {
 			scheme: "dark",
 			suitFontSize: "XL",
 			suitColors: "green-orange",
+			baizeStrength: "mild",
 			bidTurnFrame: false,
 			playTurnFrame: true,
 			bidTurnText: false,
@@ -96,8 +99,23 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.scheme", "auto ");
 		storage.setItem("opentrick.settings.suit-font-size", "200%; color: red");
 		storage.setItem("opentrick.settings.suit-colors", "invalid");
+		storage.setItem("opentrick.settings.baize-strength", "invalid");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
 		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
+	});
+
+	it("stores each board texture strength and rejects invalid values", () => {
+		const storage = memoryStorage();
+		for (const baizeStrength of BAIZE_STRENGTHS) {
+			writeSettings(storage, { ...DEFAULT_SETTINGS, baizeStrength });
+			expect(readSettings(storage).baizeStrength).toBe(baizeStrength);
+		}
+		expect(() =>
+			writeSettings(storage, {
+				...DEFAULT_SETTINGS,
+				baizeStrength: "invalid" as never,
+			}),
+		).toThrow("unknown board texture strength");
 	});
 
 	it.each(["S", "M", "L", "XL", "XXL", "XXXL"] as const)(

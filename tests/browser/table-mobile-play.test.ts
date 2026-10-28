@@ -303,6 +303,53 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("uses three progressively stronger baize tiles on desktop and mobile", async () => {
+		const variances: number[] = [];
+		const urls = new Set<string>();
+		try {
+			for (const strength of ["mild", "normal", "strong"] as const) {
+				document.documentElement.dataset.baizeStrength = strength;
+				let reference = "";
+				for (const layout of ["desktop", "compact"] as const) {
+					const { root } = renderView(playView(), layout);
+					const surface = root.querySelector<HTMLElement>(
+						layout === "desktop" ? ".felt" : ".mobile-auction-board",
+					);
+					if (!surface) throw new Error("missing playing surface");
+					const background = getComputedStyle(surface).backgroundImage;
+					if (reference) expect(background).toBe(reference);
+					else reference = background;
+				}
+				const url = /^url\("(.*)"\)$/.exec(reference)?.[1];
+				if (!url) throw new Error("missing texture URL");
+				urls.add(url);
+				const image = new Image();
+				image.src = url;
+				await image.decode();
+				const canvas = document.createElement("canvas");
+				canvas.width = image.naturalWidth;
+				canvas.height = image.naturalHeight;
+				const ctx = canvas.getContext("2d");
+				if (!ctx) throw new Error("canvas is unavailable");
+				ctx.drawImage(image, 0, 0);
+				const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+				let total = 0;
+				let squares = 0;
+				const count = pixels.length / 4;
+				for (let index = 1; index < pixels.length; index += 4) {
+					const green = pixels[index] ?? 0;
+					total += green;
+					squares += green * green;
+				}
+				variances.push(squares / count - (total / count) ** 2);
+			}
+			expect(urls.size).toBe(3);
+			expect(variances[1]).toBeGreaterThan(variances[0] ?? 0);
+			expect(variances[2]).toBeGreaterThan(variances[1] ?? 0);
+		} finally {
+			delete document.documentElement.dataset.baizeStrength;
+		}
+	});
 	it("shows the same repeating baize on desktop and mobile in light and dark themes", async () => {
 		let reference = "";
 		try {

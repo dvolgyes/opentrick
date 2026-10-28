@@ -5,9 +5,11 @@
 :root {
 	--suit-font-scale: 1;
 	/* The 2× tile repeats at its 384px design size. */
-	--felt-texture: url("./assets/bridge-baize.webp");
+	--felt-texture: url("./assets/bridge-baize-strong.webp");
 	--felt-texture-size: 384px;
 }
+:root[data-baize-strength="mild"] { --felt-texture: url("./assets/bridge-baize-mild.webp"); }
+:root[data-baize-strength="normal"] { --felt-texture: url("./assets/bridge-baize.webp"); }
 :root[data-suit-font-size="S"] { --suit-font-scale: 0.75; }
 :root[data-suit-font-size="L"] { --suit-font-scale: 1.25; }
 :root[data-suit-font-size="XL"] { --suit-font-scale: 1.5; }

@@ -6,6 +6,7 @@ import { button, el } from "./dom";
 import { languageSelect, saveLanguage } from "./language-control";
 import { BIDDER_NAMES } from "./model";
 import {
+	BAIZE_STRENGTHS,
 	readSettings,
 	SCHEMES,
 	type Scheme,
@@ -182,6 +183,35 @@ export function settingsDialog(
 		SCHEME_LABELS,
 	);
 	const theme = radios("settings-theme", "Theme", THEMES, THEME_LABELS);
+	const baize = el("input", {
+		attrs: {
+			type: "range",
+			min: "0",
+			max: "2",
+			step: "1",
+			name: "settings-baize-strength",
+		},
+	});
+	const baizeValue = el("output", {});
+	const updateBaizeLabel = () => {
+		const labels = ["Milder", "Original", "Stronger"] as const;
+		const label = t(labels[baize.valueAsNumber] ?? "Stronger");
+		baizeValue.textContent = label;
+		baize.setAttribute("aria-valuetext", label);
+	};
+	baize.addEventListener("input", updateBaizeLabel);
+	const baizeControl = el(
+		"fieldset",
+		{},
+		el("legend", {}, t("Board texture")),
+		el(
+			"label",
+			{ className: "settings-row" },
+			`${t("Texture strength")} `,
+			baize,
+			baizeValue,
+		),
+	);
 	const suitFontSize = radios(
 		"settings-suit-font-size",
 		"Suit and rank font size",
@@ -271,6 +301,7 @@ export function settingsDialog(
 		points.element,
 		scheme.element,
 		theme.element,
+		baizeControl,
 		suitFontSize.element,
 		suitColors,
 		el(
@@ -366,6 +397,7 @@ export function settingsDialog(
 			cardPoints: cardPoints.checked,
 			theme: theme.value(),
 			scheme: scheme.value(),
+			baizeStrength: BAIZE_STRENGTHS[baize.valueAsNumber] ?? "strong",
 			suitFontSize: suitFontSize.value(),
 			suitColors:
 				SUIT_COLOR_SCHEMES.find(
@@ -400,6 +432,8 @@ export function settingsDialog(
 			settings.suitFontSize;
 		element.ownerDocument.documentElement.dataset.suitColors =
 			settings.suitColors;
+		element.ownerDocument.documentElement.dataset.baizeStrength =
+			settings.baizeStrength;
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
@@ -424,6 +458,8 @@ export function settingsDialog(
 			cardPoints.checked = settings.cardPoints;
 			scheme.set(settings.scheme);
 			theme.set(settings.theme);
+			baize.value = String(BAIZE_STRENGTHS.indexOf(settings.baizeStrength));
+			updateBaizeLabel();
 			suitFontSize.set(settings.suitFontSize);
 			for (const { input } of suitColorInputs)
 				input.checked = input.value === settings.suitColors;

@@ -43,6 +43,8 @@ watchTheme(document.documentElement, window, () => readSettings(browser));
 document.documentElement.dataset.suitFontSize =
 	readSettings(browser).suitFontSize;
 document.documentElement.dataset.suitColors = readSettings(browser).suitColors;
+document.documentElement.dataset.baizeStrength =
+	readSettings(browser).baizeStrength;
 
 const root = document.getElementById("app");
 if (!root) throw new Error("index.html must contain #app");

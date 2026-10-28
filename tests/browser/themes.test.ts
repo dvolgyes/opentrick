@@ -135,14 +135,22 @@ class SystemScheme extends EventTarget {
 
 afterEach(() => {
 	applyTheme(document.documentElement, "normal", "light", false);
+	delete document.documentElement.dataset.baizeStrength;
 	document.body.replaceChildren();
 });
 
 describe("themes", () => {
-	it.each(PALETTES)(
-		"%s %s keeps felt labels readable against the actual baize",
-		async (theme, scheme) => {
+	it.each(
+		PALETTES.flatMap(([theme, scheme]) =>
+			["mild", "normal", "strong"].map(
+				(strength) => [theme, scheme, strength] as const,
+			),
+		),
+	)(
+		"%s %s keeps felt labels readable against the %s baize",
+		async (theme, scheme, strength) => {
 			applyTheme(document.documentElement, theme, scheme, false);
+			document.documentElement.dataset.baizeStrength = strength;
 			const felt = place(".felt");
 			const imageUrl = /^url\("(.*)"\)$/.exec(
 				getComputedStyle(felt).backgroundImage,

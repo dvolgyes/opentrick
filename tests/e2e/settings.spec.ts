@@ -35,6 +35,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		"Bidding system",
 		"Appearance",
 		"Theme",
+		"Board texture",
 		"Suit and rank font size",
 		"Suit colours",
 		"Screen orientation",
@@ -117,6 +118,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		),
 	).toEqual([
 		"opentrick.settings.auction-pause-ms",
+		"opentrick.settings.baize-strength",
 		"opentrick.settings.bid-turn-frame",
 		"opentrick.settings.bid-turn-text",
 		"opentrick.settings.bidder",
@@ -173,6 +175,56 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
 });
+
+for (const [layout, viewport] of [
+	["desktop", { width: 1280, height: 800 }],
+	["phone", { width: 390, height: 844 }],
+] as const) {
+	test(`board texture slider saves and restores its three levels on ${layout}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await openTable(page);
+		let dialog = await openSettings(page);
+		let slider = dialog.getByRole("slider", { name: "Texture strength" });
+		await expect(slider).toHaveValue("2");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Stronger");
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await page.keyboard.press("ArrowRight");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Original");
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-baize-strength",
+			"strong",
+		);
+		await dialog.getByRole("button", { name: "Save settings" }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-baize-strength",
+			"normal",
+		);
+		await page.reload();
+		dialog = await openSettings(page);
+		slider = dialog.getByRole("slider", { name: "Texture strength" });
+		await expect(slider).toHaveValue("1");
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Milder");
+		await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-baize-strength",
+			"normal",
+		);
+		dialog = await openSettings(page);
+		slider = dialog.getByRole("slider", { name: "Texture strength" });
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await dialog.getByRole("button", { name: "Save settings" }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-baize-strength",
+			"mild",
+		);
+	});
+}
 
 test("suit colours offer nine previews, apply on Save, and survive reload", async ({
 	page,

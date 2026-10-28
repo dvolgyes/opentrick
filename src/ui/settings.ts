@@ -44,6 +44,9 @@ export const SUIT_COLOR_SCHEMES = [
 ] as const;
 export type SuitColorScheme = (typeof SUIT_COLOR_SCHEMES)[number];
 
+export const BAIZE_STRENGTHS = ["mild", "normal", "strong"] as const;
+export type BaizeStrength = (typeof BAIZE_STRENGTHS)[number];
+
 /**
  * Display and bot choices of one player, kept in this browser's local storage and never sent to the table.
  * The language keeps its own storage name.
@@ -60,6 +63,7 @@ export interface Settings extends BotTiming {
 	/** Size of suit and rank notation relative to its original size (M). */
 	readonly suitFontSize: SuitFontSize;
 	readonly suitColors: SuitColorScheme;
+	readonly baizeStrength: BaizeStrength;
 	readonly bidTurnFrame: boolean;
 	readonly playTurnFrame: boolean;
 	readonly bidTurnText: boolean;
@@ -85,6 +89,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	scheme: "auto",
 	suitFontSize: "M",
 	suitColors: "standard",
+	baizeStrength: "strong",
 	bidTurnFrame: true,
 	playTurnFrame: true,
 	bidTurnText: true,
@@ -177,6 +182,11 @@ export function readSettings(storage: MaybeStorage): Settings {
 			SUIT_COLOR_SCHEMES,
 			DEFAULT_SETTINGS.suitColors,
 		),
+		baizeStrength: readChoice(
+			read("baize-strength"),
+			BAIZE_STRENGTHS,
+			DEFAULT_SETTINGS.baizeStrength,
+		),
 		...flags,
 	};
 }
@@ -192,6 +202,8 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		throw new Error("unknown suit and rank font size");
 	if (!SUIT_COLOR_SCHEMES.includes(settings.suitColors))
 		throw new Error("unknown suit colour scheme");
+	if (!BAIZE_STRENGTHS.includes(settings.baizeStrength))
+		throw new Error("unknown board texture strength");
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
 	for (const [field, name] of Object.entries(TIMING_KEYS))
@@ -202,6 +214,7 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	storage.setItem(`${PREFIX}scheme`, settings.scheme);
 	storage.setItem(`${PREFIX}suit-font-size`, settings.suitFontSize);
 	storage.setItem(`${PREFIX}suit-colors`, settings.suitColors);
+	storage.setItem(`${PREFIX}baize-strength`, settings.baizeStrength);
 	storage.removeItem(`${PREFIX}theme`);
 	for (const [field, name] of Object.entries(FLAGS))
 		storage.setItem(
