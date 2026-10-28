@@ -1,4 +1,5 @@
 import { updateUrl } from "../build";
+import { Discovery } from "../community/discovery";
 import { parseCommunityRoute, partyFragment } from "../community/link";
 import { newCommandId } from "../ids";
 import { newTableKey, parseRoute, tableFragment } from "../p2p/link";
@@ -26,6 +27,10 @@ import { screenWakeLock, WakeLockPolicy } from "./wake-lock";
  * the next table starts.
  */
 export function startApp(root: HTMLElement, deps: AppDeps): void {
+	const discovery = deps.openCommunity
+		? new Discovery(deps.openCommunity)
+		: undefined;
+	if (discovery) deps = { ...deps, discovery, openCommunity: discovery.open };
 	// Relative bot-model URLs use the site root on both directory entry pages and the dev server's fallback.
 	const base = document.querySelector("base");
 	if (base) base.href = siteLocation(location.pathname).root;
@@ -40,6 +45,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 			// Stop the table before opening a fresh setup page without its query or invitation key.
 			dispose?.();
 			dispose = undefined;
+			void discovery?.stop();
 			location.assign(`${sitePath(location.pathname, "create")}/`);
 		},
 		reload: () => location.reload(),
@@ -73,6 +79,8 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 				? { kind: "create" as const }
 				: parseRoute(location.hash);
 		if (community && community.kind !== "create") {
+			if (community.kind === "party") discovery?.start();
+			else void discovery?.stop();
 			if (!corner.isConnected) root.before(corner);
 			dispose = showCommunity(root, deps, community, navigation);
 			return;
@@ -82,11 +90,13 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 		else if (!corner.isConnected) root.before(corner);
 		switch (target.kind) {
 			case "create":
+				discovery?.start();
 				dispose = showCreate(
 					root,
 					deps,
 					parseBookmark(location.search),
 					(key, config, seat, hostBots, entry = "create") => {
+						void discovery?.stop();
 						const path = `${sitePath(location.pathname, entry)}/`;
 						// Keep setup data and the selected seat in the address; replaceState fires no hashchange.
 						const query = selectedPlayerQuery(
@@ -175,6 +185,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 				);
 				return;
 			case "table": {
+				void discovery?.stop();
 				dispose = showTable(
 					root,
 					deps,
@@ -187,6 +198,7 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 				return;
 			}
 			case "invalid":
+				void discovery?.stop();
 				dispose = showLinkProblem(
 					root,
 					navigation,

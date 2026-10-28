@@ -16,6 +16,7 @@ import {
 } from "../protocol";
 import type { Bookmark } from "./bookmark";
 import type { AppDeps, Dispose } from "./deps";
+import { discoveryCount } from "./discovery-count";
 import { button, el } from "./dom";
 import { languageControl } from "./language-control";
 import {
@@ -69,6 +70,7 @@ export function showCreate(
 	entry: EntryPage | "home" = "home",
 ): Dispose {
 	let disposed = false;
+	const discovery = discoveryCount(deps);
 	const pathname = new URL(deps.pageUrl()).pathname;
 	const nameFields = {} as Record<Seat, HTMLInputElement>;
 	const meChoices = {} as Record<Seat, HTMLInputElement>;
@@ -556,6 +558,7 @@ export function showCreate(
 				el("label", {}, `${deps.t("Scoring")}: `, scoring),
 			),
 			el("section", { className: "create-mode" }, soloForm),
+			discovery.element,
 			el(
 				"section",
 				{ className: "create-mode" },
@@ -577,5 +580,6 @@ export function showCreate(
 		});
 	return () => {
 		disposed = true;
+		discovery.dispose();
 	};
 }

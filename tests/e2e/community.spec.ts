@@ -88,6 +88,63 @@ function gameKey(page: Page): string | null {
 	);
 }
 
+test("discovery connections are visible on setup and reused while searching", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages } = await players(browser, baseURL, 2);
+	try {
+		const [first, second] = pages;
+		if (!first || !second) throw new Error("pages missing");
+		await first.goto("/");
+		await expect(first.getByTestId("discovery-count")).toContainText("0");
+		await second.goto("/");
+		await expect(first.getByTestId("discovery-count")).toContainText("1", {
+			timeout: 45_000,
+		});
+		await expect(second.getByTestId("discovery-count")).toContainText("1", {
+			timeout: 45_000,
+		});
+		await first.getByTestId("join-online").click();
+		await expect(first.getByTestId("community-status")).toHaveText(
+			"Searching for compatible players…",
+		);
+		await expect(first.getByTestId("discovery-count")).toContainText("1");
+		await expect(second.getByTestId("discovery-count")).toContainText("1");
+		await first.close();
+		await expect(second.getByTestId("discovery-count")).toContainText("0", {
+			timeout: 45_000,
+		});
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
+test("starting a solo game leaves the discovery room", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages } = await players(browser, baseURL, 2);
+	try {
+		const [first, second] = pages;
+		if (!first || !second) throw new Error("pages missing");
+		await first.goto("/");
+		await second.goto("/");
+		await expect(second.getByTestId("discovery-count")).toContainText("1", {
+			timeout: 45_000,
+		});
+		await first.getByTestId("create-solo").click();
+		await expect(first.getByTestId("table")).toBeVisible();
+		await expect(second.getByTestId("discovery-count")).toContainText("0", {
+			timeout: 45_000,
+		});
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
 test("centre presets preserve named friends, configure both checkboxes, and fit a phone", async ({
 	page,
 }) => {

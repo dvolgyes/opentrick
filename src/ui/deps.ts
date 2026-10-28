@@ -1,6 +1,7 @@
 import type { BuildInfo } from "../build";
 import type { GetUserMedia } from "../call/media";
 import type { Medium } from "../call/policy";
+import type { Discovery } from "../community/discovery";
 import type { OpenCommunity } from "../community/transport";
 import type { Locale, Translate } from "../i18n";
 import type { MeshHandlers } from "../p2p/mesh";
@@ -54,6 +55,7 @@ export interface AppDeps {
 		community?: boolean,
 	) => (handlers: MeshHandlers) => TableMesh;
 	readonly openCommunity?: OpenCommunity;
+	readonly discovery?: Discovery;
 	readonly call: CallSupport;
 	/** The current page URL, for building shareable links. */
 	readonly pageUrl: () => string;

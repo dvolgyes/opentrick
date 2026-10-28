@@ -15,6 +15,7 @@ import { newCommandId } from "../ids";
 import { createTable, tableIdentity } from "../p2p/table";
 import { isPlayerName, isSeat, SEAT_NAMES, SEATS } from "../protocol";
 import type { AppDeps, Dispose, Navigation } from "./deps";
+import { discoveryCount } from "./discovery-count";
 import { button, copyToClipboard, el } from "./dom";
 import { showTable } from "./join";
 import { readPersonalName, savePersonalName } from "./personal-name";
@@ -28,6 +29,7 @@ export function showCommunity(
 	initial?: CommunitySaved,
 ): Dispose {
 	let disposed = false;
+	const discovery = discoveryCount(deps);
 	let session: CommunitySession | undefined;
 	let game: Dispose | undefined;
 	let timer: ReturnType<typeof setInterval> | undefined;
@@ -268,6 +270,7 @@ export function showCommunity(
 								identity,
 							);
 						});
+						void deps.discovery?.stop();
 					},
 				},
 				{ ...active, ready: true },
@@ -277,6 +280,7 @@ export function showCommunity(
 					"section",
 					{ className: "create", attrs: { "data-testid": "community" } },
 					el("h1", {}, deps.t("Community game")),
+					discovery.element,
 					members,
 					preferences,
 					...(route.kind === "party" && route.seats.length > 1
@@ -381,6 +385,7 @@ export function showCommunity(
 			"section",
 			{ className: "create" },
 			el("h1", {}, deps.t("Community game")),
+			discovery.element,
 			status,
 		),
 	);
@@ -455,6 +460,7 @@ export function showCommunity(
 	}
 	return () => {
 		disposed = true;
+		discovery.dispose();
 		session?.stop();
 		game?.();
 		if (timer) clearInterval(timer);

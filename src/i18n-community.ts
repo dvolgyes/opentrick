@@ -14,6 +14,28 @@ const rows: readonly (readonly [
 	string,
 ])[] = [
 	[
+		"Connected browsers in discovery",
+		"Verbundene Browser in der Spielersuche",
+		"Csatlakozott böngészők a játékoskeresőben",
+		"Tilkoblede nettlesere i spillersøket",
+		"Navegadores conectados en la búsqueda",
+		"Navegadores ligados na procura",
+		"Navigateurs connectés à la recherche",
+		"Browser connessi alla ricerca",
+		"Verbonden browsers in de spelerszoeker",
+	],
+	[
+		"Discovery connection unavailable",
+		"Verbindung zur Spielersuche nicht verfügbar",
+		"A játékoskereső kapcsolata nem érhető el",
+		"Tilkoblingen til spillersøket er ikke tilgjengelig",
+		"Conexión de búsqueda no disponible",
+		"Ligação à procura indisponível",
+		"Connexion à la recherche indisponible",
+		"Connessione alla ricerca non disponibile",
+		"Verbinding met de spelerszoeker niet beschikbaar",
+	],
+	[
 		"Play with bots",
 		"Mit Bots spielen",
 		"Játék botokkal",
