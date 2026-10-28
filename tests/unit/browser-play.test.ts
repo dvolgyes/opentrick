@@ -49,7 +49,7 @@ describe("card worker boundary", () => {
 		await expect(second).resolves.toMatchObject({ samples: 10 });
 		engine.stop();
 	});
-	it("replaces a still-running worker if the next card is needed immediately", async () => {
+	it("waits for the previous search when the next card is needed immediately", async () => {
 		vi.useFakeTimers();
 		vi.stubGlobal("Worker", WorkerStub);
 		const engine = new BrowserPlayEngine({ timeMs: 1500 });
@@ -65,14 +65,98 @@ describe("card worker boundary", () => {
 		await vi.advanceTimersByTimeAsync(1500);
 		await first;
 		const second = engine.choose(position, new AbortController().signal);
-		expect(previous?.terminate).toHaveBeenCalledOnce();
-		expect(WorkerStub.made).toHaveLength(2);
-		WorkerStub.made[1]?.onmessage?.({
+		expect(previous?.terminate).not.toHaveBeenCalled();
+		expect(WorkerStub.made).toHaveLength(1);
+		previous?.onmessage?.({
+			data: { ok: true, analysis: { card: "S7", samples: 3 } },
+		});
+		previous?.onmessage?.({
 			data: { ok: true, analysis: { card: "S7" } },
 		});
 		await expect(second).resolves.toMatchObject({ card: "S7" });
 		await vi.advanceTimersByTimeAsync(1000);
-		expect(WorkerStub.made[1]?.terminate).not.toHaveBeenCalled();
+		expect(previous?.terminate).not.toHaveBeenCalled();
+		engine.stop();
+	});
+	it("replaces a draining worker that does not finish and keeps the original deadline", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("Worker", WorkerStub);
+		const engine = new BrowserPlayEngine({ timeMs: 1500 });
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		const first = engine.choose(position, new AbortController().signal);
+		const previous = WorkerStub.made[0];
+		previous?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7" } },
+		});
+		await vi.advanceTimersByTimeAsync(1500);
+		await first;
+		const second = engine.choose(position, new AbortController().signal);
+		await vi.advanceTimersByTimeAsync(750);
+		expect(previous?.terminate).toHaveBeenCalledOnce();
+		const replacement = WorkerStub.made[1];
+		expect(replacement?.postMessage).toHaveBeenCalledWith({
+			position,
+			timeMs: 750,
+		});
+		replacement?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7" } },
+		});
+		await vi.advanceTimersByTimeAsync(750);
+		await expect(second).resolves.toMatchObject({ card: "S7" });
+		engine.stop();
+	});
+	it("cancels a request waiting for the previous search", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("Worker", WorkerStub);
+		const engine = new BrowserPlayEngine({ timeMs: 1500 });
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		const first = engine.choose(position, new AbortController().signal);
+		const worker = WorkerStub.made[0];
+		worker?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7" } },
+		});
+		await vi.advanceTimersByTimeAsync(1500);
+		await first;
+		const controller = new AbortController();
+		const pending = engine.choose(position, controller.signal);
+		controller.abort();
+		await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+		expect(worker?.terminate).toHaveBeenCalledOnce();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(WorkerStub.made).toHaveLength(1);
+	});
+	it("limits the wait for a previous search when the next budget is short", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("Worker", WorkerStub);
+		const engine = new BrowserPlayEngine({ timeMs: 150 });
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		const first = engine.choose(position, new AbortController().signal);
+		WorkerStub.made[0]?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7" } },
+		});
+		await vi.advanceTimersByTimeAsync(150);
+		await first;
+		const next = engine.choose(position, new AbortController().signal);
+		await vi.advanceTimersByTimeAsync(75);
+		const replacement = WorkerStub.made[1];
+		expect(replacement?.postMessage).toHaveBeenCalledWith({
+			position,
+			timeMs: 75,
+		});
+		replacement?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7" } },
+		});
+		await vi.advanceTimersByTimeAsync(75);
+		await expect(next).resolves.toMatchObject({ card: "S7" });
 		engine.stop();
 	});
 	it("keeps searching until the default five-second response budget", async () => {

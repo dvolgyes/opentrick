@@ -16,7 +16,7 @@ describe("browser card engine", () => {
 			}
 		}
 		vi.stubGlobal("Worker", CountingWorker);
-		const engine = new BrowserPlayEngine({ timeMs: 150 });
+		const engine = new BrowserPlayEngine({ timeMs: 1000 });
 		try {
 			let board = bidding(createBoard(1, DEAL), "3NT P P P");
 			for (let ply = 0; ply < 40; ply++) {
@@ -42,7 +42,6 @@ describe("browser card engine", () => {
 					new AbortController().signal,
 				);
 				expect(position.legal).toContain(result.card);
-				await new Promise((resolve) => setTimeout(resolve, 200));
 			}
 			expect(created).toBe(1);
 		} finally {

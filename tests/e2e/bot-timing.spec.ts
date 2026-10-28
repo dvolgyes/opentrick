@@ -145,6 +145,10 @@ test("fast bots honor configured bid, card and final-auction delays and pass the
 		expect(at(step) - at(step - 1)).toBeGreaterThanOrEqual(3200);
 	expect(at(5) - at(4)).toBeGreaterThanOrEqual(3450);
 	expect(at(6) - at(5)).toBeGreaterThanOrEqual(1200);
-	expect(budgets).toEqual([1400, 1400]);
+	expect(budgets).toHaveLength(2);
+	for (const budget of budgets) {
+		expect(budget).toBeGreaterThanOrEqual(400);
+		expect(budget).toBeLessThanOrEqual(1400);
+	}
 	expect(playWorkerRequests).toBe(1);
 });
