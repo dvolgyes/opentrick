@@ -1452,14 +1452,17 @@ main:has(> .room) {
 	margin-bottom: 0.5rem;
 }
 
+/* Each measured cell is filled with its quality color; a cell without a measurement is grey. */
 .quality-matrix td {
 	width: 20%;
 	height: 2rem;
-	border-bottom: 0.3rem solid var(--network-lit, var(--network-off));
+	border-radius: 0.25rem;
+	background: var(--network-lit, var(--network-off));
+	color: var(--network-fg);
 }
 
 .quality-matrix td:empty {
-	border-color: transparent;
+	background: transparent;
 }
 
 .network-bar[data-lit] {

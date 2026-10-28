@@ -33,12 +33,20 @@ describe("quality matrix", () => {
 		expect(cell("N", "E").textContent).toBe("0.04");
 		expect(cell("N", "E").title).toBe("Network: excellent\nRoundtrip: 0.04sec");
 		expect(cell("E", "N").title).toBe("Network: poor\nRoundtrip: 0.90sec");
-		expect(getComputedStyle(cell("N", "E")).borderBottomColor).not.toBe(
-			getComputedStyle(cell("E", "N")).borderBottomColor,
+		// The whole cell takes the quality color, not only an underline.
+		expect(getComputedStyle(cell("N", "E")).backgroundColor).toBe(
+			"rgb(46, 204, 64)",
 		);
+		expect(getComputedStyle(cell("E", "N")).backgroundColor).toBe(
+			"rgb(255, 152, 0)",
+		);
+		expect(getComputedStyle(cell("N", "E")).borderBottomStyle).toBe("none");
 		for (const seat of ["N", "E", "S", "W"]) {
 			expect(cell(seat, seat).textContent).toBe("");
 			expect(cell(seat, seat).hasAttribute("data-quality")).toBe(false);
+			expect(getComputedStyle(cell(seat, seat)).backgroundColor).toBe(
+				"rgba(0, 0, 0, 0)",
+			);
 		}
 		expect(cell("S", "W").textContent).toBe("…");
 		expect(cell("S", "W").title).toBe("No measurement");

@@ -107,6 +107,8 @@
 	--network-orange: #ff9800;
 	--network-red: #e53935;
 	--network-off: #7c8c82;
+	/* Text on a cell filled with one of the network colors. */
+	--network-fg: #1d1d1b;
 	/* The voice box on a video tile: green segments on a dark panel. */
 	--voice-panel: rgb(0 0 0 / 55%);
 	--voice-frame: rgb(46 204 64 / 35%);
