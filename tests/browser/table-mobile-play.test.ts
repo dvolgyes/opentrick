@@ -3211,7 +3211,7 @@ describe("board depth and frame colours", () => {
 			}
 		},
 	);
-	it("casts the video tiles' shadow from the desktop bid box, bidding history and network meters, not on a phone", () => {
+	it("casts the video tiles' shadow from the desktop bid box, bidding history, network meters and Join call, not on a phone", () => {
 		const view: TableView = {
 			...playView(),
 			phase: "auction",
@@ -3243,6 +3243,7 @@ describe("board depth and frame colours", () => {
 			".bid-box",
 			".history-panel",
 			".felt .network-bars",
+			".felt .call-panel .call-join",
 		]);
 		if (!tile) throw new Error("missing video tile");
 		const tileShadow = getComputedStyle(tile).boxShadow;
@@ -3254,7 +3255,7 @@ describe("board depth and frame colours", () => {
 		const compact = renderView(view, "compact").root;
 		const compactPanels = [
 			...parts(compact, [".bid-box", ".history-panel"]),
-			...compact.querySelectorAll<HTMLElement>(".network-bars"),
+			...compact.querySelectorAll<HTMLElement>(".network-bars, .call-join"),
 		];
 		for (const panel of compactPanels)
 			expect(getComputedStyle(panel).boxShadow, panel.className).toBe("none");

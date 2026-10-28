@@ -2519,8 +2519,8 @@ button.call-join[data-in-call="true"] {
 	color: var(--sheet-fg);
 }
 
-/* On the desktop felt the bid box, the bidding history and the network meters cast the video tiles' shadow. */
-.room[data-form="desktop"] :is(.bid-box, .bridge-table[data-phase="auction"] .history-panel, .felt .network-bars) {
+/* On the desktop felt the bid box, the bidding history, the network meters and Join call cast the video tiles' shadow. */
+.room[data-form="desktop"] :is(.bid-box, .bridge-table[data-phase="auction"] .history-panel, .felt .network-bars, .felt .call-panel .call-join) {
 	box-shadow: var(--board-panel-shadow);
 }
 
