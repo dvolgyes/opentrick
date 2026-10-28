@@ -11,6 +11,7 @@
 	--board-shadow-scale: 1;
 	--board-card-shadow: calc(0.35rem * var(--board-shadow-scale)) calc(0.35rem * var(--board-shadow-scale)) calc(0.45rem * var(--board-shadow-scale)) var(--board-object-shadow);
 	--board-pill-shadow: calc(0.2rem * var(--board-shadow-scale)) calc(0.2rem * var(--board-shadow-scale)) calc(0.3rem * var(--board-shadow-scale)) var(--board-object-shadow);
+	--board-panel-shadow: calc(0.55rem * var(--board-shadow-scale)) calc(0.55rem * var(--board-shadow-scale)) calc(0.8rem * var(--board-shadow-scale)) var(--board-object-shadow);
 }
 :root[data-shadow-strength="0"] { --board-shadow-scale: 0; }
 :root[data-shadow-strength="1"] { --board-shadow-scale: 0.25; }
@@ -1247,7 +1248,7 @@ main:has(> .room) {
 }
 
 .felt :is(.video-row .tile, .call-panel) {
-	box-shadow: calc(0.55rem * var(--board-shadow-scale)) calc(0.55rem * var(--board-shadow-scale)) calc(0.8rem * var(--board-shadow-scale)) var(--board-object-shadow);
+	box-shadow: var(--board-panel-shadow);
 }
 
 .avatar {
@@ -2513,6 +2514,11 @@ button.call-join[data-in-call="true"] {
 	border-radius: 0.45rem;
 	background: var(--sheet-bg);
 	color: var(--sheet-fg);
+}
+
+/* On the desktop felt the bid box, the bidding history and the network meters cast the video tiles' shadow. */
+.room[data-form="desktop"] :is(.bid-box, .bridge-table[data-phase="auction"] .history-panel, .felt .network-bars) {
+	box-shadow: var(--board-panel-shadow);
 }
 
 .bid-guide .guide-open,

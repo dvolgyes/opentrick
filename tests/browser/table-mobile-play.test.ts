@@ -3211,6 +3211,50 @@ describe("board depth and frame colours", () => {
 			}
 		},
 	);
+	it("casts the video tiles' shadow from the desktop bid box, bidding history and network meters, not on a phone", () => {
+		const view: TableView = {
+			...playView(),
+			phase: "auction",
+			prompt: "",
+			yourTurn: true,
+			auction: {
+				seats: ["N", "E", "S", "W"],
+				rows: [],
+				systems: [],
+				bots: [],
+				calls: [],
+				meanings: [],
+			},
+			bids: [{ call: "P", text: "Pass" }],
+			contract: "",
+			header: undefined,
+			trick: undefined,
+			need: undefined,
+		};
+		const parts = (root: HTMLElement, selectors: readonly string[]) =>
+			selectors.map((selector) => {
+				const element = root.querySelector<HTMLElement>(selector);
+				if (!element) throw new Error(`missing ${selector}`);
+				return element;
+			});
+		const desktop = renderView(view, "desktop").root;
+		const [tile, ...panels] = parts(desktop, [
+			".felt .video-row .tile",
+			".bid-box",
+			".history-panel",
+			".felt .network-bars",
+		]);
+		if (!tile) throw new Error("missing video tile");
+		const tileShadow = getComputedStyle(tile).boxShadow;
+		expect(tileShadow).toMatch(/rgba?\(0, 0, 0/);
+		for (const panel of panels)
+			expect(getComputedStyle(panel).boxShadow, panel.className).toBe(
+				tileShadow,
+			);
+		const compact = renderView(view, "compact").root;
+		for (const panel of parts(compact, [".bid-box", ".history-panel"]))
+			expect(getComputedStyle(panel).boxShadow, panel.className).toBe("none");
+	});
 	const expectShadow = (element: HTMLElement, minimumOffset: number) => {
 		const shadow = getComputedStyle(element).boxShadow;
 		const match = /^rgba\(0, 0, 0, ([\d.]+)\) ([\d.]+)px ([\d.]+)px /.exec(
