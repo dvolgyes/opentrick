@@ -4,6 +4,7 @@ import { discardLegacyBotSettings } from "../../src/ui/legacy-bot-settings";
 import {
 	BAIZE_STRENGTHS,
 	DEFAULT_SETTINGS,
+	PAPER_STRENGTHS,
 	readSettings,
 	SUIT_COLOR_SCHEMES,
 	SUIT_FONT_SIZES,
@@ -47,6 +48,7 @@ describe("player settings", () => {
 			suitFontSize: "M",
 			suitColors: "standard",
 			baizeStrength: "strong",
+			paperStrength: "visible",
 			bidTurnFrame: true,
 			playTurnFrame: true,
 			bidTurnText: true,
@@ -75,6 +77,7 @@ describe("player settings", () => {
 			suitFontSize: "XL",
 			suitColors: "green-orange",
 			baizeStrength: "mild",
+			paperStrength: "mild",
 			bidTurnFrame: false,
 			playTurnFrame: true,
 			bidTurnText: false,
@@ -100,8 +103,23 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.suit-font-size", "200%; color: red");
 		storage.setItem("opentrick.settings.suit-colors", "invalid");
 		storage.setItem("opentrick.settings.baize-strength", "invalid");
+		storage.setItem("opentrick.settings.paper-strength", "invalid");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
 		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
+	});
+
+	it("stores each card texture strength and rejects invalid values", () => {
+		const storage = memoryStorage();
+		for (const paperStrength of PAPER_STRENGTHS) {
+			writeSettings(storage, { ...DEFAULT_SETTINGS, paperStrength });
+			expect(readSettings(storage).paperStrength).toBe(paperStrength);
+		}
+		expect(() =>
+			writeSettings(storage, {
+				...DEFAULT_SETTINGS,
+				paperStrength: "invalid" as never,
+			}),
+		).toThrow("unknown card texture strength");
 	});
 
 	it("stores each board texture strength and rejects invalid values", () => {

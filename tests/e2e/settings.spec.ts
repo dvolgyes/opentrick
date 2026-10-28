@@ -36,6 +36,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		"Appearance",
 		"Theme",
 		"Board texture",
+		"Card texture",
 		"Suit and rank font size",
 		"Suit colours",
 		"Screen orientation",
@@ -127,6 +128,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.card-points",
 		"opentrick.settings.landscape-desktop",
 		"opentrick.settings.network-quality",
+		"opentrick.settings.paper-strength",
 		"opentrick.settings.play-time-ms",
 		"opentrick.settings.play-turn-frame",
 		"opentrick.settings.play-turn-text",
@@ -186,13 +188,15 @@ for (const [layout, viewport] of [
 		await page.setViewportSize(viewport);
 		await openTable(page);
 		let dialog = await openSettings(page);
-		let slider = dialog.getByRole("slider", { name: "Texture strength" });
+		let slider = dialog
+			.getByRole("group", { name: "Board texture" })
+			.getByRole("slider", { name: "Texture strength" });
 		await expect(slider).toHaveValue("2");
 		await expect(slider).toHaveAttribute("aria-valuetext", "Stronger");
 		await slider.focus();
 		await page.keyboard.press("Home");
 		await page.keyboard.press("ArrowRight");
-		await expect(slider).toHaveAttribute("aria-valuetext", "Original");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Default");
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-baize-strength",
 			"strong",
@@ -204,7 +208,9 @@ for (const [layout, viewport] of [
 		);
 		await page.reload();
 		dialog = await openSettings(page);
-		slider = dialog.getByRole("slider", { name: "Texture strength" });
+		slider = dialog
+			.getByRole("group", { name: "Board texture" })
+			.getByRole("slider", { name: "Texture strength" });
 		await expect(slider).toHaveValue("1");
 		await slider.focus();
 		await page.keyboard.press("Home");
@@ -215,13 +221,64 @@ for (const [layout, viewport] of [
 			"normal",
 		);
 		dialog = await openSettings(page);
-		slider = dialog.getByRole("slider", { name: "Texture strength" });
+		slider = dialog
+			.getByRole("group", { name: "Board texture" })
+			.getByRole("slider", { name: "Texture strength" });
 		await slider.focus();
 		await page.keyboard.press("Home");
 		await dialog.getByRole("button", { name: "Save settings" }).click();
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-baize-strength",
 			"mild",
+		);
+	});
+
+	test(`card texture slider saves and restores its four levels on ${layout}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await openTable(page);
+		let dialog = await openSettings(page);
+		let slider = dialog
+			.getByRole("group", { name: "Card texture" })
+			.getByRole("slider", { name: "Texture strength" });
+		await expect(slider).toHaveValue("2");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Visible");
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Off");
+		await page.keyboard.press("ArrowRight");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Mild");
+		await page.keyboard.press("End");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Strong");
+		await dialog.getByRole("button", { name: "Save settings" }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-paper-strength",
+			"strong",
+		);
+		await page.reload();
+		dialog = await openSettings(page);
+		slider = dialog
+			.getByRole("group", { name: "Card texture" })
+			.getByRole("slider", { name: "Texture strength" });
+		await expect(slider).toHaveValue("3");
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-paper-strength",
+			"strong",
+		);
+		dialog = await openSettings(page);
+		slider = dialog
+			.getByRole("group", { name: "Card texture" })
+			.getByRole("slider", { name: "Texture strength" });
+		await slider.focus();
+		await page.keyboard.press("Home");
+		await dialog.getByRole("button", { name: "Save settings" }).click();
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-paper-strength",
+			"off",
 		);
 	});
 }

@@ -303,6 +303,74 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("applies four paper levels without changing card colours or card backs", async () => {
+		try {
+			const urls = new Map<string, string>();
+			for (const layout of ["desktop", "compact"] as const) {
+				for (const theme of ["normal", "solarized", "selenized", "gruvbox"]) {
+					for (const scheme of ["light", "dark"]) {
+						document.documentElement.dataset.theme = theme;
+						document.documentElement.dataset.scheme = scheme;
+						const { root } = renderView(playView(), layout);
+						const face = root.querySelector<HTMLElement>(
+							".card[data-suit] .face",
+						);
+						const played =
+							root.querySelector<HTMLElement>(".played[data-suit]");
+						const back = root.querySelector<HTMLElement>(".back .face");
+						if (!face || !played || !back)
+							throw new Error("missing card surface");
+						const faceColor = getComputedStyle(face).backgroundColor;
+						const playedColor = getComputedStyle(played).backgroundColor;
+						for (const strength of ["off", "mild", "visible", "strong"]) {
+							document.documentElement.dataset.paperStrength = strength;
+							const faceStyle = getComputedStyle(face);
+							const playedStyle = getComputedStyle(played);
+							expect(faceStyle.backgroundColor).toBe(faceColor);
+							expect(playedStyle.backgroundColor).toBe(playedColor);
+							expect(playedStyle.backgroundImage).toBe(
+								faceStyle.backgroundImage,
+							);
+							expect(getComputedStyle(back).backgroundImage).toBe("none");
+							if (strength === "off")
+								expect(faceStyle.backgroundImage).toBe("none");
+							else {
+								const earlier = urls.get(strength);
+								if (earlier) expect(faceStyle.backgroundImage).toBe(earlier);
+								else urls.set(strength, faceStyle.backgroundImage);
+							}
+						}
+					}
+				}
+			}
+			const averageAlpha: number[] = [];
+			for (const strength of ["mild", "visible", "strong"]) {
+				const url = /^url\("(.*)"\)$/.exec(urls.get(strength) ?? "")?.[1];
+				if (!url) throw new Error(`missing ${strength} texture`);
+				const image = new Image();
+				image.src = url;
+				await image.decode();
+				const canvas = document.createElement("canvas");
+				canvas.width = image.naturalWidth;
+				canvas.height = image.naturalHeight;
+				const ctx = canvas.getContext("2d");
+				if (!ctx) throw new Error("canvas unavailable");
+				ctx.drawImage(image, 0, 0);
+				const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+				let sum = 0;
+				for (let i = 3; i < data.length; i += 4) sum += data[i] ?? 0;
+				averageAlpha.push(sum / (data.length / 4));
+			}
+			expect(averageAlpha[0]).toBeGreaterThan(0);
+			expect(averageAlpha[1]).toBeGreaterThan(averageAlpha[0] ?? 0);
+			expect(averageAlpha[2]).toBeGreaterThan(averageAlpha[1] ?? 0);
+			expect(averageAlpha[2]).toBeLessThan(32);
+		} finally {
+			delete document.documentElement.dataset.paperStrength;
+			delete document.documentElement.dataset.theme;
+			delete document.documentElement.dataset.scheme;
+		}
+	});
 	it("uses three progressively stronger baize tiles on desktop and mobile", async () => {
 		const variances: number[] = [];
 		const urls = new Set<string>();

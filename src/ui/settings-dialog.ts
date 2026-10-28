@@ -7,6 +7,7 @@ import { languageSelect, saveLanguage } from "./language-control";
 import { BIDDER_NAMES } from "./model";
 import {
 	BAIZE_STRENGTHS,
+	PAPER_STRENGTHS,
 	readSettings,
 	SCHEMES,
 	type Scheme,
@@ -194,7 +195,7 @@ export function settingsDialog(
 	});
 	const baizeValue = el("output", {});
 	const updateBaizeLabel = () => {
-		const labels = ["Milder", "Original", "Stronger"] as const;
+		const labels = ["Milder", "Default", "Stronger"] as const;
 		const label = t(labels[baize.valueAsNumber] ?? "Stronger");
 		baizeValue.textContent = label;
 		baize.setAttribute("aria-valuetext", label);
@@ -210,6 +211,35 @@ export function settingsDialog(
 			`${t("Texture strength")} `,
 			baize,
 			baizeValue,
+		),
+	);
+	const paper = el("input", {
+		attrs: {
+			type: "range",
+			min: "0",
+			max: "3",
+			step: "1",
+			name: "settings-paper-strength",
+		},
+	});
+	const paperValue = el("output", {});
+	const updatePaperLabel = () => {
+		const labels = ["Off", "Mild", "Visible", "Strong"] as const;
+		const label = t(labels[paper.valueAsNumber] ?? "Visible");
+		paperValue.textContent = label;
+		paper.setAttribute("aria-valuetext", label);
+	};
+	paper.addEventListener("input", updatePaperLabel);
+	const paperControl = el(
+		"fieldset",
+		{},
+		el("legend", {}, t("Card texture")),
+		el(
+			"label",
+			{ className: "settings-row" },
+			`${t("Texture strength")} `,
+			paper,
+			paperValue,
 		),
 	);
 	const suitFontSize = radios(
@@ -302,6 +332,7 @@ export function settingsDialog(
 		scheme.element,
 		theme.element,
 		baizeControl,
+		paperControl,
 		suitFontSize.element,
 		suitColors,
 		el(
@@ -398,6 +429,7 @@ export function settingsDialog(
 			theme: theme.value(),
 			scheme: scheme.value(),
 			baizeStrength: BAIZE_STRENGTHS[baize.valueAsNumber] ?? "strong",
+			paperStrength: PAPER_STRENGTHS[paper.valueAsNumber] ?? "visible",
 			suitFontSize: suitFontSize.value(),
 			suitColors:
 				SUIT_COLOR_SCHEMES.find(
@@ -434,6 +466,8 @@ export function settingsDialog(
 			settings.suitColors;
 		element.ownerDocument.documentElement.dataset.baizeStrength =
 			settings.baizeStrength;
+		element.ownerDocument.documentElement.dataset.paperStrength =
+			settings.paperStrength;
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
@@ -460,6 +494,8 @@ export function settingsDialog(
 			theme.set(settings.theme);
 			baize.value = String(BAIZE_STRENGTHS.indexOf(settings.baizeStrength));
 			updateBaizeLabel();
+			paper.value = String(PAPER_STRENGTHS.indexOf(settings.paperStrength));
+			updatePaperLabel();
 			suitFontSize.set(settings.suitFontSize);
 			for (const { input } of suitColorInputs)
 				input.checked = input.value === settings.suitColors;

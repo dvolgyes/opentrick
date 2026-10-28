@@ -45,6 +45,8 @@ document.documentElement.dataset.suitFontSize =
 document.documentElement.dataset.suitColors = readSettings(browser).suitColors;
 document.documentElement.dataset.baizeStrength =
 	readSettings(browser).baizeStrength;
+document.documentElement.dataset.paperStrength =
+	readSettings(browser).paperStrength;
 
 const root = document.getElementById("app");
 if (!root) throw new Error("index.html must contain #app");

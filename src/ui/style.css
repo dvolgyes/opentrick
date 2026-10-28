@@ -7,9 +7,13 @@
 	/* The 2× tile repeats at its 384px design size. */
 	--felt-texture: url("./assets/bridge-baize-strong.webp");
 	--felt-texture-size: 384px;
+	--paper-texture: url("./assets/card-paper-visible.webp");
 }
 :root[data-baize-strength="mild"] { --felt-texture: url("./assets/bridge-baize-mild.webp"); }
 :root[data-baize-strength="normal"] { --felt-texture: url("./assets/bridge-baize.webp"); }
+:root[data-paper-strength="off"] { --paper-texture: none; }
+:root[data-paper-strength="mild"] { --paper-texture: url("./assets/card-paper-mild.webp"); }
+:root[data-paper-strength="strong"] { --paper-texture: url("./assets/card-paper-strong.webp"); }
 :root[data-suit-font-size="S"] { --suit-font-scale: 0.75; }
 :root[data-suit-font-size="L"] { --suit-font-scale: 1.25; }
 :root[data-suit-font-size="XL"] { --suit-font-scale: 1.5; }
@@ -4487,7 +4491,14 @@ body:has(main[data-screen="table"]) > .language-control {
 
 /* White suits need a dark card surface when the dark appearance is selected. */
 :root[data-scheme="dark"] :is(.card[data-suit] .face, .played[data-suit]) {
-	background: var(--sheet-bg);
+	background-color: var(--sheet-bg);
+}
+
+/* Transparent paper grain keeps the card surface colour from the selected theme. */
+:is(.card[data-suit] .face, .played[data-suit]) {
+	background-image: var(--paper-texture);
+	background-repeat: repeat;
+	background-size: 384px 384px;
 }
 
 .suit-color-preview {
