@@ -2208,6 +2208,46 @@ describe("turn pill", () => {
 		expect([pill("N"), pill("E")]).toEqual([undefined, other]);
 	});
 
+	it("starts a visible seat's name right below its turn pill or frame edge, and below a points pill", () => {
+		const base = sideHandView();
+		const { root } = renderView(
+			{
+				...base,
+				seats: base.seats.map((player) =>
+					player.position === "left"
+						? {
+								...player,
+								tags: ["Dummy"],
+								turn: true,
+								turnPill: { action: "play", yours: false },
+							}
+						: player.position === "bottom"
+							? { ...player, pointCards: ["SA"] }
+							: player,
+				),
+			},
+			"desktop",
+		);
+		const rect = (selector: string) => {
+			const node = root.querySelector<HTMLElement>(selector);
+			if (!node) throw new Error(`missing ${selector}`);
+			return node.getBoundingClientRect();
+		};
+		// The left dummy: the name row follows the turn pill row.
+		expect(
+			rect(".place-left .seat-label .name").top -
+				rect(".place-left .seat-tags").bottom,
+		).toBeLessThan(5);
+		// The top dummy: the name is the first row inside the turn frame.
+		expect(
+			rect(".place-top .seat-label .name").top - rect(".place-top .seat").top,
+		).toBeLessThan(2);
+		// The bottom seat: its name stays clear of the points pill above it.
+		expect(rect(".place-bottom .seat-label .name").top).toBeGreaterThanOrEqual(
+			rect(".place-bottom .hcp-pill").bottom,
+		);
+	});
+
 	it.each<Form>(["desktop", "compact"])(
 		"shows the auction summary in the middle of the %s board instead of the bid box and the bidding history",
 		(form) => {

@@ -3555,8 +3555,8 @@ main:has(> .room[data-form="compact"]) {
 	font-size: 0.7rem;
 }
 
-/* The pills sit over the top of the own seat, so the name row starts below them. */
-.seat[data-visible="true"] .seat-label {
+/* The points pill sits over the top of a seat, so the name row starts below it; without the pill, no row is kept. */
+.seat[data-visible="true"]:has(> .hcp-pill) .seat-label {
 	padding-top: 1.9rem;
 }
 
