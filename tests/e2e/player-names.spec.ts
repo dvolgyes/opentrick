@@ -161,6 +161,34 @@ test("South hosts the creation layout and an unnamed entrant edits a persistent 
 	}
 });
 
+test("the player name editor puts the host's seat at the bottom and the next seats clockwise left, top and right", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.locator('input[name="name-W"]').fill("Host");
+	await page.locator('input[name="me"][value="W"]').check();
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	const editor = await editNames(page);
+	const centre = async (seat: string) => {
+		const box = await editor
+			.getByTestId("seat-grid")
+			.locator(`[data-seat="${seat}"]`)
+			.boundingBox();
+		if (!box) throw new Error(`no ${seat} card`);
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	const [north, east, south, west] = await Promise.all(
+		["N", "E", "S", "W"].map(centre),
+	);
+	if (!north || !east || !south || !west) throw new Error("missing card");
+	// West hosts: North sits left, East on top and South right.
+	expect(east.y).toBeLessThan(north.y);
+	expect(west.y).toBeGreaterThan(south.y);
+	expect(north.x).toBeLessThan(east.x);
+	expect(east.x).toBeLessThan(south.x);
+});
+
 test("the player name editor shows each name beside its label, and one Save and one Cancel below the seats", async ({
 	page,
 }) => {

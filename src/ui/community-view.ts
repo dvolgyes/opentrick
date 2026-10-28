@@ -166,12 +166,10 @@ export function showCommunity(
 				}),
 				{
 					center: status,
-					// Before the group forms, this browser's seat is the one it chose at creation.
+					// A browser without a seat in the group sees South at the bottom.
 					bottom:
 						saved.group?.members.find((member) => member.id === saved.self)
-							?.seat ??
-						saved.preferredSeat ??
-						"S",
+							?.seat ?? "S",
 				},
 			),
 		);
