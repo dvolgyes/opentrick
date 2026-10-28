@@ -2661,6 +2661,17 @@ button.call-join[data-in-call="true"] {
 	border-radius: 12px;
 }
 
+/* Redraw the frame above the hand, so card shadows cannot cover it. */
+.room[data-form="desktop"] .seat[data-turn-frame="true"]::after {
+	content: "";
+	position: absolute;
+	inset: -4px;
+	z-index: 5;
+	outline: 4px solid var(--turn-frame);
+	border-radius: 16px;
+	pointer-events: none;
+}
+
 .seat[data-visible="true"] {
 	position: relative;
 }
@@ -3625,9 +3636,21 @@ main:has(> .room[data-form="compact"]) {
 /* The hand of the player to act gets the red frame of the desktop seat. */
 .mobile-auction-hand .seat[data-turn-frame="true"] .hand,
 .mobile-board-name[data-turn-frame="true"] + .hand {
+	position: relative;
 	outline: 3px solid var(--turn-frame);
 	outline-offset: 2px;
 	border-radius: 0.4rem;
+}
+
+.mobile-auction-hand .seat[data-turn-frame="true"] .hand::after,
+.mobile-board-name[data-turn-frame="true"] + .hand::after {
+	content: "";
+	position: absolute;
+	inset: -2px;
+	z-index: 5;
+	outline: 3px solid var(--turn-frame);
+	border-radius: calc(0.4rem + 2px);
+	pointer-events: none;
 }
 
 /* The side columns clip what leaves them, so a side hand draws its frame over the edge of its cards. */
@@ -3644,8 +3667,9 @@ main:has(> .room[data-form="compact"]) {
 	content: "";
 	position: absolute;
 	inset: 0;
-	z-index: 1;
+	z-index: 5;
 	border: 3px solid var(--turn-frame);
+	outline: none;
 	border-radius: 0.4rem;
 	pointer-events: none;
 }

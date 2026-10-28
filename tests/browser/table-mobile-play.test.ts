@@ -2727,6 +2727,105 @@ describe("mobile turn frame", () => {
 });
 
 describe("board depth and frame colours", () => {
+	it.each<["desktop" | "sideways" | "compact", Seat, string]>([
+		["desktop", "N", "bottom"],
+		["desktop", "E", "left"],
+		["desktop", "S", "top"],
+		["desktop", "W", "right"],
+		["sideways", "N", "bottom"],
+		["sideways", "E", "left"],
+		["sideways", "S", "top"],
+		["sideways", "W", "right"],
+		["compact", "N", "bottom"],
+		["compact", "E", "left"],
+		["compact", "S", "top"],
+		["compact", "W", "right"],
+	])(
+		"keeps the %s %s turn frame above card shadows",
+		async (layout, active, position) => {
+			await page.viewport(
+				layout === "compact" ? 390 : 1200,
+				layout === "compact" ? 844 : 850,
+			);
+			try {
+				const base = sideHandView();
+				const view = {
+					...base,
+					seats: base.seats.map((seat) => ({
+						...seat,
+						turn: seat.seat === active,
+					})),
+				};
+				const { root } = renderView(view, layout);
+				const board = root.querySelector<HTMLElement>(
+					layout === "compact" ? ".mobile-auction-board" : ".felt",
+				);
+				const frame = root.querySelector<HTMLElement>(
+					layout !== "compact"
+						? `.place-${position} .seat`
+						: position === "bottom"
+							? ".mobile-auction-hand .hand"
+							: `.mobile-board-${position} .hand`,
+				);
+				const face = frame?.querySelector<HTMLElement>(".face");
+				if (!board || !frame || !face)
+					throw new Error("missing board frame or card");
+				expect(getComputedStyle(frame, "::after").pointerEvents).toBe("none");
+				face.style.boxShadow = "0 0 0 300px rgba(0, 0, 0, 0.85)";
+				const boardBox = board.getBoundingClientRect();
+				const box = frame.getBoundingClientRect();
+				const offset =
+					layout !== "compact"
+						? 6
+						: position === "left" || position === "right"
+							? -1.5
+							: 3.5;
+				const points = [
+					[box.left + box.width / 2, box.top - offset],
+					[box.left + box.width / 2, box.bottom + offset],
+					[box.left - offset, box.top + box.height / 2],
+					[box.right + offset, box.top + box.height / 2],
+				].filter(
+					([x, y]) =>
+						x !== undefined &&
+						y !== undefined &&
+						x >= boardBox.left &&
+						x < boardBox.right &&
+						y >= boardBox.top &&
+						y < boardBox.bottom,
+				);
+				expect(points.length).toBeGreaterThan(0);
+				const image = new Image();
+				image.src = `data:image/png;base64,${await page.screenshot({ element: board, save: false })}`;
+				await image.decode();
+				const canvas = document.createElement("canvas");
+				canvas.width = image.naturalWidth;
+				canvas.height = image.naturalHeight;
+				const context = canvas.getContext("2d");
+				if (!context) throw new Error("canvas unavailable");
+				context.drawImage(image, 0, 0);
+				for (const [x, y] of points) {
+					if (x === undefined || y === undefined)
+						throw new Error("missing frame point");
+					const pixel = context.getImageData(
+						Math.floor(
+							((x - boardBox.left) * image.naturalWidth) / boardBox.width,
+						),
+						Math.floor(
+							((y - boardBox.top) * image.naturalHeight) / boardBox.height,
+						),
+						1,
+						1,
+					).data;
+					expect(pixel[0], `red at ${x},${y}`).toBeGreaterThan(180);
+					expect(pixel[1]).toBeLessThan(120);
+					expect(pixel[2]).toBeLessThan(120);
+				}
+			} finally {
+				await page.viewport(414, 896);
+			}
+		},
+	);
 	it.each(["desktop", "sideways", "compact"] as const)(
 		"keeps the top dealt hand upright in %s",
 		(layout) => {
