@@ -813,28 +813,6 @@ main:has(> .room) {
 	color: var(--felt);
 }
 
-.seat-label .host-autoplay-toggle {
-	margin: 0;
-	padding: 0.05rem 0.35rem;
-	border-color: var(--label-frame);
-	border-radius: 0.8rem;
-	font-size: 0.75rem;
-	line-height: 1.25;
-}
-
-.seat-label .player-autoplay-toggle {
-	margin: 0;
-	padding: 0.05rem 0.35rem;
-	border-color: var(--label-frame);
-	border-radius: 0.8rem;
-	font-size: 0.75rem;
-	line-height: 1.25;
-}
-
-.seat-label .player-autoplay-status {
-	font-size: 0.75rem;
-}
-
 .seat-label .presence {
 	opacity: 0.85;
 }
@@ -1510,6 +1488,17 @@ main:has(> .room) {
 	justify-content: space-between;
 }
 
+.autoplay-control:not([hidden]) {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.player-autoplay-status {
+	font-size: 0.75rem;
+}
+
 /* The debug and bot status lines take no room while they are empty. */
 .debug-status:empty,
 .bot-status:empty {
@@ -1739,7 +1728,7 @@ dialog {
 	box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-.room[data-form="compact"] :is(.seat-label .name, .seat-label .tag, .seat-label .host-autoplay-toggle, .seat-label .player-autoplay-toggle, .mobile-board-name, .hcp-pill, .turn-pill, .mobile-player-control button) {
+.room[data-form="compact"] :is(.seat-label .name, .seat-label .tag, .mobile-board-name, .hcp-pill, .turn-pill, .mobile-player-control button) {
 	box-shadow: none;
 }
 
@@ -2018,7 +2007,7 @@ dialog {
 }
 
 /* Board labels and player switches cast the same adjustable shadow as the cards. */
-:is(.felt, .mobile-auction-board) :is(.seat-label .name, .seat-label .tag, .seat-label .host-autoplay-toggle, .seat-label .player-autoplay-toggle, .mobile-board-name, .hcp-pill, .turn-pill, .tile-bot-control),
+:is(.felt, .mobile-auction-board) :is(.seat-label .name, .seat-label .tag, .mobile-board-name, .hcp-pill, .turn-pill, .tile-bot-control),
 .mobile-player-control button {
 	box-shadow: var(--board-pill-shadow);
 }

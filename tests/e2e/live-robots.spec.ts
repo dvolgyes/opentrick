@@ -288,7 +288,7 @@ test.describe("four robots play a full board through the public relays", () => {
 				const autoplay = page.getByTestId("host-autoplay-toggle");
 				await autoplay.click();
 				await page.getByTestId("autoplay-confirm-enable").click();
-				await expect(autoplay).toHaveText("👱 Disable autoplay");
+				await expect(autoplay).toHaveText("Disable bot");
 
 				const link = new URL(page.url());
 				link.searchParams.delete("pl");

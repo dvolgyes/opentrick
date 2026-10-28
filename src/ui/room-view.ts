@@ -987,6 +987,7 @@ export function showRoom(
 			openHostControls,
 			pauseBots,
 			resumeBots,
+			table.autoplayControl,
 		),
 	);
 	const resetStatus = el("p", { className: "note", attrs: { role: "status" } });

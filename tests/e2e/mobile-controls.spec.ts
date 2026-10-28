@@ -77,6 +77,18 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await expect(
 			page.getByRole("button", { name: "Pause bots" }),
 		).toBeVisible();
+		const ownBot = page.getByTestId("host-autoplay-toggle");
+		await expect(ownBot).toHaveText("Enable bot");
+		await expect(ownBot).toHaveAttribute(
+			"title",
+			"Temporarily replace player with a bot",
+		);
+		await expect(
+			page.locator(".room-bot-controls").getByTestId("host-autoplay-toggle"),
+		).toBeVisible();
+		await expect(
+			page.locator(".seat-label").getByTestId("host-autoplay-toggle"),
+		).toHaveCount(0);
 		await expect(page.locator(".bridge-table")).toHaveAttribute(
 			"data-phase",
 			"auction",

@@ -71,6 +71,8 @@ export interface TableHandlers {
 
 export interface TableSection {
 	readonly element: HTMLElement;
+	/** The viewer's bot control, placed with the room's bot controls. */
+	readonly autoplayControl: HTMLElement;
 	/** The score sheet. The room page places it after the table, so the table can fill the screen. */
 	/** The right column: bidding history, Tricks, and the previous-game statistics. */
 	readonly sidebar: HTMLElement;
@@ -955,7 +957,62 @@ export function tableSection(
 	let playerAutoplayStatus = "";
 	let remoteCallPresence: Readonly<Partial<Record<Seat, RemoteCallPresence>>> =
 		{};
-	let hostAutoplayControl: HTMLButtonElement | undefined;
+	const autoplayButton = button(
+		"",
+		() => {
+			const own = latestView?.seats.find(
+				(player) => player.position === "bottom",
+			);
+			if (botControlHost && own) {
+				if (botControlSeats.includes(own.seat))
+					handlers.setBotSeat?.(own.seat, false);
+				else
+					confirmAutoplay(() => {
+						if (botControlHost && !botControlSeats.includes(own.seat))
+							handlers.setBotSeat?.(own.seat, true);
+					});
+			} else if (playerAutoplayAvailable && !playerAutoplayPending) {
+				if (playerAutoplayEnabled) handlers.requestAutoplay?.(false);
+				else
+					confirmAutoplay(() => {
+						if (
+							playerAutoplayAvailable &&
+							!playerAutoplayEnabled &&
+							!playerAutoplayPending
+						)
+							handlers.requestAutoplay?.(true);
+					});
+			}
+		},
+		{ attrs: { title: t("Temporarily replace player with a bot") } },
+	);
+	const autoplayStatus = el("span", {
+		className: "player-autoplay-status",
+		attrs: { role: "status" },
+	});
+	const autoplayControl = el(
+		"div",
+		{ className: "autoplay-control" },
+		autoplayButton,
+		autoplayStatus,
+	);
+	function updateAutoplayControl(): void {
+		const own = latestView?.seats.find(
+			(player) => player.position === "bottom",
+		);
+		const enabled =
+			botControlHost && own
+				? botControlSeats.includes(own.seat)
+				: playerAutoplayEnabled;
+		autoplayControl.hidden =
+			!(botControlHost && own) && !playerAutoplayAvailable;
+		autoplayButton.disabled = !botControlHost && playerAutoplayPending;
+		autoplayButton.dataset.testid = botControlHost
+			? "host-autoplay-toggle"
+			: "player-autoplay-toggle";
+		autoplayButton.textContent = t(enabled ? "Disable bot" : "Enable bot");
+		autoplayStatus.textContent = botControlHost ? "" : playerAutoplayStatus;
+	}
 	/** The tag and player name of each seat, as the last table view gave them ("E - David"). */
 	let seatLabels = new Map<Seat, string>();
 	/** The host's last round trip to each seat, as the last table view gave it. */
@@ -1231,59 +1288,6 @@ export function tableSection(
 			),
 			...seat.tags.map((tag) => el("span", { className: "tag" }, t(tag))),
 		);
-		if (seat.tags.includes("Host") && botControlHost) {
-			const isBot = botControlSeats.includes(seat.seat);
-			hostAutoplayControl = button(
-				`${isBot ? "👱" : "🤖"} ${t(isBot ? "Disable autoplay" : "Enable autoplay (bot)")}`,
-				() => {
-					if (botControlSeats.includes(seat.seat))
-						handlers.setBotSeat?.(seat.seat, false);
-					else
-						confirmAutoplay(() => {
-							if (!botControlSeats.includes(seat.seat))
-								handlers.setBotSeat?.(seat.seat, true);
-						});
-				},
-				{
-					className: "host-autoplay-toggle",
-					attrs: { "data-testid": "host-autoplay-toggle" },
-				},
-			);
-			label.append(hostAutoplayControl);
-		}
-		if (seat.position === "bottom" && !seat.tags.includes("Host")) {
-			const autoplay = button(
-				t(playerAutoplayEnabled ? "Stop autoplay" : "Enable autoplay (bot)"),
-				() => {
-					if (playerAutoplayEnabled) handlers.requestAutoplay?.(false);
-					else
-						confirmAutoplay(() => {
-							if (
-								playerAutoplayAvailable &&
-								!playerAutoplayEnabled &&
-								!playerAutoplayPending
-							)
-								handlers.requestAutoplay?.(true);
-						});
-				},
-				{
-					className: "player-autoplay-toggle",
-					attrs: { "data-testid": "player-autoplay-toggle" },
-				},
-			);
-			autoplay.hidden = !playerAutoplayAvailable;
-			autoplay.disabled = playerAutoplayPending;
-			label.append(autoplay);
-			if (playerAutoplayStatus) {
-				label.append(
-					el(
-						"span",
-						{ className: "player-autoplay-status", attrs: { role: "status" } },
-						playerAutoplayStatus,
-					),
-				);
-			}
-		}
 		if (callState !== undefined) label.append(callState);
 		const banner = seat.connecting
 			? [
@@ -1639,16 +1643,7 @@ export function tableSection(
 		botControlHost = hosting;
 		botControlSeats = bots;
 		const artworkUrl = robotArtwork();
-		const hostSeat = latestView?.seats.find((seat) =>
-			seat.tags.includes("Host"),
-		)?.seat;
-		if (hostAutoplayControl) {
-			const isBot = hostSeat !== undefined && bots.includes(hostSeat);
-			hostAutoplayControl.hidden = !hosting;
-			hostAutoplayControl.textContent = isBot
-				? `👱 ${t("Disable autoplay")}`
-				: `🤖 ${t("Enable autoplay (bot)")}`;
-		}
+		updateAutoplayControl();
 		for (const [seat, spot] of callSpots) {
 			const isBot = bots.includes(seat);
 			if (artworkUrl !== undefined) spot.botArtwork.src = artworkUrl;
@@ -1729,6 +1724,7 @@ export function tableSection(
 		playerAutoplayEnabled = enabled;
 		playerAutoplayPending = pending;
 		playerAutoplayStatus = status;
+		updateAutoplayControl();
 		if (latestView) render(latestView);
 	}
 
@@ -2391,7 +2387,7 @@ export function tableSection(
 
 	function renderMobilePlayers(view: TableView): void {
 		const own = view.seats.find((player) => player.position === "bottom")?.seat;
-		mobileBotFold.hidden = !botControlHost && !playerAutoplayAvailable;
+		mobileBotFold.hidden = !botControlHost;
 		const others = view.seats.filter(
 			(player) =>
 				player.seat !== own &&
@@ -2405,57 +2401,31 @@ export function tableSection(
 			players: connected.length > 0 ? connected.join("  ") : t("None"),
 		});
 		mobileBotControls.replaceChildren(
-			...view.seats.map((player) => {
-				const isBot = botControlSeats.includes(player.seat);
-				const toggle = button(
-					isBot ? `👱 ${t("Switch to player")}` : `🤖 ${t("Switch to bot")}`,
-					() => {
-						if (player.seat === own && !isBot)
-							confirmAutoplay(() => {
-								if (!botControlSeats.includes(player.seat))
-									handlers.setBotSeat?.(player.seat, true);
-							});
-						else handlers.setBotSeat?.(player.seat, !isBot);
-					},
-				);
-				toggle.hidden = !botControlHost;
-				const autoplay = button(
-					t(playerAutoplayEnabled ? "Stop autoplay" : "Enable autoplay (bot)"),
-					() => {
-						if (playerAutoplayEnabled) handlers.requestAutoplay?.(false);
-						else
-							confirmAutoplay(() => {
-								if (
-									playerAutoplayAvailable &&
-									!playerAutoplayEnabled &&
-									!playerAutoplayPending
-								)
-									handlers.requestAutoplay?.(true);
-							});
-					},
-					{
-						className: "player-autoplay-toggle",
-						attrs: { "data-testid": "mobile-player-autoplay-toggle" },
-					},
-				);
-				autoplay.hidden =
-					player.seat !== own || botControlHost || !playerAutoplayAvailable;
-				autoplay.disabled = playerAutoplayPending;
-				return el(
-					"div",
-					{
-						className: "mobile-player-control",
-						attrs: { "data-seat": player.seat },
-					},
-					el(
-						"span",
-						{},
-						`${player.name || player.label}${player.bot ? " 🤖" : ""} (${t(player.seat)})`,
-					),
-					toggle,
-					autoplay,
-				);
-			}),
+			...view.seats
+				.filter((player) => player.seat !== own)
+				.map((player) => {
+					const isBot = botControlSeats.includes(player.seat);
+					const toggle = button(
+						isBot ? `👱 ${t("Switch to player")}` : `🤖 ${t("Switch to bot")}`,
+						() => {
+							handlers.setBotSeat?.(player.seat, !isBot);
+						},
+					);
+					toggle.hidden = !botControlHost;
+					return el(
+						"div",
+						{
+							className: "mobile-player-control",
+							attrs: { "data-seat": player.seat },
+						},
+						el(
+							"span",
+							{},
+							`${player.name || player.label}${player.bot ? " 🤖" : ""} (${t(player.seat)})`,
+						),
+						toggle,
+					);
+				}),
 		);
 	}
 
@@ -2588,6 +2558,7 @@ export function tableSection(
 
 	function render(view: TableView): void {
 		latestView = view;
+		updateAutoplayControl();
 		shownPointSystem = pointSystem();
 		guideBlocked = view.waiting !== "";
 		if (guideBlocked && guide.element.open) guide.element.close();
@@ -2900,6 +2871,7 @@ export function tableSection(
 
 	return {
 		element,
+		autoplayControl,
 		sidebar,
 		sidebarEnd,
 		render,

@@ -65,6 +65,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		WAITING: "WARTEN",
 		"CONNECTING TO HOST": "VERBINDUNG ZUM HOST",
 		"Enable autoplay (bot)": "Autoplay (Bot) aktivieren",
+		"Enable bot": "Bot aktivieren",
+		"Disable bot": "Bot deaktivieren",
+		"Temporarily replace player with a bot":
+			"Spieler vorübergehend durch einen Bot ersetzen",
 
 		"Disable autoplay": "Autoplay deaktivieren",
 		"Stop autoplay": "Autoplay stoppen",
@@ -729,6 +733,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		WAITING: "VÁRAKOZÁS",
 		"CONNECTING TO HOST": "KAPCSOLÓDÁS A HOSTHOZ",
 		"Enable autoplay (bot)": "Automatikus játék (bot) bekapcsolása",
+		"Enable bot": "Bot bekapcsolása",
+		"Disable bot": "Bot kikapcsolása",
+		"Temporarily replace player with a bot":
+			"A játékos ideiglenes helyettesítése bottal",
 
 		"Disable autoplay": "Automatikus játék kikapcsolása",
 		"Stop autoplay": "Automatikus játék leállítása",
@@ -1382,6 +1390,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		WAITING: "VENTER",
 		"CONNECTING TO HOST": "KOBLER TIL VERTEN",
 		"Enable autoplay (bot)": "Slå på automatisk spilling (bot)",
+		"Enable bot": "Aktiver bot",
+		"Disable bot": "Deaktiver bot",
+		"Temporarily replace player with a bot":
+			"Erstatt spilleren midlertidig med en bot",
 
 		"Disable autoplay": "Slå av automatisk spilling",
 		"Stop autoplay": "Stopp automatisk spilling",

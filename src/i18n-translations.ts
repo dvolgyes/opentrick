@@ -4,6 +4,30 @@ type TranslationRow = readonly [string, string, string, string, string, string];
 
 const rows: readonly TranslationRow[] = [
 	[
+		"Enable bot",
+		"Activar bot",
+		"Ativar bot",
+		"Activer le robot",
+		"Attiva bot",
+		"Bot inschakelen",
+	],
+	[
+		"Disable bot",
+		"Desactivar bot",
+		"Desativar bot",
+		"Désactiver le robot",
+		"Disattiva bot",
+		"Bot uitschakelen",
+	],
+	[
+		"Temporarily replace player with a bot",
+		"Sustituir temporalmente al jugador por un bot",
+		"Substituir temporariamente o jogador por um bot",
+		"Remplacer temporairement le joueur par un robot",
+		"Sostituisci temporaneamente il giocatore con un bot",
+		"Speler tijdelijk vervangen door een bot",
+	],
+	[
 		"Restart this game",
 		"Reiniciar esta partida",
 		"Reiniciar este jogo",
