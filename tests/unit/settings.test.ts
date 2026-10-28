@@ -47,8 +47,8 @@ describe("player settings", () => {
 			scheme: "auto",
 			suitFontSize: "M",
 			suitColors: "standard",
-			baizeStrength: "strong",
-			paperStrength: "visible",
+			baizeStrength: "medium",
+			paperStrength: "medium",
 			bidTurnFrame: true,
 			playTurnFrame: true,
 			bidTurnText: true,
@@ -109,6 +109,7 @@ describe("player settings", () => {
 	});
 
 	it("stores each card texture strength and rejects invalid values", () => {
+		expect(PAPER_STRENGTHS).toEqual(["off", "mild", "medium", "strong"]);
 		const storage = memoryStorage();
 		for (const paperStrength of PAPER_STRENGTHS) {
 			writeSettings(storage, { ...DEFAULT_SETTINGS, paperStrength });
@@ -123,6 +124,7 @@ describe("player settings", () => {
 	});
 
 	it("stores each board texture strength and rejects invalid values", () => {
+		expect(BAIZE_STRENGTHS).toEqual(["off", "mild", "medium", "strong"]);
 		const storage = memoryStorage();
 		for (const baizeStrength of BAIZE_STRENGTHS) {
 			writeSettings(storage, { ...DEFAULT_SETTINGS, baizeStrength });
@@ -134,6 +136,18 @@ describe("player settings", () => {
 				baizeStrength: "invalid" as never,
 			}),
 		).toThrow("unknown board texture strength");
+	});
+
+	it("preserves the earlier middle texture settings", () => {
+		const storage = memoryStorage();
+		storage.setItem("opentrick.settings.baize-strength", "normal");
+		storage.setItem("opentrick.settings.paper-strength", "visible");
+		const settings = readSettings(storage);
+		expect(settings.baizeStrength).toBe("medium");
+		expect(settings.paperStrength).toBe("medium");
+		writeSettings(storage, settings);
+		expect(storage.getItem("opentrick.settings.baize-strength")).toBe("medium");
+		expect(storage.getItem("opentrick.settings.paper-strength")).toBe("medium");
 	});
 
 	it.each(["S", "M", "L", "XL", "XXL", "XXXL"] as const)(

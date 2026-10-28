@@ -182,7 +182,7 @@ for (const [layout, viewport] of [
 	["desktop", { width: 1280, height: 800 }],
 	["phone", { width: 390, height: 844 }],
 ] as const) {
-	test(`board texture slider saves and restores its three levels on ${layout}`, async ({
+	test(`board texture slider saves and restores its four levels on ${layout}`, async ({
 		page,
 	}) => {
 		await page.setViewportSize(viewport);
@@ -192,33 +192,36 @@ for (const [layout, viewport] of [
 			.getByRole("group", { name: "Board texture" })
 			.getByRole("slider", { name: "Texture strength" });
 		await expect(slider).toHaveValue("2");
-		await expect(slider).toHaveAttribute("aria-valuetext", "Stronger");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Medium");
 		await slider.focus();
 		await page.keyboard.press("Home");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Off");
 		await page.keyboard.press("ArrowRight");
-		await expect(slider).toHaveAttribute("aria-valuetext", "Default");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Mild");
+		await page.keyboard.press("End");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Strong");
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-baize-strength",
-			"strong",
+			"medium",
 		);
 		await dialog.getByRole("button", { name: "Save settings" }).click();
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-baize-strength",
-			"normal",
+			"strong",
 		);
 		await page.reload();
 		dialog = await openSettings(page);
 		slider = dialog
 			.getByRole("group", { name: "Board texture" })
 			.getByRole("slider", { name: "Texture strength" });
-		await expect(slider).toHaveValue("1");
+		await expect(slider).toHaveValue("3");
 		await slider.focus();
 		await page.keyboard.press("Home");
-		await expect(slider).toHaveAttribute("aria-valuetext", "Milder");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Off");
 		await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-baize-strength",
-			"normal",
+			"strong",
 		);
 		dialog = await openSettings(page);
 		slider = dialog
@@ -229,7 +232,7 @@ for (const [layout, viewport] of [
 		await dialog.getByRole("button", { name: "Save settings" }).click();
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-baize-strength",
-			"mild",
+			"off",
 		);
 	});
 
@@ -243,7 +246,7 @@ for (const [layout, viewport] of [
 			.getByRole("group", { name: "Card texture" })
 			.getByRole("slider", { name: "Texture strength" });
 		await expect(slider).toHaveValue("2");
-		await expect(slider).toHaveAttribute("aria-valuetext", "Visible");
+		await expect(slider).toHaveAttribute("aria-valuetext", "Medium");
 		await slider.focus();
 		await page.keyboard.press("Home");
 		await expect(slider).toHaveAttribute("aria-valuetext", "Off");
@@ -282,6 +285,36 @@ for (const [layout, viewport] of [
 		);
 	});
 }
+
+test("earlier middle texture choices keep the same appearance", async ({
+	page,
+}) => {
+	await page.addInitScript(() => {
+		localStorage.setItem("opentrick.settings.baize-strength", "normal");
+		localStorage.setItem("opentrick.settings.paper-strength", "visible");
+	});
+	await openTable(page);
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-baize-strength",
+		"medium",
+	);
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-paper-strength",
+		"medium",
+	);
+	const dialog = await openSettings(page);
+	for (const group of ["Board texture", "Card texture"])
+		await expect(
+			dialog.getByRole("group", { name: group }).getByRole("slider"),
+		).toHaveAttribute("aria-valuetext", "Medium");
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	expect(
+		await page.evaluate(() => [
+			localStorage.getItem("opentrick.settings.baize-strength"),
+			localStorage.getItem("opentrick.settings.paper-strength"),
+		]),
+	).toEqual(["medium", "medium"]);
+});
 
 test("suit colours offer nine previews, apply on Save, and survive reload", async ({
 	page,

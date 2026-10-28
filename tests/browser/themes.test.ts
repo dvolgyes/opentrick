@@ -142,7 +142,7 @@ afterEach(() => {
 describe("themes", () => {
 	it.each(
 		PALETTES.flatMap(([theme, scheme]) =>
-			["mild", "normal", "strong"].map(
+			["mild", "medium", "strong"].map(
 				(strength) => [theme, scheme, strength] as const,
 			),
 		),

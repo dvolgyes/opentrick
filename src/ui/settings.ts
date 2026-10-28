@@ -44,10 +44,10 @@ export const SUIT_COLOR_SCHEMES = [
 ] as const;
 export type SuitColorScheme = (typeof SUIT_COLOR_SCHEMES)[number];
 
-export const BAIZE_STRENGTHS = ["mild", "normal", "strong"] as const;
+export const BAIZE_STRENGTHS = ["off", "mild", "medium", "strong"] as const;
 export type BaizeStrength = (typeof BAIZE_STRENGTHS)[number];
 
-export const PAPER_STRENGTHS = ["off", "mild", "visible", "strong"] as const;
+export const PAPER_STRENGTHS = ["off", "mild", "medium", "strong"] as const;
 export type PaperStrength = (typeof PAPER_STRENGTHS)[number];
 
 /**
@@ -93,8 +93,8 @@ export const DEFAULT_SETTINGS: Settings = {
 	scheme: "auto",
 	suitFontSize: "M",
 	suitColors: "standard",
-	baizeStrength: "strong",
-	paperStrength: "visible",
+	baizeStrength: "medium",
+	paperStrength: "medium",
 	bidTurnFrame: true,
 	playTurnFrame: true,
 	bidTurnText: true,
@@ -145,6 +145,8 @@ export function readSettings(storage: MaybeStorage): Settings {
 		storage?.getItem(PREFIX + name);
 	// An earlier version stored "none" for no points: no system preference, so the default system without card points.
 	const storedPoints = read("points");
+	const storedBaize = read("baize-strength");
+	const storedPaper = read("paper-strength");
 	const storedPlayTime = Number(read("play-time-ms"));
 	const timing = Object.fromEntries(
 		Object.entries(TIMING_KEYS).map(([field, name]) => {
@@ -188,12 +190,12 @@ export function readSettings(storage: MaybeStorage): Settings {
 			DEFAULT_SETTINGS.suitColors,
 		),
 		baizeStrength: readChoice(
-			read("baize-strength"),
+			storedBaize === "normal" ? "medium" : storedBaize,
 			BAIZE_STRENGTHS,
 			DEFAULT_SETTINGS.baizeStrength,
 		),
 		paperStrength: readChoice(
-			read("paper-strength"),
+			storedPaper === "visible" ? "medium" : storedPaper,
 			PAPER_STRENGTHS,
 			DEFAULT_SETTINGS.paperStrength,
 		),

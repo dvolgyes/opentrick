@@ -5,12 +5,13 @@
 :root {
 	--suit-font-scale: 1;
 	/* The 2× tile repeats at its 384px design size. */
-	--felt-texture: url("./assets/bridge-baize-strong.webp");
+	--felt-texture: url("./assets/bridge-baize.webp");
 	--felt-texture-size: 384px;
 	--paper-texture: url("./assets/card-paper-visible.webp");
 }
+:root[data-baize-strength="off"] { --felt-texture: none; }
 :root[data-baize-strength="mild"] { --felt-texture: url("./assets/bridge-baize-mild.webp"); }
-:root[data-baize-strength="normal"] { --felt-texture: url("./assets/bridge-baize.webp"); }
+:root[data-baize-strength="strong"] { --felt-texture: url("./assets/bridge-baize-strong.webp"); }
 :root[data-paper-strength="off"] { --paper-texture: none; }
 :root[data-paper-strength="mild"] { --paper-texture: url("./assets/card-paper-mild.webp"); }
 :root[data-paper-strength="strong"] { --paper-texture: url("./assets/card-paper-strong.webp"); }

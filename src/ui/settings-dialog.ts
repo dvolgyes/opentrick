@@ -188,15 +188,15 @@ export function settingsDialog(
 		attrs: {
 			type: "range",
 			min: "0",
-			max: "2",
+			max: "3",
 			step: "1",
 			name: "settings-baize-strength",
 		},
 	});
 	const baizeValue = el("output", {});
 	const updateBaizeLabel = () => {
-		const labels = ["Milder", "Default", "Stronger"] as const;
-		const label = t(labels[baize.valueAsNumber] ?? "Stronger");
+		const labels = ["Off", "Mild", "Medium", "Strong"] as const;
+		const label = t(labels[baize.valueAsNumber] ?? "Medium");
 		baizeValue.textContent = label;
 		baize.setAttribute("aria-valuetext", label);
 	};
@@ -224,8 +224,8 @@ export function settingsDialog(
 	});
 	const paperValue = el("output", {});
 	const updatePaperLabel = () => {
-		const labels = ["Off", "Mild", "Visible", "Strong"] as const;
-		const label = t(labels[paper.valueAsNumber] ?? "Visible");
+		const labels = ["Off", "Mild", "Medium", "Strong"] as const;
+		const label = t(labels[paper.valueAsNumber] ?? "Medium");
 		paperValue.textContent = label;
 		paper.setAttribute("aria-valuetext", label);
 	};
@@ -428,8 +428,8 @@ export function settingsDialog(
 			cardPoints: cardPoints.checked,
 			theme: theme.value(),
 			scheme: scheme.value(),
-			baizeStrength: BAIZE_STRENGTHS[baize.valueAsNumber] ?? "strong",
-			paperStrength: PAPER_STRENGTHS[paper.valueAsNumber] ?? "visible",
+			baizeStrength: BAIZE_STRENGTHS[baize.valueAsNumber] ?? "medium",
+			paperStrength: PAPER_STRENGTHS[paper.valueAsNumber] ?? "medium",
 			suitFontSize: suitFontSize.value(),
 			suitColors:
 				SUIT_COLOR_SCHEMES.find(

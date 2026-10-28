@@ -322,7 +322,7 @@ describe("played card styles", () => {
 							throw new Error("missing card surface");
 						const faceColor = getComputedStyle(face).backgroundColor;
 						const playedColor = getComputedStyle(played).backgroundColor;
-						for (const strength of ["off", "mild", "visible", "strong"]) {
+						for (const strength of ["off", "mild", "medium", "strong"]) {
 							document.documentElement.dataset.paperStrength = strength;
 							const faceStyle = getComputedStyle(face);
 							const playedStyle = getComputedStyle(played);
@@ -344,7 +344,7 @@ describe("played card styles", () => {
 				}
 			}
 			const averageAlpha: number[] = [];
-			for (const strength of ["mild", "visible", "strong"]) {
+			for (const strength of ["mild", "medium", "strong"]) {
 				const url = /^url\("(.*)"\)$/.exec(urls.get(strength) ?? "")?.[1];
 				if (!url) throw new Error(`missing ${strength} texture`);
 				const image = new Image();
@@ -380,7 +380,7 @@ describe("played card styles", () => {
 		const variances: number[] = [];
 		const urls = new Set<string>();
 		try {
-			for (const strength of ["mild", "normal", "strong"] as const) {
+			for (const strength of ["mild", "medium", "strong"] as const) {
 				document.documentElement.dataset.baizeStrength = strength;
 				let reference = "";
 				for (const layout of ["desktop", "compact"] as const) {
@@ -419,6 +419,15 @@ describe("played card styles", () => {
 			expect(urls.size).toBe(3);
 			expect(variances[1]).toBeGreaterThan(variances[0] ?? 0);
 			expect(variances[2]).toBeGreaterThan(variances[1] ?? 0);
+			document.documentElement.dataset.baizeStrength = "off";
+			for (const layout of ["desktop", "compact"] as const) {
+				const { root } = renderView(playView(), layout);
+				const surface = root.querySelector<HTMLElement>(
+					layout === "desktop" ? ".felt" : ".mobile-auction-board",
+				);
+				if (!surface) throw new Error("missing playing surface");
+				expect(getComputedStyle(surface).backgroundImage).toBe("none");
+			}
 		} finally {
 			delete document.documentElement.dataset.baizeStrength;
 		}
