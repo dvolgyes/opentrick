@@ -2836,6 +2836,60 @@ describe("mobile board names", () => {
 describe("mobile turn frame", () => {
 	const RED = "rgb(255, 69, 69)";
 
+	it("keeps the bidding box above the bidder's frame", () => {
+		const view = playView();
+		const { root } = renderMobile({
+			...view,
+			phase: "auction",
+			seats: view.seats.map((player) => ({
+				...player,
+				turn: player.seat === "E",
+			})),
+		});
+		const overlay = root.querySelector<HTMLElement>(".mobile-bid-overlay");
+		const frame = root.querySelector<HTMLElement>(
+			'.mobile-board-left .mobile-board-name[data-turn-frame="true"] + .hand',
+		);
+		if (!overlay || !frame) throw new Error("missing bid box or bidder frame");
+		const frameBox = frame.getBoundingClientRect();
+		const overlayBox = overlay.getBoundingClientRect();
+		const x = frameBox.left + 1;
+		const y = Math.max(frameBox.top, overlayBox.top) + 4;
+		expect(x).toBeGreaterThan(overlayBox.left);
+		expect(y).toBeLessThan(Math.min(frameBox.bottom, overlayBox.bottom));
+		const painted = document.elementFromPoint(x, y);
+		expect(painted && overlay.contains(painted)).toBe(true);
+	});
+
+	it("distinguishes an inactive bidding box and unavailable options", () => {
+		const base = playView();
+		const { root, section } = renderMobile({
+			...base,
+			phase: "auction",
+			bids: [{ call: "P", text: "Pass" }],
+		});
+		const overlay = root.querySelector<HTMLElement>(".mobile-bid-overlay");
+		if (!overlay) throw new Error("missing bid box");
+		const disabled = overlay.querySelector<HTMLButtonElement>(
+			".bid-levels button:disabled",
+		);
+		const enabled = overlay.querySelector<HTMLButtonElement>(
+			".bid-calls button:enabled",
+		);
+		if (!disabled || !enabled)
+			throw new Error("missing enabled or disabled bid");
+		expect(getComputedStyle(disabled).backgroundColor).not.toBe(
+			getComputedStyle(enabled).backgroundColor,
+		);
+		expect(getComputedStyle(disabled).color).not.toBe(
+			getComputedStyle(enabled).color,
+		);
+		expect(getComputedStyle(overlay).filter).toBe("none");
+		section.render({ ...base, phase: "auction", bids: [] });
+		expect(getComputedStyle(overlay).filter).toContain("grayscale");
+		expect(getComputedStyle(overlay).filter).toContain("brightness");
+	});
+
 	it.each<[TableView["phase"], Seat]>([
 		["auction", "N"],
 		["auction", "E"],
