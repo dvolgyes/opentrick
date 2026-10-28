@@ -857,30 +857,53 @@ describe("played card styles", () => {
 			?.click();
 		expect(handlers.setBotSeat).toHaveBeenCalledExactlyOnceWith("N", true);
 	});
-	it("spreads hidden side cards into the added phone board height", async () => {
-		await page.viewport(390, 844);
-		document.documentElement.dataset.suitFontSize = "XXL";
-		try {
-			const { root } = renderMobile(playView());
-			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
-			const backs = [
-				...root.querySelectorAll<HTMLElement>(
-					".mobile-board-right .back .face",
-				),
-			];
-			if (!board || backs.length !== 13)
-				throw new Error("missing board or side cards");
-			const span = () =>
-				(backs.at(-1)?.getBoundingClientRect().top ?? 0) -
-				(backs[0]?.getBoundingClientRect().top ?? 0);
-			const expanded = span();
-			board.style.height = "auto";
-			expect(expanded).toBeGreaterThan(span());
-		} finally {
-			delete document.documentElement.dataset.suitFontSize;
-			await page.viewport(414, 896);
-		}
-	});
+	it.each([2, 13])(
+		"keeps %i hidden side cards together in the middle of the phone column",
+		async (count) => {
+			await page.viewport(390, 844);
+			document.documentElement.dataset.suitFontSize = "XXL";
+			try {
+				const base = playView();
+				const { root } = renderMobile({
+					...base,
+					seats: base.seats.map((player) =>
+						player.position === "right"
+							? { ...player, hand: { visible: false as const, count } }
+							: player,
+					),
+				});
+				const column = root.querySelector<HTMLElement>(".mobile-board-right");
+				const name = column?.querySelector<HTMLElement>(".mobile-board-name");
+				const hand = column?.querySelector<HTMLElement>(".hand");
+				const backs = [
+					...(column?.querySelectorAll<HTMLElement>(".back .face") ?? []),
+				].map((face) => face.getBoundingClientRect());
+				if (!column || !name || !hand || backs.length !== count)
+					throw new Error("missing side column, name, hand or cards");
+				// Each card covers at least half of the card before it, however tall the column is.
+				for (const [index, back] of backs.slice(1).entries())
+					expect(back.top - (backs[index]?.top ?? 0)).toBeLessThanOrEqual(
+						back.height / 2 + 0.5,
+					);
+				// The hand is as tall as its cards, so its turn frame stays around them.
+				expect(
+					hand.getBoundingClientRect().bottom - (backs.at(-1)?.bottom ?? 0),
+				).toBeLessThanOrEqual(1);
+				// The name and the cards are in the middle of the column.
+				const box = column.getBoundingClientRect();
+				expect(
+					Math.abs(
+						name.getBoundingClientRect().top -
+							box.top -
+							(box.bottom - hand.getBoundingClientRect().bottom),
+					),
+				).toBeLessThanOrEqual(2);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
 	it("keeps top and bottom hands at the board edges and spreads side suits into the added phone height", async () => {
 		await page.viewport(390, 844);
 		document.documentElement.dataset.suitFontSize = "XXL";

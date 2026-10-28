@@ -3893,6 +3893,12 @@ main:has(> .room[data-form="compact"]) {
 	justify-content: space-between;
 }
 
+/* Hidden side cards stay together in the middle of the column, as the top hand's backs do: the hand is only as tall as its cards. */
+:is(.mobile-board-left, .mobile-board-right) .hand-column.backs {
+	flex: none;
+	justify-content: flex-start;
+}
+
 .mobile-board-left {
 	grid-area: left;
 	align-items: flex-start;
