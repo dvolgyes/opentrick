@@ -269,24 +269,23 @@ export function settingsDialog(
 		el("h2", { attrs: { id: "settings-title" } }, t("Settings")),
 		el("label", { className: "settings-row" }, `${t("Language")} `, language),
 		points.element,
-		engine.element,
-		el(
-			"fieldset",
-			{},
-			el("legend", {}, t("Bot timing")),
-			...Object.values(timing).map((control) => control.element),
-			el(
-				"p",
-				{ className: "settings-hint" },
-				t(
-					"Thinking time counts toward the minimum delay. Bot settings apply when this browser runs the bots.",
-				),
-			),
-		),
 		scheme.element,
 		theme.element,
 		suitFontSize.element,
 		suitColors,
+		el(
+			"fieldset",
+			{},
+			el("legend", {}, t("Screen orientation")),
+			...Object.entries(ORIENTATION_LABELS).map(([field, label]) =>
+				el(
+					"label",
+					{},
+					orientation[field as keyof typeof ORIENTATION_LABELS],
+					` ${t(label)}`,
+				),
+			),
+		),
 		el(
 			"fieldset",
 			{},
@@ -300,16 +299,17 @@ export function settingsDialog(
 				),
 			),
 		),
+		engine.element,
 		el(
 			"fieldset",
 			{},
-			el("legend", {}, t("Screen orientation")),
-			...Object.entries(ORIENTATION_LABELS).map(([field, label]) =>
-				el(
-					"label",
-					{},
-					orientation[field as keyof typeof ORIENTATION_LABELS],
-					` ${t(label)}`,
+			el("legend", {}, t("Bot timing")),
+			...Object.values(timing).map((control) => control.element),
+			el(
+				"p",
+				{ className: "settings-hint" },
+				t(
+					"Thinking time counts toward the minimum delay. Bot settings apply when this browser runs the bots.",
 				),
 			),
 		),

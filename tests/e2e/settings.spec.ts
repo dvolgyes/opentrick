@@ -19,11 +19,38 @@ async function openSettings(page: Page): Promise<Locator> {
 	return dialog;
 }
 
+async function expectSettingsOrder(dialog: Locator): Promise<void> {
+	const content = dialog.getByTestId("settings-content");
+	const order = await content.evaluate((node) =>
+		[...node.children]
+			.filter((child) => child.matches("label, fieldset"))
+			.map((child) =>
+				child.matches("label")
+					? "Language"
+					: child.querySelector("legend")?.textContent,
+			),
+	);
+	expect(order).toEqual([
+		"Language",
+		"Bidding system",
+		"Appearance",
+		"Theme",
+		"Suit and rank font size",
+		"Suit colours",
+		"Screen orientation",
+		"Turn and network display",
+		"Bidding bot",
+		"Bot timing",
+		"Connection",
+	]);
+}
+
 test("Settings shows the defaults, and Save keeps the choices in this browser after a reload", async ({
 	page,
 }) => {
 	await openTable(page);
 	let dialog = await openSettings(page);
+	await expectSettingsOrder(dialog);
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
 	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Automatic", { exact: true })).toBeChecked();
@@ -261,6 +288,7 @@ test("on a phone, Settings is below the board and its dialog fits the screen", a
 		await settings.click();
 		const dialog = page.getByTestId("settings-dialog");
 		await expect(dialog).toBeVisible();
+		await expectSettingsOrder(dialog);
 		const box = await dialog.boundingBox();
 		if (!box) throw new Error("the settings dialog has no box");
 		expect(box.x).toBeGreaterThanOrEqual(0);
