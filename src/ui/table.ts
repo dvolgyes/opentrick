@@ -1093,6 +1093,26 @@ export function tableSection(
 			const visibleSuits = hand.suits.filter((row) => row.cards.length > 0);
 			const trumpIsLast = visibleSuits.at(-1)?.trump === true;
 			node.dataset.mobileCardLayout = `${visibleSuits.length}-${trumpIsLast ? 1 : 2}`;
+			const last = visibleSuits.at(-1)?.cards.at(-1)?.card;
+			const trump = visibleSuits.find((row) => row.trump);
+			const trumpEnd = trumpIsLast ? undefined : trump?.cards.at(-1)?.card;
+			const tenStrips = visibleSuits
+				.flatMap((row) => row.cards)
+				.filter(
+					(item) =>
+						item.card.endsWith("T") &&
+						item.card !== last &&
+						item.card !== trumpEnd,
+				).length;
+			node.style.setProperty(
+				"--phone-gap-count",
+				String(Math.max(0, visibleSuits.length - 1)),
+			);
+			node.style.setProperty(
+				"--phone-fixed-ends",
+				String(trumpEnd === undefined ? 1 : 2),
+			);
+			node.style.setProperty("--phone-ten-strips", String(tenStrips));
 		}
 		if (side) {
 			// The phone divides its side column by the longest suit, so that suit's row fits the column.

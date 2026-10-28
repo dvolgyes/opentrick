@@ -303,6 +303,157 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it.each<[number, number, "left" | "right"]>([
+		[360, 540, "left"],
+		[360, 540, "right"],
+		[360, 576, "left"],
+		[360, 576, "right"],
+		[360, 720, "left"],
+		[360, 720, "right"],
+	])(
+		"fits XXXL play without overlap at %i × %i with the dummy on the %s",
+		async (width, height, position) => {
+			await page.viewport(width, height);
+			document.documentElement.dataset.suitFontSize = "XXXL";
+			try {
+				const base = sideHandView();
+				const dummy = base.seats.find((player) => player.position === "left");
+				const first = base.trick?.cards[0];
+				if (!dummy || !first) throw new Error("missing dummy or trick");
+				const makeCard = (suit: "S" | "H" | "D" | "C", rank: string) => ({
+					...card(`${suit}${rank}` as Card),
+					rank: rank === "T" ? "10" : rank,
+				});
+				const hand = {
+					visible: true as const,
+					suits: [
+						{
+							suit: "S" as const,
+							symbol: "♠",
+							trump: false,
+							cards: ["A", "K", "Q", "T"].map((rank) => makeCard("S", rank)),
+						},
+						{
+							suit: "H" as const,
+							symbol: "♥",
+							trump: false,
+							cards: ["A", "K", "Q", "T"].map((rank) => makeCard("H", rank)),
+						},
+						{
+							suit: "D" as const,
+							symbol: "♦",
+							trump: true,
+							cards: ["A", "K", "Q"].map((rank) => makeCard("D", rank)),
+						},
+						{
+							suit: "C" as const,
+							symbol: "♣",
+							trump: false,
+							cards: ["A", "K"].map((rank) => makeCard("C", rank)),
+						},
+					],
+				};
+				const view = {
+					...base,
+					seats: base.seats.map((seat) =>
+						seat.position === "bottom"
+							? { ...seat, hand }
+							: seat.position === position
+								? { ...seat, hand: dummy.hand }
+								: seat.position === "left"
+									? { ...seat, hand: { visible: false as const, count: 13 } }
+									: seat,
+					),
+					trick: {
+						cards: (["top", "left", "right", "bottom"] as const).map(
+							(side) => ({ ...first, position: side }),
+						),
+						finished: false,
+					},
+				};
+				const { root } = renderMobile(view);
+				expect(
+					Number.parseFloat(
+						getComputedStyle(document.documentElement).fontSize,
+					),
+				).toBeCloseTo(Math.min(width * 0.032, height * 0.02), 1);
+				const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+				const dummyColumn = root.querySelector<HTMLElement>(
+					`.mobile-board-${position}`,
+				);
+				const own = root.querySelector<HTMLElement>(".mobile-auction-hand");
+				const top = root.querySelector<HTMLElement>(".mobile-board-top");
+				if (!board || !dummyColumn || !own || !top)
+					throw new Error("missing board hands");
+				const bounds = board.getBoundingClientRect();
+				expect(bounds.left).toBeGreaterThanOrEqual(-0.5);
+				expect(bounds.right).toBeLessThanOrEqual(width + 0.5);
+				const cards = [
+					...root.querySelectorAll<HTMLElement>(".mobile-board-center .played"),
+				].map((element) => element.getBoundingClientRect());
+				expect(cards).toHaveLength(4);
+				const apart = (a: DOMRect, b: DOMRect) =>
+					a.right <= b.left + 0.5 ||
+					b.right <= a.left + 0.5 ||
+					a.bottom <= b.top + 0.5 ||
+					b.bottom <= a.top + 0.5;
+				for (const [index, cardBox] of cards.entries()) {
+					expect(cardBox.left).toBeGreaterThanOrEqual(bounds.left - 0.5);
+					expect(cardBox.right).toBeLessThanOrEqual(bounds.right + 0.5);
+					expect(cardBox.top).toBeGreaterThanOrEqual(bounds.top - 0.5);
+					expect(cardBox.bottom).toBeLessThanOrEqual(bounds.bottom + 0.5);
+					expect(apart(cardBox, own.getBoundingClientRect())).toBe(true);
+					expect(apart(cardBox, top.getBoundingClientRect())).toBe(true);
+					for (const other of cards.slice(index + 1))
+						expect(apart(cardBox, other)).toBe(true);
+				}
+				const markers = [
+					...dummyColumn.querySelectorAll<HTMLElement>(
+						".suit-row .card:last-child .pip",
+					),
+				];
+				expect(markers).toHaveLength(4);
+				for (const marker of markers) {
+					const range = document.createRange();
+					range.selectNodeContents(marker);
+					const markerBox = range.getBoundingClientRect();
+					expect(markerBox.left).toBeGreaterThanOrEqual(bounds.left - 0.5);
+					expect(markerBox.right).toBeLessThanOrEqual(bounds.right + 0.5);
+					expect(markerBox.top).toBeGreaterThanOrEqual(bounds.top - 0.5);
+					expect(markerBox.bottom).toBeLessThanOrEqual(bounds.bottom + 0.5);
+					for (const cardBox of cards)
+						expect(apart(markerBox, cardBox)).toBe(true);
+				}
+				const handCards = [...own.querySelectorAll<HTMLElement>(".card")];
+				expect(handCards).toHaveLength(13);
+				for (const [index, handCard] of handCards.entries()) {
+					const face = handCard.querySelector<HTMLElement>(".face");
+					if (!face) throw new Error("missing card face");
+					const faceBox = face.getBoundingClientRect();
+					expect(faceBox.left).toBeGreaterThanOrEqual(bounds.left - 0.5);
+					expect(faceBox.right).toBeLessThanOrEqual(bounds.right + 0.5);
+					expect(faceBox.top).toBeGreaterThanOrEqual(bounds.top - 0.5);
+					expect(faceBox.bottom).toBeLessThanOrEqual(bounds.bottom + 0.5);
+					const rank = handCard.querySelector<HTMLElement>(".rank");
+					if (!rank) throw new Error("missing rank");
+					const range = document.createRange();
+					range.selectNodeContents(rank);
+					const rankBox = range.getBoundingClientRect();
+					const next = handCards[index + 1];
+					if (next)
+						expect(
+							rankBox.right,
+							`rank ${rank.textContent} covered by next card`,
+						).toBeLessThanOrEqual(next.getBoundingClientRect().left + 1);
+					expect(rankBox.right).toBeLessThanOrEqual(bounds.right + 0.5);
+				}
+				expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
 	it("applies four paper levels without changing card colours or card backs", async () => {
 		try {
 			const urls = new Map<string, string>();
@@ -2727,6 +2878,29 @@ describe("mobile turn frame", () => {
 });
 
 describe("board depth and frame colours", () => {
+	it("keeps mobile hand cards and board labels free of drop shadows", () => {
+		const { root, section } = renderView(sideHandView(), "compact");
+		section.setBotControls(true, ["E"]);
+		const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+		if (!board) throw new Error("missing board");
+		const handFaces = [...board.querySelectorAll<HTMLElement>(".hand .face")];
+		const labels = [
+			...board.querySelectorAll<HTMLElement>(
+				".seat-label .name, .seat-label .tag, .mobile-board-name",
+			),
+		];
+		const toggles = [
+			...root.querySelectorAll<HTMLElement>(".mobile-player-control button"),
+		];
+		expect(handFaces.length).toBeGreaterThan(0);
+		expect(labels.length).toBeGreaterThan(0);
+		expect(toggles.length).toBeGreaterThan(0);
+		for (const element of [...handFaces, ...labels, ...toggles])
+			expect(getComputedStyle(element).boxShadow).not.toMatch(/rgba?\(0, 0, 0/);
+		const played = board.querySelector<HTMLElement>(".played");
+		if (!played) throw new Error("missing center card");
+		expect(getComputedStyle(played).boxShadow).toMatch(/rgba?\(0, 0, 0/);
+	});
 	it.each<["desktop" | "sideways" | "compact", Seat, string]>([
 		["desktop", "N", "bottom"],
 		["desktop", "E", "left"],
@@ -2880,21 +3054,14 @@ describe("board depth and frame colours", () => {
 				expect(getComputedStyle(played).transform).toBe("none");
 			const elements = [
 				...board.querySelectorAll<HTMLElement>(".played"),
-				...board.querySelectorAll<HTMLElement>(".hand .card .face"),
-				...board.querySelectorAll<HTMLElement>(".hand .back .face"),
-				...board.querySelectorAll<HTMLElement>(
-					".seat-label .name, .seat-label .tag, .mobile-board-name",
-				),
 				...(layout === "desktop"
 					? board.querySelectorAll<HTMLElement>(
-							".video-row .tile, .call-panel, .tile-bot-control",
+							".hand .card .face, .hand .back .face, .seat-label .name, .seat-label .tag, .mobile-board-name, .video-row .tile, .call-panel, .tile-bot-control",
 						)
 					: []),
-				...(layout === "compact"
-					? root.querySelectorAll<HTMLElement>(".mobile-player-control button")
-					: []),
 			];
-			if (elements.length < 8) throw new Error("missing board elements");
+			if (elements.length < (layout === "desktop" ? 8 : 4))
+				throw new Error("missing board elements");
 			const shadow = (element: HTMLElement) => {
 				const style = getComputedStyle(element);
 				const match =
@@ -5498,7 +5665,7 @@ describe("suit colour schemes", () => {
 });
 
 describe("call meanings in the auction", () => {
-	it("keeps oversized phone history inside the page and scrolls to all four bids", async () => {
+	it("keeps phone history inside the page and makes all four bids accessible", async () => {
 		await page.viewport(320, 568);
 		document.documentElement.dataset.suitFontSize = "XXXL";
 		try {
@@ -5515,11 +5682,11 @@ describe("call meanings in the auction", () => {
 			});
 			const history = root.querySelector<HTMLElement>(".auction-scroll");
 			if (!history) throw new Error("missing history");
-			expect(history.scrollWidth).toBeGreaterThan(history.clientWidth);
 			expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
 				document.documentElement.clientWidth + 1,
 			);
 			history.scrollLeft = history.scrollWidth;
+			expect(history.querySelectorAll("tbody .auction-call")).toHaveLength(4);
 			const last = history.querySelector<HTMLElement>(
 				"tbody td:last-child .auction-call",
 			);

@@ -1730,6 +1730,19 @@ dialog {
 	margin: 0;
 }
 
+/* Phone hands and board labels stay flat; only the center's played cards cast shadows. */
+.room[data-form="compact"] .hand .face {
+	box-shadow: none;
+}
+
+.room[data-form="compact"] .hand .card:enabled .face {
+	box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.room[data-form="compact"] :is(.seat-label .name, .seat-label .tag, .seat-label .host-autoplay-toggle, .seat-label .player-autoplay-toggle, .mobile-board-name, .hcp-pill, .turn-pill, .mobile-player-control button) {
+	box-shadow: none;
+}
+
 /* Center: the auction. */
 
 .auction {
@@ -4056,6 +4069,17 @@ main:has(> .room[data-form="compact"]) {
 	flex: none;
 }
 
+/* Fit the widened ten strips and the full ends of the trump group and hand within the phone. */
+:root:root :is(.mobile-auction-hand, .mobile-board-top) .hand-row:not(.backs) {
+	--card-w: max(2.1rem, calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px));
+	--phone-ten-width: calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 1px);
+	--phone-available-width: calc(100cqi - var(--phone-gap-count, 0) * var(--suit-gap) - var(--phone-fixed-ends, 1) * var(--card-w));
+	--card-step: max(0px, min(
+		calc(var(--phone-available-width) / max(1, 13 - var(--phone-fixed-ends, 1))),
+		calc((var(--phone-available-width) - var(--phone-ten-strips, 0) * var(--phone-ten-width)) / max(1, 13 - var(--phone-fixed-ends, 1) - var(--phone-ten-strips, 0)))
+	));
+}
+
 .mobile-auction-players {
 	flex: none;
 	font-size: 0.72rem;
@@ -4449,7 +4473,7 @@ html:has(
 	.room[data-form="compact"]
 		.bridge-table:is([data-phase="auction"], [data-phase="play"])
 ) {
-	font-size: min(var(--compact-width-font-size, 4.444444vw), 2dvh);
+	font-size: min(var(--compact-width-font-size, 4.444444vw), 2dvh, 3.2vw);
 }
 
 body:has(
