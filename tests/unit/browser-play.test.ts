@@ -22,6 +22,59 @@ afterEach(() => {
 });
 
 describe("card worker boundary", () => {
+	it("reuses a worker after the budget result when the search finishes", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("Worker", WorkerStub);
+		const engine = new BrowserPlayEngine({ timeMs: 1500 });
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		const first = engine.choose(position, new AbortController().signal);
+		const worker = WorkerStub.made[0];
+		worker?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7", samples: 8 } },
+		});
+		await vi.advanceTimersByTimeAsync(1500);
+		await expect(first).resolves.toMatchObject({ card: "S7" });
+		expect(worker?.terminate).not.toHaveBeenCalled();
+		worker?.onmessage?.({
+			data: { ok: true, analysis: { card: "S7", samples: 9 } },
+		});
+		const second = engine.choose(position, new AbortController().signal);
+		expect(WorkerStub.made).toHaveLength(1);
+		worker?.onmessage?.({
+			data: { ok: true, analysis: { card: "S7", samples: 10 } },
+		});
+		await expect(second).resolves.toMatchObject({ samples: 10 });
+		engine.stop();
+	});
+	it("replaces a still-running worker if the next card is needed immediately", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("Worker", WorkerStub);
+		const engine = new BrowserPlayEngine({ timeMs: 1500 });
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		const first = engine.choose(position, new AbortController().signal);
+		const previous = WorkerStub.made[0];
+		previous?.onmessage?.({
+			data: { ok: true, partial: true, analysis: { card: "S7" } },
+		});
+		await vi.advanceTimersByTimeAsync(1500);
+		await first;
+		const second = engine.choose(position, new AbortController().signal);
+		expect(previous?.terminate).toHaveBeenCalledOnce();
+		expect(WorkerStub.made).toHaveLength(2);
+		WorkerStub.made[1]?.onmessage?.({
+			data: { ok: true, analysis: { card: "S7" } },
+		});
+		await expect(second).resolves.toMatchObject({ card: "S7" });
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(WorkerStub.made[1]?.terminate).not.toHaveBeenCalled();
+		engine.stop();
+	});
 	it("keeps searching until the default five-second response budget", async () => {
 		vi.useFakeTimers();
 		vi.stubGlobal("Worker", WorkerStub);
@@ -49,6 +102,7 @@ describe("card worker boundary", () => {
 		expect(complete).toBe(false);
 		await vi.advanceTimersByTimeAsync(1);
 		await expect(result).resolves.toMatchObject({ card: "S7", samples: 100 });
+		await vi.advanceTimersByTimeAsync(1000);
 		expect(worker?.terminate).toHaveBeenCalledOnce();
 	});
 	it("rejects invalid time budgets before constructing a worker", () => {
@@ -76,6 +130,7 @@ describe("card worker boundary", () => {
 		expect(settled).toBe(false);
 		await vi.advanceTimersByTimeAsync(1);
 		await expect(result).resolves.toMatchObject({ card: "S7", samples: 8 });
+		await vi.advanceTimersByTimeAsync(1000);
 		expect(WorkerStub.made[0]?.terminate).toHaveBeenCalledOnce();
 	});
 	it("rejects a worker card outside the authoritative legal list", async () => {

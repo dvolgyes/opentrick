@@ -92,6 +92,7 @@ test("fast bots honor configured bid, card and final-auction delays and pass the
 		0,
 	);
 	const budgets: number[] = [];
+	let playWorkerRequests = 0;
 	await page.route("**/__test_play__", async (route) => {
 		const request = route.request().postDataJSON() as {
 			timeMs: number;
@@ -100,23 +101,26 @@ test("fast bots honor configured bid, card and final-auction delays and pass the
 		budgets.push(request.timeMs);
 		await route.fulfill({ json: { card: request.position.legal[0] } });
 	});
-	await page.route(/\/play-worker-[^/]+\.js$/, (route) =>
-		route.fulfill({
+	await page.route(/\/play-worker-[^/]+\.js$/, (route) => {
+		playWorkerRequests++;
+		return route.fulfill({
 			contentType: "text/javascript",
 			body: `self.onmessage = async ({data}) => {
 		const response = await fetch(new URL("/__test_play__", self.location.href), { method: "POST", body: JSON.stringify(data) });
 		const {card} = await response.json();
-		self.postMessage({ok: true, analysis: {card, samples: 1, effectiveSamples: 1, elapsedMs: 0, evaluations: []}});
+		const analysis = {card, samples: 1, effectiveSamples: 1, elapsedMs: 0, evaluations: []};
+		self.postMessage({ok: true, partial: true, analysis});
+		setTimeout(() => self.postMessage({ok: true, analysis}), data.timeMs + 100);
 	};`,
-		}),
-	);
+		});
+	});
 	await page.goto("/");
 	await createRoom(page, ["N", "E", "S"]);
 	const dialog = await settings(page);
 	await dialog.getByLabel("Minimum card time (seconds)").fill("1.25");
 	await dialog.getByLabel("Minimum bid time (seconds)").fill("3.25");
 	await dialog.getByLabel("Pause after auction (seconds)").fill("3.5");
-	await dialog.getByLabel("Card thinking budget (seconds)").fill("0.35");
+	await dialog.getByLabel("Card thinking budget (seconds)").fill("1.4");
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	const table = page.getByTestId("table");
 	await expect(table).toHaveAttribute("data-at", "3");
@@ -141,5 +145,6 @@ test("fast bots honor configured bid, card and final-auction delays and pass the
 		expect(at(step) - at(step - 1)).toBeGreaterThanOrEqual(3200);
 	expect(at(5) - at(4)).toBeGreaterThanOrEqual(3450);
 	expect(at(6) - at(5)).toBeGreaterThanOrEqual(1200);
-	expect(budgets).toEqual([350, 350]);
+	expect(budgets).toEqual([1400, 1400]);
+	expect(playWorkerRequests).toBe(1);
 });

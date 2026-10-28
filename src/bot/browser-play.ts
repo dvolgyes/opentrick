@@ -17,6 +17,7 @@ export interface PlayChooser {
 export class BrowserPlayEngine implements PlayChooser {
 	#worker: Worker | undefined;
 	#cancel: (() => void) | undefined;
+	#drainTimer: ReturnType<typeof setTimeout> | undefined;
 	readonly #timeMs: number;
 	constructor(options: { readonly timeMs?: number } = {}) {
 		this.#timeMs = playTimeMs(options.timeMs);
@@ -24,8 +25,36 @@ export class BrowserPlayEngine implements PlayChooser {
 
 	stop(): void {
 		this.#cancel?.();
+		this.#discardWorker();
+	}
+
+	#discardWorker(): void {
+		clearTimeout(this.#drainTimer);
+		this.#drainTimer = undefined;
 		this.#worker?.terminate();
 		this.#worker = undefined;
+	}
+
+	/** Let a completed-budget search finish so its initialized worker can be reused. */
+	#drain(worker: Worker, position: PlayPosition): void {
+		this.#drainTimer = setTimeout(() => this.#discardWorker(), 1000);
+		worker.onerror = () => this.#discardWorker();
+		worker.onmessage = (event: MessageEvent) => {
+			const data = event.data;
+			if (
+				!data?.ok ||
+				!isCard(data.analysis?.card) ||
+				!position.legal.includes(data.analysis.card)
+			) {
+				this.#discardWorker();
+				return;
+			}
+			if (data.partial) return;
+			clearTimeout(this.#drainTimer);
+			this.#drainTimer = undefined;
+			worker.onmessage = null;
+			worker.onerror = null;
+		};
 	}
 
 	choose(
@@ -37,6 +66,8 @@ export class BrowserPlayEngine implements PlayChooser {
 		if (signal.aborted) return Promise.reject(new BotRequestAbortedError());
 		if (this.#cancel)
 			return Promise.reject(new Error("card engine is already searching"));
+		// A worker still in native code cannot process another request promptly.
+		if (this.#drainTimer !== undefined) this.#discardWorker();
 		this.#worker ??= new Worker(new URL("./play-worker.ts", import.meta.url), {
 			type: "module",
 		});
@@ -54,17 +85,13 @@ export class BrowserPlayEngine implements PlayChooser {
 			};
 			const fail = (error: Error) => {
 				finish();
-				worker.terminate();
-				this.#worker = undefined;
+				this.#discardWorker();
 				reject(error);
 			};
 			const abort = () => fail(new BotRequestAbortedError());
-			const accept = (analysis: PlayAnalysis, terminate: boolean) => {
+			const accept = (analysis: PlayAnalysis, draining: boolean) => {
 				finish();
-				if (terminate) {
-					worker.terminate();
-					this.#worker = undefined;
-				}
+				if (draining) this.#drain(worker, position);
 				resolve(analysis);
 			};
 			const budgetTimer = setTimeout(() => {

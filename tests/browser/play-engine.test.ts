@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { BrowserPlayEngine } from "../../src/bot/browser-play";
 import { playPosition } from "../../src/bot/play-position";
 import { dealCards } from "../../src/bridge/deal";
@@ -6,6 +6,50 @@ import { applyAction, boardStatus, createBoard } from "../../src/bridge/engine";
 import { bidding, DEAL } from "../unit/bridge-fixtures";
 
 describe("browser card engine", () => {
+	it("reuses a real worker for successive timed searches", async () => {
+		const NativeWorker = Worker;
+		let created = 0;
+		class CountingWorker extends NativeWorker {
+			constructor(url: string | URL, options?: WorkerOptions) {
+				super(url, options);
+				created++;
+			}
+		}
+		vi.stubGlobal("Worker", CountingWorker);
+		const engine = new BrowserPlayEngine({ timeMs: 150 });
+		try {
+			let board = bidding(createBoard(1, DEAL), "3NT P P P");
+			for (let ply = 0; ply < 40; ply++) {
+				const status = boardStatus(board);
+				if (status.phase !== "play") throw new Error("no test ending found");
+				const position = playPosition(board, status.actor);
+				const card = position.legal[0];
+				if (!card) throw new Error("missing legal card");
+				const applied = applyAction(board, status.actor, {
+					type: "play",
+					card,
+				});
+				if (!applied.ok) throw new Error(applied.reason);
+				board = applied.board;
+			}
+			const status = boardStatus(board);
+			if (status.phase !== "play") throw new Error("missing play position");
+			const position = playPosition(board, status.actor);
+			expect(position.legal.length).toBeGreaterThan(1);
+			for (let search = 0; search < 2; search++) {
+				const result = await engine.choose(
+					position,
+					new AbortController().signal,
+				);
+				expect(position.legal).toContain(result.card);
+				await new Promise((resolve) => setTimeout(resolve, 200));
+			}
+			expect(created).toBe(1);
+		} finally {
+			engine.stop();
+			vi.unstubAllGlobals();
+		}
+	}, 15_000);
 	it("spends the default budget on more than 96 samples in an ending", async () => {
 		let board = bidding(createBoard(1, DEAL), "3NT P P P");
 		for (let ply = 0; ply < 52; ply++) {
