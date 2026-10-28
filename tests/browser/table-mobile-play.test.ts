@@ -2302,6 +2302,10 @@ describe("turn pill", () => {
 				"E-W vulnerable",
 				"Play starts in 3 seconds.",
 			]);
+			// Assistive technology must not announce the summary as the current trick.
+			expect(
+				summary.parentElement?.closest('[aria-label="Current trick"]'),
+			).toBeNull();
 			for (const panel of document.querySelectorAll<HTMLElement>(
 				'[data-testid="bid-box"], [data-testid="bid-history"]',
 			))

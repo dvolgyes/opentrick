@@ -864,10 +864,8 @@ export function tableSection(
 		className: "mobile-board-right",
 		attrs: { "aria-hidden": "true" },
 	});
-	const mobileBoardCenter = el("div", {
-		className: "mobile-board-center",
-		attrs: { role: "group", "aria-label": t("Current trick") },
-	});
+	// render() sets the role and the label: they depend on what the middle holds.
+	const mobileBoardCenter = el("div", { className: "mobile-board-center" });
 	const mobileBoard = el(
 		"section",
 		{
@@ -2626,7 +2624,16 @@ export function tableSection(
 		const mobileGameActive =
 			compact && (view.phase === "auction" || view.phase === "play");
 		mobileAuction.hidden = !mobileGameActive;
-		if (mobileGameActive && view.auctionEnd) {
+		// The middle of the phone board is the current trick, except while it shows the auction summary.
+		const summaryInMiddle = mobileGameActive && view.auctionEnd !== undefined;
+		if (summaryInMiddle) {
+			mobileBoardCenter.removeAttribute("role");
+			mobileBoardCenter.removeAttribute("aria-label");
+		} else {
+			mobileBoardCenter.setAttribute("role", "group");
+			mobileBoardCenter.setAttribute("aria-label", t("Current trick"));
+		}
+		if (summaryInMiddle) {
 			mobileBoardCenter.replaceChildren(auctionEnd);
 		} else if (mobileGameActive && view.phase === "play") {
 			mobileBoardCenter.replaceChildren(trick);
