@@ -12,7 +12,7 @@ export function discoveryCount(deps: AppDeps): {
 		element.textContent =
 			count === undefined
 				? deps.t("Discovery connection unavailable")
-				: `${deps.t("Connected browsers in discovery")}: ${count}`;
+				: `${deps.t("Peers online in discovery mode")}: ${count}`;
 	};
 	const dispose = deps.discovery?.subscribe(update) ?? (() => {});
 	update();
