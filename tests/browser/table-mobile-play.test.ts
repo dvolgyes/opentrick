@@ -4204,6 +4204,48 @@ describe("compact play controls", () => {
 		},
 	);
 
+	it.each(["M", "XXL"])(
+		"draws the trump frame against the trump cards on a phone at %s",
+		(size) => {
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				renderView(sideHandView(), "compact");
+				const frames = [
+					...document.querySelectorAll<HTMLElement>(
+						":is(.mobile-auction-hand, .mobile-board-top) .suit-group.trump, :is(.mobile-board-left, .mobile-board-right) .suit-row.trump",
+					),
+				].filter((frame) => frame.checkVisibility());
+				expect(frames).toHaveLength(3);
+				for (const frame of frames) {
+					const side = frame.classList.contains("suit-row");
+					const style = getComputedStyle(frame, side ? "::after" : null);
+					const offset = Number.parseFloat(style.outlineOffset);
+					const box = frame.getBoundingClientRect();
+					const faces = [...frame.querySelectorAll<HTMLElement>(".face")].map(
+						(face) => face.getBoundingClientRect(),
+					);
+					// The inside edge of the frame is within a pixel of the outer cards, neither apart nor across them.
+					const gaps = [
+						Math.min(...faces.map((face) => face.left)) - (box.left - offset),
+						box.right + offset - Math.max(...faces.map((face) => face.right)),
+						Math.min(...faces.map((face) => face.top)) - (box.top - offset),
+						// A side row shows only a strip of its cards; a top or bottom frame ends at the bottom of the faces.
+						...(side
+							? []
+							: [
+									box.bottom +
+										offset -
+										Math.max(...faces.map((face) => face.bottom)),
+								]),
+					];
+					for (const gap of gaps) expect(Math.abs(gap)).toBeLessThanOrEqual(1);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
+
 	it("hides Claim … while more than five tricks remain, and keeps Claim all", () => {
 		const { root } = renderMobile(playView());
 		const buttons = [...root.querySelectorAll("button")];

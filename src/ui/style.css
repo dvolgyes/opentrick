@@ -4057,6 +4057,22 @@ main:has(> .room[data-form="compact"]) {
 	position: relative;
 }
 
+/* On a phone the trump frame touches the trump cards: it is as tall as their faces, not as the row. */
+:is(.mobile-auction-hand, .mobile-board-top) .suit-group.trump {
+	align-self: flex-start;
+	height: max(
+		var(--card-h),
+		calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.1rem + 4px)
+	);
+	outline-offset: 0;
+}
+
+:is(.mobile-board-left, .mobile-board-right)
+	.hand-stack
+	.suit-row.trump::after {
+	outline-offset: 0;
+}
+
 .mobile-auction-bids {
 	display: flex;
 	flex: none;
