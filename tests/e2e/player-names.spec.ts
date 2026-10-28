@@ -27,7 +27,7 @@ test("an unnamed creator from a reusable setup link names themselves before seed
 	await expect(page.getByTestId("name-entry")).toBeVisible({ timeout: 30_000 });
 	await page.getByTestId("personal-name").fill("Seeder");
 	await page.getByRole("button", { name: "Join game", exact: true }).click();
-	await expect(page).toHaveTitle(/Seeder \(S\)$/, { timeout: 30_000 });
+	await expect(page).toHaveTitle(/Seeder \(S, host\)$/, { timeout: 30_000 });
 	await expect(page.getByTestId("host-controls")).toBeVisible();
 });
 
@@ -98,7 +98,7 @@ test("South hosts the creation layout and an unnamed entrant edits a persistent 
 	expect(west?.x).toBeLessThan(east?.x ?? 0);
 	await page.locator('input[name="name-S"]').fill("Alice");
 	await page.getByTestId("create").click();
-	await expect(page).toHaveTitle(/Alice \(S\)$/);
+	await expect(page).toHaveTitle(/Alice \(S, host\)$/);
 	expect(
 		await page.evaluate(() => localStorage.getItem("opentrick.player-name")),
 	).toBe("Alice");
@@ -399,7 +399,7 @@ test("a solo game seats the saved name at South as host against three bots", asy
 	await expect(page.locator('input[name="name-S"]')).toHaveValue("Céline");
 	await page.getByTestId("create-solo").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
-	await expect(page).toHaveTitle(/Céline \(S\)$/);
+	await expect(page).toHaveTitle(/Céline \(S, host\)$/);
 	const params = new URL(page.url()).searchParams;
 	expect(["n", "e", "s", "w", "h", "b"].map((key) => params.get(key))).toEqual([
 		"bot",

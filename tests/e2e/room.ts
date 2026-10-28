@@ -81,7 +81,7 @@ export async function createRoom(
 	await page
 		.getByTestId("create")
 		.evaluate((button) => (button as HTMLButtonElement).click());
-	await expect(page).toHaveTitle(/player4 \(W\)$/);
+	await expect(page).toHaveTitle(/player4 \(W, host\)$/);
 	await expect(page).toHaveURL(/\?.*#k=[A-Za-z0-9_-]{22}$/);
 	const linkUrl = new URL(page.url());
 	linkUrl.searchParams.delete("pl");
@@ -96,7 +96,7 @@ export async function pick(
 	seat: SeatKey,
 	timeout = CONNECT_MS,
 ): Promise<void> {
-	const title = new RegExp(`${NAME[seat]} \\(${seat}\\)$`);
+	const title = new RegExp(`${NAME[seat]} \\(${seat}(, host)?\\)$`);
 	const button = page.getByTestId(`pick-${seat}`);
 	// The seats wait for the host's lobby, and the page takes the only free seat of the lobby by itself (ADR 0005).
 	await expect
@@ -210,14 +210,14 @@ export async function readStatistics(
 	return { ew: side(1), ns: side(2) };
 }
 
-/** Waits until this page holds the seat: the title names the player and the seat, and the roster tags the row "You". */
+/** Waits until this page holds the seat: the title names the player and the seat (and host, on the host's page), and the roster tags the row "You". */
 export async function expectSeat(
 	page: Page,
 	seat: SeatKey,
 	options: { timeout?: number } = {},
 ): Promise<void> {
 	await expect(page).toHaveTitle(
-		new RegExp(`${NAME[seat]} \\(${seat}\\)$`),
+		new RegExp(`${NAME[seat]} \\(${seat}(, host)?\\)$`),
 		options,
 	);
 	await expect(

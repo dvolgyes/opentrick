@@ -1759,6 +1759,8 @@ export function showRoom(
 			name: config.names[seat],
 			seat,
 			turn: yourTurn,
+			host: view.hosting,
+			bot: activeBots.includes(seat),
 		});
 		checkTurnAlert();
 		// The lobby uses the table layout, so it looks like the game; only the sidebar is hidden while waiting.

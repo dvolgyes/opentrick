@@ -54,7 +54,7 @@ test("a cached older website gets one automatic reload and a manual retry instea
 		).toBeEnabled();
 		await guestPage.waitForTimeout(1500);
 		expect(documents).toBe(2);
-		await expect(page).toHaveTitle(/Host \(S\)$/);
+		await expect(page).toHaveTitle(/Host \(S, host\)$/);
 	} finally {
 		await guest.close();
 	}
@@ -72,7 +72,7 @@ for (const older of ["host", "guest"] as const) {
 		await page.locator('input[name="name-S"]').fill("Host");
 		await page.locator('input[name="name-N"]').fill("Guest");
 		await page.getByTestId("create").click();
-		await expect(page).toHaveTitle(/Host \(S\)$/);
+		await expect(page).toHaveTitle(/Host \(S, host\)$/);
 		const initial = new URL(page.url());
 		const link = new URL(initial);
 		link.searchParams.delete("pl");
@@ -86,7 +86,7 @@ for (const older of ["host", "guest"] as const) {
 			await expect
 				.poll(() => new URL(outdated.url()).searchParams.has("update_to"))
 				.toBe(true);
-			await expect(page).toHaveTitle(/Host \(S\)$/);
+			await expect(page).toHaveTitle(/Host \(S, host\)$/);
 			await expect(guestPage.getByTestId("pick-N")).toBeEnabled();
 			await guestPage.getByTestId("pick-N").click();
 			await expect(guestPage).toHaveTitle(/Guest \(N\)$/);

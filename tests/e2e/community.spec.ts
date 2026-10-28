@@ -302,11 +302,14 @@ test("four players in one browser profile merge, start, and keep their seats on 
 		expect(pages.map(gameKey)).toEqual([key, key, key, key]);
 		for (const [index, page] of pages.entries()) {
 			await expect(page).toHaveTitle(
-				new RegExp(`Player ${index} \\([NESW]\\)$`),
+				new RegExp(`Player ${index} \\([NESW](, host)?\\)$`),
 			);
 		}
 		const seats = await Promise.all(
-			pages.map(async (page) => /\(([NESW])\)$/.exec(await page.title())?.[1]),
+			pages.map(
+				async (page) =>
+					/\(([NESW])(?:, host)?\)$/.exec(await page.title())?.[1],
+			),
 		);
 		expect(new Set(seats).size).toBe(4);
 		await test.step("reload all four pages", async () => {
@@ -317,7 +320,7 @@ test("four players in one browser profile merge, start, and keep their seats on 
 		await test.step("all players return to board one", started);
 		for (const [index, page] of pages.entries()) {
 			await expect(page).toHaveTitle(
-				new RegExp(`Player ${index} \\(${seats[index]}\\)$`),
+				new RegExp(`Player ${index} \\(${seats[index]}(, host)?\\)$`),
 			);
 		}
 		expect(errors).toEqual([]);
@@ -422,8 +425,8 @@ test("a copied invitation seats a friend separately in the same browser profile"
 			"1",
 			{ timeout: 45_000 },
 		);
-		await expect(host).toHaveTitle(/Alice \(N\)$/);
-		await expect(friend).toHaveTitle(/Bob \(S\)$/);
+		await expect(host).toHaveTitle(/Alice \(N(, host)?\)$/);
+		await expect(friend).toHaveTitle(/Bob \(S(, host)?\)$/);
 		expect(errors).toEqual([]);
 	} finally {
 		for (const page of pages) await page.close();
@@ -511,7 +514,7 @@ test("an absent player gets bot cover for the board and returns to the reserved 
 			timeout: 45_000,
 		});
 		await expect(south).toHaveAttribute("data-bot", "false");
-		await expect(b).toHaveTitle(/Bob \(S\)$/);
+		await expect(b).toHaveTitle(/Bob \(S(, host)?\)$/);
 		await expect(b.getByTestId("table")).toHaveAttribute("data-at", "1", {
 			timeout: 20_000,
 		});
@@ -570,7 +573,8 @@ test("an invited replacement reserves the seat while temporary cover finishes th
 		});
 		await replacement.getByTestId("personal-name").fill("Carol");
 		await replacement.getByRole("button", { name: "Join game" }).click();
-		await expect(replacement).toHaveTitle(/Carol \(S\)$/);
+		// The bot still plays South for this board, so the replacement's title names the bot at South.
+		await expect(replacement).toHaveTitle(/: bot \(S\)$/);
 		await expect(
 			host
 				.locator(".name[data-bot]")
@@ -610,7 +614,7 @@ test("two opposite pairs merge into a four-human game and play after leaving dis
 		expect(new Set(pages.map(gameKey)).size).toBe(1);
 		const seats = new Map<string, Page>();
 		for (const page of pages) {
-			const seat = /\(([NESW])\)$/.exec(await page.title())?.[1];
+			const seat = /\(([NESW])(?:, host)?\)$/.exec(await page.title())?.[1];
 			if (!seat) throw new Error("player seat missing from title");
 			seats.set(seat, page);
 		}

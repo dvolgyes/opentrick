@@ -2604,6 +2604,14 @@ const rows: readonly TranslationRow[] = [
 		"{game}: {name} ({seat})",
 	],
 	[
+		"{game}: {name} ({seat}, host)",
+		"{game}: {name} ({seat}, host)",
+		"{game}: {name} ({seat}, host)",
+		"{game} : {name} ({seat}, hôte)",
+		"{game}: {name} ({seat}, host)",
+		"{game}: {name} ({seat}, host)",
+	],
+	[
 		"TURN - {title}",
 		"TU TURNO - {title}",
 		"A SUA VEZ - {title}",

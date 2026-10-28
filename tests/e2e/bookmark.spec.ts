@@ -48,7 +48,7 @@ test("the create screen is prefilled from the bookmark, with the host seat chose
 test("create opens the game and selects the host seat in the page URL", async () => {
 	await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
 	await page.getByTestId("create").click();
-	await expect(page).toHaveTitle("Bridge: zsdh (E)");
+	await expect(page).toHaveTitle("Bridge: zsdh (E, host)");
 	await expect(page).toHaveURL(
 		/\?n=player1&e=zsdh&s=player&w=dvolgyes&h=E&b=&pl=E#k=[A-Za-z0-9_-]{22}$/,
 	);
@@ -74,7 +74,7 @@ test("the other players see the names and can choose a seat from the shared URL"
 
 test("reloading the selected-player address seats the host again", async () => {
 	await page.reload();
-	await expect(page).toHaveTitle("Bridge: zsdh (E)", {
+	await expect(page).toHaveTitle("Bridge: zsdh (E, host)", {
 		timeout: CONNECT_MS,
 	});
 	await expect(page.getByTestId("pick-E")).toHaveCount(0);
