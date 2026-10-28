@@ -206,12 +206,12 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 				.locator(".mobile-auction-topbar")
 				.getByRole("button", { name: "Reload", exact: true }),
 		).toBeVisible();
-		// Host controls opens a dialog with the host's Debug, Reload players and Reset; Close closes it.
+		// Host controls opens a dialog with the host's Reload players and Reset (Debug is hidden for now); Close closes it.
 		await page
 			.getByRole("button", { name: "Host controls", exact: true })
 			.click();
 		const hostControls = page.getByTestId("host-controls-dialog");
-		for (const name of ["Debug", "Reload players", "Reset", "Close"])
+		for (const name of ["Reload players", "Reset", "Close"])
 			await expect(
 				hostControls.getByRole("button", { name, exact: true }),
 				name,

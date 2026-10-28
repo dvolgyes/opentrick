@@ -63,9 +63,10 @@ import { CallMemory } from "./call-memory";
 import type { CallDisplay, RemoteCallPresence } from "./call-model";
 import { CallPresenceTimeout } from "./call-presence";
 import { cameraSetup } from "./camera-setup";
-import { debugExport, pageAddress } from "./debug-export";
+// The Debug button is hidden for now; uncomment every "Debug button" block to restore it.
+// import { debugExport, pageAddress } from "./debug-export";
 import type { AppDeps, Dispose, Navigation } from "./deps";
-import { button, copyButton, copyWhenReady, el } from "./dom";
+import { button, copyButton, /* copyWhenReady, */ el } from "./dom";
 import { languageControl } from "./language-control";
 import {
 	type Banner,
@@ -155,8 +156,8 @@ const TERMINAL: ReadonlySet<TableStatus> = new Set([
 	"incompatible",
 ]);
 
-/** How long the Debug button waits for the players' new reports before it copies the export. */
-const REPORT_WAIT_MS = 1_500;
+// Debug button: how long it waits for the players' new reports before it copies the export.
+// const REPORT_WAIT_MS = 1_500;
 
 function botsPausedStorageKey(tableId: string): string {
 	return `opentrick.bots-paused.${tableId}`;
@@ -282,22 +283,23 @@ export function showRoom(
 		};
 	}
 
-	function debugText(asked: number): string {
-		const view = controller.view();
-		const exported = debugExport({
-			exportedAt: Date.now(),
-			build: deps.build,
-			page: pageAddress(location.href),
-			hostSeat: seat,
-			host: pageReport(window, deviceForm, tableFacts()),
-			bots: view.roster?.bots ?? [],
-			reports: controller.reports(),
-			asked,
-			view,
-			entries: controller.entries(),
-		});
-		return JSON.stringify(exported, null, 2);
-	}
+	// Debug button: the export text.
+	// function debugText(asked: number): string {
+	// 	const view = controller.view();
+	// 	const exported = debugExport({
+	// 		exportedAt: Date.now(),
+	// 		build: deps.build,
+	// 		page: pageAddress(location.href),
+	// 		hostSeat: seat,
+	// 		host: pageReport(window, deviceForm, tableFacts()),
+	// 		bots: view.roster?.bots ?? [],
+	// 		reports: controller.reports(),
+	// 		asked,
+	// 		view,
+	// 		entries: controller.entries(),
+	// 	});
+	// 	return JSON.stringify(exported, null, 2);
+	// }
 
 	/** The reload button's tooltip lists each seat's build; it is marked when a player's build is not the host's. */
 	function showPlayerBuilds(bots: readonly Seat[]): void {
@@ -901,30 +903,31 @@ export function showRoom(
 		className: "note debug-status",
 		attrs: { role: "status", "data-testid": "debug-status" },
 	});
-	// The host asks for new reports and copies the export once they had time to arrive; the copy starts in the click.
-	const debug = button(
-		deps.t("Debug"),
-		() => {
-			const asked = controller.requestReports();
-			debugStatus.textContent = deps.t("Collecting the players' reports…");
-			const text = new Promise<string>((resolve) => {
-				window.setTimeout(
-					() => resolve(debugText(asked)),
-					asked > 0 ? REPORT_WAIT_MS : 0,
-				);
-			});
-			void copyWhenReady(text).then((result) => {
-				debugStatus.textContent = deps.t(
-					result === "copied"
-						? "Debug export copied."
-						: result === "unavailable"
-							? "Clipboard access is unavailable."
-							: "Could not copy the debug export. Allow clipboard access and try again.",
-				);
-			});
-		},
-		{ attrs: { "data-testid": "debug-export" } },
-	);
+	// Debug button: the host asks for new reports and copies the export once they had time to arrive; the copy
+	// starts in the click.
+	// const debug = button(
+	// 	deps.t("Debug"),
+	// 	() => {
+	// 		const asked = controller.requestReports();
+	// 		debugStatus.textContent = deps.t("Collecting the players' reports…");
+	// 		const text = new Promise<string>((resolve) => {
+	// 			window.setTimeout(
+	// 				() => resolve(debugText(asked)),
+	// 				asked > 0 ? REPORT_WAIT_MS : 0,
+	// 			);
+	// 		});
+	// 		void copyWhenReady(text).then((result) => {
+	// 			debugStatus.textContent = deps.t(
+	// 				result === "copied"
+	// 					? "Debug export copied."
+	// 					: result === "unavailable"
+	// 						? "Clipboard access is unavailable."
+	// 						: "Could not copy the debug export. Allow clipboard access and try again.",
+	// 			);
+	// 		});
+	// 	},
+	// 	{ attrs: { "data-testid": "debug-export" } },
+	// );
 	const reloadPlayers = button(
 		deps.t("Reload players"),
 		() => {
@@ -965,7 +968,7 @@ export function showRoom(
 		el(
 			"div",
 			{ className: "host-controls-actions" },
-			debug,
+			// debug, (Debug button)
 			reloadPlayers,
 			reset,
 			button(

@@ -9,16 +9,16 @@ async function passingBots(page: Page): Promise<void> {
 	await mockBotBidding(page, () => "P");
 }
 
-/** Every localStorage value long enough to be a secret, such as the client id. */
-function storedSecrets(page: Page): Promise<string[]> {
-	return page.evaluate(() =>
-		Object.keys(localStorage)
-			.map((key) => localStorage.getItem(key) ?? "")
-			.filter((value) => value.length >= 16),
-	);
-}
+// Debug button: every localStorage value long enough to be a secret, such as the client id.
+// function storedSecrets(page: Page): Promise<string[]> {
+// 	return page.evaluate(() =>
+// 		Object.keys(localStorage)
+// 			.map((key) => localStorage.getItem(key) ?? "")
+// 			.filter((value) => value.length >= 16),
+// 	);
+// }
 
-test("the host copies a debug export with each player's page report, and reloads the players, from Host controls", async ({
+test("the host reloads the players from Host controls, which hide the Debug button for now", async ({
 	browser,
 	baseURL,
 }) => {
@@ -43,7 +43,7 @@ test("the host copies a debug export with each player's page report, and reloads
 				"auction",
 				{ timeout: CONNECT_MS },
 			);
-		// Only the host has Host controls; Debug, Reload players and Reset show only in its dialog.
+		// Only the host has Host controls; Reload players and Reset show only in its dialog.
 		const hostControls = (page: Page) =>
 			page.getByRole("button", { name: "Host controls", exact: true });
 		await expect(hostControls(guestPage)).toHaveCount(0);
@@ -59,41 +59,45 @@ test("the host copies a debug export with each player's page report, and reloads
 		await expect(
 			dialog.getByRole("button", { name: "Reset", exact: true }),
 		).toBeVisible();
+		await expect(
+			dialog.getByRole("button", { name: "Debug", exact: true }),
+		).toHaveCount(0);
 
-		await dialog.getByTestId("debug-export").click();
-		await expect(dialog.getByTestId("debug-status")).toHaveText(
-			"Debug export copied.",
-			{ timeout: CONNECT_MS },
-		);
-		const text = await hostPage.evaluate(() => navigator.clipboard.readText());
-		const exported = JSON.parse(text);
-		expect(exported.kind).toBe("opentrick-debug-export");
-		expect(exported.asked).toBe(1);
-		const north = exported.seats.find(
-			(item: { seat: string }) => item.seat === "N",
-		);
-		expect(north.source).toBe("player");
-		expect(north.detail.form).toBe("desktop");
-		expect(north.detail.window.innerHeight).toBe(800);
-		expect(north.detail.window.innerWidth).toBe(1910);
-		expect(north.detail.table.phase).toBe("auction");
-		expect(north.detail.cards).toHaveLength(13);
-		for (const card of north.detail.cards) expect(card.hit).toBe("self");
-		expect(
-			exported.seats
-				.filter((item: { source: string }) => item.source === "bot")
-				.map((item: { seat: string }) => item.seat),
-		).toEqual(["E", "S"]);
-
-		const tableKey = new URL(link).hash.match(/[#&]k=([^&]+)/)?.[1];
-		if (!tableKey) throw new Error(`the link has no table key: ${link}`);
-		const secrets = [
-			"test-key",
-			tableKey,
-			...(await storedSecrets(hostPage)),
-			...(await storedSecrets(guestPage)),
-		];
-		for (const secret of secrets) expect(text).not.toContain(secret);
+		// Debug button (hidden in room-view.ts): restore these checks of its export with the button.
+		// await dialog.getByTestId("debug-export").click();
+		// await expect(dialog.getByTestId("debug-status")).toHaveText(
+		// 	"Debug export copied.",
+		// 	{ timeout: CONNECT_MS },
+		// );
+		// const text = await hostPage.evaluate(() => navigator.clipboard.readText());
+		// const exported = JSON.parse(text);
+		// expect(exported.kind).toBe("opentrick-debug-export");
+		// expect(exported.asked).toBe(1);
+		// const north = exported.seats.find(
+		// 	(item: { seat: string }) => item.seat === "N",
+		// );
+		// expect(north.source).toBe("player");
+		// expect(north.detail.form).toBe("desktop");
+		// expect(north.detail.window.innerHeight).toBe(800);
+		// expect(north.detail.window.innerWidth).toBe(1910);
+		// expect(north.detail.table.phase).toBe("auction");
+		// expect(north.detail.cards).toHaveLength(13);
+		// for (const card of north.detail.cards) expect(card.hit).toBe("self");
+		// expect(
+		// 	exported.seats
+		// 		.filter((item: { source: string }) => item.source === "bot")
+		// 		.map((item: { seat: string }) => item.seat),
+		// ).toEqual(["E", "S"]);
+		//
+		// const tableKey = new URL(link).hash.match(/[#&]k=([^&]+)/)?.[1];
+		// if (!tableKey) throw new Error(`the link has no table key: ${link}`);
+		// const secrets = [
+		// 	"test-key",
+		// 	tableKey,
+		// 	...(await storedSecrets(hostPage)),
+		// 	...(await storedSecrets(guestPage)),
+		// ];
+		// for (const secret of secrets) expect(text).not.toContain(secret);
 
 		await expect(hostPage.getByTestId("reload-players")).toHaveAttribute(
 			"data-outdated",
