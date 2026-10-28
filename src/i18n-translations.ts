@@ -1228,6 +1228,14 @@ const rows: readonly TranslationRow[] = [
 		"N-Z kwetsbaar",
 	],
 	[
+		"{side} must make {tricks} tricks",
+		"{side} debe hacer {tricks} bazas",
+		"{side} tem de fazer {tricks} vazas",
+		"{side} doit faire {tricks} levées",
+		"{side} deve fare {tricks} prese",
+		"{side} moet {tricks} slagen maken",
+	],
+	[
 		"Not a valid stun: or stuns: URL in VITE_STUN_URLS: {url}",
 		"URL stun: o stuns: no válida en VITE_STUN_URLS: {url}",
 		"URL stun: ou stuns: inválido em VITE_STUN_URLS: {url}",

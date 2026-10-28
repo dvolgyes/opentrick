@@ -9,29 +9,71 @@
 	--felt-texture-size: 384px;
 	--paper-texture: url("./assets/card-paper-visible.webp");
 	--board-shadow-scale: 1;
-	--board-card-shadow: calc(0.35rem * var(--board-shadow-scale)) calc(0.35rem * var(--board-shadow-scale)) calc(0.45rem * var(--board-shadow-scale)) var(--board-object-shadow);
-	--board-pill-shadow: calc(0.2rem * var(--board-shadow-scale)) calc(0.2rem * var(--board-shadow-scale)) calc(0.3rem * var(--board-shadow-scale)) var(--board-object-shadow);
-	--board-panel-shadow: calc(0.55rem * var(--board-shadow-scale)) calc(0.55rem * var(--board-shadow-scale)) calc(0.8rem * var(--board-shadow-scale)) var(--board-object-shadow);
+	--board-card-shadow: calc(0.35rem * var(--board-shadow-scale))
+		calc(0.35rem * var(--board-shadow-scale))
+		calc(0.45rem * var(--board-shadow-scale)) var(--board-object-shadow);
+	--board-pill-shadow: calc(0.2rem * var(--board-shadow-scale))
+		calc(0.2rem * var(--board-shadow-scale))
+		calc(0.3rem * var(--board-shadow-scale)) var(--board-object-shadow);
+	--board-panel-shadow: calc(0.55rem * var(--board-shadow-scale))
+		calc(0.55rem * var(--board-shadow-scale))
+		calc(0.8rem * var(--board-shadow-scale)) var(--board-object-shadow);
 }
-:root[data-shadow-strength="0"] { --board-shadow-scale: 0; }
-:root[data-shadow-strength="1"] { --board-shadow-scale: 0.25; }
-:root[data-shadow-strength="2"] { --board-shadow-scale: 0.5; }
-:root[data-shadow-strength="3"] { --board-shadow-scale: 0.75; }
-:root[data-baize-strength="off"] { --felt-texture: none; }
-:root[data-baize-strength="mild"] { --felt-texture: url("./assets/bridge-baize-mild.webp"); }
-:root[data-baize-strength="strong"] { --felt-texture: url("./assets/bridge-baize-strong.webp"); }
-:root[data-paper-strength="off"] { --paper-texture: none; }
-:root[data-paper-strength="mild"] { --paper-texture: url("./assets/card-paper-mild.webp"); }
-:root[data-paper-strength="strong"] { --paper-texture: url("./assets/card-paper-strong.webp"); }
-:root[data-suit-font-size="S"] { --suit-font-scale: 0.75; }
-:root[data-suit-font-size="L"] { --suit-font-scale: 1.25; }
-:root[data-suit-font-size="XL"] { --suit-font-scale: 1.5; }
-:root[data-suit-font-size="XXL"] { --suit-font-scale: 1.75; }
-:root[data-suit-font-size="XXXL"] { --suit-font-scale: 2; }
+:root[data-shadow-strength="0"] {
+	--board-shadow-scale: 0;
+}
+:root[data-shadow-strength="1"] {
+	--board-shadow-scale: 0.25;
+}
+:root[data-shadow-strength="2"] {
+	--board-shadow-scale: 0.5;
+}
+:root[data-shadow-strength="3"] {
+	--board-shadow-scale: 0.75;
+}
+:root[data-baize-strength="off"] {
+	--felt-texture: none;
+}
+:root[data-baize-strength="mild"] {
+	--felt-texture: url("./assets/bridge-baize-mild.webp");
+}
+:root[data-baize-strength="strong"] {
+	--felt-texture: url("./assets/bridge-baize-strong.webp");
+}
+:root[data-paper-strength="off"] {
+	--paper-texture: none;
+}
+:root[data-paper-strength="mild"] {
+	--paper-texture: url("./assets/card-paper-mild.webp");
+}
+:root[data-paper-strength="strong"] {
+	--paper-texture: url("./assets/card-paper-strong.webp");
+}
+:root[data-suit-font-size="S"] {
+	--suit-font-scale: 0.75;
+}
+:root[data-suit-font-size="L"] {
+	--suit-font-scale: 1.25;
+}
+:root[data-suit-font-size="XL"] {
+	--suit-font-scale: 1.5;
+}
+:root[data-suit-font-size="XXL"] {
+	--suit-font-scale: 1.75;
+}
+:root[data-suit-font-size="XXXL"] {
+	--suit-font-scale: 2;
+}
 
-:root[data-suit-font-size="L"] { --mobile-board-growth: 1.1; }
-:root[data-suit-font-size="XL"] { --mobile-board-growth: 1.2; }
-:root:is([data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) { --mobile-board-growth: 1.2; }
+:root[data-suit-font-size="L"] {
+	--mobile-board-growth: 1.1;
+}
+:root[data-suit-font-size="XL"] {
+	--mobile-board-growth: 1.2;
+}
+:root:is([data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) {
+	--mobile-board-growth: 1.2;
+}
 
 .bid,
 .auction .bid-mark,
@@ -48,27 +90,89 @@
 	gap: 0.7rem;
 	margin: 1rem 0;
 }
-.player-editor { box-sizing: border-box; width: min(56rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; }
-.seat-card { min-width: 0; overflow-wrap: anywhere; padding: 0.7rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); color: var(--fg); }
-.seat-card h2 { margin: 0 0 0.4rem; font-size: 1rem; }
-.seat-card label { display: block; }
-.seat-card input[type="text"] { box-sizing: border-box; width: 100%; min-width: 0; }
+.player-editor {
+	box-sizing: border-box;
+	width: min(56rem, calc(100vw - 2rem));
+	max-height: calc(100dvh - 2rem);
+	overflow: auto;
+}
+.seat-card {
+	min-width: 0;
+	overflow-wrap: anywhere;
+	padding: 0.7rem;
+	border: 1px solid var(--line);
+	border-radius: 0.4rem;
+	background: var(--panel);
+	color: var(--fg);
+}
+.seat-card h2 {
+	margin: 0 0 0.4rem;
+	font-size: 1rem;
+}
+.seat-card label {
+	display: block;
+}
+.seat-card input[type="text"] {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+}
 /* src/ui/seat-grid.ts puts the viewer's seat at the bottom and the next seats clockwise at the left, top and right. */
-.seat-card[data-position="top"] { grid-area: top; }
-.seat-card[data-position="right"] { grid-area: right; }
-.seat-card[data-position="bottom"] { grid-area: bottom; }
-.seat-card[data-position="left"] { grid-area: left; }
-.seat-grid.with-center { grid-template-areas: ". top ." "left center right" ". bottom ."; }
-.seat-center { grid-area: center; align-self: center; min-width: 0; }
-.seat-presets { display: flex; flex-direction: column; gap: 0.5rem; }
-.seat-presets button { width: 100%; overflow-wrap: anywhere; }
-.community-table .seat-card { min-height: 5rem; }
+.seat-card[data-position="top"] {
+	grid-area: top;
+}
+.seat-card[data-position="right"] {
+	grid-area: right;
+}
+.seat-card[data-position="bottom"] {
+	grid-area: bottom;
+}
+.seat-card[data-position="left"] {
+	grid-area: left;
+}
+.seat-grid.with-center {
+	grid-template-areas: ". top ." "left center right" ". bottom .";
+}
+.seat-center {
+	grid-area: center;
+	align-self: center;
+	min-width: 0;
+}
+.seat-presets {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+.seat-presets button {
+	width: 100%;
+	overflow-wrap: anywhere;
+}
+.community-table .seat-card {
+	min-height: 5rem;
+}
 @media (max-width: 600px) {
-	.seat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "top top" "left right" "bottom bottom"; }
-	.seat-grid:not(.with-center) .seat-card:is([data-position="top"], [data-position="bottom"]) { width: calc(50% - 1.75rem); justify-self: center; }
-	.seat-grid.with-center { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: ". top ." "left center right" ". bottom ."; gap: 0.35rem; }
-	.seat-grid.with-center .seat-card { box-sizing: border-box; width: 100%; padding: 0.4rem; }
-	.seat-grid.with-center .seat-roles label { white-space: normal; }
+	.seat-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-areas: "top top" "left right" "bottom bottom";
+	}
+	.seat-grid:not(.with-center)
+		.seat-card:is([data-position="top"], [data-position="bottom"]) {
+		width: calc(50% - 1.75rem);
+		justify-self: center;
+	}
+	.seat-grid.with-center {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-areas: ". top ." "left center right" ". bottom .";
+		gap: 0.35rem;
+	}
+	.seat-grid.with-center .seat-card {
+		box-sizing: border-box;
+		width: 100%;
+		padding: 0.4rem;
+	}
+	.seat-grid.with-center .seat-roles label {
+		white-space: normal;
+	}
 }
 
 /* A card takes the card ink, so its text and suits read on the card colour. */
@@ -248,8 +352,13 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 }
 
 @media (max-width: 600px) {
-	.create-solo-row { font-size: clamp(0.65rem, 3.5vw, 0.85rem); gap: 0.3rem; }
-	.create-solo-row .button { padding: 0.35rem 0.4rem; }
+	.create-solo-row {
+		font-size: clamp(0.65rem, 3.5vw, 0.85rem);
+		gap: 0.3rem;
+	}
+	.create-solo-row .button {
+		padding: 0.35rem 0.4rem;
+	}
 }
 
 /* Seat choices wrap beneath the name field when the centre controls leave narrow cards. */
@@ -342,7 +451,9 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 		padding: 0.5rem;
 	}
 
-	:is(.create, .player-editor) .seat-grid:not(.with-center) .seat-card:is([data-position="top"], [data-position="bottom"]) {
+	:is(.create, .player-editor)
+		.seat-grid:not(.with-center)
+		.seat-card:is([data-position="top"], [data-position="bottom"]) {
 		width: calc(50% - 0.35rem);
 	}
 }
@@ -583,7 +694,8 @@ main:has(> .room) {
 }
 
 :is(.table-vulnerability, .mobile-round-status) [data-vulnerable="true"],
-.auction-player[data-vulnerable="true"] {
+.auction-player[data-vulnerable="true"],
+.auction-end-vulnerability[data-vulnerable="true"] {
 	color: var(--red-suit);
 	font-weight: 700;
 }
@@ -780,6 +892,11 @@ main:has(> .room) {
 	font-weight: 700;
 }
 
+.auction-end-task {
+	font-size: 1.2rem;
+	font-weight: 700;
+}
+
 .scoring[hidden],
 .scoring-countdown[hidden] {
 	display: none;
@@ -938,7 +1055,13 @@ main:has(> .room) {
 
 /* A ten needs a wide enough exposed strip to show both digits before the next card. */
 .hand-row .card[data-card$="T"] {
-	min-width: calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 1px);
+	min-width: calc(
+		var(--rank-size) *
+		var(--suit-font-scale) *
+		1.3 +
+		0.2rem +
+		1px
+	);
 }
 
 .hand-row .back {
@@ -1070,10 +1193,21 @@ main:has(> .room) {
 }
 
 /* Grow a card only when its markers need more space, with 3px at the far edge. */
-:root:is([data-suit-font-size="L"], [data-suit-font-size="XL"], [data-suit-font-size="XXL"], [data-suit-font-size="XXXL"]) {
+:root:is(
+	[data-suit-font-size="L"],
+	[data-suit-font-size="XL"],
+	[data-suit-font-size="XXL"],
+	[data-suit-font-size="XXXL"]
+) {
 	/* Each side-hand strip must expose both lines before the next suit row starts. */
 	.hand-stack .suit-row .card {
-		min-height: calc(var(--rank-size) * var(--suit-font-scale) * 1.85 + 0.1rem + 4px);
+		min-height: calc(
+			var(--rank-size) *
+			var(--suit-font-scale) *
+			1.85 +
+			0.1rem +
+			4px
+		);
 	}
 
 	.card .face {
@@ -1084,7 +1218,13 @@ main:has(> .room) {
 	/* The last card of a hand or of a trump group is as wide as its grown face, so the frame ends after the face. */
 	.hand-row > .suit-group > :last-child,
 	.hand-row > :last-child:not(.suit-group) {
-		min-width: calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px);
+		min-width: calc(
+			var(--rank-size) *
+			var(--suit-font-scale) *
+			1.3 +
+			0.2rem +
+			4px
+		);
 	}
 
 	.played {
@@ -1092,7 +1232,11 @@ main:has(> .room) {
 		min-height: calc(2em + 6px);
 	}
 
-	.bridge-table:is([data-played-card-style="corners-upright"], [data-played-card-style="corners-oriented"]) .played {
+	.bridge-table:is(
+			[data-played-card-style="corners-upright"],
+			[data-played-card-style="corners-oriented"]
+		)
+		.played {
 		min-height: calc(1.5em + 6px);
 	}
 
@@ -1114,7 +1258,10 @@ main:has(> .room) {
 
 	.mobile-board-center .trick {
 		--rank-size: 0.95rem;
-		--card-h: max(3.1rem, calc(var(--rank-size) * var(--suit-font-scale) * 3.5 + 0.16rem + 2px));
+		--card-h: max(
+			3.1rem,
+			calc(var(--rank-size) * var(--suit-font-scale) * 3.5 + 0.16rem + 2px)
+		);
 		--card-w: calc(var(--card-h) * 5 / 7);
 		grid-template-columns: repeat(3, var(--card-w));
 		grid-template-rows: var(--card-h) 0 var(--card-h);
@@ -1126,12 +1273,21 @@ main:has(> .room) {
 	}
 
 	.mobile-auction-board {
-		--side-marker-width: max(var(--phone-hand-card-h), calc(0.7rem * var(--suit-font-scale) * 1.3 + 0.2rem + 4px));
-		grid-template-columns: minmax(var(--side-marker-width), 1fr) max-content minmax(var(--side-marker-width), 1fr);
+		--side-marker-width: max(
+			var(--phone-hand-card-h),
+			calc(0.7rem * var(--suit-font-scale) * 1.3 + 0.2rem + 4px)
+		);
+		grid-template-columns: minmax(var(--side-marker-width), 1fr) max-content minmax(
+				var(--side-marker-width),
+				1fr
+			);
 	}
 
 	:is(.mobile-board-top, .mobile-auction-hand) .hand-row:not(.backs) {
-		min-height: max(3.2rem, calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.7rem + 4px));
+		min-height: max(
+			3.2rem,
+			calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.7rem + 4px)
+		);
 	}
 
 	:is(.mobile-board-left, .mobile-board-right) .hand-stack {
@@ -1205,7 +1361,9 @@ main:has(> .room) {
 
 .hand .card:enabled .face {
 	border-color: var(--accent);
-	box-shadow: var(--board-card-shadow), inset 0 0 0 1px var(--accent);
+	box-shadow:
+		var(--board-card-shadow),
+		inset 0 0 0 1px var(--accent);
 }
 
 .hand .card:focus-visible {
@@ -1423,7 +1581,10 @@ main:has(> .room) {
 	display: none;
 }
 
-:is(.network-bars, .quality-matrix td):is([data-quality="excellent"], [data-quality="good"]) {
+:is(.network-bars, .quality-matrix td):is(
+	[data-quality="excellent"],
+	[data-quality="good"]
+) {
 	--network-lit: var(--network-green);
 }
 
@@ -1773,7 +1934,15 @@ dialog {
 	box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-.room[data-form="compact"] :is(.seat-label .name, .seat-label .tag, .mobile-board-name, .hcp-pill, .turn-pill, .mobile-player-control button) {
+.room[data-form="compact"]
+	:is(
+		.seat-label .name,
+		.seat-label .tag,
+		.mobile-board-name,
+		.hcp-pill,
+		.turn-pill,
+		.mobile-player-control button
+	) {
 	box-shadow: none;
 }
 
@@ -2052,7 +2221,15 @@ dialog {
 }
 
 /* Board labels and player switches cast the same adjustable shadow as the cards. */
-:is(.felt, .mobile-auction-board) :is(.seat-label .name, .seat-label .tag, .mobile-board-name, .hcp-pill, .turn-pill, .tile-bot-control),
+:is(.felt, .mobile-auction-board)
+:is(
+	.seat-label .name,
+	.seat-label .tag,
+	.mobile-board-name,
+	.hcp-pill,
+	.turn-pill,
+	.tile-bot-control
+),
 .mobile-player-control button {
 	box-shadow: var(--board-pill-shadow);
 }
@@ -2526,7 +2703,13 @@ button.call-join[data-in-call="true"] {
 }
 
 /* On the desktop felt the bid box, the bidding history, the network meters and Join call cast the video tiles' shadow. */
-.room[data-form="desktop"] :is(.bid-box, .bridge-table[data-phase="auction"] .history-panel, .felt .network-bars, .felt .call-panel .call-join) {
+.room[data-form="desktop"]
+:is(
+	.bid-box,
+	.bridge-table[data-phase="auction"] .history-panel,
+	.felt .network-bars,
+	.felt .call-panel .call-join
+) {
 	box-shadow: var(--board-panel-shadow);
 }
 
@@ -3345,15 +3528,24 @@ main:has(> .room[data-form="compact"]) {
 	width: 100%;
 }
 
-[data-form="compact"] .bridge-table[data-phase="complete"] .place-bottom .hand-row {
+[data-form="compact"]
+	.bridge-table[data-phase="complete"]
+	.place-bottom
+	.hand-row {
 	justify-content: safe center;
 }
 
-[data-form="compact"] .bridge-table[data-phase="complete"] .place-bottom .seat-label {
+[data-form="compact"]
+	.bridge-table[data-phase="complete"]
+	.place-bottom
+	.seat-label {
 	justify-content: center;
 }
 
-[data-form="compact"] .bridge-table[data-phase="complete"] .place-bottom .hcp-pill {
+[data-form="compact"]
+	.bridge-table[data-phase="complete"]
+	.place-bottom
+	.hcp-pill {
 	left: 50%;
 	transform: translateX(-50%);
 }
@@ -3451,6 +3643,21 @@ main:has(> .room[data-form="compact"]) {
 [data-form="compact"] .scoring-countdown {
 	margin: 0.15rem 0 0;
 	font-size: 0.75rem;
+}
+
+[data-form="compact"] .auction-end {
+	width: 90%;
+	margin-inline: auto;
+}
+
+[data-form="compact"] .auction-end :is(.scoring-contract, .auction-end-task) {
+	margin: 0.1rem 0;
+	font-size: 0.95rem;
+}
+
+[data-form="compact"] .auction-end-vulnerability {
+	margin: 0.1rem 0;
+	font-size: 0.85rem;
 }
 
 [data-form="compact"] .bid-box {
@@ -3608,7 +3815,10 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-auction-board {
-	--phone-hand-card-h: max(3.1rem, calc(0.95rem * var(--suit-font-scale) * 2.2 + 0.1rem + 4px));
+	--phone-hand-card-h: max(
+		3.1rem,
+		calc(0.95rem * var(--suit-font-scale) * 2.2 + 0.1rem + 4px)
+	);
 	display: grid;
 	flex: none;
 	align-content: stretch;
@@ -3787,7 +3997,14 @@ main:has(> .room[data-form="compact"]) {
 
 :is(.mobile-board-left, .mobile-board-right) .hand-stack {
 	--rank-size: 0.7rem;
-	--card-h: max(2.6rem, calc((var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px) * 7 / 5), calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.1rem + 4px));
+	--card-h: max(
+		2.6rem,
+		calc(
+			(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px) *
+			7 / 5
+		),
+		calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.1rem + 4px)
+	);
 	--card-w: calc(var(--card-h) * 5 / 7);
 	--side-strip: calc(var(--rank-size) * 2.6);
 	justify-content: flex-start;
@@ -3799,7 +4016,9 @@ main:has(> .room[data-form="compact"]) {
 }
 
 /* Keep a trump label with its row while sharing the remaining height between suit rows. */
-:is(.mobile-board-left, .mobile-board-right) .hand-stack > :is(.suit-row:not(.trump), .trump-label):not(:first-child) {
+:is(.mobile-board-left, .mobile-board-right)
+	.hand-stack
+	> :is(.suit-row:not(.trump), .trump-label):not(:first-child) {
 	margin-top: auto;
 }
 
@@ -3813,7 +4032,9 @@ main:has(> .room[data-form="compact"]) {
 	outline: none;
 }
 
-:is(.mobile-board-left, .mobile-board-right) .hand-stack .suit-row.trump::after {
+:is(.mobile-board-left, .mobile-board-right)
+	.hand-stack
+	.suit-row.trump::after {
 	content: "";
 	position: absolute;
 	inset: 0 auto auto 0;
@@ -4069,7 +4290,10 @@ main:has(> .room[data-form="compact"]) {
 	:is(.place-top, .place-bottom)
 	.hand-row:not(.backs) {
 	container-type: inline-size;
-	--touching-step: max(var(--card-w), calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px));
+	--touching-step: max(
+		var(--card-w),
+		calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px)
+	);
 }
 
 :is(
@@ -4148,13 +4372,41 @@ main:has(> .room[data-form="compact"]) {
 
 /* Fit the widened ten strips and the full ends of the trump group and hand within the phone. */
 :root:root :is(.mobile-auction-hand, .mobile-board-top) .hand-row:not(.backs) {
-	--card-w: max(2.1rem, calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px));
-	--phone-ten-width: calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 1px);
-	--phone-available-width: calc(100cqi - var(--phone-gap-count, 0) * var(--suit-gap) - var(--phone-fixed-ends, 1) * var(--card-w));
-	--card-step: max(0px, min(
-		calc(var(--phone-available-width) / max(1, 13 - var(--phone-fixed-ends, 1))),
-		calc((var(--phone-available-width) - var(--phone-ten-strips, 0) * var(--phone-ten-width)) / max(1, 13 - var(--phone-fixed-ends, 1) - var(--phone-ten-strips, 0)))
-	));
+	--card-w: max(
+		2.1rem,
+		calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px)
+	);
+	--phone-ten-width: calc(
+		var(--rank-size) *
+		var(--suit-font-scale) *
+		1.3 +
+		0.2rem +
+		1px
+	);
+	--phone-available-width: calc(
+		100cqi -
+		var(--phone-gap-count, 0) *
+		var(--suit-gap) -
+		var(--phone-fixed-ends, 1) *
+		var(--card-w)
+	);
+	--card-step: max(
+		0px,
+		min(
+			calc(
+				var(--phone-available-width) /
+				max(1, 13 - var(--phone-fixed-ends, 1))
+			),
+			calc(
+				(
+					var(--phone-available-width) -
+					var(--phone-ten-strips, 0) *
+					var(--phone-ten-width)
+				) /
+				max(1, 13 - var(--phone-fixed-ends, 1) - var(--phone-ten-strips, 0))
+			)
+		)
+	);
 }
 
 .mobile-auction-players {

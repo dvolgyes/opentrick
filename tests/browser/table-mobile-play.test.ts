@@ -159,6 +159,7 @@ function playView(): TableView {
 		},
 		trickStatus: "",
 		scoring: undefined,
+		auctionEnd: undefined,
 		nextBoard: undefined,
 		actions: [],
 		undo: {
@@ -2206,6 +2207,55 @@ describe("turn pill", () => {
 				?.textContent;
 		expect([pill("N"), pill("E")]).toEqual([undefined, other]);
 	});
+
+	it.each<Form>(["desktop", "compact"])(
+		"shows the auction summary in the middle of the %s board instead of the bid box and the bidding history",
+		(form) => {
+			renderView(
+				{
+					...playView(),
+					phase: "auction",
+					auctionEnd: {
+						contract: { level: 4, strain: "H", doubling: "X" },
+						declarer: "by East",
+						task: "E-W must make 10 tricks",
+						vulnerability: "E-W vulnerable",
+						vulnerable: true,
+						start: "Play starts in 3 seconds.",
+					},
+				},
+				form,
+			);
+			const summary = document.querySelector<HTMLElement>(
+				'[data-testid="auction-end"]',
+			);
+			if (!summary) throw new Error("no auction summary");
+			expect(summary.checkVisibility()).toBe(true);
+			expect(
+				[...summary.querySelectorAll("p")].map((line) => line.textContent),
+			).toEqual([
+				"Contract 4♥X by East",
+				"E-W must make 10 tricks",
+				"E-W vulnerable",
+				"Play starts in 3 seconds.",
+			]);
+			for (const panel of document.querySelectorAll<HTMLElement>(
+				'[data-testid="bid-box"], [data-testid="bid-history"]',
+			))
+				expect(panel.checkVisibility()).toBe(false);
+			const board = document.querySelector<HTMLElement>(
+				form === "compact" ? ".mobile-auction-board" : ".felt",
+			);
+			if (!board) throw new Error("no board");
+			const middle = (box: DOMRect) => box.left + box.width / 2;
+			expect(
+				Math.abs(
+					middle(summary.getBoundingClientRect()) -
+						middle(board.getBoundingClientRect()),
+				),
+			).toBeLessThan(2);
+		},
+	);
 
 	it.each<Form>(["desktop", "compact"])(
 		"leaves every visible card clickable in play on the %s table",

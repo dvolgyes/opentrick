@@ -28,6 +28,7 @@ import { play } from "./remote-audio";
 import { robotArtwork } from "./robot-artwork";
 import { DEFAULT_SETTINGS, type Settings } from "./settings";
 import type {
+	AuctionEndView,
 	CardView,
 	ContractHeader,
 	HandDisplay,
@@ -496,7 +497,12 @@ export function tableSection(
 		className: "scoring",
 		attrs: { "data-testid": "scoring" },
 	});
-	const center = el("div", { className: "center" }, trick, scoring);
+	// The end of the auction: the contract, the side that must make it and its vulnerability, until play starts.
+	const auctionEnd = el("section", {
+		className: "scoring auction-end",
+		attrs: { "data-testid": "auction-end", role: "status" },
+	});
+	const center = el("div", { className: "center" }, trick, scoring, auctionEnd);
 	// The history is the auction table beside the bid box while bidding, and a sidebar panel afterwards.
 	const historyTitle = el(
 		"h3",
@@ -2222,19 +2228,7 @@ export function tableSection(
 							"p",
 							{ className: "scoring-contract" },
 							`${t("Contract")} `,
-							el(
-								"strong",
-								{ className: "bid" },
-								String(contract.level),
-								el(
-									"span",
-									{ className: `strain strain-${contract.strain}` },
-									contract.strain === "NT"
-										? "NT"
-										: SUIT_SYMBOLS[contract.strain],
-								),
-								contract.doubling,
-							),
+							contractStrong(contract),
 						),
 					]
 				: []),
@@ -2250,6 +2244,47 @@ export function tableSection(
 			scoringCountdown,
 		);
 		setCountdown(view.countdown);
+	}
+
+	function contractStrong(contract: AuctionEndView["contract"]): HTMLElement {
+		return el(
+			"strong",
+			{ className: "bid" },
+			String(contract.level),
+			el(
+				"span",
+				{ className: `strain strain-${contract.strain}` },
+				contract.strain === "NT" ? "NT" : SUIT_SYMBOLS[contract.strain],
+			),
+			contract.doubling,
+		);
+	}
+
+	function renderAuctionEnd(view: TableView["auctionEnd"]): void {
+		auctionEnd.hidden = view === undefined;
+		if (!view) {
+			auctionEnd.replaceChildren();
+			return;
+		}
+		auctionEnd.replaceChildren(
+			el(
+				"p",
+				{ className: "scoring-contract" },
+				`${t("Contract")} `,
+				contractStrong(view.contract),
+				` ${view.declarer}`,
+			),
+			el("p", { className: "auction-end-task" }, view.task),
+			el(
+				"p",
+				{
+					className: "auction-end-vulnerability",
+					attrs: { "data-vulnerable": String(view.vulnerable) },
+				},
+				view.vulnerability,
+			),
+			el("p", { className: "scoring-countdown" }, view.start),
+		);
 	}
 
 	/**
@@ -2591,12 +2626,15 @@ export function tableSection(
 		const mobileGameActive =
 			compact && (view.phase === "auction" || view.phase === "play");
 		mobileAuction.hidden = !mobileGameActive;
-		if (mobileGameActive && view.phase === "play") {
+		if (mobileGameActive && view.auctionEnd) {
+			mobileBoardCenter.replaceChildren(auctionEnd);
+		} else if (mobileGameActive && view.phase === "play") {
 			mobileBoardCenter.replaceChildren(trick);
 		} else {
 			mobileBoardCenter.replaceChildren();
 			center.prepend(trick);
 		}
+		if (auctionEnd.parentElement === null) gameSlot.before(auctionEnd);
 		if (mobileGameActive) {
 			mobileTopbar.prepend(audioGroup);
 			const ownSeat = places.bottom.firstElementChild;
@@ -2636,10 +2674,12 @@ export function tableSection(
 				);
 			}
 			placeChildren(mobileBidsFold, mobileBidsTitle, bidHistory);
-			// The history opens for each auction and folds when play starts; between those, the player's choice stays.
-			if (view.phase !== mobileBidsPhase) {
-				mobileBidsPhase = view.phase;
-				mobileBidsFold.open = view.phase !== "play";
+			// The history opens for each auction and folds when the auction summary or play starts; between those, the
+			// player's choice stays.
+			const bidsPhase = view.auctionEnd ? "play" : view.phase;
+			if (bidsPhase !== mobileBidsPhase) {
+				mobileBidsPhase = bidsPhase;
+				mobileBidsFold.open = bidsPhase !== "play";
 			}
 			mobileBidsTitle.setAttribute(
 				"aria-disabled",
@@ -2647,9 +2687,10 @@ export function tableSection(
 			);
 			placeChildren(
 				mobileBidOverlay,
-				...(view.phase === "auction" ? [bidBox] : []),
+				...(view.phase === "auction" && !view.auctionEnd ? [bidBox] : []),
 			);
-			mobileBidOverlay.hidden = view.phase !== "auction";
+			mobileBidOverlay.hidden =
+				view.phase !== "auction" || view.auctionEnd !== undefined;
 			placeChildren(
 				mobileBidControls,
 				...(view.phase === "play" ? [playControls, claimPanel] : []),
@@ -2732,8 +2773,10 @@ export function tableSection(
 			...view.actions.map((line) => actionItem(line, names)),
 		);
 		actions.hidden = view.actions.length === 0;
-		gameSlot.hidden = view.scoring !== undefined;
+		gameSlot.hidden =
+			view.scoring !== undefined || view.auctionEnd !== undefined;
 		renderScoring(view.scoring);
+		renderAuctionEnd(view.auctionEnd);
 		// The bid box stays on screen for the whole auction; without legal calls it is grayed out.
 		bidRow.hidden = view.phase !== "auction";
 		bidBox.classList.toggle("not-turn", view.bids.length === 0);

@@ -336,6 +336,20 @@ export interface ScoringView {
 	readonly countdown: number;
 }
 
+/** The end of the auction, shown in the centre until play starts: the contract and who must make it. */
+export interface AuctionEndView {
+	readonly contract: Pick<Contract, "level" | "strain" | "doubling">;
+	/** "by East". */
+	readonly declarer: string;
+	/** "E-W must make 10 tricks". */
+	readonly task: string;
+	/** "E-W vulnerable" or "E-W not vulnerable". */
+	readonly vulnerability: string;
+	readonly vulnerable: boolean;
+	/** "Play starts in 3 seconds." */
+	readonly start: string;
+}
+
 export interface UndoPanelView {
 	readonly canRequest: boolean;
 	readonly message: string;
@@ -418,6 +432,7 @@ export interface TableView {
 	/** "Contract secured" or "Contract defeated" once decided; empty while open. */
 	readonly trickStatus: string;
 	readonly scoring: ScoringView | undefined;
+	readonly auctionEnd: AuctionEndView | undefined;
 	readonly nextBoard: NextBoard | undefined;
 	readonly actions: readonly TableActionLine[];
 	readonly undo: UndoPanelView;
@@ -483,6 +498,7 @@ const EMPTY: Omit<TableView, "phase" | "prompt"> = {
 	need: undefined,
 	trickStatus: "",
 	scoring: undefined,
+	auctionEnd: undefined,
 	nextBoard: undefined,
 	actions: [],
 	undo: {
@@ -1393,6 +1409,16 @@ export function tableView(input: TableViewInput): TableView {
 		statistics: sideStats(state.results),
 	};
 	if (auctionPaused) {
+		const start = t("Play starts in {seconds} seconds.", {
+			seconds: input.auctionPauseSeconds ?? 0,
+		});
+		const side =
+			contract && (contract.declarer === "N" || contract.declarer === "S")
+				? "ns"
+				: "ew";
+		const vulnerability = common.vulnerability.find(
+			(line) => line.side === side,
+		);
 		return {
 			...common,
 			phase: "auction",
@@ -1402,9 +1428,21 @@ export function tableView(input: TableViewInput): TableView {
 				turn: false,
 				turnPill: undefined,
 			})),
-			prompt: t("Play starts in {seconds} seconds.", {
-				seconds: input.auctionPauseSeconds ?? 0,
-			}),
+			prompt: start,
+			auctionEnd:
+				contract && vulnerability
+					? {
+							contract,
+							declarer: `${t("by")} ${t(SEAT_NAMES[contract.declarer])}`,
+							task: t("{side} must make {tricks} tricks", {
+								side: t(side === "ns" ? "N-S" : "E-W"),
+								tricks: contract.level + 6,
+							}),
+							vulnerability: vulnerability.text,
+							vulnerable: vulnerability.vulnerable,
+							start,
+						}
+					: undefined,
 		};
 	}
 
