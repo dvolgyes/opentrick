@@ -140,6 +140,42 @@ afterEach(() => {
 
 describe("themes", () => {
 	it.each(PALETTES)(
+		"%s %s keeps felt labels readable against the actual baize",
+		async (theme, scheme) => {
+			applyTheme(document.documentElement, theme, scheme, false);
+			const felt = place(".felt");
+			const imageUrl = /^url\("(.*)"\)$/.exec(
+				getComputedStyle(felt).backgroundImage,
+			)?.[1];
+			if (!imageUrl) throw new Error("missing baize image");
+			const image = new Image();
+			image.src = imageUrl;
+			await image.decode();
+			const canvas = document.createElement("canvas");
+			canvas.width = image.naturalWidth;
+			canvas.height = image.naturalHeight;
+			const ctx = canvas.getContext("2d");
+			if (!ctx) throw new Error("canvas is unavailable");
+			ctx.drawImage(image, 0, 0);
+			const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+			let lightest = 0;
+			for (let i = 0; i < data.length; i += 64)
+				lightest = Math.max(
+					lightest,
+					luminance([data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]),
+				);
+			for (const [name, minimum] of [
+				["felt-fg", 4.5],
+				["trump-fg", 3],
+				["waiting-fg", 3],
+			] as const)
+				expect(
+					(luminance(token(name)) + 0.05) / (lightest + 0.05),
+					name,
+				).toBeGreaterThanOrEqual(minimum);
+		},
+	);
+	it.each(PALETTES)(
 		"%s %s keeps every text readable on its surface",
 		(theme, scheme) => {
 			applyTheme(document.documentElement, theme, scheme, false);
@@ -154,7 +190,7 @@ describe("themes", () => {
 	);
 
 	it.each(THEMES)(
-		"%s dark turns the page dark, the text bright, the felt a darker green and the cards off-white",
+		"%s dark turns the page dark, the text bright, the fallback felt darker and the cards off-white",
 		(theme) => {
 			const felt = luminance(token("felt"));
 			applyTheme(document.documentElement, theme, "dark", false);

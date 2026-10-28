@@ -4,6 +4,9 @@
 /* One scale for suit and rank notation; M preserves each display's original font size. */
 :root {
 	--suit-font-scale: 1;
+	/* The 2× tile repeats at its 384px design size. */
+	--felt-texture: url("./assets/bridge-baize.webp");
+	--felt-texture-size: 384px;
 }
 :root[data-suit-font-size="S"] { --suit-font-scale: 0.75; }
 :root[data-suit-font-size="L"] { --suit-font-scale: 1.25; }
@@ -612,6 +615,8 @@ main:has(> .room) {
 	padding: 0.6rem;
 	margin: 0.5rem 0;
 	background: var(--felt);
+	background-image: var(--felt-texture);
+	background-size: var(--felt-texture-size) var(--felt-texture-size);
 	color: var(--felt-fg);
 	border-radius: 0.6rem;
 }
@@ -3551,6 +3556,8 @@ main:has(> .room[data-form="compact"]) {
 	padding: 0.2rem;
 	border-radius: 0.45rem;
 	background: var(--felt);
+	background-image: var(--felt-texture);
+	background-size: var(--felt-texture-size) var(--felt-texture-size);
 	color: var(--felt-fg);
 }
 

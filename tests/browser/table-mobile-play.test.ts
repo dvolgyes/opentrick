@@ -303,6 +303,47 @@ function renderMobile(view: TableView) {
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
+	it("shows the same repeating baize on desktop and mobile in light and dark themes", async () => {
+		let reference = "";
+		try {
+			for (const layout of ["desktop", "compact"] as const) {
+				for (const scheme of ["light", "dark"] as const) {
+					document.documentElement.dataset.theme = "selenized";
+					document.documentElement.dataset.scheme = scheme;
+					const { root } = renderView(playView(), layout);
+					const board = root.querySelector<HTMLElement>(
+						layout === "desktop" ? ".felt" : ".mobile-auction-board",
+					);
+					if (!board) throw new Error("missing playing surface");
+					const style = getComputedStyle(board);
+					expect(style.backgroundImage).not.toBe("none");
+					expect(style.backgroundRepeat).toBe("repeat");
+					if (reference) expect(style.backgroundImage).toBe(reference);
+					else reference = style.backgroundImage;
+				}
+			}
+			const url = /^url\("(.*)"\)$/.exec(reference)?.[1];
+			if (!url) throw new Error("missing texture URL");
+			const image = new Image();
+			image.src = url;
+			await image.decode();
+			expect(image.naturalWidth).toBeGreaterThan(1);
+			const canvas = document.createElement("canvas");
+			canvas.width = image.naturalWidth;
+			canvas.height = image.naturalHeight;
+			const ctx = canvas.getContext("2d");
+			if (!ctx) throw new Error("canvas is unavailable");
+			ctx.drawImage(image, 0, 0);
+			const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+			const greens = new Set<number>();
+			for (let index = 1; index < pixels.length; index += 4)
+				greens.add(pixels[index] ?? 0);
+			expect(greens.size).toBeGreaterThan(1);
+		} finally {
+			delete document.documentElement.dataset.theme;
+			delete document.documentElement.dataset.scheme;
+		}
+	});
 	it.each(["L", "XL", "XXL", "XXXL"])(
 		"keeps the phone bidding board content-sized at %s",
 		async (size) => {
