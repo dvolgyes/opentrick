@@ -364,6 +364,11 @@ describe("played card styles", () => {
 			expect(averageAlpha[0]).toBeGreaterThan(0);
 			expect(averageAlpha[1]).toBeGreaterThan(averageAlpha[0] ?? 0);
 			expect(averageAlpha[2]).toBeGreaterThan(averageAlpha[1] ?? 0);
+			expect((averageAlpha[0] ?? 0) / (averageAlpha[1] ?? 1)).toBeCloseTo(
+				0.69,
+				1,
+			);
+			expect((averageAlpha[2] ?? 0) / (averageAlpha[1] ?? 1)).toBeCloseTo(2, 1);
 			expect(averageAlpha[2]).toBeLessThan(32);
 		} finally {
 			delete document.documentElement.dataset.paperStrength;
