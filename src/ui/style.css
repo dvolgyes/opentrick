@@ -56,7 +56,7 @@
 .seat-card[data-seat="E"] { grid-area: east; }
 .seat-card[data-seat="S"] { grid-area: south; }
 .seat-card[data-seat="W"] { grid-area: west; }
-.seat-grid.with-center { grid-template-areas: ". north ." "east center west" ". south ."; }
+.seat-grid.with-center { grid-template-areas: ". north ." "west center east" ". south ."; }
 .seat-center { grid-area: center; align-self: center; min-width: 0; }
 .seat-presets { display: flex; flex-direction: column; gap: 0.5rem; }
 .seat-presets button { width: 100%; overflow-wrap: anywhere; }
@@ -64,7 +64,7 @@
 @media (max-width: 600px) {
 	.seat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "north north" "west east" "south south"; }
 	.seat-grid:not(.with-center) .seat-card:is([data-seat="N"], [data-seat="S"]) { width: calc(50% - 1.75rem); justify-self: center; }
-	.seat-grid.with-center { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: ". north ." "east center west" ". south ."; gap: 0.35rem; }
+	.seat-grid.with-center { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: ". north ." "west center east" ". south ."; gap: 0.35rem; }
 	.seat-grid.with-center .seat-card { box-sizing: border-box; width: 100%; padding: 0.4rem; }
 	.seat-grid.with-center .seat-roles label { white-space: normal; }
 }

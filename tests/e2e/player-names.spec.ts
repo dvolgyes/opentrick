@@ -38,7 +38,8 @@ test("the creation presets and private seat picker fit a phone with their specif
 }) => {
 	if (!baseURL) throw new Error("baseURL missing");
 	await page.setViewportSize({ width: 360, height: 780 });
-	const checkCross = async (current: Page, creation: boolean) => {
+	// With South at the bottom, West is on the left in both the creation grid and the seat picker.
+	const checkCross = async (current: Page) => {
 		const boxes = await current
 			.getByTestId("seat-grid")
 			.locator("[data-seat]")
@@ -52,8 +53,7 @@ test("the creation presets and private seat picker fit a phone with their specif
 			);
 		expect(boxes.N?.y).toBeLessThan(boxes.E?.y ?? 0);
 		expect(boxes.S?.y).toBeGreaterThan(boxes.W?.y ?? 0);
-		if (creation) expect(boxes.E?.x).toBeLessThan(boxes.W?.x ?? 0);
-		else expect(boxes.W?.x).toBeLessThan(boxes.E?.x ?? 0);
+		expect(boxes.W?.x).toBeLessThan(boxes.E?.x ?? 0);
 		expect(
 			await current.evaluate(
 				() => document.documentElement.scrollWidth <= innerWidth,
@@ -61,7 +61,7 @@ test("the creation presets and private seat picker fit a phone with their specif
 		).toBe(true);
 	};
 	await page.goto("/");
-	await checkCross(page, true);
+	await checkCross(page);
 	await page.locator('input[name="name-S"]').fill("Host");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
@@ -72,7 +72,7 @@ test("the creation presets and private seat picker fit a phone with their specif
 		const other = await guest.page(url.toString());
 		await other.setViewportSize({ width: 360, height: 780 });
 		await expect(other.getByTestId("pick-N")).toBeEnabled();
-		await checkCross(other, false);
+		await checkCross(other);
 	} finally {
 		await guest.close();
 	}
@@ -95,7 +95,7 @@ test("South hosts the creation layout and an unnamed entrant edits a persistent 
 	expect(north && south && west && east).toBeTruthy();
 	expect(north?.y).toBeLessThan(west?.y ?? 0);
 	expect(south?.y).toBeGreaterThan(east?.y ?? 0);
-	expect(east?.x).toBeLessThan(west?.x ?? 0);
+	expect(west?.x).toBeLessThan(east?.x ?? 0);
 	await page.locator('input[name="name-S"]').fill("Alice");
 	await page.getByTestId("create").click();
 	await expect(page).toHaveTitle(/Alice \(S\)$/);

@@ -185,8 +185,9 @@ test("centre presets preserve named friends, configure both checkboxes, and fit 
 	const west = await grid.locator('[data-seat="W"]').boundingBox();
 	const center = await page.getByTestId("preset-both").boundingBox();
 	if (!east || !west || !center) throw new Error("seat grid missing");
-	expect(east.x + east.width).toBeLessThanOrEqual(center.x);
-	expect(center.x + center.width).toBeLessThanOrEqual(west.x);
+	// Creation has no seated user yet, so South is at the bottom: West left of the presets, East right of them.
+	expect(west.x + west.width).toBeLessThanOrEqual(center.x);
+	expect(center.x + center.width).toBeLessThanOrEqual(east.x);
 	for (const seat of ["N", "S"]) {
 		const box = await grid.locator(`[data-seat="${seat}"]`).boundingBox();
 		expect(Math.abs((box?.width ?? 0) - east.width)).toBeLessThan(1);
