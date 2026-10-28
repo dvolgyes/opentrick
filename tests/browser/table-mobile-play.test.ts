@@ -1320,11 +1320,14 @@ describe("played card styles", () => {
 		},
 	);
 
-	it("scales notation in guides, keeps prose unchanged and treats HTML as text", () => {
+	it("keeps guide notation the size of the prose and treats HTML as text", () => {
 		const text = "Play A♠ or ♣10 after [3NT]; NT, ♥ and <img src=x> stay text.";
 		const nodes = renderGuide(parseGuide(text), translator("en"));
-		document.body.append(...nodes);
-		const paragraph = document.querySelector("p");
+		const guide = document.createElement("div");
+		guide.className = "guide-content";
+		guide.append(...nodes);
+		document.body.append(guide);
+		const paragraph = guide.querySelector("p");
 		if (!paragraph) throw new Error("missing guide paragraph");
 		const markers = [
 			...paragraph.querySelectorAll<HTMLElement>(".card-notation, .guide-bid"),
@@ -1342,9 +1345,7 @@ describe("played card styles", () => {
 		try {
 			document.documentElement.dataset.suitFontSize = "XXXL";
 			for (const marker of markers)
-				expect(Number.parseFloat(getComputedStyle(marker).fontSize)).toBe(
-					base * 2,
-				);
+				expect(Number.parseFloat(getComputedStyle(marker).fontSize)).toBe(base);
 			expect(Number.parseFloat(getComputedStyle(paragraph).fontSize)).toBe(
 				base,
 			);
@@ -2042,6 +2043,47 @@ describe("desktop auction", () => {
 		clickAsPointer(root, "Approve undo");
 		expect(handlers.undoVote).toHaveBeenCalledWith("undo-1", true);
 	});
+});
+
+describe("bid box action colours", () => {
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"uses green for Guide and red for Undo in %s",
+		(layout) => {
+			const base = playView();
+			const { root } = renderView(
+				{
+					...base,
+					phase: "auction",
+					bids: [{ call: "P", text: "Pass" }],
+					undo: { ...base.undo, canRequest: true },
+				},
+				layout,
+			);
+			const box = [...root.querySelectorAll<HTMLElement>(".bid-box")].find(
+				(element) => element.checkVisibility(),
+			);
+			if (!box) throw new Error("Visible bid box is missing");
+			const guide = box.querySelector<HTMLElement>(".guide-open");
+			const confirm = box.querySelector<HTMLElement>(".confirm");
+			const undo = box.querySelector<HTMLElement>(".undo-call");
+			if (!guide || !confirm || !undo) throw new Error("Bid action is missing");
+			const expectedRed = document.createElement("span");
+			expectedRed.style.backgroundColor = "var(--reject-bg)";
+			box.append(expectedRed);
+			expect(getComputedStyle(guide).backgroundColor).toBe(
+				getComputedStyle(confirm).backgroundColor,
+			);
+			expect(getComputedStyle(guide).color).toBe(
+				getComputedStyle(confirm).color,
+			);
+			expect(getComputedStyle(undo).backgroundColor).toBe(
+				getComputedStyle(expectedRed).backgroundColor,
+			);
+			expect(getComputedStyle(undo).color).toBe(
+				getComputedStyle(confirm).color,
+			);
+		},
+	);
 });
 
 describe("undo request off turn", () => {
@@ -4315,6 +4357,28 @@ describe("bidding guide", () => {
 		root.querySelector<HTMLElement>(".guide-content");
 	const loaded = (root: HTMLElement) =>
 		expect.poll(() => content(root)?.querySelector("h2")?.textContent);
+
+	it.each(["desktop", "compact"] as const)(
+		"keeps guide bids the size of their surrounding text in %s",
+		async (form) => {
+			try {
+				document.documentElement.dataset.suitFontSize = "XXXL";
+				const { root } = renderView(auction(), form);
+				root.querySelector<HTMLButtonElement>(".guide-open")?.click();
+				await loaded(root).toBeTruthy();
+				const bids = content(root)?.querySelectorAll<HTMLElement>(".guide-bid");
+				if (!bids?.length) throw new Error("Guide bids are missing");
+				for (const bid of bids) {
+					if (!bid.parentElement) throw new Error("Guide bid has no parent");
+					expect(getComputedStyle(bid).fontSize).toBe(
+						getComputedStyle(bid.parentElement).fontSize,
+					);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
 
 	it.each(["desktop", "compact"] as const)(
 		"puts a Guide row above the levels of the bid box (%s)",

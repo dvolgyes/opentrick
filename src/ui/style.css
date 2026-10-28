@@ -17,7 +17,6 @@
 .bid,
 .auction .bid-mark,
 .card-notation,
-.guide-bid:not(.call-double, .call-redouble),
 .auction .call-pass,
 .suit-mark {
 	font-size: calc(1em * var(--suit-font-scale));
@@ -1665,6 +1664,10 @@ dialog {
 	padding-left: 1.2rem;
 }
 
+.guide-content .card-notation {
+	font-size: inherit;
+}
+
 .guide-close {
 	flex: none;
 	margin: 0.6rem 1.2rem 1rem;
@@ -2514,18 +2517,25 @@ button.call-join[data-in-call="true"] {
 	opacity: 0.4;
 }
 
+.bid-guide .guide-open,
 .bid-actions .confirm {
-	flex: 7 1 0;
-	min-height: 2.8rem;
 	border-color: var(--confirm-bg);
 	background: var(--confirm-bg);
 	color: var(--on-strong);
+}
+
+.bid-actions .confirm {
+	flex: 7 1 0;
+	min-height: 2.8rem;
 	font-weight: 700;
 }
 
 .bid-actions .undo-call {
 	flex: 3 1 0;
 	min-height: 2.8rem;
+	border-color: var(--reject-bg);
+	background: var(--reject-bg);
+	color: var(--on-strong);
 }
 
 /* A second, small line in Confirm; it fits in the height of the button, so the bid box does not grow. */
