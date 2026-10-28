@@ -206,6 +206,7 @@ export function showRoom(
 	const delegatedBotSeats = new Set<Seat>();
 	/** A bot that the host chose plays this page's seat. */
 	let botHoldsSeat = false;
+	let noHumanPlayers = false;
 	let botStarting = false;
 	let botAutoAttempted = false;
 	let botRestoreStarted = false;
@@ -695,9 +696,14 @@ export function showRoom(
 			// Only these explicit actions change the stored call status.
 			call: {
 				join: (selection) => {
+					if (noHumanPlayers) return;
 					if (selection.send.video && camera?.available !== false) {
 						void camera?.open().then((chosen) => {
 							if (chosen === undefined || call === undefined) return;
+							if (noHumanPlayers) {
+								if (chosen !== "cancelled") chosen.track.stop();
+								return;
+							}
 							// Cancel joins with the other switches; without a prepared camera the call sends no video.
 							if (chosen !== "cancelled") {
 								call.setVideoDevice(chosen.deviceId);
@@ -1173,8 +1179,13 @@ export function showRoom(
 	}
 
 	function renderCall(): void {
-		const display: CallDisplay =
-			call === undefined
+		const display: CallDisplay = noHumanPlayers
+			? {
+					available: false,
+					reason: "All present seats are controlled by bots.",
+					botsOnly: true,
+				}
+			: call === undefined
 				? { available: false, reason: support.available ? "" : support.reason }
 				: {
 						available: true,
@@ -1345,9 +1356,17 @@ export function showRoom(
 		const terminal = view.seat !== seat || TERMINAL.has(view.status);
 		// A bot that the host chose plays the seat alone, and a bot sends no audio, so the page leaves the call. The
 		// call stays off when the seat comes back.
+		const inCallSeats = callSeats(view.hostSeat, view.roster);
+		const onlyBots =
+			view.roster !== null &&
+			![...inCallSeats].some(
+				(participant) => !view.roster?.bots.includes(participant),
+			);
+		if (onlyBots && !noHumanPlayers) call?.leave();
+		noHumanPlayers = onlyBots;
 		const botAlone = botPlays(view.roster, seat);
 		const snapshot = controller.callSnapshot();
-		call?.update(botAlone ? { ...snapshot, self: null } : snapshot);
+		call?.update(botAlone || onlyBots ? { ...snapshot, self: null } : snapshot);
 		if (botAlone !== botHoldsSeat) {
 			botHoldsSeat = botAlone;
 			if (!botAlone) memory?.seatReturned();
@@ -1422,7 +1441,6 @@ export function showRoom(
 			view.table === null
 				? undefined
 				: (parseBridgeState(view.table.state, tableId) ?? null);
-		const inCallSeats = callSeats(view.hostSeat, view.roster);
 		remoteCallPresence = {};
 		for (const targetSeat of SEATS) {
 			const record = state?.media[targetSeat];

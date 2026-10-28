@@ -23,7 +23,11 @@ export type CallDisplay =
 			 */
 			readonly rejoin?: Switches;
 	  }
-	| { readonly available: false; readonly reason: string };
+	| {
+			readonly available: false;
+			readonly reason: string;
+			readonly botsOnly?: boolean;
+	  };
 
 export type Way = "send" | "receive";
 

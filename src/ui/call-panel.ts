@@ -252,21 +252,22 @@ export function callControls(
 	});
 	alert.hidden = true;
 
+	const roomCallGroup = el(
+		"div",
+		{
+			className: "icon-group",
+			attrs: { role: "group", "aria-label": t("Room call") },
+		},
+		joinButton(false),
+		// Compact devices show no video, but can send the camera.
+		toggleButton(SEND_AUDIO),
+		toggleButton(RECEIVE_AUDIO),
+		toggleButton(SEND_VIDEO),
+	);
 	const row = el(
 		"div",
 		{ className: "icon-row", attrs: { "data-testid": "call-row" } },
-		el(
-			"div",
-			{
-				className: "icon-group",
-				attrs: { role: "group", "aria-label": t("Room call") },
-			},
-			joinButton(false),
-			// Compact devices show no video, but can send the camera.
-			toggleButton(SEND_AUDIO),
-			toggleButton(RECEIVE_AUDIO),
-			toggleButton(SEND_VIDEO),
-		),
+		roomCallGroup,
 		el("span", {
 			className: "icon-separator",
 			attrs: { "aria-hidden": "true" },
@@ -438,6 +439,10 @@ export function callControls(
 		last = view;
 		invite = nextInvite(invite, hostInCall, view.inCall);
 		panel.dataset.status = next.available ? next.view.status : "unavailable";
+		panel.dataset.botsOnly = String(!next.available && next.botsOnly === true);
+		roomCallGroup.dataset.botsOnly = String(
+			!next.available && next.botsOnly === true,
+		);
 		panel.dataset.inCall = String(view.inCall);
 		heading.hidden = view.inCall;
 		self.hidden = !view.inCall;

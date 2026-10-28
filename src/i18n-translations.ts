@@ -4,6 +4,14 @@ type TranslationRow = readonly [string, string, string, string, string, string];
 
 const rows: readonly TranslationRow[] = [
 	[
+		"All present seats are controlled by bots.",
+		"Todos los puestos presentes están controlados por bots.",
+		"Todos os lugares presentes são controlados por bots.",
+		"Toutes les places présentes sont contrôlées par des robots.",
+		"Tutti i posti presenti sono controllati da bot.",
+		"Alle aanwezige plaatsen worden door bots gespeeld.",
+	],
+	[
 		"Enable bot",
 		"Activar bot",
 		"Ativar bot",

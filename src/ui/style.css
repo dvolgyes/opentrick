@@ -2296,6 +2296,10 @@ button.call-join[data-in-call="true"] {
 	font-size: 0.8rem;
 }
 
+:is(.call-panel, .icon-group)[data-bots-only="true"] {
+	filter: grayscale(1) brightness(0.6);
+}
+
 /* The compact message about a local problem; the desktop panel note says the same. */
 .call-alert {
 	display: none;
@@ -2434,13 +2438,21 @@ button.call-join[data-in-call="true"] {
 /* A call that is not legal now is crossed out in gray, so it reads as not selectable. */
 .bid-box:not(.not-turn) .bid-levels button:disabled,
 .bid-box:not(.not-turn) .bid-calls button:disabled {
+	background-color: color-mix(in srgb, var(--sheet-cell) 80%, var(--sheet-fg));
+	color: var(--control-disabled-fg);
+	opacity: 1;
+	filter: grayscale(1) brightness(0.6);
 	background-image: linear-gradient(
 		to bottom right,
-		transparent 49.5%,
-		var(--sheet-strike) 49.5%,
-		var(--sheet-strike) 50.5%,
-		transparent 50.5%
+		transparent 47%,
+		var(--sheet-fg) 47%,
+		var(--sheet-fg) 53%,
+		transparent 53%
 	);
+}
+
+.bid-box:not(.not-turn) :is(.bid-guide, .bid-actions) button:disabled {
+	filter: grayscale(1) brightness(0.6);
 }
 
 .bid-calls .pass {
@@ -2469,6 +2481,22 @@ button.call-join[data-in-call="true"] {
 
 .bid-box.not-turn .bid-actions button:disabled {
 	opacity: 0.4;
+}
+
+.room[data-form="desktop"] .bid-box.not-turn {
+	filter: grayscale(1) brightness(0.6);
+}
+
+.room[data-form="desktop"] .bridge-table[data-phase="auction"] .center {
+	position: relative;
+	z-index: 10;
+}
+
+.room[data-form="desktop"] .bridge-table[data-phase="auction"] .history-panel {
+	padding: 0.35rem;
+	border-radius: 0.45rem;
+	background: var(--sheet-bg);
+	color: var(--sheet-fg);
 }
 
 .bid-guide .guide-open,
@@ -3809,13 +3837,7 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-bid-overlay:has(.bid-box.not-turn) {
-	filter: grayscale(0.85) brightness(0.75);
-}
-
-.mobile-bid-overlay .bid-box:not(.not-turn) :is(.bid-levels, .bid-calls) button:disabled {
-	background-color: color-mix(in srgb, var(--sheet-cell) 80%, var(--sheet-fg));
-	color: var(--control-disabled-fg);
-	opacity: 1;
+	filter: grayscale(1) brightness(0.6);
 }
 
 .mobile-tricks {

@@ -2893,10 +2893,28 @@ describe("mobile turn frame", () => {
 		expect(getComputedStyle(disabled).color).not.toBe(
 			getComputedStyle(enabled).color,
 		);
+		expect(getComputedStyle(disabled).filter).toBe(
+			"grayscale(1) brightness(0.6)",
+		);
+		expect(getComputedStyle(disabled).backgroundImage).toContain("47%");
 		expect(getComputedStyle(overlay).filter).toBe("none");
 		section.render({ ...base, phase: "auction", bids: [] });
 		expect(getComputedStyle(overlay).filter).toContain("grayscale");
 		expect(getComputedStyle(overlay).filter).toContain("brightness");
+	});
+
+	it("darkens the inactive desktop bid box and keeps the bidding windows above the table", () => {
+		const { root } = renderView(
+			{ ...playView(), phase: "auction", bids: [] },
+			"desktop",
+		);
+		const bidBox = root.querySelector<HTMLElement>(".bid-box");
+		const center = root.querySelector<HTMLElement>(".center");
+		if (!bidBox || !center) throw new Error("missing bidding windows");
+		expect(getComputedStyle(bidBox).filter).toBe(
+			"grayscale(1) brightness(0.6)",
+		);
+		expect(Number(getComputedStyle(center).zIndex)).toBeGreaterThan(5);
 	});
 
 	it.each<[TableView["phase"], Seat]>([
@@ -2941,6 +2959,31 @@ describe("mobile turn frame", () => {
 });
 
 describe("board depth and frame colours", () => {
+	it.each(["desktop", "compact"] as const)(
+		"disables and dims the room call when no human can join (%s)",
+		(layout) => {
+			const { root, section } = renderView(playView(), layout);
+			section.renderCall({
+				available: false,
+				reason: "All present seats are controlled by bots.",
+				botsOnly: true,
+			});
+			const panel = root.querySelector<HTMLElement>(".call-panel");
+			const group = root.querySelector<HTMLElement>(
+				'.icon-group[data-bots-only="true"]',
+			);
+			if (!panel || !group) throw new Error("missing call controls");
+			for (const control of [panel, group]) {
+				expect(getComputedStyle(control).filter).toBe(
+					"grayscale(1) brightness(0.6)",
+				);
+				for (const button of control.querySelectorAll<HTMLButtonElement>(
+					".call-toggle, .call-join",
+				))
+					expect(button.disabled).toBe(true);
+			}
+		},
+	);
 	it("keeps mobile hand cards and board labels free of drop shadows", () => {
 		const { root, section } = renderView(sideHandView(), "compact");
 		section.setBotControls(true, ["E"]);

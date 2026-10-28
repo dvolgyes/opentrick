@@ -66,6 +66,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"CONNECTING TO HOST": "VERBINDUNG ZUM HOST",
 		"Enable autoplay (bot)": "Autoplay (Bot) aktivieren",
 		"Enable bot": "Bot aktivieren",
+		"All present seats are controlled by bots.":
+			"Alle anwesenden Plätze werden von Bots gespielt.",
 		"Disable bot": "Bot deaktivieren",
 		"Temporarily replace player with a bot":
 			"Spieler vorübergehend durch einen Bot ersetzen",
@@ -734,6 +736,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"CONNECTING TO HOST": "KAPCSOLÓDÁS A HOSTHOZ",
 		"Enable autoplay (bot)": "Automatikus játék (bot) bekapcsolása",
 		"Enable bot": "Bot bekapcsolása",
+		"All present seats are controlled by bots.":
+			"Minden jelen lévő helyet bot játszik.",
 		"Disable bot": "Bot kikapcsolása",
 		"Temporarily replace player with a bot":
 			"A játékos ideiglenes helyettesítése bottal",
@@ -1391,6 +1395,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"CONNECTING TO HOST": "KOBLER TIL VERTEN",
 		"Enable autoplay (bot)": "Slå på automatisk spilling (bot)",
 		"Enable bot": "Aktiver bot",
+		"All present seats are controlled by bots.":
+			"Alle tilstedeværende plasser spilles av boter.",
 		"Disable bot": "Deaktiver bot",
 		"Temporarily replace player with a bot":
 			"Erstatt spilleren midlertidig med en bot",
