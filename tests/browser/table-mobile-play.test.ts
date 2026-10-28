@@ -4183,6 +4183,27 @@ describe("compact play controls", () => {
 		},
 	);
 
+	it.each<Form>(["compact", "desktop"])(
+		"draws a %s side hand's trump frame above the next row, around the shown part of the trump row",
+		(form) => {
+			const { root } = renderView(sideHandView(), form);
+			const trump = [
+				...root.querySelectorAll<HTMLElement>(".hand-stack .suit-row.trump"),
+			].find((row) => row.getBoundingClientRect().width > 0);
+			const next = trump?.nextElementSibling;
+			if (!trump || !(next instanceof HTMLElement))
+				throw new Error("trump row or the row after it is missing");
+			const frame = getComputedStyle(trump, "::after");
+			// The frame ends where the next row starts, so its edge does not cross the next row's cards.
+			expect(
+				trump.getBoundingClientRect().top + Number.parseFloat(frame.height),
+			).toBeCloseTo(next.getBoundingClientRect().top, 0);
+			// The next row covers the trump cards, but not their frame.
+			expect(getComputedStyle(next).zIndex).toBe("auto");
+			expect(Number(frame.zIndex)).toBeGreaterThan(0);
+		},
+	);
+
 	it("hides Claim … while more than five tricks remain, and keeps Claim all", () => {
 		const { root } = renderMobile(playView());
 		const buttons = [...root.querySelectorAll("button")];

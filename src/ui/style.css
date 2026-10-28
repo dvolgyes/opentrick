@@ -4026,7 +4026,7 @@ main:has(> .room[data-form="compact"]) {
 	overflow: visible;
 }
 
-/* Later rows cover earlier rows, including a trump row. */
+/* Later rows cover the cards of earlier rows, but not the trump frame: it marks only the shown part of its row. */
 :is(.mobile-board-left, .mobile-board-right) .hand-stack .suit-row.trump {
 	z-index: auto;
 	outline: none;
@@ -4037,13 +4037,20 @@ main:has(> .room[data-form="compact"]) {
 	.suit-row.trump::after {
 	content: "";
 	position: absolute;
-	inset: 0 auto auto 0;
-	width: 100%;
-	height: var(--card-h);
+	inset: 0;
+	z-index: 2;
 	outline: 2px solid var(--gold);
 	outline-offset: 3px;
 	border-radius: 0.4rem;
 	pointer-events: none;
+}
+
+/* The row after the trump row starts where the trump row ends, so the frame holds all of the trump row's shown part. */
+:is(.mobile-board-left, .mobile-board-right)
+	.hand-stack
+	> .suit-row.trump
+	+ .suit-row {
+	margin-top: 0;
 }
 
 :is(.mobile-board-left, .mobile-board-right) .hand-stack .trump-label {
@@ -4502,6 +4509,7 @@ main:has(> .room[data-form="compact"]) {
 	overflow: visible;
 }
 
+/* Later rows cover the cards of earlier rows, but not the trump frame: it marks only the shown part of its row. */
 .room[data-form="desktop"] .hand-stack .suit-row.trump {
 	z-index: auto;
 	outline: none;
@@ -4510,9 +4518,8 @@ main:has(> .room[data-form="compact"]) {
 .room[data-form="desktop"] .hand-stack .suit-row.trump::after {
 	content: "";
 	position: absolute;
-	inset: 0 auto auto 0;
-	width: 100%;
-	height: var(--card-h);
+	inset: 0;
+	z-index: 2;
 	outline: 2px solid var(--gold);
 	outline-offset: 3px;
 	border-radius: 0.4rem;
