@@ -163,7 +163,7 @@ for (const locale of [
 			translator(locale)("Play with bots"),
 		);
 		await expect(row.getByTestId("join-online")).toHaveText(
-			translator(locale)("Online players"),
+			translator(locale)("Play online"),
 		);
 		for (const width of [320, 390, 1280]) {
 			await page.setViewportSize({ width, height: 844 });
@@ -199,8 +199,21 @@ test("the compact solo row exposes bookmarkable actions without wrapping", async
 		row.getByRole("link", { name: "Play with bots", exact: true }),
 	).toHaveAttribute("href", "/solo");
 	await expect(
-		row.getByRole("link", { name: "Online players", exact: true }),
+		row.getByRole("link", { name: "Play online", exact: true }),
 	).toHaveAttribute("href", "/join");
+	const heading = page.getByRole("heading", {
+		name: "Single player",
+		exact: true,
+	});
+	const headingBox = await heading.boundingBox();
+	const scoringBox = await page.locator('select[name="scoring"]').boundingBox();
+	const nameBox = await row.locator("#solo-name").boundingBox();
+	expect(headingBox?.y ?? 0).toBeGreaterThan(
+		(scoringBox?.y ?? 0) + (scoringBox?.height ?? 0),
+	);
+	expect((headingBox?.y ?? 0) + (headingBox?.height ?? 0)).toBeLessThanOrEqual(
+		nameBox?.y ?? 0,
+	);
 	const boxes = await row.locator("input, a").evaluateAll((elements) =>
 		elements.map((element) => {
 			const rect = element.getBoundingClientRect();

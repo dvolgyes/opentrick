@@ -273,7 +273,7 @@ export function showCreate(
 				"data-testid": "join-online",
 			},
 		},
-		deps.t("Online players"),
+		deps.t("Play online"),
 	);
 	const follow = (link: HTMLAnchorElement, run: () => void): void => {
 		link.addEventListener("click", (event) => {
@@ -557,7 +557,12 @@ export function showCreate(
 				el("label", {}, `${deps.t("Bidding bot")}: `, bidder),
 				el("label", {}, `${deps.t("Scoring")}: `, scoring),
 			),
-			el("section", { className: "create-mode" }, soloForm),
+			el(
+				"section",
+				{ className: "create-mode" },
+				el("h2", {}, deps.t("Single player")),
+				soloForm,
+			),
 			discovery.element,
 			el(
 				"section",

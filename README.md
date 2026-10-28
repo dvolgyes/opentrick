@@ -51,8 +51,8 @@ Do not post it publicly.
 
 ### Find community players
 
-Use the compact **Name: [name] Play with bots / Online players** row to choose how to play alone.
-Select **Online players** to enter public matchmaking.
+Use the compact **Name: [name] Play with bots / Play online** row in the **Single player** section to choose how to play alone.
+Select **Play online** to enter public matchmaking.
 The creation and community waiting pages show the number of other browsers directly connected to this browser in the discovery room.
 This local count can differ between browsers and does not count everyone who is online.
 The browser joins discovery on the creation page, reuses that connection for matchmaking, and leaves it for a solo or private game.
