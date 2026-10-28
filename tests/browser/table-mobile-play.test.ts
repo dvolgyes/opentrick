@@ -3252,7 +3252,11 @@ describe("board depth and frame colours", () => {
 				tileShadow,
 			);
 		const compact = renderView(view, "compact").root;
-		for (const panel of parts(compact, [".bid-box", ".history-panel"]))
+		const compactPanels = [
+			...parts(compact, [".bid-box", ".history-panel"]),
+			...compact.querySelectorAll<HTMLElement>(".network-bars"),
+		];
+		for (const panel of compactPanels)
 			expect(getComputedStyle(panel).boxShadow, panel.className).toBe("none");
 	});
 	const expectShadow = (element: HTMLElement, minimumOffset: number) => {
