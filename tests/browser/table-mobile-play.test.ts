@@ -3337,6 +3337,99 @@ describe("board depth and frame colours", () => {
 			expect(card.getBoundingClientRect().toJSON()).toEqual(before.toJSON());
 		},
 	);
+	it.each(
+		(["desktop", "sideways"] as const).flatMap((layout) =>
+			["M", "L", "XL", "XXL", "XXXL"].map((size) => [layout, size] as const),
+		),
+	)(
+		"keeps the %s trump frame around its cards and the cards of a suit touching at %s",
+		async (layout, size) => {
+			await page.viewport(1568, 886);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const suit = (
+					name: "S" | "H" | "D" | "C",
+					symbol: string,
+					ranks: string,
+					trump: boolean,
+				) => ({
+					suit: name,
+					symbol,
+					trump,
+					cards: [...ranks].map((rank) => card(`${name}${rank}` as Card)),
+				});
+				const hand = {
+					visible: true as const,
+					suits: [
+						suit("S", "♠", "QT9865", true),
+						suit("H", "♥", "Q9", false),
+						suit("D", "♦", "T3", false),
+						suit("C", "♣", "7", false),
+					],
+				};
+				const base = playView();
+				const { root } = renderView(
+					{
+						...base,
+						seats: base.seats.map((shown) =>
+							shown.hand.visible ? { ...shown, hand } : shown,
+						),
+					},
+					layout,
+				);
+				// The room sits in the page's table screen, so the Full HD canvas sizes the cards as in the app.
+				const screen = document.createElement("main");
+				screen.dataset.screen = "table";
+				screen.dataset.form = "desktop";
+				screen.append(...document.body.children);
+				document.body.replaceChildren(screen);
+				const rows = [
+					...root.querySelectorAll<HTMLElement>(
+						".felt :is(.place-top, .place-bottom) .hand-row:not(.backs)",
+					),
+				];
+				expect(rows).toHaveLength(2);
+				for (const row of rows) {
+					const group = row.querySelector<HTMLElement>(
+						":scope > .suit-group.trump",
+					);
+					if (!group) throw new Error("missing trump group");
+					const style = getComputedStyle(group);
+					const reach =
+						Number.parseFloat(style.outlineOffset) +
+						Number.parseFloat(style.outlineWidth);
+					const frame = group.getBoundingClientRect();
+					for (const face of group.querySelectorAll<HTMLElement>(".face")) {
+						const shown = face.getBoundingClientRect();
+						expect(shown.right, face.textContent ?? "").toBeLessThanOrEqual(
+							frame.right + reach,
+						);
+						expect(shown.left).toBeGreaterThanOrEqual(frame.left - reach);
+					}
+					// Within a suit, each card starts where the face before it ends; only the suit gap separates suits.
+					const cards = [...row.querySelectorAll<HTMLElement>(".card")];
+					cards.slice(1).forEach((next, index) => {
+						const previous = cards[index]?.querySelector(".face");
+						if (!previous) throw new Error("missing card face");
+						const suitGroup = next.closest<HTMLElement>(".suit-group");
+						const start =
+							suitGroup?.firstElementChild === next ? suitGroup : next;
+						const gap = start.classList.contains("suit-start")
+							? Number.parseFloat(getComputedStyle(start).marginLeft)
+							: 0;
+						expect(
+							next.getBoundingClientRect().left -
+								previous.getBoundingClientRect().right,
+							next.dataset.card,
+						).toBeLessThanOrEqual(gap + 0.5);
+					});
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
 
 	it("adds shadows to the video and room call boxes on the felt", () => {
 		const { root } = renderView(playView(), "desktop");
