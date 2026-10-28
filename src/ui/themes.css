@@ -52,6 +52,7 @@
 	--waiting-fg: #e6e6e6;
 	--turn-hand-bg: #c8dccf;
 	--turn-name: #ff2a2a;
+	--turn-frame: #ff7878;
 	--trump-fg: #ffe14d;
 	/* The turn frame, the trump suit and a chosen call; the pills of the points and the turn. */
 	--gold: #e8b923;

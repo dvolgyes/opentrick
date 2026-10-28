@@ -1245,6 +1245,10 @@ main:has(> .room) {
 	color: var(--felt-fg);
 }
 
+.felt :is(.video-row .tile, .call-panel) {
+	box-shadow: 0 0.35rem 0.8rem var(--shadow);
+}
+
 .avatar {
 	display: grid;
 	place-items: center;
@@ -1898,6 +1902,7 @@ dialog {
 	border: 1px solid var(--line);
 	border-radius: 0.3rem;
 	background: var(--card-bg);
+	box-shadow: 0 0.2rem 0.45rem var(--shadow);
 	color: var(--card-fg);
 	font-weight: 700;
 	font-size: calc(var(--rank-size) * var(--suit-font-scale));
@@ -2686,10 +2691,10 @@ button.call-join[data-in-call="true"] {
 	min-height: 2.75rem;
 }
 
-/* The seat to call or play gets a gold frame, unless the settings turn it off; its pills sit in the frame corners. */
+/* The seat to call or play gets a red frame, unless the settings turn it off; its pills sit in the frame corners. */
 .seat[data-turn-frame="true"] {
 	position: relative;
-	outline: 4px solid var(--gold);
+	outline: 4px solid var(--turn-frame);
 	outline-offset: 4px;
 	border-radius: 12px;
 }
@@ -3655,10 +3660,10 @@ main:has(> .room[data-form="compact"]) {
 	color: var(--turn-name);
 }
 
-/* The hand of the player to act gets the gold frame of the desktop seat. */
+/* The hand of the player to act gets the red frame of the desktop seat. */
 .mobile-auction-hand .seat[data-turn-frame="true"] .hand,
 .mobile-board-name[data-turn-frame="true"] + .hand {
-	outline: 3px solid var(--gold);
+	outline: 3px solid var(--turn-frame);
 	outline-offset: 2px;
 	border-radius: 0.4rem;
 }
@@ -3678,7 +3683,7 @@ main:has(> .room[data-form="compact"]) {
 	position: absolute;
 	inset: 0;
 	z-index: 1;
-	border: 3px solid var(--gold);
+	border: 3px solid var(--turn-frame);
 	border-radius: 0.4rem;
 	pointer-events: none;
 }
@@ -4360,7 +4365,7 @@ main[data-screen="table"][data-layout="sideways"]
 	justify-content: flex-end;
 }
 
-/* The gold frame of the own seat stays on the screen. */
+/* The turn frame of the own seat stays on the screen. */
 main[data-screen="table"][data-layout="sideways"] .felt {
 	padding-bottom: 0.6rem;
 }

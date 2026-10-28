@@ -2617,7 +2617,7 @@ describe("mobile board names", () => {
 });
 
 describe("mobile turn frame", () => {
-	const GOLD = "rgb(232, 185, 35)";
+	const RED = "rgb(255, 120, 120)";
 
 	it.each<[TableView["phase"], Seat]>([
 		["auction", "N"],
@@ -2650,18 +2650,63 @@ describe("mobile turn frame", () => {
 				const style = getComputedStyle(hand);
 				const overlay = getComputedStyle(hand, "::after");
 				const framed =
-					(style.outlineStyle === "solid" && style.outlineColor === GOLD) ||
+					(style.outlineStyle === "solid" && style.outlineColor === RED) ||
 					(overlay.content !== "none" &&
 						overlay.borderTopStyle === "solid" &&
-						overlay.borderTopColor === GOLD);
+						overlay.borderTopColor === RED);
 				expect(framed, seatName).toBe(seatName === active);
 			}
 		},
 	);
 });
 
+describe("board depth and frame colours", () => {
+	it.each(["desktop", "sideways", "compact"] as const)(
+		"keeps the side dummy's trump frame gold in %s",
+		(layout) => {
+			const { root } = renderView(sideHandView(), layout);
+			const trump = [
+				...root.querySelectorAll<HTMLElement>(".suit-row.trump"),
+			].find((row) => row.checkVisibility());
+			if (!trump) throw new Error("missing side trump suit");
+			const frame = getComputedStyle(trump, "::after");
+			expect(frame.outlineStyle).toBe("solid");
+			expect(frame.outlineColor).toBe("rgb(232, 185, 35)");
+		},
+	);
+	it.each(["desktop", "compact"] as const)(
+		"keeps trump gold and adds a played-card shadow in %s",
+		(layout) => {
+			const { root } = renderView(playView(), layout);
+			const board = root.querySelector<HTMLElement>(
+				layout === "desktop" ? ".felt" : ".mobile-auction-board",
+			);
+			const card = board?.querySelector<HTMLElement>(".played");
+			const trump = board?.querySelector<HTMLElement>(".suit-group.trump");
+			if (!card || !trump) throw new Error("missing played card or trump");
+			expect(getComputedStyle(card).boxShadow).not.toBe("none");
+			expect(getComputedStyle(trump).outlineColor).toBe("rgb(232, 185, 35)");
+			const before = card.getBoundingClientRect();
+			card.style.boxShadow = "none";
+			expect(card.getBoundingClientRect().toJSON()).toEqual(before.toJSON());
+		},
+	);
+
+	it("adds shadows to the video and room call boxes on the felt", () => {
+		const { root } = renderView(playView(), "desktop");
+		const felt = root.querySelector<HTMLElement>(".felt");
+		const videos = [
+			...(felt?.querySelectorAll<HTMLElement>(".video-row .tile") ?? []),
+		];
+		const call = felt?.querySelector<HTMLElement>(".call-panel");
+		if (!call || !videos.length) throw new Error("missing video or call box");
+		for (const box of [...videos, call])
+			expect(getComputedStyle(box).boxShadow).not.toBe("none");
+	});
+});
+
 describe("turn marks and network quality from the settings", () => {
-	const GOLD = "rgb(232, 185, 35)";
+	const RED = "rgb(255, 120, 120)";
 	const marks = (changed: Partial<TableMarks>): TableOptions => ({
 		marks: () => ({ ...DEFAULT_SETTINGS, ...changed }),
 	});
@@ -2724,9 +2769,7 @@ describe("turn marks and network quality from the settings", () => {
 				return [...root.querySelectorAll<HTMLElement>(".seat")]
 					.filter((seat) => {
 						const style = getComputedStyle(seat);
-						return (
-							style.outlineStyle === "solid" && style.outlineColor === GOLD
-						);
+						return style.outlineStyle === "solid" && style.outlineColor === RED;
 					})
 					.map((seat) => seat.dataset.testid);
 			};
@@ -2761,8 +2804,8 @@ describe("turn marks and network quality from the settings", () => {
 				const style = getComputedStyle(hand);
 				const overlay = getComputedStyle(hand, "::after");
 				return (
-					(style.outlineStyle === "solid" && style.outlineColor === GOLD) ||
-					(overlay.content !== "none" && overlay.borderTopColor === GOLD)
+					(style.outlineStyle === "solid" && style.outlineColor === RED) ||
+					(overlay.content !== "none" && overlay.borderTopColor === RED)
 				);
 			};
 			const other =

@@ -1183,7 +1183,7 @@ export function tableSection(
 		];
 	}
 
-	/** The gold frame marks the seat to act, while the settings frame the turns of this phase. */
+	/** The red frame marks the seat to act, while the settings frame the turns of this phase. */
 	function turnFramed(seat: SeatView): boolean {
 		return (
 			seat.turn &&
