@@ -989,6 +989,7 @@ export function showRoom(
 			resumeBots,
 			table.autoplayControl,
 		),
+		table.autoplayStatus,
 	);
 	const resetStatus = el("p", { className: "note", attrs: { role: "status" } });
 	const resetApprove = button(deps.t("Approve reset"), () => {

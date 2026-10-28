@@ -1,8 +1,85 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
 
 import { Player } from "./player";
 import { namePlayers } from "./room";
+
+async function expectBotControlsInOneRow(page: Page): Promise<void> {
+	const result = await page.locator(".room-bot-controls").evaluate((row) => {
+		const bounds = row.getBoundingClientRect();
+		const buttons = [...row.querySelectorAll("button")].filter((item) =>
+			item.checkVisibility(),
+		);
+		return {
+			form: row.closest<HTMLElement>(".room")?.dataset.form,
+			lang: document.documentElement.lang,
+			bounds: { left: bounds.left, right: bounds.right },
+			boxes: buttons.map((item) => {
+				const box = item.getBoundingClientRect();
+				return {
+					text: item.textContent,
+					font: getComputedStyle(item).fontSize,
+					top: box.top,
+					bottom: box.bottom,
+					left: box.left,
+					right: box.right,
+					clipped: item.scrollWidth > item.clientWidth,
+				};
+			}),
+		};
+	});
+	expect(result.boxes).toHaveLength(4);
+	expect(Math.max(...result.boxes.map((box) => box.top))).toBeLessThan(
+		Math.min(...result.boxes.map((box) => box.bottom)),
+	);
+	for (const box of result.boxes) {
+		expect(box.left).toBeGreaterThanOrEqual(result.bounds.left - 1);
+		expect(box.right, JSON.stringify(result)).toBeLessThanOrEqual(
+			result.bounds.right + 1,
+		);
+		expect(box.clipped).toBe(false);
+	}
+}
+
+for (const locale of [
+	"hu",
+	"de",
+	"no",
+	"es",
+	"pt",
+	"fr",
+	"it",
+	"nl",
+] as const) {
+	test(`keeps the translated bot controls on one desktop row (${locale})`, async ({
+		page,
+	}) => {
+		await page.addInitScript(
+			(language) => localStorage.setItem("opentrick.locale", language),
+			locale,
+		);
+		await mockBotBidding(page, () => "P");
+		await page.goto("/");
+		await namePlayers(page, "W", ["N", "E", "S"]);
+		await page
+			.getByTestId("create")
+			.evaluate((button) => (button as HTMLButtonElement).click());
+		const autoplay = page.getByTestId("host-autoplay-toggle");
+		await expect(autoplay).toBeVisible();
+		await expectBotControlsInOneRow(page);
+		const pause = page.locator(".room-bot-controls button:visible").nth(2);
+		const pauseLabel = await pause.textContent();
+		await pause.click();
+		await expect(pause).not.toHaveText(pauseLabel ?? "");
+		const previousLabel = await autoplay.textContent();
+		await autoplay.click();
+		await page.getByTestId("autoplay-confirm-enable").click();
+		await expect(autoplay).not.toHaveText(previousLabel ?? "");
+		await expectBotControlsInOneRow(page);
+		await page.setViewportSize({ width: 320, height: 800 });
+		await expectBotControlsInOneRow(page);
+	});
+}
 
 for (const size of ["M", "XXXL"] as const) {
 	test(`keeps the bottom of the phone board visible while bidding changes at ${size}`, async ({
@@ -77,6 +154,10 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await expect(
 			page.getByRole("button", { name: "Pause bots" }),
 		).toBeVisible();
+		await expectBotControlsInOneRow(page);
+		await page.setViewportSize({ width: 320, height: 800 });
+		await expectBotControlsInOneRow(page);
+		await page.setViewportSize({ width: 360, height: 800 });
 		const ownBot = page.getByTestId("host-autoplay-toggle");
 		await expect(ownBot).toHaveText("Enable bot");
 		await expect(ownBot).toHaveAttribute(
@@ -97,6 +178,7 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 		await expect(
 			page.getByRole("button", { name: "Resume bots" }),
 		).toBeVisible();
+		await expectBotControlsInOneRow(page);
 		// The phone keeps the seat switches in a closed group below the board.
 		await page.getByText("Optional automated players").click();
 		await expect(

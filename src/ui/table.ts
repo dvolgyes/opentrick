@@ -73,6 +73,8 @@ export interface TableSection {
 	readonly element: HTMLElement;
 	/** The viewer's bot control, placed with the room's bot controls. */
 	readonly autoplayControl: HTMLElement;
+	/** The status of a guest's bot request, placed below the room controls. */
+	readonly autoplayStatus: HTMLElement;
 	/** The score sheet. The room page places it after the table, so the table can fill the screen. */
 	/** The right column: bidding history, Tricks, and the previous-game statistics. */
 	readonly sidebar: HTMLElement;
@@ -994,7 +996,6 @@ export function tableSection(
 		"div",
 		{ className: "autoplay-control" },
 		autoplayButton,
-		autoplayStatus,
 	);
 	function updateAutoplayControl(): void {
 		const own = latestView?.seats.find(
@@ -2872,6 +2873,7 @@ export function tableSection(
 	return {
 		element,
 		autoplayControl,
+		autoplayStatus,
 		sidebar,
 		sidebarEnd,
 		render,

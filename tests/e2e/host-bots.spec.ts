@@ -294,6 +294,26 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		).toBeVisible();
 		const autoplay = hostPage.getByTestId("host-autoplay-toggle");
 		await expect(autoplay).toHaveText("Enable bot");
+		const controlLayout = await hostPage
+			.locator(".room-bot-controls")
+			.evaluate((row) => {
+				const rowBox = row.getBoundingClientRect();
+				const buttons = [...row.querySelectorAll("button")].filter((item) =>
+					item.checkVisibility(),
+				);
+				const boxes = buttons.map((button) => button.getBoundingClientRect());
+				return (
+					buttons.length === 4 &&
+					boxes.every(
+						(box) =>
+							box.left >= rowBox.left - 1 && box.right <= rowBox.right + 1,
+					) &&
+					Math.max(...boxes.map((box) => box.top)) <
+						Math.min(...boxes.map((box) => box.bottom)) &&
+					buttons.every((button) => button.scrollWidth <= button.clientWidth)
+				);
+			});
+		expect(controlLayout).toBe(true);
 		await expect(
 			hostPage
 				.locator(".room-bot-controls")

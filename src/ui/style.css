@@ -1484,8 +1484,23 @@ main:has(> .room) {
 }
 
 .room-bot-controls {
-	flex-wrap: wrap;
-	justify-content: space-between;
+	flex-wrap: nowrap;
+	justify-content: flex-start;
+	gap: 0.05rem;
+}
+
+.room-bot-controls button {
+	padding-inline: 0.1rem;
+	font-size: 0.8rem;
+	white-space: nowrap;
+}
+
+:root:not(:lang(en)) .room[data-form="desktop"] .room-bot-controls button {
+	font-size: 0.55rem;
+}
+
+:root:lang(fr) .room[data-form="desktop"] .room-bot-controls button {
+	font-size: 0.53rem;
 }
 
 .autoplay-control:not([hidden]) {
@@ -1497,6 +1512,10 @@ main:has(> .room) {
 
 .player-autoplay-status {
 	font-size: 0.75rem;
+}
+
+.player-autoplay-status:empty {
+	display: none;
 }
 
 /* The debug and bot status lines take no room while they are empty. */
@@ -2788,6 +2807,10 @@ button.call-join[data-in-call="true"] {
 	flex-direction: column;
 	gap: 0.8rem;
 	max-width: 22rem;
+}
+
+.room[data-form="compact"] .table-sidebar {
+	max-width: none;
 }
 
 .room-controls {
