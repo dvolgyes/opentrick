@@ -232,14 +232,13 @@ function placeMeaning(call: HTMLElement, meaning: HTMLElement): void {
 	meaning.style.maxWidth = `min(18rem, ${room}px)`;
 }
 
-/** The contract's bid, such as "3♠" or "3NTXX", with the suit in red on hearts and diamonds. */
+/** The contract's bid, such as "3♠" or "3NTXX", with the suit in the selected colour. */
 function contractBid(header: ContractHeader): HTMLElement {
-	const red = header.strain === "H" || header.strain === "D";
 	return el(
 		"span",
 		{ className: "bid" },
 		String(header.level),
-		el("span", { className: red ? "strain red" : "strain" }, header.symbol),
+		el("span", { className: `strain strain-${header.strain}` }, header.symbol),
 		header.doubling,
 	);
 }
@@ -2788,7 +2787,7 @@ export function tableSection(
 		);
 	}
 
-	/** The sidebar header: "1♣ by North · Anna", with the suit in red on hearts and diamonds. */
+	/** The sidebar header: "1♣ by North · Anna", with the suit in the selected colour. */
 	function renderContractHead(header: ContractHeader | undefined): void {
 		contractPanel.hidden = header === undefined;
 		if (!header) {

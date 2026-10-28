@@ -105,6 +105,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.portrait-mobile",
 		"opentrick.settings.relay-checks",
 		"opentrick.settings.scheme",
+		"opentrick.settings.suit-colors",
 		"opentrick.settings.suit-font-size",
 		"opentrick.settings.theme-style",
 		"opentrick.settings.voicebox",
@@ -144,6 +145,43 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByRole("button", { name: "Cancel" }).click();
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
+});
+
+test("suit colours offer nine previews, apply on Save, and survive reload", async ({
+	page,
+}) => {
+	await openTable(page);
+	let dialog = await openSettings(page);
+	const group = dialog.getByRole("group", { name: "Suit colours" });
+	await expect(group.getByRole("radio")).toHaveCount(9);
+	await expect(group.getByRole("radio").nth(0)).toBeChecked();
+	await expect(group.getByRole("radio").nth(5)).toHaveAccessibleName(
+		"Set 6: clubs Green, diamonds Orange, hearts Red, spades Black",
+	);
+	await group.getByRole("radio").nth(5).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-suit-colors",
+		"green-orange",
+	);
+	await page.reload();
+	dialog = await openSettings(page);
+	await expect(
+		dialog
+			.getByRole("group", { name: "Suit colours" })
+			.getByRole("radio")
+			.nth(5),
+	).toBeChecked();
+	await dialog
+		.getByRole("group", { name: "Suit colours" })
+		.getByRole("radio")
+		.nth(1)
+		.check();
+	await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-suit-colors",
+		"green-orange",
+	);
 });
 
 test("suit and rank size offers all six labels, applies on Save and survives reload", async ({

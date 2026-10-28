@@ -10,7 +10,9 @@ import {
 	SCHEMES,
 	type Scheme,
 	type Settings,
+	SUIT_COLOR_SCHEMES,
 	SUIT_FONT_SIZES,
+	type SuitColorScheme,
 	THEMES,
 	type Theme,
 	writeSettings,
@@ -38,6 +40,22 @@ const THEME_LABELS: Readonly<Record<Theme, string>> = {
 	selenized: "Selenized",
 	gruvbox: "Gruvbox",
 };
+
+/* Clubs, diamonds, hearts, spades: text descriptions for the radio buttons. */
+const SUIT_COLOR_NAMES = {
+	standard: ["Black", "Red", "Red", "Black"],
+	"green-blue": ["Green", "Blue", "Red", "Black"],
+	"black-yellow": ["Black", "Yellow", "Red", "Green"],
+	"purple-orange": ["Purple", "Orange", "Red", "Black"],
+	"blue-yellow": ["Blue", "Yellow", "Red", "Black"],
+	"green-orange": ["Green", "Orange", "Red", "Black"],
+	"green-yellow-blue": ["Green", "Yellow", "Red", "Blue"],
+	"pink-orange": ["Pink", "Orange", "Red", "Black"],
+	"pink-yellow-cyan": ["Pink", "Yellow", "Orange", "Cyan"],
+} as const satisfies Record<
+	SuitColorScheme,
+	readonly [string, string, string, string]
+>;
 
 const FLAG_LABELS = {
 	bidTurnFrame: "Frame the player whose turn it is to bid",
@@ -171,6 +189,59 @@ export function settingsDialog(
 		{ S: "S", M: "M", L: "L", XL: "XL", XXL: "XXL", XXXL: "XXXL" },
 		false,
 	);
+	const suitColorInputs = SUIT_COLOR_SCHEMES.map((choice, index) => {
+		const names = SUIT_COLOR_NAMES[choice];
+		const input = el("input", {
+			attrs: {
+				type: "radio",
+				name: "settings-suit-colors",
+				value: choice,
+				"aria-label": t(
+					"Set {number}: clubs {clubs}, diamonds {diamonds}, hearts {hearts}, spades {spades}",
+					{
+						number: index + 1,
+						clubs: t(names[0]),
+						diamonds: t(names[1]),
+						hearts: t(names[2]),
+						spades: t(names[3]),
+					},
+				),
+			},
+		});
+		const marks = el(
+			"span",
+			{
+				className: "suit-color-preview",
+				attrs: { "data-suit-colors": choice },
+			},
+			...(
+				[
+					["C", "♣"],
+					["D", "♦"],
+					["H", "♥"],
+					["S", "♠"],
+				] as const
+			).map(([suit, symbol]) =>
+				el("span", { className: `strain-${suit}` }, symbol),
+			),
+		);
+		return {
+			input,
+			label: el(
+				"label",
+				{},
+				input,
+				` ${t("Set {number}", { number: index + 1 })} `,
+				marks,
+			),
+		};
+	});
+	const suitColors = el(
+		"fieldset",
+		{},
+		el("legend", {}, t("Suit colours")),
+		...suitColorInputs.map(({ label }) => label),
+	);
 	const flags = Object.fromEntries(
 		Object.keys(FLAG_LABELS).map((field) => [
 			field,
@@ -215,6 +286,7 @@ export function settingsDialog(
 		scheme.element,
 		theme.element,
 		suitFontSize.element,
+		suitColors,
 		el(
 			"fieldset",
 			{},
@@ -295,6 +367,12 @@ export function settingsDialog(
 			theme: theme.value(),
 			scheme: scheme.value(),
 			suitFontSize: suitFontSize.value(),
+			suitColors:
+				SUIT_COLOR_SCHEMES.find(
+					(choice) =>
+						suitColorInputs.find(({ input }) => input.value === choice)?.input
+							.checked,
+				) ?? "standard",
 			bidTurnFrame: flags.bidTurnFrame.checked,
 			playTurnFrame: flags.playTurnFrame.checked,
 			bidTurnText: flags.bidTurnText.checked,
@@ -320,6 +398,8 @@ export function settingsDialog(
 		);
 		element.ownerDocument.documentElement.dataset.suitFontSize =
 			settings.suitFontSize;
+		element.ownerDocument.documentElement.dataset.suitColors =
+			settings.suitColors;
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
@@ -345,6 +425,8 @@ export function settingsDialog(
 			scheme.set(settings.scheme);
 			theme.set(settings.theme);
 			suitFontSize.set(settings.suitFontSize);
+			for (const { input } of suitColorInputs)
+				input.checked = input.value === settings.suitColors;
 			for (const field of Object.keys(
 				FLAG_LABELS,
 			) as (keyof typeof FLAG_LABELS)[])

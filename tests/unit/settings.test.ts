@@ -4,6 +4,7 @@ import { discardLegacyBotSettings } from "../../src/ui/legacy-bot-settings";
 import {
 	DEFAULT_SETTINGS,
 	readSettings,
+	SUIT_COLOR_SCHEMES,
 	SUIT_FONT_SIZES,
 	writeSettings,
 } from "../../src/ui/settings";
@@ -43,6 +44,7 @@ describe("player settings", () => {
 			theme: "selenized",
 			scheme: "auto",
 			suitFontSize: "M",
+			suitColors: "standard",
 			bidTurnFrame: true,
 			playTurnFrame: true,
 			bidTurnText: true,
@@ -69,6 +71,7 @@ describe("player settings", () => {
 			theme: "solarized",
 			scheme: "dark",
 			suitFontSize: "XL",
+			suitColors: "green-orange",
 			bidTurnFrame: false,
 			playTurnFrame: true,
 			bidTurnText: false,
@@ -92,6 +95,7 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.theme-style", "<b>solarized</b>");
 		storage.setItem("opentrick.settings.scheme", "auto ");
 		storage.setItem("opentrick.settings.suit-font-size", "200%; color: red");
+		storage.setItem("opentrick.settings.suit-colors", "invalid");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
 		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
 	});
@@ -105,6 +109,20 @@ describe("player settings", () => {
 			expect(readSettings(storage).suitFontSize).toBe(suitFontSize);
 		},
 	);
+
+	it("persists each suit colour scheme and rejects unknown choices", () => {
+		const storage = memoryStorage();
+		for (const suitColors of SUIT_COLOR_SCHEMES) {
+			writeSettings(storage, { ...DEFAULT_SETTINGS, suitColors });
+			expect(readSettings(storage).suitColors).toBe(suitColors);
+		}
+		expect(() =>
+			writeSettings(storage, {
+				...DEFAULT_SETTINGS,
+				suitColors: "invalid" as never,
+			}),
+		).toThrow("unknown suit colour scheme");
+	});
 
 	it("ignores the earlier flat theme, and removes it on the next save", () => {
 		const storage = memoryStorage();

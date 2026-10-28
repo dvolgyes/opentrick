@@ -1,4 +1,5 @@
 @import "./themes.css";
+@import "./suit-colors.css";
 
 /* One scale for suit and rank notation; M preserves each display's original font size. */
 :root {
@@ -721,17 +722,8 @@ main:has(> .room) {
 	font-weight: 600;
 }
 
-.scoring .strain-H,
-.scoring .strain-D {
-	color: var(--red-suit);
-}
-
 .scoring .strain-NT {
 	color: var(--call-green);
-}
-
-.scoring-inline-contract :is(.strain-S, .strain-C) {
-	color: var(--sheet-fg);
 }
 
 .scoring-result {
@@ -1192,11 +1184,6 @@ main:has(> .room) {
 	cursor: default;
 }
 
-.card[data-suit="H"] .face,
-.card[data-suit="D"] .face {
-	color: var(--red-suit);
-}
-
 .hand .card:enabled .face {
 	border-color: var(--accent);
 	box-shadow: inset 0 0 0 1px var(--accent);
@@ -1625,11 +1612,6 @@ dialog {
 	list-style: none;
 }
 
-.points-lines .strain-H,
-.points-lines .strain-D {
-	color: var(--red-suit);
-}
-
 /* The guide text scrolls; the Close button stays below it, inside the screen. */
 .guide-dialog {
 	box-sizing: border-box;
@@ -1679,8 +1661,6 @@ dialog {
 	white-space: nowrap;
 }
 
-.guide-bid.strain-H,
-.guide-bid.strain-D,
 .guide-bid.call-redouble {
 	color: var(--red-suit);
 }
@@ -1861,16 +1841,6 @@ dialog {
 	line-height: 1;
 }
 
-.bridge-table .auction .bid-mark.strain-S,
-.bridge-table .auction .bid-mark.strain-C {
-	color: var(--sheet-fg);
-}
-
-.auction .bid-mark.strain-H,
-.auction .bid-mark.strain-D {
-	color: var(--red-suit);
-}
-
 .auction .bid-mark.strain-NT {
 	color: var(--bid-nt);
 }
@@ -1943,11 +1913,6 @@ dialog {
 .rank-corner {
 	position: absolute;
 	font-size: calc(var(--rank-size) * var(--suit-font-scale));
-}
-
-.played[data-suit="H"] .rank-corner,
-.played[data-suit="D"] .rank-corner {
-	color: var(--red-suit);
 }
 
 .rank-corner.top-left {
@@ -2045,11 +2010,6 @@ dialog {
 	.played.pos-bottom
 	.played-center-suit {
 	transform: translate(-50%, -50%) rotate(180deg) scaleY(-1);
-}
-
-.played[data-suit="H"],
-.played[data-suit="D"] {
-	color: var(--red-suit);
 }
 
 .played.pos-top {
@@ -2450,11 +2410,6 @@ button.call-join[data-in-call="true"] {
 .claim-counts button[aria-pressed="true"] {
 	border-color: var(--gold);
 	box-shadow: inset 0 0 0 2px var(--gold);
-}
-
-.bid-calls .strain-H,
-.bid-calls .strain-D {
-	color: var(--red-suit);
 }
 
 .bid-calls .strain-NT {
@@ -2947,11 +2902,6 @@ button.call-join[data-in-call="true"] {
 	font-size: 2rem;
 	font-weight: 700;
 	line-height: 1.2;
-}
-
-.contract-head .strain.red,
-.tricks-counts .strain.red {
-	color: var(--red-suit);
 }
 
 .contract-head .by,
@@ -3547,10 +3497,6 @@ main:has(> .room[data-form="compact"]) {
 
 .mobile-round-status[open] > summary::before {
 	content: "▾";
-}
-
-.mobile-round-number .strain.red {
-	color: var(--red-suit);
 }
 
 .mobile-round-status .scores {
@@ -4454,4 +4400,33 @@ body:has(
 /* The table shows the build date and the language picker at the top of its sidebar, in the room canvas. */
 body:has(main[data-screen="table"]) > .language-control {
 	display: none;
+}
+
+/* A palette applies equally to cards, calls, contracts and suit notation. */
+:is(.strain-C, .card[data-suit="C"] .face, .played[data-suit="C"]) {
+	color: var(--suit-C);
+}
+
+:is(.strain-D, .card[data-suit="D"] .face, .played[data-suit="D"]) {
+	color: var(--suit-D);
+}
+
+:is(.strain-H, .card[data-suit="H"] .face, .played[data-suit="H"]) {
+	color: var(--suit-H);
+}
+
+:is(.strain-S, .card[data-suit="S"] .face, .played[data-suit="S"]) {
+	color: var(--suit-S);
+}
+
+/* White suits need a dark card surface when the dark appearance is selected. */
+:root[data-scheme="dark"] :is(.card[data-suit] .face, .played[data-suit]) {
+	background: var(--sheet-bg);
+}
+
+.suit-color-preview {
+	display: inline-flex;
+	gap: 0.45em;
+	font-size: 1.3em;
+	font-weight: 700;
 }

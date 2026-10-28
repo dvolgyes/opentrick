@@ -4587,6 +4587,246 @@ describe("bidding guide", () => {
 	);
 });
 
+describe("suit colour schemes", () => {
+	const suits = [
+		{ suit: "C", symbol: "♣", seat: "N", position: "top" },
+		{ suit: "D", symbol: "♦", seat: "E", position: "left" },
+		{ suit: "H", symbol: "♥", seat: "S", position: "bottom" },
+		{ suit: "S", symbol: "♠", seat: "W", position: "right" },
+	] as const;
+	const colors = {
+		black: "rgb(29, 29, 27)",
+		white: "rgb(255, 255, 255)",
+		red: "rgb(192, 38, 45)",
+		green: "rgb(0, 189, 60)",
+		blue: "rgb(22, 137, 239)",
+		purple: "rgb(132, 71, 237)",
+		yellow: "rgb(219, 163, 0)",
+		orange: "rgb(237, 120, 0)",
+		pink: "rgb(224, 0, 201)",
+		cyan: "rgb(0, 191, 197)",
+	} as const;
+	const palettes = {
+		standard: ["black", "red", "red", "black"],
+		"green-blue": ["green", "blue", "red", "black"],
+		"black-yellow": ["black", "yellow", "red", "green"],
+		"purple-orange": ["purple", "orange", "red", "black"],
+		"blue-yellow": ["blue", "yellow", "red", "black"],
+		"green-orange": ["green", "orange", "red", "black"],
+		"green-yellow-blue": ["green", "yellow", "red", "blue"],
+		"pink-orange": ["pink", "orange", "red", "black"],
+		"pink-yellow-cyan": ["pink", "yellow", "orange", "cyan"],
+	} as const;
+
+	it.each(["desktop", "compact"] as const)(
+		"colours real cards, played cards, calls and guide notation in %s",
+		async (layout) => {
+			const base = playView();
+			if (!base.auction) throw new Error("Auction is missing");
+			const hand = {
+				visible: true as const,
+				suits: suits.map(({ suit, symbol }) => ({
+					suit,
+					symbol,
+					trump: false,
+					cards: [card(`${suit}A`)],
+				})),
+			};
+			const view: TableView = {
+				...base,
+				phase: "auction",
+				seats: base.seats.map((player) =>
+					player.position === "bottom" ? { ...player, hand } : player,
+				),
+				auction: {
+					...base.auction,
+					rows: [["1♣", "1♦", "1♥", "1♠"]],
+					calls: ["1C", "1D", "1H", "1S"],
+				},
+				bids: suits.map(({ suit, symbol }) => ({
+					call: `1${suit}` as Call,
+					text: `1${symbol}`,
+				})),
+				trick: {
+					cards: suits.map(({ suit, symbol, seat, position }) => ({
+						seat,
+						position,
+						card: `${suit}A` as Card,
+						text: `${symbol}A`,
+						rank: "A",
+						symbol,
+					})),
+					finished: false,
+				},
+			};
+			const { root, section } = renderView(view, layout);
+			document.documentElement.dataset.theme = "normal";
+			root.querySelector<HTMLButtonElement>(".guide-open")?.click();
+			await expect
+				.poll(() => root.querySelector(".guide-bid.strain-C"))
+				.toBeTruthy();
+			const notation = document.createElement("div");
+			notation.className = "guide-content";
+			notation.append(
+				...renderGuide(parseGuide("A♣ A♦ A♥ A♠"), translator("en")),
+			);
+			root.append(notation);
+			try {
+				for (const scheme of ["light", "dark"] as const) {
+					document.documentElement.dataset.scheme = scheme;
+					for (const [palette, names] of Object.entries(palettes)) {
+						document.documentElement.dataset.suitColors = palette;
+						for (const [index, { suit }] of suits.entries()) {
+							const name = names[index];
+							if (!name) throw new Error("Missing expected colour");
+							const expected =
+								colors[name === "black" && scheme === "dark" ? "white" : name];
+							for (const selector of [
+								`.card[data-suit="${suit}"] .face`,
+								`.bid-calls .strain-${suit}`,
+								`.auction .bid-mark.strain-${suit}`,
+								`.guide-content .card-notation.strain-${suit}`,
+								`.guide-content .guide-bid.strain-${suit}`,
+							]) {
+								const element = root.querySelector<HTMLElement>(selector);
+								if (!element) throw new Error(`Missing ${selector}`);
+								expect(
+									getComputedStyle(element).color,
+									`${palette} ${scheme} ${selector}`,
+								).toBe(expected);
+							}
+						}
+					}
+				}
+				section.render({ ...view, phase: "play" });
+				for (const scheme of ["light", "dark"] as const) {
+					document.documentElement.dataset.scheme = scheme;
+					for (const [palette, names] of Object.entries(palettes)) {
+						document.documentElement.dataset.suitColors = palette;
+						for (const [index, { suit }] of suits.entries()) {
+							const name = names[index];
+							if (!name) throw new Error("Missing expected colour");
+							const expected =
+								colors[name === "black" && scheme === "dark" ? "white" : name];
+							const played = root.querySelector<HTMLElement>(
+								`.played[data-suit="${suit}"]`,
+							);
+							if (!played) throw new Error(`Missing played ${suit}`);
+							expect(getComputedStyle(played).color).toBe(expected);
+							expect(
+								getComputedStyle(
+									played.querySelector(".rank-corner") as Element,
+								).color,
+							).toBe(expected);
+							if (scheme === "dark" && name === "black") {
+								expect(getComputedStyle(played).backgroundColor).not.toBe(
+									expected,
+								);
+								const face = root.querySelector<HTMLElement>(
+									`.card[data-suit="${suit}"] .face`,
+								);
+								if (!face) throw new Error(`Missing ${suit} face`);
+								expect(getComputedStyle(face).backgroundColor).not.toBe(
+									expected,
+								);
+							}
+						}
+					}
+				}
+			} finally {
+				delete document.documentElement.dataset.suitColors;
+				delete document.documentElement.dataset.scheme;
+				delete document.documentElement.dataset.theme;
+			}
+		},
+	);
+
+	it.each(["desktop", "compact"] as const)(
+		"colours contract and result suits in %s",
+		(layout) => {
+			const base = playView();
+			if (!base.header) throw new Error("Contract header is missing");
+			try {
+				document.documentElement.dataset.theme = "normal";
+				for (const [index, { suit, symbol }] of suits.entries()) {
+					const { root, section } = renderView(
+						{ ...base, header: { ...base.header, strain: suit, symbol } },
+						layout,
+					);
+					const contracts = [
+						...document.querySelectorAll<HTMLElement>(`.bid .strain-${suit}`),
+					];
+					if (!contracts.length) throw new Error(`Missing ${suit} contract`);
+					for (const scheme of ["light", "dark"] as const) {
+						document.documentElement.dataset.scheme = scheme;
+						for (const [palette, names] of Object.entries(palettes)) {
+							document.documentElement.dataset.suitColors = palette;
+							const name = names[index];
+							if (!name) throw new Error("Missing expected colour");
+							const expected =
+								colors[name === "black" && scheme === "dark" ? "white" : name];
+							for (const contract of contracts)
+								expect(getComputedStyle(contract).color).toBe(expected);
+						}
+					}
+					section.render({
+						...base,
+						phase: "complete",
+						scoring: {
+							contract: { level: 4, strain: suit, doubling: "" },
+							compactOutcome: "WON",
+							compactDetail: `Made: 4${symbol}`,
+							countdown: 1,
+						},
+					});
+					const result = root.querySelector<HTMLElement>(
+						`.scoring .strain-${suit}`,
+					);
+					if (!result) throw new Error(`Missing ${suit} result`);
+					for (const [palette, names] of Object.entries(palettes)) {
+						document.documentElement.dataset.suitColors = palette;
+						const name = names[index];
+						if (!name) throw new Error("Missing expected colour");
+						expect(getComputedStyle(result).color).toBe(
+							colors[name === "black" ? "white" : name],
+						);
+					}
+				}
+			} finally {
+				delete document.documentElement.dataset.suitColors;
+				delete document.documentElement.dataset.scheme;
+				delete document.documentElement.dataset.theme;
+			}
+		},
+	);
+
+	it.each(["normal", "solarized", "selenized", "gruvbox"] as const)(
+		"keeps white suits visible on dark %s card faces",
+		(theme) => {
+			const { root } = renderView(playView(), "desktop");
+			try {
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.dataset.scheme = "dark";
+				document.documentElement.dataset.suitColors = "standard";
+				for (const selector of [
+					'.card[data-suit="S"] .face',
+					'.played[data-suit="S"]',
+				]) {
+					const card = root.querySelector<HTMLElement>(selector);
+					if (!card) throw new Error(`Missing ${selector}`);
+					const style = getComputedStyle(card);
+					expect(style.color).toBe(colors.white);
+					expect(style.backgroundColor).not.toBe(colors.white);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitColors;
+				delete document.documentElement.dataset.scheme;
+				delete document.documentElement.dataset.theme;
+			}
+		},
+	);
+});
+
 describe("call meanings in the auction", () => {
 	it("keeps oversized phone history inside the page and scrolls to all four bids", async () => {
 		await page.viewport(320, 568);

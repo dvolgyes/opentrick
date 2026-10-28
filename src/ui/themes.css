@@ -10,6 +10,16 @@
  * those surfaces.
  */
 :root {
+	/* Suit palette inks shared by every theme and suit-colour scheme. */
+	--suit-ink-black: #1d1d1b;
+	--suit-ink-red: #c0262d;
+	--suit-ink-green: #00bd3c;
+	--suit-ink-blue: #1689ef;
+	--suit-ink-purple: #8447ed;
+	--suit-ink-yellow: #dba300;
+	--suit-ink-orange: #ed7800;
+	--suit-ink-pink: #e000c9;
+	--suit-ink-cyan: #00bfc5;
 	--bg: #ffffff;
 	--fg: #1d1d1b;
 	--muted: #66665f;
@@ -104,6 +114,7 @@
 }
 
 :root[data-scheme="dark"] {
+	--suit-ink-black: #ffffff;
 	--bid-nt: #a7e845;
 }
 
