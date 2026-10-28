@@ -7,6 +7,7 @@ import { languageSelect, saveLanguage } from "./language-control";
 import { BIDDER_NAMES } from "./model";
 import {
 	BAIZE_STRENGTHS,
+	DEFAULT_SETTINGS,
 	PAPER_STRENGTHS,
 	readSettings,
 	SCHEMES,
@@ -467,7 +468,7 @@ export function settingsDialog(
 					(choice) =>
 						suitColorInputs.find(({ input }) => input.value === choice)?.input
 							.checked,
-				) ?? "standard",
+				) ?? DEFAULT_SETTINGS.suitColors,
 			bidTurnFrame: flags.bidTurnFrame.checked,
 			playTurnFrame: flags.playTurnFrame.checked,
 			bidTurnText: flags.bidTurnText.checked,

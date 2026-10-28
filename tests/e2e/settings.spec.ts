@@ -58,6 +58,20 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Automatic", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Selenized", { exact: true })).toBeChecked();
+	await expect(dialog.getByLabel("XXL", { exact: true })).toBeChecked();
+	await expect(
+		dialog
+			.getByRole("group", { name: "Suit colours" })
+			.getByRole("radio")
+			.nth(5),
+	).toBeChecked();
+	for (const group of ["Board texture", "Card texture"])
+		await expect(
+			dialog.getByRole("group", { name: group }).getByRole("slider"),
+		).toHaveAttribute("aria-valuetext", "Medium");
+	await expect(
+		dialog.getByRole("slider", { name: "Shadow intensity and distance" }),
+	).toHaveValue("4");
 	// The text takes the --fg token of the palette in use, so the check reads that token rather than a fixed colour.
 	// Polls, because the page applies a change of the system preference a moment after emulateMedia returns.
 	const showsInk = () =>
@@ -376,11 +390,22 @@ test("suit colours offer nine previews, apply on Save, and survive reload", asyn
 	let dialog = await openSettings(page);
 	const group = dialog.getByRole("group", { name: "Suit colours" });
 	await expect(group.getByRole("radio")).toHaveCount(9);
-	await expect(group.getByRole("radio").nth(0)).toBeChecked();
+	await expect(group.getByRole("radio").nth(5)).toBeChecked();
 	await expect(group.getByRole("radio").nth(5)).toHaveAccessibleName(
 		"Set 6: clubs Green, diamonds Orange, hearts Red, spades Black",
 	);
-	await group.getByRole("radio").nth(5).check();
+	await group.getByRole("radio").nth(0).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-suit-colors",
+		"standard",
+	);
+	dialog = await openSettings(page);
+	await dialog
+		.getByRole("group", { name: "Suit colours" })
+		.getByRole("radio")
+		.nth(5)
+		.check();
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(page.locator("html")).toHaveAttribute(
 		"data-suit-colors",
@@ -418,7 +443,7 @@ test("suit and rank size offers all six labels, applies on Save and survives rel
 	await expect(group.getByRole("radio")).toHaveCount(6);
 	for (const label of ["S", "M", "L", "XL", "XXL", "XXXL"])
 		await expect(group.getByLabel(label, { exact: true })).toBeVisible();
-	await expect(group.getByLabel("M", { exact: true })).toBeChecked();
+	await expect(group.getByLabel("XXL", { exact: true })).toBeChecked();
 	await group.getByLabel("XXXL", { exact: true }).check();
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(page.locator("html")).toHaveAttribute(

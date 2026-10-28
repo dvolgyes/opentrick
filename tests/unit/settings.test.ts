@@ -35,7 +35,7 @@ describe("player settings", () => {
 			playTimeMs: 5000,
 		});
 	});
-	it("uses HCP, the normal theme in the automatic scheme, every turn and network display, the voice box, no frequent relay checks, the phone layout for a phone in landscape and the mobile view for a portrait window when nothing is stored", () => {
+	it("uses the default settings when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
 			bidder: "sl",
 			playTimeMs: 5000,
@@ -46,8 +46,8 @@ describe("player settings", () => {
 			cardPoints: true,
 			theme: "selenized",
 			scheme: "auto",
-			suitFontSize: "M",
-			suitColors: "standard",
+			suitFontSize: "XXL",
+			suitColors: "green-orange",
 			baizeStrength: "medium",
 			paperStrength: "medium",
 			shadowStrength: "4",
@@ -62,6 +62,21 @@ describe("player settings", () => {
 			portraitMobile: true,
 		});
 		expect(readSettings(undefined)).toEqual(DEFAULT_SETTINGS);
+	});
+
+	it("keeps saved choices while using defaults for other settings", () => {
+		const storage = memoryStorage();
+		storage.setItem("opentrick.settings.suit-font-size", "S");
+		storage.setItem("opentrick.settings.suit-colors", "standard");
+		expect(readSettings(storage)).toMatchObject({
+			suitFontSize: "S",
+			suitColors: "standard",
+			theme: "selenized",
+			scheme: "auto",
+			baizeStrength: "medium",
+			paperStrength: "medium",
+			shadowStrength: "4",
+		});
 	});
 
 	it("reads back what it stores, under the opentrick prefix", () => {
