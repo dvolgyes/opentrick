@@ -1291,7 +1291,7 @@ main:has(> .room) {
 	}
 
 	:is(.mobile-board-left, .mobile-board-right) .hand-stack {
-		width: 100%;
+		max-width: 100%;
 		min-width: 0;
 	}
 
@@ -4023,11 +4023,21 @@ main:has(> .room[data-form="compact"]) {
 	);
 }
 
-/* Keep a trump label with its row while sharing the remaining height between suit rows. */
-:is(.mobile-board-left, .mobile-board-right)
-	.hand-stack
-	> :is(.suit-row:not(.trump), .trump-label):not(:first-child) {
-	margin-top: auto;
+/*
+ * A visible side hand is only as large as its cards, so its turn frame stays around them. Each suit row shows its
+ * full cards when the column is tall enough; in a shorter column the rows shrink to their strips and overlap.
+ */
+:is(.mobile-board-left, .mobile-board-right) .hand.hand-stack {
+	flex: 0 1 auto;
+}
+
+:is(.mobile-board-left, .mobile-board-right) .hand-stack > .suit-row {
+	flex: 0 1 var(--card-h);
+}
+
+/* The rows and the trump label of a right-hand player start at the board edge, away from the trick. */
+.mobile-board-right .hand-stack > :is(.suit-row, .trump-label) {
+	align-self: flex-end;
 }
 
 :is(.mobile-board-left, .mobile-board-right) .hand-stack .suit-row .card {
@@ -4051,14 +4061,6 @@ main:has(> .room[data-form="compact"]) {
 	outline-offset: 3px;
 	border-radius: 0.4rem;
 	pointer-events: none;
-}
-
-/* The row after the trump row starts where the trump row ends, so the frame holds all of the trump row's shown part. */
-:is(.mobile-board-left, .mobile-board-right)
-	.hand-stack
-	> .suit-row.trump
-	+ .suit-row {
-	margin-top: 0;
 }
 
 :is(.mobile-board-left, .mobile-board-right) .hand-stack .trump-label {

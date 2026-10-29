@@ -904,7 +904,7 @@ describe("played card styles", () => {
 			}
 		},
 	);
-	it("keeps top and bottom hands at the board edges and spreads side suits into the added phone height", async () => {
+	it("keeps top and bottom hands at the board edges and shows whole side cards in the added phone height", async () => {
 		await page.viewport(390, 844);
 		document.documentElement.dataset.suitFontSize = "XXL";
 		try {
@@ -923,16 +923,22 @@ describe("played card styles", () => {
 				bottomGap:
 					board.getBoundingClientRect().bottom -
 					bottom.getBoundingClientRect().bottom,
-				spread:
-					(rows.at(-1)?.getBoundingClientRect().top ?? 0) -
-					(rows[0]?.getBoundingClientRect().top ?? 0),
+				// With room in the column, no suit row covers the cards of the row above it.
+				covered: rows
+					.slice(1)
+					.some(
+						(row, index) =>
+							row.getBoundingClientRect().top + 0.5 <
+							(rows[index]?.querySelector(".face")?.getBoundingClientRect()
+								.bottom ?? 0),
+					),
 			});
 			const expanded = geometry();
 			board.style.height = "auto";
 			const natural = geometry();
 			expect(expanded.topGap).toBeCloseTo(natural.topGap, 0);
 			expect(expanded.bottomGap).toBeCloseTo(natural.bottomGap, 0);
-			expect(expanded.spread).toBeGreaterThan(natural.spread);
+			expect(expanded.covered).toBe(false);
 		} finally {
 			delete document.documentElement.dataset.suitFontSize;
 			await page.viewport(414, 896);
@@ -1303,6 +1309,101 @@ describe("played card styles", () => {
 					".mobile-auction-hand .card .face",
 				])
 					expect(Math.abs(middle(selector) - line), selector).toBeLessThan(2);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
+	it.each(
+		(["left", "right"] as const).flatMap((position) =>
+			(["M", "XXL"] as const).flatMap((size) =>
+				(
+					[
+						["four short suits", ["S98", "H8", "D6", "CAT9"]],
+						["one suit", ["HQT"]],
+					] as const
+				).map(([name, rows]) => [position, size, name, rows] as const),
+			),
+		),
+	)(
+		"keeps the turn frame of a visible %s phone hand at %s with %s around its cards at the board edge",
+		async (position, size, _name, rows) => {
+			await page.viewport(593, 630);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const base = playView();
+				const symbols = { S: "♠", H: "♥", D: "♦", C: "♣" } as const;
+				const hand = {
+					visible: true as const,
+					suits: rows.map((row, index) => {
+						const suit = row[0] as keyof typeof symbols;
+						return {
+							suit,
+							symbol: symbols[suit],
+							cards: [...row.slice(1)].map((rank) => ({
+								...card(`${suit}${rank}` as Card),
+								playable: false,
+							})),
+							trump: index === 0 && rows.length > 1,
+						};
+					}),
+				};
+				const { root } = renderMobile({
+					...base,
+					seats: base.seats.map((player) =>
+						player.position === position
+							? { ...player, hand, turn: true }
+							: player.position === "left" || player.position === "right"
+								? {
+										...player,
+										hand: { visible: false as const, count: 13 },
+										turn: false,
+									}
+								: { ...player, turn: false },
+					),
+				});
+				const column = root.querySelector<HTMLElement>(
+					`.mobile-board-${position}`,
+				);
+				const frame = column?.querySelector<HTMLElement>(
+					'.mobile-board-name[data-turn-frame="true"] + .hand-stack',
+				);
+				if (!column || !frame) throw new Error("missing framed side hand");
+				// The label's text, not its block, is what the frame must hold.
+				const label = frame.querySelector(".trump-label");
+				const text = document.createRange();
+				if (label) text.selectNodeContents(label);
+				const parts = [
+					...[...frame.querySelectorAll<HTMLElement>(".face")].map((face) =>
+						face.getBoundingClientRect(),
+					),
+					...(label ? [text.getBoundingClientRect()] : []),
+				];
+				const box = frame.getBoundingClientRect();
+				// The frame is the hand's box: it ends where the cards and the trump label end.
+				expect(
+					Math.abs(box.left - Math.min(...parts.map((part) => part.left))),
+				).toBeLessThanOrEqual(1);
+				expect(
+					Math.abs(box.right - Math.max(...parts.map((part) => part.right))),
+				).toBeLessThanOrEqual(1);
+				expect(
+					Math.abs(box.top - Math.min(...parts.map((part) => part.top))),
+				).toBeLessThanOrEqual(1);
+				expect(
+					Math.abs(box.bottom - Math.max(...parts.map((part) => part.bottom))),
+				).toBeLessThanOrEqual(1);
+				// Every suit row starts at the board edge of its column, away from the trick.
+				const edge = column.getBoundingClientRect();
+				for (const row of frame.querySelectorAll<HTMLElement>(".suit-row")) {
+					const bounds = row.getBoundingClientRect();
+					expect(
+						position === "left"
+							? bounds.left - edge.left
+							: edge.right - bounds.right,
+					).toBeLessThanOrEqual(1);
+				}
 			} finally {
 				delete document.documentElement.dataset.suitFontSize;
 				await page.viewport(414, 896);
