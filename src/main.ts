@@ -50,6 +50,10 @@ document.documentElement.dataset.paperStrength =
 	readSettings(browser).paperStrength;
 document.documentElement.dataset.shadowStrength =
 	readSettings(browser).shadowStrength;
+document.documentElement.dataset.panelTexture = readSettings(browser)
+	.panelTexture
+	? "on"
+	: "off";
 
 const root = document.getElementById("app");
 if (!root) throw new Error("index.html must contain #app");

@@ -3451,6 +3451,16 @@ main[data-screen="table"][data-form="desktop"] {
 }
 
 /*
+ * The right panel lies on the canvas outside the felt, so the canvas carries its paper texture: in the light appearance
+ * only, while the Side panel texture setting is on. The 1024px tile repeats without a seam.
+ */
+:root[data-scheme="light"][data-panel-texture="on"]
+main[data-screen="table"][data-form="desktop"] {
+	background-image: url("./assets/panel-parchment.webp");
+	background-size: 1024px 1024px;
+}
+
+/*
  * Compact: the stage fills the dynamic viewport while a board is on the table. The far hands and the center
  * scroll inside their area; the own hand, the game controls and the icon row always stay on the screen.
  */

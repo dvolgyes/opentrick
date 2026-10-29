@@ -37,6 +37,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		"Theme",
 		"Board texture",
 		"Card texture",
+		"Side panel texture",
 		"Shadows",
 		"Suit and rank font size",
 		"Suit colours",
@@ -143,6 +144,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.card-points",
 		"opentrick.settings.landscape-desktop",
 		"opentrick.settings.network-quality",
+		"opentrick.settings.panel-texture",
 		"opentrick.settings.paper-strength",
 		"opentrick.settings.play-time-ms",
 		"opentrick.settings.play-turn-frame",
@@ -352,6 +354,80 @@ for (const [layout, viewport] of [
 		);
 	});
 }
+
+/** The spread of the brightness at the bottom of the right panel, below its controls: 0 on a plain colour. */
+async function panelGrain(page: Page): Promise<number> {
+	const box = await page.locator(".table-sidebar").boundingBox();
+	if (!box) throw new Error("the right panel is not shown");
+	const shot = await page.screenshot({
+		clip: {
+			x: box.x + 10,
+			y: box.y + box.height - 50,
+			width: box.width - 20,
+			height: 40,
+		},
+	});
+	return page.evaluate(async (data) => {
+		const image = new Image();
+		image.src = `data:image/png;base64,${data}`;
+		await image.decode();
+		const canvas = document.createElement("canvas");
+		canvas.width = image.naturalWidth;
+		canvas.height = image.naturalHeight;
+		const context = canvas.getContext("2d");
+		if (!context) throw new Error("canvas unavailable");
+		context.drawImage(image, 0, 0);
+		const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+		const light: number[] = [];
+		for (let index = 0; index < pixels.length; index += 4)
+			light.push(
+				0.2126 * (pixels[index] ?? 0) +
+					0.7152 * (pixels[index + 1] ?? 0) +
+					0.0722 * (pixels[index + 2] ?? 0),
+			);
+		const mean = light.reduce((sum, value) => sum + value, 0) / light.length;
+		return Math.sqrt(
+			light.reduce((sum, value) => sum + (value - mean) ** 2, 0) / light.length,
+		);
+	}, shot.toString("base64"));
+}
+
+test("the desktop right panel has the paper texture in the light appearance until the setting turns it off", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.addInitScript(() =>
+		localStorage.setItem("opentrick.settings.scheme", "light"),
+	);
+	await openTable(page);
+	// The tile loads after the page, so the checks wait for it.
+	await expect.poll(() => panelGrain(page)).toBeGreaterThan(1);
+
+	let dialog = await openSettings(page);
+	const texture = dialog.getByLabel("Paper texture in the light appearance");
+	await expect(texture).toBeChecked();
+	await texture.uncheck();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	await expect.poll(() => panelGrain(page)).toBeLessThan(0.5);
+
+	// The dark appearance keeps its plain panel, although the setting is on.
+	dialog = await openSettings(page);
+	await texture.check();
+	await dialog.getByLabel("Dark", { exact: true }).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	await expect.poll(() => panelGrain(page)).toBeLessThan(0.5);
+
+	await page.reload();
+	await expect(page.getByTestId("room-controls")).toBeVisible();
+	dialog = await openSettings(page);
+	await expect(texture).toBeChecked();
+	await dialog.getByLabel("Light", { exact: true }).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	await expect.poll(() => panelGrain(page)).toBeGreaterThan(1);
+});
 
 test("earlier middle texture choices keep the same appearance", async ({
 	page,

@@ -296,6 +296,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Board texture": "Tischtextur",
 		"Texture strength": "Texturstärke",
 		"Card texture": "Kartentextur",
+		"Side panel texture": "Textur der Seitenleiste",
+		"Paper texture in the light appearance":
+			"Papiertextur in der hellen Darstellung",
 		Shadows: "Schatten",
 		"Shadow intensity and distance": "Schattenstärke und Abstand",
 		Off: "Aus",
@@ -994,6 +997,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Board texture": "Asztal textúrája",
 		"Texture strength": "Textúra erőssége",
 		"Card texture": "Kártyák textúrája",
+		"Side panel texture": "Oldalsáv textúrája",
+		"Paper texture in the light appearance":
+			"Papírtextúra világos megjelenésnél",
 		Shadows: "Árnyékok",
 		"Shadow intensity and distance": "Árnyék erőssége és távolsága",
 		Off: "Kikapcsolva",
@@ -1628,6 +1634,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Board texture": "Bordtekstur",
 		"Texture strength": "Teksturens styrke",
 		"Card texture": "Korttekstur",
+		"Side panel texture": "Tekstur på sidepanelet",
+		"Paper texture in the light appearance": "Papirtekstur i lyst utseende",
 		Shadows: "Skygger",
 		"Shadow intensity and distance": "Skyggens styrke og avstand",
 		Off: "Av",

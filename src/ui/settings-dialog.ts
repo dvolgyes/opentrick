@@ -244,6 +244,18 @@ export function settingsDialog(
 			paperValue,
 		),
 	);
+	const panelTexture = el("input", { attrs: { type: "checkbox" } });
+	const panelTextureControl = el(
+		"fieldset",
+		{},
+		el("legend", {}, t("Side panel texture")),
+		el(
+			"label",
+			{},
+			panelTexture,
+			` ${t("Paper texture in the light appearance")}`,
+		),
+	);
 	const shadow = el("input", {
 		attrs: {
 			type: "range",
@@ -363,6 +375,7 @@ export function settingsDialog(
 		theme.element,
 		baizeControl,
 		paperControl,
+		panelTextureControl,
 		shadowControl,
 		suitFontSize.element,
 		suitColors,
@@ -462,6 +475,7 @@ export function settingsDialog(
 			baizeStrength: BAIZE_STRENGTHS[baize.valueAsNumber] ?? "medium",
 			paperStrength: PAPER_STRENGTHS[paper.valueAsNumber] ?? "medium",
 			shadowStrength: SHADOW_STRENGTHS[shadow.valueAsNumber] ?? "4",
+			panelTexture: panelTexture.checked,
 			suitFontSize: suitFontSize.value(),
 			suitColors:
 				SUIT_COLOR_SCHEMES.find(
@@ -502,6 +516,8 @@ export function settingsDialog(
 			settings.paperStrength;
 		element.ownerDocument.documentElement.dataset.shadowStrength =
 			settings.shadowStrength;
+		element.ownerDocument.documentElement.dataset.panelTexture =
+			settings.panelTexture ? "on" : "off";
 		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
@@ -532,6 +548,7 @@ export function settingsDialog(
 			updatePaperLabel();
 			shadow.value = String(SHADOW_STRENGTHS.indexOf(settings.shadowStrength));
 			updateShadowLabel();
+			panelTexture.checked = settings.panelTexture;
 			suitFontSize.set(settings.suitFontSize);
 			for (const { input } of suitColorInputs)
 				input.checked = input.value === settings.suitColors;

@@ -1758,6 +1758,22 @@ const rows: readonly TranslationRow[] = [
 		"Trama delle carte",
 		"Kaarttextuur",
 	],
+	[
+		"Side panel texture",
+		"Textura del panel lateral",
+		"Textura do painel lateral",
+		"Texture du panneau latéral",
+		"Trama del pannello laterale",
+		"Textuur van het zijpaneel",
+	],
+	[
+		"Paper texture in the light appearance",
+		"Textura de papel con la apariencia clara",
+		"Textura de papel na aparência clara",
+		"Texture papier en apparence claire",
+		"Trama di carta con l'aspetto chiaro",
+		"Papiertextuur bij de lichte weergave",
+	],
 	["Off", "Desactivada", "Desligada", "Désactivée", "Disattivata", "Uit"],
 	["Shadows", "Sombras", "Sombras", "Ombres", "Ombre", "Schaduwen"],
 	[

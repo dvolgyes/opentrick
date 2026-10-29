@@ -72,6 +72,8 @@ export interface Settings extends BotTiming {
 	readonly baizeStrength: BaizeStrength;
 	readonly paperStrength: PaperStrength;
 	readonly shadowStrength: ShadowStrength;
+	/** The paper texture of the desktop right panel, in the light appearance only. */
+	readonly panelTexture: boolean;
 	readonly bidTurnFrame: boolean;
 	readonly playTurnFrame: boolean;
 	readonly bidTurnText: boolean;
@@ -100,6 +102,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	baizeStrength: "medium",
 	paperStrength: "medium",
 	shadowStrength: "4",
+	panelTexture: true,
 	bidTurnFrame: true,
 	playTurnFrame: true,
 	bidTurnText: true,
@@ -127,6 +130,7 @@ const FLAGS = {
 	relayChecks: "relay-checks",
 	landscapeDesktop: "landscape-desktop",
 	portraitMobile: "portrait-mobile",
+	panelTexture: "panel-texture",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
 function readChoice<T extends string>(
