@@ -3261,8 +3261,12 @@ describe("board depth and frame colours", () => {
 				".seat-label .name, .seat-label .tag, .mobile-board-name",
 			),
 		];
+		// The host's switches are in the Host controls, outside the room (src/ui/room-view.ts).
+		document.body.append(section.hostPlayers);
 		const toggles = [
-			...root.querySelectorAll<HTMLElement>(".mobile-player-control button"),
+			...section.hostPlayers.querySelectorAll<HTMLElement>(
+				".mobile-player-control button",
+			),
 		];
 		expect(handFaces.length).toBeGreaterThan(0);
 		expect(labels.length).toBeGreaterThan(0);
@@ -5105,29 +5109,28 @@ describe("mobile folds", () => {
 		},
 	);
 
-	it("does not reserve a screen of empty space below the folded bot controls", () => {
+	it("moves the host's players and bot switches from below the phone board to the Host controls", () => {
 		const { root, section } = renderMobile(playView());
+		const players = ".mobile-auction-players";
+		// A guest keeps the list of connected players below the board.
+		expect(root.querySelector(`.mobile-auction > ${players}`)).not.toBeNull();
+		expect(section.hostPlayers.children).toHaveLength(0);
 		section.setBotControls(true, []);
-		const stage = root.closest<HTMLElement>(".stage");
-		const fold = root.querySelector<HTMLDetailsElement>(".mobile-bot-fold");
-		if (!stage || !fold)
-			throw new Error("missing mobile stage or bot controls");
-		expect(fold.open).toBe(false);
+		expect(root.querySelector(players)).toBeNull();
 		expect(
-			stage.getBoundingClientRect().bottom -
-				fold.getBoundingClientRect().bottom,
-		).toBeLessThan(24);
-		fold.open = true;
-		expect(shown(root, ".mobile-player-control button")).toBe(true);
+			section.hostPlayers.querySelector(`${players} .mobile-players-connected`)
+				?.textContent,
+		).toMatch(/^Connected: /);
 		expect(
-			stage.getBoundingClientRect().bottom -
-				fold.getBoundingClientRect().bottom,
-		).toBeLessThan(24);
-		fold.open = false;
-		expect(
-			stage.getBoundingClientRect().bottom -
-				fold.getBoundingClientRect().bottom,
-		).toBeLessThan(24);
+			section.hostPlayers.querySelectorAll(".mobile-player-control button"),
+		).toHaveLength(3);
+		// The desktop has the bot switches on the video tiles, so its Host controls have none.
+		section.setForm("desktop");
+		expect(section.hostPlayers.children).toHaveLength(0);
+		section.setForm("compact");
+		section.setBotControls(false, []);
+		expect(root.querySelector(`.mobile-auction > ${players}`)).not.toBeNull();
+		expect(section.hostPlayers.children).toHaveLength(0);
 	});
 
 	it("folds the bidding history in play, and a click opens and folds it", () => {
@@ -5155,23 +5158,28 @@ describe("mobile folds", () => {
 	});
 
 	it("folds the bot switches by default, and a click opens them", () => {
-		const { root, section } = renderMobile({
+		const { section } = renderMobile({
 			...playView(),
 			phase: "auction",
 		});
 		section.setBotControls(true, []);
+		// The room shows these in its Host controls (src/ui/room-view.ts).
+		const controls = section.hostPlayers;
+		document.body.append(controls);
 		const toggle = ".mobile-player-control button";
-		expect(root.querySelector(toggle)?.textContent).toBe("🤖 Switch to bot");
-		expect(shown(root, toggle)).toBe(false);
-		const title = root.querySelector<HTMLElement>(
+		expect(controls.querySelector(toggle)?.textContent).toBe(
+			"🤖 Switch to bot",
+		);
+		expect(shown(controls, toggle)).toBe(false);
+		const title = controls.querySelector<HTMLElement>(
 			".mobile-auction-players summary",
 		);
 		expect(title?.textContent).toBe("🤖 Optional automated players");
 		title?.click();
-		expect(shown(root, toggle)).toBe(true);
+		expect(shown(controls, toggle)).toBe(true);
 		section.render(playView());
 		section.setBotControls(true, ["E"]);
-		expect(shown(root, toggle)).toBe(true);
+		expect(shown(controls, toggle)).toBe(true);
 	});
 });
 

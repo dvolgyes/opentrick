@@ -981,6 +981,7 @@ export function showRoom(
 			),
 		),
 		debugStatus,
+		table.hostPlayers,
 		quality.element,
 		communityManagement,
 		el(

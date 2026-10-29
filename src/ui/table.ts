@@ -76,6 +76,11 @@ export interface TableSection {
 	readonly autoplayControl: HTMLElement;
 	/** The status of a guest's bot request, placed below the room controls. */
 	readonly autoplayStatus: HTMLElement;
+	/**
+	 * The room places this in its Host controls. On an upright phone the host's list of connected players and bot
+	 * switches moves here, so the board has the room.
+	 */
+	readonly hostPlayers: HTMLElement;
 	/** The score sheet. The room page places it after the table, so the table can fill the screen. */
 	/** The right column: bidding history, Tricks, and the previous-game statistics. */
 	readonly sidebar: HTMLElement;
@@ -904,6 +909,7 @@ export function tableSection(
 		connectedPlayers,
 		mobileBotFold,
 	);
+	const hostPlayers = el("div", { className: "host-players" });
 	const mobileAuction = el(
 		"section",
 		{
@@ -2421,6 +2427,12 @@ export function tableSection(
 
 	function renderMobilePlayers(view: TableView): void {
 		const own = view.seats.find((player) => player.position === "bottom")?.seat;
+		// On an upright phone the host finds these in the Host controls, so the board has the room; a guest keeps the
+		// list of connected players below the board. A phone held sideways shows them at the top of the sidebar.
+		if (!sideways) {
+			const home = compact && botControlHost ? hostPlayers : mobileAuction;
+			if (mobilePlayers.parentElement !== home) home.append(mobilePlayers);
+		}
 		mobileBotFold.hidden = !botControlHost;
 		const others = view.seats.filter(
 			(player) =>
@@ -2727,11 +2739,7 @@ export function tableSection(
 			placeChildren(sidewaysControls, audioGroup, mobilePlayers);
 			if (sidebar.firstElementChild !== sidewaysControls)
 				sidebar.prepend(sidewaysControls);
-		} else {
-			sidewaysControls.remove();
-			if (mobilePlayers.parentElement !== mobileAuction)
-				mobileAuction.append(mobilePlayers);
-		}
+		} else sidewaysControls.remove();
 		renderMobilePlayers(view);
 		// A compact screen shows these below its board, or below the felt outside the auction and the play.
 		const below = compact ? (mobileGameActive ? mobileBoard : felt) : undefined;
@@ -2924,6 +2932,7 @@ export function tableSection(
 		element,
 		autoplayControl,
 		autoplayStatus,
+		hostPlayers,
 		sidebar,
 		sidebarEnd,
 		render,

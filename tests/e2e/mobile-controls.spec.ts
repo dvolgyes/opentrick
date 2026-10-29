@@ -179,11 +179,6 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 			page.getByRole("button", { name: "Resume bots" }),
 		).toBeVisible();
 		await expectBotControlsInOneRow(page);
-		// The phone keeps the seat switches in a closed group below the board.
-		await page.getByText("Optional automated players").click();
-		await expect(
-			page.getByRole("button", { name: /Switch to player$/ }).first(),
-		).toBeVisible();
 		// During the auction the top bar holds the only Reload, New table and Share URL; Settings holds the key and the models.
 		for (const [name, count] of [
 			["Reload", 1],
@@ -206,7 +201,8 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 				.locator(".mobile-auction-topbar")
 				.getByRole("button", { name: "Reload", exact: true }),
 		).toBeVisible();
-		// Host controls opens a dialog with the host's Reload players and Reset (Debug is hidden for now); Close closes it.
+		// Host controls opens a dialog with the host's Reload players and Reset (Debug is hidden for now), and the seat
+		// switches in a closed group; Close closes it.
 		await page
 			.getByRole("button", { name: "Host controls", exact: true })
 			.click();
@@ -216,6 +212,10 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 				hostControls.getByRole("button", { name, exact: true }),
 				name,
 			).toBeInViewport();
+		await hostControls.getByText("Optional automated players").click();
+		await expect(
+			hostControls.getByRole("button", { name: /Switch to player$/ }).first(),
+		).toBeVisible();
 		await hostControls
 			.getByRole("button", { name: "Close", exact: true })
 			.click();

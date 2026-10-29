@@ -104,8 +104,13 @@ for (const layout of ["desktop", "compact"] as const) {
 				).toBeEnabled();
 				await expect(controls).toHaveAttribute("data-bots-only", "false");
 			} else {
-				await page.getByText("Optional automated players").click();
+				// On a phone the seat switches are in the Host controls.
 				await page
+					.getByRole("button", { name: "Host controls", exact: true })
+					.click();
+				const hostControls = page.getByTestId("host-controls-dialog");
+				await hostControls.getByText("Optional automated players").click();
+				await hostControls
 					.locator('.mobile-player-control[data-seat="N"] button')
 					.click();
 			}

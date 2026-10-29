@@ -1779,6 +1779,17 @@ dialog {
 	gap: 0.4rem;
 }
 
+/* On an upright phone the connected players and the bot switches are in the Host controls, at the dialog's text size. */
+.host-players .mobile-auction-players {
+	margin-top: 0.75rem;
+	font-size: inherit;
+}
+
+/* The switches keep the phone's flat look; the dialog sits outside the room's phone rules. */
+.host-players .mobile-player-control button {
+	box-shadow: none;
+}
+
 .host-controls-close {
 	display: flex;
 	justify-content: flex-end;
