@@ -4380,6 +4380,115 @@ describe("compact play controls", () => {
 		},
 	);
 
+	it("draws a desktop side hand's trump label and frame above the cards of the row before them", async () => {
+		await page.viewport(1400, 900);
+		try {
+			const base = sideHandView();
+			const view: TableView = {
+				...base,
+				seats: base.seats.map((player) => {
+					if (player.position !== "left" || !player.hand.visible) return player;
+					const cards = (suit: string, ranks: string[]) =>
+						ranks.map((rank) => ({
+							...card(`${suit}${rank}` as Card),
+							playable: false,
+						}));
+					return {
+						...player,
+						hand: {
+							visible: true as const,
+							suits: [
+								{
+									suit: "S",
+									symbol: "♠",
+									cards: cards("S", ["A", "Q", "8", "7", "5"]),
+									trump: false,
+								},
+								{
+									suit: "H",
+									symbol: "♥",
+									cards: cards("H", ["8", "7", "5", "4"]),
+									trump: true,
+								},
+								{
+									suit: "C",
+									symbol: "♣",
+									cards: cards("C", ["K", "Q", "9"]),
+									trump: false,
+								},
+							],
+						},
+					};
+				}),
+			};
+			const { root } = renderView(view, "desktop");
+			const label = root.querySelector<HTMLElement>(".pos-left .trump-label");
+			const trump = root.querySelector<HTMLElement>(
+				".pos-left .suit-row.trump",
+			);
+			const before = label?.previousElementSibling;
+			if (!label || !trump || !(before instanceof HTMLElement))
+				throw new Error(
+					"trump label, trump row or the row before them is missing",
+				);
+			const labelBox = label.getBoundingClientRect();
+			const trumpBox = trump.getBoundingClientRect();
+			// The faces of the row before the label reach down behind the label and the top of the frame.
+			const faces = [...before.querySelectorAll<HTMLElement>(".face")].map(
+				(face) => face.getBoundingClientRect(),
+			);
+			expect(Math.max(...faces.map((face) => face.bottom))).toBeGreaterThan(
+				trumpBox.top,
+			);
+			const hand = trump.closest<HTMLElement>(".hand");
+			if (!hand) throw new Error("side hand is missing");
+			const handBox = hand.getBoundingClientRect();
+			const image = new Image();
+			image.src = `data:image/png;base64,${await page.screenshot({ element: hand, save: false })}`;
+			await image.decode();
+			const canvas = document.createElement("canvas");
+			canvas.width = image.naturalWidth;
+			canvas.height = image.naturalHeight;
+			const context = canvas.getContext("2d");
+			if (!context) throw new Error("canvas unavailable");
+			context.drawImage(image, 0, 0);
+			const pixel = (x: number, y: number) =>
+				context.getImageData(
+					Math.floor(((x - handBox.left) * image.naturalWidth) / handBox.width),
+					Math.floor(
+						((y - handBox.top) * image.naturalHeight) / handBox.height,
+					),
+					1,
+					1,
+				).data;
+			// No white card face shows behind the label text. The samples keep 1px from the label's fractional edges.
+			let white = 0;
+			for (let x = labelBox.left + 1; x < labelBox.right - 1; x += 1)
+				for (let y = labelBox.top + 1; y < labelBox.bottom - 1; y += 1) {
+					const [red = 0, green = 0, blue = 0] = pixel(x, y);
+					if (Math.min(red, green, blue) > 225) white += 1;
+				}
+			expect(white).toBe(0);
+			// The gold top edge of the frame crosses the faces of the row before it.
+			const frame = getComputedStyle(trump, "::after");
+			const edge =
+				trumpBox.top -
+				Number.parseFloat(frame.outlineOffset) -
+				Number.parseFloat(frame.outlineWidth) / 2;
+			for (const face of faces.filter((face) => face.left < trumpBox.right)) {
+				const [red = 0, green = 0, blue = 0] = pixel(
+					Math.max(face.left, trumpBox.left) + 4,
+					edge,
+				);
+				expect(red).toBeGreaterThan(180);
+				expect(green).toBeGreaterThan(140);
+				expect(blue).toBeLessThan(90);
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
 	it.each(["M", "XXL"])(
 		"draws the trump frame against the trump cards on a phone at %s",
 		(size) => {

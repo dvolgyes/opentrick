@@ -4554,8 +4554,15 @@ main:has(> .room[data-form="compact"]) {
 	pointer-events: none;
 }
 
+/*
+ * A trump label after an earlier suit row lies on that row's card faces. Its felt backing covers them there, so the
+ * label stays readable above the cards.
+ */
 .room[data-form="desktop"] .hand-stack .trump-label {
 	position: relative;
+	background: var(--felt);
+	background-image: var(--felt-texture);
+	background-size: var(--felt-texture-size) var(--felt-texture-size);
 }
 
 .room[data-form="desktop"] .place-left .seat,
