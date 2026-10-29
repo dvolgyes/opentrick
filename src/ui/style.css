@@ -1044,10 +1044,14 @@ main:has(> .room) {
 	z-index: 3;
 }
 
-/* The hand of the seat whose turn it is sits on a light green sheet, so the cards it can play stand out. */
+/* The hand of the seat whose turn it is stands 0.3rem inside the seat, so its trump frame stays clear of the red frame. */
 .seat[data-turn="true"] .hand:not(.backs) {
 	padding: 0.3rem;
 	border-radius: 0.4rem;
+}
+
+/* Off the desktop table, that hand sits on a light green sheet, so the cards it can play stand out. */
+.room:not([data-layout="desktop"]) .seat[data-turn="true"] .hand:not(.backs) {
 	background: var(--turn-hand-bg);
 }
 
@@ -1243,14 +1247,18 @@ main:has(> .room) {
 	[data-suit-font-size="XXXL"]
 ) {
 	/* Each side-hand strip must expose both lines before the next suit row starts. */
-	.hand-stack .suit-row .card {
-		min-height: calc(
+	.hand-stack {
+		--side-min-strip: calc(
 			var(--rank-size) *
 			var(--suit-font-scale) *
 			1.85 +
 			0.1rem +
 			4px
 		);
+	}
+
+	.hand-stack .suit-row .card {
+		min-height: var(--side-min-strip);
 	}
 
 	.card .face {
@@ -3321,12 +3329,102 @@ main[data-screen="table"][data-form="desktop"] > .room > .table-sidebar {
 	/* At the reference size, the card height matches the existing Full HD layout. */
 	main[data-screen="table"][data-form="desktop"] .bridge-table {
 		--card-h: 162px;
+		/* The hands set their own --card-w; this keeps the width of a played card for them. */
+		--played-card-w: var(--card-w);
 	}
 
 	/* The own cards overlap: each card shows its rank and suit, and the last card shows in full. The top hand has the same shape, so a card face never covers the next suit. */
 	main[data-screen="table"][data-form="desktop"] .place-top,
 	main[data-screen="table"][data-form="desktop"] .place-bottom {
 		--card-w: calc(var(--rank-size) * 2.2);
+	}
+
+	/*
+	 * On the Full HD canvas (not on a phone held sideways), the last card of each suit of the top and bottom hands is
+	 * as wide as a played card while the row fits between the corner windows. A longer hand first narrows the gaps
+	 * between the suits, down to half the gap beside a narrow card, and then narrows the last cards, down to the narrow
+	 * card above. The gap is at most a quarter of the last card. src/ui/table.ts gives the counts of suits and strips.
+	 */
+	main[data-screen="table"][data-form="desktop"]
+		.room[data-layout="desktop"]
+		:is(.place-top, .place-bottom) {
+		--narrow-card-w: max(
+			var(--card-w),
+			calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 4px)
+		);
+		--min-suit-gap: calc(
+			(var(--suit-gap) - var(--narrow-card-w) + var(--card-step)) /
+			2
+		);
+		container-type: inline-size;
+	}
+
+	main[data-screen="table"][data-form="desktop"]
+		.room[data-layout="desktop"]
+		:is(.place-top, .place-bottom)
+		.hand-row:not(.backs) {
+		--strips-w: calc(
+			(var(--hand-strips) - var(--hand-ten-strips)) *
+			var(--card-step) +
+			var(--hand-ten-strips) *
+			max(
+				var(--card-step),
+				calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 1px)
+			)
+		);
+		/* The row is centred; a window's width from each side leaves room for the turn frame beside the right window (12px from the felt's edge). */
+		--last-cards-w: calc(
+			100cqi -
+			2 *
+			(var(--card-h) * 4 / 3 * 1.4) -
+			var(--strips-w)
+		);
+		--card-w: clamp(
+			var(--narrow-card-w),
+			(var(--last-cards-w) - (var(--hand-suits) - 1) * var(--min-suit-gap)) /
+			max(1, var(--hand-suits)),
+			var(--played-card-w)
+		);
+		--suit-gap: clamp(
+			var(--min-suit-gap),
+			(var(--last-cards-w) - var(--hand-suits) * var(--card-w)) /
+			max(1, var(--hand-suits) - 1),
+			var(--card-w) /
+			4
+		);
+	}
+
+	/* The last card of a suit takes its full width, so the suit gap is the free felt between the suits. */
+	main[data-screen="table"][data-form="desktop"]
+		.room[data-layout="desktop"]
+		:is(.place-top, .place-bottom)
+		.hand-row
+		> .card:has(+ .suit-start) {
+		width: var(--card-w);
+	}
+
+	/*
+	 * On the Full HD canvas the suit rows of a side hand overlap by 1/8 more than on other tables: a strip s becomes
+	 * s - (card height - s) / 8. The least strip of the large suit fonts loses at most 8px, the empty space below
+	 * the suit symbol, so the symbol stays whole.
+	 */
+	main[data-screen="table"][data-form="desktop"]
+		.room[data-layout="desktop"]
+		.hand-stack {
+		--side-strip: calc((var(--rank-size) * 2.6 * 9 - var(--card-h)) / 8);
+	}
+
+	main[data-screen="table"][data-form="desktop"]
+		.room[data-layout="desktop"]
+		.hand-stack
+		.suit-row
+		.card {
+		min-height: max(
+			(var(--side-min-strip, 0px) * 9 - var(--card-h)) /
+			8,
+			var(--side-min-strip, 0px) -
+			8px
+		);
 	}
 
 	/* The top cards move 10px down; the bottom cards move up so their bottom edge is 20px above the felt's bottom edge, like the call panel and the right window. */
@@ -3338,6 +3436,17 @@ main[data-screen="table"][data-form="desktop"] > .room > .table-sidebar {
 	main[data-screen="table"][data-form="desktop"] .place-bottom {
 		position: relative;
 		top: -20px;
+	}
+
+	/*
+	 * When the deal is complete the side hands move up by about 1.25 points-pill heights, nearer to the middle between
+	 * the upper window and the lower window or call panel.
+	 */
+	main[data-screen="table"][data-form="desktop"]
+		.bridge-table[data-phase="complete"]
+		:is(.place-left, .place-right) {
+		position: relative;
+		top: -1.35rem;
 	}
 
 	/* On the desktop the history and the bid box share the row equally, so the bid box is half the old width. */
@@ -4598,7 +4707,45 @@ main:has(> .room[data-form="compact"]) {
 	width: max-content;
 }
 
-/* The top seat's cards start at the top of the top window: the felt gap (0.6rem) plus this margin puts the body at 10px, and the top seat moves 10px down. */
+/*
+ * On the Full HD table the points pill stands in the name row, after the name and its tags. A side seat keeps its
+ * turn pill row above the name; the other parts of a seat follow in their own rows.
+ */
+.room[data-layout="desktop"] .seat {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+}
+
+.room[data-layout="desktop"] .seat > * {
+	grid-column: 1 / -1;
+	order: 3;
+}
+
+.room[data-layout="desktop"] :is(.place-left, .place-right) .seat > .seat-tags {
+	order: 0;
+}
+
+.room[data-layout="desktop"] .seat > .seat-label {
+	grid-column: 1;
+	order: 1;
+}
+
+.room[data-layout="desktop"]
+	.seat[data-visible="true"]:has(> .hcp-pill)
+	.seat-label {
+	padding-top: 0;
+}
+
+.room[data-layout="desktop"] .seat > .hcp-pill {
+	position: static;
+	grid-column: 2;
+	order: 2;
+	justify-self: start;
+	margin: 0 0 0.25rem 0.25rem;
+}
+
+/* The top seat's cards start 20px below the felt's top edge: the felt gap (0.6rem) plus this margin puts the body at 10px, and the top seat moves 10px down. */
 .room[data-form="desktop"] .video-row + .body {
 	margin-top: calc(10px - 0.6rem);
 }
@@ -4650,24 +4797,31 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .room[data-form="desktop"] .video-left {
-	top: 20px;
-	left: 20px;
+	top: 5px;
+	left: 5px;
 }
 
-/* The right-hand windows stand 0.75rem further in, so the network bars beside them stay on the felt. */
+/* The right-hand windows stand near the felt's edge; their network bars are inside them, in the corner above the caption. */
 .room[data-form="desktop"] .video-top {
-	top: 20px;
-	right: calc(20px + 0.75rem);
+	top: 5px;
+	right: 12px;
 }
 
 .room[data-form="desktop"] .video-right {
-	right: calc(20px + 0.75rem);
+	right: 12px;
 	bottom: 40px;
+}
+
+.room[data-form="desktop"] :is(.video-top, .video-right) .network-bars {
+	right: 0.3rem;
+	bottom: calc(var(--tile-caption-h) + 0.3rem);
+	left: auto;
+	z-index: 3;
 }
 
 /* The mirror place of the right window: its control row hangs into the same 40px gap. */
 .room[data-form="desktop"] .call-slot {
-	left: 20px;
+	left: 5px;
 	bottom: 40px;
 	z-index: 1;
 }

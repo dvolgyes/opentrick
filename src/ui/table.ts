@@ -1184,6 +1184,14 @@ export function tableSection(
 				String(trumpEnd === undefined ? 1 : 2),
 			);
 			node.style.setProperty("--phone-ten-strips", String(tenStrips));
+			// The desktop sizes the shown face of each suit from these counts (src/ui/style.css).
+			const strips = visibleSuits.flatMap((row) => row.cards.slice(0, -1));
+			node.style.setProperty("--hand-suits", String(visibleSuits.length));
+			node.style.setProperty("--hand-strips", String(strips.length));
+			node.style.setProperty(
+				"--hand-ten-strips",
+				String(strips.filter((item) => item.card.endsWith("T")).length),
+			);
 		}
 		if (side) {
 			// The phone divides its side column by the longest suit, so that suit's row fits the column.

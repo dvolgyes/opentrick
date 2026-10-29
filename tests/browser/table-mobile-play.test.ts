@@ -2459,7 +2459,7 @@ describe("turn pill", () => {
 		expect([pill("N"), pill("E")]).toEqual([undefined, other]);
 	});
 
-	it("starts a visible seat's name right below its turn pill or frame edge, and below a points pill", () => {
+	it("starts a visible seat's name right below its turn pill or frame edge, with the points pill after the name's tags", () => {
 		const base = sideHandView();
 		const { root } = renderView(
 			{
@@ -2471,9 +2471,10 @@ describe("turn pill", () => {
 								tags: ["Dummy"],
 								turn: true,
 								turnPill: { action: "play", yours: false },
+								pointCards: ["SA"],
 							}
 						: player.position === "bottom"
-							? { ...player, pointCards: ["SA"] }
+							? { ...player, tags: ["Host"], pointCards: ["SA"] }
 							: player,
 				),
 			},
@@ -2493,10 +2494,22 @@ describe("turn pill", () => {
 		expect(
 			rect(".place-top .seat-label .name").top - rect(".place-top .seat").top,
 		).toBeLessThan(2);
-		// The bottom seat: its name stays clear of the points pill above it.
-		expect(rect(".place-bottom .seat-label .name").top).toBeGreaterThanOrEqual(
-			rect(".place-bottom .hcp-pill").bottom,
-		);
+		// The points pill stands in the name row, after the name and its tags, so it takes no row of its own.
+		for (const place of ["left", "bottom"]) {
+			const name = rect(`.place-${place} .seat-label .name`);
+			const points = rect(`.place-${place} .hcp-pill`);
+			expect(
+				(points.top + points.bottom) / 2 - (name.top + name.bottom) / 2,
+				place,
+			).toBeCloseTo(0, 0);
+			expect(points.left, place).toBeGreaterThanOrEqual(
+				rect(`.place-${place} .seat-label .tag`).right,
+			);
+		}
+		expect(
+			rect(".place-bottom .seat-label .name").top -
+				rect(".place-bottom .seat").top,
+		).toBeLessThan(2);
 	});
 
 	it.each<Layout>(["desktop", "sideways", "compact"])(
@@ -3877,6 +3890,312 @@ describe("board depth and frame colours", () => {
 		const call = felt?.querySelector<HTMLElement>(".call-panel");
 		if (!call || !videos.length) throw new Error("missing video or call box");
 		for (const box of [...videos, call]) expectShadow(box, 0.45);
+	});
+});
+
+describe("desktop top and bottom hands", () => {
+	const suit = (
+		name: "S" | "H" | "D" | "C",
+		symbol: string,
+		ranks: string,
+		trump = false,
+	) => ({
+		suit: name,
+		symbol,
+		trump,
+		cards: [...ranks].map((rank) => card(`${name}${rank}` as Card)),
+	});
+
+	/** Shows the hand at the top and the bottom of the play view, in the scaled Full HD canvas of the app. */
+	function renderHands(
+		suits: ReturnType<typeof suit>[],
+		roundTrip?: TableView["seats"][number]["roundTrip"],
+	) {
+		const hand = { visible: true as const, suits };
+		const base = playView();
+		const { root } = renderView(
+			{
+				...base,
+				seats: base.seats.map((shown) => ({
+					...shown,
+					...(shown.hand.visible ? { hand } : {}),
+					...(roundTrip ? { roundTrip } : {}),
+				})),
+			},
+			"desktop",
+		);
+		const screen = document.createElement("main");
+		screen.dataset.screen = "table";
+		screen.dataset.form = "desktop";
+		screen.append(...document.body.children);
+		document.body.replaceChildren(screen);
+		const box = (selector: string) => {
+			const node = root.querySelector<HTMLElement>(selector);
+			if (!node) throw new Error(`missing ${selector}`);
+			return node.getBoundingClientRect();
+		};
+		return {
+			box,
+			played: box(".felt .played").width,
+			rows: (["top", "bottom"] as const).map((place) => {
+				const cards = [
+					...root.querySelectorAll<HTMLElement>(
+						`.felt .place-${place} .hand-row:not(.backs) .card`,
+					),
+				];
+				return { place, cards };
+			}),
+		};
+	}
+
+	/** The last card of each suit, whose whole face shows. */
+	const suitEnds = (cards: HTMLElement[]) =>
+		cards.filter(
+			(shown, index) => cards[index + 1]?.dataset.suit !== shown.dataset.suit,
+		);
+
+	const face = (shown: HTMLElement) => {
+		const node = shown.querySelector<HTMLElement>(".face");
+		if (!node) throw new Error("missing card face");
+		return node.getBoundingClientRect();
+	};
+
+	it("shows each suit of a short hand as wide as a played card, with a clear gap between the suits", async () => {
+		await page.viewport(1568, 886);
+		try {
+			const { played, rows } = renderHands([
+				suit("S", "♠", "AK3", true),
+				suit("H", "♥", "Q9"),
+				suit("D", "♦", "T3"),
+				suit("C", "♣", "7"),
+			]);
+			for (const { place, cards } of rows) {
+				expect(cards, place).toHaveLength(8);
+				const ends = suitEnds(cards);
+				expect(ends, place).toHaveLength(4);
+				for (const end of ends)
+					expect(face(end).width, `${place} ${end.dataset.card}`).toBeCloseTo(
+						played,
+						0,
+					);
+				for (const end of ends.slice(0, -1)) {
+					const next = cards[cards.indexOf(end) + 1];
+					if (!next) throw new Error("missing next suit");
+					expect(
+						next.getBoundingClientRect().left - face(end).right,
+						`${place} gap after ${end.dataset.card}`,
+					).toBeGreaterThanOrEqual(played / 5);
+				}
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
+	it("keeps the network bars of the corner windows on the felt, clear of the names", async () => {
+		await page.viewport(1568, 886);
+		try {
+			const { box } = renderHands([suit("S", "♠", "AK3", true)], {
+				text: "Network: measuring…",
+				quality: "pending",
+			});
+			const felt = box(".felt");
+			const tiles = [
+				...document.querySelectorAll<HTMLElement>(".felt .video-slot .tile"),
+			];
+			expect(tiles).toHaveLength(3);
+			for (const tile of tiles) {
+				const name = tile.dataset.testid;
+				const bars = tile.querySelector<HTMLElement>(".network-bars");
+				const caption = tile.querySelector<HTMLElement>(".tile-caption");
+				if (!bars || !caption) throw new Error(`missing bars of ${name}`);
+				expect(bars.checkVisibility(), name).toBe(true);
+				const shown = bars.getBoundingClientRect();
+				expect(shown.left, name).toBeGreaterThanOrEqual(felt.left);
+				expect(shown.right, name).toBeLessThanOrEqual(felt.right);
+				const label = caption.getBoundingClientRect();
+				const overlaps =
+					shown.left < label.right &&
+					label.left < shown.right &&
+					shown.top < label.bottom &&
+					label.top < shown.bottom;
+				expect(overlaps, name).toBe(false);
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
+	it.each(["S", "M", "L", "XL", "XXL", "XXXL"])(
+		"keeps a full hand with four tens between the corner windows at suit font size %s",
+		async (size) => {
+			await page.viewport(1568, 886);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const { box, rows } = renderHands([
+					suit("S", "♠", "AT9", true),
+					suit("H", "♥", "KT2"),
+					suit("D", "♦", "QT3"),
+					suit("C", "♣", "JT54"),
+				]);
+				const corners = {
+					top: [box(".video-left"), box(".video-top")],
+					bottom: [box(".call-slot"), box(".video-right")],
+				};
+				for (const { place, cards } of rows) {
+					expect(cards, place).toHaveLength(13);
+					const [left, right] = corners[place];
+					if (!left || !right) throw new Error("missing corner window");
+					const group = cards[0]?.closest<HTMLElement>(".suit-group.trump");
+					if (!group) throw new Error("missing trump group");
+					const frame = getComputedStyle(group, "::after");
+					// The outline is in canvas pixels; the boxes are in scaled screen pixels.
+					const scale = group.getBoundingClientRect().width / group.offsetWidth;
+					const reach =
+						(Number.parseFloat(frame.outlineOffset) +
+							Number.parseFloat(frame.outlineWidth)) *
+						scale;
+					expect(
+						group.getBoundingClientRect().left - reach,
+						place,
+					).toBeGreaterThan(left.right);
+					expect(face(cards.at(-1) as HTMLElement).right, place).toBeLessThan(
+						right.left,
+					);
+					// The red frame of the seat to play stands outside the seat box.
+					const seatBox = cards[0]?.closest<HTMLElement>(".seat");
+					if (!seatBox) throw new Error("missing seat");
+					expect(seatBox.dataset.turnFrame, place).toBe("true");
+					const turn = getComputedStyle(seatBox, "::after");
+					const turnReach =
+						(Number.parseFloat(turn.outlineWidth) -
+							Number.parseFloat(turn.left)) *
+						scale;
+					const seatRect = seatBox.getBoundingClientRect();
+					expect(seatRect.left - turnReach, place).toBeGreaterThan(left.right);
+					expect(seatRect.right + turnReach, place).toBeLessThan(right.left);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
+
+	it("shows the felt between the suits of the hand whose turn it is", async () => {
+		await page.viewport(1568, 886);
+		try {
+			const { rows } = renderHands([
+				suit("S", "♠", "AK3", true),
+				suit("H", "♥", "Q9"),
+				suit("D", "♦", "T3"),
+				suit("C", "♣", "7"),
+			]);
+			for (const { place, cards } of rows) {
+				const hand = cards[0]?.closest<HTMLElement>(".hand");
+				if (!hand) throw new Error("missing hand");
+				expect(hand.closest<HTMLElement>(".seat")?.dataset.turn, place).toBe(
+					"true",
+				);
+				const handBox = hand.getBoundingClientRect();
+				const image = new Image();
+				image.src = `data:image/png;base64,${await page.screenshot({ element: hand, save: false })}`;
+				await image.decode();
+				const canvas = document.createElement("canvas");
+				canvas.width = image.naturalWidth;
+				canvas.height = image.naturalHeight;
+				const context = canvas.getContext("2d");
+				if (!context) throw new Error("canvas unavailable");
+				context.drawImage(image, 0, 0);
+				// The middle of the gap after the hearts: the sheet, if any, fills it.
+				const hearts = suitEnds(cards).find(
+					(shown) => shown.dataset.suit === "H",
+				);
+				const next = hearts && cards[cards.indexOf(hearts) + 1];
+				if (!hearts || !next) throw new Error("missing heart gap");
+				const points = {
+					gap: [
+						(face(hearts).right + next.getBoundingClientRect().left) / 2,
+						handBox.top + handBox.height / 2,
+					],
+				};
+				for (const [name, [x = 0, y = 0]] of Object.entries(points)) {
+					const [red = 0, green = 0, blue = 0] = context.getImageData(
+						Math.floor(
+							((x - handBox.left) * image.naturalWidth) / handBox.width,
+						),
+						Math.floor(
+							((y - handBox.top) * image.naturalHeight) / handBox.height,
+						),
+						1,
+						1,
+					).data;
+					// The light sheet is about (200, 220, 207); the felt is a dark green.
+					expect(red + green + blue, `${place} ${name}`).toBeLessThan(400);
+				}
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
+	it("lifts the side hands by one to one and a half points-pill heights when the deal is complete", async () => {
+		await page.viewport(1568, 886);
+		try {
+			const seatTops = (phase: "play" | "complete") => {
+				const base = playView();
+				const hand = base.seats.find((shown) => shown.hand.visible)?.hand;
+				if (!hand) throw new Error("missing hand");
+				const { root } = renderView(
+					{
+						...base,
+						phase,
+						...(phase === "complete"
+							? {
+									trick: undefined,
+									scoring: {
+										contract: { level: 4, strain: "H", doubling: "" },
+										compactOutcome: "WON",
+										compactDetail: "Made: 4♥",
+										countdown: 1,
+									},
+								}
+							: {}),
+						// Every seat shows its points in both phases, so only the phase changes the layout.
+						seats: base.seats.map((shown) => ({
+							...shown,
+							hand,
+							pointCards: ["SA"],
+						})),
+					},
+					"desktop",
+				);
+				const screen = document.createElement("main");
+				screen.dataset.screen = "table";
+				screen.dataset.form = "desktop";
+				screen.append(...document.body.children);
+				document.body.replaceChildren(screen);
+				const pill = root.querySelector(".place-left .hcp-pill");
+				if (!pill) throw new Error("missing points pill");
+				return {
+					pill: pill.getBoundingClientRect().height,
+					tops: (["left", "right"] as const).map((place) => {
+						const seat = root.querySelector(`.place-${place} .seat`);
+						if (!seat) throw new Error(`missing ${place} seat`);
+						return seat.getBoundingClientRect().top;
+					}),
+				};
+			};
+			const play = seatTops("play");
+			const complete = seatTops("complete");
+			complete.tops.forEach((top, index) => {
+				const lift = ((play.tops[index] ?? 0) - top) / complete.pill;
+				expect(lift, `seat ${index}`).toBeGreaterThanOrEqual(1);
+				expect(lift, `seat ${index}`).toBeLessThanOrEqual(1.5);
+			});
+		} finally {
+			await page.viewport(414, 896);
+		}
 	});
 });
 
