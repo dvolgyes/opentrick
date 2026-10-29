@@ -1493,12 +1493,11 @@ describe("played card styles", () => {
 		},
 	);
 	it.each<Layout>(["desktop", "sideways"])(
-		"keeps both sidebar contracts the same size as the trick labels (%s)",
+		"keeps the sidebar header's contract the same size as the trick labels (%s)",
 		(layout) => {
 			renderView(playView(), layout);
 			const selectors = [
 				".table-sidebar .contract-head .bid",
-				".table-sidebar .tricks-counts .bid",
 				".table-sidebar .tricks-counts .count-label",
 			];
 			const nodes = selectors.map((selector) => {
@@ -1510,8 +1509,34 @@ describe("played card styles", () => {
 				for (const size of ["S", "M", "L", "XL", "XXL", "XXXL"]) {
 					document.documentElement.dataset.suitFontSize = size;
 					const values = nodes.map((node) => getComputedStyle(node).fontSize);
-					expect(values[0], size).toBe(values[2]);
-					expect(values[1], size).toBe(values[2]);
+					expect(values[0], size).toBe(values[1]);
+				}
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+			}
+		},
+	);
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"draws the trick guide's contract at the size of its numbers at each font setting (%s)",
+		(layout) => {
+			renderView(playView(), layout);
+			const rows = [
+				...document.querySelectorAll<HTMLElement>(".tricks-counts"),
+			].filter((row) => row.checkVisibility());
+			expect(rows.length).toBeGreaterThan(0);
+			try {
+				for (const size of ["S", "M", "L", "XL", "XXL", "XXXL"]) {
+					document.documentElement.dataset.suitFontSize = size;
+					for (const row of rows) {
+						const bid = row.querySelector<HTMLElement>(".bid");
+						const numbers = [...row.querySelectorAll<HTMLElement>("strong")];
+						if (!bid) throw new Error("the trick guide has no contract");
+						expect(numbers).toHaveLength(3);
+						for (const number of numbers)
+							expect(getComputedStyle(bid).fontSize, size).toBe(
+								getComputedStyle(number).fontSize,
+							);
+					}
 				}
 			} finally {
 				delete document.documentElement.dataset.suitFontSize;
@@ -1884,7 +1909,11 @@ describe("played card styles", () => {
 							nodes[index]?.closest(".mobile-board-center .played");
 						expect(actual, `${selectors[index]} at ${size}`).toBeCloseTo(
 							(medium[index] ?? 0) *
-								(nodes[index]?.closest(".table-sidebar .bid") ? 1 : scale) *
+								(nodes[index]?.closest(
+									".table-sidebar .bid, .tricks-counts .bid",
+								)
+									? 1
+									: scale) *
 								(phonePlayed ? 0.95 / 0.85 : 1),
 							3,
 						);
@@ -4098,19 +4127,6 @@ describe("compact play controls", () => {
 		expect(row?.hidden).toBe(false);
 		expect(row.textContent).toBe("2♣Our tricks2Target8Opponents'3");
 		expectTwoRows(row);
-		// The contract is twice the size of the earlier 1.2rem, larger than the trick counts.
-		const bid = row.querySelector<HTMLElement>(".bid");
-		const ours = row.querySelector<HTMLElement>(".count strong");
-		if (!bid || !ours) throw new Error("the contract and a count");
-		const rem = Number.parseFloat(
-			getComputedStyle(document.documentElement).fontSize,
-		);
-		expect(Number.parseFloat(getComputedStyle(bid).fontSize)).toBeCloseTo(
-			2.4 * rem,
-		);
-		expect(Number.parseFloat(getComputedStyle(bid).fontSize)).toBeGreaterThan(
-			Number.parseFloat(getComputedStyle(ours).fontSize),
-		);
 		expect(row.querySelector(".tricks-needed")).toBeNull();
 		const board = root.querySelector(".mobile-auction-board");
 		const controls = root.querySelector(".mobile-auction-controls");

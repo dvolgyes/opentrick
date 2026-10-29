@@ -3187,7 +3187,6 @@ button.call-join[data-in-call="true"] {
 }
 
 .tricks-counts .bid {
-	font-size: calc(1.5rem * var(--suit-font-scale));
 	font-weight: 700;
 	white-space: nowrap;
 }
@@ -3200,13 +3199,13 @@ button.call-join[data-in-call="true"] {
 	overflow-wrap: break-word;
 }
 
-/* Both sidebar contracts match the trick labels and keep that size across font settings. */
-.table-sidebar .contract-head .bid,
-.table-sidebar .tricks-counts .bid {
+/* The sidebar header's contract matches the trick labels and keeps that size across font settings. */
+.table-sidebar .contract-head .bid {
 	font-size: 0.95rem;
 }
 
-.tricks-counts strong {
+/* The trick guide's contract has the size of the numbers beside it, at each font setting. */
+.tricks-counts :is(.bid, strong) {
 	font-size: 2rem;
 }
 
@@ -4158,12 +4157,6 @@ main:has(> .room[data-form="compact"]) {
 
 .mobile-tricks .tricks-counts .count-label {
 	font-size: 0.8rem;
-}
-
-/* The contract is large; a tight line keeps it in the row of the counts, below their labels. */
-.mobile-tricks .tricks-counts .bid {
-	font-size: calc(2.4rem * var(--suit-font-scale));
-	line-height: 1;
 }
 
 .mobile-auction-bids .history-panel {
