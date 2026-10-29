@@ -4018,7 +4018,7 @@ main:has(> .room[data-form="compact"]) {
 	justify-content: flex-start;
 	--card-step: min(
 		calc(var(--rank-size) * 1.2 + 0.3rem),
-		(100cqi - var(--card-w)) /
+		(100cqi - 6px - var(--card-w)) /
 		max(1, var(--longest-suit) - 1)
 	);
 }
@@ -4026,9 +4026,11 @@ main:has(> .room[data-form="compact"]) {
 /*
  * A visible side hand is only as large as its cards, so its turn frame stays around them. Each suit row shows its
  * full cards when the column is tall enough; in a shorter column the rows shrink to their strips and overlap.
+ * The padding is the width of the turn frame, which is drawn inside the hand: it does not cover the cards or the label.
  */
 :is(.mobile-board-left, .mobile-board-right) .hand.hand-stack {
 	flex: 0 1 auto;
+	padding: 3px;
 }
 
 :is(.mobile-board-left, .mobile-board-right) .hand-stack > .suit-row {

@@ -1381,19 +1381,22 @@ describe("played card styles", () => {
 					...(label ? [text.getBoundingClientRect()] : []),
 				];
 				const box = frame.getBoundingClientRect();
-				// The frame is the hand's box: it ends where the cards and the trump label end.
-				expect(
-					Math.abs(box.left - Math.min(...parts.map((part) => part.left))),
-				).toBeLessThanOrEqual(1);
-				expect(
-					Math.abs(box.right - Math.max(...parts.map((part) => part.right))),
-				).toBeLessThanOrEqual(1);
-				expect(
-					Math.abs(box.top - Math.min(...parts.map((part) => part.top))),
-				).toBeLessThanOrEqual(1);
-				expect(
-					Math.abs(box.bottom - Math.max(...parts.map((part) => part.bottom))),
-				).toBeLessThanOrEqual(1);
+				// The frame is drawn inside the hand's box. It lies just outside the cards and the trump label:
+				// it covers none of them and leaves no room beside them.
+				const width = Number.parseFloat(
+					getComputedStyle(frame, "::after").borderTopWidth,
+				);
+				expect(width).toBeGreaterThan(0);
+				const gaps = [
+					Math.min(...parts.map((part) => part.left)) - box.left,
+					box.right - Math.max(...parts.map((part) => part.right)),
+					Math.min(...parts.map((part) => part.top)) - box.top,
+					box.bottom - Math.max(...parts.map((part) => part.bottom)),
+				];
+				for (const gap of gaps) {
+					expect(gap).toBeGreaterThanOrEqual(width - 0.5);
+					expect(gap).toBeLessThanOrEqual(width + 1);
+				}
 				// Every suit row starts at the board edge of its column, away from the trick.
 				const edge = column.getBoundingClientRect();
 				for (const row of frame.querySelectorAll<HTMLElement>(".suit-row")) {
@@ -1402,7 +1405,7 @@ describe("played card styles", () => {
 						position === "left"
 							? bounds.left - edge.left
 							: edge.right - bounds.right,
-					).toBeLessThanOrEqual(1);
+					).toBeLessThanOrEqual(width + 1);
 				}
 			} finally {
 				delete document.documentElement.dataset.suitFontSize;
