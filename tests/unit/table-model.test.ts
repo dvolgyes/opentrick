@@ -163,16 +163,15 @@ it("keeps the final auction visible with no playable cards or turn prompt during
 	expect(ready.yourTurn).toBe(true);
 });
 
-it("names the contract, the side that must make it and that side's vulnerability while play waits", () => {
+it("names the contract, its declarer and the declaring side's vulnerability while play waits", () => {
 	const north = view("E", NORTH_DECLARER_BOARD, { auctionPauseSeconds: 3 });
 	expect(north.auctionEnd).toMatchObject({
 		contract: { level: 1, strain: "C", doubling: "" },
 		declarer: "by North",
-		task: "N-S must make 7 tricks",
 		vulnerability: "N-S not vulnerable",
 		vulnerable: false,
-		start: "Play starts in 3 seconds.",
 	});
+	expect(north.prompt).toBe("Play starts in 3 seconds.");
 	// Board 3: South deals and East-West are vulnerable; West opens 2♥ and the others pass.
 	const west = view("N", bidding(createBoard(3, DEAL), "P 2H P P P"), {
 		auctionPauseSeconds: 2,
@@ -180,7 +179,6 @@ it("names the contract, the side that must make it and that side's vulnerability
 	expect(west.auctionEnd).toMatchObject({
 		contract: { level: 2, strain: "H" },
 		declarer: "by West",
-		task: "E-W must make 8 tricks",
 		vulnerability: "E-W vulnerable",
 		vulnerable: true,
 	});

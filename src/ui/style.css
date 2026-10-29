@@ -752,6 +752,7 @@ main:has(> .room) {
  */
 
 .felt {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: 0.6rem;
@@ -892,9 +893,34 @@ main:has(> .room) {
 	font-weight: 700;
 }
 
-.auction-end-task {
-	font-size: 1.2rem;
-	font-weight: 700;
+/* The auction summary is as wide as its two lines. */
+.auction-end {
+	width: max-content;
+	max-width: 90%;
+}
+
+/*
+ * The summaries of the auction and of the game lie on the middle of the green board, above its cards. On a phone
+ * the board (`.mobile-auction-board`) is the frame of the auction summary.
+ */
+.felt > .scoring,
+.mobile-board-center > .auction-end {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: 11;
+	transform: translate(-50%, -50%);
+}
+
+/* The lines of the auction summary have the text size of the bid tiles. */
+.auction-end :is(.scoring-contract, .auction-end-vulnerability) {
+	font-size: 1.15rem;
+}
+
+.room[data-layout="sideways"]
+	.auction-end
+	:is(.scoring-contract, .auction-end-vulnerability) {
+	font-size: 0.85rem;
 }
 
 .scoring[hidden],
@@ -3656,18 +3682,14 @@ main:has(> .room[data-form="compact"]) {
 }
 
 [data-form="compact"] .auction-end {
-	width: 90%;
-	margin-inline: auto;
+	width: max-content;
 }
 
-[data-form="compact"] .auction-end :is(.scoring-contract, .auction-end-task) {
+[data-form="compact"]
+	.auction-end
+	:is(.scoring-contract, .auction-end-vulnerability) {
 	margin: 0.1rem 0;
-	font-size: 0.95rem;
-}
-
-[data-form="compact"] .auction-end-vulnerability {
-	margin: 0.1rem 0;
-	font-size: 0.85rem;
+	font-size: 0.9rem;
 }
 
 [data-form="compact"] .bid-box {
@@ -3829,6 +3851,7 @@ main:has(> .room[data-form="compact"]) {
 		3.1rem,
 		calc(0.95rem * var(--suit-font-scale) * 2.2 + 0.1rem + 4px)
 	);
+	position: relative;
 	display: grid;
 	flex: none;
 	align-content: stretch;

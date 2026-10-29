@@ -301,6 +301,18 @@ function renderMobile(view: TableView) {
 	return renderView(view, "compact");
 }
 
+/** The middle of `panel` is within 2px of the middle of `board`, in both directions. */
+function expectSameMiddle(panel: HTMLElement, board: HTMLElement): void {
+	const middle = (node: HTMLElement): [number, number] => {
+		const box = node.getBoundingClientRect();
+		return [box.left + box.width / 2, box.top + box.height / 2];
+	};
+	const [x, y] = middle(panel);
+	const [boardX, boardY] = middle(board);
+	expect(Math.abs(x - boardX), "horizontal").toBeLessThan(2);
+	expect(Math.abs(y - boardY), "vertical").toBeLessThan(2);
+}
+
 afterEach(() => document.body.replaceChildren());
 
 describe("played card styles", () => {
@@ -2449,37 +2461,40 @@ describe("turn pill", () => {
 		);
 	});
 
-	it.each<Form>(["desktop", "compact"])(
-		"shows the auction summary in the middle of the %s board instead of the bid box and the bidding history",
-		(form) => {
-			renderView(
-				{
-					...playView(),
-					phase: "auction",
-					auctionEnd: {
-						contract: { level: 4, strain: "H", doubling: "X" },
-						declarer: "by East",
-						task: "E-W must make 10 tricks",
-						vulnerability: "E-W vulnerable",
-						vulnerable: true,
-						start: "Play starts in 3 seconds.",
-					},
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"shows a short auction summary on the middle of the %s board, in the text size of the bid tiles' words",
+		(layout) => {
+			const base = { ...playView(), phase: "auction" as const };
+			const { section } = renderView(base, layout);
+			// The words of the bid box ("Guide", "Confirm", "Undo") keep their size; call symbols follow the suit font.
+			const tile = [
+				...document.querySelectorAll<HTMLElement>(".bid-guide button"),
+			].find((button) => button.checkVisibility());
+			if (!tile) throw new Error("no bid tile");
+			const tileSize = getComputedStyle(tile).fontSize;
+			section.render({
+				...base,
+				auctionEnd: {
+					contract: { level: 4, strain: "H", doubling: "X" },
+					declarer: "by East",
+					vulnerability: "E-W vulnerable",
+					vulnerable: true,
 				},
-				form,
-			);
+			});
 			const summary = document.querySelector<HTMLElement>(
 				'[data-testid="auction-end"]',
 			);
 			if (!summary) throw new Error("no auction summary");
 			expect(summary.checkVisibility()).toBe(true);
-			expect(
-				[...summary.querySelectorAll("p")].map((line) => line.textContent),
-			).toEqual([
+			const lines = [...summary.querySelectorAll("p")];
+			expect(lines.map((line) => line.textContent)).toEqual([
 				"Contract 4♥X by East",
-				"E-W must make 10 tricks",
 				"E-W vulnerable",
-				"Play starts in 3 seconds.",
 			]);
+			for (const line of lines)
+				expect(getComputedStyle(line).fontSize, line.textContent ?? "").toBe(
+					tileSize,
+				);
 			// Assistive technology must not announce the summary as the current trick.
 			expect(
 				summary.parentElement?.closest('[aria-label="Current trick"]'),
@@ -2489,16 +2504,36 @@ describe("turn pill", () => {
 			))
 				expect(panel.checkVisibility()).toBe(false);
 			const board = document.querySelector<HTMLElement>(
-				form === "compact" ? ".mobile-auction-board" : ".felt",
+				layout === "compact" ? ".mobile-auction-board" : ".felt",
 			);
 			if (!board) throw new Error("no board");
-			const middle = (box: DOMRect) => box.left + box.width / 2;
-			expect(
-				Math.abs(
-					middle(summary.getBoundingClientRect()) -
-						middle(board.getBoundingClientRect()),
-				),
-			).toBeLessThan(2);
+			expectSameMiddle(summary, board);
+		},
+	);
+
+	it.each<Layout>(["desktop", "sideways", "compact"])(
+		"shows the game result on the middle of the %s green board",
+		(layout) => {
+			renderView(
+				{
+					...playView(),
+					phase: "complete",
+					scoring: {
+						contract: { level: 4, strain: "H", doubling: "X" },
+						compactOutcome: "WON",
+						compactDetail: "Made: 4♥X + 1",
+						countdown: 1,
+					},
+				},
+				layout,
+			);
+			const result = document.querySelector<HTMLElement>(
+				'[data-testid="scoring"]',
+			);
+			const board = document.querySelector<HTMLElement>(".felt");
+			if (!result || !board) throw new Error("no result or board");
+			expect(result.checkVisibility()).toBe(true);
+			expectSameMiddle(result, board);
 		},
 	);
 
@@ -4044,7 +4079,7 @@ describe("compact play controls", () => {
 				nextBoard: { board: 2, ready: false },
 			},
 			"desktop",
-		).root.querySelector(".strain-D") as HTMLElement;
+		).root.querySelector('[data-testid="scoring"] .strain-D') as HTMLElement;
 		expect(getComputedStyle(diamond).color).toBe("rgb(192, 38, 45)");
 
 		const noTrump = renderView(
@@ -4061,7 +4096,7 @@ describe("compact play controls", () => {
 				nextBoard: { board: 2, ready: false },
 			},
 			"desktop",
-		).root.querySelector(".strain-NT") as HTMLElement;
+		).root.querySelector('[data-testid="scoring"] .strain-NT') as HTMLElement;
 		expect(getComputedStyle(noTrump).color).toBe("rgb(31, 122, 70)");
 	});
 

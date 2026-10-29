@@ -502,12 +502,12 @@ export function tableSection(
 		className: "scoring",
 		attrs: { "data-testid": "scoring" },
 	});
-	// The end of the auction: the contract, the side that must make it and its vulnerability, until play starts.
+	// The end of the auction: the contract, its declarer and the declaring side's vulnerability, until play starts.
 	const auctionEnd = el("section", {
 		className: "scoring auction-end",
 		attrs: { "data-testid": "auction-end", role: "status" },
 	});
-	const center = el("div", { className: "center" }, trick, scoring, auctionEnd);
+	const center = el("div", { className: "center" }, trick);
 	// The history is the auction table beside the bid box while bidding, and a sidebar panel afterwards.
 	const historyTitle = el(
 		"h3",
@@ -955,6 +955,9 @@ export function tableSection(
 			),
 			el("div", { className: "col col-right" }, places.right),
 		),
+		// The summaries of the auction and of the game lie on the middle of the green board.
+		scoring,
+		auctionEnd,
 		waitingOverlay,
 		approvalBackdrop,
 	);
@@ -2278,7 +2281,6 @@ export function tableSection(
 				contractStrong(view.contract),
 				` ${view.declarer}`,
 			),
-			el("p", { className: "auction-end-task" }, view.task),
 			el(
 				"p",
 				{
@@ -2287,7 +2289,6 @@ export function tableSection(
 				},
 				view.vulnerability,
 			),
-			el("p", { className: "scoring-countdown" }, view.start),
 		);
 	}
 
@@ -2653,7 +2654,8 @@ export function tableSection(
 			mobileBoardCenter.replaceChildren();
 			center.prepend(trick);
 		}
-		if (auctionEnd.parentElement === null) gameSlot.before(auctionEnd);
+		// Outside the phone board's middle, the summary lies on the middle of the felt.
+		if (auctionEnd.parentElement === null) scoring.after(auctionEnd);
 		if (mobileGameActive) {
 			mobileTopbar.prepend(audioGroup);
 			const ownSeat = places.bottom.firstElementChild;

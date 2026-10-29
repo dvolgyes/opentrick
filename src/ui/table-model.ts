@@ -336,18 +336,14 @@ export interface ScoringView {
 	readonly countdown: number;
 }
 
-/** The end of the auction, shown in the centre until play starts: the contract and who must make it. */
+/** The end of the auction, shown in the middle of the board until play starts: the contract, its declarer and vulnerability. */
 export interface AuctionEndView {
 	readonly contract: Pick<Contract, "level" | "strain" | "doubling">;
 	/** "by East". */
 	readonly declarer: string;
-	/** "E-W must make 10 tricks". */
-	readonly task: string;
 	/** "E-W vulnerable" or "E-W not vulnerable". */
 	readonly vulnerability: string;
 	readonly vulnerable: boolean;
-	/** "Play starts in 3 seconds." */
-	readonly start: string;
 }
 
 export interface UndoPanelView {
@@ -1434,13 +1430,8 @@ export function tableView(input: TableViewInput): TableView {
 					? {
 							contract,
 							declarer: `${t("by")} ${t(SEAT_NAMES[contract.declarer])}`,
-							task: t("{side} must make {tricks} tricks", {
-								side: t(side === "ns" ? "N-S" : "E-W"),
-								tricks: contract.level + 6,
-							}),
 							vulnerability: vulnerability.text,
 							vulnerable: vulnerability.vulnerable,
-							start,
 						}
 					: undefined,
 		};
