@@ -3719,12 +3719,61 @@ describe("board depth and frame colours", () => {
 			const trump = board?.querySelector<HTMLElement>(".suit-group.trump");
 			if (!card || !trump) throw new Error("missing played card or trump");
 			expectShadow(card, 0.3);
-			expect(getComputedStyle(trump).outlineColor).toBe("rgb(232, 185, 35)");
+			expect(getComputedStyle(trump, "::after").outlineColor).toBe(
+				"rgb(232, 185, 35)",
+			);
 			const before = card.getBoundingClientRect();
 			card.style.boxShadow = "none";
 			expect(card.getBoundingClientRect().toJSON()).toEqual(before.toJSON());
 		},
 	);
+	it("draws the whole trump frame of a desktop hand above its cards' shadows", async () => {
+		await page.viewport(1400, 900);
+		try {
+			const { root } = renderView(playView(), "desktop");
+			const group = root.querySelector<HTMLElement>(
+				".place-bottom .suit-group.trump",
+			);
+			const hand = group?.closest<HTMLElement>(".hand");
+			if (!group || !hand) throw new Error("missing bottom trump group");
+			const handBox = hand.getBoundingClientRect();
+			const box = group.getBoundingClientRect();
+			const frame = getComputedStyle(group, "::after");
+			// The middle of the gold line, outside the group by the offset and half the line width.
+			const reach =
+				Number.parseFloat(frame.outlineOffset) +
+				Number.parseFloat(frame.outlineWidth) / 2;
+			const image = new Image();
+			image.src = `data:image/png;base64,${await page.screenshot({ element: hand, save: false })}`;
+			await image.decode();
+			const canvas = document.createElement("canvas");
+			canvas.width = image.naturalWidth;
+			canvas.height = image.naturalHeight;
+			const context = canvas.getContext("2d");
+			if (!context) throw new Error("canvas unavailable");
+			context.drawImage(image, 0, 0);
+			const pixel = (x: number, y: number) =>
+				context.getImageData(
+					Math.floor(((x - handBox.left) * image.naturalWidth) / handBox.width),
+					Math.floor(
+						((y - handBox.top) * image.naturalHeight) / handBox.height,
+					),
+					1,
+					1,
+				).data;
+			// The card shadows fall to the right and below, across the right and bottom edges of the frame.
+			const edges = {
+				right: [box.right + reach, box.top + box.height / 2],
+				bottom: [box.left + box.width / 2, box.bottom + reach],
+			};
+			for (const [edge, [x = 0, y = 0]] of Object.entries(edges)) {
+				const [red = 0, green = 0, blue = 0] = pixel(x, y);
+				expect([red, green, blue], edge).toEqual([232, 185, 35]);
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
 	it.each(
 		(["desktop", "sideways"] as const).flatMap((layout) =>
 			["M", "L", "XL", "XXL", "XXXL"].map((size) => [layout, size] as const),
@@ -3782,7 +3831,7 @@ describe("board depth and frame colours", () => {
 						":scope > .suit-group.trump",
 					);
 					if (!group) throw new Error("missing trump group");
-					const style = getComputedStyle(group);
+					const style = getComputedStyle(group, "::after");
 					const reach =
 						Number.parseFloat(style.outlineOffset) +
 						Number.parseFloat(style.outlineWidth);
@@ -4324,8 +4373,8 @@ describe("compact play controls", () => {
 		if (!ownTrump || !dummyTrump || !dummyHand)
 			throw new Error("mobile trump hands are missing");
 
-		expect(getComputedStyle(ownTrump).outlineStyle).toBe("solid");
-		expect(getComputedStyle(dummyTrump).outlineStyle).toBe("solid");
+		expect(getComputedStyle(ownTrump, "::after").outlineStyle).toBe("solid");
+		expect(getComputedStyle(dummyTrump, "::after").outlineStyle).toBe("solid");
 		expect(getComputedStyle(dummyHand).overflow).toBe("visible");
 	});
 
@@ -4570,14 +4619,21 @@ describe("compact play controls", () => {
 					1,
 					1,
 				).data;
-			// No white card face shows behind the label text. The samples keep 1px from the label's fractional edges.
+			// The label is drawn over the faces of the row before it, and those faces show around its letters: the
+			// label has no felt backing.
+			expect(
+				document.elementFromPoint(
+					(labelBox.left + labelBox.right) / 2,
+					(labelBox.top + labelBox.bottom) / 2,
+				),
+			).toBe(label);
 			let white = 0;
 			for (let x = labelBox.left + 1; x < labelBox.right - 1; x += 1)
 				for (let y = labelBox.top + 1; y < labelBox.bottom - 1; y += 1) {
 					const [red = 0, green = 0, blue = 0] = pixel(x, y);
 					if (Math.min(red, green, blue) > 225) white += 1;
 				}
-			expect(white).toBe(0);
+			expect(white).toBeGreaterThan(0);
 			// The gold top edge of the frame crosses the faces of the row before it.
 			const frame = getComputedStyle(trump, "::after");
 			const edge =

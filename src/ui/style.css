@@ -1161,12 +1161,21 @@ main:has(> .room) {
 	flex-direction: row;
 }
 
-/* The frame is drawn above the cards of the other suits, so no card covers it. */
+/* The trump group is drawn above the cards of the other suits, so no card covers it. */
 .suit-group.trump {
 	z-index: 1;
+}
+
+/* The frame is drawn above the trump cards and their shadows. */
+.suit-group.trump::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 2;
 	outline: 2px solid var(--gold);
 	outline-offset: 3px;
 	border-radius: 0.4rem;
+	pointer-events: none;
 }
 
 /* The last card of a trump group is drawn at full width, so the frame ends after it and does not cut across it. */
@@ -4087,20 +4096,6 @@ main:has(> .room[data-form="compact"]) {
 /* Later rows cover the cards of earlier rows, but not the trump frame: it marks only the shown part of its row. */
 :is(.mobile-board-left, .mobile-board-right) .hand-stack .suit-row.trump {
 	z-index: auto;
-	outline: none;
-}
-
-:is(.mobile-board-left, .mobile-board-right)
-	.hand-stack
-	.suit-row.trump::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	z-index: 2;
-	outline: 2px solid var(--gold);
-	outline-offset: 3px;
-	border-radius: 0.4rem;
-	pointer-events: none;
 }
 
 :is(.mobile-board-left, .mobile-board-right) .hand-stack .trump-label {
@@ -4114,9 +4109,9 @@ main:has(> .room[data-form="compact"]) {
 		var(--card-h),
 		calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.1rem + 4px)
 	);
-	outline-offset: 0;
 }
 
+:is(.mobile-auction-hand, .mobile-board-top) .suit-group.trump::after,
 :is(.mobile-board-left, .mobile-board-right)
 	.hand-stack
 	.suit-row.trump::after {
@@ -4572,29 +4567,11 @@ main:has(> .room[data-form="compact"]) {
 /* Later rows cover the cards of earlier rows, but not the trump frame: it marks only the shown part of its row. */
 .room[data-form="desktop"] .hand-stack .suit-row.trump {
 	z-index: auto;
-	outline: none;
 }
 
-.room[data-form="desktop"] .hand-stack .suit-row.trump::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	z-index: 2;
-	outline: 2px solid var(--gold);
-	outline-offset: 3px;
-	border-radius: 0.4rem;
-	pointer-events: none;
-}
-
-/*
- * A trump label after an earlier suit row lies on that row's card faces. Its felt backing covers them there, so the
- * label stays readable above the cards.
- */
+/* A trump label after an earlier suit row lies on that row's card faces; it is drawn over them, with no backing. */
 .room[data-form="desktop"] .hand-stack .trump-label {
 	position: relative;
-	background: var(--felt);
-	background-image: var(--felt-texture);
-	background-size: var(--felt-texture-size) var(--felt-texture-size);
 }
 
 .room[data-form="desktop"] .place-left .seat,
