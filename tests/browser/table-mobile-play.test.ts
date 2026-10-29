@@ -1264,6 +1264,51 @@ describe("played card styles", () => {
 			await page.viewport(414, 896);
 		}
 	});
+
+	it.each(["M", "XXL"])(
+		"puts the top hand, the trick and the bottom hand on the middle line of the phone board at %s",
+		async (size) => {
+			await page.viewport(364, 784);
+			document.documentElement.dataset.suitFontSize = size;
+			try {
+				const base = playView();
+				const first = base.trick?.cards[0];
+				if (!base.trick || !first) throw new Error("missing trick");
+				const { root } = renderMobile({
+					...base,
+					trick: {
+						...base.trick,
+						cards: (["top", "left", "right", "bottom"] as const).map(
+							(position) => ({ ...first, position }),
+						),
+					},
+				});
+				const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+				if (!board) throw new Error("missing board");
+				const middle = (selector: string) => {
+					const boxes = [...root.querySelectorAll<HTMLElement>(selector)].map(
+						(item) => item.getBoundingClientRect(),
+					);
+					if (boxes.length === 0) throw new Error(`missing ${selector}`);
+					return (
+						(Math.min(...boxes.map((box) => box.left)) +
+							Math.max(...boxes.map((box) => box.right))) /
+						2
+					);
+				};
+				const line = middle(".mobile-auction-board");
+				for (const selector of [
+					".mobile-board-top :is(.back, .card .face)",
+					".mobile-board-center .played",
+					".mobile-auction-hand .card .face",
+				])
+					expect(Math.abs(middle(selector) - line), selector).toBeLessThan(2);
+			} finally {
+				delete document.documentElement.dataset.suitFontSize;
+				await page.viewport(414, 896);
+			}
+		},
+	);
 	it.each<["left" | "right", number, number]>([
 		["left", 320, 568],
 		["right", 320, 568],

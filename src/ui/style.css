@@ -3978,10 +3978,12 @@ main:has(> .room[data-form="compact"]) {
 	grid-area: center;
 }
 
+/* The trick's tracks are narrower than the middle column; they stay on the middle line of the board. */
 .mobile-board-center .trick {
 	--card-h: 2.8rem;
 	--card-w: 2rem;
 	--rank-size: 0.85rem;
+	justify-content: center;
 	gap: 0.1rem;
 }
 
