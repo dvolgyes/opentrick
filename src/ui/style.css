@@ -3546,6 +3546,11 @@ main:has(> .room[data-form="compact"]) {
 	overflow: auto;
 }
 
+/* On a phone's result screen the hands lie in the middle of the felt, so the result between them is in its middle. */
+[data-form="compact"] .bridge-table[data-phase="complete"] .body {
+	align-content: safe center;
+}
+
 [data-form="compact"] .place-left .seat,
 [data-form="compact"] .place-right .seat {
 	max-width: none;

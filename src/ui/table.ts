@@ -2654,8 +2654,12 @@ export function tableSection(
 			mobileBoardCenter.replaceChildren();
 			center.prepend(trick);
 		}
-		// Outside the phone board's middle, the summary lies on the middle of the felt.
-		if (auctionEnd.parentElement === null) scoring.after(auctionEnd);
+		// A phone's result lies between the four hands, so it covers none of them; elsewhere the summaries lie on the
+		// middle of the felt.
+		if (compact) {
+			if (scoring.parentElement !== center) center.append(scoring);
+		} else if (scoring.parentElement !== felt) waitingOverlay.before(scoring);
+		if (auctionEnd.parentElement === null) waitingOverlay.before(auctionEnd);
 		if (mobileGameActive) {
 			mobileTopbar.prepend(audioGroup);
 			const ownSeat = places.bottom.firstElementChild;

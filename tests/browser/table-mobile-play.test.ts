@@ -301,7 +301,10 @@ function renderMobile(view: TableView) {
 	return renderView(view, "compact");
 }
 
-/** The middle of `panel` is within 2px of the middle of `board`, in both directions. */
+/**
+ * The middle of `panel` is within 4px of the middle of `board`, in both directions. On a phone's result screen the
+ * empty call slot below the hands takes one 0.4rem felt gap, so the hands lie about 3px above the felt's middle.
+ */
 function expectSameMiddle(panel: HTMLElement, board: HTMLElement): void {
 	const middle = (node: HTMLElement): [number, number] => {
 		const box = node.getBoundingClientRect();
@@ -309,8 +312,43 @@ function expectSameMiddle(panel: HTMLElement, board: HTMLElement): void {
 	};
 	const [x, y] = middle(panel);
 	const [boardX, boardY] = middle(board);
-	expect(Math.abs(x - boardX), "horizontal").toBeLessThan(2);
-	expect(Math.abs(y - boardY), "vertical").toBeLessThan(2);
+	expect(Math.abs(x - boardX), "horizontal").toBeLessThan(4);
+	expect(Math.abs(y - boardY), "vertical").toBeLessThan(4);
+}
+
+/** Renders the result of a board as the model shows it: every hand with its 13 cards again, and no trick. */
+function renderResult(layout: Layout): HTMLElement {
+	const ranks = "AKQJT98765432";
+	const deal = {
+		visible: true as const,
+		suits: (["S", "H", "D", "C"] as const).map((suit, index) => ({
+			suit,
+			symbol: { S: "♠", H: "♥", D: "♦", C: "♣" }[suit],
+			trump: false,
+			cards: [...ranks.slice(index * 3, index === 3 ? 13 : index * 3 + 3)].map(
+				(rank) => card(`${suit}${rank}` as Card),
+			),
+		})),
+	};
+	const base = playView();
+	renderView(
+		{
+			...base,
+			phase: "complete",
+			trick: undefined,
+			seats: base.seats.map((player) => ({ ...player, hand: deal })),
+			scoring: {
+				contract: { level: 4, strain: "H", doubling: "X" },
+				compactOutcome: "WON",
+				compactDetail: "Made: 4♥X + 1",
+				countdown: 1,
+			},
+		},
+		layout,
+	);
+	const result = document.querySelector<HTMLElement>('[data-testid="scoring"]');
+	if (!result) throw new Error("no result");
+	return result;
 }
 
 afterEach(() => document.body.replaceChildren());
@@ -2514,26 +2552,42 @@ describe("turn pill", () => {
 	it.each<Layout>(["desktop", "sideways", "compact"])(
 		"shows the game result on the middle of the %s green board",
 		(layout) => {
-			renderView(
-				{
-					...playView(),
-					phase: "complete",
-					scoring: {
-						contract: { level: 4, strain: "H", doubling: "X" },
-						compactOutcome: "WON",
-						compactDetail: "Made: 4♥X + 1",
-						countdown: 1,
-					},
-				},
-				layout,
-			);
-			const result = document.querySelector<HTMLElement>(
-				'[data-testid="scoring"]',
-			);
+			const result = renderResult(layout);
 			const board = document.querySelector<HTMLElement>(".felt");
-			if (!result || !board) throw new Error("no result or board");
+			if (!board) throw new Error("no board");
 			expect(result.checkVisibility()).toBe(true);
 			expectSameMiddle(result, board);
+		},
+	);
+
+	// The vitest page has no full-screen table frame, so the desktop felt is only as tall as its content here; the
+	// desktop clearance is checked on the real page (tests/e2e/result-banner.spec.ts).
+	it.each([
+		[414, 896],
+		[390, 844],
+		[360, 640],
+	])(
+		"covers no card or seat name of the shown deal with a phone's result at %sx%s",
+		async (width, height) => {
+			await page.viewport(width, height);
+			try {
+				const box = renderResult("compact").getBoundingClientRect();
+				const covered = [
+					...document.querySelectorAll<HTMLElement>(".hand .card, .seat-label"),
+				].filter((part) => {
+					const rect = part.getBoundingClientRect();
+					return (
+						part.checkVisibility() &&
+						rect.left < box.right &&
+						rect.right > box.left &&
+						rect.top < box.bottom &&
+						rect.bottom > box.top
+					);
+				});
+				expect(covered.map((part) => part.textContent)).toEqual([]);
+			} finally {
+				await page.viewport(414, 896);
+			}
 		},
 	);
 
