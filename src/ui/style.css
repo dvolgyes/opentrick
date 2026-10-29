@@ -1136,6 +1136,14 @@ main:has(> .room) {
 	white-space: nowrap;
 }
 
+/* A side hand's trump label lies on the card faces of the row before it; a dark edge keeps its letters readable there. */
+.hand-stack .trump-label {
+	text-shadow:
+		0 0 1px var(--gold-fg),
+		0 0 2px var(--gold-fg),
+		0 0 3px var(--gold-fg);
+}
+
 .hand-stack .suit-row .card {
 	width: var(--card-step);
 	height: var(--side-strip);

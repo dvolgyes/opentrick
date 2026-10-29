@@ -4620,7 +4620,7 @@ describe("compact play controls", () => {
 					1,
 				).data;
 			// The label is drawn over the faces of the row before it, and those faces show around its letters: the
-			// label has no felt backing.
+			// label has no felt backing. A dark edge around the gold letters keeps them readable on the white faces.
 			expect(
 				document.elementFromPoint(
 					(labelBox.left + labelBox.right) / 2,
@@ -4628,12 +4628,15 @@ describe("compact play controls", () => {
 				),
 			).toBe(label);
 			let white = 0;
+			let dark = 0;
 			for (let x = labelBox.left + 1; x < labelBox.right - 1; x += 1)
 				for (let y = labelBox.top + 1; y < labelBox.bottom - 1; y += 1) {
 					const [red = 0, green = 0, blue = 0] = pixel(x, y);
 					if (Math.min(red, green, blue) > 225) white += 1;
+					if (Math.max(red, green, blue) < 90) dark += 1;
 				}
 			expect(white).toBeGreaterThan(0);
+			expect(dark).toBeGreaterThan(0);
 			// The gold top edge of the frame crosses the faces of the row before it.
 			const frame = getComputedStyle(trump, "::after");
 			const edge =
