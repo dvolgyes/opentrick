@@ -264,13 +264,14 @@ const RANK_LABELS = [
 ];
 
 /**
- * The overlapped cards whose visible strip cannot show every rank label in full, with the overflow in pixels.
- * The ink box of the tallest, deepest and widest label is placed at each card's rank baseline and centre line
- * (src/ui/style.css `.face > .rank` centres the label) in its own font, so the result does not depend on the deal
- * or on the device font.
+ * The overlapped cards whose visible strip cannot show every rank label of its kind in full, with the overflow in
+ * pixels. A ten has a wider strip (src/ui/style.css `.hand-row .card[data-card$="T"]`), so a ten's strip must show
+ * "10" and every other strip each one-character label. The ink box of the tallest, deepest and widest label of the
+ * kind is placed at the card's rank baseline and left edge (src/ui/style.css `.face > .rank` aligns the label left)
+ * in its own font, so the result does not depend on the deal or on the device font.
  */
 function ranksCut(page: Page): Promise<string[]> {
-	return page.evaluate((labels) => {
+	return page.evaluate((allLabels) => {
 		const context = document.createElement("canvas").getContext("2d");
 		if (!context) throw new Error("no 2D canvas");
 		const cut: string[] = [];
@@ -285,6 +286,9 @@ function ranksCut(page: Page): Promise<string[]> {
 				const style = getComputedStyle(rank);
 				context.font = style.font;
 				context.letterSpacing = style.letterSpacing;
+				const labels = allLabels.filter(
+					(label) => (label === "10") === (text.data === "10"),
+				);
 				const ink = labels.map((label) => context.measureText(label));
 				const range = document.createRange();
 				range.selectNodeContents(text);
@@ -294,7 +298,6 @@ function ranksCut(page: Page): Promise<string[]> {
 				// are scaled, the canvas metrics are not.
 				const scale = place.width / rank.offsetWidth;
 				const baseline = box.top + (ink[0]?.fontBoundingBoxAscent ?? 0) * scale;
-				const centre = place.left + place.width / 2;
 				const strip = card.getBoundingClientRect();
 				const over = Math.max(
 					strip.top -
@@ -303,11 +306,9 @@ function ranksCut(page: Page): Promise<string[]> {
 					baseline +
 						Math.max(...ink.map((m) => m.actualBoundingBoxDescent)) * scale -
 						strip.bottom,
-					Math.max(
-						...ink.map(
-							(m) => centre + (m.actualBoundingBoxRight - m.width / 2) * scale,
-						),
-					) - strip.right,
+					place.left +
+						Math.max(...ink.map((m) => m.actualBoundingBoxRight)) * scale -
+						strip.right,
 				);
 				if (over > 1)
 					cut.push(
