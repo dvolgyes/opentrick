@@ -4983,8 +4983,9 @@ main[data-screen="table"][data-layout="sideways"] .bid-row > .bid-box {
 	--card-h: 3.9rem;
 }
 
-/* The bidding history fits the half of the centre and the narrow sidebar. */
-.room[data-layout="sideways"] .auction {
+/* The bidding history fits the half of the centre and the narrow sidebar, also against the large suit fonts' least width. */
+.room[data-layout="sideways"] .auction,
+main[data-screen="table"][data-layout="sideways"] .auction-scroll .auction {
 	width: 100%;
 	min-width: 0;
 	table-layout: fixed;
