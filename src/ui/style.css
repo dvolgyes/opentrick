@@ -3344,6 +3344,8 @@ main[data-screen="table"][data-form="desktop"] > .room > .table-sidebar {
 	 * as wide as a played card while the row fits between the corner windows. A longer hand first narrows the gaps
 	 * between the suits, down to half the gap beside a narrow card, and then narrows the last cards, down to the narrow
 	 * card above. The gap is at most a quarter of the last card. src/ui/table.ts gives the counts of suits and strips.
+	 * A strip widens to show the widest one-character rank (the tail of Q) before the next card while the narrow last
+	 * cards and the least gaps still fit; the least suit gap keeps the step of the other tables.
 	 */
 	main[data-screen="table"][data-form="desktop"]
 		.room[data-layout="desktop"]
@@ -3363,6 +3365,25 @@ main[data-screen="table"][data-form="desktop"] > .room > .table-sidebar {
 		.room[data-layout="desktop"]
 		:is(.place-top, .place-bottom)
 		.hand-row:not(.backs) {
+		--card-step: clamp(
+			calc(var(--rank-size) * 1.2 + 0.3rem),
+			(
+				100cqi -
+				2 *
+				(var(--card-h) * 4 / 3 * 1.4) -
+				var(--hand-ten-strips) *
+				max(
+					calc(var(--rank-size) * 1.2 + 0.3rem),
+					calc(var(--rank-size) * var(--suit-font-scale) * 1.3 + 0.2rem + 1px)
+				) -
+				var(--hand-suits) *
+				var(--narrow-card-w) -
+				(var(--hand-suits) - 1) *
+				var(--min-suit-gap)
+			) /
+			max(1, var(--hand-strips) - var(--hand-ten-strips)),
+			calc(var(--rank-size) * var(--suit-font-scale) * 0.8 + 0.2rem + 1px)
+		);
 		--strips-w: calc(
 			(var(--hand-strips) - var(--hand-ten-strips)) *
 			var(--card-step) +
