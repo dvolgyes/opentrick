@@ -348,6 +348,8 @@ export interface AuctionEndView {
 
 export interface UndoPanelView {
 	readonly canRequest: boolean;
+	/** "Ask to undo your last bid?": the question that confirms a request before it is sent; empty while none can be. */
+	readonly question: string;
 	readonly message: string;
 	readonly requestId: string | undefined;
 	readonly canVote: boolean;
@@ -499,6 +501,7 @@ const EMPTY: Omit<TableView, "phase" | "prompt"> = {
 	actions: [],
 	undo: {
 		canRequest: false,
+		question: "",
 		message: "",
 		requestId: undefined,
 		canVote: false,
@@ -949,16 +952,27 @@ function undoPanelView(
 	const board = state.board;
 	if (!pending) {
 		const sending = outbox.some((item) => item.payload.type === "undo-request");
+		const position = board === null ? undefined : undoPosition(board, seat);
+		const canRequest =
+			!terminal &&
+			!declarerIsBot &&
+			!sending &&
+			state.claim === null &&
+			state.claimResult === null &&
+			state.undo === null &&
+			position !== undefined;
 		return {
-			canRequest:
-				!terminal &&
-				!declarerIsBot &&
-				!sending &&
-				state.claim === null &&
-				state.claimResult === null &&
-				state.undo === null &&
-				board !== null &&
-				undoPosition(board, seat) !== undefined,
+			canRequest,
+			question:
+				canRequest && board !== null
+					? t("Ask to undo your {action}?", {
+							action: t(
+								position.cards < board.cards.length
+									? "last played card"
+									: "last bid",
+							),
+						})
+					: "",
 			message: sending ? t("Undo request is being sent.") : "",
 			requestId: undefined,
 			canVote: false,
@@ -997,6 +1011,7 @@ function undoPanelView(
 		!terminal && pending.required.includes(seat) && !voted && !voteSending;
 	return {
 		canRequest: false,
+		question: "",
 		message:
 			pending.requester === seat
 				? cancelSending

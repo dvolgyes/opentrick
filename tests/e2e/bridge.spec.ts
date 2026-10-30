@@ -295,6 +295,7 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	// The room always shows the desktop form (src/ui/room-view.ts): a dialog asks about the undo, and the claim uses
 	// the sidebar.
 	await tab.E.getByTestId("undo-request").click();
+	await tab.E.getByTestId("undo-confirm-send").click();
 	const approval = tab.N.getByRole("dialog", { name: "Undo request" });
 	await expect(approval).toBeVisible();
 	await expect(approval).toContainText("Do you approve?");

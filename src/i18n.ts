@@ -498,6 +498,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{requester} bittet darum, das Spiel zurückzusetzen.",
 		"last played card": "zuletzt gespielte Karte",
 		"last bid": "letztes bid",
+		"Ask to undo your {action}?":
+			"Möchtest du bitten, dein {action} rückgängig zu machen?",
+		"Ask to undo": "Rückgängigmachen anfragen",
 		"Claim tricks": "Tricks beanspruchen",
 		"Claim all remaining tricks": "Alle verbleibenden Tricks beanspruchen",
 		"Number of tricks to claim": "Anzahl der zu beanspruchenden Tricks",
@@ -1257,6 +1260,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{requester} kéri az utolsó {action} visszavonását. Jóváhagyod?",
 		"last played card": "utoljára kijátszott lap",
 		"last bid": "utolsó bid",
+		"Ask to undo your {action}?": "Kéred az {action} visszavonását?",
+		"Ask to undo": "Visszavonás kérése",
 		"How many of the remaining {count} tricks will you take?":
 			"A hátralévő {count} ütésből hányat viszel el?",
 		"Confirm that you claim all {count} remaining tricks.":
@@ -1768,6 +1773,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Venter på at {players} godkjenner nullstillingen.",
 		"last played card": "sist spilte kort",
 		"last bid": "siste melding",
+		"Ask to undo your {action}?": "Vil du be om å angre {action}?",
+		"Ask to undo": "Be om angring",
 
 		"Another tab changed the table at the same time. Reload the page.":
 			"En annen fane endret bordet samtidig. Last inn siden på nytt.",

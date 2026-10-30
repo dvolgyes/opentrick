@@ -2834,6 +2834,22 @@ const rows: readonly TranslationRow[] = [
 		"laatst gespeelde kaart",
 	],
 	[
+		"Ask to undo your {action}?",
+		"¿Pedir deshacer tu {action}?",
+		"Pedir para desfazer a sua {action}?",
+		"Demander d'annuler votre {action} ?",
+		"Chiedere di annullare la tua {action}?",
+		"Vragen om je {action} ongedaan te maken?",
+	],
+	[
+		"Ask to undo",
+		"Pedir deshacer",
+		"Pedir para desfazer",
+		"Demander l'annulation",
+		"Chiedi di annullare",
+		"Vragen om ongedaan te maken",
+	],
+	[
 		"memory only: a reload loses this copy",
 		"solo en memoria: al recargar se pierde esta copia",
 		"apenas na memória: ao recarregar perde-se esta cópia",

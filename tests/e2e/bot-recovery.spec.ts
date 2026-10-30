@@ -19,6 +19,7 @@ for (const operation of ["undo", "reset"] as const) {
 				.getByTestId("bid-box")
 				.getByRole("button", { name: "Undo", exact: true })
 				.click();
+			await page.getByTestId("undo-confirm-send").click();
 		} else {
 			await page
 				.getByRole("button", { name: "Host controls", exact: true })

@@ -464,6 +464,44 @@ export function tableSection(
 		autoplayAction = action;
 		autoplayDialog.showModal();
 	}
+	// An undo request goes to the other players at once, so the player confirms it first.
+	let undoConfirmBoard: number | undefined;
+	const undoConfirmTitle = el("h3", { attrs: { id: "undo-confirm-title" } });
+	const undoConfirmDialog: HTMLDialogElement = el(
+		"dialog",
+		{
+			className: "autoplay-dialog",
+			attrs: {
+				"aria-labelledby": "undo-confirm-title",
+				"data-testid": "undo-confirm",
+			},
+		},
+		undoConfirmTitle,
+		el(
+			"div",
+			{ className: "autoplay-dialog-actions" },
+			button(t("Cancel"), () => undoConfirmDialog.close(), {
+				attrs: { "data-testid": "undo-confirm-cancel" },
+			}),
+			button(
+				t("Ask to undo"),
+				() => {
+					const board = undoConfirmBoard;
+					undoConfirmDialog.close();
+					// The table can change while the question is open; a request goes only for the same board.
+					if (latestView?.undo.canRequest && latestView.board === board)
+						handlers.undoRequest(board);
+				},
+				{ attrs: { "data-testid": "undo-confirm-send" } },
+			),
+		),
+	);
+	function confirmUndo(view: TableView): void {
+		if (undoConfirmDialog.open || !view.undo.canRequest) return;
+		undoConfirmBoard = view.board;
+		undoConfirmTitle.textContent = view.undo.question;
+		undoConfirmDialog.showModal();
+	}
 	const heading = el("h3", {});
 	// The vulnerability of each side, one line each, right of the heading.
 	const vulnerability = el("div", {
@@ -562,13 +600,12 @@ export function tableSection(
 		claimMode = "all";
 		if (latestView) renderClaimPanel(latestView);
 	});
-	let undoBoard: number | undefined;
 	let undoRequestId: string | undefined;
 	let claimRequestId: string | undefined;
 	const playUndo = button(
 		t("Undo"),
 		() => {
-			if (undoBoard !== undefined) handlers.undoRequest(undoBoard);
+			if (latestView) confirmUndo(latestView);
 		},
 		{ className: "claim-undo", attrs: { "data-testid": "undo-request" } },
 	);
@@ -712,7 +749,7 @@ export function tableSection(
 	const compactUndo = button(
 		"",
 		() => {
-			if (undoBoard !== undefined) handlers.undoRequest(undoBoard);
+			if (latestView) confirmUndo(latestView);
 		},
 		{
 			className: "icon-button",
@@ -1077,6 +1114,7 @@ export function tableSection(
 		dock,
 		pointsDialog,
 		autoplayDialog,
+		undoConfirmDialog,
 		call.invite,
 		guide.element,
 	);
@@ -1918,8 +1956,8 @@ export function tableSection(
 				if (hasPick) {
 					pick = {};
 					redraw();
-				} else if (view.undo.canRequest) {
-					handlers.undoRequest(view.board);
+				} else {
+					confirmUndo(view);
 				}
 			},
 			{ className: "undo-call" },
@@ -2811,8 +2849,13 @@ export function tableSection(
 		bidBox.classList.toggle("not-turn", view.bids.length === 0);
 		renderBidBox(view);
 		renderScores(view);
-		undoBoard = view.board;
 		undoRequestId = view.undo.requestId;
+		// The question closes when its request can no longer go, such as after a new deal or another player's request.
+		if (
+			undoConfirmDialog.open &&
+			(!view.undo.canRequest || view.board !== undoConfirmBoard)
+		)
+			undoConfirmDialog.close();
 		claimRequestId = view.claim.requestId;
 		undoMessage.textContent = view.undo.message;
 		undoMessage.hidden = view.undo.message === "";

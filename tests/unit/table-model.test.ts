@@ -249,6 +249,19 @@ describe("table layout", () => {
 		).toBe(true);
 	});
 
+	it("names the action that an undo request would take back, and nothing while no request can be sent", () => {
+		expect(view("N", bidding(BOARD, "1C")).undo.question).toBe(
+			"Ask to undo your last bid?",
+		);
+		expect(view("E", LED).undo.question).toBe(
+			"Ask to undo your last played card?",
+		);
+		expect(view("E", bidding(BOARD, "1C")).undo).toMatchObject({
+			canRequest: false,
+			question: "",
+		});
+	});
+
 	it("offers the trick count choice only when five tricks or fewer remain", () => {
 		const six = afterTricks(NORTH_DECLARER_BOARD, 7);
 		const five = afterTricks(NORTH_DECLARER_BOARD, 8);

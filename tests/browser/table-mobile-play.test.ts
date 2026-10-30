@@ -164,6 +164,7 @@ function playView(): TableView {
 		actions: [],
 		undo: {
 			canRequest: true,
+			question: "Ask to undo your last played card?",
 			message: "",
 			requestId: undefined,
 			canVote: false,
@@ -2821,6 +2822,7 @@ describe("desktop auction", () => {
 			need: undefined,
 			undo: {
 				canRequest: false,
+				question: "",
 				message: "",
 				requestId: "undo-1",
 				canVote: false,
@@ -3038,6 +3040,7 @@ describe("undo request off turn", () => {
 				need: undefined,
 				undo: {
 					canRequest: true,
+					question: "Ask to undo your last bid?",
 					message: "",
 					requestId: undefined,
 					canVote: false,
@@ -3056,9 +3059,37 @@ describe("undo request off turn", () => {
 			);
 			expect(hit?.closest("button")).toBe(target);
 			(hit as HTMLElement).click();
-			expect(handlers.undoRequest).toHaveBeenCalledWith(view.board);
+			// The request goes only after the player confirms it.
+			const dialog = root.querySelector<HTMLDialogElement>(
+				'[data-testid="undo-confirm"]',
+			);
+			expect(dialog?.open).toBe(true);
+			expect(dialog?.textContent).toContain("Ask to undo your last bid?");
+			expect(handlers.undoRequest).not.toHaveBeenCalled();
+			dialog
+				?.querySelector<HTMLButtonElement>('[data-testid="undo-confirm-send"]')
+				?.click();
+			expect(dialog?.open).toBe(false);
+			expect(handlers.undoRequest).toHaveBeenCalledExactlyOnceWith(view.board);
 		},
 	);
+
+	it("sends no undo request when the player cancels the question", () => {
+		const { root, handlers } = renderView(playView(), "desktop");
+		// The desktop play controls are in the sidebar, outside the table section.
+		document
+			.querySelector<HTMLButtonElement>('[data-testid="undo-request"]')
+			?.click();
+		const dialog = root.querySelector<HTMLDialogElement>(
+			'[data-testid="undo-confirm"]',
+		);
+		expect(dialog?.open).toBe(true);
+		dialog
+			?.querySelector<HTMLButtonElement>('[data-testid="undo-confirm-cancel"]')
+			?.click();
+		expect(dialog?.open).toBe(false);
+		expect(handlers.undoRequest).not.toHaveBeenCalled();
+	});
 });
 
 describe("bid box under a held press", () => {
@@ -5109,6 +5140,10 @@ describe("compact play controls", () => {
 			(button) => button.textContent === "Undo",
 		);
 		undo?.click();
+		expect(handlers.undoRequest).not.toHaveBeenCalled();
+		root
+			.querySelector<HTMLButtonElement>('[data-testid="undo-confirm-send"]')
+			?.click();
 		expect(handlers.undoRequest).toHaveBeenCalledWith(1);
 	});
 });
@@ -5839,6 +5874,7 @@ describe("approval of an undo or a claim", () => {
 		trick: undefined,
 		undo: {
 			canRequest: false,
+			question: "",
 			message: QUESTION,
 			requestId: "undo-1",
 			canVote: true,
@@ -5850,6 +5886,7 @@ describe("approval of an undo or a claim", () => {
 		...playView(),
 		undo: {
 			canRequest: false,
+			question: "",
 			message: "playerW asks to undo their last played card. Do you approve?",
 			requestId: "undo-1",
 			canVote: true,
