@@ -120,10 +120,10 @@ export function commandText(payload: unknown, t: Translate = english): string {
 }
 
 /**
- * "Waiting for David (E) and West to come back", in the viewer's language: each seat by its player's name and its
- * letter, or by its direction while it has no player. Undefined for no seats.
+ * "David (E) and West", in the viewer's language: each seat by its player's name and its letter, or by its direction
+ * while it has no player. Undefined for no seats.
  */
-export function comeBackText(
+function playerList(
 	seats: readonly Seat[],
 	names: Readonly<Partial<Record<Seat, string>>>,
 	t: Translate,
@@ -134,10 +134,21 @@ export function comeBackText(
 	});
 	const last = players.pop();
 	if (last === undefined) return undefined;
-	return t("Waiting for {players} to come back", {
-		players:
-			players.length > 0 ? `${players.join(", ")} ${t("and")} ${last}` : last,
-	});
+	return players.length > 0
+		? `${players.join(", ")} ${t("and")} ${last}`
+		: last;
+}
+
+/** "Waiting for David (E) and West to come back", with the seats of `playerList`. Undefined for no seats. */
+export function comeBackText(
+	seats: readonly Seat[],
+	names: Readonly<Partial<Record<Seat, string>>>,
+	t: Translate,
+): string | undefined {
+	const players = playerList(seats, names, t);
+	return players === undefined
+		? undefined
+		: t("Waiting for {players} to come back", { players });
 }
 
 /**
@@ -1209,13 +1220,22 @@ export function tableView(input: TableViewInput): TableView {
 			ready: canStartAction && dealWait === undefined,
 		};
 	};
-	if (!board)
+	if (!board) {
+		// Before the first board, the absent seats have not joined yet.
+		const joining = playerList(
+			SEATS.filter((owner) => !allPresent.includes(owner)),
+			config.names,
+			t,
+		);
 		return {
 			...EMPTY,
 			phase: "waiting",
 			heading: "ROOM CONNECTION",
 			details: "Room lobby",
-			prompt: dealWait ?? t("The first board is dealt now."),
+			prompt:
+				joining === undefined
+					? t("The first board is dealt now.")
+					: t("Waiting for {players} to join", { players: joining }),
 			seats: lobbySeats(input, t),
 			nextBoard: nextBoard(),
 			actions,
@@ -1224,6 +1244,7 @@ export function tableView(input: TableViewInput): TableView {
 			scores,
 			totals: sums,
 		};
+	}
 
 	// While a claim waits, the defenders who decide it see every hand; the declarer and dummy see the defenders'
 	// hands only when the claim is accepted.

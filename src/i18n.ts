@@ -62,6 +62,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Das Spiel beginnt in {seconds} Sekunden.",
 		"Waiting for {players} to come back":
 			"Warten auf die Rückkehr von {players}",
+		"Waiting for {players} to join": "Warten auf den Beitritt von {players}",
 		"The first board is dealt now.": "Das erste Board wird jetzt gegeben.",
 		WAITING: "WARTEN",
 		"CONNECTING TO HOST": "VERBINDUNG ZUM HOST",
@@ -743,6 +744,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A játék {seconds} másodperc múlva kezdődik.",
 		"Waiting for {players} to come back":
 			"Várakozás, hogy visszatérjenek: {players}",
+		"Waiting for {players} to join":
+			"Várakozás, hogy csatlakozzanak: {players}",
 		"The first board is dealt now.": "Az első leosztás most következik.",
 		WAITING: "VÁRAKOZÁS",
 		"CONNECTING TO HOST": "KAPCSOLÓDÁS A HOSTHOZ",
@@ -1411,6 +1414,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Spillet starter om {seconds} sekunder.",
 		"Waiting for {players} to come back":
 			"Venter på at {players} kommer tilbake",
+		"Waiting for {players} to join": "Venter på at {players} blir med",
 		"The first board is dealt now.": "Den første given deles ut nå.",
 		WAITING: "VENTER",
 		"CONNECTING TO HOST": "KOBLER TIL VERTEN",

@@ -2586,6 +2586,14 @@ const rows: readonly TranslationRow[] = [
 		"Wachten tot {players} terug is",
 	],
 	[
+		"Waiting for {players} to join",
+		"Esperando la llegada de {players}",
+		"À espera da chegada de {players}",
+		"En attente de l'arrivée de {players}",
+		"In attesa dell'arrivo di {players}",
+		"Wachten tot {players} meedoet",
+	],
+	[
 		"Waiting for {players} to decide.",
 		"Esperando la decisión de {players}.",
 		"À espera da decisão de {players}.",

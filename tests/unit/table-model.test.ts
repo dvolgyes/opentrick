@@ -720,7 +720,7 @@ describe("presence (plan §12 R4)", () => {
 		const table = view("E", null, { present: without("N", "W") });
 		expect(table.nextBoard?.ready).toBe(false);
 		expect(table.prompt).toBe(
-			"Waiting for player1 (N) and player4 (W) to come back",
+			"Waiting for player1 (N) and player4 (W) to join",
 		);
 	});
 
@@ -775,7 +775,7 @@ describe("presence (plan §12 R4)", () => {
 	it("names a seat without a player by its direction", () => {
 		const config = { ...CONFIG, names: { ...CONFIG.names, W: "" } };
 		expect(view("E", null, { config, present: without("N", "W") }).prompt).toBe(
-			"Waiting for player1 (N) and West to come back",
+			"Waiting for player1 (N) and West to join",
 		);
 	});
 });
@@ -845,7 +845,7 @@ describe("the viewer's language", () => {
 		expect(away.waiting).toBe("Várakozás, hogy visszatérjenek: player1 (É)");
 		expect(
 			view("E", null, { ...hu, present: new Set<Seat>(["E", "S"]) }).prompt,
-		).toBe("Várakozás, hogy visszatérjenek: player1 (É) és player4 (Ny)");
+		).toBe("Várakozás, hogy csatlakozzanak: player1 (É) és player4 (Ny)");
 	});
 
 	it("writes the loading and unreadable tables, the calls to confirm, and the sent call in Hungarian", () => {
