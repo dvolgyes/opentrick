@@ -59,6 +59,8 @@ export function parseMerge(value: unknown): Merge | undefined {
 	return validMerge(merge) ? merge : undefined;
 }
 
+export const TRANSFERS_PREFIX = "opentrick.community.transfers.";
+
 /**
  * A prepare is a durable vote for exactly one destination. It cannot time out into another search.
  * Every participant can reconstruct commitment from all votes, without the original coordinator.
@@ -76,7 +78,7 @@ export class TransferJournal {
 	constructor(store: Store, member: string) {
 		this.#store = store;
 		this.#member = member;
-		this.#key = `opentrick.community.transfers.${member}`;
+		this.#key = TRANSFERS_PREFIX + member;
 		const text = store.getItem(this.#key);
 		if (text === null) return;
 		this.#valid = false;

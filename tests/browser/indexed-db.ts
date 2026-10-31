@@ -1,6 +1,7 @@
 import {
 	type CorruptRecord,
 	openIndexedDbStorage,
+	STORAGE_VERSION,
 	type TableStorage,
 } from "../../src/p2p/storage";
 
@@ -28,7 +29,7 @@ export function deleteDatabase(): Promise<void> {
  * Every storage connection closes, so its later transactions fail.
  */
 export async function openNewerVersion(): Promise<void> {
-	const upgraded = await request(indexedDB.open(DB_NAME, 2));
+	const upgraded = await request(indexedDB.open(DB_NAME, STORAGE_VERSION + 1));
 	upgraded.close();
 }
 

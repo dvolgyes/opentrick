@@ -295,7 +295,12 @@ export class MemoryStorage implements TableStorage {
 // IndexedDB
 
 const DB_NAME = "opentrick-p2p";
-const DB_VERSION = 1;
+/**
+ * The version of the game data that this build stores, in IndexedDB and in web storage (ADR 0008). Raise it when a
+ * build cannot use the stored data of the build before. The first page of the new build then drops the game data of
+ * the browser, and an open page of an older build loses its database connection.
+ */
+export const STORAGE_VERSION = 1;
 const TABLES = "tables";
 const ENTRIES = "entries";
 const OUTBOX = "outbox";
@@ -332,6 +337,7 @@ function storageFailure(error: unknown): StorageFailure {
 export function openIndexedDbStorage(
 	api: IndexedDbApi | undefined,
 	onCorrupt: (record: CorruptRecord) => void,
+	version = STORAGE_VERSION,
 ): Promise<StorageResult<TableStorage>> {
 	if (!api) {
 		return Promise.resolve(failure("storage", "IndexedDB is not available"));
@@ -339,13 +345,16 @@ export function openIndexedDbStorage(
 	return new Promise((resolve) => {
 		let request: IDBOpenDBRequest;
 		try {
-			request = api.factory.open(DB_NAME, DB_VERSION);
+			request = api.factory.open(DB_NAME, version);
 		} catch (error) {
 			resolve(storageFailure(error));
 			return;
 		}
 		request.onupgradeneeded = () => {
 			const db = request.result;
+			// The tables of an older storage version are not usable: drop them (ADR 0008).
+			for (const name of Array.from(db.objectStoreNames))
+				db.deleteObjectStore(name);
 			db.createObjectStore(TABLES, { keyPath: ["tableId", "replica"] });
 			db.createObjectStore(ENTRIES, { keyPath: ["tableId", "replica", "seq"] });
 			db.createObjectStore(OUTBOX, { keyPath: ["tableId", "replica", "id"] });

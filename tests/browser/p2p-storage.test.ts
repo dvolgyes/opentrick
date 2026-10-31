@@ -6,6 +6,7 @@ import {
 	type CorruptRecord,
 	MemoryStorage,
 	openIndexedDbStorage,
+	STORAGE_VERSION,
 	type StorageResult,
 	type TableStorage,
 } from "../../src/p2p/storage";
@@ -495,6 +496,30 @@ describe("IndexedDB storage", () => {
 			closed,
 		);
 		expect(await storage.load(TABLE, "N")).toMatchObject(closed);
+	});
+
+	it("drops the stored tables when a page of a newer storage version opens the database", async () => {
+		const { storage } = await indexedDb();
+		const start = created();
+		value(await storage.commit(start));
+		value(await storage.expireTable(OTHER_TABLE, 1_000));
+
+		const opened = await openIndexedDbStorage(
+			{ factory: indexedDB, keyRange: IDBKeyRange },
+			() => {},
+			STORAGE_VERSION + 1,
+		);
+		const newer = value(opened);
+
+		expect(await loaded(newer)).toBeNull();
+		expect(value(await newer.tombstone(OTHER_TABLE))).toBeNull();
+		value(await newer.commit(start));
+		expect((await loaded(newer))?.table).toEqual(start.table);
+		// The page of the older version can no longer write.
+		expect(await storage.commit(extended(start.table, 1))).toMatchObject({
+			ok: false,
+			code: "storage",
+		});
 	});
 
 	it("reports a database that a newer version of the page upgraded", async () => {

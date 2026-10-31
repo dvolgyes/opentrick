@@ -79,7 +79,7 @@ import type {
 // ---------------------------------------------------------------------------------------------------------------
 // Identity and creation
 
-const CLIENT_PREFIX = "opentrick.client.";
+export const CLIENT_PREFIX = "opentrick.client.";
 const RELOAD_LOCK_WAIT_MS = 500;
 const RELOAD_LOCK_POLL_MS = 50;
 

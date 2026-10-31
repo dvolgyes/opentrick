@@ -106,7 +106,7 @@ export interface SessionDeps {
 	readonly play: (key: string, start: GameStart, self: string) => Promise<void>;
 }
 
-const prefix = "opentrick.community.room.";
+export const ROOM_PREFIX = "opentrick.community.room.";
 const TIMEOUT_MS = 25_000;
 
 export function parseStart(value: unknown): GameStart | undefined {
@@ -178,8 +178,8 @@ export function readCommunity(
 	member?: string,
 ): CommunitySaved | undefined {
 	const text =
-		(member ? store.getItem(`${prefix}${key}.${member}`) : null) ??
-		store.getItem(prefix + key);
+		(member ? store.getItem(`${ROOM_PREFIX}${key}.${member}`) : null) ??
+		store.getItem(ROOM_PREFIX + key);
 	if (!text || text.length > 32_768) return undefined;
 	let raw: unknown;
 	try {
@@ -491,14 +491,14 @@ export class CommunitySession {
 			this.#saved.key,
 			...(previousKey ? [previousKey] : []),
 		])) {
-			const name = `${prefix}${key}.${this.#saved.self}`;
+			const name = `${ROOM_PREFIX}${key}.${this.#saved.self}`;
 			this.#deps.store.setItem(name, text);
 			if (this.#deps.store.getItem(name) !== text) {
 				this.#fail("This browser could not save matchmaking progress.");
 				return false;
 			}
 			// Last-used fallback for old links. Another tab may legitimately replace it immediately.
-			this.#deps.store.setItem(prefix + key, text);
+			this.#deps.store.setItem(ROOM_PREFIX + key, text);
 		}
 		return true;
 	}

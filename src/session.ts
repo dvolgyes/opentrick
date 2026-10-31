@@ -7,9 +7,9 @@ export const SEAT_MEMORY_TTL_MS = 24 * 60 * 60 * 1000;
 /** A browser that hosted a room seeds it again sooner after expiry (ADR 0005), for a year after it last hosted. */
 export const HOST_MEMORY_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 
-const TAB_PREFIX = "opentrick.tab.";
-const BROWSER_PREFIX = "opentrick.seat.";
-const HOST_PREFIX = "opentrick.host.";
+export const TAB_PREFIX = "opentrick.tab.";
+export const BROWSER_PREFIX = "opentrick.seat.";
+export const HOST_PREFIX = "opentrick.host.";
 
 /** Storage that may be missing, for example when the browser blocks site data. */
 export type MaybeStorage =
