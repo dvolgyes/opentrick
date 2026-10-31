@@ -42,6 +42,10 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Tras la superaceptación, el respondedor pasa con 0–5 puntos y declara cuatro del mayor con 6 o más puntos.
 - [2C] (Stayman): 8 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto, [2H] con cuatro corazones, [2S] con cuatro picas y sin cuatro corazones.
 - Stayman débil: [2C] también con 0–7 puntos, cuatro picas, cuatro corazones y como máximo un trébol. Pasa cualquier respuesta del abridor.
+- Tras [2C] [2D], el respondedor declara [2H] o [2S] con cinco cartas en ese mayor, cuatro cartas en el otro mayor y 8–9 puntos; del mismo modo [3H] o [3S] con 10–15 puntos, forzante a manga. Sin mayor quinto, [2NT] con 8–9 puntos o [3NT] con 10–15 puntos.
+- Tras [2C] [2H], el respondedor declara [3H] con cuatro corazones y 8–9 puntos o [4H] con 10–15 puntos; sin cuatro corazones, del mismo modo [2NT] o [3NT]. Tras [2C] [2S], lo mismo con picas. Con 16 o más puntos, la guía no da ninguna declaración.
+- Tras Stayman, el abridor responde a [2NT] con 15 puntos con [P] y con 16–17 puntos con [3NT]; tras [2C] [2H] [2NT], con cuatro picas, en su lugar del mismo modo con [3S] o [4S]. Tras tres del mayor del abridor, [P] con 15 puntos o cuatro con 16–17 puntos. Tras [3NT], [P], pero [4S] con cuatro picas tras [2C] [2H].
+- Tras [2C] [2D] y cinco cartas del respondedor en un mayor, el abridor con dos cartas en ese mayor declara [2NT] sobre una declaración a nivel de dos con 15 puntos, si no [3NT]; con tres o más cartas, [P] sobre una declaración a nivel de dos con 15 puntos, si no cuatro del mayor.
 - [2S] (transferencia a menor): 0–7 puntos con seis o más cartas en un menor, o con cinco cartas en un menor en una mano que no es 5-3-3-2. El abridor debe declarar [3C]; pasa con tréboles, o declara [3D] con diamantes. Con un menor quinto en una mano 5-3-3-2, pasa [1NT].
 - [2NT]: 8–9 puntos sin mayor cuarto, invitativo. El abridor pasa con 15 puntos y declara [3NT] con 16–17 puntos.
 - [3C] [3D]: 8–9 puntos con seis o más cartas en el menor, invita a [3NT]. El abridor responde como después de [2NT].

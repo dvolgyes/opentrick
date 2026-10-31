@@ -292,7 +292,16 @@ Source: SAYC ("If responder instead bids other major, it shows 5 cards in that m
 - The guide leaves out [2S] after [2H] and [3H] after [2S] (decided 2026-10-31, derived from Q2): a hand with five spades and four hearts raises opener's hearts, and a hand with five spades without four hearts transfers; the same holds for five hearts after [2S].
   So no hand that follows the guide can bid them.
 - With 16 or more points the guide gives no second call after Stayman, as after a transfer.
+- After weak Stayman (0–7 points), responder passes any answer.
 - Opener answers an invitation: [P] (or the lowest partscore) with 15 points, game with 16–17 points.
+  The details below are derived (2026-11-01) from this rule and from opener's answers after a transfer:
+  - [2D] – [2H] or [2S] (five cards in that major): with three or more cards in the major, [P] with 15 points and four of the major with 16–17 points; with two cards, [2NT] with 15 points and [3NT] with 16–17 points.
+  - [2D] – [3H] or [3S] (game forcing): four of the major with three or more cards, [3NT] with two cards.
+  - [2D] – [2NT], [2S] – [2NT]: [P] with 15 points, [3NT] with 16–17 points.
+  - [2H] – [2NT]: with four spades, [3S] with 15 points and [4S] with 16–17 points; otherwise [P] or [3NT].
+  - [2H] – [3H], [2S] – [3S]: [P] with 15 points, four of the major with 16–17 points.
+  - [2H] – [3NT]: [4S] with four spades, otherwise [P].
+    [2D] – [3NT] and [2S] – [3NT]: [P].
 
 ### Decided: super-accept and responder's second call after a transfer (Q3, Q4, Q5)
 

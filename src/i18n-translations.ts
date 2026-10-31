@@ -165,6 +165,14 @@ const rows: readonly TranslationRow[] = [
 		"precies {length} {suit}",
 	],
 	[
+		"exactly {length} {suit} and {otherLength} {other}",
+		"exactamente {length} {suit} y {otherLength} {other}",
+		"exatamente {length} {suit} e {otherLength} {other}",
+		"exactement {length} {suit} et {otherLength} {other}",
+		"esattamente {length} {suit} e {otherLength} {other}",
+		"precies {length} {suit} en {otherLength} {other}",
+	],
+	[
 		"exactly {length} {suit}, no singleton or void",
 		"exactamente {length} {suit}, sin semifallo ni fallo",
 		"exatamente {length} {suit}, sem singleton nem void",

@@ -35,6 +35,10 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - A szuperelfogadás után a válaszoló 0–5 ponttal passzol, legalább 6 ponttal négyes szinten licitálja a nemes színt.
 - [2C] (Stayman): legalább 8 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D], négy kőrrel [2H], négy pikkel és négy kőr nélkül [2S] választ ad.
 - Gyenge Stayman: [2C] 0–7 ponttal is, négy pikkel, négy kőrrel és legfeljebb egy treffel. A nyitó bármely válaszát passzold.
+- [2C] [2D] után a válaszoló licitje [2H] vagy [2S] öt lappal abban a nemes színben, négy lappal a másik nemes színben és 8–9 ponttal; ugyanígy [3H] vagy [3S] 10–15 ponttal, manche-ig forszírozó. Ötlapos nemes szín nélkül 8–9 ponttal [2NT], 10–15 ponttal [3NT].
+- [2C] [2H] után a válaszoló licitje négy kőrrel és 8–9 ponttal [3H], 10–15 ponttal [4H]; négy kőr nélkül ugyanígy [2NT] vagy [3NT]. [2C] [2S] után ugyanez pikkel. Legalább 16 ponttal az útmutató nem ad licitet.
+- Stayman után a nyitó a [2NT]-re 15 ponttal [P]-t, 16–17 ponttal [3NT]-t mond; [2C] [2H] [2NT] után négy pikkel helyette ugyanígy [3S]-t vagy [4S]-t. A nyitó nemes színének hármas szintje után 15 ponttal [P], 16–17 ponttal a szín négyes szinten. [3NT] után [P], de négy pikkel [4S], ha a licitmenet [2C] [2H] volt.
+- [2C] [2D] után, ha a válaszoló öt lapot mutat egy nemes színben, a nyitó két lappal ebben a színben kettes szintű licitre 15 ponttal [2NT]-t mond, különben [3NT]-t; legalább három lappal kettes szintű licitre 15 ponttal [P]-t, különben a nemes színt négyes szinten.
 - [2S] (alacsonyszín-transzfer): 0–7 pont legalább hatlapos alacsony színnel, vagy ötlapos alacsony színnel, ha a lapod nem 5-3-3-2 elosztású. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited. Ötlapos alacsony színnel és 5-3-3-2 elosztással passzold az [1NT] nyitást.
 - [2NT]: 8–9 pont négylapos nemes szín nélkül, invitáló. A nyitó 15 ponttal passzol, 16–17 ponttal [3NT] a licitje.
 - [3C] [3D]: 8–9 pont legalább hatlapos alacsony színnel, [3NT]-re invitál. A nyitó úgy válaszol, mint [2NT] után.

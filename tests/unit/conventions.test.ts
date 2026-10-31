@@ -221,6 +221,41 @@ describe("guide calls for a hand", () => {
 		["1NT P 2D P 2H P 2S P", "AQ.KJ52.Q862.K73", ["3H"]], // 15, more hearts
 		["1NT P 2D P 2H P 2S P", "AQ.KJ52.Q862.A73", ["4H"]], // 16, more hearts
 		["1NT P 2D P 2H P 2S P", "AQ4.KJ5.Q862.A73", ["4S"]], // 16, three spades, three hearts
+		["1NT P 2C P 2D P", "QJ84.KQ973.52.32", ["2H"]], // 8, five hearts, four spades
+		["1NT P 2C P 2D P", "KQ973.QJ84.52.32", ["2S"]], // 8, five spades, four hearts
+		["1NT P 2C P 2D P", "J984.KQ973.A2.32", ["3H"]], // 10, five hearts, four spades
+		["1NT P 2C P 2D P", "KJ84.QJ84.52.Q32", ["2NT"]], // 9, four-four
+		["1NT P 2C P 2D P", "KJ84.Q84.A52.Q32", ["3NT"]], // 12
+		["1NT P 2C P 2D P", "J984.T843.J9852.-", ["P"]], // 2, weak Stayman
+		["1NT P 2C P 2D P", "AK84.KQ84.A52.32", []], // 16: no guide call
+		["1NT P 2C P 2H P", "QJ84.KQ84.52.532", ["3H"]], // 8, four hearts
+		["1NT P 2C P 2H P", "QJ84.KQ84.A2.532", ["4H"]], // 12, four hearts
+		["1NT P 2C P 2H P", "KJ84.Q84.J52.Q32", ["2NT"]], // 9, four spades
+		["1NT P 2C P 2H P", "KJ84.Q84.A52.Q32", ["3NT"]], // 12, four spades
+		["1NT P 2C P 2H P", "KQ973.QJ84.52.32", ["3H"]], // 8, five spades, four hearts
+		["1NT P 2C P 2S P", "KJ84.Q84.J52.Q32", ["3S"]], // 9, four spades
+		["1NT P 2C P 2S P", "Q84.KJ84.J52.Q32", ["2NT"]], // 9, four hearts
+		["1NT P 2C P 2S P", "Q84.KJ84.A52.Q32", ["3NT"]], // 12, four hearts
+		["1NT P 2C P 2S P", "KJ84.Q84.A52.Q32", ["4S"]], // 12, four spades
+		["1NT P 2C P 2D P 2H P", "AQ4.KJ5.Q862.K73", ["P"]], // 15, three hearts
+		["1NT P 2C P 2D P 2H P", "AQ4.KJ.Q8652.K73", ["2NT"]], // 15, two hearts
+		["1NT P 2C P 2D P 2H P", "AQ4.KJ5.Q862.A73", ["4H"]], // 16, three hearts
+		["1NT P 2C P 2D P 2H P", "AQ4.KJ.Q8652.A73", ["3NT"]], // 16, two hearts
+		["1NT P 2C P 2D P 3S P", "AQ4.KJ5.Q862.K73", ["4S"]], // three spades
+		["1NT P 2C P 2D P 3S P", "AQ.KJ5.Q8652.K73", ["3NT"]], // two spades
+		["1NT P 2C P 2D P 2NT P", "AQ4.KJ5.Q862.K73", ["P"]], // 15
+		["1NT P 2C P 2D P 2NT P", "AQ4.KJ5.Q862.A73", ["3NT"]], // 16
+		["1NT P 2C P 2D P 3NT P", "AQ4.KJ5.Q862.A73", ["P"]],
+		["1NT P 2C P 2H P 2NT P", "AQ84.KJ52.Q8.K73", ["3S"]], // 15, four spades
+		["1NT P 2C P 2H P 2NT P", "AQ84.KJ52.Q8.A73", ["4S"]], // 16, four spades
+		["1NT P 2C P 2H P 2NT P", "AQ4.KJ52.Q86.K73", ["P"]], // 15
+		["1NT P 2C P 2H P 2NT P", "AQ4.KJ52.Q86.A73", ["3NT"]], // 16
+		["1NT P 2C P 2H P 3NT P", "AQ84.KJ52.Q8.K73", ["4S"]], // four spades
+		["1NT P 2C P 2H P 3NT P", "AQ4.KJ52.Q86.K73", ["P"]],
+		["1NT P 2C P 2H P 3H P", "AQ4.KJ52.Q86.K73", ["P"]], // 15
+		["1NT P 2C P 2H P 3H P", "AQ4.KJ52.Q86.A73", ["4H"]], // 16
+		["1NT P 2C P 2S P 2NT P", "AQ84.KJ5.Q82.K73", ["P"]], // 15
+		["1NT P 2C P 2S P 3S P", "AQ84.KJ5.Q82.A73", ["4S"]], // 16
 		["1NT P 2S P", "AQ4.KJ5.Q862.K73", ["3C"]],
 		["1NT P 2S P 3C P", "84.73.QT9873.J52", ["3D"]], // six diamonds
 		["1NT P 2S P 3C P", "84.732.QT987.J52", ["3D"]], // five diamonds
@@ -753,6 +788,62 @@ describe("guide meaning of a call", () => {
 				shape: { kind: "longer-major", suit: "H", other: "S", ties: false },
 			},
 		],
+		[
+			"hcp",
+			"1NT P 2C P 2D P 2H",
+			{
+				range: { min: 8, max: 9 },
+				shape: {
+					kind: "two-suits",
+					suit: "H",
+					length: 5,
+					other: "S",
+					otherLength: 4,
+				},
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2C P 2D P 3NT",
+			{
+				range: { min: 10, max: 15 },
+				shape: { kind: "no-major", min: 5 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2C P 2H P P",
+			{ range: { min: 0, max: 7 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 2C P 2H P 2NT",
+			{
+				range: { min: 8, max: 9 },
+				shape: { kind: "at-most", suit: "H", max: 3 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2C P 2S P 4S",
+			{
+				range: { min: 10, max: 15 },
+				shape: { kind: "support", suit: "S", min: 4 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2C P 2H P 2NT P 3S",
+			{
+				range: { min: 15, max: 15 },
+				shape: { kind: "cards", suit: "S", min: 4 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2C P 2D P 3H P 3NT",
+			{ shape: { kind: "at-most", suit: "H", max: 2 } },
+		],
 		["hcp", "1NT P 2S P 3C", { shape: { kind: "relay" } }],
 		[
 			"hcp",
@@ -943,6 +1034,8 @@ describe("guide meaning of a call", () => {
 		["hcp", "1NT P 2NT P 4NT"],
 		["hcp", "1NT P 4NT P 5C"], // no ace answer to a [4NT] that invites [6NT]
 		["hcp", "1NT P 2D P 2H P 3S"], // a jump in the other major after the transfer
+		["hcp", "1NT P 2C P 2H P 2S"], // five spades after Stayman: the guide leaves it out
+		["hcp", "1NT P 2C P 2S P 3H"],
 		["hcp", "1NT P 3NT P 4NT"],
 		["hcp", "4NT"],
 		["hcp", "1H P 3H P 4NT X 5D"],
@@ -990,6 +1083,13 @@ describe("guide calls and meanings agree", () => {
 			"1NT P 2D P 2H P 2S P",
 			"1NT P 2H P 2S P 3S P",
 			"1NT P 2H P 2S P 3NT P",
+			"1NT P 2C P 2D P",
+			"1NT P 2C P 2H P",
+			"1NT P 2C P 2S P",
+			"1NT P 2C P 2D P 2H P",
+			"1NT P 2C P 2D P 3S P",
+			"1NT P 2C P 2H P 2NT P",
+			"1NT P 2C P 2H P 3NT P",
 			"1NT P 2NT P",
 			"1NT P 3C P",
 			"1NT P 3H P",
@@ -1066,6 +1166,18 @@ describe("guide calls and meanings agree", () => {
 			"1NT P 2H P 2S P 2NT P",
 			"1NT P 2H P 2S P 3S P",
 			"1NT P 2H P 2S P 3NT P",
+			"1NT P 2C P 2D P 2H P",
+			"1NT P 2C P 2D P 2S P",
+			"1NT P 2C P 2D P 2NT P",
+			"1NT P 2C P 2D P 3H P",
+			"1NT P 2C P 2D P 3S P",
+			"1NT P 2C P 2D P 3NT P",
+			"1NT P 2C P 2H P 2NT P",
+			"1NT P 2C P 2H P 3H P",
+			"1NT P 2C P 2H P 3NT P",
+			"1NT P 2C P 2S P 2NT P",
+			"1NT P 2C P 2S P 3S P",
+			"1NT P 2C P 2S P 3NT P",
 		];
 		const counts = { responses: 0, answers: 0 };
 		for (let game = 0; game < 400; game += 1) {
@@ -1128,6 +1240,29 @@ describe("guide calls and meanings agree", () => {
 		}
 		expect(counts.accepted).toBeGreaterThan(300);
 		expect(counts.superAccepted).toBeGreaterThan(300);
+		expect(counts.above).toBeGreaterThan(0);
+	}, 30_000);
+
+	it("gives the Stayman bidder exactly one second call after each answer up to 15 points, and none above", () => {
+		const counts = { answered: 0, above: 0 };
+		for (let game = 0; game < 400; game += 1) {
+			const deal = dealCards(randomBelowFrom(seeded(game + 1)));
+			for (const seat of SEATS)
+				for (const system of RULE_SYSTEMS) {
+					const cards = deal[seat];
+					if (suggested(system, cardsText(cards), "1NT P")?.join() !== "2C")
+						continue;
+					const points = countHandPoints(system, cards).total;
+					for (const answer of ["2D", "2H", "2S"]) {
+						expect(
+							suggested(system, cardsText(cards), `1NT P 2C P ${answer} P`),
+							`${system} ${cardsText(cards)} after ${answer}`,
+						).toHaveLength(points <= 15 ? 1 : 0);
+						counts[points <= 15 ? "answered" : "above"] += 1;
+					}
+				}
+		}
+		expect(counts.answered).toBeGreaterThan(300);
 		expect(counts.above).toBeGreaterThan(0);
 	}, 30_000);
 });
@@ -1228,6 +1363,14 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"nt-super-game": [
 		"Responses to [1NT]",
 		"bids four of the major with {range} points",
+	],
+	"stayman-invite": [
+		"Responses to [1NT]",
+		"four cards in the other major and {range} points",
+	],
+	"stayman-game": [
+		"Responses to [1NT]",
+		"[3H] or [3S] in the same way with {range} points",
 	],
 	"2nt-gerber": ["Responses to [2NT]", "- [4C] (Gerber): {range} points"],
 	"2c-waiting": ["Responses to [2C]", "- [2D]: waiting, {range} points"],

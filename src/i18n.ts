@@ -678,6 +678,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"artificial and forcing": "künstlich und forcierend",
 		"{min}+ {suit} support": "Unterstützung mit {min}+ {suit}",
 		"exactly {length} {suit}": "genau {length} {suit}",
+		"exactly {length} {suit} and {otherLength} {other}":
+			"genau {length} {suit} und {otherLength} {other}",
 		"exactly {length} {suit}, no singleton or void":
 			"genau {length} {suit}, kein Single und kein Chicane",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
@@ -1376,6 +1378,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"artificial and forcing": "mesterséges és forszírozó",
 		"{min}+ {suit} support": "{suit} támogatás, {min}+ lap",
 		"exactly {length} {suit}": "pontosan {length} {suit}",
+		"exactly {length} {suit} and {otherLength} {other}":
+			"pontosan {length} {suit} és {otherLength} {other}",
 		"exactly {length} {suit}, no singleton or void":
 			"pontosan {length} {suit}, szingli és renonsz nélkül",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
@@ -2065,6 +2069,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"artificial and forcing": "kunstig og krav",
 		"{min}+ {suit} support": "støtte med {min}+ {suit}",
 		"exactly {length} {suit}": "nøyaktig {length} {suit}",
+		"exactly {length} {suit} and {otherLength} {other}":
+			"nøyaktig {length} {suit} og {otherLength} {other}",
 		"exactly {length} {suit}, no singleton or void":
 			"nøyaktig {length} {suit}, ingen singleton eller renons",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":

@@ -42,6 +42,10 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Dopo la superaccettazione, il rispondente passa con 0–5 punti e dichiara quattro nel nobile con 6 o più punti.
 - [2C] (Stayman): 8 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, [2H] con quattro cuori, [2S] con quattro picche e senza quattro cuori.
 - Stayman debole: [2C] anche con 0–7 punti, quattro picche, quattro cuori e al massimo una carta di fiori. Passa su ogni risposta dell'apertore.
+- Dopo [2C] [2D], il rispondente dichiara [2H] o [2S] con cinque carte in quel nobile, quattro carte nell'altro nobile e 8–9 punti; allo stesso modo [3H] o [3S] con 10–15 punti, forzante a manche. Senza un nobile quinto, [2NT] con 8–9 punti o [3NT] con 10–15 punti.
+- Dopo [2C] [2H], il rispondente dichiara [3H] con quattro cuori e 8–9 punti o [4H] con 10–15 punti; senza quattro cuori, allo stesso modo [2NT] o [3NT]. Dopo [2C] [2S], lo stesso con le picche. Con 16 o più punti, la guida non indica alcuna dichiarazione.
+- Dopo lo Stayman, l'apertore risponde a [2NT] con 15 punti con [P] e con 16–17 punti con [3NT]; dopo [2C] [2H] [2NT], con quattro picche, invece allo stesso modo con [3S] o [4S]. Dopo tre nel nobile dell'apertore, [P] con 15 punti o quattro con 16–17 punti. Dopo [3NT], [P], ma [4S] con quattro picche dopo [2C] [2H].
+- Dopo [2C] [2D] e cinque carte del rispondente in un nobile, l'apertore con due carte in quel nobile dichiara [2NT] su una dichiarazione a livello di due con 15 punti, altrimenti [3NT]; con tre o più carte, [P] su una dichiarazione a livello di due con 15 punti, altrimenti quattro nel nobile.
 - [2S] (transfer minore): 0–7 punti con sei o più carte in un minore, o con cinque carte in un minore in una mano che non è 5-3-3-2. L'apertore deve dichiarare [3C]; passa con i fiori, oppure dichiara [3D] con i quadri. Con un minore quinto in una mano 5-3-3-2, passa su [1NT].
 - [2NT]: 8–9 punti senza un nobile quarto, invitante. L'apertore passa con 15 punti e dichiara [3NT] con 16–17 punti.
 - [3C] [3D]: 8–9 punti con sei o più carte nel minore, invita a [3NT]. L'apertore risponde come dopo [2NT].

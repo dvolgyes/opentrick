@@ -42,6 +42,10 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - After the super-accept, responder passes with 0–5 points and bids four of the major with 6 or more points.
 - [2C] (Stayman): 8 or more points with a four-card major. Opener answers [2D] without a four-card major, [2H] with four hearts, [2S] with four spades and not four hearts.
 - Weak Stayman: [2C] also with 0–7 points, four spades, four hearts and at most one club. Pass any answer of opener.
+- After [2C] [2D], responder bids [2H] or [2S] with five cards in that major, four cards in the other major and 8–9 points; [3H] or [3S] in the same way with 10–15 points, game forcing. Without a five-card major, [2NT] with 8–9 points or [3NT] with 10–15 points.
+- After [2C] [2H], responder bids [3H] with four hearts and 8–9 points or [4H] with 10–15 points; without four hearts, [2NT] or [3NT] in the same way. After [2C] [2S], the same with spades. With 16 or more points, the guide gives no call.
+- After Stayman, opener answers [2NT] with 15 points by [P] and with 16–17 points by [3NT]; after [2C] [2H] [2NT], with four spades, by [3S] or [4S] in the same way instead. After three of opener's major, [P] with 15 points or four of it with 16–17 points. After [3NT], [P], but [4S] with four spades after [2C] [2H].
+- After [2C] [2D] and five cards in a major from responder, opener with two cards in that major bids [2NT] over a two-level bid with 15 points, otherwise [3NT]; with three or more cards, [P] over a two-level bid with 15 points, otherwise four of the major.
 - [2S] (minor transfer): 0–7 points with six or more cards in a minor, or with five cards in a minor in a hand that is not 5-3-3-2. Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds. With a five-card minor in a 5-3-3-2 hand, pass [1NT].
 - [2NT]: 8–9 points without a four-card major, invitational. Opener passes with 15 points and bids [3NT] with 16–17 points.
 - [3C] [3D]: 8–9 points with six or more cards in the minor, invites [3NT]. Opener answers as after [2NT].

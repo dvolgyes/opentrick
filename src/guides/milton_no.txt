@@ -35,6 +35,10 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Etter superaksepten passer svarer med 0–5 poeng og melder fire i høyfargen med 6 eller flere poeng.
 - [2C] (Stayman): 8 eller flere poeng med firekorts høyfarge. Åpner svarer [2D] uten firekorts høyfarge, [2H] med fire hjerter, [2S] med fire spar og ikke fire hjerter.
 - Svak Stayman: [2C] også med 0–7 poeng, fire spar, fire hjerter og høyst én kløver. Pass på alle svar fra åpner.
+- Etter [2C] [2D] melder svarer [2H] eller [2S] med fem kort i den høyfargen, fire kort i den andre høyfargen og 8–9 poeng; på samme måte [3H] eller [3S] med 10–15 poeng, utgangskrav. Uten femkorts høyfarge, [2NT] med 8–9 poeng eller [3NT] med 10–15 poeng.
+- Etter [2C] [2H] melder svarer [3H] med fire hjerter og 8–9 poeng eller [4H] med 10–15 poeng; uten fire hjerter på samme måte [2NT] eller [3NT]. Etter [2C] [2S] gjelder det samme med spar. Med 16 eller flere poeng gir veiledningen ingen melding.
+- Etter Stayman svarer åpner på [2NT] med 15 poeng med [P] og med 16–17 poeng med [3NT]; etter [2C] [2H] [2NT] med fire spar i stedet på samme måte med [3S] eller [4S]. Etter tre i åpners høyfarge, [P] med 15 poeng eller fire i den med 16–17 poeng. Etter [3NT], [P], men [4S] med fire spar etter [2C] [2H].
+- Etter [2C] [2D] og fem kort i en høyfarge fra svarer melder åpner med to kort i den høyfargen [2NT] over en melding på totrinnet med 15 poeng, ellers [3NT]; med tre eller flere kort [P] over en melding på totrinnet med 15 poeng, ellers fire i høyfargen.
 - [2S] (lavfargeoverføring): 0–7 poeng med seks eller flere kort i en lavfarge, eller med fem kort i en lavfarge på en hånd som ikke er 5-3-3-2. Åpner må melde [3C]; pass med kløver, eller meld [3D] med ruter. Med femkorts lavfarge på en 5-3-3-2-hånd, pass på [1NT].
 - [2NT]: 8–9 poeng uten firekorts høyfarge, invitasjon. Åpner passer med 15 poeng og melder [3NT] med 16–17 poeng.
 - [3C] [3D]: 8–9 poeng med seks eller flere kort i lavfargen, inviterer til [3NT]. Åpner svarer som etter [2NT].

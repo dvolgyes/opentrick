@@ -51,6 +51,8 @@ export type RangeKey =
 	| "transfer-pass"
 	| "transfer-invite"
 	| "transfer-game"
+	| "stayman-invite"
+	| "stayman-game"
 	| "2nt-gerber"
 	| "2c-waiting"
 	| "2c-positive"
@@ -122,6 +124,8 @@ const MILTON = {
 	"transfer-pass": { min: 0, max: 7 }, // "After the transfer, responder bids [P] with 0–7 points"
 	"transfer-invite": { min: 8, max: 9 }, // "[2NT] with exactly five cards and 8–9 points"
 	"transfer-game": { min: 10, max: 15 }, // "[3NT] with exactly five cards, no singleton or void, and 10–15 points"
+	"stayman-invite": { min: 8, max: 9 }, // "four cards in the other major and 8–9 points"
+	"stayman-game": { min: 10, max: 15 }, // "[3H] or [3S] in the same way with 10–15 points"
 	// ## Responses to [2NT]
 	"2nt-gerber": { min: 12 }, // "[4C] (Gerber): 12 or more points"
 	// ## Responses to [2C]

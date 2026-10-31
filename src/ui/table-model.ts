@@ -887,6 +887,13 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				max: shape.max,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
+		case "two-suits":
+			return t("exactly {length} {suit} and {otherLength} {other}", {
+				length: shape.length,
+				suit: SUIT_SYMBOLS[shape.suit],
+				otherLength: shape.otherLength,
+				other: SUIT_SYMBOLS[shape.other],
+			});
 		case "exact":
 			return t(
 				shape.flat === true
