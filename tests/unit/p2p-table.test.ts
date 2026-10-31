@@ -7,6 +7,7 @@ import { deriveHolder, makeTag } from "../../src/p2p/keys";
 import {
 	BEAT_MS,
 	BUTTON_MS,
+	HOSTED_SEED_WAIT_MS,
 	RESUME_ONLINE_MS,
 	SEED_WAIT_MS,
 	TICK_MS,
@@ -77,7 +78,10 @@ class Rig {
 	peers: string[] = [];
 	online = true;
 	creator = true;
+	community = false;
 	config: RoomConfig = CONFIG;
+	/** The seat from which this browser hosted the table last (the host record of src/session.ts). */
+	hosted: Seat | undefined;
 	/** Every control message that the page sent, with its receiver. */
 	readonly sentTo: {
 		readonly to: string | null;
@@ -134,6 +138,13 @@ class Rig {
 				seatToReopen: () => remembered,
 				remember: () => {},
 				forget: () => {},
+				hostSeat: () => this.hosted,
+				rememberHost: (_roomId, hosted) => {
+					this.hosted = hosted;
+				},
+				forgetHost: () => {
+					this.hosted = undefined;
+				},
 			},
 			module: chatModule,
 			clock: this.clock,
@@ -150,6 +161,7 @@ class Rig {
 			newId: newCommandId,
 			nonce: randomNonce,
 			creator: this.creator,
+			community: this.community,
 			preferredSeat: seat,
 			bootstrap: { config: this.config, host },
 		});
@@ -236,6 +248,79 @@ describe("table controller seat from the URL", () => {
 		const table = await rig.start(undefined, undefined, "S");
 		expect(table.view().seat).toBeNull();
 	});
+
+	it("opens the seat from which this browser hosted last when the URL names no seat and no seat is remembered", async () => {
+		rig.hosted = "E";
+		const table = await rig.start(undefined, undefined, "N");
+		expect(table.view().seat).toBe("E");
+	});
+
+	it("opens the remembered seat before the seat from which this browser hosted last", async () => {
+		rig.hosted = "E";
+		const table = await rig.start(undefined, "W", "N");
+		expect(table.view().seat).toBe("W");
+	});
+
+	it("opens no seat from the host record of a community table", async () => {
+		rig.community = true;
+		rig.hosted = "E";
+		const table = await rig.start(undefined, undefined, "N");
+		expect(table.view().seat).toBeNull();
+	});
+});
+
+describe("table controller host record", () => {
+	const EAST = "east000000000000000";
+
+	it("records the seat from which the page hosts", async () => {
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["N", "E", "W"], bidder: "sl" },
+		};
+		const table = await rig.start("S");
+		await rig.advance(2 * TICK_MS);
+		expect(table.view().hosting).toBe(true);
+		expect(rig.hosted).toBe("S");
+	});
+
+	it("keeps no host record for a community table", async () => {
+		rig.community = true;
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["N", "E", "W"], bidder: "sl" },
+		};
+		const table = await rig.start("S");
+		await rig.advance(2 * TICK_MS);
+		expect(table.view().hosting).toBe(true);
+		expect(rig.hosted).toBeUndefined();
+	});
+
+	it.each([
+		["another browser", "clientE-0123456789abcd", undefined],
+		["another tab of this browser", CLIENT, "N"],
+	] as const)(
+		"follows a host in %s and keeps the record only for this browser",
+		async (_, client, kept) => {
+			rig.hosted = "N";
+			rig.peers = [EAST];
+			const table = await rig.start(null);
+			const holder = await deriveHolder(TABLE, client);
+			const auth = { term: 2, tag: makeTag(holder, "E"), inc: 1 };
+			rig.handlers?.ctl(EAST, {
+				k: "beat",
+				role: "host",
+				holder,
+				seat: "E",
+				elig: true,
+				auth,
+				pos: { rev: 5, lastAuth: auth },
+			});
+			await settle();
+
+			expect(table.view().election).toMatchObject({ phase: "lobby" });
+			expect(rig.hosted).toBe(kept);
+		},
+	);
 });
 
 describe("table controller beats", () => {
@@ -599,6 +684,45 @@ describe("table controller seeding from the setup link", () => {
 		await rig.advance(4 * TICK_MS);
 
 		expect(table.view().hosting).toBe(true);
+	});
+
+	it("seeds the seat from which this browser hosted last after HOSTED_SEED_WAIT_MS alone", async () => {
+		rig.hosted = "N";
+		const table = await rig.start("N");
+		await rig.advance(HOSTED_SEED_WAIT_MS / 2);
+		expect(table.view().hosting).toBe(false);
+
+		await rig.advance(HOSTED_SEED_WAIT_MS / 2 + 2 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("waits SEED_WAIT_MS on another seat than the one from which this browser hosted last", async () => {
+		rig.hosted = "E";
+		const table = await rig.start("N");
+		await rig.advance(2 * HOSTED_SEED_WAIT_MS);
+		expect(table.view().hosting).toBe(false);
+	});
+
+	it("seeds no table from the seat that this browser hosted while beats show that the table exists", async () => {
+		rig.hosted = "N";
+		const table = await rig.start("N");
+		for (let beats = 0; beats < (3 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			await eastBeat();
+			await rig.advance(BEAT_MS);
+		}
+		expect(table.view().hosting).toBe(false);
+		expect(rig.storage.commits).toBe(0);
+	});
+
+	it("does not seed from the seat that this browser hosted while a page higher in the order is there (rule 14)", async () => {
+		rig.hosted = "N";
+		const table = await rig.start("N", undefined, "S");
+		for (let beats = 0; beats < (2 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			await westBeat();
+			await rig.advance(BEAT_MS);
+		}
+		expect(table.view().hosting).toBe(false);
 	});
 });
 

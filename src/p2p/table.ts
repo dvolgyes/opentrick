@@ -39,12 +39,14 @@ import {
 	isClientId,
 	makeTag,
 	newClientId,
+	tagHolder,
 	tagSeat,
 } from "./keys";
 import {
 	CLEANUP_MS,
 	CONNECTION_FAILED_MS,
 	HOST_LOST_MS,
+	HOSTED_SEED_WAIT_MS,
 	SEED_WAIT_MS,
 	TICK_MS,
 } from "./limits";
@@ -179,7 +181,13 @@ export interface TableDeps {
 	readonly locks: SeatLocks;
 	readonly memory: Pick<
 		SeatMemory,
-		"tabSeat" | "seatToReopen" | "remember" | "forget"
+		| "tabSeat"
+		| "seatToReopen"
+		| "remember"
+		| "forget"
+		| "hostSeat"
+		| "rememberHost"
+		| "forgetHost"
 	>;
 	readonly module: GameModule;
 	readonly clock: Clock;
@@ -333,6 +341,8 @@ export class TableController {
 	#seedCandidate: Seated | null = null;
 	/** When a beat or a lobby last showed that the table exists; no seed until SEED_WAIT_MS after it. */
 	#tableSeenAt: number | null = null;
+	/** The seat from which this browser hosted the table last; a community table keeps no such record. */
+	#hostedSeat: Seat | undefined;
 	/** While the seed writes: the election of the page without the table must not see the seeded log. */
 	#seeding = false;
 	#busy = false;
@@ -472,6 +482,9 @@ export class TableController {
 		}
 		this.#heldElsewhere = await locks.heldElsewhere(this.#tableId);
 		const tabSeat = memory.tabSeat(this.#tableId);
+		this.#hostedSeat = this.#deps.community
+			? undefined
+			: memory.hostSeat(this.#tableId);
 		const { preferredSeat } = this.#deps;
 		const wanted =
 			preferredSeat === null
@@ -517,12 +530,13 @@ export class TableController {
 	}
 
 	/**
-	 * The seat that a page opens without a URL seat or a remembered one: the only seat of a solo setup link, as nobody
-	 * else can play it. A seat without a name stays free, so that the player gives one when they take it.
+	 * The seat that a page of a setup link opens without a URL seat or a remembered one: the seat from which this
+	 * browser hosted last, else the only seat of a solo link, as nobody else can play it. A seat without a name stays
+	 * free, so that the player gives one when they take it.
 	 */
 	#linkSeat(): Seat | undefined {
 		const config = this.#deps.bootstrap?.config;
-		const seat = config && soloSeat(config);
+		const seat = config && (this.#hostedSeat ?? soloSeat(config));
 		return seat && !unnamedPlayer(config.names[seat]) ? seat : undefined;
 	}
 
@@ -581,7 +595,11 @@ export class TableController {
 		const config = this.#deps.bootstrap?.config;
 		const solo =
 			config !== undefined && soloSeat(config) === candidate.log.seat;
-		if (!solo && election.absentMs < SEED_WAIT_MS) return;
+		const wait =
+			candidate.log.seat === this.#hostedSeat
+				? HOSTED_SEED_WAIT_MS
+				: SEED_WAIT_MS;
+		if (!solo && election.absentMs < wait) return;
 		if (!solo && !seedsFirst(election)) return;
 		const seen = this.#tableSeenAt;
 		if (seen !== null && this.#now() - seen < SEED_WAIT_MS) return;
@@ -1068,6 +1086,19 @@ export class TableController {
 				// Hosting the seat confirms it, as a bound welcome does.
 				this.#reopened = false;
 				this.#deps.memory.remember(this.#tableId, seat);
+				if (!this.#deps.community) {
+					this.#hostedSeat = seat;
+					this.#deps.memory.rememberHost(this.#tableId, seat);
+				}
+			}
+			// Another browser hosts after this one; another tab of this browser keeps the record.
+			if (
+				effect.type === "follow" &&
+				effect.host &&
+				tagHolder(effect.host.auth.tag) !== this.#deps.identity.holder
+			) {
+				this.#hostedSeat = undefined;
+				this.#deps.memory.forgetHost(this.#tableId);
 			}
 		}
 	}

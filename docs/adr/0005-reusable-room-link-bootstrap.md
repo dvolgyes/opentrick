@@ -28,11 +28,19 @@ Since 2026-10-31, at the owner's request, a solo link seeds at once: when the li
 It still does not seed while a host lobby or a beat shows the table.
 So a page whose peers with the table all left does not wait for a host until a reload.
 Until then, the seat waits for a host like any other seat.
+Since 2026-10-31, at the owner's request, a browser keeps a host record for each table that it hosted, except a community table: the seat from which it hosted last, for 365 days (src/session.ts `HOST_MEMORY_TTL_MS`).
+Expiry keeps the record.
+When a page of this browser follows a host of another browser, the page removes the record; a host in another tab of this browser keeps it.
+A page on the seat of the record seeds after `HOSTED_SEED_WAIT_MS` (5 s) online without a host, not after `SEED_WAIT_MS`.
+The other conditions stay: no seed while a host lobby or a beat shows the table, and only the page first in the order of priority seeds (rule 14).
+The owner proposed that the older table wins the merge.
+The election keeps rule 13 instead: a fresh table has fewer entries than a running one, so the running table survives, and the clocks of two devices do not give a reliable order.
 Other pages can select seats and wait for that host.
 The table link carries no `pl`; a player's own URL keeps the player's seat for reload.
 Without `pl`, a page reopens the seat that this browser remembers, so a shared link restores a player's seat after the tab closes. The earlier `selected_player=none` shared link is no longer read.
 Since 2026-10-31, at the owner's request, a page without `pl` and without a remembered seat opens the only seat of a solo link, because nobody else can play it.
 So a solo link that expired starts at once, although the expiry made the browser forget its seat.
+Before the solo seat, such a page opens the seat of this browser's host record, so the browser that hosted a shared link gets its seat back after expiry.
 A seat without a name (`player` or empty) stays free, so that the player gives a name when they take it.
 Until 2026-10-26, it also did not take the last free seat.
 Now, at the owner's request, it takes the only free seat of the host's lobby by itself, unless the lobby shows that this browser held that seat.
@@ -64,6 +72,13 @@ A page whose peers with the table were silent for `SEED_WAIT_MS` also seeds one,
 A solo link on a second device of the same player seeds at once, so it seeds a second table when the first device still hosts and the two pages have not found each other yet.
 Since 2026-10-31, this also applies to a solo link without `pl`, as on any browser that opens a shared solo link.
 Such a page that loses the merge finds its seat taken and stays as a visitor.
+Since 2026-10-31, a page on the seat of its host record seeds after 5 s, so it seeds a second table when its links come later.
+The first links of a page can take about 20 s (src/p2p/limits.ts `SEED_WAIT_MS`).
+The running table has more entries, so it survives, and the page loses only the entries of its fresh table (tests/unit/p2p-table-sim.test.ts).
+Two browsers with a host record for the same table that have not found each other can both seed after 5 s, and the merge keeps one of the two fresh tables.
+A user can write a host record into their own browser to get the 5 s wait, but the room key already lets anyone with the link seed the table.
+The host records keep the ids of the hosted tables in localStorage for a year; `SeatMemory.prune` removes older records.
+A table id is a hash of the room key, so a record does not give access to the table.
 In a local reproduction, the second device found the host within 5 s, did not seed, and the first device kept hosting.
 When the links of the two hosts name the same host seat, the table with more entries survives, then the table of the seat with the higher priority (ADR 0007, election rule 13).
 Otherwise the election compares the two authorities (src/p2p/authority.ts `compareAuthority`): a higher term wins, and in term 1 the lower tag wins.

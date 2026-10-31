@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { chatModule, chatPayload } from "../../src/game/chat";
 import { deriveHolder, tagSeat } from "../../src/p2p/keys";
-import { SEED_WAIT_MS } from "../../src/p2p/limits";
+import { HOSTED_SEED_WAIT_MS, SEED_WAIT_MS } from "../../src/p2p/limits";
 import type { MeshHandlers } from "../../src/p2p/mesh";
 import {
 	createTable,
@@ -54,6 +54,8 @@ interface Browser {
 	/** The next page opens as the creator of the stored table. */
 	creator: boolean;
 	clears: number;
+	/** The seat from which this browser hosted the table last (the host record of src/session.ts). */
+	hosted: Seat | undefined;
 	page: SimPage | null;
 }
 
@@ -139,6 +141,7 @@ class Sim {
 			storage: new TestStorage(),
 			creator: false,
 			clears: 0,
+			hosted: undefined,
 			page: null,
 		};
 		this.browsers.push(browser);
@@ -185,6 +188,13 @@ class Sim {
 				seatToReopen: () => undefined,
 				remember: () => {},
 				forget: () => {},
+				hostSeat: () => browser.hosted,
+				rememberHost: (_roomId, seat) => {
+					browser.hosted = seat;
+				},
+				forgetHost: () => {
+					browser.hosted = undefined;
+				},
 			},
 			module: chatModule,
 			clock: mesh.clock,
@@ -248,6 +258,7 @@ class Sim {
 		browser.client = this.#newClient();
 		browser.holder = await deriveHolder(TABLE, browser.client);
 		browser.storage = new TestStorage();
+		browser.hosted = undefined;
 	}
 
 	/** Holds the links between the two sides down for `ms`. */
@@ -552,6 +563,44 @@ describe("four table controllers", () => {
 
 		expect(sim.hostSeats).toEqual(["W", "S"]);
 		expect(sim.hostTable()?.rev).toBeGreaterThanOrEqual(2);
+	});
+
+	it("keep the running table when the page that hosted it last seeds a fresh one before its links come", async () => {
+		// host=S: South creates and hosts the table, then leaves, and another page takes over.
+		const sim = new Sim(1);
+		for (const seat of SEATS) await sim.addBrowser(seat, "S");
+		const south = sim.browsers.find((browser) => browser.seat === "S");
+		if (!south) throw new Error("no South");
+		await sim.create(south);
+		for (const browser of sim.browsers) await sim.open(browser);
+		await sim.mesh.until(() => sim.unsettled() === null, 2 * SEED_WAIT_MS);
+		expect(south.hosted).toBe("S");
+		sim.close(south);
+		const others = sim.browsers.filter((browser) => browser !== south);
+		await sim.mesh.until(
+			() => others.some((browser) => browser.page?.controller.view().hosting),
+			2 * SEED_WAIT_MS,
+		);
+		for (const browser of others) {
+			await browser.page?.controller.send(chatPayload(TABLE, browser.seat));
+		}
+		await sim.mesh.advance(5_000);
+		const running = await sim.largestLog();
+
+		// South's browser lost its replica but kept its host record; its links come only after 20 s.
+		south.storage = new TestStorage();
+		sim.split(["S"], 20_000);
+		await sim.open(south);
+		await sim.mesh.until(
+			() => south.page?.controller.view().hosting === true,
+			HOSTED_SEED_WAIT_MS + 5_000,
+		);
+		await sim.mesh.until(
+			() => sim.unsettled() === null,
+			2 * SEED_WAIT_MS + 60_000,
+		);
+
+		expect(sim.hostTable()?.rev).toBeGreaterThanOrEqual(running);
 	});
 
 	it(`end with one host and four bound seats for ${SEEDS} seeds`, async () => {

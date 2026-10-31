@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Seat } from "../../src/protocol";
 import {
 	guardedStorage,
+	HOST_MEMORY_TTL_MS,
 	type HoldOptions,
 	SEAT_MEMORY_TTL_MS,
 	SeatMemory,
@@ -115,6 +116,39 @@ describe("SeatMemory on the page's sessionStorage and localStorage", () => {
 		expect(reloaded.seatToReopen(ROOM_ID, true)).toBeUndefined();
 		expect(reloaded.tabSeat(OTHER_ROOM_ID)).toBe("N");
 		expect(reloaded.browserSeat(OTHER_ROOM_ID)).toBe("N");
+	});
+
+	it("keeps the seat that this browser hosted from for a year, also when the room's seats are forgotten", () => {
+		seats().rememberHost(ROOM_ID, "W");
+		seats().rememberHost(OTHER_ROOM_ID, "N");
+		seats().forget(ROOM_ID);
+		expect(seats().hostSeat(ROOM_ID)).toBe("W");
+		seats().forgetHost(ROOM_ID);
+		expect(seats().hostSeat(ROOM_ID)).toBeUndefined();
+		expect(seats().hostSeat(OTHER_ROOM_ID)).toBe("N");
+	});
+
+	it("forgets the host seat after a year and prunes older host records", () => {
+		// Records that pages of this browser wrote a year and a year less a minute ago.
+		const now = Date.now();
+		localStorage.setItem(
+			`opentrick.host.${ROOM_ID}`,
+			JSON.stringify({ seat: "E", savedAt: now - HOST_MEMORY_TTL_MS }),
+		);
+		localStorage.setItem(
+			`opentrick.host.${OTHER_ROOM_ID}`,
+			JSON.stringify({ seat: "N", savedAt: now - HOST_MEMORY_TTL_MS + 60_000 }),
+		);
+		localStorage.setItem("opentrick.host.garbage", "{not json");
+		const memory = seats();
+		expect(memory.hostSeat(ROOM_ID)).toBeUndefined();
+		expect(memory.hostSeat(OTHER_ROOM_ID)).toBe("N");
+		memory.prune();
+		expect(localStorage.getItem(`opentrick.host.${ROOM_ID}`)).toBeNull();
+		expect(localStorage.getItem("opentrick.host.garbage")).toBeNull();
+		expect(
+			localStorage.getItem(`opentrick.host.${OTHER_ROOM_ID}`),
+		).not.toBeNull();
 	});
 
 	it("treats unreadable records and missing storage as no memory", () => {

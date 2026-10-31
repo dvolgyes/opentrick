@@ -5,6 +5,8 @@ import { CONNECT_MS, hostRows, namePlayers } from "./room";
 
 /** A solo link has no other page to wait for, so it starts well before the 30 s seed wait of a shared link. */
 const SOLO_START_MS = 15_000;
+/** The browser that hosted a shared link last seeds it again after 5 s, well before the 30 s seed wait. */
+const HOSTED_START_MS = 20_000;
 
 test.beforeEach(async ({ page }) => {
 	// Set up wall-clock control before the app creates its timers; keep monotonic time and timers running.
@@ -110,4 +112,26 @@ test("a solo link without a seat seats its only player and starts at once, also 
 		timeout: SOLO_START_MS,
 	});
 	await expect(page.getByTestId("waiting")).toBeHidden();
+});
+
+test("a multiplayer link without a seat reopens the seat that this browser hosted from, and hosts it soon after expiry", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await namePlayers(page, "S", []);
+	await page.getByLabel("South name").fill("test");
+	await page.getByTestId("create").click();
+	await expect(hostRows(page)).toHaveAttribute("data-seat", "S");
+	const shared = new URL(page.url());
+	shared.searchParams.delete("pl");
+	await page.clock.setFixedTime(Date.now() + 9 * 60 * 60 * 1000);
+	await expect(page.getByTestId("banner")).toHaveAttribute(
+		"data-kind",
+		"expired",
+	);
+	// Expiry made the browser forget its seat; the host record remains.
+	await page.goto(shared.toString());
+	await expect(hostRows(page)).toHaveAttribute("data-seat", "S", {
+		timeout: HOSTED_START_MS,
+	});
 });

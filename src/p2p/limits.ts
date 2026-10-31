@@ -29,6 +29,11 @@ export const RESUME_ONLINE_MS = 3_000;
  * fresh table next to the running one splits the room.
  */
 export const SEED_WAIT_MS = 30_000;
+/**
+ * A page on the seat from which its browser hosted the table last waits only this long (ADR 0005). A fresh table has
+ * fewer entries than a running one, so the running table survives the merge when the links come later (rule 13).
+ */
+export const HOSTED_SEED_WAIT_MS = 5_000;
 /** A timer tick this late means the tab was frozen; the absence clock starts again. */
 export const LATE_TICK_MS = 5_000;
 /** The controller steps the election at least this often. */

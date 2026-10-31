@@ -7,6 +7,7 @@ import {
 	expectAllConnected,
 	expectBanner,
 	expectSeat,
+	hostRows,
 	MESSAGE,
 	makeCall,
 	pick,
@@ -248,9 +249,12 @@ test("a table without activity for 8 h expires and stays expired", async () => {
 	).toBeVisible({ timeout: CONNECT_MS });
 	await page.getByRole("button", { name: "Create new game" }).click();
 	await expect(page.getByTestId("create")).toBeVisible();
-	// The room link clears the tombstone and offers the four seats of its setup again.
+	// The room link clears the tombstone and starts the room again: this browser hosted it from West, so it reopens
+	// West and seeds the table (ADR 0005, host record).
 	await page.goto(link);
-	await expect(picks(page)).toHaveCount(4, { timeout: CONNECT_MS });
+	await expect(hostRows(page)).toHaveAttribute("data-seat", "W", {
+		timeout: CONNECT_MS,
+	});
 });
 
 test("no uncaught errors", () => {

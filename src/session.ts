@@ -4,8 +4,12 @@ import { isObject, isSeat, type Seat } from "./protocol";
 // Seat memory (owner decision 2026-10-18: reopening the same link gives the same seat back)
 
 export const SEAT_MEMORY_TTL_MS = 24 * 60 * 60 * 1000;
+/** A browser that hosted a room seeds it again sooner after expiry (ADR 0005), for a year after it last hosted. */
+export const HOST_MEMORY_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+
 const TAB_PREFIX = "opentrick.tab.";
 const BROWSER_PREFIX = "opentrick.seat.";
+const HOST_PREFIX = "opentrick.host.";
 
 /** Storage that may be missing, for example when the browser blocks site data. */
 export type MaybeStorage =
@@ -41,7 +45,8 @@ export function guardedStorage(open: () => Storage): MaybeStorage {
 
 /**
  * sessionStorage holds this tab's seat (survives reload and an Android tab restore). localStorage holds
- * the browser's last seat per room for 24 hours (survives closing the tab).
+ * the browser's last seat per room for 24 hours (survives closing the tab), and the seat from which the browser last
+ * hosted the room for a year (survives expiry).
  */
 export class SeatMemory {
 	readonly #tab: MaybeStorage;
@@ -90,17 +95,40 @@ export class SeatMemory {
 		this.#browser?.removeItem(BROWSER_PREFIX + roomId);
 	}
 
-	/** Removes browser records older than the room lifetime. */
+	/** The seat from which this browser last hosted the room. Expiry keeps it, so the browser seeds the room sooner. */
+	hostSeat(roomId: string): Seat | undefined {
+		const record = this.#readBrowser(HOST_PREFIX + roomId);
+		return record && this.#now() - record.savedAt < HOST_MEMORY_TTL_MS
+			? record.seat
+			: undefined;
+	}
+
+	rememberHost(roomId: string, seat: Seat): void {
+		this.#browser?.setItem(
+			HOST_PREFIX + roomId,
+			JSON.stringify({ seat, savedAt: this.#now() }),
+		);
+	}
+
+	forgetHost(roomId: string): void {
+		this.#browser?.removeItem(HOST_PREFIX + roomId);
+	}
+
+	/** Removes seat records older than the room lifetime, and host records older than HOST_MEMORY_TTL_MS. */
 	prune(): void {
 		const storage = this.#browser;
 		if (!storage) return;
 		const stale: string[] = [];
 		for (let index = 0; index < storage.length; index++) {
 			const key = storage.key(index);
-			if (!key?.startsWith(BROWSER_PREFIX)) continue;
+			const ttl = key?.startsWith(BROWSER_PREFIX)
+				? SEAT_MEMORY_TTL_MS
+				: key?.startsWith(HOST_PREFIX)
+					? HOST_MEMORY_TTL_MS
+					: undefined;
+			if (!key || ttl === undefined) continue;
 			const record = this.#readBrowser(key);
-			if (!record || this.#now() - record.savedAt >= SEAT_MEMORY_TTL_MS)
-				stale.push(key);
+			if (!record || this.#now() - record.savedAt >= ttl) stale.push(key);
 		}
 		for (const key of stale) storage.removeItem(key);
 	}
