@@ -1092,7 +1092,7 @@ describe("the connection room before the first deal", () => {
 		},
 	];
 
-	it("shows joined seats with backs, free seats as not joined, and the host tag", () => {
+	it("shows joined seats with backs, the viewer's own seat too, free seats as not joined, and the host tag", () => {
 		const table = view("N", null, {
 			roster: WEST_HOSTS,
 			hostSeat: "W",
@@ -1112,7 +1112,7 @@ describe("the connection room before the first deal", () => {
 		});
 		expect(seatView(table, "N")).toMatchObject({
 			connecting: false,
-			hand: { visible: false, count: 0 },
+			hand: { visible: false, count: 13 },
 		});
 	});
 

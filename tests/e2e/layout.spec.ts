@@ -499,16 +499,36 @@ async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
 }
 
 /**
- * Before the first board, a phone's felt has about the 9:10 shape of its board during the game (width to height),
- * and does not reach down to the bottom of a tall screen.
+ * Before the first board, a phone shows the board of the game: the own seat's backs at its bottom, a joined player's
+ * backs on the right, and a free seat at the top without cards. Returns the board's height.
  */
-async function expectWaitingFelt(page: Page): Promise<void> {
+async function expectWaitingBoard(page: Page, seat: SeatKey): Promise<number> {
 	await expect(table(page)).toHaveAttribute("data-phase", "waiting");
-	const box = await page.locator(".felt").boundingBox();
-	if (!box) throw new Error("the felt has no box");
-	const ratio = box.width / box.height;
-	expect(ratio, "felt width to height").toBeGreaterThan(0.85);
-	expect(ratio, "felt width to height").toBeLessThan(0.95);
+	await expect(page.locator(".felt")).toBeHidden();
+	const board = page.locator(".mobile-auction-board");
+	await expect(
+		board.locator(".mobile-auction-hand").getByTestId(`hand-${seat}`),
+	).toBeVisible();
+	await expect(
+		board.locator(".mobile-auction-hand .back"),
+		"own backs",
+	).toHaveCount(13);
+	await expect(
+		board.locator(".mobile-board-right .back"),
+		"a joined seat's backs",
+	).toHaveCount(13);
+	await expect(
+		board.locator(".mobile-board-top .back"),
+		"a free seat's backs",
+	).toHaveCount(0);
+	await expect(board.locator(".mobile-board-top")).toContainText("WAITING");
+	return await boardHeight(page);
+}
+
+async function boardHeight(page: Page): Promise<number> {
+	const box = await page.locator(".mobile-auction-board").boundingBox();
+	if (!box) throw new Error("the phone board has no box");
+	return box.height;
 }
 
 /**
@@ -710,7 +730,7 @@ test("3: a phone held upright and a portrait window get the compact table, a pho
 	const link = await createRoom(host);
 	phoneTab = await phone.page(link);
 	await pick(phoneTab, "N");
-	await expectWaitingFelt(phoneTab);
+	const lobbyHeight = await expectWaitingBoard(phoneTab, "N");
 	for (const seat of ["S", "E"] as const)
 		await pick(await players[seat].page(link), seat);
 	await expectCompactRoom(phoneTab);
@@ -719,6 +739,11 @@ test("3: a phone held upright and a portrait window get the compact table, a pho
 	await expect(table(phoneTab)).toHaveAttribute("data-phase", "auction", {
 		timeout: CONNECT_MS,
 	});
+	const auctionHeight = await boardHeight(phoneTab);
+	expect(lobbyHeight / auctionHeight, "lobby to auction board").toBeCloseTo(
+		1,
+		1,
+	);
 	const phoneParts = [
 		phoneTab.locator(".mobile-auction-hand"),
 		phoneTab.getByTestId("bid-box"),

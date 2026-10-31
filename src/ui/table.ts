@@ -2682,7 +2682,11 @@ export function tableSection(
 		for (const seat of view.seats) renderPlace(seat, lobby, back);
 		const mobileGameActive =
 			compact && (view.phase === "auction" || view.phase === "play");
-		mobileAuction.hidden = !mobileGameActive;
+		// Before the first board, a phone shows the same board with the backs of the joined seats, and nothing else of
+		// the game.
+		const mobileBoardActive =
+			mobileGameActive || (compact && lobby && view.seats.length > 0);
+		mobileAuction.hidden = !mobileBoardActive;
 		// The middle of the phone board is the current trick, except while it shows the auction summary.
 		const summaryInMiddle = mobileGameActive && view.auctionEnd !== undefined;
 		if (summaryInMiddle) {
@@ -2706,8 +2710,7 @@ export function tableSection(
 			if (scoring.parentElement !== center) center.append(scoring);
 		} else if (scoring.parentElement !== felt) waitingOverlay.before(scoring);
 		if (auctionEnd.parentElement === null) waitingOverlay.before(auctionEnd);
-		if (mobileGameActive) {
-			mobileTopbar.prepend(audioGroup);
+		if (mobileBoardActive) {
 			const ownSeat = places.bottom.firstElementChild;
 			if (ownSeat) mobileHand.replaceChildren(ownSeat);
 			for (const [position, target] of [
@@ -2744,6 +2747,20 @@ export function tableSection(
 					),
 				);
 			}
+		} else {
+			mobileHand.replaceChildren();
+			mobileOpponentTop.replaceChildren();
+			mobileOpponentLeft.replaceChildren();
+			mobileOpponentRight.replaceChildren();
+			for (const target of [
+				mobileOpponentTop,
+				mobileOpponentLeft,
+				mobileOpponentRight,
+			])
+				target.setAttribute("aria-hidden", "true");
+		}
+		if (mobileGameActive) {
+			mobileTopbar.prepend(audioGroup);
 			placeChildren(mobileBidsFold, mobileBidsTitle, bidHistory);
 			// The history opens for each auction and folds when the auction summary or play starts; between those, the
 			// player's choice stays.
@@ -2770,16 +2787,7 @@ export function tableSection(
 			renderMobileRoundStatus(view);
 		} else {
 			call.row.prepend(audioGroup);
-			mobileHand.replaceChildren();
-			mobileOpponentTop.replaceChildren();
-			mobileOpponentLeft.replaceChildren();
-			mobileOpponentRight.replaceChildren();
-			for (const target of [
-				mobileOpponentTop,
-				mobileOpponentLeft,
-				mobileOpponentRight,
-			])
-				target.setAttribute("aria-hidden", "true");
+			mobileBidOverlay.hidden = true;
 			placeChildren(
 				bidRow,
 				...(view.phase === "auction" ? [bidHistory, bidBox] : [bidBox]),
@@ -2793,8 +2801,12 @@ export function tableSection(
 				sidebar.prepend(sidewaysControls);
 		} else sidewaysControls.remove();
 		renderMobilePlayers(view);
-		// A compact screen shows these below its board, or below the felt outside the auction and the play.
-		const below = compact ? (mobileGameActive ? mobileBoard : felt) : undefined;
+		// A compact screen shows these below its board, or below the felt between the boards.
+		const below = compact
+			? mobileBoardActive
+				? mobileBoard
+				: felt
+			: undefined;
 		renderApproval(view, below);
 		renderWaiting(view, below);
 		const bottom = view.seats.find((seat) => seat.position === "bottom");

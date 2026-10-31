@@ -554,8 +554,8 @@ function presenceOf(
 }
 
 /**
- * The four seats of the lobby, before the first deal. A free seat shows no name and no cards; a joined seat
- * shows backs. The viewer's own backs appear only while the viewer waits for the host to connect.
+ * The four seats of the lobby, before the first deal. A free seat shows no name and no cards; a joined seat,
+ * the viewer's own seat too, shows backs.
  */
 function lobbySeats(input: TableViewInput, t: Translate): SeatView[] {
 	const { seat, config, roster, hostSeat, present, bots } = input;
@@ -564,7 +564,6 @@ function lobbySeats(input: TableViewInput, t: Translate): SeatView[] {
 		const presence = presenceOf(roster, owner);
 		const joined = presence !== "free";
 		const connecting = owner === seat && hostSeat !== seat && !hostOnline;
-		const backs = joined && (owner !== seat || connecting);
 		return {
 			seat: owner,
 			position: positionOf(seat, owner),
@@ -575,7 +574,7 @@ function lobbySeats(input: TableViewInput, t: Translate): SeatView[] {
 			name: joined ? config.names[owner] : "",
 			tags: owner === hostSeat ? ["Host"] : [],
 			turn: false,
-			hand: { visible: false, count: backs ? 13 : 0 },
+			hand: { visible: false, count: joined ? 13 : 0 },
 			presence,
 			connecting,
 			turnPill: undefined,

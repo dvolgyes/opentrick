@@ -2768,8 +2768,13 @@ button.call-join[data-in-call="true"] {
 	filter: grayscale(1) brightness(0.6);
 }
 
-:is(.room[data-form="desktop"], .mobile-bid-overlay) .bid-box.not-turn > :not(.bid-actions),
-:is(.room[data-form="desktop"], .mobile-bid-overlay) .bid-box.not-turn .bid-actions > :not(button:enabled) {
+:is(.room[data-form="desktop"], .mobile-bid-overlay)
+	.bid-box.not-turn
+	> :not(.bid-actions),
+:is(.room[data-form="desktop"], .mobile-bid-overlay)
+	.bid-box.not-turn
+	.bid-actions
+	> :not(button:enabled) {
 	filter: grayscale(1) brightness(0.6);
 }
 
@@ -3643,11 +3648,6 @@ main:has(> .room[data-form="compact"]) {
 	height: auto;
 }
 
-/* Before the first board, the felt has about the shape of the phone board during the game, not the screen's height. */
-[data-form="compact"] .stage:has(.bridge-table[data-phase="waiting"]) {
-	height: auto;
-}
-
 [data-form="compact"] .you {
 	margin: 0;
 	font-size: 0.85rem;
@@ -3692,13 +3692,6 @@ main:has(> .room[data-form="compact"]) {
 	min-height: 0;
 	padding: 0.4rem;
 	margin: 0.3rem 0;
-}
-
-/* The phone board is 9:10 during the game, and stops near 29rem high in a wider compact window. */
-[data-form="compact"] .bridge-table[data-phase="waiting"] .felt {
-	flex: none;
-	aspect-ratio: 9 / 10;
-	max-height: 30rem;
 }
 
 /* The phone keeps one grid: the top seat, the left and right seats beside the centre, and the own seat. */
@@ -3928,7 +3921,11 @@ main:has(> .room[data-form="compact"]) {
 }
 
 [data-form="compact"]
-	.bridge-table:is([data-phase="auction"], [data-phase="play"])
+	.bridge-table:is(
+		[data-phase="waiting"],
+		[data-phase="auction"],
+		[data-phase="play"]
+	)
 	.mobile-auction {
 	display: flex;
 	flex: 1 1 auto;
@@ -4068,8 +4065,9 @@ main:has(> .room[data-form="compact"]) {
 	color: var(--felt-fg);
 }
 
-/* The bidding overlay already determines the space it needs. */
-.bridge-table[data-phase="auction"] .mobile-auction-board {
+/* The bidding overlay already determines the space it needs. Before the first board, nothing grows in the middle. */
+.bridge-table:is([data-phase="waiting"], [data-phase="auction"])
+.mobile-auction-board {
 	--mobile-board-growth: 1;
 }
 
@@ -4099,7 +4097,7 @@ main:has(> .room[data-form="compact"]) {
 	justify-content: safe center;
 }
 
-.mobile-board-top .hand-row > .back:last-child {
+:is(.mobile-board-top, .mobile-auction-hand) .hand-row > .back:last-child {
 	width: var(--back-card-w);
 }
 
@@ -4516,6 +4514,9 @@ main:has(> .room[data-form="compact"]) {
 	--card-w: 2.1rem;
 	--card-step: 1rem;
 	--rank-size: 0.95rem;
+	/* Before the first board, the own backs spread over the row, as the top hand's backs do. */
+	--back-card-w: calc(var(--card-h) * 5 / 7);
+	--back-step: calc((100% - var(--back-card-w)) / 12);
 	--suit-gap: 0.9rem;
 	box-sizing: border-box;
 	width: 100%;
@@ -5068,8 +5069,19 @@ main[data-screen="table"][data-layout="sideways"] .auction-scroll .auction {
 	display: none;
 }
 
+/* Before the first board, a phone keeps its status and its call row, and shows only the board of the game. */
+[data-form="compact"]
+	.bridge-table[data-phase="waiting"]
+	:is(.felt, .mobile-auction > :not(.mobile-auction-board)) {
+	display: none;
+}
+
 .room[data-form="compact"]
-	.bridge-table:is([data-phase="auction"], [data-phase="play"])
+	.bridge-table:is(
+		[data-phase="waiting"],
+		[data-phase="auction"],
+		[data-phase="play"]
+	)
 	.mobile-auction-hand
 	.seat
 	.hand {
@@ -5079,14 +5091,22 @@ main[data-screen="table"][data-layout="sideways"] .auction-scroll .auction {
 
 html:has(
 	.room[data-form="compact"]
-		.bridge-table:is([data-phase="auction"], [data-phase="play"])
+		.bridge-table:is(
+			[data-phase="waiting"],
+			[data-phase="auction"],
+			[data-phase="play"]
+		)
 ) {
 	font-size: min(var(--compact-width-font-size, 4.444444vw), 2dvh, 3.2vw);
 }
 
 body:has(
 	.room[data-form="compact"]
-		.bridge-table:is([data-phase="auction"], [data-phase="play"])
+		.bridge-table:is(
+			[data-phase="waiting"],
+			[data-phase="auction"],
+			[data-phase="play"]
+		)
 ) {
 	font-size: 1rem;
 }
