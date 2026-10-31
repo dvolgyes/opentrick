@@ -28,7 +28,11 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 
 ## Réponses à [1NT]
 - 0–7 points : [P], sauf si un transfert, le Stayman faible ou [2S] convient.
-- [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts), avec n'importe quel nombre de points. Avec cinq cartes ou plus dans les deux majeures, transférez vers la plus longue ; à longueur égale, vers les piques. L'ouvreur nomme la couleur suivante.
+- [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts), avec n'importe quel nombre de points. Avec cinq cartes ou plus dans les deux majeures, transférez vers la plus longue ; à longueur égale, vers les piques, mais vers les cœurs avec cinq cartes dans chacune et 8–9 points. L'ouvreur nomme la couleur suivante, ou saute à trois dans cette couleur avec 17 points et quatre cartes ou plus (super-acceptation).
+- Après le transfert, le répondant dit [P] avec 0–7 points ; [2NT] avec exactement cinq cartes et 8–9 points ; trois dans la majeure avec six cartes ou plus et 8–9 points ; [3NT] avec exactement cinq cartes, sans singleton ni chicane, et 10–15 points ; quatre dans la majeure avec six cartes ou plus et 10–15 points. Avec 16 points ou plus, le guide ne donne aucune enchère.
+- Une couleur nouvelle après le transfert est forcing de manche : exactement cinq cartes dans la majeure, quatre cartes ou plus dans la couleur nouvelle, un singleton ou une chicane, et 10–15 points. Avec deux telles couleurs, nommez la plus longue, ou la moins chère à longueur égale. Après [2D] [2H], [2S] au lieu de [2NT] montre cinq cartes dans chaque majeure et 8–9 points.
+- Après le transfert, l'ouvreur répond à [2NT] avec 15 points par [P] avec deux cartes dans la majeure, ou par trois dans la majeure avec trois cartes ou plus ; avec 16–17 points, de la même façon par [3NT] ou quatre dans la majeure. Après trois dans la majeure, l'ouvreur passe avec 15 points et dit quatre avec 16–17 points. Après [3NT], l'ouvreur passe avec deux cartes dans la majeure et dit quatre avec trois cartes ou plus. Après [2S], l'ouvreur passe avec 15 points et au moins autant de piques que de cœurs ; sinon l'ouvreur dit [3H] ; avec 16–17 points, de la même façon [4S] ou [4H].
+- Après la super-acceptation, le répondant passe avec 0–5 points et dit quatre dans la majeure avec 6 points ou plus.
 - [2C] (Stayman) : 8 points ou plus avec une majeure quatrième. L'ouvreur répond [2D] sans majeure quatrième, [2H] avec quatre cœurs, [2S] avec quatre piques et sans quatre cœurs.
 - Stayman faible : [2C] aussi avec 0–7 points, quatre piques, quatre cœurs et au plus un trèfle. Passez sur toute réponse de l'ouvreur.
 - [2S] (transfert mineur) : 0–7 points avec six cartes ou plus dans une mineure, ou avec cinq cartes dans une mineure dans une main qui n'est pas 5-3-3-2. L'ouvreur doit dire [3C] ; passez avec les trèfles, ou dites [3D] avec les carreaux. Avec une mineure cinquième dans une main 5-3-3-2, passez sur [1NT].
@@ -73,5 +77,6 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Stayman : nommé d'après Sam Stayman, qui l'a publié en 1945. Jack Marx et George Rapée avaient eu l'idée avant lui.
 - Stayman faible : un nom descriptif ; aussi appelé garbage Stayman.
 - Transferts Jacoby : nommés d'après Oswald Jacoby, qui les a décrits en 1956. Le transfert mineur est la forme du SAYC.
+- Super-acceptation (super-accept) : un nom descriptif pour le saut de l'ouvreur à trois dans la majeure après un transfert ; il montre un soutien de quatre cartes et un maximum.
 - Blackwood : nommé d'après Easley Blackwood, qui l'a publié en 1933.
 - Gerber : nommé d'après John Gerber, qui l'a introduit en Amérique du Nord en 1938.

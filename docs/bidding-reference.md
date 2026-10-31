@@ -284,11 +284,14 @@ Source: SAYC ("If responder instead bids other major, it shows 5 cards in that m
 - After [2H]:
   - With four hearts: [3H] with 8–9 points (invitational), [4H] with 10–15 points.
   - Without four hearts (so with four spades): [2NT] with 8–9 points, [3NT] with 10–15 points; opener with four spades bids [3S] or [4S] in place of [2NT] / [3NT], because [2H] can hide four spades.
-  - [2S]: five spades, 8–9 points, invitational.
+  - [2S]: five spades, 8–9 points, invitational (SAYC); the guide leaves it out, see below.
 - After [2S]:
   - With four spades: [3S] with 8–9 points, [4S] with 10–15 points.
   - Without four spades: [2NT] with 8–9 points, [3NT] with 10–15 points.
-  - [3H]: five hearts, 10–15 points, game forcing.
+  - [3H]: five hearts, 10–15 points, game forcing (SAYC); the guide leaves it out, see below.
+- The guide leaves out [2S] after [2H] and [3H] after [2S] (decided 2026-10-31, derived from Q2): a hand with five spades and four hearts raises opener's hearts, and a hand with five spades without four hearts transfers; the same holds for five hearts after [2S].
+  So no hand that follows the guide can bid them.
+- With 16 or more points the guide gives no second call after Stayman, as after a transfer.
 - Opener answers an invitation: [P] (or the lowest partscore) with 15 points, game with 16–17 points.
 
 ### Decided: super-accept and responder's second call after a transfer (Q3, Q4, Q5)
@@ -303,13 +306,16 @@ Source: SAYC, BB-JT, LC-JT.
     Opener passes or bids three of the major with 15 points (three of the major with three-card support); [3NT] or four of the major with 16–17 points.
   - Three of the major: six or more cards, 8–9 points, invitational.
     Opener passes with 15 points, bids game with 16–17 points.
-  - [3NT]: exactly five cards, 10–15 points; opener chooses between [3NT] (two-card support) and four of the major (three or more).
+  - [3NT]: exactly five cards, no singleton or void, 10–15 points; opener chooses between [P] (two-card support) and four of the major (three or more).
   - Four of the major: six or more cards, 10–15 points, to play.
-  - A new suit: four or more cards, 10 or more points, game forcing.
+  - A new suit: exactly five cards in the major, four or more cards in the new suit, a singleton or void, 10–15 points, game forcing.
     Exception: [1NT] – [2D] – [2H] – [2S] shows five hearts, five spades and 8–9 points, invitational, not forcing.
-    This is the route for invitational 5-5 hands (Q3).
+    This is the route for invitational 5-5 hands (Q3), so a 5-5 hand with 8–9 points transfers to hearts, not to spades.
   - Game-forcing 5-5 in the majors: transfer to spades, then [3H] (LC-JT).
-- Opener's answer to [2S] in the 5-5 invitation (proposed; SAYC does not say): with 15 points, [P] with three or more spades or more spades than hearts, otherwise [3H]; with 16–17 points, game in the major with more cards ([4S] with equal length).
+  - With exactly five cards and 16 or more points the guide gives no call (decided 2026-10-31); a six-card major with 16 or more points bids [3H] or [3S] at once.
+- Opener's answer to [2S] in the 5-5 invitation (proposed; SAYC does not say): with 15 points, [P] with at least as many spades as hearts, otherwise [3H]; with 16–17 points, [4S] with at least as many spades as hearts, otherwise [4H].
+  The user changed the first proposal on 2026-10-31: it bid [3H] with two cards in each major, which plays the same 7-card fit one level higher.
+- Overlap of [3NT] and a new suit (decided 2026-10-31): a hand with a side four-card suit and no singleton or void (5-4-2-2) bids [3NT], as Cohen advises; only a hand with a singleton or void bids the new suit.
 
 ### Decided: responses to one of a suit follow SAYC (Q8, Q9, Q10)
 

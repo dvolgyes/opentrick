@@ -28,7 +28,11 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 
 ## Antwoorden op [1NT]
 - 0–7 punten: [P], tenzij een transfer, zwakke Stayman of [2S] past.
-- [2D] belooft vijf of meer harten, [2H] belooft vijf of meer schoppen (transfers), met elk aantal punten. Met vijf of meer kaarten in beide hoge kleuren, transfer naar de langste; bij gelijke lengte naar schoppen. De openaar biedt de volgende kleur.
+- [2D] belooft vijf of meer harten, [2H] belooft vijf of meer schoppen (transfers), met elk aantal punten. Met vijf of meer kaarten in beide hoge kleuren, transfer naar de langste; bij gelijke lengte naar schoppen, maar naar harten met vijf kaarten in elk en 8–9 punten. De openaar biedt de volgende kleur, of springt naar drie in die kleur met 17 punten en vier of meer kaarten (super-accept).
+- Na de transfer biedt de antwoorder [P] met 0–7 punten; [2NT] met precies vijf kaarten en 8–9 punten; drie in de hoge kleur met zes of meer kaarten en 8–9 punten; [3NT] met precies vijf kaarten, geen singleton of renonce, en 10–15 punten; vier in de hoge kleur met zes of meer kaarten en 10–15 punten. Met 16 of meer punten geeft de gids geen bieding.
+- Een nieuwe kleur na de transfer is mancheforcing: precies vijf kaarten in de hoge kleur, vier of meer kaarten in de nieuwe kleur, een singleton of renonce, en 10–15 punten. Met twee zulke kleuren, bied de langste, of de laagste bij gelijke lengte. Na [2D] [2H] belooft [2S] in plaats van [2NT] vijf kaarten in elke hoge kleur en 8–9 punten.
+- Na de transfer antwoordt de openaar op [2NT] met 15 punten met [P] met twee kaarten in de hoge kleur, of met drie in de hoge kleur met drie of meer kaarten; met 16–17 punten op dezelfde manier met [3NT] of vier in de hoge kleur. Na drie in de hoge kleur past de openaar met 15 punten en biedt vier met 16–17 punten. Na [3NT] past de openaar met twee kaarten in de hoge kleur en biedt vier met drie of meer kaarten. Na [2S] past de openaar met 15 punten en minstens evenveel schoppen als harten; anders biedt de openaar [3H]; met 16–17 punten op dezelfde manier [4S] of [4H].
+- Na de super-accept past de antwoorder met 0–5 punten en biedt vier in de hoge kleur met 6 of meer punten.
 - [2C] (Stayman): 8 of meer punten met een vierkaart hoge kleur. De openaar antwoordt [2D] zonder vierkaart hoge kleur, [2H] met vier harten, [2S] met vier schoppen en zonder vier harten.
 - Zwakke Stayman: [2C] ook met 0–7 punten, vier schoppen, vier harten en hoogstens één klaveren. Pas op elk antwoord van de openaar.
 - [2S] (transfer naar een lage kleur): 0–7 punten met zes of meer kaarten in een lage kleur, of met vijf kaarten in een lage kleur in een hand die niet 5-3-3-2 is. De openaar moet [3C] bieden; pas met klaveren, of bied [3D] met ruiten. Met een vijfkaart lage kleur in een 5-3-3-2-hand, pas op [1NT].
@@ -73,5 +77,6 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - Stayman: genoemd naar Sam Stayman, die de conventie in 1945 publiceerde. Jack Marx en George Rapée hadden het idee al eerder.
 - Zwakke Stayman: een beschrijvende naam; ook garbage Stayman genoemd.
 - Jacoby-transfers: genoemd naar Oswald Jacoby, die er in 1956 over schreef. De transfer naar een lage kleur is de SAYC-vorm.
+- Super-accept: een beschrijvende naam voor de sprong van de openaar naar drie in de hoge kleur na een transfer; die belooft vier kaarten steun en een maximum.
 - Blackwood: genoemd naar Easley Blackwood, die de conventie in 1933 publiceerde.
 - Gerber: genoemd naar John Gerber, die de conventie in 1938 naar Noord-Amerika bracht.

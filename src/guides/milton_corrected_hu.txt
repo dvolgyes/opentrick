@@ -35,7 +35,11 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 
 ## Válaszok az [1NT] nyitásra
 - 0–7 pont: [P], ha nem illik transzfer, gyenge Stayman vagy [2S].
-- [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek), bármennyi ponttal. Ha mindkét nemes színed legalább ötlapos, a hosszabbikra adj transzfert; egyenlő hossznál a pikkre. A nyitó a következő színt licitálja.
+- [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek), bármennyi ponttal. Ha mindkét nemes színed legalább ötlapos, a hosszabbikra adj transzfert; egyenlő hossznál a pikkre, de két ötlapos nemes színnel és 8–9 ponttal a kőrre. A nyitó a következő színt licitálja, vagy 17 ponttal és legalább négy lappal hármas szinten licitálja (szuperelfogadás).
+- A transzfer után a válaszoló licitje 0–7 ponttal [P]; pontosan öt lappal és 8–9 ponttal [2NT]; legalább hat lappal és 8–9 ponttal a nemes szín hármas szinten; pontosan öt lappal, szingli és renonsz nélkül, 10–15 ponttal [3NT]; legalább hat lappal és 10–15 ponttal a nemes szín négyes szinten. Legalább 16 ponttal az útmutató nem ad licitet.
+- Új szín a transzfer után manche-ig forszírozó: pontosan öt lap a nemes színben, legalább négy lap az új színben, szingli vagy renonsz, és 10–15 pont. Két ilyen színnel a hosszabbikat licitáld, egyenlő hossznál az alacsonyabbat. [2D] [2H] után a [2NT] helyett [2S] mindkét nemes színben öt lapot és 8–9 pontot mutat.
+- A transzfer után a nyitó a [2NT]-re 15 ponttal [P]-t mond két lappal a nemes színben, vagy legalább három lappal hármas szinten licitálja a nemes színt; 16–17 ponttal ugyanígy [3NT] vagy a nemes szín négyes szinten. A nemes szín hármas szintje után a nyitó 15 ponttal passzol, 16–17 ponttal négyes szinten licitálja. [3NT] után a nyitó két lappal a nemes színben passzol, legalább három lappal négyes szinten licitálja. [2S] után a nyitó 15 ponttal és legalább annyi pikkel, mint kőrrel passzol, különben [3H] a licitje; 16–17 ponttal ugyanígy [4S] vagy [4H].
+- A szuperelfogadás után a válaszoló 0–5 ponttal passzol, legalább 6 ponttal négyes szinten licitálja a nemes színt.
 - [2C] (Stayman): legalább 8 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D], négy kőrrel [2H], négy pikkel és négy kőr nélkül [2S] választ ad.
 - Gyenge Stayman: [2C] 0–7 ponttal is, négy pikkel, négy kőrrel és legfeljebb egy treffel. A nyitó bármely válaszát passzold.
 - [2S] (alacsonyszín-transzfer): 0–7 pont legalább hatlapos alacsony színnel, vagy ötlapos alacsony színnel, ha a lapod nem 5-3-3-2 elosztású. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited. Ötlapos alacsony színnel és 5-3-3-2 elosztással passzold az [1NT] nyitást.
@@ -80,5 +84,6 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Stayman: Sam Stayman nevét viseli, aki 1945-ben publikálta. Jack Marx és George Rapée már előtte kitalálta.
 - Gyenge Stayman: leíró név; garbage Stayman néven is ismert.
 - Jacoby-transzferek: Oswald Jacoby nevét viselik, aki 1956-ban írt róluk. Az alacsonyszín-transzfer a SAYC változata.
+- Szuperelfogadás (super-accept): leíró név a nyitó ugrására a nemes szín hármas szintjére transzfer után; négylapos támogatást és maximumot mutat.
 - Blackwood: Easley Blackwood nevét viseli, aki 1933-ban publikálta.
 - Gerber: John Gerber nevét viseli, aki 1938-ban hozta el Észak-Amerikába.

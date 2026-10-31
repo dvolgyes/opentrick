@@ -887,6 +887,35 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				max: shape.max,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
+		case "exact":
+			return t(
+				shape.flat === true
+					? "exactly {length} {suit}, no singleton or void"
+					: "exactly {length} {suit}",
+				{ length: shape.length, suit: SUIT_SYMBOLS[shape.suit] },
+			);
+		case "second-suit":
+			return t("exactly {length} {major}, {min}+ {suit}, a singleton or void", {
+				length: shape.length,
+				major: SUIT_SYMBOLS[shape.major],
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "at-most":
+			return t("at most {max} {suit}", {
+				max: shape.max,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "longer-major":
+			return t(
+				shape.ties
+					? "at least as many {suit} as {other}"
+					: "more {suit} than {other}",
+				{
+					suit: SUIT_SYMBOLS[shape.suit],
+					other: SUIT_SYMBOLS[shape.other],
+				},
+			);
 		case "relay":
 			return t("forced, any hand");
 		case "ask":

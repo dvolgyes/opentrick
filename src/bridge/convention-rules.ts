@@ -45,6 +45,12 @@ export type RangeKey =
 	| "nt-7NT"
 	| "nt-invite-pass"
 	| "nt-invite-accept"
+	| "nt-super-accept"
+	| "nt-super-pass"
+	| "nt-super-game"
+	| "transfer-pass"
+	| "transfer-invite"
+	| "transfer-game"
 	| "2nt-gerber"
 	| "2c-waiting"
 	| "2c-positive"
@@ -110,6 +116,12 @@ const MILTON = {
 	"nt-7NT": { min: 22 }, // "[7NT]: 22 or more points"
 	"nt-invite-pass": { min: 15, max: 15 }, // after [2NT] or [4NT]: "Opener passes with 15 points"
 	"nt-invite-accept": { min: 16, max: 17 }, // "and bids [3NT] with 16–17 points", or [6NT] after [4NT]
+	"nt-super-accept": { min: 17, max: 17 }, // "or jumps to three of it with 17 points and four or more cards"
+	"nt-super-pass": { min: 0, max: 5 }, // "After the super-accept, responder passes with 0–5 points"
+	"nt-super-game": { min: 6 }, // "and bids four of the major with 6 or more points"
+	"transfer-pass": { min: 0, max: 7 }, // "After the transfer, responder bids [P] with 0–7 points"
+	"transfer-invite": { min: 8, max: 9 }, // "[2NT] with exactly five cards and 8–9 points"
+	"transfer-game": { min: 10, max: 15 }, // "[3NT] with exactly five cards, no singleton or void, and 10–15 points"
 	// ## Responses to [2NT]
 	"2nt-gerber": { min: 12 }, // "[4C] (Gerber): 12 or more points"
 	// ## Responses to [2C]
@@ -198,6 +210,14 @@ export const SHAPES = {
 	weakStaymanClubs: 1,
 	/** "[3H] [3S]: 16 or more points with six or more cards in the major" */
 	slamTry: 6,
+	/** "or jumps to three of it with 17 points and four or more cards (super-accept)" */
+	superAccept: 4,
+	/** "After the transfer ... three of the major with six or more cards" */
+	transferLong: 6,
+	/** "a new suit ... a singleton or void": at most this many cards in some suit. */
+	shortSide: 1,
+	/** "Opener answers [2NT] ... [P] with two cards in the major, or ... three of the major with three or more" */
+	transferSupport: 3,
 	/** "[2H] [2S] [3C] [3D]: ... with a good five-card suit" */
 	positive: 5,
 	/** "An overcall at the one level: ... with a good five-card suit" */

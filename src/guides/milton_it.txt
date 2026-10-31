@@ -28,7 +28,11 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 
 ## Risposte a [1NT]
 - 0–7 punti: [P], salvo che vada bene un transfer, la Stayman debole o [2S].
-- [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer), con qualsiasi punteggio. Con cinque o più carte in entrambi i nobili, transfer sul più lungo; a parità di lunghezza, sulle picche. L'apertore dichiara il colore successivo.
+- [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer), con qualsiasi punteggio. Con cinque o più carte in entrambi i nobili, transfer sul più lungo; a parità di lunghezza, sulle picche, ma sui cuori con cinque carte in ciascuno e 8–9 punti. L'apertore dichiara il colore successivo, o salta a tre in quel colore con 17 punti e quattro o più carte (superaccettazione).
+- Dopo il transfer, il rispondente dichiara [P] con 0–7 punti; [2NT] con esattamente cinque carte e 8–9 punti; tre nel nobile con sei o più carte e 8–9 punti; [3NT] con esattamente cinque carte, senza singolo né vuoto, e 10–15 punti; quattro nel nobile con sei o più carte e 10–15 punti. Con 16 o più punti, la guida non indica alcuna dichiarazione.
+- Un nuovo colore dopo il transfer è forzante a manche: esattamente cinque carte nel nobile, quattro o più carte nel nuovo colore, un singolo o un vuoto, e 10–15 punti. Con due colori così, dichiara il più lungo, o il più basso a parità di lunghezza. Dopo [2D] [2H], [2S] invece di [2NT] mostra cinque carte in ciascun nobile e 8–9 punti.
+- Dopo il transfer, l'apertore risponde a [2NT] con 15 punti con [P] con due carte nel nobile, o con tre nel nobile con tre o più carte; con 16–17 punti, allo stesso modo con [3NT] o quattro nel nobile. Dopo tre nel nobile, l'apertore passa con 15 punti e dichiara quattro con 16–17 punti. Dopo [3NT], l'apertore passa con due carte nel nobile e dichiara quattro con tre o più carte. Dopo [2S], l'apertore passa con 15 punti e almeno tante carte di picche quante di cuori; altrimenti dichiara [3H]; con 16–17 punti, allo stesso modo [4S] o [4H].
+- Dopo la superaccettazione, il rispondente passa con 0–5 punti e dichiara quattro nel nobile con 6 o più punti.
 - [2C] (Stayman): 8 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, [2H] con quattro cuori, [2S] con quattro picche e senza quattro cuori.
 - Stayman debole: [2C] anche con 0–7 punti, quattro picche, quattro cuori e al massimo una carta di fiori. Passa su ogni risposta dell'apertore.
 - [2S] (transfer minore): 0–7 punti con sei o più carte in un minore, o con cinque carte in un minore in una mano che non è 5-3-3-2. L'apertore deve dichiarare [3C]; passa con i fiori, oppure dichiara [3D] con i quadri. Con un minore quinto in una mano 5-3-3-2, passa su [1NT].
@@ -73,5 +77,6 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Stayman: dal nome di Sam Stayman, che la pubblicò nel 1945. Jack Marx e George Rapée ebbero l'idea prima di lui.
 - Stayman debole: un nome descrittivo; detta anche garbage Stayman.
 - Transfer Jacoby: dal nome di Oswald Jacoby, che ne scrisse nel 1956. Il transfer minore è la forma del SAYC.
+- Superaccettazione (super-accept): un nome descrittivo per il salto dell'apertore a tre nel nobile dopo un transfer; mostra un appoggio di quattro carte e un massimo.
 - Blackwood: dal nome di Easley Blackwood, che la pubblicò nel 1933.
 - Gerber: dal nome di John Gerber, che la portò in Nord America nel 1938.

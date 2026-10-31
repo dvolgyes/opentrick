@@ -141,7 +141,9 @@ describe("guide calls for a hand", () => {
 		["1NT P", "KJ842.Q973.A5.64", ["2C"]], // 10, five spades and four hearts: Stayman, not a transfer
 		["1NT P", "KJ842.Q973.85.64", ["2H"]], // 6, five spades and four hearts: a transfer, weak
 		["2NT P", "A4.K3.KQ8732.Q52", ["4C"]], // 14, unbalanced: Gerber
-		["1NT P", "KQ842.QJ973.5.64", ["2H"]], // 8, five-five in the majors: spades
+		["1NT P", "KQ842.QJ973.5.64", ["2D"]], // 8, five-five in the majors: hearts, then [2S]
+		["1NT P", "KQ842.J9732.5.64", ["2H"]], // 6, five-five in the majors: spades
+		["1NT P", "KQ842.AJ973.5.64", ["2H"]], // 10, five-five in the majors: spades, then [3H]
 		["1NT P", "KQ84.QJ9732.5.64", ["2D"]], // 8, six hearts and four spades: the longer major
 		["1NT X", "84.QT973.J52.632", ["2D"]], // 3, the same responses after a double
 		["2C P", "8642.K73.J52.643", ["2D"]], // 4
@@ -189,6 +191,36 @@ describe("guide calls for a hand", () => {
 		["1NT P 2C P", "AQ84.KJ5.Q82.K73", ["2S"]], // four spades
 		["1NT P 2D P", "AQ4.KJ5.Q862.K73", ["2H"]],
 		["1NT P 2H P", "AQ4.KJ5.Q862.K73", ["2S"]],
+		["1NT P 2D P", "AQ4.KQ52.Q86.A73", ["3H"]], // 17, four hearts: super-accept
+		["1NT P 2H P", "AQ84.KQ5.Q86.A73", ["3S"]], // 17, four spades: super-accept
+		["1NT P 2D P", "AQ4.KJ52.Q86.A73", ["2H"]], // 16, four hearts
+		["1NT P 2D P 2H P", "84.QT973.J52.632", ["P"]], // 3
+		["1NT P 2D P 2H P", "84.KQ973.J52.Q32", ["2NT"]], // 8, five hearts
+		["1NT P 2D P 2H P", "84.KQ9732.J52.Q3", ["3H"]], // 8, six hearts
+		["1NT P 2D P 2H P", "84.KQ973.A52.Q32", ["3NT"]], // 11, 5-3-3-2
+		["1NT P 2D P 2H P", "84.KQ973.A5.Q432", ["3NT"]], // 11, 5-4-2-2
+		["1NT P 2D P 2H P", "8.KQ973.A52.Q432", ["3C"]], // 11, four clubs and a singleton
+		["1NT P 2D P 2H P", "-.KQ973.A542.Q432", ["3C"]], // 11, two four-card minors: the lower
+		["1NT P 2D P 2H P", "8.KQ973.A5432.Q2", ["3D"]], // 11, the longer minor
+		["1NT P 2D P 2H P", "84.KQ9732.A52.Q3", ["4H"]], // 11, six hearts
+		["1NT P 2D P 2H P", "KQ842.QJ973.5.64", ["2S"]], // 8, five-five in the majors
+		["1NT P 2D P 2H P", "AK4.KQ973.A52.Q3", []], // 18, five hearts: no guide call
+		["1NT P 2H P 2S P", "KQ842.AJ973.5.64", ["3H"]], // 10, five-five in the majors
+		["1NT P 2D P 3H P", "84.QT973.J52.Q32", ["P"]], // 5
+		["1NT P 2D P 3H P", "84.QT973.K52.Q32", ["4H"]], // 7
+		["1NT P 2D P 2H P 2NT P", "AQ4.KJ5.Q862.K73", ["3H"]], // 15, three hearts
+		["1NT P 2D P 2H P 2NT P", "AQ43.KJ.Q862.K73", ["P"]], // 15, two hearts
+		["1NT P 2D P 2H P 2NT P", "AQ4.KJ5.Q862.A73", ["4H"]], // 16, three hearts
+		["1NT P 2D P 2H P 2NT P", "AQ43.KJ.Q862.A73", ["3NT"]], // 16, two hearts
+		["1NT P 2D P 2H P 3H P", "AQ43.KJ.Q862.K73", ["P"]], // 15
+		["1NT P 2D P 2H P 3H P", "AQ43.KJ.Q862.A73", ["4H"]], // 16
+		["1NT P 2D P 2H P 3NT P", "AQ4.KJ5.Q862.K73", ["4H"]], // three hearts
+		["1NT P 2D P 2H P 3NT P", "AQ43.KJ.Q862.A73", ["P"]], // two hearts
+		["1NT P 2D P 2H P 2S P", "AQ4.KJ5.Q862.K73", ["P"]], // 15, three spades, three hearts
+		["1NT P 2D P 2H P 2S P", "AQ.KJ.Q8652.K973", ["P"]], // 15, two spades, two hearts
+		["1NT P 2D P 2H P 2S P", "AQ.KJ52.Q862.K73", ["3H"]], // 15, more hearts
+		["1NT P 2D P 2H P 2S P", "AQ.KJ52.Q862.A73", ["4H"]], // 16, more hearts
+		["1NT P 2D P 2H P 2S P", "AQ4.KJ5.Q862.A73", ["4S"]], // 16, three spades, three hearts
 		["1NT P 2S P", "AQ4.KJ5.Q862.K73", ["3C"]],
 		["1NT P 2S P 3C P", "84.73.QT9873.J52", ["3D"]], // six diamonds
 		["1NT P 2S P 3C P", "84.732.QT987.J52", ["3D"]], // five diamonds
@@ -596,6 +628,131 @@ describe("guide meaning of a call", () => {
 		["hcp", "1NT P 2C P 2S", { shape: { kind: "cards", suit: "S", min: 4 } }],
 		["hcp", "1NT P 2D P 2H", { shape: { kind: "accept", suit: "H" } }],
 		["hcp", "1NT P 2H P 2S", { shape: { kind: "accept", suit: "S" } }],
+		[
+			"hcp",
+			"1NT P 2D P 3H",
+			{
+				range: { min: 17, max: 17 },
+				shape: { kind: "support", suit: "H", min: 4 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2D P 3H P P",
+			{ range: { min: 0, max: 5 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 2D P 3H P 4H",
+			{ range: { min: 6 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P P",
+			{ range: { min: 0, max: 7 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 2NT",
+			{
+				range: { min: 8, max: 9 },
+				shape: { kind: "exact", suit: "H", length: 5 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2H P 2S P 3S",
+			{
+				range: { min: 8, max: 9 },
+				shape: { kind: "cards", suit: "S", min: 6 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 3NT",
+			{
+				range: { min: 10, max: 15 },
+				shape: { kind: "exact", suit: "H", length: 5, flat: true },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 4H",
+			{
+				range: { min: 10, max: 15 },
+				shape: { kind: "cards", suit: "H", min: 6 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 2S",
+			{
+				range: { min: 8, max: 9 },
+				shape: {
+					kind: "second-suit",
+					major: "H",
+					length: 5,
+					suit: "S",
+					min: 5,
+				},
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2H P 2S P 3H",
+			{
+				range: { min: 10, max: 15 },
+				shape: {
+					kind: "second-suit",
+					major: "S",
+					length: 5,
+					suit: "H",
+					min: 4,
+				},
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 2NT P P",
+			{
+				range: { min: 15, max: 15 },
+				shape: { kind: "at-most", suit: "H", max: 2 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 2NT P 4H",
+			{
+				range: { min: 16, max: 17 },
+				shape: { kind: "support", suit: "H", min: 3 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2H P 2S P 3S P 4S",
+			{ range: { min: 16, max: 17 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 2H P 2S P 3NT P P",
+			{ shape: { kind: "at-most", suit: "S", max: 2 } },
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 2S P P",
+			{
+				range: { min: 15, max: 15 },
+				shape: { kind: "longer-major", suit: "S", other: "H", ties: true },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 2D P 2H P 2S P 4H",
+			{
+				range: { min: 16, max: 17 },
+				shape: { kind: "longer-major", suit: "H", other: "S", ties: false },
+			},
+		],
 		["hcp", "1NT P 2S P 3C", { shape: { kind: "relay" } }],
 		[
 			"hcp",
@@ -785,6 +942,7 @@ describe("guide meaning of a call", () => {
 		["hcp", "1NT P 2C P 2D P 4NT"], // not an ace ask after partner's notrump
 		["hcp", "1NT P 2NT P 4NT"],
 		["hcp", "1NT P 4NT P 5C"], // no ace answer to a [4NT] that invites [6NT]
+		["hcp", "1NT P 2D P 2H P 3S"], // a jump in the other major after the transfer
 		["hcp", "1NT P 3NT P 4NT"],
 		["hcp", "4NT"],
 		["hcp", "1H P 3H P 4NT X 5D"],
@@ -825,6 +983,13 @@ describe("guide calls and meanings agree", () => {
 			"1NT P 2H P",
 			"1NT P 2S P",
 			"1NT P 2S P 3C P",
+			"1NT P 2D P 2H P",
+			"1NT P 2H P 2S P",
+			"1NT P 2D P 3H P",
+			"1NT P 2D P 2H P 2NT P",
+			"1NT P 2D P 2H P 2S P",
+			"1NT P 2H P 2S P 3S P",
+			"1NT P 2H P 2S P 3NT P",
 			"1NT P 2NT P",
 			"1NT P 3C P",
 			"1NT P 3H P",
@@ -894,6 +1059,13 @@ describe("guide calls and meanings agree", () => {
 			"1NT P 4C P",
 			"1NT P 4C P 4D P 5C P",
 			"1NT P 4NT P",
+			"1NT P 2D P 2H P 2NT P",
+			"1NT P 2D P 2H P 3H P",
+			"1NT P 2D P 2H P 3NT P",
+			"1NT P 2D P 2H P 2S P",
+			"1NT P 2H P 2S P 2NT P",
+			"1NT P 2H P 2S P 3S P",
+			"1NT P 2H P 2S P 3NT P",
 		];
 		const counts = { responses: 0, answers: 0 };
 		for (let game = 0; game < 400; game += 1) {
@@ -920,6 +1092,43 @@ describe("guide calls and meanings agree", () => {
 		expect(counts.responses).toBeGreaterThan(3000);
 		expect(counts.answers).toBeGreaterThan(300);
 		// About 1.5 s alone; the pre-commit hook runs it beside the browser tests.
+	}, 30_000);
+
+	it("gives the transfer bidder exactly one second call up to 15 points, and none above", () => {
+		const counts = { accepted: 0, superAccepted: 0, above: 0 };
+		for (let game = 0; game < 400; game += 1) {
+			const deal = dealCards(randomBelowFrom(seeded(game + 1)));
+			for (const seat of SEATS)
+				for (const system of RULE_SYSTEMS) {
+					const cards = deal[seat];
+					const transfer = suggested(system, cardsText(cards), "1NT P")?.join();
+					if (transfer !== "2D" && transfer !== "2H") continue;
+					const major = transfer === "2D" ? "H" : "S";
+					const points = countHandPoints(system, cards).total;
+					const accepted = suggested(
+						system,
+						cardsText(cards),
+						`1NT P ${transfer} P 2${major} P`,
+					);
+					expect(
+						accepted,
+						`${system} ${cardsText(cards)} after the acceptance`,
+					).toHaveLength(points <= 15 ? 1 : 0);
+					counts[points <= 15 ? "accepted" : "above"] += 1;
+					expect(
+						suggested(
+							system,
+							cardsText(cards),
+							`1NT P ${transfer} P 3${major} P`,
+						),
+						`${system} ${cardsText(cards)} after the super-accept`,
+					).toHaveLength(1);
+					counts.superAccepted += 1;
+				}
+		}
+		expect(counts.accepted).toBeGreaterThan(300);
+		expect(counts.superAccepted).toBeGreaterThan(300);
+		expect(counts.above).toBeGreaterThan(0);
 	}, 30_000);
 });
 
@@ -995,6 +1204,30 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"nt-invite-accept": [
 		"Responses to [1NT]",
 		"and bids [3NT] with {range} points",
+	],
+	"nt-super-accept": [
+		"Responses to [1NT]",
+		"jumps to three of it with {range} points",
+	],
+	"transfer-pass": [
+		"Responses to [1NT]",
+		"- After the transfer, responder bids [P] with {range} points",
+	],
+	"transfer-invite": [
+		"Responses to [1NT]",
+		"[2NT] with exactly five cards and {range} points",
+	],
+	"transfer-game": [
+		"Responses to [1NT]",
+		"no singleton or void, and {range} points",
+	],
+	"nt-super-pass": [
+		"Responses to [1NT]",
+		"After the super-accept, responder passes with {range} points",
+	],
+	"nt-super-game": [
+		"Responses to [1NT]",
+		"bids four of the major with {range} points",
 	],
 	"2nt-gerber": ["Responses to [2NT]", "- [4C] (Gerber): {range} points"],
 	"2c-waiting": ["Responses to [2C]", "- [2D]: waiting, {range} points"],

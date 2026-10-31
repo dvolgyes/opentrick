@@ -35,7 +35,11 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 
 ## Antworten auf [1NT]
 - 0–7 Punkte: [P], außer ein Transfer, schwaches Stayman oder [2S] passt.
-- [2D] zeigt fünf oder mehr Coeur, [2H] zeigt fünf oder mehr Pik (Transfers), mit beliebig vielen Punkten. Mit fünf oder mehr Karten in beiden Oberfarben transferiere in die längere; bei gleicher Länge in Pik. Der Eröffner reizt die nächste Farbe.
+- [2D] zeigt fünf oder mehr Coeur, [2H] zeigt fünf oder mehr Pik (Transfers), mit beliebig vielen Punkten. Mit fünf oder mehr Karten in beiden Oberfarben transferiere in die längere; bei gleicher Länge in Pik, aber mit je fünf Karten und 8–9 Punkten in Coeur. Der Eröffner reizt die nächste Farbe oder springt mit 17 Punkten und vier oder mehr Karten auf drei in dieser Farbe (Super-Accept).
+- Nach dem Transfer reizt der Antwortende [P] mit 0–7 Punkten; [2NT] mit genau fünf Karten und 8–9 Punkten; drei in der Oberfarbe mit sechs oder mehr Karten und 8–9 Punkten; [3NT] mit genau fünf Karten, ohne Single oder Chicane, und 10–15 Punkten; vier in der Oberfarbe mit sechs oder mehr Karten und 10–15 Punkten. Mit 16 oder mehr Punkten gibt der Leitfaden kein Gebot an.
+- Eine neue Farbe nach dem Transfer ist partieforcierend: genau fünf Karten in der Oberfarbe, vier oder mehr Karten in der neuen Farbe, ein Single oder Chicane und 10–15 Punkte. Mit zwei solchen Farben reize die längere, bei gleicher Länge die niedrigere. Nach [2D] [2H] zeigt [2S] statt [2NT] je fünf Karten in beiden Oberfarben und 8–9 Punkte.
+- Nach dem Transfer antwortet der Eröffner auf [2NT] mit 15 Punkten mit [P] bei zwei Karten in der Oberfarbe oder mit drei in der Oberfarbe bei drei oder mehr Karten; mit 16–17 Punkten ebenso mit [3NT] oder vier in der Oberfarbe. Nach drei in der Oberfarbe passt der Eröffner mit 15 Punkten und reizt vier mit 16–17 Punkten. Nach [3NT] passt der Eröffner mit zwei Karten in der Oberfarbe und reizt vier darin mit drei oder mehr Karten. Nach [2S] passt der Eröffner mit 15 Punkten und mindestens so vielen Pik wie Coeur, sonst reizt der Eröffner [3H]; mit 16–17 Punkten ebenso [4S] oder [4H].
+- Nach dem Super-Accept passt der Antwortende mit 0–5 Punkten und reizt vier in der Oberfarbe mit 6 oder mehr Punkten.
 - [2C] (Stayman): 8 oder mehr Punkte mit einer Viereroberfarbe. Der Eröffner antwortet [2D] ohne Viereroberfarbe, [2H] mit vier Coeur, [2S] mit vier Pik und ohne vier Coeur.
 - Schwaches Stayman: [2C] auch mit 0–7 Punkten, vier Pik, vier Coeur und höchstens einem Treff. Passe auf jede Antwort des Eröffners.
 - [2S] (Unterfarben-Transfer): 0–7 Punkte mit sechs oder mehr Karten in einer Unterfarbe, oder mit fünf Karten in einer Unterfarbe in einer Hand, die nicht 5-3-3-2 ist. Der Eröffner muss [3C] reizen; passe mit Treff, oder reize [3D] mit Karo. Mit einer fünfkartigen Unterfarbe in einer 5-3-3-2-Hand passe auf [1NT].
@@ -80,5 +84,6 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Stayman: benannt nach Sam Stayman, der die Konvention 1945 veröffentlichte. Jack Marx und George Rapée hatten die Idee vor ihm.
 - Schwaches Stayman: ein beschreibender Name; auch Garbage Stayman genannt.
 - Jacoby-Transfers: benannt nach Oswald Jacoby, der 1956 darüber schrieb. Der Unterfarben-Transfer ist die SAYC-Form.
+- Super-Accept: ein beschreibender Name für den Sprung des Eröffners auf drei in der Oberfarbe nach einem Transfer; er zeigt Unterstützung mit vier Karten und ein Maximum.
 - Blackwood: benannt nach Easley Blackwood, der die Konvention 1933 veröffentlichte.
 - Gerber: benannt nach John Gerber, der die Konvention 1938 nach Nordamerika brachte.

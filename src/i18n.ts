@@ -677,6 +677,15 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		balanced: "ausgeglichen",
 		"artificial and forcing": "künstlich und forcierend",
 		"{min}+ {suit} support": "Unterstützung mit {min}+ {suit}",
+		"exactly {length} {suit}": "genau {length} {suit}",
+		"exactly {length} {suit}, no singleton or void":
+			"genau {length} {suit}, kein Single und kein Chicane",
+		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
+			"genau {length} {major}, {min}+ {suit}, ein Single oder Chicane",
+		"at most {max} {suit}": "höchstens {max} {suit}",
+		"at least as many {suit} as {other}":
+			"mindestens so viele {suit} wie {other}",
+		"more {suit} than {other}": "mehr {suit} als {other}",
 		"weak two, a good {length}-card {suit} suit":
 			"schwache Zwei, eine gute {suit}-Farbe mit {length} Karten",
 		"preempt, a good {length}-card {suit} suit":
@@ -1366,6 +1375,14 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		balanced: "kiegyensúlyozott",
 		"artificial and forcing": "mesterséges és forszírozó",
 		"{min}+ {suit} support": "{suit} támogatás, {min}+ lap",
+		"exactly {length} {suit}": "pontosan {length} {suit}",
+		"exactly {length} {suit}, no singleton or void":
+			"pontosan {length} {suit}, szingli és renonsz nélkül",
+		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
+			"pontosan {length} {major}, {min}+ {suit}, szingli vagy renonsz",
+		"at most {max} {suit}": "legfeljebb {max} {suit}",
+		"at least as many {suit} as {other}": "legalább annyi {suit}, mint {other}",
+		"more {suit} than {other}": "több {suit}, mint {other}",
 		"weak two, a good {length}-card {suit} suit":
 			"gyenge kettes, jó {length} lapos {suit} szín",
 		"preempt, a good {length}-card {suit} suit":
@@ -2047,6 +2064,14 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		balanced: "balansert",
 		"artificial and forcing": "kunstig og krav",
 		"{min}+ {suit} support": "støtte med {min}+ {suit}",
+		"exactly {length} {suit}": "nøyaktig {length} {suit}",
+		"exactly {length} {suit}, no singleton or void":
+			"nøyaktig {length} {suit}, ingen singleton eller renons",
+		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
+			"nøyaktig {length} {major}, {min}+ {suit}, en singleton eller renons",
+		"at most {max} {suit}": "høyst {max} {suit}",
+		"at least as many {suit} as {other}": "minst like mange {suit} som {other}",
+		"more {suit} than {other}": "flere {suit} enn {other}",
 		"weak two, a good {length}-card {suit} suit":
 			"svak to-åpning, en god {suit}-farge med {length} kort",
 		"preempt, a good {length}-card {suit} suit":

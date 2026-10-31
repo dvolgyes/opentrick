@@ -35,7 +35,11 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 
 ## Svar på [1NT]
 - 0–7 poeng: [P], med mindre en overføring, svak Stayman eller [2S] passer.
-- [2D] viser fem eller flere hjerter, [2H] viser fem eller flere spar (overføringer), med hvor mange poeng som helst. Med fem eller flere kort i begge høyfargene, overfør til den lengste; med like lange, til spar. Åpner melder neste farge.
+- [2D] viser fem eller flere hjerter, [2H] viser fem eller flere spar (overføringer), med hvor mange poeng som helst. Med fem eller flere kort i begge høyfargene, overfør til den lengste; med like lange, til spar, men til hjerter med fem kort i hver og 8–9 poeng. Åpner melder neste farge, eller hopper til tre i den med 17 poeng og fire eller flere kort (superaksept).
+- Etter overføringen melder svarer [P] med 0–7 poeng; [2NT] med nøyaktig fem kort og 8–9 poeng; tre i høyfargen med seks eller flere kort og 8–9 poeng; [3NT] med nøyaktig fem kort, ingen singleton eller renons, og 10–15 poeng; fire i høyfargen med seks eller flere kort og 10–15 poeng. Med 16 eller flere poeng gir veiledningen ingen melding.
+- En ny farge etter overføringen er utgangskrav: nøyaktig fem kort i høyfargen, fire eller flere kort i den nye fargen, en singleton eller renons, og 10–15 poeng. Med to slike farger, meld den lengste, eller den laveste med like lange. Etter [2D] [2H] viser [2S] i stedet for [2NT] fem kort i hver høyfarge og 8–9 poeng.
+- Etter overføringen svarer åpner på [2NT] med 15 poeng med [P] med to kort i høyfargen, eller med tre i høyfargen med tre eller flere kort; med 16–17 poeng på samme måte med [3NT] eller fire i høyfargen. Etter tre i høyfargen passer åpner med 15 poeng og melder fire med 16–17 poeng. Etter [3NT] passer åpner med to kort i høyfargen og melder fire i den med tre eller flere kort. Etter [2S] passer åpner med 15 poeng og minst like mange spar som hjerter, ellers melder åpner [3H]; med 16–17 poeng på samme måte [4S] eller [4H].
+- Etter superaksepten passer svarer med 0–5 poeng og melder fire i høyfargen med 6 eller flere poeng.
 - [2C] (Stayman): 8 eller flere poeng med firekorts høyfarge. Åpner svarer [2D] uten firekorts høyfarge, [2H] med fire hjerter, [2S] med fire spar og ikke fire hjerter.
 - Svak Stayman: [2C] også med 0–7 poeng, fire spar, fire hjerter og høyst én kløver. Pass på alle svar fra åpner.
 - [2S] (lavfargeoverføring): 0–7 poeng med seks eller flere kort i en lavfarge, eller med fem kort i en lavfarge på en hånd som ikke er 5-3-3-2. Åpner må melde [3C]; pass med kløver, eller meld [3D] med ruter. Med femkorts lavfarge på en 5-3-3-2-hånd, pass på [1NT].
@@ -80,5 +84,6 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Stayman: oppkalt etter Sam Stayman, som publiserte den i 1945. Jack Marx og George Rapée hadde ideen før ham.
 - Svak Stayman: et beskrivende navn; også kalt garbage Stayman.
 - Jacoby-overføringer: oppkalt etter Oswald Jacoby, som skrev om dem i 1956. Lavfargeoverføringen er SAYC-formen.
+- Superaksept (super-accept): et beskrivende navn på åpners hopp til tre i høyfargen etter en overføring; det viser firekorts støtte og maksimum.
 - Blackwood: oppkalt etter Easley Blackwood, som publiserte den i 1933.
 - Gerber: oppkalt etter John Gerber, som brakte den til Nord-Amerika i 1938.

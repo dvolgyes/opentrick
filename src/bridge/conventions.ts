@@ -42,6 +42,30 @@ export type Shape =
 	| { readonly kind: "competitive"; readonly suit: Suit; readonly min: number }
 	/** `min` or more cards in `suit`, the suit above the bid. */
 	| { readonly kind: "transfer"; readonly suit: Suit; readonly min: number }
+	/** Exactly `length` cards in `suit`; `flat` also needs no singleton or void. */
+	| {
+			readonly kind: "exact";
+			readonly suit: Suit;
+			readonly length: number;
+			readonly flat?: true;
+	  }
+	/** Exactly `length` cards in the `major`, `min` or more in the new `suit`, and a singleton or void. */
+	| {
+			readonly kind: "second-suit";
+			readonly major: Suit;
+			readonly length: number;
+			readonly suit: Suit;
+			readonly min: number;
+	  }
+	/** At most `max` cards in partner's `suit`. */
+	| { readonly kind: "at-most"; readonly suit: Suit; readonly max: number }
+	/** More cards in `suit` than in `other`, or with `ties` at least as many. */
+	| {
+			readonly kind: "longer-major";
+			readonly suit: Suit;
+			readonly other: Suit;
+			readonly ties: boolean;
+	  }
 	/**
 	 * A major with exactly `min` cards and `strong` points, or exactly `min` cards in both majors, at most `clubs`
 	 * clubs and `weak` points (weak Stayman).
@@ -153,6 +177,16 @@ type Position =
 	| { readonly kind: "relay" }
 	/** Responder's call after [1NT] [P] [2S] [P] [3C] [P]. */
 	| { readonly kind: "relay-answer" }
+	/** Responder's second call after the transfer to the major `suit` was accepted at the two level. */
+	| { readonly kind: "transfer-rebid"; readonly suit: Suit }
+	/** Responder's second call after opener jumped to three of the major `suit` (super-accept). */
+	| { readonly kind: "super-accepted"; readonly suit: Suit }
+	/** Opener's third call after the transfer to `suit`, the acceptance, and responder's `rebid`. */
+	| {
+			readonly kind: "transfer-reply";
+			readonly suit: Suit;
+			readonly rebid: Bid;
+	  }
 	/**
 	 * Opener's call after [1NT], a pass, partner's invitation [2NT], [3C], [3D] or [4NT] and a pass; `game` accepts
 	 * it.
@@ -180,6 +214,9 @@ const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
 	"transfer-answer",
 	"relay",
 	"relay-answer",
+	"transfer-rebid",
+	"super-accepted",
+	"transfer-reply",
 	"nt-invite",
 	"slam-try",
 	"aces",
@@ -257,6 +294,34 @@ function afterGerberAnswer(calls: readonly Call[]): boolean {
 		(calls[start] === "1NT" || calls[start] === "2NT") &&
 		/^P 4C P (4D|4H|4S|4NT) P$/.test(calls.slice(start + 1).join(" "))
 	);
+}
+
+/** The position after [1NT] and `after`: a pass, a transfer, a pass and more, all without the opponents' calls. */
+function transferPosition(after: readonly Call[]): Position | undefined {
+	const [pass, transfer, again, accept, still, rebid, last, ...rest] = after;
+	const suit = transfer === "2D" ? "H" : transfer === "2H" ? "S" : undefined;
+	if (suit === undefined || pass !== "P" || again !== "P" || still !== "P")
+		return undefined;
+	if (rebid === undefined)
+		return accept === `2${suit}`
+			? { kind: "transfer-rebid", suit }
+			: accept === `3${suit}`
+				? { kind: "super-accepted", suit }
+				: undefined;
+	// The invitations: [2NT], three of the major, [3NT], and the five-five [2S] after [2D] [2H].
+	const invitations: readonly Call[] = [
+		"2NT",
+		`3${suit}`,
+		"3NT",
+		...(suit === "H" ? (["2S"] as const) : []),
+	];
+	return accept === `2${suit}` &&
+		last === "P" &&
+		rest.length === 0 &&
+		isBid(rebid) &&
+		invitations.includes(rebid)
+		? { kind: "transfer-reply", suit, rebid }
+		: undefined;
 }
 
 /** The position after partner's one of `opened`, a pass, and `response`, a new suit without a jump or [1NT]. */
@@ -355,6 +420,9 @@ function position(calls: readonly Call[]): Position | undefined {
 	if (after === "P") return responsePosition(opening);
 	if (opening === "1NT" && after === "P 2S P 3C P")
 		return { kind: "relay-answer" };
+	const later =
+		opening === "1NT" ? transferPosition(calls.slice(start + 1)) : undefined;
+	if (later !== undefined) return later;
 	const [pass, response, again, ...rest] = calls.slice(start + 1);
 	if (
 		(pass !== "P" && !(opening === "1NT" && pass === "X")) ||
@@ -575,6 +643,119 @@ function slamTryMeaning(
 				shape: { kind: "ace-ask", suit, min: SHAPES.support },
 			}
 		: undefined;
+}
+
+/** Responder's second call after opener accepted the transfer to the major `suit` at the two level. */
+function transferRebidMeaning(
+	ranges: Ranges,
+	suit: Suit,
+	call: Call,
+): CallMeaning | undefined {
+	const five = SHAPES.transfer;
+	const invite = ranges["transfer-invite"];
+	const game = ranges["transfer-game"];
+	const long: Shape = { kind: "cards", suit, min: SHAPES.transferLong };
+	// "[P] with 0–7 points; [2NT] with exactly five cards and 8–9 points; three of the major with six or more cards and
+	// 8–9 points; [3NT] with exactly five cards, no singleton or void, and 10–15 points; four of the major with six or
+	// more cards and 10–15 points."
+	const meanings: Partial<Record<Call, CallMeaning>> = {
+		P: { range: ranges["transfer-pass"], shape: { kind: "none" } },
+		"2NT": { range: invite, shape: { kind: "exact", suit, length: five } },
+		[`3${suit}`]: { range: invite, shape: long },
+		"3NT": {
+			range: game,
+			shape: { kind: "exact", suit, length: five, flat: true },
+		},
+		[`4${suit}`]: { range: game, shape: long },
+	};
+	const meaning = meanings[call];
+	if (meaning !== undefined) return meaning;
+	// "After [2D] [2H], [2S] instead of [2NT] shows five cards in each major and 8–9 points."
+	if (suit === "H" && call === "2S")
+		return {
+			range: invite,
+			shape: {
+				kind: "second-suit",
+				major: suit,
+				length: five,
+				suit: "S",
+				min: five,
+			},
+		};
+	// "A new suit after the transfer is game forcing: exactly five cards in the major, four or more cards in the new
+	// suit, a singleton or void, and 10–15 points."
+	const newSuits: readonly Suit[] = suit === "S" ? ["C", "D", "H"] : ["C", "D"];
+	const side = newSuits.find((other) => call === `3${other}`);
+	return side === undefined
+		? undefined
+		: {
+				range: game,
+				shape: {
+					kind: "second-suit",
+					major: suit,
+					length: five,
+					suit: side,
+					min: SHAPES.newSuit,
+				},
+			};
+}
+
+/** Opener's third call after the transfer to `suit`, the acceptance, and responder's invitation `rebid`. */
+function transferReplyMeaning(
+	ranges: Ranges,
+	suit: Suit,
+	rebid: Bid,
+): Partial<Record<Call, CallMeaning>> {
+	const low = ranges["nt-invite-pass"];
+	const high = ranges["nt-invite-accept"];
+	const short: Shape = {
+		kind: "at-most",
+		suit,
+		max: SHAPES.transferSupport - 1,
+	};
+	const support: Shape = { kind: "support", suit, min: SHAPES.transferSupport };
+	switch (rebid) {
+		case "2NT":
+			// "Opener answers [2NT] with 15 points by [P] with two cards in the major, or by three of the major with three
+			// or more cards; with 16–17 points, by [3NT] or four of the major in the same way."
+			return {
+				P: { range: low, shape: short },
+				[`3${suit}`]: { range: low, shape: support },
+				"3NT": { range: high, shape: short },
+				[`4${suit}`]: { range: high, shape: support },
+			};
+		case "3NT":
+			// "After [3NT], opener passes with two cards in the major and bids four of it with three or more cards."
+			return { P: { shape: short }, [`4${suit}`]: { shape: support } };
+		case "2S": {
+			// "After [2S], opener passes with 15 points and at least as many spades as hearts, otherwise bids [3H]; with
+			// 16–17 points, [4S] or [4H] in the same way."
+			const spades: Shape = {
+				kind: "longer-major",
+				suit: "S",
+				other: "H",
+				ties: true,
+			};
+			const hearts: Shape = {
+				kind: "longer-major",
+				suit: "H",
+				other: "S",
+				ties: false,
+			};
+			return {
+				P: { range: low, shape: spades },
+				"3H": { range: low, shape: hearts },
+				"4S": { range: high, shape: spades },
+				"4H": { range: high, shape: hearts },
+			};
+		}
+		default:
+			// "After three of the major, opener passes with 15 points and bids four of it with 16–17 points."
+			return {
+				P: { range: low, shape: { kind: "none" } },
+				[`4${suit}`]: { range: high, shape: { kind: "none" } },
+			};
+	}
 }
 
 /** The answers by steps from `first`: 0 or 4, then 1, 2 and 3. */
@@ -834,9 +1015,26 @@ function meaningAt(
 					? { shape: { kind: "support", suit: at.suit, min: 3 } }
 					: undefined;
 			}
+			// "Opener bids the next suit, or jumps to three of it with 17 points and four or more cards (super-accept)."
+			if (call === `3${at.suit}`)
+				return {
+					range: ranges["nt-super-accept"],
+					shape: { kind: "support", suit: at.suit, min: SHAPES.superAccept },
+				};
 			return call === `2${at.suit}`
 				? { shape: { kind: "accept", suit: at.suit } }
 				: undefined;
+		case "transfer-rebid":
+			return transferRebidMeaning(ranges, at.suit, call);
+		case "super-accepted":
+			// "After the super-accept, responder passes with 0–5 points and bids four of the major with 6 or more points."
+			return call === "P"
+				? { range: ranges["nt-super-pass"], shape: { kind: "none" } }
+				: call === `4${at.suit}`
+					? { range: ranges["nt-super-game"], shape: { kind: "none" } }
+					: undefined;
+		case "transfer-reply":
+			return transferReplyMeaning(ranges, at.suit, at.rebid)[call];
 		case "relay":
 			return call === "3C" ? { shape: { kind: "relay" } } : undefined;
 		case "relay-answer":
@@ -955,6 +1153,24 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			return true;
 		case "balanced":
 			return isBalanced(hand);
+		case "exact":
+			return (
+				lengths[shape.suit] === shape.length &&
+				(shape.flat !== true ||
+					SUITS.every((suit) => lengths[suit] > SHAPES.shortSide))
+			);
+		case "second-suit":
+			return (
+				lengths[shape.major] === shape.length &&
+				lengths[shape.suit] >= shape.min &&
+				SUITS.some((suit) => lengths[suit] <= SHAPES.shortSide)
+			);
+		case "at-most":
+			return lengths[shape.suit] <= shape.max;
+		case "longer-major":
+			return shape.ties
+				? lengths[shape.suit] >= lengths[shape.other]
+				: lengths[shape.suit] > lengths[shape.other];
 		case "short-suit":
 			return lengths[shape.suit] <= shape.max;
 		case "cards":
@@ -1072,11 +1288,20 @@ const OPENING_GROUPS: readonly ((call: Call) => boolean)[] = [
 /**
  * "The order: [3H] or [3S] first; with five cards in one major and four in the other, [2C] with 8 or more points, else
  * the transfer; then the other transfers; then [2C]; [3C] or [3D] before [2NT]." Of two long majors the longer one,
- * spades on equal length, as for the transfers; of two long minors the longer one, diamonds on equal length.
+ * spades on equal length, as for the transfers, but hearts with five cards in each and 8–9 points; of two long minors
+ * the longer one, diamonds on equal length.
  */
-function notrumpPreferred(hand: Hand, fitting: GuideCall[]): GuideCall[] {
+function notrumpPreferred(
+	ranges: Ranges,
+	hand: Hand,
+	fitting: GuideCall[],
+): GuideCall[] {
 	const { H, S, D, C } = hand.lengths;
-	const major = H > S ? "H" : "S";
+	const fiveFiveInvite =
+		H === SHAPES.transfer &&
+		S === SHAPES.transfer &&
+		inRange(hand.points, ranges["transfer-invite"]);
+	const major = H > S || fiveFiveInvite ? "H" : "S";
 	const order: readonly Call[][] = [
 		[`3${major}`],
 		Math.max(H, S) === SHAPES.transfer && Math.min(H, S) === SHAPES.stayman
@@ -1094,6 +1319,7 @@ function notrumpPreferred(hand: Hand, fitting: GuideCall[]): GuideCall[] {
 }
 
 function preferred(
+	ranges: Ranges,
 	at: Position,
 	hand: Hand,
 	fitting: GuideCall[],
@@ -1120,7 +1346,20 @@ function preferred(
 		const raise = fitting.filter(({ call }) => call === `2${at.suit}`);
 		if (raise.length > 0) return raise;
 	}
-	if (at.kind === "1NT") return notrumpPreferred(hand, fitting);
+	if (at.kind === "1NT") return notrumpPreferred(ranges, hand, fitting);
+	if (at.kind === "transfer-answer") {
+		// "or jumps to three of it with 17 points and four or more cards (super-accept)".
+		const jump = fitting.filter(({ call }) => call === `3${at.suit}`);
+		if (jump.length > 0) return jump;
+	}
+	if (at.kind === "transfer-rebid") {
+		// "[2S] instead of [2NT]"; "with two such suits, the longer, or the lower one with equal length".
+		const length = ({ meaning: { shape } }: GuideCall) =>
+			shape.kind === "second-suit" ? hand.lengths[shape.suit] : 0;
+		const longest = Math.max(...fitting.map(length));
+		const second = fitting.find((guide) => length(guide) === longest);
+		if (longest > 0 && second !== undefined) return [second];
+	}
 	if (at.kind === "stayman-answer") {
 		// "[2H] with four hearts, [2S] with four spades and not four hearts".
 		const hearts = fitting.filter(({ call }) => call === "2H");
@@ -1191,5 +1430,5 @@ export function conventionCalls(
 	});
 	const others = fitting.filter(({ meaning }) => meaning.shape.kind !== "rest");
 	if (fitting.length === 0 && !EVERY_HAND.has(at.kind)) return undefined;
-	return preferred(at, hand, others.length > 0 ? others : fitting);
+	return preferred(ranges, at, hand, others.length > 0 ? others : fitting);
 }

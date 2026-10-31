@@ -28,7 +28,11 @@ This guide uses a natural five-card-major method, similar to Standard American.
 
 ## Responses to [1NT]
 - 0–7 points: [P], unless a transfer, weak Stayman or [2S] fits.
-- [2D] shows five or more hearts, [2H] shows five or more spades (transfers), with any points. With five or more cards in both majors, transfer to the longer one; with equal length, to spades. Opener bids the next suit.
+- [2D] shows five or more hearts, [2H] shows five or more spades (transfers), with any points. With five or more cards in both majors, transfer to the longer one; with equal length, to spades, but to hearts with five cards in each and 8–9 points. Opener bids the next suit, or jumps to three of it with 17 points and four or more cards (super-accept).
+- After the transfer, responder bids [P] with 0–7 points; [2NT] with exactly five cards and 8–9 points; three of the major with six or more cards and 8–9 points; [3NT] with exactly five cards, no singleton or void, and 10–15 points; four of the major with six or more cards and 10–15 points. With 16 or more points, the guide gives no call.
+- A new suit after the transfer is game forcing: exactly five cards in the major, four or more cards in the new suit, a singleton or void, and 10–15 points. With two such suits, bid the longer one, or the lower one with equal length. After [2D] [2H], [2S] instead of [2NT] shows five cards in each major and 8–9 points.
+- After the transfer, opener answers [2NT] with 15 points by [P] with two cards in the major, or by three of the major with three or more cards; with 16–17 points, by [3NT] or four of the major in the same way. After three of the major, opener passes with 15 points and bids four of it with 16–17 points. After [3NT], opener passes with two cards in the major and bids four of it with three or more cards. After [2S], opener passes with 15 points and at least as many spades as hearts, otherwise bids [3H]; with 16–17 points, [4S] or [4H] in the same way.
+- After the super-accept, responder passes with 0–5 points and bids four of the major with 6 or more points.
 - [2C] (Stayman): 8 or more points with a four-card major. Opener answers [2D] without a four-card major, [2H] with four hearts, [2S] with four spades and not four hearts.
 - Weak Stayman: [2C] also with 0–7 points, four spades, four hearts and at most one club. Pass any answer of opener.
 - [2S] (minor transfer): 0–7 points with six or more cards in a minor, or with five cards in a minor in a hand that is not 5-3-3-2. Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds. With a five-card minor in a 5-3-3-2 hand, pass [1NT].
@@ -73,5 +77,6 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - Stayman: named after Sam Stayman, who published it in 1945. Jack Marx and George Rapée had the idea before him.
 - Weak Stayman: a descriptive name; also called garbage Stayman.
 - Jacoby transfers: named after Oswald Jacoby, who wrote about them in 1956. The minor transfer is the SAYC form.
+- Super-accept: a descriptive name for opener's jump to three of the major after a transfer; it shows four-card support and a maximum.
 - Blackwood: named after Easley Blackwood, who published it in 1933.
 - Gerber: named after John Gerber, who brought it to North America in 1938.

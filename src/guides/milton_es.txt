@@ -28,7 +28,11 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 
 ## Respuestas a [1NT]
 - 0–7 puntos: [P], salvo que encaje una transferencia, Stayman débil o [2S].
-- [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias), con cualquier número de puntos. Con cinco o más cartas en ambos mayores, transfiere al más largo; con igual longitud, a picas. El abridor declara el palo siguiente.
+- [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias), con cualquier número de puntos. Con cinco o más cartas en ambos mayores, transfiere al más largo; con igual longitud, a picas, pero a corazones con cinco cartas en cada uno y 8–9 puntos. El abridor declara el palo siguiente, o salta a tres de ese palo con 17 puntos y cuatro o más cartas (superaceptación).
+- Tras la transferencia, el respondedor declara [P] con 0–7 puntos; [2NT] con exactamente cinco cartas y 8–9 puntos; tres del mayor con seis o más cartas y 8–9 puntos; [3NT] con exactamente cinco cartas, sin semifallo ni fallo, y 10–15 puntos; cuatro del mayor con seis o más cartas y 10–15 puntos. Con 16 o más puntos, la guía no da ninguna declaración.
+- Un palo nuevo tras la transferencia es forzante a manga: exactamente cinco cartas en el mayor, cuatro o más cartas en el palo nuevo, un semifallo o fallo, y 10–15 puntos. Con dos palos así, declara el más largo, o el más bajo con igual longitud. Tras [2D] [2H], [2S] en lugar de [2NT] muestra cinco cartas en cada mayor y 8–9 puntos.
+- Tras la transferencia, el abridor responde a [2NT] con 15 puntos con [P] con dos cartas en el mayor, o con tres del mayor con tres o más cartas; con 16–17 puntos, del mismo modo con [3NT] o cuatro del mayor. Tras tres del mayor, el abridor pasa con 15 puntos y declara cuatro con 16–17 puntos. Tras [3NT], el abridor pasa con dos cartas en el mayor y declara cuatro con tres o más cartas. Tras [2S], el abridor pasa con 15 puntos y al menos tantas picas como corazones; si no, declara [3H]; con 16–17 puntos, del mismo modo [4S] o [4H].
+- Tras la superaceptación, el respondedor pasa con 0–5 puntos y declara cuatro del mayor con 6 o más puntos.
 - [2C] (Stayman): 8 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto, [2H] con cuatro corazones, [2S] con cuatro picas y sin cuatro corazones.
 - Stayman débil: [2C] también con 0–7 puntos, cuatro picas, cuatro corazones y como máximo un trébol. Pasa cualquier respuesta del abridor.
 - [2S] (transferencia a menor): 0–7 puntos con seis o más cartas en un menor, o con cinco cartas en un menor en una mano que no es 5-3-3-2. El abridor debe declarar [3C]; pasa con tréboles, o declara [3D] con diamantes. Con un menor quinto en una mano 5-3-3-2, pasa [1NT].
@@ -73,5 +77,6 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Stayman: lleva el nombre de Sam Stayman, que lo publicó en 1945. Jack Marx y George Rapée tuvieron la idea antes que él.
 - Stayman débil: un nombre descriptivo; también llamado garbage Stayman.
 - Transferencias Jacoby: llevan el nombre de Oswald Jacoby, que escribió sobre ellas en 1956. La transferencia a menor es la forma de SAYC.
+- Superaceptación (super-accept): un nombre descriptivo para el salto del abridor a tres del mayor tras una transferencia; muestra apoyo de cuatro cartas y un máximo.
 - Blackwood: lleva el nombre de Easley Blackwood, que lo publicó en 1933.
 - Gerber: lleva el nombre de John Gerber, que lo llevó a Norteamérica en 1938.

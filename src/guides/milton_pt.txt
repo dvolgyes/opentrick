@@ -28,7 +28,11 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 
 ## Respostas a [1NT]
 - 0–7 pontos: [P], salvo se servir uma transferência, o Stayman fraco ou [2S].
-- [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências), com qualquer número de pontos. Com cinco ou mais cartas em ambos os naipes maiores, transferir para o mais longo; com igual comprimento, para espadas. O abridor declara o naipe seguinte.
+- [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências), com qualquer número de pontos. Com cinco ou mais cartas em ambos os naipes maiores, transferir para o mais longo; com igual comprimento, para espadas, mas para copas com cinco cartas em cada um e 8–9 pontos. O abridor declara o naipe seguinte, ou salta para três desse naipe com 17 pontos e quatro ou mais cartas (superaceitação).
+- Depois da transferência, o respondente marca [P] com 0–7 pontos; [2NT] com exatamente cinco cartas e 8–9 pontos; três no naipe maior com seis ou mais cartas e 8–9 pontos; [3NT] com exatamente cinco cartas, sem singleton nem void, e 10–15 pontos; quatro no naipe maior com seis ou mais cartas e 10–15 pontos. Com 16 ou mais pontos, o guia não dá nenhuma marcação.
+- Um naipe novo depois da transferência é forcing de partida: exatamente cinco cartas no naipe maior, quatro ou mais cartas no naipe novo, um singleton ou void, e 10–15 pontos. Com dois naipes assim, marcar o mais longo, ou o mais baixo com igual comprimento. Depois de [2D] [2H], [2S] em vez de [2NT] mostra cinco cartas em cada naipe maior e 8–9 pontos.
+- Depois da transferência, o abridor responde a [2NT] com 15 pontos com [P] com duas cartas no naipe maior, ou com três no naipe maior com três ou mais cartas; com 16–17 pontos, da mesma forma com [3NT] ou quatro no naipe maior. Depois de três no naipe maior, o abridor passa com 15 pontos e marca quatro com 16–17 pontos. Depois de [3NT], o abridor passa com duas cartas no naipe maior e marca quatro com três ou mais cartas. Depois de [2S], o abridor passa com 15 pontos e pelo menos tantas espadas quanto copas; caso contrário, marca [3H]; com 16–17 pontos, da mesma forma [4S] ou [4H].
+- Depois da superaceitação, o respondente passa com 0–5 pontos e marca quatro no naipe maior com 6 ou mais pontos.
 - [2C] (Stayman): 8 ou mais pontos com um naipe maior quarto. O abridor responde [2D] sem naipe maior quarto, [2H] com quatro copas, [2S] com quatro espadas e sem quatro copas.
 - Stayman fraco: [2C] também com 0–7 pontos, quatro espadas, quatro copas e no máximo uma carta de paus. Passar qualquer resposta do abridor.
 - [2S] (transferência para menor): 0–7 pontos com seis ou mais cartas num naipe menor, ou com cinco cartas num naipe menor numa mão que não seja 5-3-3-2. O abridor tem de marcar [3C]; passar com paus, ou marcar [3D] com ouros. Com um naipe menor quinto numa mão 5-3-3-2, passar [1NT].
@@ -73,5 +77,6 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Stayman: o nome vem de Sam Stayman, que o publicou em 1945. Jack Marx e George Rapée tiveram a ideia antes dele.
 - Stayman fraco: um nome descritivo; também chamado garbage Stayman.
 - Transferências Jacoby: o nome vem de Oswald Jacoby, que escreveu sobre elas em 1956. A transferência para menor é a forma do SAYC.
+- Superaceitação (super-accept): um nome descritivo para o salto do abridor para três no naipe maior depois de uma transferência; mostra apoio de quatro cartas e um máximo.
 - Blackwood: o nome vem de Easley Blackwood, que o publicou em 1933.
 - Gerber: o nome vem de John Gerber, que o levou para a América do Norte em 1938.
