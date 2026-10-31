@@ -887,6 +887,15 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				max: shape.max,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
+		case "feature":
+			return t("{suit} ace or king, none in a lower suit except {trumps}", {
+				suit: SUIT_SYMBOLS[shape.suit],
+				trumps: SUIT_SYMBOLS[shape.trumps],
+			});
+		case "no-feature":
+			return t("no ace or king outside {trumps}", {
+				trumps: SUIT_SYMBOLS[shape.trumps],
+			});
 		case "two-suits":
 			return t("exactly {length} {suit} and {otherLength} {other}", {
 				length: shape.length,

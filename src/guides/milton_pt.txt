@@ -60,6 +60,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 ## Respostas a um dois fraco
 - Apoiar o naipe do parceiro para dificultar o leilão aos adversários.
 - [2NT]: 15 ou mais pontos, pede ao abridor que descreva a mão.
+- Depois de [2NT], o abridor marca três do seu naipe com 5–8 pontos. Com 9–11 pontos, marca três do naipe lateral mais baixo com ás ou rei (valor, em inglês feature), ou [3NT] sem valor.
 
 ## Leilão competitivo
 - Uma intervenção ao nível de um: 8–16 pontos com um bom naipe quinto. Ao nível de dois: 10–16 pontos.
@@ -78,6 +79,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - O Standard American é o método natural habitual com maiores quintos na América do Norte. O SAYC (Standard American Yellow Card) é a sua forma comum para o jogo online.
 - Pontos Milton: o nome vem de Milton Work, que popularizou a contagem a partir de cerca de 1927.
 - Dois fraco: Howard Schenken desenvolveu-o no início da década de 1940.
+- Valor (feature): um nome descritivo para o ás ou o rei de um naipe lateral; o abridor mostra-o depois da pergunta [2NT].
 - Stayman: o nome vem de Sam Stayman, que o publicou em 1945. Jack Marx e George Rapée tiveram a ideia antes dele.
 - Stayman fraco: um nome descritivo; também chamado garbage Stayman.
 - Transferências Jacoby: o nome vem de Oswald Jacoby, que escreveu sobre elas em 1956. A transferência para menor é a forma do SAYC.

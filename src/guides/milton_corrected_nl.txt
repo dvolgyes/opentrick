@@ -67,6 +67,7 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 ## Antwoorden op een zwakke twee
 - Verhoog de kleur van je partner om het bieden moeilijker te maken voor de tegenstanders.
 - [2NT]: 15 of meer punten, vraagt de openaar om de hand te beschrijven.
+- Na [2NT] biedt de openaar drie in de eigen kleur met 5–8 punten. Met 9–11 punten biedt de openaar drie in de laagste bijkleur met aas of heer (feature), of [3NT] zonder feature.
 
 ## Competitieve biedingen
 - Een volgbod op het één-niveau: 8–16 punten met een goede vijfkaart. Op het twee-niveau: 10–16 punten.
@@ -85,6 +86,7 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - Standard American is de gebruikelijke natuurlijke methode met vijfkaart hoge kleuren in Noord-Amerika. SAYC (Standard American Yellow Card) is de gangbare vorm voor online spel.
 - Milton-punten: genoemd naar Milton Work, die de telling vanaf ongeveer 1927 populair maakte.
 - Zwakke twee: Howard Schenken ontwikkelde die begin jaren 1940.
+- Feature: een beschrijvende naam voor de aas of heer in een bijkleur; de openaar toont die na de vraag [2NT].
 - Stayman: genoemd naar Sam Stayman, die de conventie in 1945 publiceerde. Jack Marx en George Rapée hadden het idee al eerder.
 - Zwakke Stayman: een beschrijvende naam; ook garbage Stayman genoemd.
 - Jacoby-transfers: genoemd naar Oswald Jacoby, die er in 1956 over schreef. De transfer naar een lage kleur is de SAYC-vorm.

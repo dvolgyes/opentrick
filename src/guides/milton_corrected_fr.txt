@@ -67,6 +67,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 ## Réponses à un deux faible
 - Soutenez la couleur du partenaire pour compliquer les enchères des adversaires.
 - [2NT] : 15 points ou plus, demande à l'ouvreur de décrire sa main.
+- Après [2NT], l'ouvreur nomme sa couleur au palier de trois avec 5–8 points. Avec 9–11 points, il nomme au palier de trois la couleur latérale la plus basse avec l'as ou le roi (feature), ou [3NT] sans feature.
 
 ## Enchères de compétition
 - Une intervention au niveau de un : 8–16 points avec une bonne couleur cinquième. Au niveau de deux : 10–16 points.
@@ -85,6 +86,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Le Standard American est la méthode naturelle habituelle à majeure cinquième en Amérique du Nord. Le SAYC (Standard American Yellow Card) en est la forme courante pour le jeu en ligne.
 - Points Milton : nommés d'après Milton Work, qui a popularisé ce décompte à partir de 1927 environ.
 - Deux faible : Howard Schenken l'a mis au point au début des années 1940.
+- Feature : un nom descriptif pour l'as ou le roi d'une couleur latérale ; l'ouvreur le montre après la question [2NT].
 - Stayman : nommé d'après Sam Stayman, qui l'a publié en 1945. Jack Marx et George Rapée avaient eu l'idée avant lui.
 - Stayman faible : un nom descriptif ; aussi appelé garbage Stayman.
 - Transferts Jacoby : nommés d'après Oswald Jacoby, qui les a décrits en 1956. Le transfert mineur est la forme du SAYC.

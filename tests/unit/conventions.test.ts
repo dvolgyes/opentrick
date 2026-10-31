@@ -298,6 +298,15 @@ describe("guide calls for a hand", () => {
 		["1S P 2S 3H", "AKJ73.A4.AQ82.65", ["4S"]], // 18
 		["1H P 3H P", "K4.AQJ73.K82.J65", ["P"]], // 14: at most 26 together
 		["1H P 3H P", "K4.AKJ73.K82.J65", ["4H"]], // 15: at least 25 together
+		["2H P 2NT P", "84.KQT973.J52.63", ["3H"]], // 6: minimum
+		["2H P 2NT P", "84.AKJT73.Q52.63", ["3NT"]], // 10, no side ace or king
+		["2H P 2NT P", "K4.KQT973.J52.63", ["3S"]], // 9, spade feature
+		["2H P 2NT P", "K4.KQT973.K52.63", ["3D"]], // 11, two features: the lower one
+		["2H P 2NT P", "A4.KQT973.K52.63", []], // 12: not a weak two
+		["2D P 2NT P", "84.63.KQT973.A52", ["3C"]], // 9, club feature below the suit
+		["2D P 2NT P", "87.K6.KQT743.JT8", ["3H"]], // 9, heart feature: W2 in docs/bidding-reference.md
+		["2S P 2NT P", "KQT973.A52.84.63", ["3H"]], // 9, heart feature
+		["2S P 2NT P", "KQT973.852.84.Q3", ["3S"]], // 7: minimum
 	] as const)(
 		"continues %s with %s by %j in HCP",
 		(auction, cardsText, expected) => {
@@ -891,6 +900,35 @@ describe("guide meaning of a call", () => {
 		["hcp", "2H P 2NT", { range: { min: 15 }, shape: { kind: "ask" } }],
 		[
 			"hcp",
+			"2H P 2NT P 3H",
+			{ range: { min: 5, max: 8 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"2H P 2NT P 3D",
+			{
+				range: { min: 9, max: 11 },
+				shape: { kind: "feature", suit: "D", trumps: "H" },
+			},
+		],
+		[
+			"hcp",
+			"2D P 2NT P 3C",
+			{
+				range: { min: 9, max: 11 },
+				shape: { kind: "feature", suit: "C", trumps: "D" },
+			},
+		],
+		[
+			"hcp",
+			"2S P 2NT P 3NT",
+			{
+				range: { min: 9, max: 11 },
+				shape: { kind: "no-feature", trumps: "S" },
+			},
+		],
+		[
+			"hcp",
 			"1H 1S",
 			{
 				range: { min: 8, max: 16 },
@@ -1030,6 +1068,9 @@ describe("guide meaning of a call", () => {
 		["hcp", "1NT X"],
 		["hcp", "2H 2S"],
 		["hcp", "2H P 3C"],
+		["hcp", "2H P 2NT P 4H"], // above the answers to the ask
+		["hcp", "2H P 2NT X 3H"], // after an opponent's call
+		["hcp", "2H P 2NT P 3S P 4H"], // responder's call after the answer
 		["hcp", "1NT P 2C P 2D P 4NT"], // not an ace ask after partner's notrump
 		["hcp", "1NT P 2NT P 4NT"],
 		["hcp", "1NT P 4NT P 5C"], // no ace answer to a [4NT] that invites [6NT]
@@ -1068,6 +1109,9 @@ describe("guide calls and meanings agree", () => {
 			"1NT P",
 			"2C P",
 			"2H P",
+			"2D P 2NT P",
+			"2H P 2NT P",
+			"2S P 2NT P",
 			"1D P 1H P",
 			"1H P 1S P",
 			"1S P 2C P",
@@ -1265,6 +1309,27 @@ describe("guide calls and meanings agree", () => {
 		expect(counts.answered).toBeGreaterThan(300);
 		expect(counts.above).toBeGreaterThan(0);
 	}, 30_000);
+
+	it("gives the weak-two opener exactly one answer to the [2NT] ask", () => {
+		let answered = 0;
+		for (let game = 0; game < 400; game += 1) {
+			const deal = dealCards(randomBelowFrom(seeded(game + 1)));
+			for (const seat of SEATS)
+				for (const system of RULE_SYSTEMS) {
+					const text = cardsText(deal[seat]);
+					const opening = suggested(system, text, "")?.find((call) =>
+						["2D", "2H", "2S"].includes(call),
+					);
+					if (opening === undefined) continue;
+					expect(
+						suggested(system, text, `${opening} P 2NT P`),
+						`${system} ${text} after ${opening}`,
+					).toHaveLength(1);
+					answered += 1;
+				}
+		}
+		expect(answered).toBeGreaterThan(30);
+	}, 30_000);
 });
 
 /** The inverse of hand(): "AQ4.KJ5.Q862.K73". */
@@ -1397,6 +1462,14 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"jump-raise-pass": ["Opener's rebid", "otherwise [P] with {range} points."],
 	"jump-raise-game": ["Opener's rebid", "[4H] with {range} points (25"],
 	"weak-2NT": ["Responses to a weak two", "- [2NT]: {range} points, asks"],
+	"weak-2NT-minimum": [
+		"Responses to a weak two",
+		"opener bids three of the suit with {range} points",
+	],
+	"weak-2NT-maximum": [
+		"Responses to a weak two",
+		"With {range} points, opener bids three of the lowest side suit",
+	],
 	"overcall-one": [
 		"Competitive bids",
 		"- An overcall at the one level: {range} points",

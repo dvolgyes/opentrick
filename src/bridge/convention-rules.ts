@@ -69,6 +69,8 @@ export type RangeKey =
 	| "jump-raise-pass"
 	| "jump-raise-game"
 	| "weak-2NT"
+	| "weak-2NT-minimum"
+	| "weak-2NT-maximum"
 	| "overcall-one"
 	| "overcall-two"
 	| "overcall-1NT"
@@ -147,6 +149,8 @@ const MILTON = {
 	"jump-raise-game": { min: 15, max: 21 }, // "[4H] with 15–21 points (25 or more together)"
 	// ## Responses to a weak two
 	"weak-2NT": { min: 15 }, // "[2NT]: 15 or more points, asks opener"
+	"weak-2NT-minimum": { min: 5, max: 8 }, // "opener bids three of the suit with 5–8 points"
+	"weak-2NT-maximum": { min: 9, max: 11 }, // "With 9–11 points, opener bids three of the lowest side suit"
 	// ## Competitive bids
 	"overcall-one": { min: 8, max: 16 }, // "An overcall at the one level: 8–16 points"
 	"overcall-two": { min: 10, max: 16 }, // "At the two level: 10–16 points"

@@ -60,6 +60,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 ## Risposte al due debole
 - Appoggia il colore del compagno per rendere la licita più difficile agli avversari.
 - [2NT]: 15 o più punti, chiede all'apertore di descrivere la mano.
+- Dopo [2NT], l'apertore dichiara tre nel suo colore con 5–8 punti. Con 9–11 punti, dichiara tre nel colore laterale più basso con asso o re (valore, in inglese feature), oppure [3NT] senza valore.
 
 ## Dichiarazioni competitive
 - Un intervento a livello di uno: 8–16 punti con un buon colore quinto. A livello di due: 10–16 punti.
@@ -78,6 +79,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Lo Standard American è il consueto sistema naturale a quinta nobile del Nord America. Il SAYC (Standard American Yellow Card) ne è la forma comune per il gioco online.
 - Punti Milton: dal nome di Milton Work, che rese popolare il conteggio a partire dal 1927 circa.
 - Due debole: Howard Schenken lo sviluppò all'inizio degli anni 1940.
+- Valore (feature): un nome descrittivo per l'asso o il re di un colore laterale; l'apertore lo mostra dopo la domanda [2NT].
 - Stayman: dal nome di Sam Stayman, che la pubblicò nel 1945. Jack Marx e George Rapée ebbero l'idea prima di lui.
 - Stayman debole: un nome descrittivo; detta anche garbage Stayman.
 - Transfer Jacoby: dal nome di Oswald Jacoby, che ne scrisse nel 1956. Il transfer minore è la forma del SAYC.

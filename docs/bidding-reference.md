@@ -469,6 +469,10 @@ Such a hand bids [2C], also with five diamonds, so J2 bids [2C] as Cohen does.
   - Three of a side suit with its ace or king (a "feature"): 9–11 points.
   - [3NT]: 9–11 points and no feature.
   - SAYC also lists four of a minor with a maximum and a side four- or five-card minor with the queen; the guide leaves this out, because it is rare.
+  - The details below are derived (2026-11-01); SAYC does not say them:
+    - A feature is the ace or king of a suit other than opener's suit.
+    - With two or three features, opener shows the lowest one, because it uses the least bidding space.
+    - The guide gives no call to responder after opener's answer.
 
 ### Planned remarks on the names and origins of the conventions
 
@@ -483,6 +487,7 @@ Each remark below has a source; a remark with a doubtful date says less, not mor
 | Stayman | Named after Sam Stayman, who published it in The Bridge World in 1945; Jack Marx (1939) and his partner George Rapée (1944) had the idea before him. | [Wikipedia: Stayman convention](https://en.wikipedia.org/wiki/Stayman_convention), [Wikipedia: Sam Stayman](https://en.wikipedia.org/wiki/Sam_Stayman) |
 | Weak Stayman | A descriptive name: Stayman with a weak hand that passes any answer; also called "garbage Stayman". | SAYC (the use) |
 | Jacoby transfer | Named after Oswald Jacoby, who wrote about it in The Bridge World in 1956. | [Wikipedia: Jacoby transfer](https://en.wikipedia.org/wiki/Jacoby_transfer) |
+| Feature | A descriptive name: the ace or king of a side suit, which opener shows after the [2NT] ask over a weak two. | SAYC |
 | Super-accept | A descriptive name: opener accepts the transfer and shows extra strength and support. | SAYC (the bid), BB-JT (the name) |
 | [2S] minor transfer | SAYC's relay to [3C]; the name says that responder transfers the contract to a minor. | SAYC |
 | Jacoby [2NT] | Usually credited to Oswald Jacoby; some credit Leo Baron. | [Wikipedia: Jacoby 2NT](https://en.wikipedia.org/wiki/Jacoby_2NT) |

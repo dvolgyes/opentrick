@@ -67,6 +67,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 ## Respuestas a un dos débil
 - Apoya el palo de tu compañero para dificultar la subasta a los contrarios.
 - [2NT]: 15 o más puntos, pide al abridor que describa su mano.
+- Tras [2NT], el abridor dice tres de su palo con 5–8 puntos. Con 9–11 puntos, dice tres del palo lateral más bajo con as o rey (valor, en inglés feature), o [3NT] sin valor.
 
 ## Subasta competitiva
 - Una intervención a nivel de uno: 8–16 puntos con un buen palo de cinco cartas. A nivel de dos: 10–16 puntos.
@@ -85,6 +86,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - El Standard Americano es el método natural habitual de mayores quintos en Norteamérica. SAYC (Standard American Yellow Card) es su forma común para el juego en línea.
 - Puntos Milton: llevan el nombre de Milton Work, que popularizó el recuento desde aproximadamente 1927.
 - Dos débil: Howard Schenken lo desarrolló a principios de los años 1940.
+- Valor (feature): un nombre descriptivo para el as o el rey de un palo lateral; el abridor lo muestra tras la pregunta [2NT].
 - Stayman: lleva el nombre de Sam Stayman, que lo publicó en 1945. Jack Marx y George Rapée tuvieron la idea antes que él.
 - Stayman débil: un nombre descriptivo; también llamado garbage Stayman.
 - Transferencias Jacoby: llevan el nombre de Oswald Jacoby, que escribió sobre ellas en 1956. La transferencia a menor es la forma de SAYC.

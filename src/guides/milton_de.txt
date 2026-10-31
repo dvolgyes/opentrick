@@ -60,6 +60,7 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 ## Antworten auf eine schwache Zwei
 - Hebe die Farbe deines Partners, um den Gegnern die Reizung zu erschweren.
 - [2NT]: 15 oder mehr Punkte, fordert den Eröffner auf, seine Hand zu beschreiben.
+- Nach [2NT] reizt der Eröffner mit 5–8 Punkten drei in seiner Farbe. Mit 9–11 Punkten reizt er drei in der niedrigsten Nebenfarbe mit Ass oder König (Feature), oder [3NT] ohne Feature.
 
 ## Kompetitive Reizung
 - Eine Gegenreizung auf Einerstufe: 8–16 Punkte mit einer guten Fünferfarbe. Auf Zweierstufe: 10–16 Punkte.
@@ -78,6 +79,7 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Standard American ist die übliche natürliche Methode mit Fünferoberfarben in Nordamerika. SAYC (Standard American Yellow Card) ist ihre verbreitete Form im Online-Spiel.
 - Milton-Punkte: benannt nach Milton Work, der die Zählung ab etwa 1927 bekannt machte.
 - Schwache Zwei: Howard Schenken entwickelte sie Anfang der 1940er-Jahre.
+- Feature: ein beschreibender Name für Ass oder König in einer Nebenfarbe; der Eröffner zeigt es nach der Frage [2NT].
 - Stayman: benannt nach Sam Stayman, der die Konvention 1945 veröffentlichte. Jack Marx und George Rapée hatten die Idee vor ihm.
 - Schwaches Stayman: ein beschreibender Name; auch Garbage Stayman genannt.
 - Jacoby-Transfers: benannt nach Oswald Jacoby, der 1956 darüber schrieb. Der Unterfarben-Transfer ist die SAYC-Form.

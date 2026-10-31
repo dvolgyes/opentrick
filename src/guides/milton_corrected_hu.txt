@@ -67,6 +67,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 ## Válaszok gyenge kettes nyitásra
 - Emeld a partnered színét, hogy megnehezítsd az ellenfelek licitálását.
 - [2NT]: legalább 15 pont, a nyitótól a keze leírását kéri.
+- [2NT] után a nyitó 5–8 ponttal hármas szinten a saját színét licitálja. 9–11 ponttal hármas szinten a legalacsonyabb mellékszínét licitálja, amelyben ásza vagy királya van (feature), vagy [3NT]-t, ha nincs ilyen.
 
 ## Versenylicitek
 - Közbelicit egyes szinten: 8–16 pont jó ötlapos színnel. Kettes szinten: 10–16 pont.
@@ -85,6 +86,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - A Standard American Észak-Amerika szokásos természetes rendszere ötlapos nemes színekkel. A SAYC (Standard American Yellow Card) ennek az online játékban elterjedt formája.
 - Milton-pontok: Milton Work nevét viseli, aki kb. 1927-től tette népszerűvé ezt a számolást.
 - Gyenge kettes: Howard Schenken dolgozta ki az 1940-es évek elején.
+- Feature: leíró név egy mellékszín ászára vagy királyára; a nyitó a [2NT] kérdés után mutatja meg.
 - Stayman: Sam Stayman nevét viseli, aki 1945-ben publikálta. Jack Marx és George Rapée már előtte kitalálta.
 - Gyenge Stayman: leíró név; garbage Stayman néven is ismert.
 - Jacoby-transzferek: Oswald Jacoby nevét viselik, aki 1956-ban írt róluk. Az alacsonyszín-transzfer a SAYC változata.

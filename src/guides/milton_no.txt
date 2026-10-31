@@ -60,6 +60,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 ## Svar på svak to-åpning
 - Støtt makkers farge for å gjøre meldingsforløpet vanskeligere for motstanderne.
 - [2NT]: 15 eller flere poeng, ber åpner beskrive hånden.
+- Etter [2NT] melder åpner tre i fargen med 5–8 poeng. Med 9–11 poeng melder åpner tre i den laveste sidefargen med ess eller konge (feature), eller [3NT] uten feature.
 
 ## Konkurransemeldinger
 - Innmelding på ett-trinnet: 8–16 poeng med god femkortsfarge. På to-trinnet: 10–16 poeng.
@@ -78,6 +79,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Standard American er den vanlige naturlige metoden med femkorts høyfarger i Nord-Amerika. SAYC (Standard American Yellow Card) er den vanlige formen for spill på nett.
 - Milton-poeng: oppkalt etter Milton Work, som gjorde tellingen populær fra omkring 1927.
 - Svak to-åpning: Howard Schenken utviklet den tidlig på 1940-tallet.
+- Feature: et beskrivende navn på ess eller konge i en sidefarge; åpner viser det etter spørsmålet [2NT].
 - Stayman: oppkalt etter Sam Stayman, som publiserte den i 1945. Jack Marx og George Rapée hadde ideen før ham.
 - Svak Stayman: et beskrivende navn; også kalt garbage Stayman.
 - Jacoby-overføringer: oppkalt etter Oswald Jacoby, som skrev om dem i 1956. Lavfargeoverføringen er SAYC-formen.

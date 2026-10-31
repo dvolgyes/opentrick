@@ -173,6 +173,22 @@ const rows: readonly TranslationRow[] = [
 		"precies {length} {suit} en {otherLength} {other}",
 	],
 	[
+		"{suit} ace or king, none in a lower suit except {trumps}",
+		"as o rey de {suit}, ninguno en un palo más bajo salvo {trumps}",
+		"ás ou rei de {suit}, nenhum num naipe mais baixo exceto {trumps}",
+		"as ou roi de {suit}, aucun dans une couleur plus basse sauf {trumps}",
+		"asso o re di {suit}, nessuno in un colore più basso tranne {trumps}",
+		"aas of heer in {suit}, geen in een lagere kleur behalve {trumps}",
+	],
+	[
+		"no ace or king outside {trumps}",
+		"ningún as ni rey fuera de {trumps}",
+		"nenhum ás nem rei fora de {trumps}",
+		"aucun as ni roi hors de {trumps}",
+		"nessun asso né re fuori da {trumps}",
+		"geen aas of heer buiten {trumps}",
+	],
+	[
 		"exactly {length} {suit}, no singleton or void",
 		"exactamente {length} {suit}, sin semifallo ni fallo",
 		"exatamente {length} {suit}, sem singleton nem void",

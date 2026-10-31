@@ -680,6 +680,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"exactly {length} {suit}": "genau {length} {suit}",
 		"exactly {length} {suit} and {otherLength} {other}":
 			"genau {length} {suit} und {otherLength} {other}",
+		"{suit} ace or king, none in a lower suit except {trumps}":
+			"{suit}-Ass oder -König, keines in einer niedrigeren Farbe außer {trumps}",
+		"no ace or king outside {trumps}": "kein Ass oder König außer in {trumps}",
 		"exactly {length} {suit}, no singleton or void":
 			"genau {length} {suit}, kein Single und kein Chicane",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
@@ -1380,6 +1383,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"exactly {length} {suit}": "pontosan {length} {suit}",
 		"exactly {length} {suit} and {otherLength} {other}":
 			"pontosan {length} {suit} és {otherLength} {other}",
+		"{suit} ace or king, none in a lower suit except {trumps}":
+			"{suit} ász vagy király, a {trumps} szín kivételével alacsonyabb színben nincs",
+		"no ace or king outside {trumps}":
+			"a {trumps} színen kívül nincs ász vagy király",
 		"exactly {length} {suit}, no singleton or void":
 			"pontosan {length} {suit}, szingli és renonsz nélkül",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
@@ -2071,6 +2078,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"exactly {length} {suit}": "nøyaktig {length} {suit}",
 		"exactly {length} {suit} and {otherLength} {other}":
 			"nøyaktig {length} {suit} og {otherLength} {other}",
+		"{suit} ace or king, none in a lower suit except {trumps}":
+			"{suit} ess eller konge, ingen i en lavere farge utenom {trumps}",
+		"no ace or king outside {trumps}": "ikke ess eller konge utenom {trumps}",
 		"exactly {length} {suit}, no singleton or void":
 			"nøyaktig {length} {suit}, ingen singleton eller renons",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":

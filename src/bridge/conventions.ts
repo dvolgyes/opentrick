@@ -67,6 +67,10 @@ export type Shape =
 	  }
 	/** At most `max` cards in partner's `suit`. */
 	| { readonly kind: "at-most"; readonly suit: Suit; readonly max: number }
+	/** The ace or king of `suit` (a feature), and neither in a lower suit other than `trumps`. */
+	| { readonly kind: "feature"; readonly suit: Suit; readonly trumps: Suit }
+	/** No ace or king in a suit other than `trumps`. */
+	| { readonly kind: "no-feature"; readonly trumps: Suit }
 	/** More cards in `suit` than in `other`, or with `ties` at least as many. */
 	| {
 			readonly kind: "longer-major";
@@ -162,6 +166,8 @@ type Position =
 	| { readonly kind: "1NT" }
 	| { readonly kind: "2C" }
 	| { readonly kind: "weak-two"; readonly suit: Suit }
+	/** Opener's answer after a weak two in `suit`, a pass, partner's [2NT] ask and a pass. */
+	| { readonly kind: "weak-answer"; readonly suit: Suit }
 	/** Opener's second call after one of `opened`, a pass, and partner's `response`. */
 	| { readonly kind: "rebid"; readonly opened: Suit; readonly response: Bid }
 	/**
@@ -226,6 +232,7 @@ const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
 	"suit",
 	"1NT",
 	"2C",
+	"weak-answer",
 	"stayman-answer",
 	"transfer-answer",
 	"relay",
@@ -472,6 +479,14 @@ function position(calls: readonly Call[]): Position | undefined {
 	if (after === "P") return responsePosition(opening);
 	if (opening === "1NT" && after === "P 2S P 3C P")
 		return { kind: "relay-answer" };
+	const strain = strainOf(opening);
+	if (
+		after === "P 2NT P" &&
+		levelOf(opening) === 2 &&
+		isSuit(strain) &&
+		strain !== "C"
+	)
+		return { kind: "weak-answer", suit: strain };
 	const later =
 		opening === "1NT"
 			? (transferPosition(calls.slice(start + 1)) ??
@@ -977,6 +992,30 @@ function weakTwoResponseMeaning(
 		: undefined;
 }
 
+/** Opener's answer to the [2NT] ask after a weak two in `trumps`. */
+function weakAnswerMeaning(
+	ranges: Ranges,
+	trumps: Suit,
+): Partial<Record<Call, CallMeaning>> {
+	// "After [2NT], opener bids three of the suit with 5–8 points. With 9–11 points, opener bids three of the lowest
+	// side suit with its ace or king (a feature), or [3NT] without a feature."
+	const maximum = ranges["weak-2NT-maximum"];
+	const meanings: Partial<Record<Call, CallMeaning>> = {
+		[`3${trumps}`]: {
+			range: ranges["weak-2NT-minimum"],
+			shape: { kind: "none" },
+		},
+		"3NT": { range: maximum, shape: { kind: "no-feature", trumps } },
+	};
+	for (const suit of SUITS)
+		if (suit !== trumps)
+			meanings[`3${suit}`] = {
+				range: maximum,
+				shape: { kind: "feature", suit, trumps },
+			};
+	return meanings;
+}
+
 function rebidMeaning(
 	ranges: Ranges,
 	opened: Suit,
@@ -1168,6 +1207,8 @@ function meaningAt(
 			return twoClubsResponseMeaning(ranges, call);
 		case "weak-two":
 			return weakTwoResponseMeaning(ranges, at.suit, call);
+		case "weak-answer":
+			return weakAnswerMeaning(ranges, at.suit)[call];
 		case "rebid":
 			return rebidMeaning(ranges, at.opened, at.response, call);
 		case "reraise":
@@ -1303,6 +1344,13 @@ function hasStopper(hand: Hand, suit: Suit): boolean {
 	);
 }
 
+/** Whether `hand` holds the ace or king of `suit`. */
+function hasFeature(hand: Hand, suit: Suit): boolean {
+	return suitCards(hand, suit).some(
+		(card) => card[1] === "A" || card[1] === "K",
+	);
+}
+
 function inRange(points: number, range: PointRange | undefined): boolean {
 	// A range from 0 also covers a negative total: corrected HCP gives a 4333 hand without honours -1.
 	return (
@@ -1326,6 +1374,17 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			return true;
 		case "balanced":
 			return isBalanced(hand);
+		case "feature":
+			return (
+				hasFeature(hand, shape.suit) &&
+				SUITS.slice(SUITS.indexOf(shape.suit) + 1).every(
+					(suit) => suit === shape.trumps || !hasFeature(hand, suit),
+				)
+			);
+		case "no-feature":
+			return SUITS.every(
+				(suit) => suit === shape.trumps || !hasFeature(hand, suit),
+			);
 		case "two-suits":
 			return (
 				lengths[shape.suit] === shape.length &&
