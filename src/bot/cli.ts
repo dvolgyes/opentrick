@@ -347,8 +347,8 @@ async function run(options: Options): Promise<void> {
 			strategyKey = undefined;
 			await submitVote(
 				`claim:${state.claim.id}`,
-				// A bot rejects every claim, so the board is played out (src/bot/host-runner.ts).
-				claimVotePayload(identity.tableId, state.claim.id, false),
+				// A bot accepts every claim, so that only the human players decide it (src/bot/host-runner.ts).
+				claimVotePayload(identity.tableId, state.claim.id, true),
 			);
 			return;
 		}
@@ -374,8 +374,10 @@ async function run(options: Options): Promise<void> {
 			);
 			return;
 		}
+		// An accepted claim ends the board, so the bot does not act until the next deal.
 		if (
 			state.claim ||
+			state.claimResult ||
 			state.undo ||
 			state.reset ||
 			!state.board ||

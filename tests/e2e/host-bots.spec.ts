@@ -391,7 +391,7 @@ async function westDeclaresAgainstBots(page: Page): Promise<Locator> {
 	return phase;
 }
 
-test("the bots reject the host's claims, so the board is played out", async ({
+test("the bots accept the host's claim, so the board ends at once", async ({
 	page,
 }) => {
 	test.setTimeout(120_000);
@@ -416,7 +416,6 @@ test("the bots reject the host's claims, so the board is played out", async ({
 	// North dealer: 1NT, pass, pass, West 2NT, and three passes.
 	const calls = 7;
 	const controls = page.locator(".play-controls");
-	const claimAll = controls.getByRole("button", { name: "Claim all" });
 	const claim = controls.getByRole("button", { name: "Claim …" });
 	const card = page
 		.locator('[data-testid="hand-W"], [data-testid="hand-E"]')
@@ -448,12 +447,7 @@ test("the bots reject the host's claims, so the board is played out", async ({
 		}
 	};
 
-	// North leads, and West claims all tricks at its first turn.
-	await expect(claimAll).toBeEnabled({ timeout: 30_000 });
-	await claimAll.click();
-	await page.getByTestId("claim-confirm").click();
-
-	// The bots reject it, so West plays on until "Claim …" shows with five tricks left, and claims 2 of them.
+	// North leads, and West plays until "Claim …" shows with five tricks left, and claims 2 of them.
 	await playUntil(claim);
 	await expect(claim).toBeEnabled({ timeout: 30_000 });
 	await claim.click();
@@ -471,10 +465,10 @@ test("the bots reject the host's claims, so the board is played out", async ({
 	await page.getByTestId("claim-count-2").click();
 	await page.getByTestId("claim-confirm").click();
 
-	// The bots reject this claim too, and board 1 ends after all 52 cards; board 2 is dealt soon after.
-	await playUntil(
-		page.locator(`html[data-completed-board-1-at="${calls + 52}"]`),
-	);
+	// The bots accept the claim, so board 1 ends after 32 cards, with no further card; board 2 is dealt soon after.
+	await expect(
+		page.locator(`html[data-completed-board-1-at="${calls + 32}"]`),
+	).toBeAttached({ timeout: 30_000 });
 });
 
 /** The bots of `page` answer with the first legal call or card. */

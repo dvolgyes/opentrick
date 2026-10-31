@@ -218,10 +218,9 @@ export class HostBotRunner {
 							: undefined;
 			if (voteKey && !this.#processed.has(voteKey)) {
 				this.#processed.add(voteKey);
-				// A bot rejects every claim, so the board is played out, and accepts every undo and reset, so that
-				// only the human players decide them.
+				// A bot accepts every claim, undo and reset, so that only the human players decide them.
 				const payload = state.claim
-					? claimVotePayload(this.#controller.tableId, state.claim.id, false)
+					? claimVotePayload(this.#controller.tableId, state.claim.id, true)
 					: state.undo
 						? undoVotePayload(this.#controller.tableId, state.undo.id, true)
 						: resetVotePayload(
@@ -233,7 +232,15 @@ export class HostBotRunner {
 				return;
 			}
 		}
-		if (state.claim || state.undo || state.reset || !state.board) return;
+		// An accepted claim ends the board, so no seat acts until the next deal.
+		if (
+			state.claim ||
+			state.claimResult ||
+			state.undo ||
+			state.reset ||
+			!state.board
+		)
+			return;
 		for (const seat of seats) {
 			const actions = tableLegalActions(
 				state.board,

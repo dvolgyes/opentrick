@@ -246,7 +246,7 @@ describe("host bot play", () => {
 		host.runner.stop();
 	});
 
-	it("decides a claim made while it chooses a card, then plays at the same position", async () => {
+	it("accepts a claim made while it chooses a card, and drops the card", async () => {
 		// North declares 1C, and East, a bot, is to lead.
 		const start = tableState(OPENING);
 		const board = parseBridgeState(start, ROOM_ID)?.board;
@@ -276,18 +276,21 @@ describe("host bot play", () => {
 		);
 		answerFirst?.();
 
-		// A bot rejects the claim, and East then leads; the bots keep running.
+		// The bots accept the claim, so the board ends without East's card; the bots keep running.
 		await vi.advanceTimersByTimeAsync(6000);
-		expect(host.state()?.board?.cards).toEqual([lead.card]);
+		expect(host.state()?.board?.cards).toEqual([]);
 		host.runner.stop();
-		expect(host.state()).toMatchObject({ claim: null, claimResult: null });
+		expect(host.state()).toMatchObject({
+			claim: null,
+			claimResult: { requester: "N", tricks: 13 },
+		});
 		expect(host.onError).not.toHaveBeenCalled();
-		expect(asked).toHaveBeenCalledTimes(2);
+		expect(asked).toHaveBeenCalledTimes(1);
 	});
 });
 
 describe("host bot play, refused", () => {
-	it("decides a claim that reaches the host just before its card, then plays at the same position", async () => {
+	it("accepts a claim that reaches the host just before its card, and drops the card", async () => {
 		const start = tableState(OPENING);
 		const board = parseBridgeState(start, ROOM_ID)?.board;
 		const lead = board && legalActions(board, "E")[0];
@@ -309,16 +312,19 @@ describe("host bot play, refused", () => {
 		});
 		expect(await host.runner.start()).toBe(true);
 		await vi.advanceTimersByTimeAsync(6000);
-		expect(host.state()?.board?.cards).toEqual([lead.card]);
+		expect(host.state()?.board?.cards).toEqual([]);
 		host.runner.stop();
-		expect(host.state()).toMatchObject({ claim: null, claimResult: null });
+		expect(host.state()).toMatchObject({
+			claim: null,
+			claimResult: { requester: "N", tricks: 13 },
+		});
 		expect(host.onError).not.toHaveBeenCalled();
-		expect(asked).toHaveBeenCalledTimes(2);
+		expect(asked).toHaveBeenCalledTimes(1);
 	});
 });
 
 describe("host bot votes", () => {
-	it("rejects every claim", async () => {
+	it("accepts every claim", async () => {
 		// North opens 1C and declares; after three cards North claims all thirteen tricks.
 		const state = tableState([
 			...OPENING,
@@ -338,7 +344,7 @@ describe("host bot votes", () => {
 			expect(payload).toMatchObject({
 				type: "claim-vote",
 				requestId: claim?.id,
-				approve: false,
+				approve: true,
 			});
 	});
 
