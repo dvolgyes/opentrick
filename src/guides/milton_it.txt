@@ -27,15 +27,22 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Dopo un appoggio a salto del tuo nobile ([1H] – [3H]) e un passo, il compagno ha almeno 10 punti: [4H] con 15–21 punti (25 o più in due), altrimenti [P] con 12–14 punti.
 
 ## Risposte a [1NT]
-- 0–7 punti: [P] senza un colore quinto.
+- 0–7 punti: [P], salvo che vada bene un transfer, la Stayman debole o [2S].
 - [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer), con qualsiasi punteggio. Con cinque o più carte in entrambi i nobili, transfer sul più lungo; a parità di lunghezza, sulle picche. L'apertore dichiara il colore successivo.
 - [2C] (Stayman): 8 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, [2H] con quattro cuori, [2S] con quattro picche e senza quattro cuori.
-- [2S] (transfer minore): 0–7 punti con cinque o più carte in un minore. L'apertore deve dichiarare [3C]; passa con i fiori, oppure dichiara [3D] con i quadri.
+- Stayman debole: [2C] anche con 0–7 punti, quattro picche, quattro cuori e al massimo una carta di fiori. Passa su ogni risposta dell'apertore.
+- [2S] (transfer minore): 0–7 punti con sei o più carte in un minore, o con cinque carte in un minore in una mano che non è 5-3-3-2. L'apertore deve dichiarare [3C]; passa con i fiori, oppure dichiara [3D] con i quadri. Con un minore quinto in una mano 5-3-3-2, passa su [1NT].
 - [2NT]: 8–9 punti senza un nobile quarto, invitante. L'apertore passa con 15 punti e dichiara [3NT] con 16–17 punti.
+- [3C] [3D]: 8–9 punti con sei o più carte nel minore, invita a [3NT]. L'apertore risponde come dopo [2NT].
 - [3NT]: 10–15 punti senza un nobile quarto, conclusivo. L'apertore passa.
-- [4NT]: 16–17 punti senza un nobile quarto, invita a [6NT]; non è Blackwood. L'apertore passa con 15 punti e dichiara [6NT] con 16–17 punti.
-- [6NT]: 18–21 punti senza un nobile quarto. [7NT]: 22 o più punti. L'apertore passa.
-- Un transfer viene prima di Stayman e di [2S].
+- [3H] [3S]: 16 o più punti con sei o più carte nel nobile, interesse per lo slam. L'apertore dichiara quattro nel nobile con 15 punti o con due carte nel colore; con 16–17 punti e tre o più carte, [4NT] (Blackwood).
+- [4C] (Gerber): 16 o più punti, una mano sbilanciata senza un nobile quarto; chiede gli assi. L'apertore risponde [4D] 0 o 4, [4H] 1, [4S] 2, [4NT] 3. Poi [5C] chiede i re con gli stessi gradini, a partire da [5D]; ogni altra dichiarazione è conclusiva.
+- [4NT]: 16–17 punti, bilanciata, senza un nobile quarto, invita a [6NT]; non è Blackwood. L'apertore passa con 15 punti e dichiara [6NT] con 16–17 punti.
+- [6NT]: 18–21 punti, bilanciata, senza un nobile quarto. [7NT]: 22 o più punti. L'apertore passa.
+- L'ordine: prima [3H] o [3S]; con cinque carte in un nobile e quattro nell'altro, [2C] con 8 o più punti, altrimenti il transfer; poi gli altri transfer; poi [2C]; [3C] o [3D] prima di [2NT].
+
+## Risposte a [2NT]
+- [4C] (Gerber): 12 o più punti, una mano sbilanciata senza un nobile quarto; chiede gli assi, come dopo [1NT]. La guida non descrive le altre dichiarazioni.
 
 ## Risposte a [2C]
 - [2D]: d'attesa, 0–7 punti.
@@ -58,3 +65,13 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - 33 punti: piccolo slam.
 - 37 punti: grande slam.
 - [4NT] (Blackwood) chiede gli assi: [5C] 0 o 4, [5D] 1, [5H] 2, [5S] 3.
+
+## Nomi delle convenzioni
+- Lo Standard American è il consueto sistema naturale a quinta nobile del Nord America. Il SAYC (Standard American Yellow Card) ne è la forma comune per il gioco online.
+- Punti Milton: dal nome di Milton Work, che rese popolare il conteggio a partire dal 1927 circa.
+- Due debole: Howard Schenken lo sviluppò all'inizio degli anni 1940.
+- Stayman: dal nome di Sam Stayman, che la pubblicò nel 1945. Jack Marx e George Rapée ebbero l'idea prima di lui.
+- Stayman debole: un nome descrittivo; detta anche garbage Stayman.
+- Transfer Jacoby: dal nome di Oswald Jacoby, che ne scrisse nel 1956. Il transfer minore è la forma del SAYC.
+- Blackwood: dal nome di Easley Blackwood, che la pubblicò nel 1933.
+- Gerber: dal nome di John Gerber, che la portò in Nord America nel 1938.

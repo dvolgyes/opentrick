@@ -27,15 +27,22 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - After a jump raise of your major ([1H] – [3H]) and a pass, partner has at least 10 points: [4H] with 15–21 points (25 or more together), otherwise [P] with 12–14 points.
 
 ## Responses to [1NT]
-- 0–7 points: [P] without a five-card suit.
+- 0–7 points: [P], unless a transfer, weak Stayman or [2S] fits.
 - [2D] shows five or more hearts, [2H] shows five or more spades (transfers), with any points. With five or more cards in both majors, transfer to the longer one; with equal length, to spades. Opener bids the next suit.
 - [2C] (Stayman): 8 or more points with a four-card major. Opener answers [2D] without a four-card major, [2H] with four hearts, [2S] with four spades and not four hearts.
-- [2S] (minor transfer): 0–7 points with five or more cards in a minor. Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds.
+- Weak Stayman: [2C] also with 0–7 points, four spades, four hearts and at most one club. Pass any answer of opener.
+- [2S] (minor transfer): 0–7 points with six or more cards in a minor, or with five cards in a minor in a hand that is not 5-3-3-2. Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds. With a five-card minor in a 5-3-3-2 hand, pass [1NT].
 - [2NT]: 8–9 points without a four-card major, invitational. Opener passes with 15 points and bids [3NT] with 16–17 points.
+- [3C] [3D]: 8–9 points with six or more cards in the minor, invites [3NT]. Opener answers as after [2NT].
 - [3NT]: 10–15 points without a four-card major, to play. Opener passes.
-- [4NT]: 16–17 points without a four-card major, invites [6NT]; not Blackwood. Opener passes with 15 points and bids [6NT] with 16–17 points.
-- [6NT]: 18–21 points without a four-card major. [7NT]: 22 or more points. Opener passes.
-- A transfer comes before Stayman and [2S].
+- [3H] [3S]: 16 or more points with six or more cards in the major, slam interest. Opener bids four of the major with 15 points or with two cards in it; with 16–17 points and three or more cards, [4NT] (Blackwood).
+- [4C] (Gerber): 16 or more points, an unbalanced hand without a four-card major; asks for aces. Opener answers [4D] 0 or 4, [4H] 1, [4S] 2, [4NT] 3. Then [5C] asks for kings in the same steps, from [5D]; any other bid is to play.
+- [4NT]: 16–17 points, balanced, without a four-card major, invites [6NT]; not Blackwood. Opener passes with 15 points and bids [6NT] with 16–17 points.
+- [6NT]: 18–21 points, balanced, without a four-card major. [7NT]: 22 or more points. Opener passes.
+- The order: [3H] or [3S] first; with five cards in one major and four in the other, [2C] with 8 or more points, else the transfer; then the other transfers; then [2C]; [3C] or [3D] before [2NT].
+
+## Responses to [2NT]
+- [4C] (Gerber): 12 or more points, an unbalanced hand without a four-card major; asks for aces, as after [1NT]. The guide does not describe the other calls.
 
 ## Responses to [2C]
 - [2D]: waiting, 0–7 points.
@@ -58,3 +65,13 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - 33 points: small slam.
 - 37 points: grand slam.
 - [4NT] (Blackwood) asks for aces: [5C] 0 or 4, [5D] 1, [5H] 2, [5S] 3.
+
+## Names of the conventions
+- Standard American is the usual natural five-card-major method in North America. SAYC (Standard American Yellow Card) is its common form for online play.
+- Milton points: named after Milton Work, who made the count popular from about 1927.
+- Weak two: Howard Schenken developed it in the early 1940s.
+- Stayman: named after Sam Stayman, who published it in 1945. Jack Marx and George Rapée had the idea before him.
+- Weak Stayman: a descriptive name; also called garbage Stayman.
+- Jacoby transfers: named after Oswald Jacoby, who wrote about them in 1956. The minor transfer is the SAYC form.
+- Blackwood: named after Easley Blackwood, who published it in 1933.
+- Gerber: named after John Gerber, who brought it to North America in 1938.

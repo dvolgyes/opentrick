@@ -34,15 +34,22 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Nach einer Sprunghebung deiner Oberfarbe ([1H] – [3H]) und einem Passe hat dein Partner mindestens 10 Punkte: [4H] mit 15–21 Punkten (zusammen 25 oder mehr), sonst [P] mit 12–14 Punkten.
 
 ## Antworten auf [1NT]
-- 0–7 Punkte: [P] ohne Fünferfarbe.
+- 0–7 Punkte: [P], außer ein Transfer, schwaches Stayman oder [2S] passt.
 - [2D] zeigt fünf oder mehr Coeur, [2H] zeigt fünf oder mehr Pik (Transfers), mit beliebig vielen Punkten. Mit fünf oder mehr Karten in beiden Oberfarben transferiere in die längere; bei gleicher Länge in Pik. Der Eröffner reizt die nächste Farbe.
 - [2C] (Stayman): 8 oder mehr Punkte mit einer Viereroberfarbe. Der Eröffner antwortet [2D] ohne Viereroberfarbe, [2H] mit vier Coeur, [2S] mit vier Pik und ohne vier Coeur.
-- [2S] (Unterfarben-Transfer): 0–7 Punkte mit fünf oder mehr Karten in einer Unterfarbe. Der Eröffner muss [3C] reizen; passe mit Treff, oder reize [3D] mit Karo.
+- Schwaches Stayman: [2C] auch mit 0–7 Punkten, vier Pik, vier Coeur und höchstens einem Treff. Passe auf jede Antwort des Eröffners.
+- [2S] (Unterfarben-Transfer): 0–7 Punkte mit sechs oder mehr Karten in einer Unterfarbe, oder mit fünf Karten in einer Unterfarbe in einer Hand, die nicht 5-3-3-2 ist. Der Eröffner muss [3C] reizen; passe mit Treff, oder reize [3D] mit Karo. Mit einer fünfkartigen Unterfarbe in einer 5-3-3-2-Hand passe auf [1NT].
 - [2NT]: 8–9 Punkte ohne Viereroberfarbe, einladend. Der Eröffner passt mit 15 Punkten und reizt [3NT] mit 16–17 Punkten.
+- [3C] [3D]: 8–9 Punkte mit sechs oder mehr Karten in der Unterfarbe, lädt zu [3NT] ein. Der Eröffner antwortet wie nach [2NT].
 - [3NT]: 10–15 Punkte ohne Viereroberfarbe, Schlussgebot. Der Eröffner passt.
-- [4NT]: 16–17 Punkte ohne Viereroberfarbe, lädt zu [6NT] ein; nicht Blackwood. Der Eröffner passt mit 15 Punkten und reizt [6NT] mit 16–17 Punkten.
-- [6NT]: 18–21 Punkte ohne Viereroberfarbe. [7NT]: 22 oder mehr Punkte. Der Eröffner passt.
-- Ein Transfer geht vor Stayman und [2S].
+- [3H] [3S]: 16 oder mehr Punkte mit sechs oder mehr Karten in der Oberfarbe, Schlemminteresse. Der Eröffner reizt vier in der Oberfarbe mit 15 Punkten oder mit zwei Karten darin; mit 16–17 Punkten und drei oder mehr Karten [4NT] (Blackwood).
+- [4C] (Gerber): 16 oder mehr Punkte, eine unausgeglichene Hand ohne Viereroberfarbe; fragt nach Assen. Der Eröffner antwortet [4D] 0 oder 4, [4H] 1, [4S] 2, [4NT] 3. Danach fragt [5C] in denselben Stufen nach Königen, ab [5D]; jedes andere Gebot ist ein Schlussgebot.
+- [4NT]: 16–17 Punkte, ausgeglichen, ohne Viereroberfarbe, lädt zu [6NT] ein; nicht Blackwood. Der Eröffner passt mit 15 Punkten und reizt [6NT] mit 16–17 Punkten.
+- [6NT]: 18–21 Punkte, ausgeglichen, ohne Viereroberfarbe. [7NT]: 22 oder mehr Punkte. Der Eröffner passt.
+- Die Reihenfolge: zuerst [3H] oder [3S]; mit fünf Karten in einer Oberfarbe und vier in der anderen [2C] mit 8 oder mehr Punkten, sonst der Transfer; dann die anderen Transfers; dann [2C]; [3C] oder [3D] vor [2NT].
+
+## Antworten auf [2NT]
+- [4C] (Gerber): 12 oder mehr Punkte, eine unausgeglichene Hand ohne Viereroberfarbe; fragt nach Assen, wie nach [1NT]. Der Leitfaden beschreibt die anderen Gebote nicht.
 
 ## Antworten auf [2C]
 - [2D]: Wartegebot, 0–7 Punkte.
@@ -65,3 +72,13 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - 33 Punkte: Kleinschlemm.
 - 37 Punkte: Großschlemm.
 - [4NT] (Blackwood) fragt nach Assen: [5C] 0 oder 4, [5D] 1, [5H] 2, [5S] 3.
+
+## Namen der Konventionen
+- Standard American ist die übliche natürliche Methode mit Fünferoberfarben in Nordamerika. SAYC (Standard American Yellow Card) ist ihre verbreitete Form im Online-Spiel.
+- Milton-Punkte: benannt nach Milton Work, der die Zählung ab etwa 1927 bekannt machte.
+- Schwache Zwei: Howard Schenken entwickelte sie Anfang der 1940er-Jahre.
+- Stayman: benannt nach Sam Stayman, der die Konvention 1945 veröffentlichte. Jack Marx und George Rapée hatten die Idee vor ihm.
+- Schwaches Stayman: ein beschreibender Name; auch Garbage Stayman genannt.
+- Jacoby-Transfers: benannt nach Oswald Jacoby, der 1956 darüber schrieb. Der Unterfarben-Transfer ist die SAYC-Form.
+- Blackwood: benannt nach Easley Blackwood, der die Konvention 1933 veröffentlichte.
+- Gerber: benannt nach John Gerber, der die Konvention 1938 nach Nordamerika brachte.

@@ -808,9 +808,53 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
 		case "stayman":
-			return t("Stayman, a {min}-card major", { min: shape.min });
+			return t(
+				"Stayman: a {min}-card major with {strong}, or {min}-{min} in the majors and at most {clubs} {suit} with {weak}",
+				{
+					min: shape.min,
+					strong: rangeText(shape.strong, system, t),
+					clubs: shape.clubs,
+					suit: SUIT_SYMBOLS.C,
+					weak: rangeText(shape.weak, system, t),
+				},
+			);
 		case "weak-minor":
-			return t("weak, a {min}+ card minor", { min: shape.min });
+			return t(
+				"weak, a {long}+ card minor, or a {min}-card minor not in 5-3-3-2",
+				{ min: shape.min, long: shape.long },
+			);
+		case "nt-pass":
+			return t(
+				"no {min}-card major, no {long}-card minor, a {min}-card minor only in 5-3-3-2, not weak Stayman",
+				{ min: shape.min, long: shape.long },
+			);
+		case "invite":
+			return t("invites 3NT, {min}+ {suit}", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "slam-try":
+			return t("slam interest, {min}+ {suit}", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "slam-decline":
+			return t("no slam: {points}, or at most {short} {suit}", {
+				points: rangeText(shape.points, system, t),
+				short: shape.short,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "ace-ask":
+			return t("Blackwood, asks for aces, {min}+ {suit}", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "gerber":
+			return t("Gerber, asks for aces: unbalanced, no {min}-card major", {
+				min: shape.min,
+			});
+		case "king-ask":
+			return t("asks for kings");
 		case "game-try":
 			return t("game try, invites game, {min}+ {suit}", {
 				min: shape.min,
@@ -830,10 +874,10 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				min: shape.min,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
-		case "no-long-suit":
-			return t("no {min}-card suit", { min: shape.min });
 		case "no-major":
-			return t("no {min}-card major", { min: shape.min });
+			return shape.balanced
+				? t("balanced, no {min}-card major", { min: shape.min })
+				: t("no {min}-card major", { min: shape.min });
 		case "accept":
 			return `${t("completes the transfer to {suit}", {
 				suit: SUIT_SYMBOLS[shape.suit],
@@ -866,6 +910,8 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 			);
 		case "aces":
 			return t("aces: {counts}", { counts: shape.counts.join("/") });
+		case "kings":
+			return t("kings: {counts}", { counts: shape.counts.join("/") });
 	}
 }
 

@@ -34,15 +34,22 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - A nemes színed ugrásos emelése ([1H] – [3H]) és egy passz után a partnerednek legalább 10 pontja van: 15–21 ponttal [4H] (együtt legalább 25 pont), különben 12–14 ponttal [P].
 
 ## Válaszok az [1NT] nyitásra
-- 0–7 pont: [P], ha nincs ötlapos színed.
+- 0–7 pont: [P], ha nem illik transzfer, gyenge Stayman vagy [2S].
 - [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek), bármennyi ponttal. Ha mindkét nemes színed legalább ötlapos, a hosszabbikra adj transzfert; egyenlő hossznál a pikkre. A nyitó a következő színt licitálja.
 - [2C] (Stayman): legalább 8 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D], négy kőrrel [2H], négy pikkel és négy kőr nélkül [2S] választ ad.
-- [2S] (alacsonyszín-transzfer): 0–7 pont legalább ötlapos alacsony színnel. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited.
+- Gyenge Stayman: [2C] 0–7 ponttal is, négy pikkel, négy kőrrel és legfeljebb egy treffel. A nyitó bármely válaszát passzold.
+- [2S] (alacsonyszín-transzfer): 0–7 pont legalább hatlapos alacsony színnel, vagy ötlapos alacsony színnel, ha a lapod nem 5-3-3-2 elosztású. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited. Ötlapos alacsony színnel és 5-3-3-2 elosztással passzold az [1NT] nyitást.
 - [2NT]: 8–9 pont négylapos nemes szín nélkül, invitáló. A nyitó 15 ponttal passzol, 16–17 ponttal [3NT] a licitje.
+- [3C] [3D]: 8–9 pont legalább hatlapos alacsony színnel, [3NT]-re invitál. A nyitó úgy válaszol, mint [2NT] után.
 - [3NT]: 10–15 pont négylapos nemes szín nélkül, lezáró. A nyitó passzol.
-- [4NT]: 16–17 pont négylapos nemes szín nélkül, [6NT]-re invitál; nem Blackwood. A nyitó 15 ponttal passzol, 16–17 ponttal [6NT] a licitje.
-- [6NT]: 18–21 pont négylapos nemes szín nélkül. [7NT]: legalább 22 pont. A nyitó passzol.
-- A transzfer megelőzi a Staymant és a [2S] licitet.
+- [3H] [3S]: legalább 16 pont legalább hatlapos nemes színnel, szlemérdeklődés. A nyitó 15 ponttal vagy két lappal a színben négyes szinten licitálja a nemes színt; 16–17 ponttal és legalább három lappal [4NT] (Blackwood).
+- [4C] (Gerber): legalább 16 pont, nem kiegyensúlyozott lap négylapos nemes szín nélkül; az ászokat kérdezi. A nyitó válaszai: [4D] 0 vagy 4, [4H] 1, [4S] 2, [4NT] 3. Ezután az [5C] ugyanezekben a lépcsőkben a királyokat kérdezi, [5D]-től; minden más licit lezáró.
+- [4NT]: 16–17 pont, kiegyensúlyozott, négylapos nemes szín nélkül, [6NT]-re invitál; nem Blackwood. A nyitó 15 ponttal passzol, 16–17 ponttal [6NT] a licitje.
+- [6NT]: 18–21 pont, kiegyensúlyozott, négylapos nemes szín nélkül. [7NT]: legalább 22 pont. A nyitó passzol.
+- A sorrend: először [3H] vagy [3S]; ötlapos és négylapos nemes színnel [2C] legalább 8 ponttal, különben a transzfer; utána a többi transzfer; utána [2C]; [3C] vagy [3D] a [2NT] előtt.
+
+## Válaszok a [2NT] nyitásra
+- [4C] (Gerber): legalább 12 pont, nem kiegyensúlyozott lap négylapos nemes szín nélkül; az ászokat kérdezi, mint [1NT] után. Az útmutató a többi licitet nem írja le.
 
 ## Válaszok a [2C] nyitásra
 - [2D]: várakozó, 0–7 pont.
@@ -65,3 +72,13 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - 33 pont: kisszlem.
 - 37 pont: nagyszlem.
 - [4NT] (Blackwood) az ászokat kérdezi: [5C] 0 vagy 4, [5D] 1, [5H] 2, [5S] 3.
+
+## A konvenciók nevei
+- A Standard American Észak-Amerika szokásos természetes rendszere ötlapos nemes színekkel. A SAYC (Standard American Yellow Card) ennek az online játékban elterjedt formája.
+- Milton-pontok: Milton Work nevét viseli, aki kb. 1927-től tette népszerűvé ezt a számolást.
+- Gyenge kettes: Howard Schenken dolgozta ki az 1940-es évek elején.
+- Stayman: Sam Stayman nevét viseli, aki 1945-ben publikálta. Jack Marx és George Rapée már előtte kitalálta.
+- Gyenge Stayman: leíró név; garbage Stayman néven is ismert.
+- Jacoby-transzferek: Oswald Jacoby nevét viselik, aki 1956-ban írt róluk. Az alacsonyszín-transzfer a SAYC változata.
+- Blackwood: Easley Blackwood nevét viseli, aki 1933-ban publikálta.
+- Gerber: John Gerber nevét viseli, aki 1938-ban hozta el Észak-Amerikába.

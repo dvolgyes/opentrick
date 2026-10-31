@@ -32,13 +32,20 @@ export type RangeKey =
 	| "suit-force"
 	| "nt-weak"
 	| "nt-stayman"
+	| "nt-weak-stayman"
 	| "nt-2NT"
+	| "nt-3m"
 	| "nt-3NT"
+	| "nt-3M"
+	| "nt-slam-decline"
+	| "nt-slam-accept"
+	| "nt-gerber"
 	| "nt-4NT"
 	| "nt-6NT"
 	| "nt-7NT"
 	| "nt-invite-pass"
 	| "nt-invite-accept"
+	| "2nt-gerber"
 	| "2c-waiting"
 	| "2c-positive"
 	| "2c-2NT"
@@ -88,15 +95,23 @@ const MILTON = {
 	"suit-invite": { min: 10, max: 12 }, // "10–12 points: invitational"
 	"suit-force": { min: 13 }, // "13 or more points: game forcing"
 	// ## Responses to [1NT]
-	"nt-weak": { min: 0, max: 7 }, // "0–7 points: [P] without a five-card suit"; "[2S] ... 0–7 points"
+	"nt-weak": { min: 0, max: 7 }, // "0–7 points: [P], unless ..."; "[2S] (minor transfer): 0–7 points"
 	"nt-stayman": { min: 8 }, // "[2C] (Stayman): 8 or more points"
+	"nt-weak-stayman": { min: 0, max: 7 }, // "Weak Stayman: [2C] also with 0–7 points"
 	"nt-2NT": { min: 8, max: 9 }, // "[2NT]: 8–9 points, invitational"
+	"nt-3m": { min: 8, max: 9 }, // "[3C] [3D]: 8–9 points with six or more cards in the minor"
 	"nt-3NT": { min: 10, max: 15 }, // "[3NT]: 10–15 points, to play"
+	"nt-3M": { min: 16 }, // "[3H] [3S]: 16 or more points with six or more cards in the major"
+	"nt-slam-decline": { min: 15, max: 15 }, // "Opener bids four of the major with 15 points"
+	"nt-slam-accept": { min: 16, max: 17 }, // "with 16–17 points and three or more cards, [4NT]"
+	"nt-gerber": { min: 16 }, // "[4C] (Gerber): 16 or more points"
 	"nt-4NT": { min: 16, max: 17 }, // "[4NT]: 16–17 points ... invites [6NT]"
 	"nt-6NT": { min: 18, max: 21 }, // "[6NT]: 18–21 points"
 	"nt-7NT": { min: 22 }, // "[7NT]: 22 or more points"
 	"nt-invite-pass": { min: 15, max: 15 }, // after [2NT] or [4NT]: "Opener passes with 15 points"
 	"nt-invite-accept": { min: 16, max: 17 }, // "and bids [3NT] with 16–17 points", or [6NT] after [4NT]
+	// ## Responses to [2NT]
+	"2nt-gerber": { min: 12 }, // "[4C] (Gerber): 12 or more points"
 	// ## Responses to [2C]
 	"2c-waiting": { min: 0, max: 7 }, // "[2D]: waiting, 0–7 points"
 	"2c-positive": { min: 8 }, // "[2H] [2S] [3C] [3D]: 8 or more points"
@@ -171,10 +186,18 @@ export const SHAPES = {
 	transfer: 5,
 	/** "[2C] (Stayman): ... with a four-card major" */
 	stayman: 4,
-	/** "[2S] (minor transfer): 0–7 points with five or more cards in a minor" */
+	/**
+	 * "[2S] (minor transfer): 0–7 points with six or more cards in a minor, or with five cards in a minor in a hand
+	 * that is not 5-3-3-2"; "[3C] [3D]: ... six or more cards in the minor"
+	 */
 	weakMinor: 5,
-	/** "0–7 points: [P] without a five-card suit": a longer suit takes a transfer or [2S]. */
+	longMinor: 6,
+	/** "0–7 points: [P], unless a transfer, weak Stayman or [2S] fits": a five-card major takes a transfer. */
 	notrumpPass: 5,
+	/** "Weak Stayman: [2C] also with 0–7 points, four spades, four hearts and at most one club" */
+	weakStaymanClubs: 1,
+	/** "[3H] [3S]: 16 or more points with six or more cards in the major" */
+	slamTry: 6,
 	/** "[2H] [2S] [3C] [3D]: ... with a good five-card suit" */
 	positive: 5,
 	/** "An overcall at the one level: ... with a good five-card suit" */

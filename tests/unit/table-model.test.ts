@@ -524,7 +524,7 @@ describe("auction", () => {
 				undefined,
 				"15–17 HCP, balanced",
 				undefined,
-				"8+ corrected HCP, Stayman, a 4-card major",
+				"Stayman: a 4-card major with 8+ corrected HCP, or 4-4 in the majors and at most 1 ♣ with 0–7 corrected HCP",
 			],
 			[undefined],
 		]);

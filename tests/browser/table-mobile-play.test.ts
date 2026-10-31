@@ -7273,8 +7273,8 @@ describe("convention hint", () => {
 			"(Convention: 2♦)",
 		],
 		[
-			"the minor transfer, not a pass, with 3 points and five diamonds (♠84 ♥732 ♦QT987 ♣J52)",
-			["S8", "S4", "H7", "H3", "H2", "DQ", "DT", "D9", "D8", "D7", "CJ", "C5"],
+			"the minor transfer, not a pass, with 3 points and five diamonds not in 5-3-3-2 (♠8 ♥7432 ♦QT987 ♣J52)",
+			["S8", "H7", "H4", "H3", "H2", "DQ", "DT", "D9", "D8", "D7", "CJ", "C5"],
 			undefined,
 			"P",
 			"(Convention: 2♠)",

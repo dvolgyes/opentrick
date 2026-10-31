@@ -34,15 +34,22 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Tras un apoyo con salto de tu mayor ([1H] – [3H]) y un paso, tu compañero tiene al menos 10 puntos: [4H] con 15–21 puntos (25 o más entre los dos); si no, [P] con 12–14 puntos.
 
 ## Respuestas a [1NT]
-- 0–7 puntos: [P] sin palo quinto.
+- 0–7 puntos: [P], salvo que encaje una transferencia, Stayman débil o [2S].
 - [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias), con cualquier número de puntos. Con cinco o más cartas en ambos mayores, transfiere al más largo; con igual longitud, a picas. El abridor declara el palo siguiente.
 - [2C] (Stayman): 8 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto, [2H] con cuatro corazones, [2S] con cuatro picas y sin cuatro corazones.
-- [2S] (transferencia a menor): 0–7 puntos con cinco o más cartas en un menor. El abridor debe declarar [3C]; pasa con tréboles, o declara [3D] con diamantes.
+- Stayman débil: [2C] también con 0–7 puntos, cuatro picas, cuatro corazones y como máximo un trébol. Pasa cualquier respuesta del abridor.
+- [2S] (transferencia a menor): 0–7 puntos con seis o más cartas en un menor, o con cinco cartas en un menor en una mano que no es 5-3-3-2. El abridor debe declarar [3C]; pasa con tréboles, o declara [3D] con diamantes. Con un menor quinto en una mano 5-3-3-2, pasa [1NT].
 - [2NT]: 8–9 puntos sin mayor cuarto, invitativo. El abridor pasa con 15 puntos y declara [3NT] con 16–17 puntos.
+- [3C] [3D]: 8–9 puntos con seis o más cartas en el menor, invita a [3NT]. El abridor responde como después de [2NT].
 - [3NT]: 10–15 puntos sin mayor cuarto, para jugar. El abridor pasa.
-- [4NT]: 16–17 puntos sin mayor cuarto, invita a [6NT]; no es Blackwood. El abridor pasa con 15 puntos y declara [6NT] con 16–17 puntos.
-- [6NT]: 18–21 puntos sin mayor cuarto. [7NT]: 22 o más puntos. El abridor pasa.
-- Una transferencia va antes que Stayman y [2S].
+- [3H] [3S]: 16 o más puntos con seis o más cartas en el mayor, interés de slam. El abridor declara cuatro del mayor con 15 puntos o con dos cartas en él; con 16–17 puntos y tres o más cartas, [4NT] (Blackwood).
+- [4C] (Gerber): 16 o más puntos, una mano no equilibrada sin mayor cuarto; pregunta por ases. El abridor responde [4D] 0 o 4, [4H] 1, [4S] 2, [4NT] 3. Después [5C] pregunta por reyes con los mismos escalones, desde [5D]; cualquier otra declaración es para jugar.
+- [4NT]: 16–17 puntos, equilibrada, sin mayor cuarto, invita a [6NT]; no es Blackwood. El abridor pasa con 15 puntos y declara [6NT] con 16–17 puntos.
+- [6NT]: 18–21 puntos, equilibrada, sin mayor cuarto. [7NT]: 22 o más puntos. El abridor pasa.
+- El orden: primero [3H] o [3S]; con cinco cartas en un mayor y cuatro en el otro, [2C] con 8 o más puntos, si no la transferencia; después las otras transferencias; después [2C]; [3C] o [3D] antes que [2NT].
+
+## Respuestas a [2NT]
+- [4C] (Gerber): 12 o más puntos, una mano no equilibrada sin mayor cuarto; pregunta por ases, como después de [1NT]. La guía no describe las otras declaraciones.
 
 ## Respuestas a [2C]
 - [2D]: de espera, 0–7 puntos.
@@ -65,3 +72,13 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - 33 puntos: pequeño slam.
 - 37 puntos: gran slam.
 - [4NT] (Blackwood) pide ases: [5C] 0 o 4, [5D] 1, [5H] 2, [5S] 3.
+
+## Nombres de las convenciones
+- El Standard Americano es el método natural habitual de mayores quintos en Norteamérica. SAYC (Standard American Yellow Card) es su forma común para el juego en línea.
+- Puntos Milton: llevan el nombre de Milton Work, que popularizó el recuento desde aproximadamente 1927.
+- Dos débil: Howard Schenken lo desarrolló a principios de los años 1940.
+- Stayman: lleva el nombre de Sam Stayman, que lo publicó en 1945. Jack Marx y George Rapée tuvieron la idea antes que él.
+- Stayman débil: un nombre descriptivo; también llamado garbage Stayman.
+- Transferencias Jacoby: llevan el nombre de Oswald Jacoby, que escribió sobre ellas en 1956. La transferencia a menor es la forma de SAYC.
+- Blackwood: lleva el nombre de Easley Blackwood, que lo publicó en 1933.
+- Gerber: lleva el nombre de John Gerber, que lo llevó a Norteamérica en 1938.

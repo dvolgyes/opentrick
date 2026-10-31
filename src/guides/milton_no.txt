@@ -27,15 +27,22 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Etter hoppstøtte i høyfargen din ([1H] – [3H]) og pass har makker minst 10 poeng: [4H] med 15–21 poeng (25 eller flere sammen), ellers [P] med 12–14 poeng.
 
 ## Svar på [1NT]
-- 0–7 poeng: [P] uten femkortsfarge.
+- 0–7 poeng: [P], med mindre en overføring, svak Stayman eller [2S] passer.
 - [2D] viser fem eller flere hjerter, [2H] viser fem eller flere spar (overføringer), med hvor mange poeng som helst. Med fem eller flere kort i begge høyfargene, overfør til den lengste; med like lange, til spar. Åpner melder neste farge.
 - [2C] (Stayman): 8 eller flere poeng med firekorts høyfarge. Åpner svarer [2D] uten firekorts høyfarge, [2H] med fire hjerter, [2S] med fire spar og ikke fire hjerter.
-- [2S] (lavfargeoverføring): 0–7 poeng med fem eller flere kort i en lavfarge. Åpner må melde [3C]; pass med kløver, eller meld [3D] med ruter.
+- Svak Stayman: [2C] også med 0–7 poeng, fire spar, fire hjerter og høyst én kløver. Pass på alle svar fra åpner.
+- [2S] (lavfargeoverføring): 0–7 poeng med seks eller flere kort i en lavfarge, eller med fem kort i en lavfarge på en hånd som ikke er 5-3-3-2. Åpner må melde [3C]; pass med kløver, eller meld [3D] med ruter. Med femkorts lavfarge på en 5-3-3-2-hånd, pass på [1NT].
 - [2NT]: 8–9 poeng uten firekorts høyfarge, invitasjon. Åpner passer med 15 poeng og melder [3NT] med 16–17 poeng.
+- [3C] [3D]: 8–9 poeng med seks eller flere kort i lavfargen, inviterer til [3NT]. Åpner svarer som etter [2NT].
 - [3NT]: 10–15 poeng uten firekorts høyfarge, sluttmelding. Åpner passer.
-- [4NT]: 16–17 poeng uten firekorts høyfarge, inviterer til [6NT]; ikke Blackwood. Åpner passer med 15 poeng og melder [6NT] med 16–17 poeng.
-- [6NT]: 18–21 poeng uten firekorts høyfarge. [7NT]: 22 eller flere poeng. Åpner passer.
-- En overføring går foran Stayman og [2S].
+- [3H] [3S]: 16 eller flere poeng med seks eller flere kort i høyfargen, sleminteresse. Åpner melder fire i høyfargen med 15 poeng eller med to kort i den; med 16–17 poeng og tre eller flere kort, [4NT] (Blackwood).
+- [4C] (Gerber): 16 eller flere poeng, en ubalansert hånd uten firekorts høyfarge; spør etter ess. Åpner svarer [4D] 0 eller 4, [4H] 1, [4S] 2, [4NT] 3. Deretter spør [5C] etter konger i de samme trinnene, fra [5D]; alle andre meldinger er sluttmeldinger.
+- [4NT]: 16–17 poeng, balansert, uten firekorts høyfarge, inviterer til [6NT]; ikke Blackwood. Åpner passer med 15 poeng og melder [6NT] med 16–17 poeng.
+- [6NT]: 18–21 poeng, balansert, uten firekorts høyfarge. [7NT]: 22 eller flere poeng. Åpner passer.
+- Rekkefølgen: [3H] eller [3S] først; med fem kort i én høyfarge og fire i den andre, [2C] med 8 eller flere poeng, ellers overføringen; så de andre overføringene; så [2C]; [3C] eller [3D] før [2NT].
+
+## Svar på [2NT]
+- [4C] (Gerber): 12 eller flere poeng, en ubalansert hånd uten firekorts høyfarge; spør etter ess, som etter [1NT]. Veiledningen beskriver ikke de andre meldingene.
 
 ## Svar på [2C]
 - [2D]: ventemelding, 0–7 poeng.
@@ -58,3 +65,13 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - 33 poeng: lilleslem.
 - 37 poeng: storeslem.
 - [4NT] (Blackwood) spør etter ess: [5C] 0 eller 4, [5D] 1, [5H] 2, [5S] 3.
+
+## Navnene på konvensjonene
+- Standard American er den vanlige naturlige metoden med femkorts høyfarger i Nord-Amerika. SAYC (Standard American Yellow Card) er den vanlige formen for spill på nett.
+- Milton-poeng: oppkalt etter Milton Work, som gjorde tellingen populær fra omkring 1927.
+- Svak to-åpning: Howard Schenken utviklet den tidlig på 1940-tallet.
+- Stayman: oppkalt etter Sam Stayman, som publiserte den i 1945. Jack Marx og George Rapée hadde ideen før ham.
+- Svak Stayman: et beskrivende navn; også kalt garbage Stayman.
+- Jacoby-overføringer: oppkalt etter Oswald Jacoby, som skrev om dem i 1956. Lavfargeoverføringen er SAYC-formen.
+- Blackwood: oppkalt etter Easley Blackwood, som publiserte den i 1933.
+- Gerber: oppkalt etter John Gerber, som brakte den til Nord-Amerika i 1938.

@@ -27,15 +27,22 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Après un soutien à saut de votre majeure ([1H] – [3H]) et un passe, le partenaire a au moins 10 points : [4H] avec 15–21 points (25 ou plus à deux), sinon [P] avec 12–14 points.
 
 ## Réponses à [1NT]
-- 0–7 points : [P] sans couleur cinquième.
+- 0–7 points : [P], sauf si un transfert, le Stayman faible ou [2S] convient.
 - [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts), avec n'importe quel nombre de points. Avec cinq cartes ou plus dans les deux majeures, transférez vers la plus longue ; à longueur égale, vers les piques. L'ouvreur nomme la couleur suivante.
 - [2C] (Stayman) : 8 points ou plus avec une majeure quatrième. L'ouvreur répond [2D] sans majeure quatrième, [2H] avec quatre cœurs, [2S] avec quatre piques et sans quatre cœurs.
-- [2S] (transfert mineur) : 0–7 points avec cinq cartes ou plus dans une mineure. L'ouvreur doit dire [3C] ; passez avec les trèfles, ou dites [3D] avec les carreaux.
+- Stayman faible : [2C] aussi avec 0–7 points, quatre piques, quatre cœurs et au plus un trèfle. Passez sur toute réponse de l'ouvreur.
+- [2S] (transfert mineur) : 0–7 points avec six cartes ou plus dans une mineure, ou avec cinq cartes dans une mineure dans une main qui n'est pas 5-3-3-2. L'ouvreur doit dire [3C] ; passez avec les trèfles, ou dites [3D] avec les carreaux. Avec une mineure cinquième dans une main 5-3-3-2, passez sur [1NT].
 - [2NT] : 8–9 points sans majeure quatrième, invitant. L'ouvreur passe avec 15 points et dit [3NT] avec 16–17 points.
+- [3C] [3D] : 8–9 points avec six cartes ou plus dans la mineure, invite à [3NT]. L'ouvreur répond comme après [2NT].
 - [3NT] : 10–15 points sans majeure quatrième, pour jouer. L'ouvreur passe.
-- [4NT] : 16–17 points sans majeure quatrième, invite à [6NT] ; pas Blackwood. L'ouvreur passe avec 15 points et dit [6NT] avec 16–17 points.
-- [6NT] : 18–21 points sans majeure quatrième. [7NT] : 22 points ou plus. L'ouvreur passe.
-- Un transfert passe avant Stayman et [2S].
+- [3H] [3S] : 16 points ou plus avec six cartes ou plus dans la majeure, intérêt pour le chelem. L'ouvreur dit quatre dans la majeure avec 15 points ou avec deux cartes dans la couleur ; avec 16–17 points et trois cartes ou plus, [4NT] (Blackwood).
+- [4C] (Gerber) : 16 points ou plus, une main irrégulière sans majeure quatrième ; demande les as. L'ouvreur répond [4D] 0 ou 4, [4H] 1, [4S] 2, [4NT] 3. Ensuite [5C] demande les rois avec les mêmes paliers, à partir de [5D] ; toute autre enchère est pour jouer.
+- [4NT] : 16–17 points, régulière, sans majeure quatrième, invite à [6NT] ; pas Blackwood. L'ouvreur passe avec 15 points et dit [6NT] avec 16–17 points.
+- [6NT] : 18–21 points, régulière, sans majeure quatrième. [7NT] : 22 points ou plus. L'ouvreur passe.
+- L'ordre : d'abord [3H] ou [3S] ; avec cinq cartes dans une majeure et quatre dans l'autre, [2C] avec 8 points ou plus, sinon le transfert ; puis les autres transferts ; puis [2C] ; [3C] ou [3D] avant [2NT].
+
+## Réponses à [2NT]
+- [4C] (Gerber) : 12 points ou plus, une main irrégulière sans majeure quatrième ; demande les as, comme après [1NT]. Le guide ne décrit pas les autres enchères.
 
 ## Réponses à [2C]
 - [2D] : réponse d'attente, 0–7 points.
@@ -58,3 +65,13 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - 33 points : petit chelem.
 - 37 points : grand chelem.
 - [4NT] (Blackwood) demande les as : [5C] 0 ou 4, [5D] 1, [5H] 2, [5S] 3.
+
+## Noms des conventions
+- Le Standard American est la méthode naturelle habituelle à majeure cinquième en Amérique du Nord. Le SAYC (Standard American Yellow Card) en est la forme courante pour le jeu en ligne.
+- Points Milton : nommés d'après Milton Work, qui a popularisé ce décompte à partir de 1927 environ.
+- Deux faible : Howard Schenken l'a mis au point au début des années 1940.
+- Stayman : nommé d'après Sam Stayman, qui l'a publié en 1945. Jack Marx et George Rapée avaient eu l'idée avant lui.
+- Stayman faible : un nom descriptif ; aussi appelé garbage Stayman.
+- Transferts Jacoby : nommés d'après Oswald Jacoby, qui les a décrits en 1956. Le transfert mineur est la forme du SAYC.
+- Blackwood : nommé d'après Easley Blackwood, qui l'a publié en 1933.
+- Gerber : nommé d'après John Gerber, qui l'a introduit en Amérique du Nord en 1938.

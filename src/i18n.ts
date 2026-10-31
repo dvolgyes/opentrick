@@ -682,8 +682,21 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"preempt, a good {length}-card {suit} suit":
 			"Sperreröffnung, eine gute {suit}-Farbe mit {length} Karten",
 		"transfer, {min}+ {suit}": "Transfer, {min}+ {suit}",
-		"Stayman, a {min}-card major": "Stayman, eine Oberfarbe mit {min} Karten",
-		"weak, a {min}+ card minor": "schwach, eine Unterfarbe mit {min}+ Karten",
+		"Stayman: a {min}-card major with {strong}, or {min}-{min} in the majors and at most {clubs} {suit} with {weak}":
+			"Stayman: eine Oberfarbe mit {min} Karten und {strong}, oder {min}-{min} in den Oberfarben und höchstens {clubs} {suit} mit {weak}",
+		"weak, a {long}+ card minor, or a {min}-card minor not in 5-3-3-2":
+			"schwach, eine Unterfarbe mit {long}+ Karten, oder eine Unterfarbe mit {min} Karten, nicht in 5-3-3-2",
+		"no {min}-card major, no {long}-card minor, a {min}-card minor only in 5-3-3-2, not weak Stayman":
+			"keine Oberfarbe mit {min} Karten, keine Unterfarbe mit {long} Karten, eine Unterfarbe mit {min} Karten nur in 5-3-3-2, kein schwaches Stayman",
+		"invites 3NT, {min}+ {suit}": "lädt zu 3NT ein, {min}+ {suit}",
+		"slam interest, {min}+ {suit}": "Schlemminteresse, {min}+ {suit}",
+		"no slam: {points}, or at most {short} {suit}":
+			"kein Schlemm: {points}, oder höchstens {short} {suit}",
+		"Blackwood, asks for aces, {min}+ {suit}":
+			"Blackwood, fragt nach Assen, {min}+ {suit}",
+		"Gerber, asks for aces: unbalanced, no {min}-card major":
+			"Gerber, fragt nach Assen: unausgeglichen, keine Oberfarbe mit {min} Karten",
+		"asks for kings": "fragt nach Königen",
 		"game try, invites game, {min}+ {suit}":
 			"Partieversuch, lädt zur Partie ein, {min}+ {suit}",
 		"competitive, no game invitation, {min}+ {suit}":
@@ -694,7 +707,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"a good {min}+ card {suit} suit":
 			"eine gute {suit}-Farbe mit {min}+ Karten",
 		"no {min}-card major": "keine Oberfarbe mit {min} Karten",
-		"no {min}-card suit": "keine Farbe mit {min} Karten",
+		"balanced, no {min}-card major":
+			"ausgeglichen, keine Oberfarbe mit {min} Karten",
 		"completes the transfer to {suit}": "vollzieht den Transfer nach {suit}",
 		"forced, any hand": "erzwungen, jede Hand",
 		"asks opener to describe the hand": "fragt den Eröffner nach seinem Blatt",
@@ -706,6 +720,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Blackwood: {small}/{grand}": "Blackwood: {small}/{grand}",
 		"Aces: {answers}": "Asse: {answers}",
 		"aces: {counts}": "Asse: {counts}",
+		"kings: {counts}": "Könige: {counts}",
 		"not in the guide": "nicht im Reizleitfaden",
 	},
 	hu: {
@@ -1356,8 +1371,21 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"preempt, a good {length}-card {suit} suit":
 			"blokk, jó {length} lapos {suit} szín",
 		"transfer, {min}+ {suit}": "transzfer, {min}+ {suit}",
-		"Stayman, a {min}-card major": "Stayman, {min} lapos nemes szín",
-		"weak, a {min}+ card minor": "gyenge, {min}+ lapos alacsony szín",
+		"Stayman: a {min}-card major with {strong}, or {min}-{min} in the majors and at most {clubs} {suit} with {weak}":
+			"Stayman: {min} lapos nemes szín és {strong}, vagy {min}-{min} a nemes színekben, legfeljebb {clubs} {suit} és {weak}",
+		"weak, a {long}+ card minor, or a {min}-card minor not in 5-3-3-2":
+			"gyenge, {long}+ lapos alacsony szín, vagy {min} lapos alacsony szín, de nem 5-3-3-2",
+		"no {min}-card major, no {long}-card minor, a {min}-card minor only in 5-3-3-2, not weak Stayman":
+			"nincs {min} lapos nemes szín, nincs {long} lapos alacsony szín, {min} lapos alacsony szín csak 5-3-3-2-ben, nem gyenge Stayman",
+		"invites 3NT, {min}+ {suit}": "3NT-re invitál, {min}+ {suit}",
+		"slam interest, {min}+ {suit}": "szlemérdeklődés, {min}+ {suit}",
+		"no slam: {points}, or at most {short} {suit}":
+			"nincs szlem: {points}, vagy legfeljebb {short} {suit}",
+		"Blackwood, asks for aces, {min}+ {suit}":
+			"Blackwood, az ászokat kérdezi, {min}+ {suit}",
+		"Gerber, asks for aces: unbalanced, no {min}-card major":
+			"Gerber, az ászokat kérdezi: nem kiegyensúlyozott, nincs {min} lapos nemes szín",
+		"asks for kings": "a királyokat kérdezi",
 		"game try, invites game, {min}+ {suit}":
 			"manche-kísérlet, manche-ra invitál, {min}+ {suit}",
 		"competitive, no game invitation, {min}+ {suit}":
@@ -1366,7 +1394,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"no other guide call fits": "az útmutatóban nincs más illő licit",
 		"a good {min}+ card {suit} suit": "jó {min}+ lapos {suit} szín",
 		"no {min}-card major": "nincs {min} lapos nemes szín",
-		"no {min}-card suit": "nincs {min} lapos szín",
+		"balanced, no {min}-card major":
+			"kiegyensúlyozott, nincs {min} lapos nemes szín",
 		"completes the transfer to {suit}": "teljesíti a transzfert: {suit}",
 		"forced, any hand": "kötelező, bármilyen lappal",
 		"asks opener to describe the hand": "kéri, hogy a nyitó írja le a lapját",
@@ -1378,6 +1407,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Blackwood: {small}/{grand}": "Blackwood: {small}/{grand}",
 		"Aces: {answers}": "Ászok: {answers}",
 		"aces: {counts}": "ászok: {counts}",
+		"kings: {counts}": "királyok: {counts}",
 		"not in the guide": "nincs az útmutatóban",
 	},
 	no: {
@@ -2022,8 +2052,21 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"preempt, a good {length}-card {suit} suit":
 			"sperremelding, en god {suit}-farge med {length} kort",
 		"transfer, {min}+ {suit}": "overføring, {min}+ {suit}",
-		"Stayman, a {min}-card major": "Stayman, en høyfarge med {min} kort",
-		"weak, a {min}+ card minor": "svak, en lavfarge med {min}+ kort",
+		"Stayman: a {min}-card major with {strong}, or {min}-{min} in the majors and at most {clubs} {suit} with {weak}":
+			"Stayman: en høyfarge med {min} kort og {strong}, eller {min}-{min} i høyfargene og høyst {clubs} {suit} med {weak}",
+		"weak, a {long}+ card minor, or a {min}-card minor not in 5-3-3-2":
+			"svak, en lavfarge med {long}+ kort, eller en lavfarge med {min} kort, ikke i 5-3-3-2",
+		"no {min}-card major, no {long}-card minor, a {min}-card minor only in 5-3-3-2, not weak Stayman":
+			"ingen høyfarge med {min} kort, ingen lavfarge med {long} kort, en lavfarge med {min} kort bare i 5-3-3-2, ikke svak Stayman",
+		"invites 3NT, {min}+ {suit}": "inviterer til 3NT, {min}+ {suit}",
+		"slam interest, {min}+ {suit}": "sleminteresse, {min}+ {suit}",
+		"no slam: {points}, or at most {short} {suit}":
+			"ikke slem: {points}, eller høyst {short} {suit}",
+		"Blackwood, asks for aces, {min}+ {suit}":
+			"Blackwood, spør etter ess, {min}+ {suit}",
+		"Gerber, asks for aces: unbalanced, no {min}-card major":
+			"Gerber, spør etter ess: ubalansert, ingen høyfarge med {min} kort",
+		"asks for kings": "spør etter konger",
 		"game try, invites game, {min}+ {suit}":
 			"utgangsforsøk, inviterer til utgang, {min}+ {suit}",
 		"competitive, no game invitation, {min}+ {suit}":
@@ -2033,7 +2076,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"ingen annen melding i meldeveiledningen passer",
 		"a good {min}+ card {suit} suit": "en god {suit}-farge med {min}+ kort",
 		"no {min}-card major": "ingen høyfarge med {min} kort",
-		"no {min}-card suit": "ingen farge med {min} kort",
+		"balanced, no {min}-card major": "balansert, ingen høyfarge med {min} kort",
 		"completes the transfer to {suit}": "fullfører overføringen til {suit}",
 		"forced, any hand": "tvunget, alle hender",
 		"asks opener to describe the hand": "ber åpner beskrive hånden",
@@ -2045,6 +2088,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Blackwood: {small}/{grand}": "Blackwood: {small}/{grand}",
 		"Aces: {answers}": "Ess: {answers}",
 		"aces: {counts}": "ess: {counts}",
+		"kings: {counts}": "konger: {counts}",
 		"not in the guide": "ikke i meldeveiledningen",
 	},
 	...additionalCatalogs,

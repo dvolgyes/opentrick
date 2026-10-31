@@ -27,15 +27,22 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Depois de um apoio com salto do naipe maior de abertura ([1H] – [3H]) e um passe, o parceiro tem pelo menos 10 pontos: [4H] com 15–21 pontos (25 ou mais em conjunto); caso contrário, [P] com 12–14 pontos.
 
 ## Respostas a [1NT]
-- 0–7 pontos: [P] sem naipe quinto.
+- 0–7 pontos: [P], salvo se servir uma transferência, o Stayman fraco ou [2S].
 - [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências), com qualquer número de pontos. Com cinco ou mais cartas em ambos os naipes maiores, transferir para o mais longo; com igual comprimento, para espadas. O abridor declara o naipe seguinte.
 - [2C] (Stayman): 8 ou mais pontos com um naipe maior quarto. O abridor responde [2D] sem naipe maior quarto, [2H] com quatro copas, [2S] com quatro espadas e sem quatro copas.
-- [2S] (transferência para menor): 0–7 pontos com cinco ou mais cartas num naipe menor. O abridor tem de marcar [3C]; passar com paus, ou marcar [3D] com ouros.
+- Stayman fraco: [2C] também com 0–7 pontos, quatro espadas, quatro copas e no máximo uma carta de paus. Passar qualquer resposta do abridor.
+- [2S] (transferência para menor): 0–7 pontos com seis ou mais cartas num naipe menor, ou com cinco cartas num naipe menor numa mão que não seja 5-3-3-2. O abridor tem de marcar [3C]; passar com paus, ou marcar [3D] com ouros. Com um naipe menor quinto numa mão 5-3-3-2, passar [1NT].
 - [2NT]: 8–9 pontos sem naipe maior quarto, convidativo. O abridor passa com 15 pontos e marca [3NT] com 16–17 pontos.
+- [3C] [3D]: 8–9 pontos com seis ou mais cartas no naipe menor, convida a [3NT]. O abridor responde como depois de [2NT].
 - [3NT]: 10–15 pontos sem naipe maior quarto, para jogar. O abridor passa.
-- [4NT]: 16–17 pontos sem naipe maior quarto, convida a [6NT]; não é Blackwood. O abridor passa com 15 pontos e marca [6NT] com 16–17 pontos.
-- [6NT]: 18–21 pontos sem naipe maior quarto. [7NT]: 22 ou mais pontos. O abridor passa.
-- Uma transferência vem antes de Stayman e de [2S].
+- [3H] [3S]: 16 ou mais pontos com seis ou mais cartas no naipe maior, interesse em slam. O abridor marca quatro no naipe maior com 15 pontos ou com duas cartas nele; com 16–17 pontos e três ou mais cartas, [4NT] (Blackwood).
+- [4C] (Gerber): 16 ou mais pontos, uma mão não equilibrada sem naipe maior quarto; pergunta por ases. O abridor responde [4D] 0 ou 4, [4H] 1, [4S] 2, [4NT] 3. Depois [5C] pergunta por reis nos mesmos degraus, a partir de [5D]; qualquer outra marcação é para jogar.
+- [4NT]: 16–17 pontos, equilibrada, sem naipe maior quarto, convida a [6NT]; não é Blackwood. O abridor passa com 15 pontos e marca [6NT] com 16–17 pontos.
+- [6NT]: 18–21 pontos, equilibrada, sem naipe maior quarto. [7NT]: 22 ou mais pontos. O abridor passa.
+- A ordem: primeiro [3H] ou [3S]; com cinco cartas num naipe maior e quatro no outro, [2C] com 8 ou mais pontos, senão a transferência; depois as outras transferências; depois [2C]; [3C] ou [3D] antes de [2NT].
+
+## Respostas a [2NT]
+- [4C] (Gerber): 12 ou mais pontos, uma mão não equilibrada sem naipe maior quarto; pergunta por ases, como depois de [1NT]. O guia não descreve as outras marcações.
 
 ## Respostas a [2C]
 - [2D]: resposta de espera, 0–7 pontos.
@@ -58,3 +65,13 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - 33 pontos: pequeno slam.
 - 37 pontos: grande slam.
 - [4NT] (Blackwood) pede ases: [5C] 0 ou 4, [5D] 1, [5H] 2, [5S] 3.
+
+## Nomes das convenções
+- O Standard American é o método natural habitual com maiores quintos na América do Norte. O SAYC (Standard American Yellow Card) é a sua forma comum para o jogo online.
+- Pontos Milton: o nome vem de Milton Work, que popularizou a contagem a partir de cerca de 1927.
+- Dois fraco: Howard Schenken desenvolveu-o no início da década de 1940.
+- Stayman: o nome vem de Sam Stayman, que o publicou em 1945. Jack Marx e George Rapée tiveram a ideia antes dele.
+- Stayman fraco: um nome descritivo; também chamado garbage Stayman.
+- Transferências Jacoby: o nome vem de Oswald Jacoby, que escreveu sobre elas em 1956. A transferência para menor é a forma do SAYC.
+- Blackwood: o nome vem de Easley Blackwood, que o publicou em 1933.
+- Gerber: o nome vem de John Gerber, que o levou para a América do Norte em 1938.

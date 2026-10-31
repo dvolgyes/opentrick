@@ -42,19 +42,52 @@ export type Shape =
 	| { readonly kind: "competitive"; readonly suit: Suit; readonly min: number }
 	/** `min` or more cards in `suit`, the suit above the bid. */
 	| { readonly kind: "transfer"; readonly suit: Suit; readonly min: number }
-	/** A major with exactly `min` cards. */
-	| { readonly kind: "stayman"; readonly min: number }
-	/** `min` or more cards in a minor. */
-	| { readonly kind: "weak-minor"; readonly min: number }
-	/** No suit with `min` or more cards. */
-	| { readonly kind: "no-long-suit"; readonly min: number }
+	/**
+	 * A major with exactly `min` cards and `strong` points, or exactly `min` cards in both majors, at most `clubs`
+	 * clubs and `weak` points (weak Stayman).
+	 */
+	| {
+			readonly kind: "stayman";
+			readonly min: number;
+			readonly strong: PointRange;
+			readonly weak: PointRange;
+			readonly clubs: number;
+	  }
+	/** `long` or more cards in a minor, or `min` cards in a minor in a hand that is not 5-3-3-2. */
+	| { readonly kind: "weak-minor"; readonly min: number; readonly long: number }
+	/**
+	 * The pass of [1NT] by a weak hand: no major with `min` or more cards, no minor with `long` or more, a minor with
+	 * `min` cards only in a 5-3-3-2 hand, and not the weak Stayman shape.
+	 */
+	| { readonly kind: "nt-pass"; readonly min: number; readonly long: number }
+	/** Invites [3NT] with `min` or more cards in the minor `suit`. */
+	| { readonly kind: "invite"; readonly suit: Suit; readonly min: number }
+	/** Slam interest with `min` or more cards in the major `suit`. */
+	| { readonly kind: "slam-try"; readonly suit: Suit; readonly min: number }
+	/** Opener declines the slam try in `suit`: `points`, or at most `short` cards in `suit`. */
+	| {
+			readonly kind: "slam-decline";
+			readonly suit: Suit;
+			readonly short: number;
+			readonly points: PointRange;
+	  }
+	/** Opener accepts the slam try with `min` or more cards in `suit`, and asks for aces with [4NT]. */
+	| { readonly kind: "ace-ask"; readonly suit: Suit; readonly min: number }
+	/** [4C] asks partner for aces: an unbalanced hand without a major of `min` cards. */
+	| { readonly kind: "gerber"; readonly min: number }
+	/** [5C] after the answer to Gerber asks partner for kings. */
+	| { readonly kind: "king-ask" }
 	| { readonly kind: "waiting" }
 	/** A pass when no other guide call fits the hand. */
 	| { readonly kind: "rest" }
 	/** `min` or more cards in `suit`, with the top cards of SHAPES.goodSuit. */
 	| { readonly kind: "good-suit"; readonly suit: Suit; readonly min: number }
-	/** Opener's answer to Stayman: no major with `min` cards. */
-	| { readonly kind: "no-major"; readonly min: number }
+	/** No major with `min` cards, as opener's answer to Stayman; `balanced` also needs a balanced hand. */
+	| {
+			readonly kind: "no-major";
+			readonly min: number;
+			readonly balanced?: true;
+	  }
 	/** Opener completes the transfer to `suit`. */
 	| { readonly kind: "accept"; readonly suit: Suit }
 	/** Opener must bid [3C] after [2S], whatever the hand. */
@@ -75,8 +108,10 @@ export type Shape =
 			readonly small: PointRange;
 			readonly grand: PointRange;
 	  }
-	/** The answer to [4NT]: the number of aces is one of `counts`. */
-	| { readonly kind: "aces"; readonly counts: readonly number[] };
+	/** The answer to [4NT] or Gerber: the number of aces is one of `counts`. */
+	| { readonly kind: "aces"; readonly counts: readonly number[] }
+	/** The answer to the king ask after Gerber: the number of kings is one of `counts`. */
+	| { readonly kind: "kings"; readonly counts: readonly number[] };
 
 /** What a call shows by the guide. A meaning without `range` has no point limit. */
 export interface CallMeaning {
@@ -118,14 +153,22 @@ type Position =
 	| { readonly kind: "relay" }
 	/** Responder's call after [1NT] [P] [2S] [P] [3C] [P]. */
 	| { readonly kind: "relay-answer" }
-	/** Opener's call after [1NT], a pass, partner's invitation [2NT] or [4NT] and a pass; `game` accepts it. */
+	/**
+	 * Opener's call after [1NT], a pass, partner's invitation [2NT], [3C], [3D] or [4NT] and a pass; `game` accepts
+	 * it.
+	 */
 	| { readonly kind: "nt-invite"; readonly game: Bid }
+	/** Opener's call after [1NT], a pass, partner's slam try in the major `suit` and a pass. */
+	| { readonly kind: "slam-try"; readonly suit: Suit }
+	/** The first response to [2NT]: the guide describes only Gerber. */
+	| { readonly kind: "2NT" }
 	| { readonly kind: "2C-rebid"; readonly response: Bid }
 	/** A call after the opponents' one of `opened`, directly or after two passes. */
 	| { readonly kind: "overcall"; readonly opened: Suit }
 	/** Responder's call after partner's one of a suit was doubled. */
 	| { readonly kind: "redouble" }
-	| { readonly kind: "aces" };
+	/** The answer to an ask for aces or kings by steps: `first` shows 0 or 4, each step above it one more. */
+	| { readonly kind: "aces"; readonly honour: "A" | "K"; readonly first: Bid };
 
 /** The positions in which the guide gives every hand a call; in the others a hand can fit no call. */
 const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
@@ -138,8 +181,12 @@ const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
 	"relay",
 	"relay-answer",
 	"nt-invite",
+	"slam-try",
 	"aces",
 ]);
+
+/** The positions in which the guide describes only some calls; fitsCall does not judge the others. */
+const SOME_CALLS: ReadonlySet<Position["kind"]> = new Set(["2NT"]);
 
 const MAJORS: readonly Suit[] = ["S", "H"];
 const MINORS: readonly Suit[] = ["D", "C"];
@@ -203,6 +250,15 @@ function isBlackwood(calls: readonly Call[], index: number): boolean {
 	);
 }
 
+/** True when `calls` end with [1NT] or [2NT], a pass, Gerber, a pass, opener's answer and a pass. */
+function afterGerberAnswer(calls: readonly Call[]): boolean {
+	const start = calls.findIndex((call) => call !== "P");
+	return (
+		(calls[start] === "1NT" || calls[start] === "2NT") &&
+		/^P 4C P (4D|4H|4S|4NT) P$/.test(calls.slice(start + 1).join(" "))
+	);
+}
+
 /** The position after partner's one of `opened`, a pass, and `response`, a new suit without a jump or [1NT]. */
 function rebidPosition(opened: Suit, response: Call): Position | undefined {
 	if (response === "1NT") return { kind: "rebid", opened, response };
@@ -221,6 +277,9 @@ function openerPosition(opening: Bid, response: Call): Position | undefined {
 	if (opened !== undefined) return rebidPosition(opened, response);
 	if (opening === "2C")
 		return isBid(response) ? { kind: "2C-rebid", response } : undefined;
+	// "[4C] (Gerber) ... Opener answers [4D] 0 or 4, [4H] 1, [4S] 2, [4NT] 3."
+	if ((opening === "1NT" || opening === "2NT") && response === "4C")
+		return { kind: "aces", honour: "A", first: "4D" };
 	if (opening !== "1NT") return undefined;
 	switch (response) {
 		case "2C":
@@ -232,7 +291,13 @@ function openerPosition(opening: Bid, response: Call): Position | undefined {
 		case "2S":
 			return { kind: "relay" };
 		case "2NT":
+		case "3C":
+		case "3D":
 			return { kind: "nt-invite", game: "3NT" };
+		case "3H":
+			return { kind: "slam-try", suit: "H" };
+		case "3S":
+			return { kind: "slam-try", suit: "S" };
 		case "4NT":
 			return { kind: "nt-invite", game: "6NT" };
 		default:
@@ -245,6 +310,7 @@ function responsePosition(opening: Bid): Position | undefined {
 	const opened = oneOfASuit(opening);
 	if (opened !== undefined) return { kind: "suit", suit: opened };
 	if (opening === "1NT") return { kind: "1NT" };
+	if (opening === "2NT") return { kind: "2NT" };
 	if (opening === "2C") return { kind: "2C" };
 	const strain = strainOf(opening);
 	if (levelOf(opening) === 2 && isSuit(strain))
@@ -259,8 +325,20 @@ function responsePosition(opening: Bid): Position | undefined {
 function position(calls: readonly Call[]): Position | undefined {
 	if (calls.every((call) => call === "P"))
 		return calls.length < 4 ? { kind: "opening" } : undefined;
-	if (calls.at(-1) === "P" && isBlackwood(calls, calls.length - 2))
-		return { kind: "aces" };
+	if (
+		calls.at(-1) === "P" &&
+		(isBlackwood(calls, calls.length - 2) ||
+			(calls.at(-2) === "4NT" &&
+				position(calls.slice(0, -2))?.kind === "slam-try"))
+	)
+		return { kind: "aces", honour: "A", first: "5C" };
+	// "Then [5C] asks for kings in the same steps, from [5D]".
+	if (
+		calls.at(-2) === "5C" &&
+		calls.at(-1) === "P" &&
+		afterGerberAnswer(calls.slice(0, -2))
+	)
+		return { kind: "aces", honour: "K", first: "5D" };
 	const start = calls.findIndex((call) => call !== "P");
 	const opening = calls[start];
 	if (opening === undefined || !isBid(opening)) return undefined;
@@ -399,21 +477,34 @@ function notrumpResponseMeaning(
 	ranges: Ranges,
 	call: Call,
 ): CallMeaning | undefined {
-	// "[2NT]", "[3NT]", "[4NT]", "[6NT]" and "[7NT]": "without a four-card major".
-	const notrump = (key: RangeKey): CallMeaning => ({
+	// "[2NT]" and "[3NT]": "without a four-card major"; "[4NT]", "[6NT]" and "[7NT]": also "balanced".
+	const notrump = (key: RangeKey, balanced?: true): CallMeaning => ({
 		range: ranges[key],
-		shape: { kind: "no-major", min: SHAPES.stayman },
+		shape: {
+			kind: "no-major",
+			min: SHAPES.stayman,
+			...(balanced ? { balanced } : {}),
+		},
 	});
 	switch (call) {
 		case "P":
 			return {
 				range: ranges["nt-weak"],
-				shape: { kind: "no-long-suit", min: SHAPES.notrumpPass },
+				shape: {
+					kind: "nt-pass",
+					min: SHAPES.notrumpPass,
+					long: SHAPES.longMinor,
+				},
 			};
 		case "2C":
 			return {
-				range: ranges["nt-stayman"],
-				shape: { kind: "stayman", min: SHAPES.stayman },
+				shape: {
+					kind: "stayman",
+					min: SHAPES.stayman,
+					strong: ranges["nt-stayman"],
+					weak: ranges["nt-weak-stayman"],
+					clubs: SHAPES.weakStaymanClubs,
+				},
 			};
 		case "2D":
 			return { shape: { kind: "transfer", suit: "H", min: SHAPES.transfer } };
@@ -422,21 +513,81 @@ function notrumpResponseMeaning(
 		case "2S":
 			return {
 				range: ranges["nt-weak"],
-				shape: { kind: "weak-minor", min: SHAPES.weakMinor },
+				shape: {
+					kind: "weak-minor",
+					min: SHAPES.weakMinor,
+					long: SHAPES.longMinor,
+				},
 			};
 		case "2NT":
 			return notrump("nt-2NT");
+		case "3C":
+		case "3D":
+			return {
+				range: ranges["nt-3m"],
+				shape: { kind: "invite", suit: call[1] as Suit, min: SHAPES.longMinor },
+			};
+		case "3H":
+		case "3S":
+			return {
+				range: ranges["nt-3M"],
+				shape: { kind: "slam-try", suit: call[1] as Suit, min: SHAPES.slamTry },
+			};
+		case "4C":
+			return gerber(ranges["nt-gerber"]);
 		case "3NT":
 			return notrump("nt-3NT");
 		case "4NT":
-			return notrump("nt-4NT");
+			return notrump("nt-4NT", true);
 		case "6NT":
-			return notrump("nt-6NT");
+			return notrump("nt-6NT", true);
 		case "7NT":
-			return notrump("nt-7NT");
+			return notrump("nt-7NT", true);
 		default:
 			return undefined;
 	}
+}
+
+/** "[4C] (Gerber): ... an unbalanced hand without a four-card major; asks for aces." */
+function gerber(range: PointRange): CallMeaning {
+	return { range, shape: { kind: "gerber", min: SHAPES.stayman } };
+}
+
+function slamTryMeaning(
+	ranges: Ranges,
+	suit: Suit,
+	call: Call,
+): CallMeaning | undefined {
+	// "Opener bids four of the major with 15 points or with two cards in it; with 16–17 points and three or more
+	// cards, [4NT] (Blackwood)."
+	if (call === `4${suit}`)
+		return {
+			shape: {
+				kind: "slam-decline",
+				suit,
+				short: SHAPES.support - 1,
+				points: ranges["nt-slam-decline"],
+			},
+		};
+	return call === "4NT"
+		? {
+				range: ranges["nt-slam-accept"],
+				shape: { kind: "ace-ask", suit, min: SHAPES.support },
+			}
+		: undefined;
+}
+
+/** The answers by steps from `first`: 0 or 4, then 1, 2 and 3. */
+function stepAnswers(
+	first: Bid,
+): Readonly<Partial<Record<Call, readonly number[]>>> {
+	const start = CALLS.indexOf(first);
+	return Object.fromEntries(
+		[[0, 4], [1], [2], [3]].map((counts, step) => [
+			CALLS[start + step],
+			counts,
+		]),
+	);
 }
 
 const POSITIVE_RESPONSES: Readonly<Partial<Record<Call, Suit>>> = {
@@ -627,12 +778,7 @@ function overcallMeaning(
 }
 
 /** "[4NT] (Blackwood) asks for aces: [5C] 0 or 4, [5D] 1, [5H] 2, [5S] 3." */
-export const ACE_ANSWERS: Readonly<Partial<Record<Call, readonly number[]>>> = {
-	"5C": [0, 4],
-	"5D": [1],
-	"5H": [2],
-	"5S": [3],
-};
+export const ACE_ANSWERS = stepAnswers("5C");
 
 /**
  * Whether the guide gives a pass to the hands that fit no other call in `at`: after the opponents' opening, after
@@ -702,6 +848,10 @@ function meaningAt(
 				: call === at.game
 					? { range: ranges["nt-invite-accept"], shape: { kind: "none" } }
 					: undefined;
+		case "slam-try":
+			return slamTryMeaning(ranges, at.suit, call);
+		case "2NT":
+			return call === "4C" ? gerber(ranges["2nt-gerber"]) : undefined;
 		case "2C-rebid":
 			// "With a balanced 22–24 points, rebid [2NT] after partner's answer."
 			return call === "2NT" && cheapestLevel("NT", at.response) === 2
@@ -714,10 +864,10 @@ function meaningAt(
 				? { range: ranges.redouble, shape: { kind: "none" } }
 				: undefined;
 		case "aces": {
-			const counts = ACE_ANSWERS[call];
+			const counts = stepAnswers(at.first)[call];
 			return counts === undefined
 				? undefined
-				: { shape: { kind: "aces", counts } };
+				: { shape: { kind: at.honour === "A" ? "aces" : "kings", counts } };
 		}
 	}
 }
@@ -733,19 +883,20 @@ export function callMeaning(
 	if (ranges === undefined || call === undefined) return undefined;
 	const at = position(calls.slice(0, index));
 	const meaning = at === undefined ? undefined : meaningAt(ranges, at, call);
-	// The [4NT] ask is a meaning only: no hand needs it, so conventionCalls never suggests it.
-	return (
-		meaning ??
-		(isBlackwood(calls, index)
-			? {
-					shape: {
-						kind: "blackwood",
-						small: ranges["slam-small"],
-						grand: ranges["slam-grand"],
-					},
-				}
-			: undefined)
-	);
+	// The [4NT] ask and the king ask after Gerber are meanings only: no hand needs them, so conventionCalls never
+	// suggests them.
+	if (meaning !== undefined) return meaning;
+	if (isBlackwood(calls, index))
+		return {
+			shape: {
+				kind: "blackwood",
+				small: ranges["slam-small"],
+				grand: ranges["slam-grand"],
+			},
+		};
+	return call === "5C" && afterGerberAnswer(calls.slice(0, index))
+		? { shape: { kind: "king-ask" } }
+		: undefined;
 }
 
 interface Hand {
@@ -826,15 +977,45 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 				lengths[shape.suit] === shape.length && isGoodSuit(hand, shape.suit)
 			);
 		case "stayman":
-			return MAJORS.some((major) => lengths[major] === shape.min);
+			return (
+				(inRange(hand.points, shape.strong) &&
+					MAJORS.some((major) => lengths[major] === shape.min)) ||
+				(inRange(hand.points, shape.weak) &&
+					MAJORS.every((major) => lengths[major] === shape.min) &&
+					lengths.C <= shape.clubs)
+			);
 		case "weak-minor":
-			return MINORS.some((minor) => lengths[minor] >= shape.min);
-		case "no-long-suit":
-			return SUITS.every((suit) => lengths[suit] < shape.min);
+			return fitsWeakMinor(hand, shape.min, shape.long);
+		case "nt-pass":
+			return (
+				MAJORS.every((major) => lengths[major] < shape.min) &&
+				!fitsWeakMinor(hand, shape.min, shape.long) &&
+				!(
+					MAJORS.every((major) => lengths[major] === SHAPES.stayman) &&
+					lengths.C <= SHAPES.weakStaymanClubs
+				)
+			);
+		case "invite":
+		case "slam-try":
+		case "ace-ask":
+			return lengths[shape.suit] >= shape.min;
+		case "slam-decline":
+			return (
+				inRange(hand.points, shape.points) || lengths[shape.suit] <= shape.short
+			);
+		case "gerber":
+			return (
+				MAJORS.every((major) => lengths[major] < shape.min) && !isBalanced(hand)
+			);
+		case "king-ask":
+			return true;
 		case "good-suit":
 			return lengths[shape.suit] >= shape.min && isGoodSuit(hand, shape.suit);
 		case "no-major":
-			return MAJORS.every((major) => lengths[major] < shape.min);
+			return (
+				MAJORS.every((major) => lengths[major] < shape.min) &&
+				(shape.balanced !== true || isBalanced(hand))
+			);
 		case "stopper":
 			return isBalanced(hand) && hasStopper(hand, shape.suit);
 		case "takeout":
@@ -850,7 +1031,20 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			return shape.counts.includes(
 				hand.cards.filter((card) => card[1] === "A").length,
 			);
+		case "kings":
+			return shape.counts.includes(
+				hand.cards.filter((card) => card[1] === "K").length,
+			);
 	}
+}
+
+/** "[2S]": `long` or more cards in a minor, or `min` cards in a minor in a hand that is not 5-3-3-2. */
+function fitsWeakMinor(hand: Hand, min: number, long: number): boolean {
+	return MINORS.some(
+		(minor) =>
+			hand.lengths[minor] >= long ||
+			(hand.lengths[minor] >= min && !isBalanced(hand)),
+	);
 }
 
 /** The suit of a one-level opening: the longest five-card or longer suit, the higher on a tie; else the longer minor. */
@@ -874,6 +1068,30 @@ const OPENING_GROUPS: readonly ((call: Call) => boolean)[] = [
 	(call) => isBid(call) && levelOf(call) === 1 && isSuit(strainOf(call)),
 	() => true,
 ];
+
+/**
+ * "The order: [3H] or [3S] first; with five cards in one major and four in the other, [2C] with 8 or more points, else
+ * the transfer; then the other transfers; then [2C]; [3C] or [3D] before [2NT]." Of two long majors the longer one,
+ * spades on equal length, as for the transfers; of two long minors the longer one, diamonds on equal length.
+ */
+function notrumpPreferred(hand: Hand, fitting: GuideCall[]): GuideCall[] {
+	const { H, S, D, C } = hand.lengths;
+	const major = H > S ? "H" : "S";
+	const order: readonly Call[][] = [
+		[`3${major}`],
+		Math.max(H, S) === SHAPES.transfer && Math.min(H, S) === SHAPES.stayman
+			? ["2C"]
+			: [],
+		[major === "H" ? "2D" : "2H"],
+		["2C"],
+		[D >= C ? "3D" : "3C"],
+	];
+	for (const calls of order) {
+		const first = fitting.filter(({ call }) => calls.includes(call));
+		if (first.length > 0) return first;
+	}
+	return fitting;
+}
 
 function preferred(
 	at: Position,
@@ -902,17 +1120,7 @@ function preferred(
 		const raise = fitting.filter(({ call }) => call === `2${at.suit}`);
 		if (raise.length > 0) return raise;
 	}
-	if (at.kind === "1NT") {
-		// "A transfer comes before Stayman and [2S]. With five or more cards in both majors, transfer to the longer
-		// one; with equal length, to spades."
-		const transfers = fitting.filter(
-			({ call }) => call === "2D" || call === "2H",
-		);
-		if (transfers.length > 0)
-			return transfers.filter(
-				({ call }) => call === (hand.lengths.H > hand.lengths.S ? "2D" : "2H"),
-			);
-	}
+	if (at.kind === "1NT") return notrumpPreferred(hand, fitting);
 	if (at.kind === "stayman-answer") {
 		// "[2H] with four hearts, [2S] with four spades and not four hearts".
 		const hearts = fitting.filter(({ call }) => call === "2H");
@@ -948,10 +1156,14 @@ export function fitsCall(
 	const meaning = callMeaning(system, [...calls, call], calls.length);
 	const hand = handOf(system, cards);
 	if (hand === undefined) return undefined;
-	if (meaning === undefined)
-		return rules(system) === undefined || position(calls) === undefined
+	if (meaning === undefined) {
+		const at = position(calls);
+		return rules(system) === undefined ||
+			at === undefined ||
+			SOME_CALLS.has(at.kind)
 			? undefined
 			: false;
+	}
 	return inRange(hand.points, meaning.range) && fitsShape(hand, meaning.shape);
 }
 

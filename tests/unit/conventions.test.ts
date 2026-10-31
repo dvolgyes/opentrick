@@ -123,14 +123,24 @@ describe("guide calls for a hand", () => {
 		["1NT P", "84.QT973.J5432.6", ["2D"]], // 3, five hearts and five diamonds: the major first
 		["1NT P", "KJ84.A73.Q65.643", ["2C"]], // 10, four spades: Stayman, not [3NT]
 		["1NT P", "84.73.QT9873.J52", ["2S"]], // 3, six diamonds
-		["1NT P", "84.732.QT987.J52", ["2S"]], // 3, five diamonds
+		["1NT P", "84.73.QT987.J752", ["2S"]], // 3, five diamonds, not 5-3-3-2
+		["1NT P", "84.732.QT987.J52", ["P"]], // 3, five diamonds in a 5-3-3-2 hand
+		["1NT P", "J842.Q973.T9852.-", ["2C"]], // 3, weak Stayman: no clubs, also with five diamonds
+		["1NT P", "J842.Q973.T985.2", ["2C"]], // 3, weak Stayman: 4-4-4-1
+		["1NT P", "J842.Q973.T9.852", ["P"]], // 3, two clubs: not weak Stayman
 		["1NT P", "K84.Q73.A652.643", ["2NT"]], // 9
+		["1NT P", "84.Q3.AQT873.J52", ["3D"]], // 9, six diamonds: [3D], not [2NT]
+		["1NT P", "AKQ842.KQ3.A5.64", ["3S"]], // 18, six spades: slam interest
+		["1NT P", "A4.K3.AKQ873.Q52", ["4C"]], // 18, unbalanced: Gerber
+		["1NT P", "AQ4.KJ3.KQ852.Q4", ["4NT"]], // 17, a balanced 5-3-3-2 hand: not Gerber
 		["1NT P", "K84.Q73.AQ52.643", ["3NT"]], // 11
 		["1NT P", "K84.Q73.AQJ52.64", ["3NT"]], // 12, a five-card minor and no four-card major
 		["1NT P", "AQ4.KJ3.KQ52.Q43", ["4NT"]], // 17: invites a slam
 		["1NT P", "AQ4.KQ3.AQ52.Q43", ["6NT"]], // 19
 		["1NT P", "AK4.AK3.AQ52.KQ3", ["7NT"]], // 25
-		["1NT P", "KJ842.Q973.A5.64", ["2H"]], // 10, five spades and four hearts: a transfer, not Stayman
+		["1NT P", "KJ842.Q973.A5.64", ["2C"]], // 10, five spades and four hearts: Stayman, not a transfer
+		["1NT P", "KJ842.Q973.85.64", ["2H"]], // 6, five spades and four hearts: a transfer, weak
+		["2NT P", "A4.K3.KQ8732.Q52", ["4C"]], // 14, unbalanced: Gerber
 		["1NT P", "KQ842.QJ973.5.64", ["2H"]], // 8, five-five in the majors: spades
 		["1NT P", "KQ84.QJ9732.5.64", ["2D"]], // 8, six hearts and four spades: the longer major
 		["1NT X", "84.QT973.J52.632", ["2D"]], // 3, the same responses after a double
@@ -187,6 +197,15 @@ describe("guide calls for a hand", () => {
 		["1NT P 2NT P", "AQ4.KJ5.Q862.A73", ["3NT"]], // 16
 		["1NT P 4NT P", "AQ4.KJ5.Q862.K73", ["P"]], // 15
 		["1NT P 4NT P", "AQ4.KJ5.Q862.A73", ["6NT"]], // 16
+		["1NT P 3D P", "AQ4.KJ5.Q862.K73", ["P"]], // 15
+		["1NT P 3C P", "AQ4.KJ5.Q862.A73", ["3NT"]], // 16
+		["1NT P 3S P", "AQ4.KJ5.Q862.K73", ["4S"]], // 15
+		["1NT P 3S P", "AQ.KJ52.Q862.A73", ["4S"]], // 16, two spades
+		["1NT P 3S P", "AQ4.KJ5.Q862.A73", ["4NT"]], // 16, three spades: Blackwood
+		["1NT P 3H P 4NT P", "AQ4.KJ5.Q862.K73", ["5D"]], // one ace
+		["1NT P 4C P", "AQ4.KJ5.Q862.K73", ["4H"]], // one ace
+		["2NT P 4C P", "AK4.AQ5.KQ62.K73", ["4S"]], // two aces
+		["1NT P 4C P 4H P 5C P", "AQ4.KJ5.Q862.K73", ["5S"]], // two kings
 		["2C P 2D P", "AK4.AKJ5.KQ2.QJ3", ["2NT"]], // 23, balanced
 		["2H P", "K84.Q73.J652.Q64", ["3H", "4H"]], // three hearts
 		["2H P", "AK84.Q7.AJ52.K64", ["2NT"]], // 17
@@ -253,6 +272,10 @@ describe("a hand against the meaning of one call", () => {
 		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "7NT", undefined], // the guide does not describe the position
 		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "2C", undefined], // the guide does not describe the position
 		["hcp", "Q2.KJ92.Q874.432", "1H P 3H P", "4NT", true], // the ask fits any hand
+		["hcp", "A2.KJ92.Q874.432", "2NT P", "3NT", undefined], // after [2NT] the guide describes only Gerber
+		["hcp", "A2.K92.KQ8743.43", "2NT P", "4C", true], // 12, unbalanced: Gerber
+		["hcp", "A2.KJ92.Q874.432", "2NT P", "4C", false], // a four-card major
+		["hcp", "Q2.KJ92.Q874.432", "1NT P 4C P 4H P", "5C", true], // the king ask fits any hand
 		["other", "Q2.KJ92.Q874.432", "1H", "1S", undefined],
 	] as const)(
 		"%s: %s after %s, %s fits: %s",
@@ -340,12 +363,23 @@ describe("guide meaning of a call", () => {
 		[
 			"hcp",
 			"1NT P P",
-			{ range: { min: 0, max: 7 }, shape: { kind: "no-long-suit", min: 5 } },
+			{
+				range: { min: 0, max: 7 },
+				shape: { kind: "nt-pass", min: 5, long: 6 },
+			},
 		],
 		[
 			"hcp",
 			"1NT P 2C",
-			{ range: { min: 8 }, shape: { kind: "stayman", min: 4 } },
+			{
+				shape: {
+					kind: "stayman",
+					min: 4,
+					strong: { min: 8 },
+					weak: { min: 0, max: 7 },
+					clubs: 1,
+				},
+			},
 		],
 		[
 			"hcp-corrected",
@@ -356,12 +390,38 @@ describe("guide meaning of a call", () => {
 		[
 			"hcp",
 			"1NT P 2S",
-			{ range: { min: 0, max: 7 }, shape: { kind: "weak-minor", min: 5 } },
+			{
+				range: { min: 0, max: 7 },
+				shape: { kind: "weak-minor", min: 5, long: 6 },
+			},
 		],
 		[
 			"hcp",
 			"1NT P 2NT",
 			{ range: { min: 8, max: 9 }, shape: { kind: "no-major", min: 4 } },
+		],
+		[
+			"hcp",
+			"1NT P 3D",
+			{
+				range: { min: 8, max: 9 },
+				shape: { kind: "invite", suit: "D", min: 6 },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 3S",
+			{ range: { min: 16 }, shape: { kind: "slam-try", suit: "S", min: 6 } },
+		],
+		[
+			"hcp",
+			"1NT P 4C",
+			{ range: { min: 16 }, shape: { kind: "gerber", min: 4 } },
+		],
+		[
+			"hcp",
+			"2NT P 4C",
+			{ range: { min: 12 }, shape: { kind: "gerber", min: 4 } },
 		],
 		[
 			"hcp-corrected",
@@ -371,17 +431,65 @@ describe("guide meaning of a call", () => {
 		[
 			"hcp",
 			"1NT P 4NT",
-			{ range: { min: 16, max: 17 }, shape: { kind: "no-major", min: 4 } },
+			{
+				range: { min: 16, max: 17 },
+				shape: { kind: "no-major", min: 4, balanced: true },
+			},
 		],
 		[
 			"hcp",
 			"1NT P 6NT",
-			{ range: { min: 18, max: 21 }, shape: { kind: "no-major", min: 4 } },
+			{
+				range: { min: 18, max: 21 },
+				shape: { kind: "no-major", min: 4, balanced: true },
+			},
 		],
 		[
 			"hcp",
 			"1NT P 7NT",
-			{ range: { min: 22 }, shape: { kind: "no-major", min: 4 } },
+			{
+				range: { min: 22 },
+				shape: { kind: "no-major", min: 4, balanced: true },
+			},
+		],
+		[
+			"hcp",
+			"1NT P 3D P P",
+			{ range: { min: 15, max: 15 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 3C P 3NT",
+			{ range: { min: 16, max: 17 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 3S P 4S",
+			{
+				shape: {
+					kind: "slam-decline",
+					suit: "S",
+					short: 2,
+					points: { min: 15, max: 15 },
+				},
+			},
+		],
+		[
+			"hcp",
+			"1NT P 3H P 4NT",
+			{
+				range: { min: 16, max: 17 },
+				shape: { kind: "ace-ask", suit: "H", min: 3 },
+			},
+		],
+		["hcp", "1NT P 3H P 4NT P 5H", { shape: { kind: "aces", counts: [2] } }],
+		["hcp", "1NT P 4C P 4D", { shape: { kind: "aces", counts: [0, 4] } }],
+		["hcp", "2NT P 4C P 4NT", { shape: { kind: "aces", counts: [3] } }],
+		["hcp", "1NT P 4C P 4H P 5C", { shape: { kind: "king-ask" } }],
+		[
+			"hcp",
+			"1NT P 4C P 4H P 5C P 5S",
+			{ shape: { kind: "kings", counts: [2] } },
 		],
 		["hcp", "1NT X 2D", { shape: { kind: "transfer", suit: "H", min: 5 } }],
 		[
@@ -718,8 +826,15 @@ describe("guide calls and meanings agree", () => {
 			"1NT P 2S P",
 			"1NT P 2S P 3C P",
 			"1NT P 2NT P",
+			"1NT P 3C P",
+			"1NT P 3H P",
+			"1NT P 3S P 4NT P",
+			"1NT P 4C P",
+			"1NT P 4C P 4S P 5C P",
 			"1NT P 4NT P",
 			"1NT X",
+			"2NT P",
+			"2NT P 4C P",
 			"2C P 2D P",
 			"1H",
 			"P 1S",
@@ -760,7 +875,8 @@ describe("guide calls and meanings agree", () => {
 					}
 		}
 		expect(checked).toBeGreaterThan(1000);
-	});
+		// About 2.5 s alone; the pre-commit hook runs it beside the browser tests.
+	}, 30_000);
 
 	it("gives each hand exactly one call after [1NT], and the [1NT] opener exactly one answer", () => {
 		const responses = ["1NT P", "1NT X"];
@@ -770,6 +886,13 @@ describe("guide calls and meanings agree", () => {
 			"1NT P 2H P",
 			"1NT P 2S P",
 			"1NT P 2NT P",
+			"1NT P 3C P",
+			"1NT P 3D P",
+			"1NT P 3H P",
+			"1NT P 3S P",
+			"1NT P 3H P 4NT P",
+			"1NT P 4C P",
+			"1NT P 4C P 4D P 5C P",
 			"1NT P 4NT P",
 		];
 		const counts = { responses: 0, answers: 0 };
@@ -796,7 +919,8 @@ describe("guide calls and meanings agree", () => {
 		}
 		expect(counts.responses).toBeGreaterThan(3000);
 		expect(counts.answers).toBeGreaterThan(300);
-	});
+		// About 1.5 s alone; the pre-commit hook runs it beside the browser tests.
+	}, 30_000);
 });
 
 /** The inverse of hand(): "AQ4.KJ5.Q862.K73". */
@@ -845,13 +969,25 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"Responses to one of a suit",
 		"- {range} points: game forcing",
 	],
-	"nt-weak": [
-		"Responses to [1NT]",
-		"- {range} points: [P] without a five-card suit",
-	],
+	"nt-weak": ["Responses to [1NT]", "- {range} points: [P], unless"],
 	"nt-stayman": ["Responses to [1NT]", "- [2C] (Stayman): {range} points"],
+	"nt-weak-stayman": [
+		"Responses to [1NT]",
+		"- Weak Stayman: [2C] also with {range} points",
+	],
 	"nt-2NT": ["Responses to [1NT]", "- [2NT]: {range} points"],
+	"nt-3m": ["Responses to [1NT]", "- [3C] [3D]: {range} points"],
 	"nt-3NT": ["Responses to [1NT]", "- [3NT]: {range} points"],
+	"nt-3M": ["Responses to [1NT]", "- [3H] [3S]: {range} points"],
+	"nt-slam-decline": [
+		"Responses to [1NT]",
+		"Opener bids four of the major with {range} points",
+	],
+	"nt-slam-accept": [
+		"Responses to [1NT]",
+		"with {range} points and three or more cards, [4NT]",
+	],
+	"nt-gerber": ["Responses to [1NT]", "- [4C] (Gerber): {range} points"],
 	"nt-4NT": ["Responses to [1NT]", "- [4NT]: {range} points"],
 	"nt-6NT": ["Responses to [1NT]", "- [6NT]: {range} points"],
 	"nt-7NT": ["Responses to [1NT]", "[7NT]: {range} points"],
@@ -860,6 +996,7 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"Responses to [1NT]",
 		"and bids [3NT] with {range} points",
 	],
+	"2nt-gerber": ["Responses to [2NT]", "- [4C] (Gerber): {range} points"],
 	"2c-waiting": ["Responses to [2C]", "- [2D]: waiting, {range} points"],
 	"2c-positive": ["Responses to [2C]", "- [2H] [2S] [3C] [3D]: {range} points"],
 	"2c-2NT": ["Responses to [2C]", "- [2NT]: {range} points"],
