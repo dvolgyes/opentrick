@@ -853,7 +853,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Fallback: "Tartalék",
 		Backup: "Másodlagos tartalék",
 
-		"Join call": "Hívás",
+		"Join call": "Csatlakozás",
 		"Leave call": "Lerak",
 		"Rejoin the call": "Újracsatlakozás a híváshoz",
 		Optional: "Opcionális",
@@ -1520,7 +1520,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Fallback: "Reserve",
 		Backup: "Ekstra reserve",
 
-		"Join call": "Bli med",
+		"Join call": "Bli med i samtalen",
 		"Leave call": "Legg på",
 		"Rejoin the call": "Bli med igjen",
 		Optional: "Valgfritt",

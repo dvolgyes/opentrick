@@ -107,6 +107,23 @@ describe("localization", () => {
 			expect(translator(locale)("Send link to players")).toBe(text);
 	});
 
+	it("says in every supported language that the call button joins a call and does not start one", () => {
+		const cases = [
+			["en", "Join call"],
+			["de", "Anruf beitreten"],
+			["hu", "Csatlakozás"],
+			["no", "Bli med i samtalen"],
+			["es", "Unirse a la llamada"],
+			["pt", "Entrar na chamada"],
+			["fr", "Rejoindre l'appel"],
+			["it", "Entra nella chiamata"],
+			["nl", "Deelnemen aan oproep"],
+		] as const satisfies readonly (readonly [Locale, string])[];
+
+		for (const [locale, text] of cases)
+			expect(translator(locale)("Join call")).toBe(text);
+	});
+
 	it("translates declarer and dummy in every supported language", () => {
 		const roles = [
 			["de", "Alleinspieler", "Tisch"],
