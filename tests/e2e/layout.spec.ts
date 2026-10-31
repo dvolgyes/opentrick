@@ -499,6 +499,19 @@ async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
 }
 
 /**
+ * Before the first board, a phone's felt has about the 9:10 shape of its board during the game (width to height),
+ * and does not reach down to the bottom of a tall screen.
+ */
+async function expectWaitingFelt(page: Page): Promise<void> {
+	await expect(table(page)).toHaveAttribute("data-phase", "waiting");
+	const box = await page.locator(".felt").boundingBox();
+	if (!box) throw new Error("the felt has no box");
+	const ratio = box.width / box.height;
+	expect(ratio, "felt width to height").toBeGreaterThan(0.85);
+	expect(ratio, "felt width to height").toBeLessThan(0.95);
+}
+
+/**
  * A phone-width window gets the compact table (src/call/device-class.ts): the room is not the scaled Full HD canvas,
  * the page has no horizontal scroll, and each given part lies within the window's width.
  */
@@ -697,6 +710,7 @@ test("3: a phone held upright and a portrait window get the compact table, a pho
 	const link = await createRoom(host);
 	phoneTab = await phone.page(link);
 	await pick(phoneTab, "N");
+	await expectWaitingFelt(phoneTab);
 	for (const seat of ["S", "E"] as const)
 		await pick(await players[seat].page(link), seat);
 	await expectCompactRoom(phoneTab);

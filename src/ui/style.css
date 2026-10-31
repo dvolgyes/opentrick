@@ -3643,6 +3643,11 @@ main:has(> .room[data-form="compact"]) {
 	height: auto;
 }
 
+/* Before the first board, the felt has about the shape of the phone board during the game, not the screen's height. */
+[data-form="compact"] .stage:has(.bridge-table[data-phase="waiting"]) {
+	height: auto;
+}
+
 [data-form="compact"] .you {
 	margin: 0;
 	font-size: 0.85rem;
@@ -3687,6 +3692,13 @@ main:has(> .room[data-form="compact"]) {
 	min-height: 0;
 	padding: 0.4rem;
 	margin: 0.3rem 0;
+}
+
+/* The phone board is 9:10 during the game, and stops near 29rem high in a wider compact window. */
+[data-form="compact"] .bridge-table[data-phase="waiting"] .felt {
+	flex: none;
+	aspect-ratio: 9 / 10;
+	max-height: 30rem;
 }
 
 /* The phone keeps one grid: the top seat, the left and right seats beside the centre, and the own seat. */
