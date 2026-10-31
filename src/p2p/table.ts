@@ -1,4 +1,4 @@
-import { botSeatClaims, botSeatHolder } from "../bot/seats";
+import { botSeatClaims, botSeatHolder, botSeats } from "../bot/seats";
 import { type BuildInfo, isBuildDate, newerBuildDate } from "../build";
 import type { CallRoomSnapshot } from "../call/mesh";
 import type { CallTransport } from "../call/signaling";
@@ -555,7 +555,8 @@ export class TableController {
 	 * Seeds the open seat after SEED_WAIT_MS online without a host (ADR 0005). Until then the seat waits for a host:
 	 * a beat or a lobby that shows the table holds the seed back until SEED_WAIT_MS after the last one, so a page whose
 	 * peers with the table all left does not wait for ever. A page higher in the order of the link's host seat seeds
-	 * first (election rule 14).
+	 * first (election rule 14). When the link gives every other seat to a bot, no other seat can host, so the page
+	 * seeds at once unless a beat or a lobby shows the table.
 	 */
 	#seedWhenAlone(): void {
 		const candidate = this.#seedCandidate;
@@ -565,8 +566,14 @@ export class TableController {
 			return;
 		}
 		const election = this.#election;
-		if (!election || election.absentMs < SEED_WAIT_MS) return;
-		if (!seedsFirst(election)) return;
+		if (!election) return;
+		const config = this.#deps.bootstrap?.config;
+		const bots = config ? botSeats(config) : [];
+		const solo = SEATS.every(
+			(seat) => seat === candidate.log.seat || bots.includes(seat),
+		);
+		if (!solo && election.absentMs < SEED_WAIT_MS) return;
+		if (!solo && !seedsFirst(election)) return;
 		const seen = this.#tableSeenAt;
 		if (seen !== null && this.#now() - seen < SEED_WAIT_MS) return;
 		this.#seedCandidate = null;

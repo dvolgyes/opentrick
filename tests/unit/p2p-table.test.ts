@@ -405,6 +405,33 @@ describe("table controller seeding from the setup link", () => {
 		expect(table.view().hosting).toBe(true);
 	});
 
+	it("seeds a link whose other seats are all bots at once, as no other page can host it", async () => {
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["N", "E", "W"], bidder: "sl" },
+		};
+		const table = await rig.start("S");
+
+		await rig.advance(2 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("seeds no table from a link whose other seats are all bots while beats show that the table exists", async () => {
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["N", "E", "W"], bidder: "sl" },
+		};
+		const table = await rig.start("S");
+		for (let beats = 0; beats < (3 * SEED_WAIT_MS) / BEAT_MS; beats++) {
+			await eastBeat();
+			await rig.advance(BEAT_MS);
+		}
+
+		expect(table.view().hosting).toBe(false);
+		expect(rig.storage.commits).toBe(0);
+	});
+
 	it("seeds the host seat that a visitor chooses only after the page was alone for SEED_WAIT_MS", async () => {
 		const table = await rig.start(null);
 		expect(await table.choose("N")).toEqual({ ok: true });

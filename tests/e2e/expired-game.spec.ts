@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
 import { CONNECT_MS, hostRows, namePlayers } from "./room";
 
+/** A solo link has no other page to wait for, so it starts well before the 30 s seed wait of a shared link. */
+const SOLO_START_MS = 15_000;
+
 test.beforeEach(async ({ page }) => {
 	// Set up wall-clock control before the app creates its timers; keep monotonic time and timers running.
 	await page.clock.setFixedTime(Date.now());
@@ -67,7 +70,9 @@ test("a solo bookmark starts a game without saved state and still works after ex
 	const key = randomBytes(16).toString("base64url");
 	await page.goto(`/?n=bot&e=bot&s=test&w=bot&h=S&b=NEW&pl=S#k=${key}`);
 	const table = page.getByTestId("table");
-	await expect(table).toHaveAttribute("data-at", "2", { timeout: CONNECT_MS });
+	await expect(table).toHaveAttribute("data-at", "2", {
+		timeout: SOLO_START_MS,
+	});
 	const bookmark = page.url();
 	await page.clock.setFixedTime(Date.now() + 9 * 60 * 60 * 1000);
 	await expect(page.getByTestId("banner")).toHaveAttribute(
@@ -75,7 +80,9 @@ test("a solo bookmark starts a game without saved state and still works after ex
 		"expired",
 	);
 	await page.reload();
-	await expect(table).toHaveAttribute("data-at", "2", { timeout: CONNECT_MS });
+	await expect(table).toHaveAttribute("data-at", "2", {
+		timeout: SOLO_START_MS,
+	});
 	await expect(page).toHaveURL(bookmark);
 	await expect(page.getByTestId("waiting")).toBeHidden();
 });
