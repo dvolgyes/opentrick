@@ -2748,7 +2748,28 @@ button.call-join[data-in-call="true"] {
 	opacity: 0.4;
 }
 
+/*
+ * Off turn the panel is grayed out. The filter is on a background layer and on the controls that do not work, because
+ * a filter on the panel would also gray out an Undo that still works.
+ */
 .room[data-form="desktop"] .bid-box.not-turn {
+	position: relative;
+	isolation: isolate;
+}
+
+.room[data-form="desktop"] .bid-box.not-turn::before,
+.mobile-bid-overlay:has(.bid-box.not-turn)::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	background: var(--sheet-bg);
+	filter: grayscale(1) brightness(0.6);
+}
+
+:is(.room[data-form="desktop"], .mobile-bid-overlay) .bid-box.not-turn > :not(.bid-actions),
+:is(.room[data-form="desktop"], .mobile-bid-overlay) .bid-box.not-turn .bid-actions > :not(button:enabled) {
 	filter: grayscale(1) brightness(0.6);
 }
 
@@ -4304,8 +4325,9 @@ main:has(> .room[data-form="compact"]) {
 	color: var(--sheet-fg);
 }
 
-.mobile-bid-overlay:has(.bid-box.not-turn) {
-	filter: grayscale(1) brightness(0.6);
+/* The overlay's grayed background layer shows through; see the desktop bid box rule. */
+.mobile-bid-overlay .bid-box.not-turn {
+	background: transparent;
 }
 
 .mobile-tricks {

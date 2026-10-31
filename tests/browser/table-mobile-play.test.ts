@@ -3058,6 +3058,20 @@ describe("undo request off turn", () => {
 				box.top + box.height / 2,
 			);
 			expect(hit?.closest("button")).toBe(target);
+			// The calls are grayed out, but the Undo that still works keeps its colour: no filter on it or around it.
+			const filters = (element: Element | null): string[] => {
+				const found: string[] = [];
+				for (let node = element; node; node = node.parentElement) {
+					const { filter } = getComputedStyle(node);
+					if (filter !== "none") found.push(filter);
+				}
+				return found;
+			};
+			expect(filters(target)).toEqual([]);
+			const level = [...root.querySelectorAll(".bid-levels button")].find(
+				(button) => button.checkVisibility(),
+			);
+			expect(filters(level ?? null)).not.toEqual([]);
 			(hit as HTMLElement).click();
 			// The request goes only after the player confirms it.
 			const dialog = root.querySelector<HTMLDialogElement>(
@@ -3325,10 +3339,15 @@ describe("mobile turn frame", () => {
 			"grayscale(1) brightness(0.6)",
 		);
 		expect(getComputedStyle(disabled).backgroundImage).toContain("47%");
-		expect(getComputedStyle(overlay).filter).toBe("none");
+		// The background layer and the calls are darkened, not the overlay itself, so a working Undo keeps its colour.
+		expect(getComputedStyle(overlay, "::before").filter).toBe("none");
 		section.render({ ...base, phase: "auction", bids: [] });
-		expect(getComputedStyle(overlay).filter).toContain("grayscale");
-		expect(getComputedStyle(overlay).filter).toContain("brightness");
+		expect(getComputedStyle(overlay, "::before").filter).toBe(
+			"grayscale(1) brightness(0.6)",
+		);
+		expect(
+			getComputedStyle(overlay.querySelector(".bid-levels") as Element).filter,
+		).toBe("grayscale(1) brightness(0.6)");
 	});
 
 	it("darkens the inactive desktop bid box and keeps the bidding windows above the table", () => {
@@ -3339,9 +3358,12 @@ describe("mobile turn frame", () => {
 		const bidBox = root.querySelector<HTMLElement>(".bid-box");
 		const center = root.querySelector<HTMLElement>(".center");
 		if (!bidBox || !center) throw new Error("missing bidding windows");
-		expect(getComputedStyle(bidBox).filter).toBe(
+		expect(getComputedStyle(bidBox, "::before").filter).toBe(
 			"grayscale(1) brightness(0.6)",
 		);
+		expect(
+			getComputedStyle(bidBox.querySelector(".bid-levels") as Element).filter,
+		).toBe("grayscale(1) brightness(0.6)");
 		expect(Number(getComputedStyle(center).zIndex)).toBeGreaterThan(5);
 	});
 
