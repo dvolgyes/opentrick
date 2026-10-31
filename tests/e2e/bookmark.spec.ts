@@ -55,7 +55,9 @@ test("create opens the game and selects the host seat in the page URL", async ()
 	await expect(page.getByRole("textbox", { name: "Table link" })).toHaveCount(
 		0,
 	);
-	await expect(page.getByRole("button", { name: "Copy link" })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Send link to players" }),
+	).toBeVisible();
 	await expect(page.locator(".copy-status")).toHaveCount(0);
 	link = await page.evaluate(() => navigator.clipboard.readText());
 	expect(link).toMatch(TABLE_LINK);

@@ -863,7 +863,7 @@ export function showRoom(
 	const nativeShare =
 		navigator.share !== undefined && isTouchDevice(readSignals(window));
 	const copyRoomLink = button(
-		deps.t(nativeShare ? "Share URL" : "Copy link"),
+		deps.t("Send link to players"),
 		async () => {
 			const link = roomShareLink(
 				deps.pageUrl(),

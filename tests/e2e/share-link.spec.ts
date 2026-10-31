@@ -7,7 +7,7 @@ import { CONNECT_MS, createRoom, expectSeat } from "./room";
  * creator's browser comes back to its own seat. Taking a seat names it in the URL.
  */
 
-test("Copy link copies a link without a seat, and the creator's browser reopens its own seat from it", async ({
+test("Send link to players copies a link without a seat, and the creator's browser reopens its own seat from it", async ({
 	browser,
 	baseURL,
 }) => {
@@ -20,7 +20,9 @@ test("Copy link copies a link without a seat, and the creator's browser reopens 
 		const own = new URL(await createRoom(page));
 		const clipboard = () => page.evaluate(() => navigator.clipboard.readText());
 		await page.evaluate(() => navigator.clipboard.writeText(""));
-		await page.getByRole("button", { name: "Copy link", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Send link to players", exact: true })
+			.click();
 		await expect.poll(clipboard).not.toBe("");
 		const link = await clipboard();
 		const shared = new URL(link);
@@ -65,7 +67,9 @@ test("on a phone the link button opens the device's share sheet with the link th
 		const page = await host.page("./");
 		const own = new URL(await createRoom(page));
 		await page.evaluate(() => navigator.clipboard.writeText(""));
-		await page.getByRole("button", { name: "Share URL", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Send link to players", exact: true })
+			.click();
 		const sharedData = () =>
 			page.evaluate(
 				() => (window as unknown as { sharedData: ShareData[] }).sharedData,

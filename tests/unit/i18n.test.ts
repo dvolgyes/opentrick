@@ -90,6 +90,23 @@ describe("localization", () => {
 		}
 	});
 
+	it("names the link button for the other players in every supported language", () => {
+		const cases = [
+			["en", "Send link to players"],
+			["de", "Link an die Spieler senden"],
+			["hu", "Link küldése"],
+			["no", "Send lenke til spillerne"],
+			["es", "Enviar enlace a los jugadores"],
+			["pt", "Enviar ligação aos jogadores"],
+			["fr", "Envoyer le lien aux joueurs"],
+			["it", "Invia il link ai giocatori"],
+			["nl", "Link naar spelers sturen"],
+		] as const satisfies readonly (readonly [Locale, string])[];
+
+		for (const [locale, text] of cases)
+			expect(translator(locale)("Send link to players")).toBe(text);
+	});
+
 	it("translates declarer and dummy in every supported language", () => {
 		const roles = [
 			["de", "Alleinspieler", "Tisch"],

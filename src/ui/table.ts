@@ -845,7 +845,10 @@ export function tableSection(
 		},
 		{
 			className: "icon-button mobile-auction-share",
-			attrs: { "aria-label": t("Share URL"), title: t("Share URL") },
+			attrs: {
+				"aria-label": t("Send link to players"),
+				title: t("Send link to players"),
+			},
 		},
 	);
 	mobileShare.append(icon("share"));

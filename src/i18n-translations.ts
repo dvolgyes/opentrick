@@ -823,12 +823,12 @@ const rows: readonly TranslationRow[] = [
 	],
 	["Copied.", "Copiado.", "Copiado.", "Copié.", "Copiato.", "Gekopieerd."],
 	[
-		"Copy link",
-		"Copiar enlace",
-		"Copiar ligação",
-		"Copier le lien",
-		"Copia link",
-		"Link kopiëren",
+		"Send link to players",
+		"Enviar enlace a los jugadores",
+		"Enviar ligação aos jogadores",
+		"Envoyer le lien aux joueurs",
+		"Invia il link ai giocatori",
+		"Link naar spelers sturen",
 	],
 	[
 		"Copy table link",
@@ -2046,14 +2046,6 @@ const rows: readonly TranslationRow[] = [
 	],
 	["Sending", "Enviando", "A enviar", "Envoi", "Invio", "Verzenden"],
 
-	[
-		"Share URL",
-		"Compartir URL",
-		"Partilhar URL",
-		"Partager l'URL",
-		"Condividi URL",
-		"URL delen",
-	],
 	[
 		"Share action completed.",
 		"Se completó la acción de compartir.",

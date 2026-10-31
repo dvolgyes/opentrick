@@ -179,12 +179,11 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 			page.getByRole("button", { name: "Resume bots" }),
 		).toBeVisible();
 		await expectBotControlsInOneRow(page);
-		// During the auction the top bar holds the only Reload, New table and Share URL; Settings holds the key and the models.
+		// During the auction the top bar holds the only Reload, New table and Send link to players; Settings holds the key and the models.
 		for (const [name, count] of [
 			["Reload", 1],
 			["New table", 1],
-			["Share URL", 1],
-			["Copy link", 0],
+			["Send link to players", 1],
 			["Set API key", 0],
 			["Model", 0],
 			["Debug", 0],
