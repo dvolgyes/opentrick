@@ -256,3 +256,222 @@ None of these is changed yet.
 - Cohen's and BridgeBum's minor-suit methods differ from SAYC; where the guide follows SAYC, a different source call is not an error in the guide.
 - Only the uncontested auctions and the double of [1NT] were checked against the engine; the competitive rules were compared as text only.
 - The constructed hands test one rule each; they are not published examples.
+
+## Decisions and planned rules
+
+This section records the user's answers of 2026-10-31 and the rules that follow from them.
+The order of work is: these rules first, then the guide texts, then the engine.
+Each rule names its source; "proposed" marks a number that the sources do not give.
+The user accepted all proposed numbers on 2026-10-31.
+"Derived" marks a number that follows from the guide's existing ranges; it was not asked separately.
+
+### Decided: 5-4 in the majors after [1NT] (Q2)
+
+- With five cards in one major, four in the other, and 8 or more points, responder bids [2C] (Stayman) first.
+  Source: SAYC, BB-JT, LC-JT.
+- With the same shape and 0–7 points, responder transfers to the five-card major, then passes.
+- The rule "a transfer comes before Stayman" stays for hands with a five-card major and no four-card other major.
+
+### Decided: responder's second call after Stayman (Q5)
+
+Source: SAYC ("If responder instead bids other major, it shows 5 cards in that major ... forcing to game only if bid at 3 level"; three of a minor shows slam interest), BB-ST.
+
+- After [2D] (no major):
+  - [2H] / [2S]: five cards in that major, four in the other, 8–9 points, invitational.
+  - [3H] / [3S]: five cards in that major, four in the other, 10–15 points, game forcing.
+  - [2NT]: 8–9 points, invitational.
+    [3NT]: 10–15 points, to play.
+- After [2H]:
+  - With four hearts: [3H] with 8–9 points (invitational), [4H] with 10–15 points.
+  - Without four hearts (so with four spades): [2NT] with 8–9 points, [3NT] with 10–15 points; opener with four spades bids [3S] or [4S] in place of [2NT] / [3NT], because [2H] can hide four spades.
+  - [2S]: five spades, 8–9 points, invitational.
+- After [2S]:
+  - With four spades: [3S] with 8–9 points, [4S] with 10–15 points.
+  - Without four spades: [2NT] with 8–9 points, [3NT] with 10–15 points.
+  - [3H]: five hearts, 10–15 points, game forcing.
+- Opener answers an invitation: [P] (or the lowest partscore) with 15 points, game with 16–17 points.
+
+### Decided: super-accept and responder's second call after a transfer (Q3, Q4, Q5)
+
+Source: SAYC, BB-JT, LC-JT.
+
+- Super-accept: after [2D], opener bids [3H] instead of [2H] with 17 points and four hearts; after [2H], [3S] with 17 points and four spades.
+  Responder then passes with 0–5 points and bids game with 6 or more (proposed; SAYC gives only the jump).
+- After the normal acceptance:
+  - [P]: 0–7 points.
+  - [2NT]: exactly five cards, 8–9 points, invitational.
+    Opener passes or bids three of the major with 15 points (three of the major with three-card support); [3NT] or four of the major with 16–17 points.
+  - Three of the major: six or more cards, 8–9 points, invitational.
+    Opener passes with 15 points, bids game with 16–17 points.
+  - [3NT]: exactly five cards, 10–15 points; opener chooses between [3NT] (two-card support) and four of the major (three or more).
+  - Four of the major: six or more cards, 10–15 points, to play.
+  - A new suit: four or more cards, 10 or more points, game forcing.
+    Exception: [1NT] – [2D] – [2H] – [2S] shows five hearts, five spades and 8–9 points, invitational, not forcing.
+    This is the route for invitational 5-5 hands (Q3).
+  - Game-forcing 5-5 in the majors: transfer to spades, then [3H] (LC-JT).
+- Opener's answer to [2S] in the 5-5 invitation (proposed; SAYC does not say): with 15 points, [P] with three or more spades or more spades than hearts, otherwise [3H]; with 16–17 points, game in the major with more cards ([4S] with equal length).
+
+### Decided: responses to one of a suit follow SAYC (Q8, Q9, Q10)
+
+Source: SAYC, "Responses after 1H", "1D and 1C openings", and "Negative doubles" sections.
+
+- [1NT] response: 6–10 points (was 6–9).
+  Over [1H] it denies four spades and three hearts.
+  Not forcing.
+- Single raise of a major: three or more cards, 6–10 points (was 6–9).
+- Limit raise (a jump raise): 10–12 points, as now.
+- A new suit at the two level: 11 or more points and four or more cards (was 10).
+- Raise of a minor: four or more diamonds to raise [1D], five or more clubs to raise [1C]; 6–10 points for the single raise, 10–12 points for the jump raise.
+  There is no forcing minor raise.
+- Over [1C] / [1D]: [2NT] with 13–15 points, balanced, game forcing; [3NT] with 16–17 points, balanced.
+  Both deny a four-card major (proposed; SAYC says "standard").
+- Over [1H] / [1S]:
+  - [2NT] (Jacoby 2NT): four or more cards in partner's major and 13 or more points, game forcing.
+    SAYC says "game-forcing raise, 13+ dummy points" without a length; four cards is the common reading (proposed).
+  - Opener answers Jacoby [2NT]: three of a new suit shows a singleton or void; without one, four of the major with 12–14 points, [3NT] with 15–17 points, three of the major with 18–21 points (SAYC gives only "4M = minimum"; the other two are proposed, in the guide's ranges).
+  - [3NT]: 15–17 points, balanced, exactly two cards in partner's major.
+  - Four of the major: five or more cards, a singleton or void, and fewer than 10 points (preemptive).
+- Jump shift (for example [1H] – [2S], [1H] – [3C]): a strong hand that invites slam.
+  SAYC gives no number; proposed: 19 or more points with a good five-card suit.
+- Negative double, after partner opens one of a suit and the next player overcalls in a suit up to [2S]:
+  - It promises four or more cards in the unbid major (both unbid majors after [1C] – [1D]).
+  - After [1C] / [1D] – [1H]: exactly four spades ([1S] would show five).
+  - After [1C] / [1D] – [1S]: four hearts and 6 or more points, or five hearts and 6–10 points.
+  - Points: 6 or more at the one level, 8 or more at the two level (proposed; SAYC gives 6+ in one example only).
+  - Opener answers: a minimum bid with 12–15 points, a jump with 16–18 points, a cuebid of the opponents' suit with 19 or more points (SAYC: "< 16", "16-18", "19+").
+  - A new suit at the two level after an overcall: five or more cards and 10 or more points (SAYC).
+
+### Decided: opener's rebid ranges stay
+
+- Opener's rebid ranges stay 12–14 / 15–17 / 18–21 (SAYC: 13–16 / 17–18 / 19–22).
+  The guide opens from 12 points and its [1NT] opening is 15–17, so a 12–14 minimum fits a [1NT] rebid with 12–14.
+  The user kept these ranges.
+
+### Decided: [2S] with a weak hand and a long minor (Q1)
+
+Cohen gives no point range for "weak"; in this guide the hand is weak when it is below the [2NT] invitation, so 0–7 points.
+A 5-3-3-2 hand with 8–9 points already bids [2NT], and with 10–15 points it bids [3NT], so the question applies only to 0–7 points.
+His rule: "With only a 5-card minor, usually pass 1NT", and "You 'never' transfer to a minor with a flat (5-3-3-2) hand" ([LC-MIN](https://larryco.com/bridge-articles/showing-a-minor-after-partners-1nt)).
+
+The alternatives:
+
+- A. Five or more cards, 0–7 points (the current rule).
+- B. Six or more cards only (Cohen's plain rule).
+- C. Six or more cards, or five cards with a singleton or void.
+- D. A point split: five cards with 0–4 points, six or more cards with 0–7 points.
+- E. A point and shape split: five cards with a singleton or void at 0–7 points, five cards in a 5-3-3-2 hand only with 0–2 points, six or more cards with 0–7 points.
+
+The double-dummy comparison below gives evidence for the choice.
+
+#### Double-dummy comparison of [1NT] and three of the minor
+
+Method:
+
+- North has a [1NT] opening: 15–17 points, 4-3-3-3, 4-4-3-2 or 5-3-3-2.
+- South has 0–7 points, no four-card major and five or more cards in a minor.
+- For each deal, the solver finds the tricks for [1NT] by North (East leads) and for three of the minor ([3C] by North, [3D] by South, the other side leads).
+- The score difference is converted to IMPs, so a positive number favours the transfer.
+- 600 deals in each cell, 5,400 deals in total, seed 20261031; "±" is one standard error.
+- Shape classes: "5332" is a five-card minor in a 5-3-3-2 hand; "5 unbalanced" is a five-card minor in any other shape (for example 5-4-3-1 or 5-4-2-2 in the minors); "6+" is six or more cards.
+
+| South's hand | Points | IMPs, not vulnerable | IMPs, vulnerable | 3m better / equal / [1NT] better (%) |
+| --- | --- | --- | --- | --- |
+| 5332 | 0–2 | +0.06 ± 0.09 | +0.12 ± 0.14 | 37 / 32 / 31 |
+| 5332 | 3–4 | −0.62 ± 0.10 | −0.85 ± 0.15 | 30 / 27 / 44 |
+| 5332 | 5–7 | −1.17 ± 0.11 | −1.51 ± 0.14 | 29 / 12 / 59 |
+| 5 unbalanced | 0–2 | +1.00 ± 0.11 | +1.57 ± 0.16 | 52 / 25 / 23 |
+| 5 unbalanced | 3–4 | +0.65 ± 0.12 | +0.92 ± 0.17 | 49 / 23 / 28 |
+| 5 unbalanced | 5–7 | +0.14 ± 0.12 | +0.14 ± 0.16 | 50 / 13 / 37 |
+| 6+ | 0–2 | +2.57 ± 0.11 | +4.02 ± 0.16 | 79 / 12 / 9 |
+| 6+ | 3–4 | +1.82 ± 0.12 | +2.60 ± 0.17 | 66 / 15 / 20 |
+| 6+ | 5–7 | +0.88 ± 0.12 | +1.19 ± 0.15 | 59 / 6 / 35 |
+
+What the numbers show:
+
+- Cohen's rule holds for 5-3-3-2 hands with 3–7 points: the transfer loses 0.6–1.5 IMPs a deal.
+  With 0–2 points the two contracts score the same.
+- With a five-card minor in an unbalanced hand, the transfer gains 0.7–1.0 IMPs with 0–4 points; with 5–7 points the difference is less than two standard errors from zero.
+- With six or more cards, the transfer gains at every point count, and most with the weakest hands.
+- The gain falls as responder's points rise, because [1NT] makes more often when dummy has high cards.
+
+Limits of the comparison:
+
+- Double-dummy play: every player sees all four hands, so it favours declarer and the opening lead is perfect.
+- The opponents always pass.
+  In real play they often bid over [1NT] – [P], and the minor transfer can be doubled; this is not measured.
+- Each point band has the same number of deals; in real play, 5–7 point hands are more frequent than 0–2 point hands.
+- Suit quality and honour count inside the band are not separate classes, so alternative E's "honours" form has no direct evidence.
+- The test was a temporary script, not kept in the repository.
+
+Recommendation: alternative C, "six or more cards, or five cards in a hand that is not 5-3-3-2".
+It matches the data in every cell where the difference is clear, and it needs no new point limit.
+Alternative D (a point split) is weaker: it sends 5-3-3-2 hands with 0–4 points to the transfer (a loss at 3–4 points) and stops unbalanced five-card hands at 5–7 points, where the data show no difference.
+
+Decision: alternative C.
+With 0–7 points and no four-card major, responder bids [2S] with six or more cards in a minor, or with five cards in a hand that is not 5-3-3-2; with a 5-3-3-2 hand, responder passes [1NT].
+
+### Decided: weak Stayman
+
+Weak Stayman (also "garbage Stayman") is [2C] with a weak hand, 0–7 points, when responder will pass any answer.
+SAYC allows it: "it can be used in cases where responder has little HCP and intends to pass any response, ie if responder has 4-4-4-1 shape and club singleton".
+
+How it works:
+
+- Responder has four spades, four hearts and four or more diamonds, so at most one club: 4-4-4-1 or 4-4-5-0.
+- Opener answers as usual: [2D], [2H] or [2S].
+- Responder passes every answer.
+  After [2H] or [2S], the partnership plays a 4-4 major fit.
+  After [2D], opener has at least two diamonds, so the fit is at least 4-2 or 5-2, and opener has no four-card major.
+- Why: with a weak hand and a singleton, [1NT] often goes down, because responder's hand gives no entries and no long suit; a two-level suit contract with a fit usually takes more tricks.
+
+What it changes for the reader of an auction:
+
+- [2C] no longer always shows 8 or more points: it shows 8 or more points with a four-card major, or 0–7 points with 4-4-4-1 / 4-4-5-0 and short clubs.
+- The first sign of the weak hand is responder's pass of opener's answer, so the meaning is known only after responder's second call.
+
+Other forms exist, but they conflict with the decided rules:
+
+- "Crawling Stayman": a weak hand with both majors bids [2C], and over [2D] it bids [2H], which opener passes or corrects to [2S].
+  The decided SAYC rule above uses [1NT] – [2C] – [2D] – [2H] as an invitation with five hearts and four spades, so the two cannot both be in the guide.
+
+Example: J2 `5432.5432.65432.-` (Cohen bids [2C] and passes any answer; the guide now bids [2S]).
+
+Decision: add weak Stayman for 4-4-4-1 / 4-4-5-0 with short clubs and 0–7 points, without the crawling form.
+Such a hand bids [2C], also with five diamonds, so J2 bids [2C] as Cohen does.
+
+### Decided: other SAYC responses to [1NT] and to a weak two
+
+- [3C] / [3D] over [1NT]: six or more cards and 8–9 points (derived: the [2NT] invitation range), invitational to [3NT].
+  Opener bids [3NT] with 16–17 points, otherwise [P] (derived: as after [2NT]).
+- [3H] / [3S] over [1NT]: six or more cards and 16 or more points (derived: four of the major after a transfer is 10–15), slam interest.
+  Opener bids four of the major with 15 points or with two cards; with 16–17 points and three or more cards, [4NT] (Blackwood) (derived).
+- [4C] (Gerber) over [1NT] and [2NT]: an unbalanced hand with slam interest, 16 or more points over [1NT], 12 or more over [2NT] (derived: 33 together for a small slam); asks for aces.
+  Opener answers in steps: [4D] 0 or 4 aces, [4H] 1, [4S] 2, [4NT] 3.
+  Responder then bids [5C] to ask for kings (the same steps one level higher), or bids a contract to play; any bid other than [5C] is to play (SAYC).
+  A balanced hand uses the notrump raises instead.
+- After a weak two and [2NT] (15 or more points, forcing):
+  - Three of opener's suit: 5–8 points (minimum).
+  - Three of a side suit with its ace or king (a "feature"): 9–11 points.
+  - [3NT]: 9–11 points and no feature.
+  - SAYC also lists four of a minor with a maximum and a side four- or five-card minor with the queen; the guide leaves this out, because it is rare.
+
+### Planned remarks on the names and origins of the conventions
+
+The guide will name each convention and say in one short clause where the name comes from.
+Each remark below has a source; a remark with a doubtful date says less, not more.
+
+| Convention | Remark | Source |
+| --- | --- | --- |
+| Milton point count (4-3-2-1) | Named after Milton Work, who promoted the count from about 1927; Bryant McCampbell suggested it in 1915. | [Wikipedia: Milton Work](https://en.wikipedia.org/wiki/Milton_Work), [Wikipedia: Hand evaluation](https://en.wikipedia.org/wiki/Hand_evaluation) |
+| SAYC | The Standard American Yellow Card, a system of the American Contract Bridge League (ACBL); widely used in online play. | SAYC booklet; [Wikipedia: Standard American](https://en.wikipedia.org/wiki/Standard_American) |
+| Weak two | Howard Schenken developed the modern weak two-bid in the early 1940s. | [Wikipedia: Weak two bid](https://en.wikipedia.org/wiki/Weak_two_bid) |
+| Stayman | Named after Sam Stayman, who published it in The Bridge World in 1945; Jack Marx (1939) and his partner George Rapée (1944) had the idea before him. | [Wikipedia: Stayman convention](https://en.wikipedia.org/wiki/Stayman_convention), [Wikipedia: Sam Stayman](https://en.wikipedia.org/wiki/Sam_Stayman) |
+| Weak Stayman | A descriptive name: Stayman with a weak hand that passes any answer; also called "garbage Stayman". | SAYC (the use) |
+| Jacoby transfer | Named after Oswald Jacoby, who wrote about it in The Bridge World in 1956. | [Wikipedia: Jacoby transfer](https://en.wikipedia.org/wiki/Jacoby_transfer) |
+| Super-accept | A descriptive name: opener accepts the transfer and shows extra strength and support. | SAYC (the bid), BB-JT (the name) |
+| [2S] minor transfer | SAYC's relay to [3C]; the name says that responder transfers the contract to a minor. | SAYC |
+| Jacoby [2NT] | Usually credited to Oswald Jacoby; some credit Leo Baron. | [Wikipedia: Jacoby 2NT](https://en.wikipedia.org/wiki/Jacoby_2NT) |
+| Limit raise | A descriptive name: the raise shows a limited point range (10–12). | SAYC |
+| Negative double | Alvin Roth and Tobias Stone gave it this meaning in 1957; it was first called "Sputnik", because it was as new as the satellite. | [Wikipedia: Negative double](https://en.wikipedia.org/wiki/Negative_double) |
+| Blackwood | Named after Easley Blackwood, who published it in 1933. | [Wikipedia: Blackwood convention](https://en.wikipedia.org/wiki/Blackwood_convention) |
+| Gerber | Named after John Gerber, who brought it to North America in 1938. | [Wikipedia: Gerber convention](https://en.wikipedia.org/wiki/Gerber_convention) |
