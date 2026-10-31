@@ -501,13 +501,13 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{requester} asks to reset the game.":
 			"{requester} bittet darum, das Spiel zurückzusetzen.",
 		"last played card": "zuletzt gespielte Karte",
-		"last bid": "letztes bid",
+		"last bid": "letztes Gebot",
 		"Ask to undo your {action}?":
 			"Möchtest du bitten, dein {action} rückgängig zu machen?",
 		"Ask to undo": "Rückgängigmachen anfragen",
-		"Claim tricks": "Tricks beanspruchen",
-		"Claim all remaining tricks": "Alle verbleibenden Tricks beanspruchen",
-		"Number of tricks to claim": "Anzahl der zu beanspruchenden Tricks",
+		"Claim tricks": "Stiche beanspruchen",
+		"Claim all remaining tricks": "Alle verbleibenden Stiche beanspruchen",
+		"Number of tricks to claim": "Anzahl der zu beanspruchenden Stiche",
 		"Bidding history": "Gebotsverlauf",
 		"Current trick": "Aktueller Stich",
 		"Trick count": "Anzahl der Stiche",
@@ -551,7 +551,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"How many of the remaining {count} tricks will you take?":
 			"Wie viele der verbleibenden {count} Stiche machst du?",
 		"Confirm that you claim all {count} remaining tricks.":
-			"Bestätige, dass du alle {count} verbleibenden Tricks beanspruchst.",
+			"Bestätige, dass du alle {count} verbleibenden Stiche beanspruchst.",
 		Undo: "Rückgängig machen",
 		"Undo request": "Anfrage zum Rückgängigmachen",
 		"Claim …": "Beanspruchen …",
@@ -1246,35 +1246,35 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Waiting for {players} to approve.": "Várakozás {players} jóváhagyására.",
 		"Waiting for {players} to decide.": "Várakozás {players} döntésére.",
 		"You ask to undo your {action}. Your cancellation is being sent.":
-			"Kéred az utolsó {action} visszavonását. A visszavonási kérés elküldése folyamatban.",
+			"Kéred az {action} visszavonását. A visszavonási kérés elküldése folyamatban.",
 		"You ask to undo your {action}. {waiting}":
-			"Kéred az utolsó {action} visszavonását. {waiting}",
+			"Kéred az {action} visszavonását. {waiting}",
 		"{requester} asks to undo their {action}. Your vote is being sent.":
-			"{requester} kéri az utolsó {action} visszavonását. A szavazatod küldése folyamatban.",
+			"{requester} kéri az {action} visszavonását. A szavazatod küldése folyamatban.",
 		"{requester} asks to undo their {action}. Your approval is recorded. {waiting}":
-			"{requester} kéri az utolsó {action} visszavonását. A jóváhagyásodat rögzítettük. {waiting}",
+			"{requester} kéri az {action} visszavonását. A jóváhagyásodat rögzítettük. {waiting}",
 		"{requester} asks to undo their {action}. {waiting}":
-			"{requester} kéri az utolsó {action} visszavonását. {waiting}",
+			"{requester} kéri az {action} visszavonását. {waiting}",
 		"Your claim for {count} {tricks} is waiting. {waiting}":
-			"A {count} {tricks} igénylése folyamatban van. {waiting}",
+			"{count} ütést igényeltél. {waiting}",
 		"{requester} claims {count} {tricks}. Your decision is being sent.":
-			"{requester} {count} {tricks}-t igényel. A döntésed küldése folyamatban.",
+			"{requester} {count} ütést igényel. A döntésed küldése folyamatban.",
 		"{requester} claims {count} {tricks}. You accepted. {waiting}":
-			"{requester} {count} {tricks}-t igényel. Elfogadtad. {waiting}",
+			"{requester} {count} ütést igényel. Elfogadtad. {waiting}",
 		"{requester} claims {count} {tricks}. {waiting}":
-			"{requester} {count} {tricks}-t igényel. {waiting}",
+			"{requester} {count} ütést igényel. {waiting}",
 		"{requester} claims {count} {tricks}. Do you accept the claim?":
-			"{requester} {count} {tricks}-t igényel. Elfogadod az igénylést?",
+			"{requester} {count} ütést igényel. Elfogadod az igénylést?",
 		"{requester} asks to undo their {action}. Do you approve?":
-			"{requester} kéri az utolsó {action} visszavonását. Jóváhagyod?",
+			"{requester} kéri az {action} visszavonását. Jóváhagyod?",
 		"last played card": "utoljára kijátszott lap",
-		"last bid": "utolsó bid",
+		"last bid": "utolsó licit",
 		"Ask to undo your {action}?": "Kéred az {action} visszavonását?",
 		"Ask to undo": "Visszavonás kérése",
 		"How many of the remaining {count} tricks will you take?":
 			"A hátralévő {count} ütésből hányat viszel el?",
 		"Confirm that you claim all {count} remaining tricks.":
-			"Erősítsd meg mind a hátralévő {count} Tricks igénylését.",
+			"Erősítsd meg, hogy a hátralévő {count} ütés mindegyikét igényled.",
 		"YOUR TURN TO BID": "TE LICITÁLSZ",
 		"{seat} TO BID": "{seat} LICITÁL",
 		"YOUR TURN TO PLAY": "TE KÖVETKEZEL",

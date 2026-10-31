@@ -124,6 +124,67 @@ describe("localization", () => {
 			expect(translator(locale)("Join call")).toBe(text);
 	});
 
+	it("uses German and Hungarian bridge words, not the English trick and bid, in the undo and claim texts", () => {
+		const de = translator("de");
+		const hu = translator("hu");
+		const cases = [
+			[
+				de("Ask to undo your {action}?", { action: de("last bid") }),
+				"Möchtest du bitten, dein letztes Gebot rückgängig zu machen?",
+			],
+			[de("Claim tricks"), "Stiche beanspruchen"],
+			[
+				de("Claim all remaining tricks"),
+				"Alle verbleibenden Stiche beanspruchen",
+			],
+			[de("Number of tricks to claim"), "Anzahl der zu beanspruchenden Stiche"],
+			[
+				de("Confirm that you claim all {count} remaining tricks.", {
+					count: 3,
+				}),
+				"Bestätige, dass du alle 3 verbleibenden Stiche beanspruchst.",
+			],
+			[
+				hu("{requester} asks to undo their {action}. Do you approve?", {
+					requester: "Kelet",
+					action: hu("last bid"),
+				}),
+				"Kelet kéri az utolsó licit visszavonását. Jóváhagyod?",
+			],
+			[
+				hu("You ask to undo your {action}. {waiting}", {
+					action: hu("last played card"),
+					waiting: "Várakozás.",
+				}),
+				"Kéred az utoljára kijátszott lap visszavonását. Várakozás.",
+			],
+			[
+				hu("{requester} claims {count} {tricks}. Do you accept the claim?", {
+					requester: "Kelet",
+					count: 3,
+					tricks: hu("tricks"),
+				}),
+				"Kelet 3 ütést igényel. Elfogadod az igénylést?",
+			],
+			[
+				hu("Your claim for {count} {tricks} is waiting. {waiting}", {
+					count: 3,
+					tricks: hu("tricks"),
+					waiting: "Várakozás.",
+				}),
+				"3 ütést igényeltél. Várakozás.",
+			],
+			[
+				hu("Confirm that you claim all {count} remaining tricks.", {
+					count: 3,
+				}),
+				"Erősítsd meg, hogy a hátralévő 3 ütés mindegyikét igényled.",
+			],
+		] as const;
+
+		for (const [text, expected] of cases) expect(text).toBe(expected);
+	});
+
 	it("translates declarer and dummy in every supported language", () => {
 		const roles = [
 			["de", "Alleinspieler", "Tisch"],
