@@ -6,6 +6,7 @@ import { randomNonce } from "../../src/p2p/checks";
 import { deriveHolder, makeTag } from "../../src/p2p/keys";
 import {
 	BEAT_MS,
+	BUTTON_MS,
 	RESUME_ONLINE_MS,
 	SEED_WAIT_MS,
 	TICK_MS,
@@ -430,6 +431,18 @@ describe("table controller seeding from the setup link", () => {
 
 		expect(table.view().hosting).toBe(false);
 		expect(rig.storage.commits).toBe(0);
+	});
+
+	it("tells a seated page that waits to seed that the table starts again from the link", async () => {
+		const table = await rig.start("N");
+
+		await rig.advance(BUTTON_MS + TICK_MS);
+
+		expect(table.view().hosting).toBe(false);
+		expect(table.view().election).toMatchObject({
+			phase: "waiting-for-host",
+			button: { enabled: false, reason: "seed" },
+		});
 	});
 
 	it("seeds the host seat that a visitor chooses only after the page was alone for SEED_WAIT_MS", async () => {

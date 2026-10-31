@@ -1317,6 +1317,22 @@ const rows: readonly TranslationRow[] = [
 		"Alleen een speler aan tafel kan host worden",
 	],
 	[
+		"If no host comes, the table starts again from the link",
+		"Si no llega ningún anfitrión, la mesa se reinicia desde el enlace",
+		"Se nenhum anfitrião chegar, a mesa recomeça a partir da ligação",
+		"Si aucun hôte n'arrive, la table redémarre depuis le lien",
+		"Se non arriva nessun host, il tavolo riparte dal link",
+		"Als er geen host komt, start de tafel opnieuw via de link",
+	],
+	[
+		"This page has no copy of the table yet",
+		"Esta página aún no tiene una copia de la mesa",
+		"Esta página ainda não tem uma cópia da mesa",
+		"Cette page n'a pas encore de copie de la table",
+		"Questa pagina non ha ancora una copia del tavolo",
+		"Deze pagina heeft nog geen kopie van de tafel",
+	],
+	[
 		"Only a seated player can release a seat.",
 		"Solo un jugador sentado puede liberar un asiento.",
 		"Só um jogador sentado pode libertar um lugar.",

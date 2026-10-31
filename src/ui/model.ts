@@ -223,6 +223,8 @@ const FAILURE_TEXT: Readonly<Record<CommandFailure["status"], string>> = {
 const HOST_BLOCK_TEXT: Readonly<Record<HostBlock, string>> = {
 	witness: "Another player must be online to confirm",
 	seat: "Only a seated player can become the host",
+	seed: "If no host comes, the table starts again from the link",
+	copy: "This page has no copy of the table yet",
 	ineligible: "This client cannot host the table",
 	storage: "This browser cannot store the table",
 	limit: "This table cannot change its host again",

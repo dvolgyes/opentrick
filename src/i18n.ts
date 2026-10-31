@@ -400,6 +400,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Ein anderer Spieler muss online sein, um zu bestätigen",
 		"Only a seated player can become the host":
 			"Nur ein Spieler mit Platz kann Host werden",
+		"If no host comes, the table starts again from the link":
+			"Kommt kein Host, startet der Tisch über den Link neu",
+		"This page has no copy of the table yet":
+			"Diese Seite hat noch keine Kopie des Tisches",
 		"This client cannot host the table":
 			"Dieser Client kann den Tisch nicht hosten",
 		"This browser cannot store the table":
@@ -1161,6 +1165,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A megerősítéshez egy másik játékosnak online kell lennie",
 		"Only a seated player can become the host":
 			"Csak helyet foglaló játékos lehet host",
+		"If no host comes, the table starts again from the link":
+			"Ha nem jön host, az asztal a hivatkozásról újraindul",
+		"This page has no copy of the table yet":
+			"Ennek az oldalnak még nincs másolata az asztalról",
 		"This client cannot host the table":
 			"Ez a kliens nem hostolhatja az asztalt",
 		"This browser cannot store the table":
@@ -1545,6 +1553,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"This seat cannot be released.": "Denne plassen kan ikke frigis.",
 		"Only a seated player can become the host":
 			"Bare en spiller med plass kan bli vert.",
+		"If no host comes, the table starts again from the link":
+			"Hvis ingen vert kommer, starter bordet på nytt fra lenken.",
+		"This page has no copy of the table yet":
+			"Denne siden har ingen kopi av bordet ennå.",
 		"This client cannot host the table":
 			"Denne klienten kan ikke være vert for bordet.",
 		"This table cannot change its host again":

@@ -150,8 +150,18 @@ export interface ElectionStep {
 	readonly effects: readonly ElectionEffect[];
 }
 
-/** Why this page cannot become the host now (rule 7). */
-export type HostBlock = "seat" | "ineligible" | "storage" | "limit" | "witness";
+/**
+ * Why this page cannot become the host now (rule 7). A seated page without a table has none to host: "seed" when it
+ * may start the table from the setup link (rule 14), else "copy".
+ */
+export type HostBlock =
+	| "seat"
+	| "seed"
+	| "copy"
+	| "ineligible"
+	| "storage"
+	| "limit"
+	| "witness";
 
 export type HostButton =
 	| { readonly enabled: true }
@@ -620,7 +630,9 @@ function leader(state: ElectionState): Lead | null {
 function claimBlock(state: ElectionState): HostBlock | null {
 	const { seating } = state.self;
 	if (state.self.hostEligible === false) return "ineligible";
-	if (seating === null || !seating.bound) return "seat";
+	if (seating === null) return "seat";
+	if (seating.host === null) return state.self.seed === true ? "seed" : "copy";
+	if (!seating.bound) return "seat";
 	if (!seating.persistent || !seating.writable) return "storage";
 	if ((state.known?.term ?? 0) >= MAX_TERM || seating.inc >= MAX_TERM) {
 		return "limit";

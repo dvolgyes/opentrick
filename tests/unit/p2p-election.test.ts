@@ -478,6 +478,31 @@ describe("the Make me the host button (rules 6–7)", () => {
 			button: { enabled: false, reason: "seat" },
 		});
 	});
+
+	it.each([
+		["seed", true],
+		["copy", false],
+	] as const)(
+		"is disabled for %s on a seated page that has no table yet",
+		(reason, seed) => {
+			const page = new Page({
+				...facts(
+					HOLDER_W,
+					seating("W", {
+						pos: { rev: 0, lastAuth: null },
+						host: null,
+						bound: false,
+					}),
+				),
+				seed,
+			});
+			page.run(BUTTON_MS, [VISITOR_WITNESS]);
+			expect(page.view).toMatchObject({
+				phase: "waiting-for-host",
+				button: { enabled: false, reason },
+			});
+		},
+	);
 });
 
 describe("the automatic volunteer (rule 8)", () => {
