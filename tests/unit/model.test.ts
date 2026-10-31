@@ -390,6 +390,45 @@ describe("lobbyScreen", () => {
 		expect(none.kind === "lobby" && none.autoSeat).toBeUndefined();
 	});
 
+	it("marks the setup's bot seats as bot seats, because the seed gives them to bots", () => {
+		const setup = {
+			setup: {
+				config: { ...CONFIG, names: { ...CONFIG.names, E: "bot", W: "bot" } },
+			},
+			lobby: null,
+		};
+		const waiting = lobby({
+			...setup,
+			election: { phase: "waiting-for-host", absentMs: 3000, button: null },
+		});
+		expect(waiting.kind === "lobby" && waiting.choices).toEqual([
+			{
+				seat: "N",
+				label: "North — player1 (waiting for the host)",
+				free: false,
+			},
+			{ seat: "E", label: "East — bot (bot)", free: false },
+			{
+				seat: "S",
+				label: "South — player2 (waiting for the host)",
+				free: false,
+			},
+			{ seat: "W", label: "West — bot (bot)", free: false },
+		]);
+		const screen = lobby({
+			...setup,
+			election: { phase: "nobody-here" },
+			heldElsewhere: ["N"],
+		});
+		expect(screen.kind === "lobby" && screen.choices).toEqual([
+			{ seat: "N", label: "North — player1 (in another tab)", free: false },
+			{ seat: "E", label: "East — bot (bot)", free: false },
+			{ seat: "S", label: "South — player2", free: true },
+			{ seat: "W", label: "West — bot (bot)", free: false },
+		]);
+		expect(screen.kind === "lobby" && screen.autoSeat).toBe("S");
+	});
+
 	it("waits for the host's lobby before it lists seats, and names a seat by its compass point until the config is known", () => {
 		expect(
 			lobby({

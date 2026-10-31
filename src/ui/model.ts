@@ -1,3 +1,4 @@
+import { botSeats } from "../bot/seats";
 import { isChatCommand, isChatEvent } from "../game/bridge";
 import { parseChatEvent } from "../game/chat";
 import { englishTranslator as english, type Translate } from "../i18n";
@@ -417,6 +418,8 @@ export function lobbyScreen(input: LobbyInput): LobbyScreen {
 	const { lobby } = input;
 	const elsewhere = new Set(input.heldElsewhere);
 	const setupConfig = input.setup?.config;
+	// The seed gives the link's bot seats to bots, as the host's lobby shows them.
+	const setupBots = setupConfig === undefined ? [] : botSeats(setupConfig);
 	// The link only finds the host, and the host's lobby says which seats are free. The page offers the link's seats
 	// only when it finds no host, so that it can start the table again from the link (ADR 0005).
 	const hostless =
@@ -454,11 +457,13 @@ export function lobbyScreen(input: LobbyInput): LobbyScreen {
 						choice(
 							setupConfig,
 							seat,
-							elsewhere.has(seat)
-								? "elsewhere"
-								: hostless
-									? undefined
-									: "waiting",
+							setupBots.includes(seat)
+								? "bot"
+								: elsewhere.has(seat)
+									? "elsewhere"
+									: hostless
+										? undefined
+										: "waiting",
 						),
 					)
 				: undefined;

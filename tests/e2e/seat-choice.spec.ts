@@ -124,6 +124,20 @@ test("a link whose table nobody has offers its seats only after the page finds n
 	await expect(page.getByTestId("pick-E")).toHaveText(`East — ${NAME.E}`);
 });
 
+test("a link whose table nobody has does not offer the seats that it gives to bots", async () => {
+	const [, guest] = players as [Player, Player];
+	const key = randomBytes(16).toString("base64url");
+	const page = await guest.page(
+		`./?n=${NAME.N}&e=bot&s=${NAME.S}&w=bot&h=S#k=${key}`,
+	);
+	await expect(page.getByTestId("pick-E")).toHaveText("East — bot (bot)");
+	await expect(picks(page)).toHaveCount(2, { timeout: NOBODY_MS + CONNECT_MS });
+	await expect(page.getByTestId("pick-N")).toBeEnabled();
+	await expect(page.getByTestId("pick-S")).toBeEnabled();
+	await expect(page.getByTestId("pick-W")).toHaveText("West — bot (bot)");
+	await expect(page.getByTestId("pick-W")).toBeDisabled();
+});
+
 test("no uncaught errors", () => {
 	expect(players.flatMap((player) => player.errors)).toEqual([]);
 });
