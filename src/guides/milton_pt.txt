@@ -27,12 +27,15 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Depois de um apoio com salto do naipe maior de abertura ([1H] – [3H]) e um passe, o parceiro tem pelo menos 10 pontos: [4H] com 15–21 pontos (25 ou mais em conjunto); caso contrário, [P] com 12–14 pontos.
 
 ## Respostas a [1NT]
-- 0–7 pontos: [P], ou uma transferência com um naipe maior quinto.
-- [2C] (Stayman): 8 ou mais pontos com um naipe maior quarto. O abridor responde [2D] sem naipe maior quarto; caso contrário, [2H] ou [2S].
-- [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências). O abridor declara o naipe seguinte.
-- [2S]: uma mão fraca com seis ou mais cartas num naipe menor. O abridor tem de marcar [3C]; passar com paus, ou marcar [3D] com ouros.
-- [2NT]: 8–9 pontos, convidativo.
-- [3NT]: 10–15 pontos, para jogar.
+- 0–7 pontos: [P] sem naipe quinto.
+- [2D] mostra cinco ou mais copas, [2H] mostra cinco ou mais espadas (transferências), com qualquer número de pontos. Com cinco ou mais cartas em ambos os naipes maiores, transferir para o mais longo; com igual comprimento, para espadas. O abridor declara o naipe seguinte.
+- [2C] (Stayman): 8 ou mais pontos com um naipe maior quarto. O abridor responde [2D] sem naipe maior quarto, [2H] com quatro copas, [2S] com quatro espadas e sem quatro copas.
+- [2S] (transferência para menor): 0–7 pontos com cinco ou mais cartas num naipe menor. O abridor tem de marcar [3C]; passar com paus, ou marcar [3D] com ouros.
+- [2NT]: 8–9 pontos sem naipe maior quarto, convidativo. O abridor passa com 15 pontos e marca [3NT] com 16–17 pontos.
+- [3NT]: 10–15 pontos sem naipe maior quarto, para jogar. O abridor passa.
+- [4NT]: 16–17 pontos sem naipe maior quarto, convida a [6NT]; não é Blackwood. O abridor passa com 15 pontos e marca [6NT] com 16–17 pontos.
+- [6NT]: 18–21 pontos sem naipe maior quarto. [7NT]: 22 ou mais pontos. O abridor passa.
+- Uma transferência vem antes de Stayman e de [2S].
 
 ## Respostas a [2C]
 - [2D]: resposta de espera, 0–7 pontos.

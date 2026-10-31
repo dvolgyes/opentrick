@@ -3356,6 +3356,14 @@ const rows: readonly TranslationRow[] = [
 		"{min}–{max} {scale}",
 	],
 	[
+		"{min} {scale}",
+		"{min} {scale}",
+		"{min} {scale}",
+		"{min} {scale}",
+		"{min} {scale}",
+		"{min} {scale}",
+	],
+	[
 		"balanced",
 		"equilibrada",
 		"equilibrada",
@@ -3466,6 +3474,14 @@ const rows: readonly TranslationRow[] = [
 		"pas de majeure de {min} cartes",
 		"nessun nobile di {min} carte",
 		"geen hoge kleur van {min} kaarten",
+	],
+	[
+		"no {min}-card suit",
+		"sin palo de {min} cartas",
+		"sem naipe de {min} cartas",
+		"pas de couleur de {min} cartes",
+		"nessun colore di {min} carte",
+		"geen kleur van {min} kaarten",
 	],
 	[
 		"completes the transfer to {suit}",

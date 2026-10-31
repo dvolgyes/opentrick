@@ -117,16 +117,34 @@ describe("guide calls for a hand", () => {
 		["1H P", "K84.Q73.86.AJ652", ["2C", "3H"]], // 10, invitational
 		["1H P", "AQ84.73.K65.KJ62", ["1S", "2C"]], // 13, game forcing
 		["1H P", "8642.73.J652.Q64", ["P"]], // 3
-		["1NT P", "84.QT973.J52.632", ["P", "2D"]], // 3, five hearts
-		["1NT P", "KJ84.A73.Q65.643", ["2C", "3NT"]], // 10, four spades
-		["1NT P", "84.73.QT9873.J52", ["P", "2S"]], // 3, six diamonds
+		["1NT P", "84.QT973.J52.632", ["2D"]], // 3, five hearts: a transfer, not a pass
+		["1NT P", "8432.732.Q98.J52", ["P"]], // 3, no five-card suit
+		["1NT P", "Q842.J73.Q52.643", ["P"]], // 5, a four-card major is not enough for Stayman
+		["1NT P", "84.QT973.J5432.6", ["2D"]], // 3, five hearts and five diamonds: the major first
+		["1NT P", "KJ84.A73.Q65.643", ["2C"]], // 10, four spades: Stayman, not [3NT]
+		["1NT P", "84.73.QT9873.J52", ["2S"]], // 3, six diamonds
+		["1NT P", "84.732.QT987.J52", ["2S"]], // 3, five diamonds
 		["1NT P", "K84.Q73.A652.643", ["2NT"]], // 9
-		["1NT P", "KJ842.Q973.A5.64", ["2C", "2H", "3NT"]], // 10, five spades and four hearts
+		["1NT P", "K84.Q73.AQ52.643", ["3NT"]], // 11
+		["1NT P", "K84.Q73.AQJ52.64", ["3NT"]], // 12, a five-card minor and no four-card major
+		["1NT P", "AQ4.KJ3.KQ52.Q43", ["4NT"]], // 17: invites a slam
+		["1NT P", "AQ4.KQ3.AQ52.Q43", ["6NT"]], // 19
+		["1NT P", "AK4.AK3.AQ52.KQ3", ["7NT"]], // 25
+		["1NT P", "KJ842.Q973.A5.64", ["2H"]], // 10, five spades and four hearts: a transfer, not Stayman
+		["1NT P", "KQ842.QJ973.5.64", ["2H"]], // 8, five-five in the majors: spades
+		["1NT P", "KQ84.QJ9732.5.64", ["2D"]], // 8, six hearts and four spades: the longer major
+		["1NT X", "84.QT973.J52.632", ["2D"]], // 3, the same responses after a double
 		["2C P", "8642.K73.J52.643", ["2D"]], // 4
 		["2C P", "84.KQJ73.A52.643", ["2H", "2NT"]], // 10, a good five-card suit, balanced
 		["2C P", "K842.Q73.A52.J64", ["2NT"]], // 10, balanced
 	])("answers %s with %s by %j in HCP", (auction, cardsText, expected) => {
 		expect(suggested("hcp", cardsText, auction)).toEqual(expected);
+	});
+
+	it("passes [1NT] with a 4333 hand without honours, which counts -1 in corrected HCP", () => {
+		expect(suggested("hcp-corrected", "642.952.8762.865", "1NT P")).toEqual([
+			"P",
+		]);
 	});
 
 	it.each([
@@ -157,11 +175,18 @@ describe("guide calls for a hand", () => {
 		["1H P 1S P", "A4.AKJ73.AQ82.65", ["3D"]], // 18, four diamonds
 		["1H P 1S P", "K4.AKJ73.AQ8.Q65", ["2NT"]], // 19, balanced
 		["1NT P 2C P", "AQ4.KJ5.Q862.K73", ["2D"]], // no four-card major
-		["1NT P 2C P", "AQ84.KJ52.Q8.K73", ["2H", "2S"]], // both majors
+		["1NT P 2C P", "AQ84.KJ52.Q8.K73", ["2H"]], // both majors: hearts first
+		["1NT P 2C P", "AQ84.KJ5.Q82.K73", ["2S"]], // four spades
 		["1NT P 2D P", "AQ4.KJ5.Q862.K73", ["2H"]],
+		["1NT P 2H P", "AQ4.KJ5.Q862.K73", ["2S"]],
 		["1NT P 2S P", "AQ4.KJ5.Q862.K73", ["3C"]],
 		["1NT P 2S P 3C P", "84.73.QT9873.J52", ["3D"]], // six diamonds
+		["1NT P 2S P 3C P", "84.732.QT987.J52", ["3D"]], // five diamonds
 		["1NT P 2S P 3C P", "84.73.J52.QT9873", ["P"]], // six clubs
+		["1NT P 2NT P", "AQ4.KJ5.Q862.K73", ["P"]], // 15
+		["1NT P 2NT P", "AQ4.KJ5.Q862.A73", ["3NT"]], // 16
+		["1NT P 4NT P", "AQ4.KJ5.Q862.K73", ["P"]], // 15
+		["1NT P 4NT P", "AQ4.KJ5.Q862.A73", ["6NT"]], // 16
 		["2C P 2D P", "AK4.AKJ5.KQ2.QJ3", ["2NT"]], // 23, balanced
 		["2H P", "K84.Q73.J652.Q64", ["3H", "4H"]], // three hearts
 		["2H P", "AK84.Q7.AJ52.K64", ["2NT"]], // 17
@@ -312,7 +337,11 @@ describe("guide meaning of a call", () => {
 			{ range: { min: 10 }, shape: { kind: "cards", suit: "C", min: 4 } },
 		],
 		["hcp", "1H P 1NT", { range: { min: 6, max: 9 }, shape: { kind: "none" } }],
-		["hcp", "1NT P P", { range: { min: 0, max: 7 }, shape: { kind: "none" } }],
+		[
+			"hcp",
+			"1NT P P",
+			{ range: { min: 0, max: 7 }, shape: { kind: "no-long-suit", min: 5 } },
+		],
 		[
 			"hcp",
 			"1NT P 2C",
@@ -327,18 +356,34 @@ describe("guide meaning of a call", () => {
 		[
 			"hcp",
 			"1NT P 2S",
-			{ range: { min: 0, max: 7 }, shape: { kind: "weak-minor", min: 6 } },
+			{ range: { min: 0, max: 7 }, shape: { kind: "weak-minor", min: 5 } },
 		],
 		[
 			"hcp",
 			"1NT P 2NT",
-			{ range: { min: 8, max: 9 }, shape: { kind: "none" } },
+			{ range: { min: 8, max: 9 }, shape: { kind: "no-major", min: 4 } },
 		],
 		[
 			"hcp-corrected",
 			"1NT P 3NT",
-			{ range: { min: 10, max: 15 }, shape: { kind: "none" } },
+			{ range: { min: 10, max: 15 }, shape: { kind: "no-major", min: 4 } },
 		],
+		[
+			"hcp",
+			"1NT P 4NT",
+			{ range: { min: 16, max: 17 }, shape: { kind: "no-major", min: 4 } },
+		],
+		[
+			"hcp",
+			"1NT P 6NT",
+			{ range: { min: 18, max: 21 }, shape: { kind: "no-major", min: 4 } },
+		],
+		[
+			"hcp",
+			"1NT P 7NT",
+			{ range: { min: 22 }, shape: { kind: "no-major", min: 4 } },
+		],
+		["hcp", "1NT X 2D", { shape: { kind: "transfer", suit: "H", min: 5 } }],
 		[
 			"hcp-corrected",
 			"2C P 2D",
@@ -449,7 +494,7 @@ describe("guide meaning of a call", () => {
 			"1NT P 2S P 3C P P",
 			{
 				range: { min: 0, max: 7 },
-				shape: { kind: "cards", suit: "C", min: 6 },
+				shape: { kind: "cards", suit: "C", min: 5 },
 			},
 		],
 		[
@@ -457,8 +502,28 @@ describe("guide meaning of a call", () => {
 			"1NT P 2S P 3C P 3D",
 			{
 				range: { min: 0, max: 7 },
-				shape: { kind: "cards", suit: "D", min: 6 },
+				shape: { kind: "cards", suit: "D", min: 5 },
 			},
+		],
+		[
+			"hcp",
+			"1NT P 2NT P P",
+			{ range: { min: 15, max: 15 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp-corrected",
+			"1NT P 2NT P 3NT",
+			{ range: { min: 16, max: 17 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 4NT P P",
+			{ range: { min: 15, max: 15 }, shape: { kind: "none" } },
+		],
+		[
+			"hcp",
+			"1NT P 4NT P 6NT",
+			{ range: { min: 16, max: 17 }, shape: { kind: "none" } },
 		],
 		[
 			"hcp-corrected",
@@ -609,8 +674,10 @@ describe("guide meaning of a call", () => {
 		["hcp", "1NT X"],
 		["hcp", "2H 2S"],
 		["hcp", "2H P 3C"],
-		["hcp", "1NT P 4NT"], // not an ace ask after partner's notrump
-		["hcp", "1NT P 2C P 2D P 4NT"],
+		["hcp", "1NT P 2C P 2D P 4NT"], // not an ace ask after partner's notrump
+		["hcp", "1NT P 2NT P 4NT"],
+		["hcp", "1NT P 4NT P 5C"], // no ace answer to a [4NT] that invites [6NT]
+		["hcp", "1NT P 3NT P 4NT"],
 		["hcp", "4NT"],
 		["hcp", "1H P 3H P 4NT X 5D"],
 		["hcp", "1H P 3H P 4NT P 6H"],
@@ -650,6 +717,9 @@ describe("guide calls and meanings agree", () => {
 			"1NT P 2H P",
 			"1NT P 2S P",
 			"1NT P 2S P 3C P",
+			"1NT P 2NT P",
+			"1NT P 4NT P",
+			"1NT X",
 			"2C P 2D P",
 			"1H",
 			"P 1S",
@@ -691,7 +761,54 @@ describe("guide calls and meanings agree", () => {
 		}
 		expect(checked).toBeGreaterThan(1000);
 	});
+
+	it("gives each hand exactly one call after [1NT], and the [1NT] opener exactly one answer", () => {
+		const responses = ["1NT P", "1NT X"];
+		const answers = [
+			"1NT P 2C P",
+			"1NT P 2D P",
+			"1NT P 2H P",
+			"1NT P 2S P",
+			"1NT P 2NT P",
+			"1NT P 4NT P",
+		];
+		const counts = { responses: 0, answers: 0 };
+		for (let game = 0; game < 400; game += 1) {
+			const deal = dealCards(randomBelowFrom(seeded(game + 1)));
+			for (const seat of SEATS)
+				for (const system of RULE_SYSTEMS) {
+					const cards = deal[seat];
+					const opener =
+						suggested(system, cardsText(cards), "")?.join() === "1NT";
+					for (const auction of [...responses, ...(opener ? answers : [])]) {
+						const guide = conventionCalls(system, cards, calls(auction));
+						// The guide does not check a hand with a suit longer than seven cards.
+						if (guide === undefined) continue;
+						counts[
+							opener && answers.includes(auction) ? "answers" : "responses"
+						] += 1;
+						expect(
+							guide.map(({ call }) => call),
+							`${system} ${cardsText(cards)} after ${auction}`,
+						).toHaveLength(1);
+					}
+				}
+		}
+		expect(counts.responses).toBeGreaterThan(3000);
+		expect(counts.answers).toBeGreaterThan(300);
+	});
 });
+
+/** The inverse of hand(): "AQ4.KJ5.Q862.K73". */
+function cardsText(cards: readonly Card[]): string {
+	return SUITS.map(
+		(suit) =>
+			cards
+				.filter((card) => card[0] === suit)
+				.map((card) => card[1])
+				.join("") || "-",
+	).join(".");
+}
 
 /** "15–17" or "22 or more", with half points as "½", as the English guides write a range. */
 function pointsNumber(value: number): string {
@@ -699,8 +816,9 @@ function pointsNumber(value: number): string {
 }
 
 function rangeText({ min, max }: PointRange): string {
-	return max === undefined
-		? `${pointsNumber(min)} or more`
+	if (max === undefined) return `${pointsNumber(min)} or more`;
+	return min === max
+		? pointsNumber(min)
 		: `${pointsNumber(min)}–${pointsNumber(max)}`;
 }
 
@@ -727,10 +845,21 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"Responses to one of a suit",
 		"- {range} points: game forcing",
 	],
-	"nt-weak": ["Responses to [1NT]", "- {range} points: [P], or a transfer"],
+	"nt-weak": [
+		"Responses to [1NT]",
+		"- {range} points: [P] without a five-card suit",
+	],
 	"nt-stayman": ["Responses to [1NT]", "- [2C] (Stayman): {range} points"],
 	"nt-2NT": ["Responses to [1NT]", "- [2NT]: {range} points"],
 	"nt-3NT": ["Responses to [1NT]", "- [3NT]: {range} points"],
+	"nt-4NT": ["Responses to [1NT]", "- [4NT]: {range} points"],
+	"nt-6NT": ["Responses to [1NT]", "- [6NT]: {range} points"],
+	"nt-7NT": ["Responses to [1NT]", "[7NT]: {range} points"],
+	"nt-invite-pass": ["Responses to [1NT]", "Opener passes with {range} points"],
+	"nt-invite-accept": [
+		"Responses to [1NT]",
+		"and bids [3NT] with {range} points",
+	],
 	"2c-waiting": ["Responses to [2C]", "- [2D]: waiting, {range} points"],
 	"2c-positive": ["Responses to [2C]", "- [2H] [2S] [3C] [3D]: {range} points"],
 	"2c-2NT": ["Responses to [2C]", "- [2NT]: {range} points"],

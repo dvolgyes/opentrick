@@ -27,12 +27,15 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Nach einer Sprunghebung deiner Oberfarbe ([1H] – [3H]) und einem Passe hat dein Partner mindestens 10 Punkte: [4H] mit 15–21 Punkten (zusammen 25 oder mehr), sonst [P] mit 12–14 Punkten.
 
 ## Antworten auf [1NT]
-- 0–7 Punkte: [P], oder ein Transfer mit einer Fünferoberfarbe.
-- [2C] (Stayman): 8 oder mehr Punkte mit einer Viereroberfarbe. Der Eröffner antwortet [2D] ohne Viereroberfarbe, sonst [2H] oder [2S].
-- [2D] zeigt fünf oder mehr Coeur, [2H] zeigt fünf oder mehr Pik (Transfers). Der Eröffner reizt die nächste Farbe.
-- [2S]: eine schwache Hand mit sechs oder mehr Karten in einer Unterfarbe. Der Eröffner muss [3C] reizen; passe mit Treff, oder reize [3D] mit Karo.
-- [2NT]: 8–9 Punkte, einladend.
-- [3NT]: 10–15 Punkte, Schlussgebot.
+- 0–7 Punkte: [P] ohne Fünferfarbe.
+- [2D] zeigt fünf oder mehr Coeur, [2H] zeigt fünf oder mehr Pik (Transfers), mit beliebig vielen Punkten. Mit fünf oder mehr Karten in beiden Oberfarben transferiere in die längere; bei gleicher Länge in Pik. Der Eröffner reizt die nächste Farbe.
+- [2C] (Stayman): 8 oder mehr Punkte mit einer Viereroberfarbe. Der Eröffner antwortet [2D] ohne Viereroberfarbe, [2H] mit vier Coeur, [2S] mit vier Pik und ohne vier Coeur.
+- [2S] (Unterfarben-Transfer): 0–7 Punkte mit fünf oder mehr Karten in einer Unterfarbe. Der Eröffner muss [3C] reizen; passe mit Treff, oder reize [3D] mit Karo.
+- [2NT]: 8–9 Punkte ohne Viereroberfarbe, einladend. Der Eröffner passt mit 15 Punkten und reizt [3NT] mit 16–17 Punkten.
+- [3NT]: 10–15 Punkte ohne Viereroberfarbe, Schlussgebot. Der Eröffner passt.
+- [4NT]: 16–17 Punkte ohne Viereroberfarbe, lädt zu [6NT] ein; nicht Blackwood. Der Eröffner passt mit 15 Punkten und reizt [6NT] mit 16–17 Punkten.
+- [6NT]: 18–21 Punkte ohne Viereroberfarbe. [7NT]: 22 oder mehr Punkte. Der Eröffner passt.
+- Ein Transfer geht vor Stayman und [2S].
 
 ## Antworten auf [2C]
 - [2D]: Wartegebot, 0–7 Punkte.

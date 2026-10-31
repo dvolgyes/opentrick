@@ -4,7 +4,7 @@
  * suggested call always has the meaning that the auction shows for it. The numbers are in convention-rules.ts.
  *
  * The guides describe the opening, the first response to one of a suit, [1NT], [2C] or a weak two, opener's
- * rebid, opener's re-raise after a single or a jump raise of the major, opener's answer to Stayman, a transfer and [2S], the overcalls and the takeout double of one of a suit, the
+ * rebid, opener's re-raise after a single or a jump raise of the major, opener's answer to Stayman, a transfer, [2S] and a notrump invitation, the overcalls and the takeout double of one of a suit, the
  * redouble after partner's opening is doubled, and Blackwood. Each of them only when the other side passed, except
  * the overcalls, the double, the redouble, the re-raise, SAYC notrump transfers after doubles and the [4NT] ask. Any other position, a hand with a suit longer than
  * SHAPES.longestChecked, and the "other" system are not described, and the functions return undefined. Where the
@@ -15,6 +15,7 @@ import { type Card, SUITS, type Suit, suitOf } from "./cards";
 import {
 	type PointRange,
 	RANGES,
+	type RangeKey,
 	type Ranges,
 	type RuleSystem,
 	SHAPES,
@@ -45,6 +46,8 @@ export type Shape =
 	| { readonly kind: "stayman"; readonly min: number }
 	/** `min` or more cards in a minor. */
 	| { readonly kind: "weak-minor"; readonly min: number }
+	/** No suit with `min` or more cards. */
+	| { readonly kind: "no-long-suit"; readonly min: number }
 	| { readonly kind: "waiting" }
 	/** A pass when no other guide call fits the hand. */
 	| { readonly kind: "rest" }
@@ -115,6 +118,8 @@ type Position =
 	| { readonly kind: "relay" }
 	/** Responder's call after [1NT] [P] [2S] [P] [3C] [P]. */
 	| { readonly kind: "relay-answer" }
+	/** Opener's call after [1NT], a pass, partner's invitation [2NT] or [4NT] and a pass; `game` accepts it. */
+	| { readonly kind: "nt-invite"; readonly game: Bid }
 	| { readonly kind: "2C-rebid"; readonly response: Bid }
 	/** A call after the opponents' one of `opened`, directly or after two passes. */
 	| { readonly kind: "overcall"; readonly opened: Suit }
@@ -132,6 +137,7 @@ const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
 	"transfer-answer",
 	"relay",
 	"relay-answer",
+	"nt-invite",
 	"aces",
 ]);
 
@@ -225,6 +231,10 @@ function openerPosition(opening: Bid, response: Call): Position | undefined {
 			return { kind: "transfer-answer", suit: "S" };
 		case "2S":
 			return { kind: "relay" };
+		case "2NT":
+			return { kind: "nt-invite", game: "3NT" };
+		case "4NT":
+			return { kind: "nt-invite", game: "6NT" };
 		default:
 			return undefined;
 	}
@@ -389,9 +399,17 @@ function notrumpResponseMeaning(
 	ranges: Ranges,
 	call: Call,
 ): CallMeaning | undefined {
+	// "[2NT]", "[3NT]", "[4NT]", "[6NT]" and "[7NT]": "without a four-card major".
+	const notrump = (key: RangeKey): CallMeaning => ({
+		range: ranges[key],
+		shape: { kind: "no-major", min: SHAPES.stayman },
+	});
 	switch (call) {
 		case "P":
-			return { range: ranges["nt-weak"], shape: { kind: "none" } };
+			return {
+				range: ranges["nt-weak"],
+				shape: { kind: "no-long-suit", min: SHAPES.notrumpPass },
+			};
 		case "2C":
 			return {
 				range: ranges["nt-stayman"],
@@ -407,9 +425,15 @@ function notrumpResponseMeaning(
 				shape: { kind: "weak-minor", min: SHAPES.weakMinor },
 			};
 		case "2NT":
-			return { range: ranges["nt-2NT"], shape: { kind: "none" } };
+			return notrump("nt-2NT");
 		case "3NT":
-			return { range: ranges["nt-3NT"], shape: { kind: "none" } };
+			return notrump("nt-3NT");
+		case "4NT":
+			return notrump("nt-4NT");
+		case "6NT":
+			return notrump("nt-6NT");
+		case "7NT":
+			return notrump("nt-7NT");
 		default:
 			return undefined;
 	}
@@ -671,6 +695,13 @@ function meaningAt(
 			return call === "3C" ? { shape: { kind: "relay" } } : undefined;
 		case "relay-answer":
 			return relayAnswerMeaning(ranges, call);
+		case "nt-invite":
+			// "Opener passes with 15 points and bids [3NT] with 16–17 points", or [6NT] after [4NT].
+			return call === "P"
+				? { range: ranges["nt-invite-pass"], shape: { kind: "none" } }
+				: call === at.game
+					? { range: ranges["nt-invite-accept"], shape: { kind: "none" } }
+					: undefined;
 		case "2C-rebid":
 			// "With a balanced 22–24 points, rebid [2NT] after partner's answer."
 			return call === "2NT" && cheapestLevel("NT", at.response) === 2
@@ -751,9 +782,11 @@ function hasStopper(hand: Hand, suit: Suit): boolean {
 }
 
 function inRange(points: number, range: PointRange | undefined): boolean {
+	// A range from 0 also covers a negative total: corrected HCP gives a 4333 hand without honours -1.
 	return (
 		range === undefined ||
-		(points >= range.min && points <= (range.max ?? Number.POSITIVE_INFINITY))
+		((points >= range.min || range.min === 0) &&
+			points <= (range.max ?? Number.POSITIVE_INFINITY))
 	);
 }
 
@@ -796,6 +829,8 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			return MAJORS.some((major) => lengths[major] === shape.min);
 		case "weak-minor":
 			return MINORS.some((minor) => lengths[minor] >= shape.min);
+		case "no-long-suit":
+			return SUITS.every((suit) => lengths[suit] < shape.min);
 		case "good-suit":
 			return lengths[shape.suit] >= shape.min && isGoodSuit(hand, shape.suit);
 		case "no-major":
@@ -866,6 +901,22 @@ function preferred(
 		// "Raise partner's major one level with three or more cards. Otherwise bid a new suit ... or [1NT]."
 		const raise = fitting.filter(({ call }) => call === `2${at.suit}`);
 		if (raise.length > 0) return raise;
+	}
+	if (at.kind === "1NT") {
+		// "A transfer comes before Stayman and [2S]. With five or more cards in both majors, transfer to the longer
+		// one; with equal length, to spades."
+		const transfers = fitting.filter(
+			({ call }) => call === "2D" || call === "2H",
+		);
+		if (transfers.length > 0)
+			return transfers.filter(
+				({ call }) => call === (hand.lengths.H > hand.lengths.S ? "2D" : "2H"),
+			);
+	}
+	if (at.kind === "stayman-answer") {
+		// "[2H] with four hearts, [2S] with four spades and not four hearts".
+		const hearts = fitting.filter(({ call }) => call === "2H");
+		if (hearts.length > 0) return hearts;
 	}
 	return fitting;
 }

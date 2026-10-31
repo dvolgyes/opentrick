@@ -770,9 +770,11 @@ function rangeText(
 ): string {
 	const scale = t(SCALE_NAMES[system]);
 	const min = pointsText(range.min);
-	return range.max === undefined
-		? t("{min}+ {scale}", { min, scale })
-		: t("{min}–{max} {scale}", { min, max: pointsText(range.max), scale });
+	return range.max === range.min
+		? t("{min} {scale}", { min, scale })
+		: range.max === undefined
+			? t("{min}+ {scale}", { min, scale })
+			: t("{min}–{max} {scale}", { min, max: pointsText(range.max), scale });
 }
 
 function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
@@ -828,6 +830,8 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				min: shape.min,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
+		case "no-long-suit":
+			return t("no {min}-card suit", { min: shape.min });
 		case "no-major":
 			return t("no {min}-card major", { min: shape.min });
 		case "accept":

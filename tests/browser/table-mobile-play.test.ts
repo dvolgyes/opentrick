@@ -7167,6 +7167,7 @@ describe("convention hint", () => {
 				{ call: "1S", text: "1♠" },
 				{ call: "2C", text: "2♣" },
 				{ call: "2D", text: "2♦" },
+				{ call: "2S", text: "2♠" },
 				{ call: "4NT", text: "4NT" },
 				{ call: "7NT", text: "7NT" },
 				{ call: "P", text: "Pass" },
@@ -7252,6 +7253,47 @@ describe("convention hint", () => {
 			pickBid(root, "1", "S");
 			expect(hint(root)).toBeUndefined();
 			expect(confirm(root)?.textContent).toBe("Confirm 1♠");
+		},
+	);
+
+	// The cards without ♣2, which each hand also holds.
+	it.each([
+		[
+			"Stayman, not [4NT], with 10 points and four spades (♠KJ84 ♥A73 ♦Q65 ♣642)",
+			["SK", "SJ", "S8", "S4", "HA", "H7", "H3", "DQ", "D6", "D5", "C6", "C4"],
+			"4",
+			"NT",
+			"(Convention: 2♣)",
+		],
+		[
+			"a transfer, not a pass, with 3 points and five hearts (♠84 ♥QT973 ♦J52 ♣632)",
+			["S8", "S4", "HQ", "HT", "H9", "H7", "H3", "DJ", "D5", "D2", "C6", "C3"],
+			undefined,
+			"P",
+			"(Convention: 2♦)",
+		],
+		[
+			"the minor transfer, not a pass, with 3 points and five diamonds (♠84 ♥732 ♦QT987 ♣J52)",
+			["S8", "S4", "H7", "H3", "H2", "DQ", "DT", "D9", "D8", "D7", "CJ", "C5"],
+			undefined,
+			"P",
+			"(Convention: 2♠)",
+		],
+	] as const)(
+		"names the guide response to [1NT] on Confirm: %s",
+		(_name, twelve, level, strain, expected) => {
+			const { root } = renderView(
+				bidView(["1NT", "P"], [...twelve, "C2"]),
+				"desktop",
+				undefined,
+				undefined,
+				hcp,
+			);
+			if (level === undefined)
+				root.querySelector<HTMLButtonElement>(".bid-calls .pass")?.click();
+			else pickBid(root, level, strain);
+			expect(confirm(root)?.dataset.call).toBe(`${level ?? ""}${strain}`);
+			expect(hint(root)).toBe(expected);
 		},
 	);
 

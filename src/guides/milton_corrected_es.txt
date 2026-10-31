@@ -34,12 +34,15 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Tras un apoyo con salto de tu mayor ([1H] – [3H]) y un paso, tu compañero tiene al menos 10 puntos: [4H] con 15–21 puntos (25 o más entre los dos); si no, [P] con 12–14 puntos.
 
 ## Respuestas a [1NT]
-- 0–7 puntos: [P], o una transferencia con un mayor quinto.
-- [2C] (Stayman): 8 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto; si no, [2H] o [2S].
-- [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias). El abridor declara el palo siguiente.
-- [2S]: una mano débil con seis o más cartas en un menor. El abridor debe declarar [3C]; pasa con tréboles, o declara [3D] con diamantes.
-- [2NT]: 8–9 puntos, invitativo.
-- [3NT]: 10–15 puntos, para jugar.
+- 0–7 puntos: [P] sin palo quinto.
+- [2D] muestra cinco o más corazones, [2H] muestra cinco o más picas (transferencias), con cualquier número de puntos. Con cinco o más cartas en ambos mayores, transfiere al más largo; con igual longitud, a picas. El abridor declara el palo siguiente.
+- [2C] (Stayman): 8 o más puntos con un mayor cuarto. El abridor responde [2D] sin mayor cuarto, [2H] con cuatro corazones, [2S] con cuatro picas y sin cuatro corazones.
+- [2S] (transferencia a menor): 0–7 puntos con cinco o más cartas en un menor. El abridor debe declarar [3C]; pasa con tréboles, o declara [3D] con diamantes.
+- [2NT]: 8–9 puntos sin mayor cuarto, invitativo. El abridor pasa con 15 puntos y declara [3NT] con 16–17 puntos.
+- [3NT]: 10–15 puntos sin mayor cuarto, para jugar. El abridor pasa.
+- [4NT]: 16–17 puntos sin mayor cuarto, invita a [6NT]; no es Blackwood. El abridor pasa con 15 puntos y declara [6NT] con 16–17 puntos.
+- [6NT]: 18–21 puntos sin mayor cuarto. [7NT]: 22 o más puntos. El abridor pasa.
+- Una transferencia va antes que Stayman y [2S].
 
 ## Respuestas a [2C]
 - [2D]: de espera, 0–7 puntos.

@@ -34,12 +34,15 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Etter hoppstøtte i høyfargen din ([1H] – [3H]) og pass har makker minst 10 poeng: [4H] med 15–21 poeng (25 eller flere sammen), ellers [P] med 12–14 poeng.
 
 ## Svar på [1NT]
-- 0–7 poeng: [P], eller overføring med femkorts høyfarge.
-- [2C] (Stayman): 8 eller flere poeng med firekorts høyfarge. Åpner svarer [2D] uten firekorts høyfarge, ellers [2H] eller [2S].
-- [2D] viser fem eller flere hjerter, [2H] viser fem eller flere spar (overføringer). Åpner melder neste farge.
-- [2S]: en svak hånd med seks eller flere kort i en lavfarge. Åpner må melde [3C]; pass med kløver, eller meld [3D] med ruter.
-- [2NT]: 8–9 poeng, invitasjon.
-- [3NT]: 10–15 poeng, sluttmelding.
+- 0–7 poeng: [P] uten femkortsfarge.
+- [2D] viser fem eller flere hjerter, [2H] viser fem eller flere spar (overføringer), med hvor mange poeng som helst. Med fem eller flere kort i begge høyfargene, overfør til den lengste; med like lange, til spar. Åpner melder neste farge.
+- [2C] (Stayman): 8 eller flere poeng med firekorts høyfarge. Åpner svarer [2D] uten firekorts høyfarge, [2H] med fire hjerter, [2S] med fire spar og ikke fire hjerter.
+- [2S] (lavfargeoverføring): 0–7 poeng med fem eller flere kort i en lavfarge. Åpner må melde [3C]; pass med kløver, eller meld [3D] med ruter.
+- [2NT]: 8–9 poeng uten firekorts høyfarge, invitasjon. Åpner passer med 15 poeng og melder [3NT] med 16–17 poeng.
+- [3NT]: 10–15 poeng uten firekorts høyfarge, sluttmelding. Åpner passer.
+- [4NT]: 16–17 poeng uten firekorts høyfarge, inviterer til [6NT]; ikke Blackwood. Åpner passer med 15 poeng og melder [6NT] med 16–17 poeng.
+- [6NT]: 18–21 poeng uten firekorts høyfarge. [7NT]: 22 eller flere poeng. Åpner passer.
+- En overføring går foran Stayman og [2S].
 
 ## Svar på [2C]
 - [2D]: ventemelding, 0–7 poeng.

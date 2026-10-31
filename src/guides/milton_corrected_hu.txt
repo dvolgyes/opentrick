@@ -34,12 +34,15 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - A nemes színed ugrásos emelése ([1H] – [3H]) és egy passz után a partnerednek legalább 10 pontja van: 15–21 ponttal [4H] (együtt legalább 25 pont), különben 12–14 ponttal [P].
 
 ## Válaszok az [1NT] nyitásra
-- 0–7 pont: [P], vagy ötlapos nemes színnel transzfer.
-- [2C] (Stayman): legalább 8 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D] választ ad, egyébként [2H] vagy [2S].
-- [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek). A nyitó a következő színt licitálja.
-- [2S]: gyenge kéz legalább hatlapos alacsony színnel. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited.
-- [2NT]: 8–9 pont, invitáló.
-- [3NT]: 10–15 pont, lezáró.
+- 0–7 pont: [P], ha nincs ötlapos színed.
+- [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek), bármennyi ponttal. Ha mindkét nemes színed legalább ötlapos, a hosszabbikra adj transzfert; egyenlő hossznál a pikkre. A nyitó a következő színt licitálja.
+- [2C] (Stayman): legalább 8 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D], négy kőrrel [2H], négy pikkel és négy kőr nélkül [2S] választ ad.
+- [2S] (alacsonyszín-transzfer): 0–7 pont legalább ötlapos alacsony színnel. A nyitó kötelezően [3C] licitet ad; treffel passzolj, káróval [3D] a licited.
+- [2NT]: 8–9 pont négylapos nemes szín nélkül, invitáló. A nyitó 15 ponttal passzol, 16–17 ponttal [3NT] a licitje.
+- [3NT]: 10–15 pont négylapos nemes szín nélkül, lezáró. A nyitó passzol.
+- [4NT]: 16–17 pont négylapos nemes szín nélkül, [6NT]-re invitál; nem Blackwood. A nyitó 15 ponttal passzol, 16–17 ponttal [6NT] a licitje.
+- [6NT]: 18–21 pont négylapos nemes szín nélkül. [7NT]: legalább 22 pont. A nyitó passzol.
+- A transzfer megelőzi a Staymant és a [2S] licitet.
 
 ## Válaszok a [2C] nyitásra
 - [2D]: várakozó, 0–7 pont.

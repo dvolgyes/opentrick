@@ -34,12 +34,15 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Après un soutien à saut de votre majeure ([1H] – [3H]) et un passe, le partenaire a au moins 10 points : [4H] avec 15–21 points (25 ou plus à deux), sinon [P] avec 12–14 points.
 
 ## Réponses à [1NT]
-- 0–7 points : [P], ou un transfert avec une majeure cinquième.
-- [2C] (Stayman) : 8 points ou plus avec une majeure quatrième. L'ouvreur répond [2D] sans majeure quatrième, sinon [2H] ou [2S].
-- [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts). L'ouvreur nomme la couleur suivante.
-- [2S] : une main faible avec six cartes ou plus dans une mineure. L'ouvreur doit dire [3C] ; passez avec les trèfles, ou dites [3D] avec les carreaux.
-- [2NT] : 8–9 points, invitant.
-- [3NT] : 10–15 points, pour jouer.
+- 0–7 points : [P] sans couleur cinquième.
+- [2D] montre cinq cœurs ou plus, [2H] montre cinq piques ou plus (transferts), avec n'importe quel nombre de points. Avec cinq cartes ou plus dans les deux majeures, transférez vers la plus longue ; à longueur égale, vers les piques. L'ouvreur nomme la couleur suivante.
+- [2C] (Stayman) : 8 points ou plus avec une majeure quatrième. L'ouvreur répond [2D] sans majeure quatrième, [2H] avec quatre cœurs, [2S] avec quatre piques et sans quatre cœurs.
+- [2S] (transfert mineur) : 0–7 points avec cinq cartes ou plus dans une mineure. L'ouvreur doit dire [3C] ; passez avec les trèfles, ou dites [3D] avec les carreaux.
+- [2NT] : 8–9 points sans majeure quatrième, invitant. L'ouvreur passe avec 15 points et dit [3NT] avec 16–17 points.
+- [3NT] : 10–15 points sans majeure quatrième, pour jouer. L'ouvreur passe.
+- [4NT] : 16–17 points sans majeure quatrième, invite à [6NT] ; pas Blackwood. L'ouvreur passe avec 15 points et dit [6NT] avec 16–17 points.
+- [6NT] : 18–21 points sans majeure quatrième. [7NT] : 22 points ou plus. L'ouvreur passe.
+- Un transfert passe avant Stayman et [2S].
 
 ## Réponses à [2C]
 - [2D] : réponse d'attente, 0–7 points.

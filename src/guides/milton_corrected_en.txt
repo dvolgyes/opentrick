@@ -34,12 +34,15 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - After a jump raise of your major ([1H] – [3H]) and a pass, partner has at least 10 points: [4H] with 15–21 points (25 or more together), otherwise [P] with 12–14 points.
 
 ## Responses to [1NT]
-- 0–7 points: [P], or a transfer with a five-card major.
-- [2C] (Stayman): 8 or more points with a four-card major. Opener answers [2D] without a four-card major, otherwise [2H] or [2S].
-- [2D] shows five or more hearts, [2H] shows five or more spades (transfers). Opener bids the next suit.
-- [2S]: a weak hand with six or more cards in a minor. Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds.
-- [2NT]: 8–9 points, invitational.
-- [3NT]: 10–15 points, to play.
+- 0–7 points: [P] without a five-card suit.
+- [2D] shows five or more hearts, [2H] shows five or more spades (transfers), with any points. With five or more cards in both majors, transfer to the longer one; with equal length, to spades. Opener bids the next suit.
+- [2C] (Stayman): 8 or more points with a four-card major. Opener answers [2D] without a four-card major, [2H] with four hearts, [2S] with four spades and not four hearts.
+- [2S] (minor transfer): 0–7 points with five or more cards in a minor. Opener must bid [3C]; pass with clubs, or bid [3D] with diamonds.
+- [2NT]: 8–9 points without a four-card major, invitational. Opener passes with 15 points and bids [3NT] with 16–17 points.
+- [3NT]: 10–15 points without a four-card major, to play. Opener passes.
+- [4NT]: 16–17 points without a four-card major, invites [6NT]; not Blackwood. Opener passes with 15 points and bids [6NT] with 16–17 points.
+- [6NT]: 18–21 points without a four-card major. [7NT]: 22 or more points. Opener passes.
+- A transfer comes before Stayman and [2S].
 
 ## Responses to [2C]
 - [2D]: waiting, 0–7 points.

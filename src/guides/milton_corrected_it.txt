@@ -34,12 +34,15 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Dopo un appoggio a salto del tuo nobile ([1H] – [3H]) e un passo, il compagno ha almeno 10 punti: [4H] con 15–21 punti (25 o più in due), altrimenti [P] con 12–14 punti.
 
 ## Risposte a [1NT]
-- 0–7 punti: [P], oppure un transfer con un nobile quinto.
-- [2C] (Stayman): 8 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, altrimenti [2H] o [2S].
-- [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer). L'apertore dichiara il colore successivo.
-- [2S]: una mano debole con sei o più carte in un minore. L'apertore deve dichiarare [3C]; passa con i fiori, oppure dichiara [3D] con i quadri.
-- [2NT]: 8–9 punti, invitante.
-- [3NT]: 10–15 punti, conclusivo.
+- 0–7 punti: [P] senza un colore quinto.
+- [2D] mostra cinque o più cuori, [2H] mostra cinque o più picche (transfer), con qualsiasi punteggio. Con cinque o più carte in entrambi i nobili, transfer sul più lungo; a parità di lunghezza, sulle picche. L'apertore dichiara il colore successivo.
+- [2C] (Stayman): 8 o più punti con un nobile quarto. L'apertore risponde [2D] senza un nobile quarto, [2H] con quattro cuori, [2S] con quattro picche e senza quattro cuori.
+- [2S] (transfer minore): 0–7 punti con cinque o più carte in un minore. L'apertore deve dichiarare [3C]; passa con i fiori, oppure dichiara [3D] con i quadri.
+- [2NT]: 8–9 punti senza un nobile quarto, invitante. L'apertore passa con 15 punti e dichiara [3NT] con 16–17 punti.
+- [3NT]: 10–15 punti senza un nobile quarto, conclusivo. L'apertore passa.
+- [4NT]: 16–17 punti senza un nobile quarto, invita a [6NT]; non è Blackwood. L'apertore passa con 15 punti e dichiara [6NT] con 16–17 punti.
+- [6NT]: 18–21 punti senza un nobile quarto. [7NT]: 22 o più punti. L'apertore passa.
+- Un transfer viene prima di Stayman e di [2S].
 
 ## Risposte a [2C]
 - [2D]: d'attesa, 0–7 punti.

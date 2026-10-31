@@ -34,12 +34,15 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - Na een sprongverhoging van je hoge kleur ([1H] – [3H]) en een pas heeft je partner minstens 10 punten: [4H] met 15–21 punten (samen 25 of meer), anders [P] met 12–14 punten.
 
 ## Antwoorden op [1NT]
-- 0–7 punten: [P], of een transfer met een vijfkaart hoge kleur.
-- [2C] (Stayman): 8 of meer punten met een vierkaart hoge kleur. De openaar antwoordt [2D] zonder vierkaart hoge kleur, anders [2H] of [2S].
-- [2D] belooft vijf of meer harten, [2H] belooft vijf of meer schoppen (transfers). De openaar biedt de volgende kleur.
-- [2S]: een zwakke hand met zes of meer kaarten in een lage kleur. De openaar moet [3C] bieden; pas met klaveren, of bied [3D] met ruiten.
-- [2NT]: 8–9 punten, uitnodigend.
-- [3NT]: 10–15 punten, afsluitend.
+- 0–7 punten: [P] zonder vijfkaart.
+- [2D] belooft vijf of meer harten, [2H] belooft vijf of meer schoppen (transfers), met elk aantal punten. Met vijf of meer kaarten in beide hoge kleuren, transfer naar de langste; bij gelijke lengte naar schoppen. De openaar biedt de volgende kleur.
+- [2C] (Stayman): 8 of meer punten met een vierkaart hoge kleur. De openaar antwoordt [2D] zonder vierkaart hoge kleur, [2H] met vier harten, [2S] met vier schoppen en zonder vier harten.
+- [2S] (transfer naar een lage kleur): 0–7 punten met vijf of meer kaarten in een lage kleur. De openaar moet [3C] bieden; pas met klaveren, of bied [3D] met ruiten.
+- [2NT]: 8–9 punten zonder vierkaart hoge kleur, uitnodigend. De openaar past met 15 punten en biedt [3NT] met 16–17 punten.
+- [3NT]: 10–15 punten zonder vierkaart hoge kleur, afsluitend. De openaar past.
+- [4NT]: 16–17 punten zonder vierkaart hoge kleur, nodigt uit voor [6NT]; geen Blackwood. De openaar past met 15 punten en biedt [6NT] met 16–17 punten.
+- [6NT]: 18–21 punten zonder vierkaart hoge kleur. [7NT]: 22 of meer punten. De openaar past.
+- Een transfer gaat voor Stayman en [2S].
 
 ## Antwoorden op [2C]
 - [2D]: afwachtend, 0–7 punten.
