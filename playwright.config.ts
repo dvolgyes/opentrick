@@ -13,6 +13,7 @@ export default defineConfig({
 	use: {
 		baseURL: `http://localhost:${PORT}/`,
 		// UI flows use the supported shorter preference; a real-worker test covers the five-second default.
+		// The stored default bidder marks the settings as saved, so the first table does not open Settings.
 		storageState: {
 			cookies: [],
 			origins: [
@@ -20,6 +21,7 @@ export default defineConfig({
 					origin: `http://localhost:${PORT}`,
 					localStorage: [
 						{ name: "opentrick.settings.play-time-ms", value: "150" },
+						{ name: "opentrick.settings.bidder", value: "sl" },
 					],
 				},
 			],

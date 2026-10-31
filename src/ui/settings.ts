@@ -217,6 +217,14 @@ export function readSettings(storage: MaybeStorage): Settings {
 	};
 }
 
+/**
+ * False at the first play: this browser has not saved its settings yet. A single stored value does not count, as a
+ * save stores all of them. A browser without storage cannot save them, so it is never at the first play.
+ */
+export function settingsSaved(storage: MaybeStorage): boolean {
+	return storage === undefined || storage.getItem(`${PREFIX}bidder`) !== null;
+}
+
 /** Saves this browser's display and bot preferences. */
 export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");

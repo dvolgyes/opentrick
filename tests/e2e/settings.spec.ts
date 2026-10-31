@@ -49,6 +49,45 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 	]);
 }
 
+for (const [form, options] of [
+	["desktop", {}],
+	[
+		"phone",
+		{ viewport: { width: 360, height: 800 }, isMobile: true, hasTouch: true },
+	],
+] as const)
+	test(`on ${form}, the first table opens Settings by itself until the player saves them`, async ({
+		browser,
+		baseURL,
+	}) => {
+		// A browser without stored settings, as at the first play: the other tests start with them.
+		const context = await browser.newContext({
+			...options,
+			baseURL,
+			storageState: { cookies: [], origins: [] },
+		});
+		try {
+			const page = await context.newPage();
+			const dialog = page.getByTestId("settings-dialog");
+			await openTable(page);
+			await expect(dialog).toBeVisible();
+			// Cancel keeps the first run, so the next table screen asks again.
+			await dialog.getByRole("button", { name: "Cancel" }).click();
+			await expect(dialog).toBeHidden();
+			await page.reload();
+			await expect(page.getByTestId("room-controls")).toBeVisible();
+			await expect(dialog).toBeVisible();
+			await dialog.getByRole("button", { name: "Save settings" }).click();
+			await expect(dialog).toBeHidden();
+			await page.reload();
+			await expect(page.getByTestId("room-controls")).toBeVisible();
+			await expect(page.getByTestId("table")).toBeVisible();
+			await expect(dialog).toBeHidden();
+		} finally {
+			await context.close();
+		}
+	});
+
 test("Settings shows the defaults, and Save keeps the choices in this browser after a reload", async ({
 	page,
 }) => {

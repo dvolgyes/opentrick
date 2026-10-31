@@ -95,7 +95,7 @@ import { pageTitle } from "./page-title";
 import { playerEditor } from "./player-editor";
 import { qualityMatrix } from "./quality-matrix";
 import { remoteAudio } from "./remote-audio";
-import { readSettings, type Settings } from "./settings";
+import { readSettings, type Settings, settingsSaved } from "./settings";
 import { settingsDialog } from "./settings-dialog";
 import { sitePath } from "./site-path";
 import { tableSection } from "./table";
@@ -1170,6 +1170,8 @@ export function showRoom(
 	root.replaceChildren(room);
 	root.append(settings.element, hostControls, players.element);
 	if (camera) root.append(camera.element);
+	// At the first play, the player chooses the settings before anything else; until a save, each table asks again.
+	if (!settingsSaved(deps.browser)) settings.open();
 	if (initialBotSettings) void startHostBots();
 
 	async function startHostBots(requiredSeat?: Seat): Promise<boolean> {

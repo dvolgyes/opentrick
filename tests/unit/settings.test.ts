@@ -9,6 +9,7 @@ import {
 	SHADOW_STRENGTHS,
 	SUIT_COLOR_SCHEMES,
 	SUIT_FONT_SIZES,
+	settingsSaved,
 	writeSettings,
 } from "../../src/ui/settings";
 
@@ -112,6 +113,18 @@ describe("player settings", () => {
 		expect(readSettings(storage)).toEqual(settings);
 		for (let index = 0; index < storage.length; index++)
 			expect(storage.key(index)).toMatch(/^opentrick\.settings\./);
+	});
+
+	it("knows the first run: no save yet, while a single stored value or no storage does not count", () => {
+		const storage = memoryStorage();
+		expect(settingsSaved(storage)).toBe(false);
+		// A test or an earlier version can store one value without a save.
+		storage.setItem("opentrick.settings.play-time-ms", "150");
+		expect(settingsSaved(storage)).toBe(false);
+		writeSettings(storage, DEFAULT_SETTINGS);
+		expect(settingsSaved(storage)).toBe(true);
+		// A browser that cannot store the settings cannot leave the first run, so it does not have one.
+		expect(settingsSaved(undefined)).toBe(true);
 	});
 
 	it("replaces each unknown or malformed stored value with its default", () => {
