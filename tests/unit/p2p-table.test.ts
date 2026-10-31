@@ -204,6 +204,38 @@ describe("table controller seat from the URL", () => {
 		expect(table.view().seat).toBeNull();
 		expect(rig.locks.held.size).toBe(0);
 	});
+
+	it("opens the only seat that a solo link does not give to a bot, and seeds it at once", async () => {
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["N", "E", "W"], bidder: "sl" },
+		};
+		const table = await rig.start(undefined, undefined, "S");
+		expect(table.view().seat).toBe("S");
+
+		await rig.advance(2 * TICK_MS);
+
+		expect(table.view().hosting).toBe(true);
+	});
+
+	it("opens no seat by itself from a solo link that does not name its player, so the player gives a name", async () => {
+		rig.config = {
+			...CONFIG,
+			names: { ...CONFIG.names, S: "player" },
+			botSetup: { seats: ["N", "E", "W"], bidder: "sl" },
+		};
+		const table = await rig.start(undefined, undefined, "S");
+		expect(table.view().seat).toBeNull();
+	});
+
+	it("opens no seat by itself from a link with more than one seat for a person", async () => {
+		rig.config = {
+			...CONFIG,
+			botSetup: { seats: ["N", "E"], bidder: "sl" },
+		};
+		const table = await rig.start(undefined, undefined, "S");
+		expect(table.view().seat).toBeNull();
+	});
 });
 
 describe("table controller beats", () => {

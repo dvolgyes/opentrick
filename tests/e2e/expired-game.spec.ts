@@ -86,3 +86,28 @@ test("a solo bookmark starts a game without saved state and still works after ex
 	await expect(page).toHaveURL(bookmark);
 	await expect(page.getByTestId("waiting")).toBeHidden();
 });
+
+test("a solo link without a seat seats its only player and starts at once, also after expiry", async ({
+	page,
+}) => {
+	test.setTimeout(180_000);
+	await mockBotBidding(page, () => "P");
+	const key = randomBytes(16).toString("base64url");
+	// A shared link names no seat, and expiry makes the browser forget the seat that it had.
+	await page.goto(`/?n=bot&e=bot&s=test&w=bot&h=S&b=NEW#k=${key}`);
+	const table = page.getByTestId("table");
+	await expect(table).toHaveAttribute("data-at", "2", {
+		timeout: SOLO_START_MS,
+	});
+	await page.clock.setFixedTime(Date.now() + 9 * 60 * 60 * 1000);
+	await expect(page.getByTestId("banner")).toHaveAttribute(
+		"data-kind",
+		"expired",
+	);
+	// The page wrote its seat into the address, so this opens the seatless link again.
+	await page.goto(`/?n=bot&e=bot&s=test&w=bot&h=S&b=NEW#k=${key}`);
+	await expect(table).toHaveAttribute("data-at", "2", {
+		timeout: SOLO_START_MS,
+	});
+	await expect(page.getByTestId("waiting")).toBeHidden();
+});

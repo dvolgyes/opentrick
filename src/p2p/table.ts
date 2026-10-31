@@ -1,9 +1,9 @@
-import { botSeatClaims, botSeatHolder, botSeats } from "../bot/seats";
+import { botSeatClaims, botSeatHolder, soloSeat } from "../bot/seats";
 import { type BuildInfo, isBuildDate, newerBuildDate } from "../build";
 import type { CallRoomSnapshot } from "../call/mesh";
 import type { CallTransport } from "../call/signaling";
 import type { GameModule } from "../game/module";
-import { playerConfig } from "../players";
+import { playerConfig, unnamedPlayer } from "../players";
 import {
 	type JsonObject,
 	type RoomConfig,
@@ -477,7 +477,8 @@ export class TableController {
 			preferredSeat === null
 				? undefined
 				: (preferredSeat ??
-					memory.seatToReopen(this.#tableId, this.#deps.creator === true));
+					memory.seatToReopen(this.#tableId, this.#deps.creator === true) ??
+					this.#linkSeat());
 		let seated: Seated | null = null;
 		if (wanted !== undefined && wanted === tabSeat) {
 			await this.#waitForReloadLock(wanted);
@@ -513,6 +514,16 @@ export class TableController {
 		this.#begin(seated, creator);
 		this.#stopTimer = this.#deps.every(TICK_MS, () => this.#tick());
 		this.#notify();
+	}
+
+	/**
+	 * The seat that a page opens without a URL seat or a remembered one: the only seat of a solo setup link, as nobody
+	 * else can play it. A seat without a name stays free, so that the player gives one when they take it.
+	 */
+	#linkSeat(): Seat | undefined {
+		const config = this.#deps.bootstrap?.config;
+		const seat = config && soloSeat(config);
+		return seat && !unnamedPlayer(config.names[seat]) ? seat : undefined;
 	}
 
 	/** A visitor takes a free seat. */
@@ -568,10 +579,8 @@ export class TableController {
 		const election = this.#election;
 		if (!election) return;
 		const config = this.#deps.bootstrap?.config;
-		const bots = config ? botSeats(config) : [];
-		const solo = SEATS.every(
-			(seat) => seat === candidate.log.seat || bots.includes(seat),
-		);
+		const solo =
+			config !== undefined && soloSeat(config) === candidate.log.seat;
 		if (!solo && election.absentMs < SEED_WAIT_MS) return;
 		if (!solo && !seedsFirst(election)) return;
 		const seen = this.#tableSeenAt;

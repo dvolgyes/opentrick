@@ -31,6 +31,9 @@ Until then, the seat waits for a host like any other seat.
 Other pages can select seats and wait for that host.
 The table link carries no `pl`; a player's own URL keeps the player's seat for reload.
 Without `pl`, a page reopens the seat that this browser remembers, so a shared link restores a player's seat after the tab closes. The earlier `selected_player=none` shared link is no longer read.
+Since 2026-10-31, at the owner's request, a page without `pl` and without a remembered seat opens the only seat of a solo link, because nobody else can play it.
+So a solo link that expired starts at once, although the expiry made the browser forget its seat.
+A seat without a name (`player` or empty) stays free, so that the player gives a name when they take it.
 Until 2026-10-26, it also did not take the last free seat.
 Now, at the owner's request, it takes the only free seat of the host's lobby by itself, unless the lobby shows that this browser held that seat.
 Before the host's lobby arrives, a page without `pl` waits for the lobby before it takes a free seat by itself.
@@ -59,6 +62,8 @@ The seed now waits as the Decision describes.
 A page that does not reach the other pages within `SEED_WAIT_MS` still seeds a second table.
 A page whose peers with the table were silent for `SEED_WAIT_MS` also seeds one, and those peers can come back with the table.
 A solo link on a second device of the same player seeds at once, so it seeds a second table when the first device still hosts and the two pages have not found each other yet.
+Since 2026-10-31, this also applies to a solo link without `pl`, as on any browser that opens a shared solo link.
+Such a page that loses the merge finds its seat taken and stays as a visitor.
 In a local reproduction, the second device found the host within 5 s, did not seed, and the first device kept hosting.
 When the links of the two hosts name the same host seat, the table with more entries survives, then the table of the seat with the higher priority (ADR 0007, election rule 13).
 Otherwise the election compares the two authorities (src/p2p/authority.ts `compareAuthority`): a higher term wins, and in term 1 the lower tag wins.
