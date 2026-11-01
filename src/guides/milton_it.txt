@@ -22,6 +22,8 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - [2NT] su [1H] o [1S] (Jacoby 2NT): 13 o più punti e quattro o più carte nel nobile del compagno, forzante a manche.
 - [3NT] su [1H] o [1S]: 15–17 punti, mano bilanciata, con esattamente due carte nel nobile del compagno.
 - Quattro nel nobile del compagno ([1H] – [4H]): 6–9 punti, cinque o più carte nel colore e un singolo o un vuoto. Questo appoggio è uno sbarramento.
+- [2NT] su [1C] o [1D]: 13–15 punti, mano bilanciata, senza un nobile quarto, forzante a manche. [3NT] su [1C] o [1D]: 16–17 punti, mano bilanciata, senza un nobile quarto.
+- Un salto in un nuovo colore ([1H] – [2S], [1D] – [3C]): 19 o più punti e un buon colore quinto. Invita allo slam.
 
 ## Ridichiarazione dell'apertore
 - 12–14 punti: [1NT] con una mano bilanciata, un appoggio semplice, oppure la ripetizione del tuo colore.
@@ -89,6 +91,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Appoggio limite (limit raise): un nome descrittivo per l'appoggio a salto ([1S] – [3S]); mostra una fascia limitata di punti (10–12).
 - Jacoby 2NT: di solito attribuito a Oswald Jacoby; alcuni lo attribuiscono a Leo Baron.
 - Appoggio di sbarramento (preemptive raise): un nome descrittivo per l'appoggio a manche ([1H] – [4H]); toglie spazio licitativo agli avversari.
+- Salto in nuovo colore (jump shift): un nome descrittivo; il rispondente salta in un nuovo colore, diverso da quello del compagno ([1H] – [2S]).
 - Stayman: dal nome di Sam Stayman, che la pubblicò nel 1945. Jack Marx e George Rapée ebbero l'idea prima di lui.
 - Stayman debole: un nome descrittivo; detta anche garbage Stayman.
 - Transfer Jacoby: dal nome di Oswald Jacoby, che ne scrisse nel 1956. Il transfer minore è la forma del SAYC.

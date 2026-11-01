@@ -616,6 +616,13 @@ function suitResponseMeaning(
 	if (call === "1NT")
 		return { range: ranges["suit-low"], shape: oneNotrumpShape(opened) };
 	const major = MAJORS.includes(opened);
+	// "[2NT] over [1C] or [1D]: 13–15 points, balanced, without a four-card major, game forcing. [3NT] over [1C] or
+	// [1D]: 16–17 points, balanced, without a four-card major."
+	const flat: Shape = {
+		kind: "no-major",
+		min: SHAPES.newSuit,
+		balanced: true,
+	};
 	// "[2NT] over [1H] or [1S] (Jacoby 2NT): 13 or more points and four or more cards in partner's major"
 	if (call === "2NT")
 		return major
@@ -623,7 +630,7 @@ function suitResponseMeaning(
 					range: ranges["suit-jacoby"],
 					shape: { kind: "support", suit: opened, min: SHAPES.jacoby },
 				}
-			: undefined;
+			: { range: ranges["suit-2NT-minor"], shape: flat };
 	// "[3NT] over [1H] or [1S]: 15–17 points, balanced, with exactly two cards in partner's major."
 	if (call === "3NT")
 		return major
@@ -635,7 +642,7 @@ function suitResponseMeaning(
 						length: SHAPES.support - 1,
 					},
 				}
-			: undefined;
+			: { range: ranges["suit-3NT-minor"], shape: flat };
 	if (!isBid(call)) return undefined;
 	const level = levelOf(call);
 	const strain = strainOf(call);
@@ -658,7 +665,14 @@ function suitResponseMeaning(
 					shape: { kind: "support", suit: opened, min: raiseLength(opened) },
 				};
 	}
-	if (level !== cheapestLevel(strain, `1${opened}`)) return undefined;
+	const cheapest = cheapestLevel(strain, `1${opened}`);
+	// "A jump in a new suit ([1H] – [2S], [1D] – [3C]): 19 or more points and a good five-card suit."
+	if (level === cheapest + 1)
+		return {
+			range: ranges["suit-jump-shift"],
+			shape: { kind: "good-suit", suit: strain, min: SHAPES.jumpShift },
+		};
+	if (level !== cheapest) return undefined;
 	// The guide: a new suit at the one level from 6–10 points up; "a new suit at the two level needs 11 or more points".
 	return {
 		range: {
@@ -1715,6 +1729,11 @@ function preferred(
 		const game = raise.filter(({ call }) => call === `4${at.suit}`);
 		if (game.length > 0) return game;
 		if (raise.length > 0) return raise;
+		// A hand with a jump shift also fits the new suit without a jump; the guide gives the jump.
+		const jump = fitting.filter(
+			({ meaning }) => meaning.shape.kind === "good-suit",
+		);
+		if (jump.length > 0) return jump;
 	}
 	if (at.kind === "1NT") return notrumpPreferred(ranges, hand, fitting);
 	if (at.kind === "transfer-answer") {

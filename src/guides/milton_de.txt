@@ -22,6 +22,8 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - [2NT] über [1H] oder [1S] (Jacoby 2NT): 13 oder mehr Punkte und vier oder mehr Karten in der Oberfarbe deines Partners, partieforcierend.
 - [3NT] über [1H] oder [1S]: 15–17 Punkte, ausgeglichen, mit genau zwei Karten in der Oberfarbe deines Partners.
 - Vier in der Oberfarbe deines Partners ([1H] – [4H]): 6–9 Punkte, fünf oder mehr Karten in der Farbe und ein Single oder Chicane. Diese Hebung ist eine Sperre.
+- [2NT] über [1C] oder [1D]: 13–15 Punkte, ausgeglichen, ohne Viereroberfarbe, partieforcierend. [3NT] über [1C] oder [1D]: 16–17 Punkte, ausgeglichen, ohne Viereroberfarbe.
+- Ein Sprung in eine neue Farbe ([1H] – [2S], [1D] – [3C]): 19 oder mehr Punkte und eine gute Fünferfarbe. Er lädt zum Schlemm ein.
 
 ## Wiedergebot des Eröffners
 - 12–14 Punkte: [1NT] mit ausgeglichener Hand, eine einfache Hebung oder die Wiederholung deiner eigenen Farbe.
@@ -89,6 +91,7 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Limit-Hebung (limit raise): ein beschreibender Name für die Sprunghebung ([1S] – [3S]); sie zeigt einen begrenzten Punktbereich (10–12).
 - Jacoby 2NT: meist Oswald Jacoby zugeschrieben; manche nennen Leo Baron.
 - Sperrhebung (preemptive raise): ein beschreibender Name für die Hebung zur Partie ([1H] – [4H]); sie nimmt den Gegnern Reizraum.
+- Sprung in eine neue Farbe (jump shift): ein beschreibender Name; der Antwortende springt in eine neue Farbe, weg von der Farbe des Partners ([1H] – [2S]).
 - Stayman: benannt nach Sam Stayman, der die Konvention 1945 veröffentlichte. Jack Marx und George Rapée hatten die Idee vor ihm.
 - Schwaches Stayman: ein beschreibender Name; auch Garbage Stayman genannt.
 - Jacoby-Transfers: benannt nach Oswald Jacoby, der 1956 darüber schrieb. Der Unterfarben-Transfer ist die SAYC-Form.

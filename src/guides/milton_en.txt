@@ -22,6 +22,8 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - [2NT] over [1H] or [1S] (Jacoby 2NT): 13 or more points and four or more cards in partner's major, game forcing.
 - [3NT] over [1H] or [1S]: 15–17 points, balanced, with exactly two cards in partner's major.
 - Four of partner's major ([1H] – [4H]): 6–9 points, five or more cards in the major and a singleton or void. This raise is preemptive.
+- [2NT] over [1C] or [1D]: 13–15 points, balanced, without a four-card major, game forcing. [3NT] over [1C] or [1D]: 16–17 points, balanced, without a four-card major.
+- A jump in a new suit ([1H] – [2S], [1D] – [3C]): 19 or more points and a good five-card suit. It invites slam.
 
 ## Opener's rebid
 - 12–14 points: [1NT] with a balanced hand, a single raise, or a rebid of your own suit.
@@ -89,6 +91,7 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - Limit raise: a descriptive name for the jump raise ([1S] – [3S]); it shows a limited range of points (10–12).
 - Jacoby 2NT: usually credited to Oswald Jacoby; some credit Leo Baron.
 - Preemptive raise: a descriptive name for the raise to game ([1H] – [4H]); it takes bidding space from the opponents.
+- Jump shift: a descriptive name; responder jumps in a new suit, which shifts from partner's suit ([1H] – [2S]).
 - Stayman: named after Sam Stayman, who published it in 1945. Jack Marx and George Rapée had the idea before him.
 - Weak Stayman: a descriptive name; also called garbage Stayman.
 - Jacoby transfers: named after Oswald Jacoby, who wrote about them in 1956. The minor transfer is the SAYC form.

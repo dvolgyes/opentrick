@@ -34,6 +34,9 @@ export type RangeKey =
 	| "suit-jacoby"
 	| "suit-3NT"
 	| "suit-game"
+	| "suit-2NT-minor"
+	| "suit-3NT-minor"
+	| "suit-jump-shift"
 	| "nt-weak"
 	| "nt-stayman"
 	| "nt-weak-stayman"
@@ -115,6 +118,9 @@ const MILTON = {
 	"suit-jacoby": { min: 13 }, // "[2NT] over [1H] or [1S] (Jacoby 2NT): 13 or more points"
 	"suit-3NT": { min: 15, max: 17 }, // "[3NT] over [1H] or [1S]: 15–17 points, balanced"
 	"suit-game": { min: 6, max: 9 }, // "Four of partner's major ([1H] – [4H]): 6–9 points"
+	"suit-2NT-minor": { min: 13, max: 15 }, // "[2NT] over [1C] or [1D]: 13–15 points, balanced"
+	"suit-3NT-minor": { min: 16, max: 17 }, // "[3NT] over [1C] or [1D]: 16–17 points, balanced"
+	"suit-jump-shift": { min: 19 }, // "A jump in a new suit ([1H] – [2S], [1D] – [3C]): 19 or more points"
 	// ## Responses to [1NT]
 	"nt-weak": { min: 0, max: 7 }, // "0–7 points: [P], unless ..."; "[2S] (minor transfer): 0–7 points"
 	"nt-stayman": { min: 8 }, // "[2C] (Stayman): 8 or more points"
@@ -241,6 +247,8 @@ export const SHAPES = {
 	jacoby: 4,
 	/** "Four of partner's major ([1H] – [4H]): ... five or more cards in the major and a singleton or void" */
 	gameRaise: 5,
+	/** "A jump in a new suit ...: 19 or more points and a good five-card suit" */
+	jumpShift: 5,
 	/** "After the transfer ... three of the major with six or more cards" */
 	transferLong: 6,
 	/** "a new suit ... a singleton or void": at most this many cards in some suit. */

@@ -29,6 +29,8 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - [2NT] sur [1H] ou [1S] (Jacoby 2NT) : 13 points ou plus et quatre cartes ou plus dans la majeure du partenaire, forcing de manche.
 - [3NT] sur [1H] ou [1S] : 15–17 points, main régulière, avec exactement deux cartes dans la majeure du partenaire.
 - Quatre dans la majeure du partenaire ([1H] – [4H]) : 6–9 points, cinq cartes ou plus dans la couleur et un singleton ou une chicane. Ce soutien est un barrage.
+- [2NT] sur [1C] ou [1D] : 13–15 points, main régulière, sans majeure quatrième, forcing de manche. [3NT] sur [1C] ou [1D] : 16–17 points, main régulière, sans majeure quatrième.
+- Un saut dans une couleur nouvelle ([1H] – [2S], [1D] – [3C]) : 19 points ou plus et une bonne couleur cinquième. Il propose le chelem.
 
 ## Redemande de l'ouvreur
 - 12–14 points : [1NT] avec une main régulière, un soutien simple ou la répétition de votre couleur.
@@ -96,6 +98,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Soutien limite (limit raise) : un nom descriptif pour le soutien à saut ([1S] – [3S]) ; il montre une zone de points limitée (10–12).
 - Jacoby 2NT : généralement attribué à Oswald Jacoby ; certains l'attribuent à Leo Baron.
 - Soutien de barrage (preemptive raise) : un nom descriptif pour le soutien à la manche ([1H] – [4H]) ; il prend de l'espace d'enchères aux adversaires.
+- Saut en couleur nouvelle (jump shift) : un nom descriptif ; le répondant saute dans une couleur nouvelle, autre que celle du partenaire ([1H] – [2S]).
 - Stayman : nommé d'après Sam Stayman, qui l'a publié en 1945. Jack Marx et George Rapée avaient eu l'idée avant lui.
 - Stayman faible : un nom descriptif ; aussi appelé garbage Stayman.
 - Transferts Jacoby : nommés d'après Oswald Jacoby, qui les a décrits en 1956. Le transfert mineur est la forme du SAYC.

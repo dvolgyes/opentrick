@@ -29,6 +29,8 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - [2NT] [1H] vagy [1S] után (Jacoby 2NT): legalább 13 pont és legalább négy lap a partnered nemes színében, manche-ig forszírozó.
 - [3NT] [1H] vagy [1S] után: 15–17 pont, kiegyensúlyozott kéz, pontosan két lappal a partnered nemes színében.
 - A partnered nemes színe négyes szinten ([1H] – [4H]): 6–9 pont, legalább öt lap a színben, és szingli vagy renonsz. Ez az emelés blokk.
+- [2NT] [1C] vagy [1D] után: 13–15 pont, kiegyensúlyozott kéz, négylapos nemes szín nélkül, manche-ig forszírozó. [3NT] [1C] vagy [1D] után: 16–17 pont, kiegyensúlyozott kéz, négylapos nemes szín nélkül.
+- Ugrás új színben ([1H] – [2S], [1D] – [3C]): legalább 19 pont és jó ötlapos szín. Szlemre invitál.
 
 ## A nyitó második licitje
 - 12–14 pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
@@ -96,6 +98,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Limitemelés (limit raise): leíró név az ugrásos emelésre ([1S] – [3S]); korlátozott pontsávot mutat (10–12).
 - Jacoby 2NT: többnyire Oswald Jacobynak tulajdonítják; egyesek Leo Baronnak.
 - Blokkemelés (preemptive raise): leíró név a manche-ra emelésre ([1H] – [4H]); licitteret vesz el az ellenfelektől.
+- Ugrásos színváltás (jump shift): leíró név; a válaszoló ugrással új színt licitál, a partnere színétől eltérve ([1H] – [2S]).
 - Stayman: Sam Stayman nevét viseli, aki 1945-ben publikálta. Jack Marx és George Rapée már előtte kitalálta.
 - Gyenge Stayman: leíró név; garbage Stayman néven is ismert.
 - Jacoby-transzferek: Oswald Jacoby nevét viselik, aki 1956-ban írt róluk. Az alacsonyszín-transzfer a SAYC változata.

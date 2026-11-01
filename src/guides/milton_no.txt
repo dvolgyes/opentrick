@@ -22,6 +22,8 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - [2NT] etter [1H] eller [1S] (Jacoby 2NT): 13 eller flere poeng og fire eller flere kort i makkers høyfarge, utgangskrav.
 - [3NT] etter [1H] eller [1S]: 15–17 poeng, balansert hånd, med nøyaktig to kort i makkers høyfarge.
 - Fire i makkers høyfarge ([1H] – [4H]): 6–9 poeng, fem eller flere kort i fargen og en singleton eller renons. Denne støtten er en sperremelding.
+- [2NT] etter [1C] eller [1D]: 13–15 poeng, balansert hånd, uten firekorts høyfarge, utgangskrav. [3NT] etter [1C] eller [1D]: 16–17 poeng, balansert hånd, uten firekorts høyfarge.
+- Hopp i en ny farge ([1H] – [2S], [1D] – [3C]): 19 eller flere poeng og en god femkortsfarge. Det inviterer til slem.
 
 ## Åpners gjenmelding
 - 12–14 poeng: [1NT] med balansert hånd, enkel støtte, eller gjenmelding av egen farge.
@@ -89,6 +91,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Limitstøtte (limit raise): et beskrivende navn på hoppstøtten ([1S] – [3S]); den viser et begrenset poengområde (10–12).
 - Jacoby 2NT: vanligvis tilskrevet Oswald Jacoby; noen nevner Leo Baron.
 - Sperrestøtte (preemptive raise): et beskrivende navn på støtten til utgang ([1H] – [4H]); den tar meldeplass fra motspillerne.
+- Hoppskift (jump shift): et beskrivende navn; svarhånden hopper i en ny farge, bort fra makkers farge ([1H] – [2S]).
 - Stayman: oppkalt etter Sam Stayman, som publiserte den i 1945. Jack Marx og George Rapée hadde ideen før ham.
 - Svak Stayman: et beskrivende navn; også kalt garbage Stayman.
 - Jacoby-overføringer: oppkalt etter Oswald Jacoby, som skrev om dem i 1956. Lavfargeoverføringen er SAYC-formen.

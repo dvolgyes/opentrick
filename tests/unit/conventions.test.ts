@@ -128,6 +128,11 @@ describe("guide calls for a hand", () => {
 		["1H P", "AQ4.K732.KJ5.Q62", ["2NT"]], // 15, four hearts and no other four-card suit
 		["1H P", "5.KJ754.Q9632.84", ["4H"]], // 6, five hearts and a singleton: preemptive
 		["1S P", "KQ.Q74.AJ63.K842", ["2C", "2D", "3NT"]], // 15, balanced, two spades
+		["1C P", "KQ4.Q73.AJ6.K842", ["2NT"]], // 15, balanced, no four-card major
+		["1C P", "AQ4.K73.AJ6.Q842", ["3NT"]], // 16, balanced, no four-card major
+		["1H P", "AKJ84.A3.KQ6.Q42", ["2S"]], // 19, a good five-card suit: jump shift
+		["1D P", "A3.KQ6.Q42.AKJ84", ["3C"]], // 19, a good five-card suit: jump shift
+		["1H P", "J9842.A3.KQ6.AKQ", ["1S"]], // 19, the suit is not good
 		["1H P 2NT P", "A4.KJ763.K52.Q42", ["4H"]], // 13, no singleton or void
 		["1H P 2NT P", "AQ4.KJ763.K52.Q4", ["3NT"]], // 15
 		["1H P 2NT P", "AK4.AKJ63.K52.Q4", ["3H"]], // 20
@@ -485,6 +490,32 @@ describe("guide meaning of a call", () => {
 		],
 		[
 			"hcp",
+			"1C P 2NT",
+			{
+				range: { min: 13, max: 15 },
+				shape: { kind: "no-major", min: 4, balanced: true },
+			},
+		],
+		[
+			"hcp",
+			"1D P 3NT",
+			{
+				range: { min: 16, max: 17 },
+				shape: { kind: "no-major", min: 4, balanced: true },
+			},
+		],
+		[
+			"hcp",
+			"1H P 2S",
+			{ range: { min: 19 }, shape: { kind: "good-suit", suit: "S", min: 5 } },
+		],
+		[
+			"hcp",
+			"1D P 3C",
+			{ range: { min: 19 }, shape: { kind: "good-suit", suit: "C", min: 5 } },
+		],
+		[
+			"hcp",
 			"1S P 4S",
 			{
 				range: { min: 6, max: 9 },
@@ -688,7 +719,7 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H X 2H"],
 		["hcp", "1H P 1S P"],
 		["hcp", "1H P 4S"], // a jump to game in a new suit
-		["hcp", "1H P 3C"], // a jump in a new suit
+		["hcp", "1H P 4C"], // a double jump in a new suit
 		["hcp", "1C P 4C"], // a minor raise past the jump raise
 		["hcp", "2C P P"],
 		["hcp", "4S"],
@@ -1605,6 +1636,18 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"suit-game": [
 		"Responses to one of a suit",
 		"- Four of partner's major ([1H] – [4H]): {range} points",
+	],
+	"suit-2NT-minor": [
+		"Responses to one of a suit",
+		"- [2NT] over [1C] or [1D]: {range} points",
+	],
+	"suit-3NT-minor": [
+		"Responses to one of a suit",
+		"[3NT] over [1C] or [1D]: {range} points",
+	],
+	"suit-jump-shift": [
+		"Responses to one of a suit",
+		"[1D] – [3C]): {range} points and a good five-card suit",
 	],
 	"jacoby-minimum": ["Opener's rebid", "Without one, [4H] with {range} points"],
 	"jacoby-middle": ["Opener's rebid", ", [3NT] with {range} points"],

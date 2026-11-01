@@ -22,6 +22,8 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - [2NT] sobre [1H] ou [1S] (Jacoby 2NT): 13 ou mais pontos e quatro ou mais cartas no naipe maior do parceiro, forcing de partida.
 - [3NT] sobre [1H] ou [1S]: 15–17 pontos, mão equilibrada, com exatamente duas cartas no naipe maior do parceiro.
 - Quatro no naipe maior do parceiro ([1H] – [4H]): 6–9 pontos, cinco ou mais cartas no naipe e um singleton ou void. Este apoio é preventivo.
+- [2NT] sobre [1C] ou [1D]: 13–15 pontos, mão equilibrada, sem naipe maior quarto, forcing de partida. [3NT] sobre [1C] ou [1D]: 16–17 pontos, mão equilibrada, sem naipe maior quarto.
+- Um salto num naipe novo ([1H] – [2S], [1D] – [3C]): 19 ou mais pontos e um bom naipe quinto. Convida a slam.
 
 ## Redeclaração do abridor
 - 12–14 pontos: [1NT] com uma mão equilibrada, um apoio simples ou a repetição do próprio naipe.
@@ -89,6 +91,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Apoio limite (limit raise): um nome descritivo para o apoio com salto ([1S] – [3S]); mostra uma faixa limitada de pontos (10–12).
 - Jacoby 2NT: atribuído normalmente a Oswald Jacoby; alguns atribuem-no a Leo Baron.
 - Apoio preventivo (preemptive raise): um nome descritivo para o apoio à partida ([1H] – [4H]); tira espaço de leilão aos adversários.
+- Salto em naipe novo (jump shift): um nome descritivo; o respondente salta para um naipe novo, diferente do naipe do parceiro ([1H] – [2S]).
 - Stayman: o nome vem de Sam Stayman, que o publicou em 1945. Jack Marx e George Rapée tiveram a ideia antes dele.
 - Stayman fraco: um nome descritivo; também chamado garbage Stayman.
 - Transferências Jacoby: o nome vem de Oswald Jacoby, que escreveu sobre elas em 1956. A transferência para menor é a forma do SAYC.

@@ -29,6 +29,8 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - [2NT] sobre [1H] o [1S] (Jacoby 2NT): 13 o más puntos y cuatro o más cartas en el mayor de tu compañero, forzante a manga.
 - [3NT] sobre [1H] o [1S]: 15–17 puntos, mano equilibrada, con exactamente dos cartas en el mayor de tu compañero.
 - Cuatro del mayor de tu compañero ([1H] – [4H]): 6–9 puntos, cinco o más cartas en el palo y un semifallo o fallo. Este apoyo es preventivo.
+- [2NT] sobre [1C] o [1D]: 13–15 puntos, mano equilibrada, sin mayor cuarto, forzante a manga. [3NT] sobre [1C] o [1D]: 16–17 puntos, mano equilibrada, sin mayor cuarto.
+- Un salto en un palo nuevo ([1H] – [2S], [1D] – [3C]): 19 o más puntos y un buen palo de cinco cartas. Invita a slam.
 
 ## Redeclaración del abridor
 - 12–14 puntos: [1NT] con mano equilibrada, un apoyo simple o la repetición de tu propio palo.
@@ -96,6 +98,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Apoyo limitado (limit raise): un nombre descriptivo para el apoyo con salto ([1S] – [3S]); muestra un rango limitado de puntos (10–12).
 - Jacoby 2NT: se atribuye normalmente a Oswald Jacoby; algunos lo atribuyen a Leo Baron.
 - Apoyo preventivo (preemptive raise): un nombre descriptivo para el apoyo a manga ([1H] – [4H]); quita espacio de subasta a los contrarios.
+- Salto en palo nuevo (jump shift): un nombre descriptivo; el respondedor salta a un palo nuevo, distinto del palo de su compañero ([1H] – [2S]).
 - Stayman: lleva el nombre de Sam Stayman, que lo publicó en 1945. Jack Marx y George Rapée tuvieron la idea antes que él.
 - Stayman débil: un nombre descriptivo; también llamado garbage Stayman.
 - Transferencias Jacoby: llevan el nombre de Oswald Jacoby, que escribió sobre ellas en 1956. La transferencia a menor es la forma de SAYC.

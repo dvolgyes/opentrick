@@ -343,8 +343,10 @@ Source: SAYC, "Responses after 1H", "1D and 1C openings", and "Negative doubles"
     When the single raise fits, the guide gives no other call, as now.
   - Over [1C] or [1D], [1NT] denies a four-card major; over [1S], it denies three spades.
     This follows the rule over [1H]: a hand that can bid a major at the one level or raise does so.
-  - Over a minor, the guide does not order the calls that fit: a one-level major, a raise of the minor and [1NT] can stand side by side, because SAYC does not order them.- Over [1C] / [1D]: [2NT] with 13–15 points, balanced, game forcing; [3NT] with 16–17 points, balanced.
+  - Over a minor, the guide does not order the calls that fit: a one-level major, a raise of the minor and [1NT] can stand side by side, because SAYC does not order them.
+- Over [1C] / [1D]: [2NT] with 13–15 points, balanced, game forcing; [3NT] with 16–17 points, balanced.
   Both deny a four-card major (proposed; SAYC says "standard").
+  - Derived (2026-11-01): [2NT] or [3NT] and a new suit can both fit (for example a balanced hand with four diamonds over [1C]); the guide gives both, by the same rule as above.
 - Over [1H] / [1S]:
   - [2NT] (Jacoby 2NT): four or more cards in partner's major and 13 or more points, game forcing.
     SAYC says "game-forcing raise, 13+ dummy points" without a length; four cards is the common reading (proposed).
@@ -359,6 +361,11 @@ Source: SAYC, "Responses after 1H", "1D and 1C openings", and "Negative doubles"
     - With two singletons or voids, opener shows the lower one, the same tie rule as for a feature after a weak two.
 - Jump shift (for example [1H] – [2S], [1H] – [3C]): a strong hand that invites slam.
   SAYC gives no number; proposed: 19 or more points with a good five-card suit.
+  - The details below are derived (2026-11-01) from this rule:
+    - A good suit has the same top cards as a weak two: two of the ace, king and queen, or three of the top five cards.
+    - A jump shift is a jump of exactly one level; a double jump in a new suit has no guide meaning.
+    - When the jump shift fits, the guide gives only the jump, not the new suit without a jump.
+    - With four-card support for a major, Jacoby [2NT] comes first, because it is a raise.
 - Negative double, after partner opens one of a suit and the next player overcalls in a suit up to [2S]:
   - It promises four or more cards in the unbid major (both unbid majors after [1C] – [1D]).
   - After [1C] / [1D] – [1H]: exactly four spades ([1S] would show five).
@@ -504,6 +511,7 @@ Each remark below has a source; a remark with a doubtful date says less, not mor
 | Jacoby [2NT] | Usually credited to Oswald Jacoby; some credit Leo Baron. | [Wikipedia: Jacoby 2NT](https://en.wikipedia.org/wiki/Jacoby_2NT) |
 | Limit raise | A descriptive name: the raise shows a limited point range (10–12). | SAYC |
 | Preemptive raise | A descriptive name: the raise to game takes bidding space from the opponents. | SAYC (the bid) |
+| Jump shift | A descriptive name: responder jumps a level and shifts to a new suit. | SAYC (the bid) |
 | Negative double | Alvin Roth and Tobias Stone gave it this meaning in 1957; it was first called "Sputnik", because it was as new as the satellite. | [Wikipedia: Negative double](https://en.wikipedia.org/wiki/Negative_double) |
 | Blackwood | Named after Easley Blackwood, who published it in 1933. | [Wikipedia: Blackwood convention](https://en.wikipedia.org/wiki/Blackwood_convention) |
 | Gerber | Named after John Gerber, who brought it to North America in 1938. | [Wikipedia: Gerber convention](https://en.wikipedia.org/wiki/Gerber_convention) |

@@ -22,6 +22,8 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - [2NT] na [1H] of [1S] (Jacoby 2NT): 13 of meer punten en vier of meer kaarten in de hoge kleur van je partner, mancheforcing.
 - [3NT] na [1H] of [1S]: 15–17 punten, evenwichtige hand, met precies twee kaarten in de hoge kleur van je partner.
 - Vier in de hoge kleur van je partner ([1H] – [4H]): 6–9 punten, vijf of meer kaarten in de kleur en een singleton of renonce. Deze verhoging is preëmptief.
+- [2NT] na [1C] of [1D]: 13–15 punten, evenwichtige hand, zonder vierkaart hoge kleur, mancheforcing. [3NT] na [1C] of [1D]: 16–17 punten, evenwichtige hand, zonder vierkaart hoge kleur.
+- Een sprong in een nieuwe kleur ([1H] – [2S], [1D] – [3C]): 19 of meer punten en een goede vijfkaart. Die nodigt uit tot slem.
 
 ## Herbod van de openaar
 - 12–14 punten: [1NT] met een evenwichtige hand, een enkele verhoging, of een herhaling van je eigen kleur.
@@ -89,6 +91,7 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - Limietverhoging (limit raise): een beschrijvende naam voor de sprongverhoging ([1S] – [3S]); die toont een beperkt puntenbereik (10–12).
 - Jacoby 2NT: meestal toegeschreven aan Oswald Jacoby; sommigen noemen Leo Baron.
 - Preëmptieve verhoging (preemptive raise): een beschrijvende naam voor de verhoging naar de manche ([1H] – [4H]); die neemt biedruimte van de tegenstanders.
+- Sprong in een nieuwe kleur (jump shift): een beschrijvende naam; de antwoorder springt naar een nieuwe kleur, weg van de kleur van de partner ([1H] – [2S]).
 - Stayman: genoemd naar Sam Stayman, die de conventie in 1945 publiceerde. Jack Marx en George Rapée hadden het idee al eerder.
 - Zwakke Stayman: een beschrijvende naam; ook garbage Stayman genoemd.
 - Jacoby-transfers: genoemd naar Oswald Jacoby, die er in 1956 over schreef. De transfer naar een lage kleur is de SAYC-vorm.
