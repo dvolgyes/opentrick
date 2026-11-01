@@ -571,6 +571,47 @@ describe("bidding guide", () => {
 		expect.poll(() => content(root)?.querySelector("h2")?.textContent);
 
 	it.each(["desktop", "compact"] as const)(
+		"links directly to transfers and Stayman in the Hungarian guide (%s)",
+		async (form) => {
+			const { root } = renderView(
+				auction(),
+				form,
+				undefined,
+				translator("hu"),
+				{
+					locale: "hu",
+					pointSystem: () => "hcp",
+					marks: () => ({ ...DEFAULT_SETTINGS, guideButton: true }),
+				},
+			);
+			root.querySelector<HTMLButtonElement>(".guide-open")?.click();
+			await loaded(root).toBe("Licitálási útmutató: Milton HCP (4-3-2-1)");
+			const text = content(root);
+			if (!text) throw new Error("Missing guide content");
+			for (const [id, fragment] of [
+				["guide-transfer-link", "legalább öt kőrt"],
+				["guide-stayman-link", "legalább 8 pont négylapos nemes színnel"],
+			] as const) {
+				const link = text.querySelector<HTMLButtonElement>(
+					`[data-testid='${id}']`,
+				);
+				if (!link) throw new Error(`Missing ${id}`);
+				link.click();
+				const target = document.activeElement;
+				expect(target?.tagName).toBe("LI");
+				expect(target?.textContent).toContain(fragment);
+				expect(text.scrollTop).toBeGreaterThan(0);
+				const top = target?.getBoundingClientRect().top ?? 0;
+				const navigation = text.querySelector<HTMLElement>(".guide-jumps");
+				if (!navigation) throw new Error("Missing guide navigation");
+				expect(
+					Math.abs(top - navigation.getBoundingClientRect().bottom),
+				).toBeLessThan(5);
+			}
+		},
+	);
+
+	it.each(["desktop", "compact"] as const)(
 		"keeps guide bids the size of their surrounding text in %s",
 		async (form) => {
 			try {
@@ -999,6 +1040,21 @@ describe("bidding guide over the side panel", () => {
 			box.top + box.height / 2,
 		);
 		expect(guide.contains(hit)).toBe(true);
+	});
+
+	it("links to the 1NT transfer in the side guide", async () => {
+		onCanvas(auction(), "desktop");
+		await loaded().toBeTruthy();
+		const text = content();
+		const link = text?.querySelector<HTMLButtonElement>(
+			"[data-testid='guide-transfer-link']",
+		);
+		if (!text || !link) throw new Error("Missing transfer link");
+		link.click();
+		expect(document.activeElement?.textContent).toContain(
+			"five or more hearts",
+		);
+		expect(text.scrollTop).toBeGreaterThan(0);
 	});
 
 	it("does not move the other panels of the sidebar", () => {

@@ -16,7 +16,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - 0–9 pont: [P].
 - 10–15 pont: legalább három lappal emeld egy szinttel a partnered nemes színét ([1H] – [2H]). Egyébként legalább négy lappal licitálj új színt egyes szinten, vagy [1NT] a válaszod.
 - 16–20 pont: invitáló. Legalább három lappal ugrással emeld a partnered nemes színét ([1S] – [3S]), vagy licitálj új színt. Kettes szinten az új színhez legalább 16 pont kell.
-- Legalább 21 pont: manche-ig forszírozó. Licitálj új színt, és licitálj tovább a manche-ig ([3NT], [4H], [4S]).
+- Legalább 21 pont: gémig forszírozó. Licitálj új színt, és licitálj tovább a gémig ([3NT], [4H], [4S]).
 
 ## A nyitó második licitje
 - 19–23 pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
@@ -47,8 +47,8 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - [XX], ha a partnered nyitását megkontrázták: legalább 16 pont.
 
 ## A pár céljai
-- 40 pont: [3NT], [4H] vagy [4S] manche.
-- 46 pont: [5C] vagy [5D] manche.
+- 40 pont: [3NT], [4H] vagy [4S] gém.
+- 46 pont: [5C] vagy [5D] gém.
 - 53 pont: kisszlem.
 - 59 pont: nagyszlem.
 - [4NT] (Blackwood) az ászokat kérdezi: [5C] 0 vagy 4, [5D] 1, [5H] 2, [5S] 3.

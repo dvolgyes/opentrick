@@ -143,12 +143,51 @@ async function guideNodes(
 	system: PointSystem,
 	locale: Locale,
 	t: Translate,
+	content: HTMLElement,
 ): Promise<HTMLElement[]> {
 	const text =
 		(await loadGuide(system, locale)) ?? (await loadGuide(system, "en"));
-	return text === undefined
-		? [el("p", {}, t("The bidding guide could not be loaded."))]
-		: renderGuide(parseGuide(text), t);
+	if (text === undefined)
+		return [el("p", {}, t("The bidding guide could not be loaded."))];
+	const nodes = renderGuide(parseGuide(text), t);
+	const section = nodes.findIndex(
+		(node) =>
+			node.tagName === "H3" &&
+			node.querySelector(".guide-bid")?.textContent === "1NT",
+	);
+	const list = nodes[section + 1];
+	if (section < 0 || list?.tagName !== "UL") return nodes;
+	const items = [...list.querySelectorAll<HTMLElement>(":scope > li")];
+	const targets = [
+		{ call: "2♦", label: "Transfers after 1NT", id: "guide-transfer-link" },
+		{ call: "2♣", label: "Stayman after 1NT", id: "guide-stayman-link" },
+	] as const;
+	const navigation = el("nav", { className: "guide-jumps" });
+	for (const { call, label, id } of targets) {
+		const target = items.find(
+			(item) => item.querySelector(".guide-bid")?.textContent === call,
+		);
+		if (!target) continue;
+		target.tabIndex = -1;
+		navigation.append(
+			button(
+				t(label),
+				() => {
+					target.focus({ preventScroll: true });
+					content.scrollTop = target.offsetTop - navigation.offsetHeight;
+					const scale =
+						content.getBoundingClientRect().height / content.offsetHeight || 1;
+					content.scrollTop +=
+						(target.getBoundingClientRect().top -
+							navigation.getBoundingClientRect().bottom) /
+						scale;
+				},
+				{ attrs: { "data-testid": id } },
+			),
+		);
+	}
+	if (navigation.childElementCount > 0) nodes.splice(1, 0, navigation);
+	return nodes;
 }
 
 export interface GuidePanel {
@@ -178,7 +217,7 @@ export function guidePanel(t: Translate, locale: Locale): GuidePanel {
 			if (system === shown) return;
 			shown = system;
 			content.replaceChildren();
-			void guideNodes(system, locale, t).then((nodes) => {
+			void guideNodes(system, locale, t, content).then((nodes) => {
 				if (system !== shown) return;
 				content.replaceChildren(...nodes);
 				content.scrollTop = 0;
@@ -221,7 +260,7 @@ export function guideDialog(t: Translate, locale: Locale): GuideDialog {
 			const current = ++request;
 			content.replaceChildren();
 			if (!element.open) element.showModal();
-			void guideNodes(system, locale, t).then((nodes) => {
+			void guideNodes(system, locale, t, content).then((nodes) => {
 				if (current !== request) return;
 				content.replaceChildren(...nodes);
 				content.scrollTop = 0;

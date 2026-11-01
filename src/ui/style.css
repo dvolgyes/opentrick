@@ -1932,10 +1932,29 @@ dialog {
 }
 
 .guide-content {
+	position: relative;
 	flex: 1 1 auto;
 	min-height: 0;
 	overflow-y: auto;
 	padding: 0.5rem 1.2rem;
+}
+
+.guide-jumps {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	display: flex;
+	gap: 0.3rem;
+	padding: 0.3rem 0;
+	background: var(--sheet-bg);
+}
+
+.guide-jumps button {
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 0.25rem 0.3rem;
+	font-size: 0.85rem;
+	overflow-wrap: anywhere;
 }
 
 .guide-content h2 {

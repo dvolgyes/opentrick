@@ -25,19 +25,19 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Az [1NT] [1C] vagy [1D] után tagadja a négylapos nemes színt, [1H] után a négy pikket és a három kőrt, [1S] után a három pikket.
 - Az alacsony színt ugyanígy emeld, [1D] után legalább négy káróval, [1C] után legalább öt treffel: egy szinttel 6–10 ponttal, ugrással 10–12 ponttal.
 - 10–12 pont: invitáló. Legalább három lappal ugrással emeld a partnered nemes színét ([1S] – [3S]), vagy licitálj új színt. Kettes szinten az új színhez legalább 11 pont kell.
-- Legalább 13 pont: manche-ig forszírozó. Licitálj új színt, és licitálj tovább a manche-ig ([3NT], [4H], [4S]).
-- [2NT] [1H] vagy [1S] után (Jacoby 2NT): legalább 13 pont és legalább négy lap a partnered nemes színében, manche-ig forszírozó.
+- Legalább 13 pont: gémig forszírozó. Licitálj új színt, és licitálj tovább a gémig ([3NT], [4H], [4S]).
+- [2NT] [1H] vagy [1S] után (Jacoby 2NT): legalább 13 pont és legalább négy lap a partnered nemes színében, gémig forszírozó.
 - [3NT] [1H] vagy [1S] után: 15–17 pont, kiegyensúlyozott kéz, pontosan két lappal a partnered nemes színében.
 - A partnered nemes színe négyes szinten ([1H] – [4H]): 6–9 pont, legalább öt lap a színben, és szingli vagy renonsz. Ez az emelés blokk.
-- [2NT] [1C] vagy [1D] után: 13–15 pont, kiegyensúlyozott kéz, négylapos nemes szín nélkül, manche-ig forszírozó. [3NT] [1C] vagy [1D] után: 16–17 pont, kiegyensúlyozott kéz, négylapos nemes szín nélkül.
+- [2NT] [1C] vagy [1D] után: 13–15 pont, kiegyensúlyozott kéz, négylapos nemes szín nélkül, gémig forszírozó. [3NT] [1C] vagy [1D] után: 16–17 pont, kiegyensúlyozott kéz, négylapos nemes szín nélkül.
 - Ugrás új színben ([1H] – [2S], [1D] – [3C]): legalább 19 pont és jó ötlapos szín. Szlemre invitál.
 
 ## A nyitó második licitje
 - 12–14 pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
 - 15–17 pont: ugrásos emelés, vagy a saját színed ismétlése ugrással.
 - 18–21 pont: ugrás új színben, vagy kiegyensúlyozott 18–19 ponttal [2NT].
-- A nemes színed egyszerű emelése ([1H] – [2H]) és egy passz után: 12–14 ponttal [P]; 15–17 ponttal a [3H] manche-kísérlet, manche-ra invitál; 18–21 ponttal [4H].
-- Ha az emelés után egy ellenfél licitál vagy kontrát mond: 12–17 ponttal és legalább hat lappal a színben a [3H] kompetitív licit, nem invitál manche-ra; 18–21 ponttal [4H].
+- A nemes színed egyszerű emelése ([1H] – [2H]) és egy passz után: 12–14 ponttal [P]; 15–17 ponttal a [3H] gémkísérlet, gémre invitál; 18–21 ponttal [4H].
+- Ha az emelés után egy ellenfél licitál vagy kontrát mond: 12–17 ponttal és legalább hat lappal a színben a [3H] kompetitív licit, nem invitál gémre; 18–21 ponttal [4H].
 - A nemes színed ugrásos emelése ([1H] – [3H]) és egy passz után a partnerednek legalább 10 pontja van: 15–21 ponttal [4H] (együtt legalább 25 pont), különben 12–14 ponttal [P].
 - Jacoby [2NT] ([1H] – [2NT]) és egy passz után: egy új szín hármas szinten szinglit vagy renonszot mutat, kettővel az alacsonyabbat. Ha nincs ilyen, 12–14 ponttal [4H], 15–17 ponttal [3NT], 18–21 ponttal [3H].
 
@@ -45,12 +45,12 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - 0–7 pont: [P], ha nem illik transzfer, gyenge Stayman vagy [2S].
 - [2D] legalább öt kőrt, [2H] legalább öt pikket mutat (transzferek), bármennyi ponttal. Ha mindkét nemes színed legalább ötlapos, a hosszabbikra adj transzfert; egyenlő hossznál a pikkre, de két ötlapos nemes színnel és 8–9 ponttal a kőrre. A nyitó a következő színt licitálja, vagy 17 ponttal és legalább négy lappal hármas szinten licitálja (szuperelfogadás).
 - A transzfer után a válaszoló licitje 0–7 ponttal [P]; pontosan öt lappal és 8–9 ponttal [2NT]; legalább hat lappal és 8–9 ponttal a nemes szín hármas szinten; pontosan öt lappal, szingli és renonsz nélkül, 10–15 ponttal [3NT]; legalább hat lappal és 10–15 ponttal a nemes szín négyes szinten. Legalább 16 ponttal az útmutató nem ad licitet.
-- Új szín a transzfer után manche-ig forszírozó: pontosan öt lap a nemes színben, legalább négy lap az új színben, szingli vagy renonsz, és 10–15 pont. Két ilyen színnel a hosszabbikat licitáld, egyenlő hossznál az alacsonyabbat. [2D] [2H] után a [2NT] helyett [2S] mindkét nemes színben öt lapot és 8–9 pontot mutat.
+- Új szín a transzfer után gémig forszírozó: pontosan öt lap a nemes színben, legalább négy lap az új színben, szingli vagy renonsz, és 10–15 pont. Két ilyen színnel a hosszabbikat licitáld, egyenlő hossznál az alacsonyabbat. [2D] [2H] után a [2NT] helyett [2S] mindkét nemes színben öt lapot és 8–9 pontot mutat.
 - A transzfer után a nyitó a [2NT]-re 15 ponttal [P]-t mond két lappal a nemes színben, vagy legalább három lappal hármas szinten licitálja a nemes színt; 16–17 ponttal ugyanígy [3NT] vagy a nemes szín négyes szinten. A nemes szín hármas szintje után a nyitó 15 ponttal passzol, 16–17 ponttal négyes szinten licitálja. [3NT] után a nyitó két lappal a nemes színben passzol, legalább három lappal négyes szinten licitálja. [2S] után a nyitó 15 ponttal és legalább annyi pikkel, mint kőrrel passzol, különben [3H] a licitje; 16–17 ponttal ugyanígy [4S] vagy [4H].
 - A szuperelfogadás után a válaszoló 0–5 ponttal passzol, legalább 6 ponttal négyes szinten licitálja a nemes színt.
 - [2C] (Stayman): legalább 8 pont négylapos nemes színnel. A nyitó négylapos nemes szín nélkül [2D], négy kőrrel [2H], négy pikkel és négy kőr nélkül [2S] választ ad.
 - Gyenge Stayman: [2C] 0–7 ponttal is, négy pikkel, négy kőrrel és legfeljebb egy treffel. A nyitó bármely válaszát passzold.
-- [2C] [2D] után a válaszoló licitje [2H] vagy [2S] öt lappal abban a nemes színben, négy lappal a másik nemes színben és 8–9 ponttal; ugyanígy [3H] vagy [3S] 10–15 ponttal, manche-ig forszírozó. Ötlapos nemes szín nélkül 8–9 ponttal [2NT], 10–15 ponttal [3NT].
+- [2C] [2D] után a válaszoló licitje [2H] vagy [2S] öt lappal abban a nemes színben, négy lappal a másik nemes színben és 8–9 ponttal; ugyanígy [3H] vagy [3S] 10–15 ponttal, gémig forszírozó. Ötlapos nemes szín nélkül 8–9 ponttal [2NT], 10–15 ponttal [3NT].
 - [2C] [2H] után a válaszoló licitje négy kőrrel és 8–9 ponttal [3H], 10–15 ponttal [4H]; négy kőr nélkül ugyanígy [2NT] vagy [3NT]. [2C] [2S] után ugyanez pikkel. Legalább 16 ponttal az útmutató nem ad licitet.
 - Stayman után a nyitó a [2NT]-re 15 ponttal [P]-t, 16–17 ponttal [3NT]-t mond; [2C] [2H] [2NT] után négy pikkel helyette ugyanígy [3S]-t vagy [4S]-t. A nyitó nemes színének hármas szintje után 15 ponttal [P], 16–17 ponttal a szín négyes szinten. [3NT] után [P], de négy pikkel [4S], ha a licitmenet [2C] [2H] volt.
 - [2C] [2D] után, ha a válaszoló öt lapot mutat egy nemes színben, a nyitó két lappal ebben a színben kettes szintű licitre 15 ponttal [2NT]-t mond, különben [3NT]-t; legalább három lappal kettes szintű licitre 15 ponttal [P]-t, különben a nemes színt négyes szinten.
@@ -87,8 +87,8 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - A nyitó válasza a negatív kontrára, egy passz után: ha legalább négy lapod van egy nemes színben, amelyet a kontra mutat, licitáld a legalacsonyabb szinten 12–15 ponttal, vagy egy szinttel magasabban 16–18 ponttal. Legalább 19 ponttal licitáld az ellenfelek színét a legalacsonyabb szinten. A többi lapra az útmutató nem ad licitet.
 
 ## A pár céljai
-- 25 pont: [3NT], [4H] vagy [4S] manche.
-- 29 pont: [5C] vagy [5D] manche.
+- 25 pont: [3NT], [4H] vagy [4S] gém.
+- 29 pont: [5C] vagy [5D] gém.
 - 33 pont: kisszlem.
 - 37 pont: nagyszlem.
 - [4NT] (Blackwood) az ászokat kérdezi: [5C] 0 vagy 4, [5D] 1, [5H] 2, [5S] 3.
@@ -100,7 +100,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Feature: leíró név egy mellékszín ászára vagy királyára; a nyitó a [2NT] kérdés után mutatja meg.
 - Limitemelés (limit raise): leíró név az ugrásos emelésre ([1S] – [3S]); korlátozott pontsávot mutat (10–12).
 - Jacoby 2NT: többnyire Oswald Jacobynak tulajdonítják; egyesek Leo Baronnak.
-- Blokkemelés (preemptive raise): leíró név a manche-ra emelésre ([1H] – [4H]); licitteret vesz el az ellenfelektől.
+- Blokkemelés (preemptive raise): leíró név a gémre emelésre ([1H] – [4H]); licitteret vesz el az ellenfelektől.
 - Ugrásos színváltás (jump shift): leíró név; a válaszoló ugrással új színt licitál, a partnere színétől eltérve ([1H] – [2S]).
 - Stayman: Sam Stayman nevét viseli, aki 1945-ben publikálta. Jack Marx és George Rapée már előtte kitalálta.
 - Gyenge Stayman: leíró név; garbage Stayman néven is ismert.

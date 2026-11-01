@@ -412,7 +412,10 @@ describe("call meanings in the auction", () => {
 	it("opens the meaning under the call on a click, and closes it with Escape, a second click, or a click outside", async () => {
 		const { root } = renderView(meaningView(), "desktop");
 		const { call, meaning, open } = parts(root, 1);
-		await userEvent.click(call);
+		const auctionCall = page
+			.getByTestId("auction")
+			.getByRole("button", { name: "1NT", exact: true });
+		await auctionCall.click();
 		expect(open()).toBe(true);
 		expect(meaning.textContent).toBe("15–17 HCP, balanced");
 		expect(meaning.getBoundingClientRect().top).toBeGreaterThanOrEqual(
@@ -420,18 +423,21 @@ describe("call meanings in the auction", () => {
 		);
 		await userEvent.keyboard("{Escape}");
 		expect(open()).toBe(false);
-		await userEvent.click(call);
+		await auctionCall.click();
 		expect(open()).toBe(true);
-		await userEvent.click(call);
+		await auctionCall.click();
 		expect(open()).toBe(false);
-		await userEvent.click(call);
+		await auctionCall.click();
 		await userEvent.click(cell(root, 0));
 		expect(open()).toBe(false);
 	});
 
 	it("keeps the meaning open while a render does not change the auction", async () => {
 		const { root, section } = renderView(meaningView(), "desktop");
-		await userEvent.click(parts(root, 1).call);
+		await page
+			.getByTestId("auction")
+			.getByRole("button", { name: "1NT", exact: true })
+			.click();
 		section.render({ ...meaningView(), prompt: "playerS is thinking" });
 		expect(parts(root, 1).open()).toBe(true);
 	});

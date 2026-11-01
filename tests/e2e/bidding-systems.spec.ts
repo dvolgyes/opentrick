@@ -77,6 +77,19 @@ test("each player sees the others' bidding systems, the Vienna calls get only th
 		await expect(
 			guestPage.getByTestId("guide-dialog").getByRole("heading", { level: 2 }),
 		).toHaveText("Bidding guide: Vienna points (7-5-3-1)");
+		const guide = guestPage.getByTestId("guide-dialog");
+		await guide.getByTestId("guide-transfer-link").click();
+		await expect(
+			guide
+				.getByRole("listitem")
+				.filter({ hasText: "shows five or more hearts" }),
+		).toBeFocused();
+		await guide.getByTestId("guide-stayman-link").click();
+		await expect(
+			guide
+				.getByRole("listitem")
+				.filter({ hasText: "13 or more points with a four-card major" }),
+		).toBeFocused();
 		await guestPage.keyboard.press("Escape");
 		await expect(guestPage.getByTestId("guide-dialog")).toBeHidden();
 

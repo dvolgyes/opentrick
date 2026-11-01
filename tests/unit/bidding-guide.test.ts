@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { POINT_SYSTEMS } from "../../src/bridge/hand-points";
-import type { Locale } from "../../src/i18n";
+import { type Locale, translator } from "../../src/i18n";
 import { guideName, loadGuide, parseGuide } from "../../src/ui/bidding-guide";
 
 const LOCALES = [
@@ -80,6 +80,29 @@ describe("bidding guide text", () => {
 });
 
 describe("bidding guide files", () => {
+	it.each(POINT_SYSTEMS)(
+		"uses Hungarian bridge terminology in the %s guide",
+		async (system) => {
+			const text = await loadGuide(system, "hu");
+			expect(text).toBeDefined();
+			expect(text).not.toMatch(/manche/i);
+			expect(text).toMatch(/gém/i);
+		},
+	);
+
+	it("uses Hungarian bridge terminology in bid explanations", () => {
+		const t = translator("hu");
+		expect(
+			t("game try, invites game, {min}+ {suit}", { min: 5, suit: "♥" }),
+		).toContain("gém");
+		expect(
+			t("competitive, no game invitation, {min}+ {suit}", {
+				min: 5,
+				suit: "♥",
+			}),
+		).not.toMatch(/manche/i);
+	});
+
 	// The first load of each guide goes through Vite's transform, which waits behind the other projects of a full run.
 	it.each(GUIDES)(
 		"has %s in each language, with the same bids as the English guide",

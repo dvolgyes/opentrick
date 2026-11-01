@@ -160,6 +160,7 @@ BRL's RL/FSP learned system remains available for bot partnerships and future wo
 Both policies run entirely in a browser worker, with no Python runtime or API key.
 Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
 Enable **Show the bidding guide button in the bid box** in Settings to open the guide for the chosen bidding system from the bid box.
+The guide has links at the top to the transfer and Stayman responses to 1NT.
 The button is disabled by default.
 On desktop, the bidding guide is also shown in the side panel during the auction by default.
 The bot's suggested call is shown by default and can also be disabled in Settings.
