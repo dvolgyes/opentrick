@@ -73,7 +73,8 @@ Transport:
   A URL can be in one relay list only, and each list has at most 8 URLs.
   The mesh diagnostics record, for each relay and STUN server, whether it is open and when it last answered.
 - The pages form a full mesh of WebRTC data channels.
-  Four actions carry all traffic: `opentrick-ctl` (control, 8 KiB), `opentrick-log` (log replication, 256 KiB), `opentrick-call` (call signaling, 64 KiB) and `opentrick-mesh` (peer lists for the mesh repair, 2 KiB).
+  Four actions carry all traffic: `opentrick-ctl` (control, 8 KiB), `opentrick-log` (log replication, 256 KiB), `opentrick-call` (call messages, 64 KiB) and `opentrick-mesh` (peer lists for the mesh repair, 2 KiB).
+  Trystero's own `@_signal` action carries the offers and answers of the call media (ADR 0009).
   Every received message passes a validator before any use.
 - Mesh repair (a deviation from one room per page): a tracker sends each announce to a few peers and repeats it only every 120 s, so in a room of four pages a link can stay missing for minutes.
   Two pages that miss each other join a Trystero room for only the two of them, which connects during the first announces.
@@ -156,6 +157,7 @@ Presence (owner requirement R4):
 Call signaling:
 
 - Call messages go over the `opentrick-call` data channel action to the peer bound to the target seat, never through a tracker or a database.
+- The call media goes over the table's connection to the page of the seat, not over a connection of its own (ADR 0009, 2026-11-01).
 - The receiver takes the sender seat and generation from the host's roster binding of the sending peer, never from the message.
   A message from an unbound peer or an old generation is dropped.
 - During a host change, the call keeps the last roster that it had, so the call between the remaining seats goes on.
@@ -164,8 +166,9 @@ Call signaling:
   The table shows the record to every seat.
   A page in the call greets each seat that the record shows in the call with an addressed `resync` until the two pages connect, at a wait that doubles from 3 s to 30 s.
   A seat in the record without a link shows "Joined earlier; no answer yet" while a direct data channel to it is open, because its page can also wait for "Rejoin the call", and "In the call; no direct connection yet" without one.
-  The resync restarts a failed link with an ICE restart, but only Retry starts a new connect window, so a link that cannot connect still shows Retry.
-  The record carries no call signaling: offers, answers and candidates go only over the direct data channel, so the host cannot change them.
+  The call has no ICE of its own: a failed table connection reconnects through the table, and the link moves to the new connection.
+  Only Retry starts a new connect window, so a link that cannot connect still shows Retry.
+  The record carries no call signaling: the media offers and answers go only over Trystero's `@_signal` action on the direct data channel (ADR 0009), so the host cannot change them.
   The `join` and `resync` messages still give discovery, and a peer that stays offline at its generation leaves the call.
 
 ## Consequences
