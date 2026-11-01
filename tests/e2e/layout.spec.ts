@@ -836,6 +836,10 @@ for (const viewport of [
 		page,
 	}) => {
 		await page.setViewportSize(viewport);
+		// The bot animation takes the place of the picture by default; the browser tests check its frame.
+		await page.addInitScript(() =>
+			localStorage.setItem("opentrick.settings.bot-animation", "0"),
+		);
 		await page.goto("/");
 		await page.getByTestId("create-solo").click();
 		for (const seat of ["N", "E", "W"]) {
