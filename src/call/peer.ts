@@ -27,6 +27,16 @@ export interface PeerLinkOptions extends LinkOptions {
 	readonly tracks: LocalTracks;
 }
 
+/**
+ * An offer on a connected connection that has no answer after this long is lost, and the link rolls it back.
+ * Trystero drops a signal from a peer whose handshake it has not finished, so the first offer on a new table
+ * connection can be lost, and Trystero never sends it again. After the rollback the link fires
+ * `negotiationneeded`, and Trystero offers again. An answer is not lost so, because the side that got the offer
+ * has finished the handshake. Local answers take under 0.1 s; an answer that arrives after the rollback makes
+ * Trystero close the peer, and the table reconnects.
+ */
+export const OFFER_TIMEOUT_MS = 5_000;
+
 /** How often the link looks for frames on a muted video receiver that the section lets receive. */
 const FRAME_POLL_MS = 500;
 
@@ -82,6 +92,7 @@ export class PeerLink implements CallLink {
 	#queue: Promise<void> = Promise.resolve();
 	#closed = false;
 	#connectTimer: ReturnType<typeof setTimeout> | undefined;
+	#offerTimer: ReturnType<typeof setTimeout> | undefined;
 	#frameTimer: ReturnType<typeof setInterval> | undefined;
 	/** The connect window ended before the link connected; it shows unavailable until it connects. */
 	#timedOut = false;
@@ -162,6 +173,7 @@ export class PeerLink implements CallLink {
 		if (this.#closed) return;
 		this.#closed = true;
 		clearTimeout(this.#connectTimer);
+		clearTimeout(this.#offerTimer);
 		this.#pollFrames(false);
 		this.#listeners?.abort();
 		this.#release(this.#pc);
@@ -183,6 +195,7 @@ export class PeerLink implements CallLink {
 		this.#release(this.#pc);
 		this.#pc = pc;
 		this.#watched = new Set();
+		clearTimeout(this.#offerTimer);
 		if (pc === undefined) {
 			clearTimeout(this.#connectTimer);
 			return;
@@ -199,10 +212,33 @@ export class PeerLink implements CallLink {
 		this.#timedOut = false;
 		this.#fault = undefined;
 		this.#armConnect();
+		this.#armOffer(pc);
 		this.#enqueue((current) => this.#apply(current));
 	}
 
+	/** While `pc` waits for the answer to its offer, rolls the offer back after OFFER_TIMEOUT_MS on a connected connection. */
+	#armOffer(pc: RTCPeerConnection): void {
+		clearTimeout(this.#offerTimer);
+		if (pc.signalingState !== "have-local-offer") return;
+		this.#offerTimer = setTimeout(() => {
+			this.#offerTimer = undefined;
+			if (this.#closed || this.#pc !== pc) return;
+			if (pc.connectionState !== "connected") {
+				this.#armOffer(pc);
+				return;
+			}
+			this.#enqueue(async (current) => {
+				if (current !== pc || pc.signalingState !== "have-local-offer") return;
+				await pc.setLocalDescription({ type: "rollback" });
+				// Chrome fires no new negotiationneeded after the rollback (browser test). Trystero offers on this
+				// event, and ignores it while it makes an offer or the state is not stable (peer.mjs createOffer).
+				pc.dispatchEvent(new Event("negotiationneeded"));
+			});
+		}, OFFER_TIMEOUT_MS);
+	}
+
 	#negotiated(pc: RTCPeerConnection): void {
+		this.#armOffer(pc);
 		if (pc.signalingState === "have-remote-offer") {
 			// This handler runs before Trystero creates the answer, so the answer carries the plan's directions.
 			this.#setDirections(pc);

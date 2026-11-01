@@ -300,6 +300,30 @@ describe("call media link on the table's Trystero connection", () => {
 		expectTableIntact(pair);
 	}, 60_000);
 
+	for (const impoliteFirst of [true, false]) {
+		it(`rolls back an offer that never arrives and negotiates again, with the ${impoliteFirst ? "impolite" : "polite"} seat as the Trystero initiator`, async () => {
+			const pair = await connectedPair(random(23), 5);
+			// North adds the sections; its offers are lost, as on a table connection whose other end has not
+			// finished its handshake. An answer cannot be lost so: the side that got the offer has activated the peer.
+			const sender = impoliteFirst ? "a" : "b";
+			pair.lost[sender] = 1;
+			const { north, east } = await call(
+				pair,
+				impoliteFirst,
+				["audio"],
+				["audio"],
+			);
+			await expectFlows(north, east);
+			expect(pair.lost[sender]).toBe(0);
+
+			pair.lost[sender] = 1;
+			update(north, east, ["audio"], ["audio", "video"]);
+			await expectFlows(north, east);
+			expect(pair.lost[sender]).toBe(0);
+			expectTableIntact(pair);
+		}, 60_000);
+	}
+
 	it("rebind() moves both links to a new table connection after a reconnect", async () => {
 		const first = await connectedPair(random(17), 5);
 		const { north, east } = await call(first, true, ["audio"], ["video"]);

@@ -56,6 +56,11 @@ export interface Pair {
 	readonly received: Readonly<Record<"a" | "b", string[]>>;
 	/** Offers and answers sent, from both sides. */
 	descriptions: number;
+	/**
+	 * How many of each side's next signals are lost on the way, as a Trystero room drops a signal from a peer
+	 * that it has not activated yet (`@_signal` has no `receiveWhilePending`, room.mjs).
+	 */
+	readonly lost: Record<"a" | "b", number>;
 }
 
 const pairs: Pair[] = [];
@@ -83,12 +88,17 @@ export async function connectedPair(
 		closes: [],
 		received: { a: [], b: [] },
 		descriptions: 0,
+		lost: { a: 0, b: 0 },
 	};
 	pairs.push(pair);
-	const route = (to: TrysteroPeer) => {
+	const route = (from: "a" | "b", to: TrysteroPeer) => {
 		let line = Promise.resolve();
 		return (signal: Signal) => {
 			pair.descriptions++;
+			if (pair.lost[from] > 0) {
+				pair.lost[from]--;
+				return;
+			}
 			const delay = Math.floor(next() * delayMs);
 			line = line.then(async () => {
 				await wait(delay);
@@ -102,7 +112,7 @@ export async function connectedPair(
 		["b", b, a],
 	] as const) {
 		peer.setHandlers({
-			signal: route(other),
+			signal: route(name, other),
 			connect: () => open++,
 			close: () => pair.closes.push(name),
 			error: (error) => pair.errors.push(`${name}: ${error.message}`),
