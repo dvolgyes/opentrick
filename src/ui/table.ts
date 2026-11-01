@@ -98,7 +98,12 @@ export interface TableSection {
 		presence?: Readonly<Partial<Record<Seat, RemoteCallPresence>>>,
 		hostInCall?: boolean,
 	): void;
-	setBotControls(hosting: boolean, bots: readonly Seat[]): void;
+	/** `paused`: this page hosts the bots and they are paused or stopped, so their pictures freeze and show Paused. */
+	setBotControls(
+		hosting: boolean,
+		bots: readonly Seat[],
+		paused: boolean,
+	): void;
 	setPlayerAutoplay(
 		available: boolean,
 		enabled: boolean,
@@ -171,6 +176,8 @@ interface CallSpot {
 	readonly botFallback: HTMLElement;
 	/** In place of the bot image while its setting is on. */
 	readonly botAnimation: BotAnimation;
+	/** "Paused" over the bot picture while the host's bots are stopped. */
+	readonly botPaused: HTMLElement;
 	/** The host gives this seat the turn, as the turn frame shows: the bot animation moves. */
 	turn: boolean;
 	readonly callPresence: HTMLElement;
@@ -1031,6 +1038,7 @@ export function tableSection(
 	const callSpots = new Map<Seat, CallSpot>();
 	let botControlHost = false;
 	let botControlSeats: readonly Seat[] = [];
+	let botControlPaused = false;
 	let playerAutoplayAvailable = false;
 	let playerAutoplayEnabled = false;
 	let playerAutoplayPending = false;
@@ -1497,12 +1505,18 @@ export function tableSection(
 			if (known !== undefined)
 				showBotPicture(known, botControlSeats.includes(seat));
 		});
+		const botPaused = el(
+			"span",
+			{ className: "bot-paused", attrs: { "data-testid": "bot-paused" } },
+			t("Paused"),
+		);
 		const botOverlay = el(
 			"span",
 			{ className: "bot-overlay", attrs: { "aria-hidden": "true" } },
 			botArtworkImage,
 			botFallback,
 			animation.element,
+			botPaused,
 		);
 		botOverlay.hidden = true;
 		video.muted = true;
@@ -1589,6 +1603,7 @@ export function tableSection(
 			botArtwork: botArtworkImage,
 			botFallback,
 			botAnimation: animation,
+			botPaused,
 			turn: false,
 			callPresence,
 			networkBars,
@@ -1607,7 +1622,7 @@ export function tableSection(
 
 	/**
 	 * The picture of a bot seat. With its setting on, the bot animation stands in place of the image; it moves only
-	 * while the seat has the turn and is frozen otherwise.
+	 * while the seat has the turn and the bots are not paused, and is frozen otherwise.
 	 */
 	function showBotPicture(spot: CallSpot, isBot: boolean): void {
 		const artworkUrl = robotArtwork();
@@ -1615,11 +1630,12 @@ export function tableSection(
 		if (artworkUrl !== undefined) spot.botArtwork.src = artworkUrl;
 		spot.botArtwork.hidden = !isBot || artworkUrl === undefined || animated;
 		spot.botFallback.hidden = artworkUrl !== undefined || animated;
+		spot.botPaused.hidden = !isBot || !botControlPaused;
 		spot.botAnimation.element.hidden = !isBot || !animated;
 		spot.botAnimation.show(
 			!isBot || !animated || spot.botOverlay.hidden
 				? "off"
-				: spot.turn
+				: spot.turn && !botControlPaused
 					? "moving"
 					: "still",
 		);
@@ -1786,9 +1802,14 @@ export function tableSection(
 		renderCallStates();
 	}
 
-	function setBotControls(hosting: boolean, bots: readonly Seat[]): void {
+	function setBotControls(
+		hosting: boolean,
+		bots: readonly Seat[],
+		paused: boolean,
+	): void {
 		botControlHost = hosting;
 		botControlSeats = bots;
+		botControlPaused = paused;
 		updateAutoplayControl();
 		for (const [seat, spot] of callSpots) {
 			const isBot = bots.includes(seat);

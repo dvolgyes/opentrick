@@ -1478,6 +1478,11 @@ export function showRoom(
 			botRunner = undefined;
 			botStatus.textContent = deps.t("Host changed. Bots stopped.");
 		}
+		// While the first start runs, the runner does not exist yet, but the bots are not stopped.
+		const botsStopped =
+			view.hosting &&
+			activeBots.length > 0 &&
+			(botsPaused || (botAutoAttempted && !botStarting && !botRunner));
 		if (
 			!botAutoAttempted &&
 			!botRestorePending &&
@@ -1735,6 +1740,7 @@ export function showRoom(
 		table.setBotControls(
 			view.hosting && !botRestorePending && !community,
 			activeBots,
+			botsStopped,
 		);
 		if (!view.hosting) delegatedBotSeats.clear();
 		const rosterHost = JSON.stringify(view.roster?.auth ?? null);

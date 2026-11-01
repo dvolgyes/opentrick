@@ -705,6 +705,7 @@ const rows: readonly TranslationRow[] = [
 		"Bot in pausa.",
 		"Bots gepauzeerd.",
 	],
+	["Paused", "En pausa", "Em pausa", "En pause", "In pausa", "Gepauzeerd"],
 	[
 		"CONNECTING TO HOST",
 		"CONECTANDO CON EL ANFITRIÓN",

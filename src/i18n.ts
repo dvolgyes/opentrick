@@ -139,6 +139,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Previous game statistics": "Statistik der vorherigen Spiele",
 
 		"Bots paused.": "Bots pausiert.",
+		Paused: "Pausiert",
 		"Running {count} bot seat(s) with {engine}.":
 			"{count} Bot-Platz/-Plätze aktiv mit {engine}.",
 		Online: "Online",
@@ -891,6 +892,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		Target: "Cél",
 
 		"Bots paused.": "A botok szünetelnek.",
+		Paused: "Szünetel",
 		"No bot seats are active.": "Nincs aktív bothely.",
 		"Running {count} bot seat(s) with {engine}.":
 			"{count} bothely fut ezzel: {engine}.",
@@ -1614,6 +1616,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Previous game statistics": "Statistikk fra forrige spill",
 		Target: "Mål",
 		"Bots paused.": "Botene er satt på pause.",
+		Paused: "På pause",
 		"No bot seats are active.": "Ingen botplasser er aktive.",
 		Online: "Tilkoblet",
 		Offline: "Frakoblet",

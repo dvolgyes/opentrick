@@ -72,19 +72,27 @@ test("host bots play two consecutive boards from auction through the final trick
 	expect(roomUrl.searchParams.has("r")).toBe(false);
 	await expect(page.getByTestId("bot-spend")).toHaveCount(0);
 	await expect(page.getByTestId("bot-balance")).toHaveCount(0);
+	// While the bots are paused or stopped, the host sees "Paused" over each bot picture.
+	const pausedLabels = ["N", "E", "S"].map((seat) =>
+		page.getByTestId(`tile-${seat}`).getByTestId("bot-paused"),
+	);
 	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
+	for (const label of pausedLabels) await expect(label).toBeHidden();
 	await page.getByRole("button", { name: "Pause bots" }).click();
 	await expect(page.getByRole("button", { name: "Resume bots" })).toBeVisible();
+	for (const label of pausedLabels) await expect(label).toBeVisible();
 	await page.reload();
 	await expect(page.getByRole("button", { name: "Resume bots" })).toBeVisible({
 		timeout: CONNECT_MS,
 	});
 	await expect(page.getByRole("button", { name: "Pause bots" })).toBeHidden();
+	for (const label of pausedLabels) await expect(label).toBeVisible();
 	const pausedRequests = requests;
 	await page.waitForTimeout(3_000);
 	expect(requests).toBe(pausedRequests);
 	await page.getByRole("button", { name: "Resume bots" }).click();
 	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
+	for (const label of pausedLabels) await expect(label).toBeHidden();
 
 	await expect
 		.poll(

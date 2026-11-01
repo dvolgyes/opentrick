@@ -1525,6 +1525,7 @@ main:has(> .room) {
 	display: grid;
 	place-items: center;
 	font-size: clamp(2.5rem, 7vw, 4.5rem);
+	container-type: inline-size;
 	line-height: 1;
 	text-shadow: 0 2px 8px var(--overlay-shadow);
 	pointer-events: none;
@@ -1607,6 +1608,23 @@ main:has(> .room) {
 	height: 100%;
 	overflow: hidden;
 	border-radius: 0.4rem 0.4rem 0 0;
+}
+
+/* While the host's bots are stopped, a red label lies in the middle of the bot picture; its size follows the picture's
+ * width (cqi), so a long translation fits a small tile. */
+.bot-paused {
+	position: absolute;
+	padding: 0.25em 0.7em;
+	border: 2px solid var(--alert-fg);
+	border-radius: 0.4rem;
+	background: var(--alert-bg);
+	box-shadow: 0 2px 8px var(--overlay-shadow);
+	color: var(--alert-fg);
+	font-size: clamp(0.7rem, 9cqi, 1.6rem);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-shadow: none;
+	text-transform: uppercase;
 }
 
 .tile-caption {

@@ -888,7 +888,7 @@ describe("played card styles", () => {
 			),
 		};
 		const { root, section, handlers } = renderMobile(view);
-		section.setBotControls(true, []);
+		section.setBotControls(true, [], false);
 		expect(
 			root.querySelector('.mobile-player-control[data-seat="N"]'),
 		).toBeNull();
@@ -1038,7 +1038,7 @@ describe("played card styles", () => {
 				),
 			};
 			const { root, section, handlers } = renderView(view, layout);
-			section.setBotControls(true, []);
+			section.setBotControls(true, [], false);
 			section.render(view);
 			const toggle =
 				section.autoplayControl.querySelector<HTMLButtonElement>("button");
@@ -1064,7 +1064,7 @@ describe("played card styles", () => {
 				)
 				?.click();
 			expect(handlers.setBotSeat).toHaveBeenCalledExactlyOnceWith("N", true);
-			section.setBotControls(true, ["N"]);
+			section.setBotControls(true, ["N"], false);
 			expect(toggle.textContent).toBe("Disable bot");
 			toggle.click();
 			expect(dialog?.open).toBe(false);
@@ -3435,7 +3435,7 @@ describe("board depth and frame colours", () => {
 	);
 	it("keeps mobile hand cards and board labels free of drop shadows", () => {
 		const { root, section } = renderView(sideHandView(), "compact");
-		section.setBotControls(true, ["E"]);
+		section.setBotControls(true, ["E"], false);
 		const board = root.querySelector<HTMLElement>(".mobile-auction-board");
 		if (!board) throw new Error("missing board");
 		const handFaces = [...board.querySelectorAll<HTMLElement>(".hand .face")];
@@ -3604,7 +3604,7 @@ describe("board depth and frame colours", () => {
 				layout,
 				"corners-oriented",
 			);
-			section.setBotControls(true, ["E"]);
+			section.setBotControls(true, ["E"], false);
 			const board = root.querySelector<HTMLElement>(
 				layout === "desktop" ? ".felt" : ".mobile-auction-board",
 			);
@@ -4433,7 +4433,7 @@ describe("turn marks and network quality from the settings", () => {
 				undefined,
 				marks({}),
 			);
-			section.setBotControls(false, ["E"]);
+			section.setBotControls(false, ["E"], false);
 			const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
 			if (tile === null) throw new Error("no tile of East");
 			const animation = tile.querySelector<HTMLElement>(
@@ -4491,7 +4491,7 @@ describe("turn marks and network quality from the settings", () => {
 				undefined,
 				marks({}),
 			);
-			section.setBotControls(false, ["E", "W"]);
+			section.setBotControls(false, ["E", "W"], false);
 			const scene = (seat: Seat) => {
 				const tile = root.querySelector<HTMLElement>(
 					`[data-testid='tile-${seat}']`,
@@ -4525,7 +4525,7 @@ describe("turn marks and network quality from the settings", () => {
 				undefined,
 				marks({ botAnimation: false }),
 			);
-			section.setBotControls(false, ["E"]);
+			section.setBotControls(false, ["E"], false);
 			const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
 			expect(
 				tile?.querySelector<HTMLElement>(".bot-artwork")?.checkVisibility(),
@@ -4536,6 +4536,76 @@ describe("turn marks and network quality from the settings", () => {
 					?.checkVisibility(),
 			).toBe(false);
 			expect(tile?.querySelector(".bridge-rain")).toBeNull();
+		});
+
+		it("freezes a paused bot on its turn and shows Paused over its picture", async () => {
+			const { root, section } = renderView(
+				botView("E"),
+				"desktop",
+				undefined,
+				undefined,
+				marks({}),
+			);
+			section.setBotControls(true, ["E"], true);
+			const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
+			if (tile === null) throw new Error("no tile of East");
+			const animation = tile.querySelector<HTMLElement>(
+				"[data-testid='bot-animation']",
+			);
+			const paused = tile.querySelector<HTMLElement>(
+				"[data-testid='bot-paused']",
+			);
+			expect(animation?.checkVisibility()).toBe(true);
+			// The scene starts when its font is ready, and stays still on the bot's turn.
+			await expect.poll(() => animation?.dataset.state).toBe("still");
+			expect(paused?.checkVisibility()).toBe(true);
+			expect(paused?.textContent).toBe("Paused");
+			// The label lies over the picture, inside its frame.
+			const frame = animation?.getBoundingClientRect();
+			const label = paused?.getBoundingClientRect();
+			if (frame === undefined || label === undefined)
+				throw new Error("no frame or label");
+			expect(label.left).toBeGreaterThanOrEqual(frame.left);
+			expect(label.right).toBeLessThanOrEqual(frame.right);
+			expect(label.top).toBeGreaterThanOrEqual(frame.top);
+			expect(label.bottom).toBeLessThanOrEqual(frame.bottom);
+			const still = cardPositions(tile);
+			await frames();
+			expect(cardPositions(tile)).toBe(still);
+			// A player's tile has no label.
+			expect(
+				root
+					.querySelector<HTMLElement>(
+						"[data-testid='tile-W'] [data-testid='bot-paused']",
+					)
+					?.checkVisibility() ?? false,
+			).toBe(false);
+
+			// Resumed, the same scene moves on from where it stopped.
+			section.setBotControls(true, ["E"], false);
+			expect(animation?.dataset.state).toBe("moving");
+			expect(paused?.checkVisibility()).toBe(false);
+			await expect.poll(() => cardPositions(tile)).not.toBe(still);
+		});
+
+		it("shows Paused over the bot image while the animation is off", () => {
+			const { root, section } = renderView(
+				botView("E"),
+				"desktop",
+				undefined,
+				undefined,
+				marks({ botAnimation: false }),
+			);
+			section.setBotControls(true, ["E"], true);
+			const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
+			expect(
+				tile?.querySelector<HTMLElement>(".bot-artwork")?.checkVisibility(),
+			).toBe(true);
+			expect(
+				tile
+					?.querySelector<HTMLElement>("[data-testid='bot-paused']")
+					?.checkVisibility(),
+			).toBe(true);
 		});
 	});
 });
@@ -4560,7 +4630,7 @@ describe("compact play controls", () => {
 			// The image shows only without the bot animation.
 			{ marks: () => ({ ...DEFAULT_SETTINGS, botAnimation: false }) },
 		);
-		section.setBotControls(false, ["E"]);
+		section.setBotControls(false, ["E"], false);
 		const name = root.querySelector<HTMLElement>(
 			"[data-testid='hand-E'] .seat-label .name",
 		);
@@ -4579,7 +4649,7 @@ describe("compact play controls", () => {
 		expect(artwork?.getAttribute("src")).toBeTruthy();
 		expect(fallback?.hidden).toBe(true);
 
-		section.setBotControls(false, []);
+		section.setBotControls(false, [], false);
 		expect(artwork?.hidden).toBe(true);
 		expect(overlay?.hidden).toBe(true);
 	});
@@ -4595,7 +4665,7 @@ describe("compact play controls", () => {
 			},
 			"desktop",
 		);
-		section.setBotControls(false, ["E"]);
+		section.setBotControls(false, ["E"], false);
 		const canvas = document.createElement("canvas");
 		const track = canvas.captureStream().getVideoTracks()[0];
 		if (track === undefined) throw new Error("the canvas gives no track");
@@ -5819,7 +5889,7 @@ describe("mobile folds", () => {
 		// A guest keeps the list of connected players below the board.
 		expect(root.querySelector(`.mobile-auction > ${players}`)).not.toBeNull();
 		expect(section.hostPlayers.children).toHaveLength(0);
-		section.setBotControls(true, []);
+		section.setBotControls(true, [], false);
 		expect(root.querySelector(players)).toBeNull();
 		expect(
 			section.hostPlayers.querySelector(`${players} .mobile-players-connected`)
@@ -5832,7 +5902,7 @@ describe("mobile folds", () => {
 		section.setForm("desktop");
 		expect(section.hostPlayers.children).toHaveLength(0);
 		section.setForm("compact");
-		section.setBotControls(false, []);
+		section.setBotControls(false, [], false);
 		expect(root.querySelector(`.mobile-auction > ${players}`)).not.toBeNull();
 		expect(section.hostPlayers.children).toHaveLength(0);
 	});
@@ -5866,7 +5936,7 @@ describe("mobile folds", () => {
 			...playView(),
 			phase: "auction",
 		});
-		section.setBotControls(true, []);
+		section.setBotControls(true, [], false);
 		// The room shows these in its Host controls (src/ui/room-view.ts).
 		const controls = section.hostPlayers;
 		document.body.append(controls);
@@ -5882,7 +5952,7 @@ describe("mobile folds", () => {
 		title?.click();
 		expect(shown(controls, toggle)).toBe(true);
 		section.render(playView());
-		section.setBotControls(true, ["E"]);
+		section.setBotControls(true, ["E"], false);
 		expect(shown(controls, toggle)).toBe(true);
 	});
 });
@@ -7914,7 +7984,7 @@ describe("a phone held sideways", () => {
 			{ ...playView(), phase: "auction" },
 			"sideways",
 		);
-		section.setBotControls(true, ["E"]);
+		section.setBotControls(true, ["E"], false);
 		const controls = section.sidebar.firstElementChild;
 		expect(controls?.className).toBe("sideways-controls");
 		expect(callNames(controls?.querySelector(".icon-group"))).toEqual([
