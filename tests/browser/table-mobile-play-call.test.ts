@@ -118,6 +118,44 @@ describe("voice box", () => {
 	const segments = (root: HTMLElement, seat: Seat) =>
 		box(root, seat).querySelectorAll(".voicebox-segment").length;
 
+	it("shows only player and bot names in desktop captions while retaining call status for accessibility", () => {
+		const view = playView();
+		const { root, section } = render({
+			...view,
+			seats: view.seats.map((player) =>
+				player.seat === "S"
+					? { ...player, bot: true, label: "S - bot 🤖" }
+					: player,
+			),
+		});
+		section.renderCall(
+			callView([
+				{ ...remote("E", undefined), peerSendsAudio: true },
+				remote("S", undefined),
+			]),
+		);
+		for (const [seat, label, status] of [
+			["E", "E - playerE", "Audio only"],
+			["S", "S - bot 🤖", "Mic off"],
+		] as const) {
+			const caption = root.querySelector<HTMLElement>(
+				`[data-testid='tile-${seat}'] .tile-caption`,
+			);
+			if (!caption) throw new Error(`Missing caption for ${seat}`);
+			const visibleText = [...caption.childNodes]
+				.filter((node) => node.nodeType === Node.TEXT_NODE)
+				.map((node) => node.textContent)
+				.join("");
+			expect(visibleText).toBe(label);
+			const detail = caption.querySelector<HTMLElement>(".tile-caption-status");
+			if (!detail)
+				throw new Error(`Missing accessible call status for ${seat}`);
+			expect(detail.textContent).toBe(` · ${status}`);
+			expect(detail.getBoundingClientRect().width).toBeLessThanOrEqual(1);
+			expect(detail.getBoundingClientRect().height).toBeLessThanOrEqual(1);
+		}
+	});
+
 	it("lights green bars from the middle on the tile of a voice without video, in place of the avatar", async () => {
 		const loud = await tone(1);
 		const quiet = await tone(0);

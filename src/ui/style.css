@@ -4022,7 +4022,8 @@ main:has(> .room[data-form="compact"]) {
 	padding: 0 0.55rem;
 }
 
-.visually-hidden {
+.visually-hidden,
+.room[data-form="desktop"] .tile-caption-status {
 	position: absolute;
 	width: 1px;
 	height: 1px;

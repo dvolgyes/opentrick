@@ -1782,7 +1782,15 @@ export function tableSection(
 			spot.shown = shown;
 			spot.caption.replaceChildren(
 				label,
-				...(status?.text === undefined ? [] : [` · ${status.text}`]),
+				...(status?.text === undefined
+					? []
+					: [
+							el(
+								"span",
+								{ className: "tile-caption-status" },
+								` · ${status.text}`,
+							),
+						]),
 			);
 			showNetworkBars(spot.networkBars, roundTrip);
 			spot.state.hidden = status?.text === undefined;
