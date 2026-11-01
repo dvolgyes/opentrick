@@ -46,6 +46,30 @@ describe("localization", () => {
 		},
 	);
 
+	it("keeps the placeholders of each key in every translation", () => {
+		// Hungarian writes the accusative "ütést" in the claim texts instead of the {tricks} value.
+		const dropped: Partial<Record<Locale, string>> = { hu: "tricks" };
+		const wrong: string[] = [];
+		for (const locale of ["de", "hu", "no", ...newLocales] as const) {
+			const t = translator(locale);
+			for (const key of translatedMessageKeys) {
+				const names = [...key.matchAll(/\{(\w+)\}/g)]
+					.map(([, name]) => name)
+					.filter((name) => name !== dropped[locale]);
+				const values = Object.fromEntries(
+					names.map((name) => [name ?? "", `<${name}>`]),
+				);
+				const text = t(key, values);
+				if (
+					names.some((name) => !text.includes(`<${name}>`)) ||
+					/\{\w+\}/.test(text)
+				)
+					wrong.push(`${locale}: ${key}`);
+			}
+		}
+		expect(wrong).toEqual([]);
+	});
+
 	it("detects each supported language from regional browser preferences", () => {
 		const cases = [
 			["es-MX", "es"],
