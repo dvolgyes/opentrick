@@ -1,9 +1,31 @@
 import { spawnSync } from "node:child_process";
 import dgram from "node:dgram";
 import { playwright } from "@vitest/browser-playwright";
+import type { Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 import type { BrowserCommandContext } from "vitest/node";
-import { ENTRY_PAGES } from "./src/ui/site-path";
+import { ENTRY_PAGES } from "./src/ui/site-path.ts";
+
+/** The DDS package uses a Node-only loader in a branch that browsers cannot execute. */
+function browserDds(): Plugin {
+	const browserNodeModule = "\0bridge-dds-node-module";
+	return {
+		name: "browser-dds",
+		apply: (config, { command }) => command === "build" && !config.build?.ssr,
+		enforce: "pre",
+		resolveId(source, importer) {
+			if (
+				source === "module" &&
+				importer?.replaceAll("\\", "/").endsWith("/bridge-dds/dist/lib/dds.js")
+			)
+				return browserNodeModule;
+		},
+		load(id) {
+			if (id === browserNodeModule)
+				return 'export function createRequire() { throw new Error("The browser DDS bundle cannot run in Node.js"); }';
+		},
+	};
+}
 
 // Only the public tracker, Nostr relay, MQTT broker and STUN lists may carry these prefixes, because Vite inlines them
 // into the bundle.
@@ -90,6 +112,7 @@ function chrome(fakeDevices = "--use-fake-device-for-media-stream") {
 export default defineConfig({
 	base: "./",
 	plugins: [
+		browserDds(),
 		{
 			name: "static-entry-pages",
 			enforce: "post",
@@ -112,6 +135,7 @@ export default defineConfig({
 			},
 		},
 	],
+	worker: { plugins: () => [browserDds()] },
 	// Discovering DDS during a browser test reloads Vite's harness; prepare it before tests start.
 	optimizeDeps: { include: ["bridge-dds"] },
 	envPrefix: ENV_PREFIXES,
