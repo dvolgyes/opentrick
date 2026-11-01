@@ -187,12 +187,16 @@ export class PeerLink implements CallLink {
 		}
 	}
 
-	restartIce(): void {
+	renew(): void {
 		if (this.#closed) return;
 		this.#unavailable = false;
 		this.#fault = undefined;
 		this.#armConnect();
 		this.#refresh();
+	}
+
+	restartIce(): void {
+		if (this.#closed) return;
 		this.#enqueue(async () => {
 			// Before the first offer arrives the polite side has no m-line to offer; the impolite side offers again.
 			if (this.#polite && this.#pc.getTransceivers().length === 0) return;

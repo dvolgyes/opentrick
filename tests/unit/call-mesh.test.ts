@@ -559,6 +559,9 @@ describe("CallMesh announcements", () => {
 		// Both sides greet at the same time, so the impolite side can restart once for each greeting.
 		expect(north.live("E")[0]?.offers.length).toBeGreaterThan(1);
 		expect(east.live("N")[0]?.offers).toEqual([]);
+		// Only Retry starts a new connect window, so the failed link keeps showing that it is unavailable.
+		expect(north.live("E")[0]?.renewals).toBe(0);
+		expect(east.live("N")[0]?.renewals).toBe(0);
 	});
 
 	it("answers a join and a resync from one seat within 300 ms with one prefs message", async () => {
@@ -618,9 +621,25 @@ describe("CallMesh announcements", () => {
 		await settle();
 		expectConnected(north, east);
 		expect(east.live("N")[0]?.offers).toEqual([2]);
+		expect(east.live("N")[0]?.renewals).toBe(1);
 		expect(table.broker.count("resync", { from: "E", addressed: false })).toBe(
 			1,
 		);
+	});
+
+	it("Retry renews the link from the impolite side and offers once", async () => {
+		const north = table.take("N");
+		const east = table.take("E");
+		north.mesh.join(AUDIO);
+		east.mesh.join(AUDIO);
+		await settle();
+		north.live("E")[0]?.fail();
+		east.live("N")[0]?.fail();
+		north.mesh.retry("E");
+		await settle();
+		expectConnected(north, east);
+		expect(north.live("E")[0]?.renewals).toBe(1);
+		expect(north.live("E")[0]?.offers).toEqual([1, 2]);
 	});
 });
 

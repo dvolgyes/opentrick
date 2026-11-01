@@ -28,6 +28,8 @@ export class FakeLink implements CallLink {
 	/** The negotiation of each offer this side made. */
 	readonly offers: number[] = [];
 	readonly received: LinkSignal[] = [];
+	/** How often a new connect window started. */
+	renewals = 0;
 	#negotiation = 0;
 
 	constructor(readonly options: LinkOptions) {
@@ -57,6 +59,10 @@ export class FakeLink implements CallLink {
 		) {
 			this.#connect();
 		}
+	}
+
+	renew(): void {
+		this.renewals++;
 	}
 
 	restartIce(): void {

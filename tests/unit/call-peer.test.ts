@@ -336,6 +336,7 @@ describe("PeerLink negotiation (call/layout plan §4.4 step 4)", () => {
 		expect(pair.north.state).toBe("unavailable");
 		expect(pair.northChanges).toHaveBeenCalled();
 
+		pair.north.renew();
 		pair.north.restartIce();
 		expect(pair.north.state).toBe("connecting");
 		await settle();
@@ -503,6 +504,27 @@ describe("PeerLink state and lifecycle (call/layout plan §4.5)", () => {
 		pair.a.setConnection("disconnected");
 		expect(pair.north.state).toBe("reconnecting");
 		pair.a.setConnection("failed");
+		expect(pair.north.state).toBe("unavailable");
+	});
+
+	it("keeps the state and the connect window over an ICE restart, and renews them only on renew", async () => {
+		const pair = new Pair(AUDIO, AUDIO);
+		await settle(CONNECT_TIMEOUT_MS / 2);
+		pair.north.restartIce();
+		await settle(CONNECT_TIMEOUT_MS / 2);
+		expect(pair.north.state).toBe("unavailable");
+		expect(pair.signals("N", "offer")).toHaveLength(2);
+
+		pair.north.restartIce();
+		await settle();
+		expect(pair.north.state).toBe("unavailable");
+		expect(pair.signals("N", "offer")).toHaveLength(3);
+
+		pair.north.renew();
+		expect(pair.north.state).toBe("connecting");
+		await settle(CONNECT_TIMEOUT_MS - SETTLE_MS);
+		expect(pair.north.state).toBe("connecting");
+		await settle(SETTLE_MS);
 		expect(pair.north.state).toBe("unavailable");
 	});
 

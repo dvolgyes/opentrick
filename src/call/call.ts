@@ -301,6 +301,7 @@ export class CallController {
 			},
 			update: (local, remote) => link.update(local, remote),
 			receive: (signal) => link.receive(signal),
+			renew: () => link.renew(),
 			restartIce: () => link.restartIce(),
 			close: () => {
 				if (this.#links.get(options.seat) === link) {

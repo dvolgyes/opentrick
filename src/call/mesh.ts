@@ -66,7 +66,9 @@ export interface CallLink {
 	readonly connected: boolean;
 	update(local: Party, remote: Party): void;
 	receive(signal: LinkSignal): void;
-	/** A new negotiation with an ICE restart, offered by this side. */
+	/** Retry starts a new connect window: the link shows `connecting` until it connects or the window ends. */
+	renew(): void;
+	/** A new negotiation with an ICE restart, offered by this side; the state and the connect window stay. */
 	restartIce(): void;
 	close(): void;
 }
@@ -245,6 +247,8 @@ export class CallMesh {
 	retry(seat: Seat): void {
 		if (!this.#joined?.announced) return;
 		const peer = this.#peers.get(seat);
+		peer?.link?.renew();
+		// The resync restarts the link of the impolite side.
 		if (peer?.link !== undefined && !this.#impolite(seat)) {
 			peer.link.restartIce();
 		}
