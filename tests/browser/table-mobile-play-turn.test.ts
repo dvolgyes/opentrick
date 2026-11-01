@@ -643,7 +643,7 @@ describe("bid box action colours", () => {
 			if (!box) throw new Error("Visible bid box is missing");
 			const guide = box.querySelector<HTMLElement>(".guide-open");
 			const confirm = box.querySelector<HTMLElement>(".confirm");
-			const undo = box.querySelector<HTMLElement>(".undo-call");
+			const undo = root.querySelector<HTMLElement>(".undo-call");
 			if (!guide || !confirm || !undo) throw new Error("Bid action is missing");
 			const expectedRed = document.createElement("span");
 			expectedRed.style.backgroundColor = "var(--reject-bg)";
@@ -707,7 +707,7 @@ describe("undo request off turn", () => {
 				box.top + box.height / 2,
 			);
 			expect(hit?.closest("button")).toBe(target);
-			// The calls are grayed out, but the Undo that still works keeps its colour: no filter on it or around it.
+			// The calls are grayed out, but the separate Undo keeps its colour.
 			const filters = (element: Element | null): string[] => {
 				const found: string[] = [];
 				for (let node = element; node; node = node.parentElement) {
@@ -988,7 +988,7 @@ describe("mobile turn frame", () => {
 			"grayscale(1) brightness(0.6)",
 		);
 		expect(getComputedStyle(disabled).backgroundImage).toContain("47%");
-		// The background layer and the calls are darkened, not the overlay itself, so a working Undo keeps its colour.
+		// The background layer and the calls are darkened, not the overlay itself.
 		expect(getComputedStyle(overlay, "::before").filter).toBe("none");
 		section.render({ ...base, phase: "auction", bids: [] });
 		expect(getComputedStyle(overlay, "::before").filter).toBe(

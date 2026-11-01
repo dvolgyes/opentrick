@@ -5,13 +5,38 @@ import { playView, renderView } from "./table-mobile-play-fixtures";
 
 afterEach(() => document.body.replaceChildren());
 
+it("moves the bidding Undo between desktop and mobile when the layout changes", () => {
+	const view = {
+		...playView(),
+		phase: "auction" as const,
+		bids: [{ call: "P" as const, text: "Pass" }],
+	};
+	const { root, section } = renderView(view, "desktop");
+	const history = root.querySelector<HTMLElement>(
+		"[data-testid='bid-history']",
+	);
+	const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+	const controls = root.querySelector<HTMLElement>(".bid-undo");
+	if (!history || !board || !controls)
+		throw new Error("Missing bidding layout");
+	expect(controls.parentElement).toBe(history);
+	section.setForm("compact");
+	expect(controls.nextElementSibling).toBe(board);
+	section.setForm("desktop");
+	expect(controls.parentElement).toBe(history);
+	expect(root.querySelectorAll(".undo-call")).toHaveLength(1);
+});
+
 describe.each(["desktop", "compact"] as const)(
 	"bidding visibility in %s",
 	(form) => {
 		const auction = {
 			...playView(),
 			phase: "auction" as const,
-			bids: [{ call: "P" as const, text: "Pass" }],
+			bids: [
+				{ call: "P" as const, text: "Pass" },
+				{ call: "1C" as const, text: "1♣" },
+			],
 		};
 
 		it("shows each optional button only when enabled", () => {
@@ -77,6 +102,96 @@ describe.each(["desktop", "compact"] as const)(
 			settings = { ...settings, hideBidBoxWhenWaiting: false };
 			section.render({ ...auction, bids: [], yourTurn: false });
 			expect(visible(box)).toBe(true);
+		});
+
+		it("keeps Undo by the history and usable when the bid box is hidden", () => {
+			const { root, section, handlers } = renderView(
+				auction,
+				form,
+				undefined,
+				undefined,
+				{ marks: () => ({ ...DEFAULT_SETTINGS, hideBidBoxWhenWaiting: true }) },
+			);
+			const screen = document.createElement("main");
+			screen.dataset.screen = "table";
+			screen.dataset.form = form;
+			screen.style.setProperty(
+				"--room-canvas-scale",
+				String(Math.min(innerWidth / 1920, innerHeight / 1080)),
+			);
+			screen.append(...document.body.children);
+			document.body.replaceChildren(screen);
+			const undo = () => {
+				const found = root.querySelector<HTMLButtonElement>(".undo-call");
+				if (!found) throw new Error("Missing bidding Undo");
+				return found;
+			};
+			const history = root.querySelector<HTMLElement>(
+				"[data-testid='bid-history']",
+			);
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			const box = root.querySelector<HTMLElement>(".bid-box");
+			if (!history || !box || !board) throw new Error("Missing bidding layout");
+			const confirm = box.querySelector<HTMLElement>(".confirm");
+			const levels = box.querySelector<HTMLElement>(".bid-levels");
+			if (!confirm || !levels) throw new Error("Missing bidding controls");
+			expect(confirm.getBoundingClientRect().width).toBeCloseTo(
+				levels.getBoundingClientRect().width,
+				1,
+			);
+			expect(box.contains(undo())).toBe(false);
+			if (form === "desktop") {
+				expect(history.contains(undo())).toBe(true);
+				const historyRect = history.getBoundingClientRect();
+				const undoRect = undo().getBoundingClientRect();
+				expect(historyRect.bottom - undoRect.bottom).toBeLessThan(10);
+				expect(undoRect.width / historyRect.width).toBeGreaterThan(0.9);
+			} else {
+				const undoRect = undo().getBoundingClientRect();
+				expect(undoRect.top).toBeGreaterThanOrEqual(
+					history.getBoundingClientRect().bottom,
+				);
+				expect(undoRect.bottom).toBeLessThanOrEqual(
+					board.getBoundingClientRect().top,
+				);
+			}
+			const pass = box.querySelector<HTMLButtonElement>(".pass");
+			if (!pass) throw new Error("Missing Pass");
+			pass.click();
+			expect(box.querySelector(".pass")?.getAttribute("aria-pressed")).toBe(
+				"true",
+			);
+			box.querySelector<HTMLButtonElement>('[aria-label="Level 1"]')?.click();
+			expect(box.querySelector(".pass")?.getAttribute("aria-pressed")).toBe(
+				"false",
+			);
+			box.querySelector<HTMLButtonElement>(".pass")?.click();
+			undo().click();
+			const dialog = root.querySelector<HTMLDialogElement>(
+				'[data-testid="undo-confirm"]',
+			);
+			expect(dialog?.open).toBe(true);
+			root
+				.querySelector<HTMLButtonElement>('[data-testid="undo-confirm-cancel"]')
+				?.click();
+			expect(box.querySelector(".pass")?.getAttribute("aria-pressed")).toBe(
+				"true",
+			);
+			section.render({ ...auction, bids: [], yourTurn: false });
+			expect(undo().checkVisibility({ visibilityProperty: true })).toBe(true);
+			expect(undo().disabled).toBe(false);
+			undo().click();
+			expect(dialog?.open).toBe(true);
+			root
+				.querySelector<HTMLButtonElement>('[data-testid="undo-confirm-send"]')
+				?.click();
+			expect(handlers.undoRequest).toHaveBeenCalledWith(auction.board);
+			section.render({
+				...auction,
+				undo: { ...auction.undo, canRequest: false },
+			});
+			box.querySelector<HTMLButtonElement>(".pass")?.click();
+			expect(undo().disabled).toBe(true);
 		});
 
 		it("keeps the history and board in place while hiding the box", () => {

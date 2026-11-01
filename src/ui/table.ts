@@ -594,11 +594,13 @@ export function tableSection(
 		auction,
 		callMeanings,
 	);
+	const bidUndoControls = el("div", { className: "bid-undo" });
 	const bidHistory = el(
 		"section",
 		{ className: "history-panel", attrs: { "data-testid": "bid-history" } },
 		historyTitle,
 		auctionScroll,
+		bidUndoControls,
 	);
 	const places: Readonly<Record<Position, HTMLElement>> = {
 		top: el("div", { className: "place place-top" }),
@@ -1897,7 +1899,7 @@ export function tableSection(
 
 	/**
 	 * The viewer's pending choice. A level and a strain build one bid; Pass, X and XX are chosen alone. Nothing is
-	 * sent until Confirm. Undo clears a pending choice, or requests rollback when the choice is empty.
+	 * sent until Confirm. A new choice replaces the previous choice.
 	 */
 	let pick: { level?: string; strain?: string; call?: Call } = {};
 	let shown: TableView | undefined;
@@ -2057,28 +2059,11 @@ export function tableSection(
 				),
 			);
 		confirm.disabled = chosen === undefined || !legal.has(chosen);
-		const undo = button(
-			t("Undo"),
-			() => {
-				const hasPick =
-					pick.level !== undefined ||
-					pick.strain !== undefined ||
-					pick.call !== undefined;
-				if (hasPick) {
-					pick = {};
-					redraw();
-				} else {
-					confirmUndo(view);
-				}
-			},
-			{ className: "undo-call" },
-		);
-		const hasPick =
-			pick.level === undefined &&
-			pick.strain === undefined &&
-			pick.call === undefined;
-		undo.disabled =
-			view.undo.requestId !== undefined || (!view.undo.canRequest && hasPick);
+		const undo = button(t("Undo"), () => confirmUndo(view), {
+			className: "undo-call",
+			attrs: { "data-testid": "auction-undo" },
+		});
+		undo.disabled = view.undo.requestId !== undefined || !view.undo.canRequest;
 		const requestId = view.undo.requestId;
 		const cancel = button(t("Cancel undo"), () => {
 			if (requestId !== undefined) handlers.undoCancel(requestId);
@@ -2087,6 +2072,7 @@ export function tableSection(
 		// The approval dialog asks the question.
 		const status = el("span", { className: "undo-message" }, view.undo.message);
 		status.hidden = view.undo.message === "" || view.undo.canVote;
+		bidUndoControls.replaceChildren(undo, cancel, status);
 		const guideOpen = button(t("Guide"), () => guide.open(shownPointSystem), {
 			className: "guide-open",
 			attrs: { "aria-haspopup": "dialog" },
@@ -2151,7 +2137,7 @@ export function tableSection(
 			...(guideRow.childElementCount > 0 ? [guideRow] : []),
 			levels,
 			calls,
-			el("div", { className: "bid-actions" }, confirm, undo, cancel, status),
+			el("div", { className: "bid-actions" }, confirm),
 			...(explanation ? [explanation] : []),
 		);
 	}
@@ -2906,6 +2892,8 @@ export function tableSection(
 		if (mobileGameActive) {
 			mobileTopbar.prepend(audioGroup);
 			placeChildren(mobileBidsFold, mobileBidsTitle, bidHistory);
+			if (bidUndoControls.nextElementSibling !== mobileBoard)
+				mobileBoard.before(bidUndoControls);
 			// The history opens for each auction and folds when the auction summary or play starts; between those, the
 			// player's choice stays.
 			const bidsPhase = view.auctionEnd ? "play" : view.phase;
@@ -2933,6 +2921,8 @@ export function tableSection(
 		} else {
 			call.row.prepend(audioGroup);
 			mobileBidOverlay.hidden = true;
+			if (bidUndoControls.parentElement !== bidHistory)
+				bidHistory.append(bidUndoControls);
 			placeChildren(
 				bidRow,
 				...(view.phase === "auction" ? [bidHistory, bidBox] : [bidBox]),
@@ -3003,6 +2993,8 @@ export function tableSection(
 		renderAuctionEnd(view.auctionEnd);
 		// Without legal calls the box is either hidden or grayed out, according to the player's setting.
 		bidRow.hidden = view.phase !== "auction";
+		bidUndoControls.hidden =
+			view.phase !== "auction" || view.auctionEnd !== undefined;
 		bidBox.classList.toggle("is-concealed", hideBidBox);
 		bidBox.classList.toggle("not-turn", view.bids.length === 0);
 		renderBidBox(view);

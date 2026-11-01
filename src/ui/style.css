@@ -2634,7 +2634,7 @@ button.call-join[data-in-call="true"] {
 	width: 100%;
 }
 
-/* Four columns: levels 1-4 and 5-7, the suits, then NT, X, XX and PASS; Confirm and Undo share a row. */
+/* Four columns: levels 1-4 and 5-7, the suits, then NT, X, XX and PASS. */
 .bid-levels,
 .bid-calls {
 	display: grid;
@@ -2644,8 +2644,18 @@ button.call-join[data-in-call="true"] {
 
 .bid-actions {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: minmax(0, 1fr);
 	gap: 0.3rem;
+}
+
+.bid-undo {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.history-panel > .bid-undo {
+	margin-top: auto;
 }
 
 .undo-message {
@@ -2666,10 +2676,6 @@ button.call-join[data-in-call="true"] {
 	margin: 0;
 	padding: 0.25rem 0.2rem;
 	font-weight: 600;
-}
-
-.bid-actions .undo-message {
-	grid-column: 1 / -1;
 }
 
 /* The Guide button is the first row of the bid box, above the levels; the bot's call shares the row equally. */
@@ -2767,8 +2773,7 @@ button.call-join[data-in-call="true"] {
 }
 
 /*
- * Not the viewer's call: the levels and suits stay visible, but grayed out and inactive. The undo controls stay
- * active, because an undo request can be decided or cancelled while nobody may call.
+ * Not the viewer's call: the levels and suits stay visible, but grayed out and inactive.
  */
 .bid-box.not-turn .bid-levels,
 .bid-box.not-turn .bid-calls {
@@ -2781,8 +2786,7 @@ button.call-join[data-in-call="true"] {
 }
 
 /*
- * Off turn the panel is grayed out. The filter is on a background layer and on the controls that do not work, because
- * a filter on the panel would also gray out an Undo that still works.
+ * Off turn the panel is grayed out with a separate background layer and filters on its controls.
  */
 .room[data-form="desktop"] .bid-box.not-turn {
 	position: relative;
@@ -2841,17 +2845,24 @@ button.call-join[data-in-call="true"] {
 }
 
 .bid-actions .confirm {
-	flex: 7 1 0;
 	min-height: 2.8rem;
 	font-weight: 700;
 }
 
-.bid-actions .undo-call {
-	flex: 3 1 0;
+.bid-undo .undo-call {
 	min-height: 2.8rem;
 	border-color: var(--reject-bg);
 	background: var(--reject-bg);
 	color: var(--on-strong);
+	font-size: 1.15rem;
+	font-weight: 600;
+}
+
+.bid-undo .undo-call:disabled {
+	border-color: var(--line);
+	background: var(--control-disabled-bg);
+	color: var(--control-disabled-fg);
+	opacity: 1;
 }
 
 /* A second, small line in Confirm; it fits in the height of the button, so the bid box does not grow. */
@@ -4500,8 +4511,7 @@ main:has(> .room[data-form="compact"]) {
 	font-size: calc(0.9rem * var(--bid-symbol-scale, 1));
 }
 
-.mobile-bid-overlay .bid-actions .confirm,
-.mobile-bid-overlay .bid-actions .undo-call {
+.mobile-bid-overlay .bid-actions .confirm {
 	min-height: 2.3rem;
 }
 

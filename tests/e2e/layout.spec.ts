@@ -819,12 +819,7 @@ test("4: the call controls have names that spell out the way and the medium, and
 	// both Undo controls stay disabled before the first call.
 	for (const id of ["claim-compact", "claim-all-compact", "undo-compact"])
 		await expect(phoneTab.getByTestId(id)).toBeDisabled();
-	await expect(
-		phoneTab.getByTestId("bid-box").getByRole("button", {
-			name: "Undo",
-			exact: true,
-		}),
-	).toBeDisabled();
+	await expect(phoneTab.getByTestId("auction-undo")).toBeDisabled();
 });
 
 for (const viewport of [
