@@ -87,14 +87,35 @@ class Wire {
 	}
 }
 
-/** The table connection of each pair of seats, which the links of both seats share (ADR 0009). */
+/**
+ * The table connection between the pages that hold each pair of seats, which the links of both seats share
+ * (ADR 0009). A reload gives the seat a new page, with new connections.
+ */
 class Tables {
 	readonly #pairs = new Map<string, FakeTrysteroPair>();
+	readonly #reloads = new Map<Seat, number>();
+	#sessions = 0;
+
+	/** A call session ID that no page of the room had before, as `crypto.randomUUID()` gives. */
+	newSession(): string {
+		return session(++this.#sessions);
+	}
+
+	/** The peer ID of the page that holds the seat. */
+	page(seat: Seat): string {
+		return `${seat}${this.#reloads.get(seat) ?? 0}`;
+	}
+
+	reload(seat: Seat): void {
+		this.#reloads.set(seat, (this.#reloads.get(seat) ?? 0) + 1);
+	}
 
 	/** The end of the pair's connection at `self`; the earlier seat in SEATS holds end `a`. */
 	end(self: Seat, other: Seat): FakePeerConnection {
 		const first = SEATS.indexOf(self) < SEATS.indexOf(other);
-		const key = first ? `${self}${other}` : `${other}${self}`;
+		const key = first
+			? `${this.page(self)}${this.page(other)}`
+			: `${this.page(other)}${this.page(self)}`;
 		let pair = this.#pairs.get(key);
 		if (pair === undefined) {
 			pair = new FakeTrysteroPair();
@@ -116,7 +137,6 @@ class Player {
 	readonly changes = vi.fn();
 	readonly call: CallController;
 	#preparedCamera: FakeTrack | undefined;
-	#sessions = 0;
 
 	constructor(
 		readonly seat: Seat,
@@ -134,9 +154,9 @@ class Player {
 				connection: (seat) => {
 					const pc = tables.end(this.seat, seat);
 					if (!this.connections.includes(pc)) this.connections.push(pc);
-					return asConnection(pc);
+					return { peer: tables.page(seat), connection: asConnection(pc) };
 				},
-				newSession: () => session(++this.#sessions),
+				newSession: () => tables.newSession(),
 			},
 			form,
 		);
@@ -500,6 +520,33 @@ describe("CallController (call/layout plan §4.5)", () => {
 		const toSouth = north.connections.at(-1);
 		expect(north.connections).toHaveLength(2);
 		expect(toSouth?.getTransceivers()[0]?.sender.track).toBe(asTrack(mic));
+	});
+
+	it("keeps a link on the page that it started with, so a reloaded seat gets no media before it joins again", async () => {
+		await connected();
+		expect(north.open?.getTransceivers()).not.toHaveLength(0);
+
+		// East reloads: a new page holds the seat, with a new table connection, and is not in the call yet.
+		tables.reload("E");
+		const reloaded = new Player("E", wire, tables);
+		reloaded.call.update(snapshot("E"));
+		north.call.update(snapshot("N"));
+		await settle();
+		const toReloaded = tables.end("N", "E");
+		expect(toReloaded).not.toBe(north.open);
+		expect(toReloaded.getTransceivers()).toEqual([]);
+		expect(north.remote("E")?.status).toBe("reconnecting");
+
+		// The new page joins: its session replaces the old link, and the media goes to it.
+		reloaded.join("audio");
+		await settle();
+		expect(toReloaded.getTransceivers()).not.toHaveLength(0);
+		for (const player of [north, reloaded])
+			tables
+				.end(player.seat, player.seat === "N" ? "E" : "N")
+				.setConnection("connected");
+		expect(north.remote("E")?.status).toBe("connected");
+		expect(reloaded.remote("N")?.status).toBe("connected");
 	});
 
 	it("stops the microphone at once when Send mic goes off, then tells the peers", async () => {

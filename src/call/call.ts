@@ -36,9 +36,16 @@ import type { OpenCallSignaling } from "./signaling";
 export interface CallDeps {
 	readonly openSignaling: OpenCallSignaling;
 	readonly getUserMedia: GetUserMedia;
-	/** The table's WebRTC connection to the seat's current holder; the call media goes on it (ADR 0009). */
-	readonly connection: (seat: Seat) => RTCPeerConnection | undefined;
+	/** The page that holds the seat now, and the table's WebRTC connection to it; the call media goes on it (ADR 0009). */
+	readonly connection: (seat: Seat) => SeatConnection | undefined;
 	readonly newSession: () => string;
+}
+
+export interface SeatConnection {
+	/** The table peer ID of the page. */
+	readonly peer: string;
+	/** Undefined while the table has no connection to the page. */
+	readonly connection: RTCPeerConnection | undefined;
 }
 
 /**
@@ -285,9 +292,17 @@ export class CallController {
 	}
 
 	#createLink(options: LinkOptions): CallLink {
+		// The link belongs to the page that holds the seat when it starts: it follows that page to a new table
+		// connection, but never moves to a later page at the seat, which did not join the call.
+		let page: string | undefined;
+		const connection = (): RTCPeerConnection | undefined => {
+			const current = this.#deps.connection(options.seat);
+			page ??= current?.peer;
+			return current?.peer === page ? current?.connection : undefined;
+		};
 		const link = new PeerLink({
 			...options,
-			connection: () => this.#deps.connection(options.seat),
+			connection,
 			tracks: {
 				audio:
 					this.#prefs.inCall && this.#prefs.send.audio

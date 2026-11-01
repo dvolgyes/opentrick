@@ -1,5 +1,6 @@
 import { botSeatClaims, botSeatHolder, soloSeat } from "../bot/seats";
 import { type BuildInfo, isBuildDate, newerBuildDate } from "../build";
+import type { SeatConnection } from "../call/call";
 import type { TableCallSnapshot } from "../call/mesh";
 import type { CallTransport } from "../call/signaling";
 import type { GameModule } from "../game/module";
@@ -441,10 +442,10 @@ export class TableController {
 	}
 
 	/**
-	 * The table's WebRTC connection to the seat's current holder, for the call media (ADR 0009): the peer that the
-	 * roster binds to the seat at its current generation, as in `callSnapshot`. Undefined while there is none.
+	 * The seat's current holder and the table's WebRTC connection to it, for the call media (ADR 0009): the peer that
+	 * the roster binds to the seat at its current generation, as in `callSnapshot`. Undefined while there is none.
 	 */
-	callConnection(seat: Seat): RTCPeerConnection | undefined {
+	callConnection(seat: Seat): SeatConnection | undefined {
 		const table = this.#closed() ? null : this.#replication?.log?.table;
 		const row = table?.seats.find((candidate) => candidate.seat === seat);
 		if (row === undefined || row.holder === null) return undefined;
@@ -453,7 +454,10 @@ export class TableController {
 		);
 		return binding === undefined
 			? undefined
-			: this.#mesh?.connection(binding.peer);
+			: {
+					peer: binding.peer,
+					connection: this.#mesh?.connection(binding.peer),
+				};
 	}
 
 	/**
