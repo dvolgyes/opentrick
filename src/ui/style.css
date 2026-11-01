@@ -2620,6 +2620,12 @@ button.call-join[data-in-call="true"] {
 	color: var(--sheet-fg);
 }
 
+/* Preserve the bidding layout while concealing the box and its mobile frame. */
+:is(.bid-box, .mobile-bid-overlay).is-concealed {
+	visibility: hidden;
+	pointer-events: none;
+}
+
 /* During the auction the bidding history and the bid box sit together; on a phone they stack. */
 .bid-row {
 	display: flex;

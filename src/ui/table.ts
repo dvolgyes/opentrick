@@ -2922,7 +2922,8 @@ export function tableSection(
 				...(view.phase === "auction" && !view.auctionEnd ? [bidBox] : []),
 			);
 			mobileBidOverlay.hidden =
-				view.phase !== "auction" || view.auctionEnd !== undefined || hideBidBox;
+				view.phase !== "auction" || view.auctionEnd !== undefined;
+			mobileBidOverlay.classList.toggle("is-concealed", hideBidBox);
 			placeChildren(
 				mobileBidControls,
 				...(view.phase === "play" ? [playControls, claimPanel] : []),
@@ -3002,7 +3003,7 @@ export function tableSection(
 		renderAuctionEnd(view.auctionEnd);
 		// Without legal calls the box is either hidden or grayed out, according to the player's setting.
 		bidRow.hidden = view.phase !== "auction";
-		bidBox.hidden = hideBidBox;
+		bidBox.classList.toggle("is-concealed", hideBidBox);
 		bidBox.classList.toggle("not-turn", view.bids.length === 0);
 		renderBidBox(view);
 		renderScores(view);
