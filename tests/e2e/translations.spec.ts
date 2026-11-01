@@ -93,19 +93,26 @@ async function shownTexts(page: Page): Promise<string[]> {
 	});
 }
 
+/** English names that a Hungarian text keeps, such as the name of a bidding system in the bidding guide. */
+const KEPT_NAMES = ["Standard American Yellow Card"] as const;
+
 /** Each shown text with English in it, as "stage: text (reason)". */
 async function englishOn(page: Page, stage: string): Promise<string[]> {
 	const found: string[] = [];
-	for (const text of await shownTexts(page)) {
-		if (Object.values(NAMES).includes(text as never)) continue;
+	for (const shown of await shownTexts(page)) {
+		if (Object.values(NAMES).includes(shown as never)) continue;
+		const text = KEPT_NAMES.reduce(
+			(rest, name) => rest.replaceAll(name, ""),
+			shown,
+		);
 		const fragment = ENGLISH_FRAGMENTS.find(({ pattern }) =>
 			pattern.test(text),
 		);
 		const word = ENGLISH_WORDS.exec(text)?.[0];
 		if (fragment !== undefined)
-			found.push(`${stage}: ${text} (catalog text "${fragment.fragment}")`);
+			found.push(`${stage}: ${shown} (catalog text "${fragment.fragment}")`);
 		else if (word !== undefined)
-			found.push(`${stage}: ${text} (English word "${word}")`);
+			found.push(`${stage}: ${shown} (English word "${word}")`);
 	}
 	return found;
 }

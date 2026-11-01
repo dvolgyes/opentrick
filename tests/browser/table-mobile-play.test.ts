@@ -6824,6 +6824,254 @@ describe("bidding guide", () => {
 	);
 });
 
+describe("bot bid in the bid box", () => {
+	const auction = (): TableView => ({
+		...playView(),
+		phase: "auction",
+		trick: undefined,
+		bids: [
+			{ call: "1C", text: "1♣" },
+			{ call: "1S", text: "1♠" },
+			{ call: "P", text: "Pass" },
+		],
+	});
+	const row = (root: HTMLElement) => [
+		...root.querySelectorAll<HTMLButtonElement>(".bid-guide button"),
+	];
+	const bot = (root: HTMLElement) => {
+		const found = root.querySelector<HTMLButtonElement>(
+			"[data-testid='bot-bid']",
+		);
+		if (!found) throw new Error("no bot bid button");
+		return found;
+	};
+	const pressed = (root: HTMLElement) =>
+		[
+			...root.querySelectorAll<HTMLButtonElement>(
+				".bid-box button[aria-pressed='true']",
+			),
+		].map((node) => node.getAttribute("aria-label"));
+	const confirm = (root: HTMLElement) =>
+		root.querySelector<HTMLButtonElement>(".bid-actions .confirm");
+
+	it.each(["desktop", "compact"] as const)(
+		"splits the first row into Guide and the bot's call (%s)",
+		(form) => {
+			const { root, section } = renderView(auction(), form);
+			expect(row(root).map((node) => node.textContent)).toEqual([
+				"Guide",
+				"Bot: …",
+			]);
+			expect(bot(root).disabled).toBe(true);
+			section.showBotBid("1S");
+			expect(row(root).map((node) => node.textContent)).toEqual([
+				"Guide",
+				"Bot: 1♠",
+			]);
+			expect(bot(root).disabled).toBe(false);
+			// The call has the colour of its strain, as in the bidding history.
+			expect(bot(root).querySelector(".bid-mark.strain-S")).not.toBeNull();
+			const [guide, suggestion] = row(root).map((node) =>
+				node.getBoundingClientRect(),
+			);
+			if (!guide || !suggestion) throw new Error("missing row buttons");
+			expect(suggestion.top).toBeCloseTo(guide.top, 0);
+			expect(suggestion.width).toBeCloseTo(guide.width, 0);
+		},
+	);
+
+	it("selects the bot's call on a click, and Confirm still sends it", () => {
+		const { root, section, handlers } = renderView(auction(), "desktop");
+		section.showBotBid("1S");
+		bot(root).click();
+		expect(pressed(root)).toEqual(["Level 1", "Spades"]);
+		expect(confirm(root)?.dataset.call).toBe("1S");
+		expect(handlers.act).not.toHaveBeenCalled();
+		confirm(root)?.click();
+		expect(handlers.act).toHaveBeenCalledWith({ type: "call", call: "1S" });
+	});
+
+	it("selects Pass when the bot passes", () => {
+		const { root, section } = renderView(auction(), "compact");
+		section.showBotBid("P");
+		expect(bot(root).textContent).toBe("Bot: Pass");
+		bot(root).click();
+		expect(pressed(root)).toEqual(["Pass"]);
+		expect(confirm(root)?.dataset.call).toBe("P");
+	});
+
+	it("does not offer a call that is not legal now, and clears it on request", () => {
+		const { root, section } = renderView(auction(), "desktop");
+		section.showBotBid("2H");
+		expect(bot(root).textContent).toBe("Bot: …");
+		expect(bot(root).disabled).toBe(true);
+		section.showBotBid("1C");
+		expect(bot(root).disabled).toBe(false);
+		section.showBotBid(undefined);
+		expect(bot(root).textContent).toBe("Bot: …");
+		expect(bot(root).disabled).toBe(true);
+	});
+
+	it.each(["desktop", "compact"] as const)(
+		"keeps the single Guide button when the setting is off (%s)",
+		(form) => {
+			const { root, section } = renderView(
+				auction(),
+				form,
+				undefined,
+				undefined,
+				{ marks: () => ({ ...DEFAULT_SETTINGS, botBidHint: false }) },
+			);
+			section.showBotBid("1S");
+			expect(row(root).map((node) => node.textContent)).toEqual(["Guide"]);
+			expect(root.querySelector("[data-testid='bot-bid']")).toBeNull();
+		},
+	);
+
+	it("names the bot and the call in the language of the table", () => {
+		const { root, section } = renderView(
+			auction(),
+			"desktop",
+			undefined,
+			translator("de"),
+			{ locale: "de" },
+		);
+		section.showBotBid("P");
+		expect(bot(root).textContent).toBe("Bot: Passe");
+		expect(bot(root).title).toBe(
+			"Wählt das Gebot des Bots. Bestätigen sendet es.",
+		);
+	});
+});
+
+describe("bidding guide over the side panel", () => {
+	const auction = (bids = 1): TableView => ({
+		...playView(),
+		phase: "auction",
+		trick: undefined,
+		bids: (
+			[
+				{ call: "1C", text: "1♣" },
+				{ call: "P", text: "Pass" },
+				{ call: "1S", text: "1♠" },
+			] as const
+		).slice(0, bids),
+	});
+	/** The table on the 1920×1080 room canvas, as the room shows it (src/ui/room-view.ts). */
+	function onCanvas(
+		view: TableView,
+		form: Layout,
+		options: TableOptions = {},
+		t?: Translate,
+	) {
+		const shown = renderView(view, form, undefined, t, {
+			pointSystem: () => "reith",
+			...options,
+		});
+		const screen = document.createElement("main");
+		screen.dataset.screen = "table";
+		screen.dataset.form = form === "compact" ? "compact" : "desktop";
+		// The room scales its canvas to the window, so the whole sidebar is on the screen.
+		screen.style.setProperty(
+			"--room-canvas-scale",
+			String(Math.min(innerWidth / 1920, innerHeight / 1080)),
+		);
+		screen.append(...document.body.children);
+		document.body.replaceChildren(screen);
+		return shown;
+	}
+	const panel = () =>
+		document.querySelector<HTMLElement>("[data-testid='side-guide']");
+	const content = () => panel()?.querySelector<HTMLElement>(".guide-content");
+	const loaded = () =>
+		expect.poll(() => content()?.querySelector("h2")?.textContent);
+
+	it("shows the guide of the viewer's scale below the auction heading, over the side panel", async () => {
+		const { section } = onCanvas(auction(), "desktop");
+		await loaded().toBe("Bidding guide: Reith points (6-4-3-2-1)");
+		const guide = panel();
+		if (!guide) throw new Error("no side guide");
+		expect(guide.parentElement).toBe(section.sidebar);
+		expect(guide.getAttribute("aria-label")).toBe("Bidding guide");
+		const status = section.sidebar.querySelector(".table-status");
+		if (!status) throw new Error("no status in the sidebar");
+		const box = guide.getBoundingClientRect();
+		const side = section.sidebar.getBoundingClientRect();
+		await expect
+			.poll(() => guide.getBoundingClientRect().top)
+			.toBeGreaterThanOrEqual(status.getBoundingClientRect().bottom - 1);
+		expect(
+			guide.getBoundingClientRect().top - status.getBoundingClientRect().bottom,
+		).toBeLessThan(30);
+		expect(box.left).toBeCloseTo(side.left, 0);
+		expect(box.width).toBeCloseTo(side.width, 0);
+		expect(box.bottom).toBeCloseTo(side.bottom, 0);
+		// The guide does not fit, so it scrolls.
+		const text = content();
+		if (!text) throw new Error("no guide content");
+		expect(text.scrollHeight).toBeGreaterThan(text.clientHeight);
+		text.scrollTop = 200;
+		expect(text.scrollTop).toBeGreaterThan(0);
+		// The guide lies over the other panels.
+		const hit = document.elementFromPoint(
+			box.left + box.width / 2,
+			box.top + box.height / 2,
+		);
+		expect(guide.contains(hit)).toBe(true);
+	});
+
+	it("does not move the other panels of the sidebar", () => {
+		const tops = (guidePanel: boolean) => {
+			const { section } = onCanvas(auction(), "desktop", {
+				marks: () => ({ ...DEFAULT_SETTINGS, guidePanel }),
+			});
+			return [...section.sidebar.children]
+				.filter((node) => node !== panel())
+				.map((node) => node.getBoundingClientRect().top);
+		};
+		expect(tops(true)).toEqual(tops(false));
+	});
+
+	it("keeps the scroll position while the auction goes on", async () => {
+		const { section } = onCanvas(auction(), "desktop");
+		await loaded().toBeTruthy();
+		const text = content();
+		if (!text) throw new Error("no guide content");
+		text.scrollTop = 200;
+		const at = text.scrollTop;
+		section.render(auction(3));
+		expect(content()).toBe(text);
+		expect(text.scrollTop).toBe(at);
+	});
+
+	it("shows the guide in the viewer's language", async () => {
+		onCanvas(auction(), "desktop", { locale: "de" }, translator("de"));
+		await loaded().toBe("Reizleitfaden: Reith-Punkte (6-4-3-2-1)");
+		expect(panel()?.getAttribute("aria-label")).toBe("Reizleitfaden");
+	});
+
+	it.each([
+		["the compact layout", "compact", {}],
+		["a phone held sideways", "sideways", {}],
+		[
+			"the setting is off",
+			"desktop",
+			{ marks: () => ({ ...DEFAULT_SETTINGS, guidePanel: false }) },
+		],
+		["the scale has no guide", "desktop", { pointSystem: () => "other" }],
+	] as const)("is absent in %s", (_, form, options) => {
+		onCanvas(auction(), form, options);
+		expect(panel()).toBeNull();
+	});
+
+	it("goes away when the auction ends", async () => {
+		const { section } = onCanvas(auction(), "desktop");
+		await loaded().toBeTruthy();
+		section.render(playView());
+		expect(panel()).toBeNull();
+	});
+});
+
 describe("suit colour schemes", () => {
 	const suits = [
 		{ suit: "C", symbol: "♣", seat: "N", position: "top" },

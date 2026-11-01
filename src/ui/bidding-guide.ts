@@ -138,6 +138,55 @@ export function renderGuide(
 	return nodes;
 }
 
+/** The guide of a scale in the language, or in English when that language has no file. */
+async function guideNodes(
+	system: PointSystem,
+	locale: Locale,
+	t: Translate,
+): Promise<HTMLElement[]> {
+	const text =
+		(await loadGuide(system, locale)) ?? (await loadGuide(system, "en"));
+	return text === undefined
+		? [el("p", {}, t("The bidding guide could not be loaded."))]
+		: renderGuide(parseGuide(text), t);
+}
+
+export interface GuidePanel {
+	readonly element: HTMLElement;
+	/** Shows the guide of this scale; the same scale keeps the text and its scroll position. */
+	show(system: PointSystem): void;
+}
+
+/** The guide in a scrolling area that stays on the page, beside the auction. */
+export function guidePanel(t: Translate, locale: Locale): GuidePanel {
+	const content = el("div", {
+		className: "guide-content",
+		attrs: { tabindex: "0" },
+	});
+	const element = el(
+		"section",
+		{
+			className: "side-guide",
+			attrs: { "aria-label": t("Bidding guide"), "data-testid": "side-guide" },
+		},
+		content,
+	);
+	let shown: PointSystem | undefined;
+	return {
+		element,
+		show(system) {
+			if (system === shown) return;
+			shown = system;
+			content.replaceChildren();
+			void guideNodes(system, locale, t).then((nodes) => {
+				if (system !== shown) return;
+				content.replaceChildren(...nodes);
+				content.scrollTop = 0;
+			});
+		},
+	};
+}
+
 export interface GuideDialog {
 	readonly element: HTMLDialogElement;
 	/** Shows the guide of this scale; the text loads when the dialog opens. */
@@ -172,17 +221,11 @@ export function guideDialog(t: Translate, locale: Locale): GuideDialog {
 			const current = ++request;
 			content.replaceChildren();
 			if (!element.open) element.showModal();
-			void (async () => {
-				const text =
-					(await loadGuide(system, locale)) ?? (await loadGuide(system, "en"));
+			void guideNodes(system, locale, t).then((nodes) => {
 				if (current !== request) return;
-				content.replaceChildren(
-					...(text === undefined
-						? [el("p", {}, t("The bidding guide could not be loaded."))]
-						: renderGuide(parseGuide(text), t)),
-				);
+				content.replaceChildren(...nodes);
 				content.scrollTop = 0;
-			})();
+			});
 		},
 	};
 }

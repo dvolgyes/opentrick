@@ -2029,6 +2029,30 @@ const rows: readonly TranslationRow[] = [
 		"Anima il bot durante il suo turno",
 		"De bot animeren tijdens zijn beurt",
 	],
+	[
+		"In the desktop view, show the bidding guide in the side panel during the auction",
+		"En la vista de escritorio, mostrar la guía de subasta en el panel lateral durante la subasta",
+		"Na vista de computador, mostrar o guia de leilão no painel lateral durante o leilão",
+		"Dans la vue ordinateur, afficher le guide des enchères dans le panneau latéral pendant les enchères",
+		"Nella vista desktop, mostra la guida alla dichiarazione nel pannello laterale durante la licita",
+		"In de desktopweergave de biedgids in het zijpaneel tonen tijdens het bieden",
+	],
+	[
+		"Show the bot's suggested call in the bid box",
+		"Mostrar la voz sugerida por el bot en la caja de subasta",
+		"Mostrar a voz sugerida pelo bot na caixa de leilão",
+		"Afficher l'annonce suggérée par le robot dans la boîte à enchères",
+		"Mostra la dichiarazione suggerita dal bot nel bidding box",
+		"Het door de bot voorgestelde bod in de biedbox tonen",
+	],
+	[
+		"Select the bot's call. Confirm sends it.",
+		"Selecciona la voz del bot. Confirmar la envía.",
+		"Seleciona a voz do bot. Confirmar envia-a.",
+		"Sélectionne l'annonce du robot. Confirmer l'envoie.",
+		"Seleziona la dichiarazione del bot. Conferma la invia.",
+		"Kiest het bod van de bot. Bevestigen verstuurt het.",
+	],
 
 	[
 		"Save settings",

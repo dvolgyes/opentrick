@@ -138,6 +138,8 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Show the network quality",
 		"Show the voice box for a player without video",
 		"Animate the bot during its turn",
+		"In the desktop view, show the bidding guide in the side panel during the auction",
+		"Show the bot's suggested call in the bid box",
 		"On a computer with a portrait window, show the mobile view",
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
@@ -162,6 +164,14 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.getByLabel("Show the voice box for a player without video")
 		.uncheck();
 	await dialog.getByLabel("Animate the bot during its turn").uncheck();
+	await dialog
+		.getByLabel(
+			"In the desktop view, show the bidding guide in the side panel during the auction",
+		)
+		.uncheck();
+	await dialog
+		.getByLabel("Show the bot's suggested call in the bid box")
+		.uncheck();
 	await relayChecks.check();
 
 	await dialog.getByRole("button", { name: "Save settings" }).click();
@@ -182,8 +192,10 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.bidder",
 		"opentrick.settings.bot-animation",
 		"opentrick.settings.bot-bid-delay-ms",
+		"opentrick.settings.bot-bid-hint",
 		"opentrick.settings.bot-card-delay-ms",
 		"opentrick.settings.card-points",
+		"opentrick.settings.guide-panel",
 		"opentrick.settings.landscape-desktop",
 		"opentrick.settings.network-quality",
 		"opentrick.settings.panel-texture",
@@ -229,6 +241,14 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Animate the bot during its turn"),
+	).not.toBeChecked();
+	await expect(
+		dialog.getByLabel(
+			"In the desktop view, show the bidding guide in the side panel during the auction",
+		),
+	).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Show the bot's suggested call in the bid box"),
 	).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Check the connection more often"),

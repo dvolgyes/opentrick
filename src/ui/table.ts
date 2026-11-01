@@ -14,7 +14,7 @@ import { englishTranslator, type Locale, type Translate } from "../i18n";
 import { SEAT_NAMES, SEATS, type Seat } from "../protocol";
 import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?url";
 import cardBackRed from "./assets/bridge-call-card-back-red.svg?url";
-import { guideDialog } from "./bidding-guide";
+import { guideDialog, guidePanel } from "./bidding-guide";
 import { type BotAnimation, botAnimation } from "./bot-animation";
 import {
 	type CallDisplay,
@@ -110,6 +110,11 @@ export interface TableSection {
 	 * also moves the call buttons and the bot switches to the top of the sidebar.
 	 */
 	setForm(layout: Layout): void;
+	/**
+	 * The call that the bot would make for the viewer now, or undefined while there is none. The bid box shows it
+	 * only while it is legal and the botBidHint setting is on.
+	 */
+	showBotBid(call: Call | undefined): void;
 }
 
 export interface TableOptions {
@@ -137,6 +142,8 @@ export type TableMarks = Pick<
 	| "networkQuality"
 	| "voicebox"
 	| "botAnimation"
+	| "guidePanel"
+	| "botBidHint"
 >;
 
 export type PlayedCardStyle =
@@ -411,6 +418,7 @@ export function tableSection(
 	let guideBlocked = false;
 	let shownCardPoints = cardPoints();
 	const guide = guideDialog(t, options.locale ?? "en");
+	const sideGuide = guidePanel(t, options.locale ?? "en");
 	const marks = options.marks ?? (() => DEFAULT_SETTINGS);
 	let shownMarks = marks();
 	const meters = options.voiceMeters ?? voiceMeters();
@@ -1159,6 +1167,37 @@ export function tableSection(
 		}
 	}
 
+	// The guide starts below the board status, which changes height with its prompt and moves with the controls above.
+	const sideGuideWatch = new ResizeObserver(alignSideGuide);
+	function alignSideGuide(): void {
+		sideGuide.element.style.top = `${status.offsetTop + status.offsetHeight}px`;
+	}
+	/** On the desktop, the bidding guide covers the side panel below the board status during the auction. */
+	function placeSideGuide(view: TableView): void {
+		sideGuideWatch.disconnect();
+		if (
+			!desktop ||
+			sideways ||
+			view.phase !== "auction" ||
+			!shownMarks.guidePanel ||
+			shownPointSystem === "other"
+		) {
+			sideGuide.element.remove();
+			return;
+		}
+		sideGuide.show(shownPointSystem);
+		// A moved node loses its scroll position, so the guide stays where it is; it lies above the panels anyway.
+		if (sideGuide.element.parentElement !== sidebar)
+			sidebar.append(sideGuide.element);
+		for (
+			let node: Element | null = status;
+			node !== null;
+			node = node.previousElementSibling
+		)
+			sideGuideWatch.observe(node);
+		alignSideGuide();
+	}
+
 	function cardButton(card: CardView, suitStart: boolean): HTMLButtonElement {
 		const node = button(
 			"",
@@ -1840,6 +1879,7 @@ export function tableSection(
 	let pick: { level?: string; strain?: string; call?: Call } = {};
 	let shown: TableView | undefined;
 	let drawnBidBox = "";
+	let botBid: Call | undefined;
 
 	const STRAIN_BUTTONS: readonly {
 		readonly strain: string;
@@ -1896,6 +1936,8 @@ export function tableSection(
 			compact,
 			shownPointSystem,
 			guideBlocked,
+			shownMarks.botBidHint,
+			botBid,
 		]);
 		if (key === drawnBidBox) return;
 		drawnBidBox = key;
@@ -2027,6 +2069,36 @@ export function tableSection(
 		});
 		guideOpen.disabled = guideBlocked;
 		const guideRow = el("div", { className: "bid-guide" }, guideOpen);
+		if (shownMarks.botBidHint) {
+			// The bot's call only selects; Confirm still sends it.
+			const suggestion =
+				botBid !== undefined && legal.has(botBid) ? botBid : undefined;
+			const botCall = button(
+				"",
+				() => {
+					if (suggestion === undefined) return;
+					pick = /^[1-7]/.test(suggestion)
+						? { level: suggestion.slice(0, 1), strain: suggestion.slice(1) }
+						: { call: suggestion };
+					redraw();
+				},
+				{
+					className: "bot-bid",
+					attrs: {
+						"data-testid": "bot-bid",
+						title: t("Select the bot's call. Confirm sends it."),
+					},
+				},
+			);
+			botCall.replaceChildren(
+				`${t("Bot")}: `,
+				...(suggestion === undefined
+					? ["…"]
+					: auctionCell(callText(suggestion), t)),
+			);
+			botCall.disabled = suggestion === undefined;
+			guideRow.append(botCall);
+		}
 		const ownCards = view.seats.find(
 			(player) => player.turnPill?.yours,
 		)?.pointCards;
@@ -2949,6 +3021,7 @@ export function tableSection(
 			scores,
 			sidebarEnd,
 		);
+		placeSideGuide(view);
 	}
 
 	/** The sidebar header: "1♣ by North · Anna", with the suit in the selected colour. */
@@ -3055,5 +3128,9 @@ export function tableSection(
 		setPlayerAutoplay,
 		setForm,
 		setCountdown,
+		showBotBid(call) {
+			botBid = call;
+			if (shown !== undefined) renderBidBox(shown);
+		},
 	};
 }

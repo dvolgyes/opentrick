@@ -59,6 +59,7 @@ import {
 	sharedQuery,
 	storedBotSeats,
 } from "./bookmark";
+import { botBidHint, viewerBidPosition } from "./bot-bid-hint";
 import { CallMemory } from "./call-memory";
 import type { CallDisplay, RemoteCallPresence } from "./call-model";
 import { CallPresenceTimeout } from "./call-presence";
@@ -813,6 +814,8 @@ export function showRoom(
 			voiceMeters: voices,
 		},
 	);
+	/** A separate local bidder: the bot runner asks its own, and one bidder answers one request at a time. */
+	const botHint = botBidHint(table.showBotBid);
 
 	form.addEventListener("submit", (event) => {
 		event.preventDefault();
@@ -1799,6 +1802,16 @@ export function showRoom(
 			}
 		}
 		table.setCountdown(tableModel.scoring?.countdown);
+		// Only a viewer who calls for themselves gets the hint; the model downloads at the first request.
+		botHint.update(
+			readSettings(deps.browser).botBidHint && !activeBots.includes(seat)
+				? viewerBidPosition(state?.board, seat)
+				: undefined,
+			(
+				botSettings ??
+				settingsFor(fallbackConfig ?? controller.view().table?.config)
+			).bidder,
+		);
 		// Restore a returned human before a completed board can advance.
 		void updateCommunityCover();
 		const boardToDeal = autoDealBoard(
@@ -1996,6 +2009,7 @@ export function showRoom(
 		if (coverTimer !== undefined) clearInterval(coverTimer);
 		callPresence.stop();
 		botRunner?.stop();
+		botHint.stop();
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
 		deviceWatch.stop();
 		biddingViewport.dispose();

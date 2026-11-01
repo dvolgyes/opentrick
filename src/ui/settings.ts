@@ -83,6 +83,10 @@ export interface Settings extends BotTiming {
 	readonly voicebox: boolean;
 	/** The animation in place of the bot image, which moves during the bot's turn (src/ui/bot-animation.ts). */
 	readonly botAnimation: boolean;
+	/** On the desktop, the bidding guide covers the side panel below the auction heading during the auction. */
+	readonly guidePanel: boolean;
+	/** The bid box shows the call that the bot would make for the viewer, beside Guide (src/ui/bot-bid-hint.ts). */
+	readonly botBidHint: boolean;
 	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
 	readonly relayChecks: boolean;
 	/** A phone or tablet in landscape gets the desktop view (src/call/device-class.ts). */
@@ -112,6 +116,8 @@ export const DEFAULT_SETTINGS: Settings = {
 	networkQuality: true,
 	voicebox: true,
 	botAnimation: true,
+	guidePanel: true,
+	botBidHint: true,
 	relayChecks: false,
 	landscapeDesktop: false,
 	portraitMobile: true,
@@ -131,6 +137,8 @@ const FLAGS = {
 	networkQuality: "network-quality",
 	voicebox: "voicebox",
 	botAnimation: "bot-animation",
+	guidePanel: "guide-panel",
+	botBidHint: "bot-bid-hint",
 	relayChecks: "relay-checks",
 	landscapeDesktop: "landscape-desktop",
 	portraitMobile: "portrait-mobile",

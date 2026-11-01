@@ -335,6 +335,12 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show the voice box for a player without video":
 			"Sprachanzeige für Spieler ohne Video zeigen",
 		"Animate the bot during its turn": "Den Bot während seines Zugs animieren",
+		"In the desktop view, show the bidding guide in the side panel during the auction":
+			"In der Desktop-Ansicht während der Reizung den Reizleitfaden in der Seitenleiste zeigen",
+		"Show the bot's suggested call in the bid box":
+			"Den Vorschlag des Bots in der Bidding-Box zeigen",
+		"Select the bot's call. Confirm sends it.":
+			"Wählt das Gebot des Bots. Bestätigen sendet es.",
 		"Screen orientation": "Bildschirmausrichtung",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Auf einem Smartphone oder Tablet im Querformat die Desktop-Ansicht zeigen",
@@ -1095,6 +1101,12 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show the voice box for a player without video":
 			"Hangjelző mutatása a videó nélküli játékosnál",
 		"Animate the bot during its turn": "A bot animálása, amikor ő következik",
+		"In the desktop view, show the bidding guide in the side panel during the auction":
+			"Asztali nézetben licitálás közben a licitálási útmutató mutatása az oldalsávban",
+		"Show the bot's suggested call in the bid box":
+			"A bot javasolt licitjének mutatása a licitdobozban",
+		"Select the bot's call. Confirm sends it.":
+			"Kiválasztja a bot licitjét. A Megerősítés küldi el.",
 		"Screen orientation": "Képernyő tájolása",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Telefonon vagy táblagépen fekvő tájolásban az asztali nézet mutatása",
@@ -1790,6 +1802,12 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show the voice box for a player without video":
 			"Vis stemmeindikatoren for en spiller uten video",
 		"Animate the bot during its turn": "Animer boten når det er dens tur",
+		"In the desktop view, show the bidding guide in the side panel during the auction":
+			"Vis meldeveiledningen på sidepanelet under meldingene i skrivebordsvisningen",
+		"Show the bot's suggested call in the bid box":
+			"Vis botens forslag i meldeboksen",
+		"Select the bot's call. Confirm sends it.":
+			"Velger botens melding. Bekreft sender den.",
 		"Screen orientation": "Skjermretning",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Vis skrivebordsvisningen på en telefon eller et nettbrett i liggende format",

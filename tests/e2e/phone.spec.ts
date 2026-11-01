@@ -283,7 +283,7 @@ test("a phone keeps its screen on from the start page through the bidding and th
 		const auction = page.getByTestId("mobile-auction");
 		await auction
 			.getByTestId("bid-box")
-			.getByRole("button", { name: "Pass" })
+			.getByRole("button", { name: "Pass", exact: true })
 			.tap();
 		await auction.getByRole("button", { name: "Confirm" }).tap();
 		await expect.poll(() => phase(page), { timeout: 30_000 }).toBe("play");

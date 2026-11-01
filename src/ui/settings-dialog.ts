@@ -71,6 +71,12 @@ const FLAG_LABELS = {
 	botAnimation: "Animate the bot during its turn",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
+const BIDDING_HELP_LABELS = {
+	guidePanel:
+		"In the desktop view, show the bidding guide in the side panel during the auction",
+	botBidHint: "Show the bot's suggested call in the bid box",
+} as const satisfies Partial<Record<keyof Settings, string>>;
+
 const ORIENTATION_LABELS = {
 	landscapeDesktop: "On a phone or tablet in landscape, show the desktop view",
 	portraitMobile: "On a computer with a portrait window, show the mobile view",
@@ -177,8 +183,22 @@ export function settingsDialog(
 		playTimeMs: timeInput(t("Card thinking budget (seconds)"), "play-time", 1),
 	};
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
+	const biddingHelp = Object.fromEntries(
+		Object.keys(BIDDING_HELP_LABELS).map((field) => [
+			field,
+			el("input", { attrs: { type: "checkbox" } }),
+		]),
+	) as Record<keyof typeof BIDDING_HELP_LABELS, HTMLInputElement>;
 	points.element.append(
 		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),
+		...Object.entries(BIDDING_HELP_LABELS).map(([field, label]) =>
+			el(
+				"label",
+				{},
+				biddingHelp[field as keyof typeof BIDDING_HELP_LABELS],
+				` ${t(label)}`,
+			),
+		),
 	);
 	const scheme = radios(
 		"settings-scheme",
@@ -491,6 +511,8 @@ export function settingsDialog(
 			networkQuality: flags.networkQuality.checked,
 			voicebox: flags.voicebox.checked,
 			botAnimation: flags.botAnimation.checked,
+			guidePanel: biddingHelp.guidePanel.checked,
+			botBidHint: biddingHelp.botBidHint.checked,
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,
 			portraitMobile: orientation.portraitMobile.checked,
@@ -542,6 +564,10 @@ export function settingsDialog(
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
 			cardPoints.checked = settings.cardPoints;
+			for (const field of Object.keys(
+				BIDDING_HELP_LABELS,
+			) as (keyof typeof BIDDING_HELP_LABELS)[])
+				biddingHelp[field].checked = settings[field];
 			scheme.set(settings.scheme);
 			theme.set(settings.theme);
 			baize.value = String(BAIZE_STRENGTHS.indexOf(settings.baizeStrength));

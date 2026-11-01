@@ -2648,9 +2648,16 @@ button.call-join[data-in-call="true"] {
 	grid-column: 1 / -1;
 }
 
-/* The Guide button is the first row of the bid box, above the levels. */
+/* The Guide button is the first row of the bid box, above the levels; the bot's call shares the row equally. */
 .bid-guide {
 	display: grid;
+	grid-auto-columns: minmax(0, 1fr);
+	grid-auto-flow: column;
+	gap: 0.3rem;
+}
+
+.bid-guide .bot-bid {
+	white-space: nowrap;
 }
 
 .bid-guide button,
@@ -3235,6 +3242,24 @@ button.call-join[data-in-call="true"] {
 	display: flex;
 	flex-direction: column;
 	gap: 0.4rem;
+}
+
+/* During the auction, the bidding guide covers the sidebar below the board status; the table sets its top. */
+.table-sidebar:has(> .side-guide) {
+	position: relative;
+}
+
+.side-guide {
+	position: absolute;
+	z-index: 1;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line);
+	border-radius: 0.5rem;
+	background: var(--sheet-bg);
 }
 
 /* The contract header: "1♣ by North · Anna", the largest type in the sidebar. */
@@ -4430,6 +4455,10 @@ main:has(> .room[data-form="compact"]) {
 
 .mobile-bid-overlay .bid-levels {
 	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 0.2rem;
+}
+
+.mobile-bid-overlay .bid-guide {
 	gap: 0.2rem;
 }
 

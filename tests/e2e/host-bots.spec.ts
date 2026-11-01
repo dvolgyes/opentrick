@@ -332,7 +332,7 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		await expect(autoplay).toHaveText("Disable bot");
 		await southPage
 			.getByTestId("bid-box")
-			.getByRole("button", { name: "Pass" })
+			.getByRole("button", { name: "Pass", exact: true })
 			.click();
 		await southPage
 			.getByTestId("bid-box")
