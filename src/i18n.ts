@@ -473,15 +473,15 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"TURN URLs are not supported; VITE_STUN_URLS takes stun: and stuns: URLs only.":
 			"TURN-URLs werden nicht unterstützt. VITE_STUN_URLS akzeptiert nur stun:- und stuns:-URLs.",
 		"You ask to undo your {action}. Your cancellation is being sent.":
-			"Du möchtest dein {action} rückgängig machen. Der Abbruch wird gesendet.",
+			"Du möchtest {action} rückgängig machen. Der Abbruch wird gesendet.",
 		"You ask to undo your {action}. {waiting}":
-			"Du möchtest dein {action} rückgängig machen. {waiting}",
+			"Du möchtest {action} rückgängig machen. {waiting}",
 		"{requester} asks to undo their {action}. Your vote is being sent.":
-			"{requester} möchte sein {action} rückgängig machen. Deine Stimme wird gesendet.",
+			"{requester} möchte {action} rückgängig machen. Deine Stimme wird gesendet.",
 		"{requester} asks to undo their {action}. Your approval is recorded. {waiting}":
-			"{requester} möchte sein {action} rückgängig machen. Deine Zustimmung wurde erfasst. {waiting}",
+			"{requester} möchte {action} rückgängig machen. Deine Zustimmung wurde erfasst. {waiting}",
 		"{requester} asks to undo their {action}. {waiting}":
-			"{requester} möchte sein {action} rückgängig machen. {waiting}",
+			"{requester} möchte {action} rückgängig machen. {waiting}",
 		"Your claim for {count} {tricks} is waiting. {waiting}":
 			"Deine Beanspruchung von {count} {tricks} wartet. {waiting}",
 		"{requester} claims {count} {tricks}. Your decision is being sent.":
@@ -493,17 +493,17 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{requester} claims {count} {tricks}. Do you accept the claim?":
 			"{requester} beansprucht {count} {tricks}. Nimmst du die Beanspruchung an?",
 		"{requester} asks to undo their {action}. Do you approve?":
-			"{requester} möchte sein {action} rückgängig machen. Stimmst du zu?",
+			"{requester} möchte {action} rückgängig machen. Stimmst du zu?",
 		"Waiting for {players} to approve.":
 			"Warte auf die Zustimmung von {players}.",
 		"Waiting for {players} to decide.":
 			"Warte auf die Entscheidung von {players}.",
 		"{requester} asks to reset the game.":
 			"{requester} bittet darum, das Spiel zurückzusetzen.",
-		"last played card": "zuletzt gespielte Karte",
-		"last bid": "letztes Gebot",
+		"last played card": "die zuletzt gespielte Karte",
+		"last bid": "das letzte Gebot",
 		"Ask to undo your {action}?":
-			"Möchtest du bitten, dein {action} rückgängig zu machen?",
+			"Möchtest du bitten, {action} rückgängig zu machen?",
 		"Ask to undo": "Rückgängigmachen anfragen",
 		"Claim tricks": "Stiche beanspruchen",
 		"Claim all remaining tricks": "Alle verbleibenden Stiche beanspruchen",

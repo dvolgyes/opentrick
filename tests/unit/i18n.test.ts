@@ -130,7 +130,26 @@ describe("localization", () => {
 		const cases = [
 			[
 				de("Ask to undo your {action}?", { action: de("last bid") }),
-				"Möchtest du bitten, dein letztes Gebot rückgängig zu machen?",
+				"Möchtest du bitten, das letzte Gebot rückgängig zu machen?",
+			],
+			// The article agrees with the feminine Karte, and the requester's gender stays open.
+			[
+				de("Ask to undo your {action}?", { action: de("last played card") }),
+				"Möchtest du bitten, die zuletzt gespielte Karte rückgängig zu machen?",
+			],
+			[
+				de("You ask to undo your {action}. {waiting}", {
+					action: de("last played card"),
+					waiting: "Warte.",
+				}),
+				"Du möchtest die zuletzt gespielte Karte rückgängig machen. Warte.",
+			],
+			[
+				de("{requester} asks to undo their {action}. Do you approve?", {
+					requester: "Ost",
+					action: de("last played card"),
+				}),
+				"Ost möchte die zuletzt gespielte Karte rückgängig machen. Stimmst du zu?",
 			],
 			[de("Claim tricks"), "Stiche beanspruchen"],
 			[
@@ -183,6 +202,48 @@ describe("localization", () => {
 		] as const;
 
 		for (const [text, expected] of cases) expect(text).toBe(expected);
+	});
+
+	it("puts the article before the undone card or bid in the undo texts", () => {
+		const cases = [
+			[
+				"es",
+				"Ana pide deshacer la última carta jugada. ¿Lo apruebas?",
+				"¿Pedir deshacer la última carta jugada?",
+			],
+			[
+				"pt",
+				"Ana pede para desfazer a última carta jogada. Aprova?",
+				"Pedir para desfazer a última carta jogada?",
+			],
+			[
+				"fr",
+				"Ana demande l'annulation de la dernière carte jouée. Approuvez-vous ?",
+				"Demander d'annuler la dernière carte jouée ?",
+			],
+			[
+				"it",
+				"Ana chiede di annullare l'ultima carta giocata. Approvi?",
+				"Chiedere di annullare l'ultima carta giocata?",
+			],
+			[
+				"nl",
+				"Ana vraagt om de laatst gespeelde kaart ongedaan te maken. Keur je dit goed?",
+				"Vragen om de laatst gespeelde kaart ongedaan te maken?",
+			],
+		] as const satisfies readonly (readonly [Locale, string, string])[];
+
+		for (const [locale, request, ask] of cases) {
+			const t = translator(locale);
+			const action = t("last played card");
+			expect(
+				t("{requester} asks to undo their {action}. Do you approve?", {
+					requester: "Ana",
+					action,
+				}),
+			).toBe(request);
+			expect(t("Ask to undo your {action}?", { action })).toBe(ask);
+		}
 	});
 
 	it("translates declarer and dummy in every supported language", () => {
