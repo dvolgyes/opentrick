@@ -1730,8 +1730,7 @@ describe("played card styles", () => {
 			try {
 				const base = sideHandView();
 				const dummy = base.seats.find((player) => player.position === "left");
-				if (!dummy || !dummy.hand.visible)
-					throw new Error("missing visible dummy");
+				if (!dummy?.hand.visible) throw new Error("missing visible dummy");
 				const [trump, ...others] = dummy.hand.suits;
 				if (!trump) throw new Error("missing trump suit");
 				const hand = {
