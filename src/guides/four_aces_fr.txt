@@ -19,6 +19,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - 8½ points ou plus : forcing de manche. Nommez une couleur nouvelle et continuez jusqu'à la manche ([3NT], [4H], [4S]).
 
 ## Redemande de l'ouvreur
+Après votre ouverture d'un à la couleur et la réponse de votre partenaire, voici votre annonce suivante ; les adversaires passent sauf indication contraire.
 - 8–9½ points : [1NT] avec une main régulière, un soutien simple ou la répétition de votre couleur.
 - 10–11 points : un soutien à saut ou une répétition à saut de votre couleur.
 - 11½–14 points : un saut dans une couleur nouvelle, ou [2NT] avec une main régulière de 11½–12½ points.

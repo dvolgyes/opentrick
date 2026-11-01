@@ -19,6 +19,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - 21 eller flere poeng: utgangskrav. Meld en ny farge, og fortsett til dere når utgang ([3NT], [4H], [4S]).
 
 ## Åpners gjenmelding
+Etter at du har åpnet med én i farge og makker har svart, er dette din neste melding; motstanderne passer hvis ikke annet er sagt.
 - 19–23 poeng: [1NT] med balansert hånd, enkel støtte, eller gjenmelding av egen farge.
 - 24–28 poeng: hoppstøtte, eller gjenmelding av egen farge med hopp.
 - 29–34 poeng: hopp i en ny farge, eller [2NT] med balansert hånd og 29–31 poeng.

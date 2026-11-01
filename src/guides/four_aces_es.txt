@@ -19,6 +19,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - 8½ o más puntos: forzante a manga. Declara un palo nuevo y sigue hasta la manga ([3NT], [4H], [4S]).
 
 ## Redeclaración del abridor
+Tras abrir uno a palo y responder tu compañero, esta es tu siguiente declaración; los adversarios pasan salvo indicación contraria.
 - 8–9½ puntos: [1NT] con mano equilibrada, un apoyo simple o la repetición de tu propio palo.
 - 10–11 puntos: un apoyo con salto, o la repetición de tu propio palo con salto.
 - 11½–14 puntos: un salto en un palo nuevo, o [2NT] con una mano equilibrada de 11½–12½ puntos.

@@ -33,6 +33,7 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - A jump in a new suit ([1H] – [2S], [1D] – [3C]): 19 or more points and a good five-card suit. It invites slam.
 
 ## Opener's rebid
+After you open one of a suit and partner bids, this is your next call; opponents pass unless stated.
 - 12–14 points: [1NT] with a balanced hand, a single raise, or a rebid of your own suit.
 - 15–17 points: a jump raise, or a jump rebid of your own suit.
 - 18–21 points: a jump in a new suit, or [2NT] with a balanced 18–19 points.

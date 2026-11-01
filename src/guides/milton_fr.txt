@@ -26,6 +26,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Un saut dans une couleur nouvelle ([1H] – [2S], [1D] – [3C]) : 19 points ou plus et une bonne couleur cinquième. Il propose le chelem.
 
 ## Redemande de l'ouvreur
+Après votre ouverture d'un à la couleur et la réponse de votre partenaire, voici votre annonce suivante ; les adversaires passent sauf indication contraire.
 - 12–14 points : [1NT] avec une main régulière, un soutien simple ou la répétition de votre couleur.
 - 15–17 points : un soutien à saut ou une répétition à saut de votre couleur.
 - 18–21 points : un saut dans une couleur nouvelle, ou [2NT] avec une main régulière de 18–19 points.

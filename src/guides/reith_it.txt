@@ -19,6 +19,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - 21 o più punti: forzante a manche. Dichiara un nuovo colore e prosegui fino alla manche ([3NT], [4H], [4S]).
 
 ## Ridichiarazione dell'apertore
+Dopo la tua apertura di uno a colore e la risposta del compagno, questa è la tua dichiarazione successiva; gli avversari passano salvo diversa indicazione.
 - 19–23 punti: [1NT] con una mano bilanciata, un appoggio semplice, oppure la ripetizione del tuo colore.
 - 24–28 punti: un appoggio a salto, oppure la ripetizione a salto del tuo colore.
 - 29–34 punti: un salto in un nuovo colore, oppure [2NT] con una bilanciata di 29–31 punti.

@@ -19,6 +19,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Legalább 21 pont: gémig forszírozó. Licitálj új színt, és licitálj tovább a gémig ([3NT], [4H], [4S]).
 
 ## A nyitó második licitje
+Egyes színnyitásod és partnered válasza után ez a következő licited; az ellenfelek passzolnak, hacsak másként nem írjuk.
 - 19–23 pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
 - 24–28 pont: ugrásos emelés, vagy a saját színed ismétlése ugrással.
 - 29–34 pont: ugrás új színben, vagy kiegyensúlyozott 29–31 ponttal [2NT].

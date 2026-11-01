@@ -19,6 +19,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - 8½ ou mais pontos: forcing de partida. Declarar um naipe novo e continuar até à partida ([3NT], [4H], [4S]).
 
 ## Redeclaração do abridor
+Após abrir um num naipe e o parceiro responder, esta é a sua próxima declaração; os adversários passam, salvo indicação em contrário.
 - 8–9½ pontos: [1NT] com uma mão equilibrada, um apoio simples ou a repetição do próprio naipe.
 - 10–11 pontos: um apoio com salto ou a repetição do próprio naipe com salto.
 - 11½–14 pontos: um salto num naipe novo, ou [2NT] com uma mão equilibrada de 11½–12½ pontos.

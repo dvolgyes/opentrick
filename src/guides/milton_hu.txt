@@ -26,6 +26,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Ugrás új színben ([1H] – [2S], [1D] – [3C]): legalább 19 pont és jó ötlapos szín. Szlemre invitál.
 
 ## A nyitó második licitje
+Egyes színnyitásod és partnered válasza után ez a következő licited; az ellenfelek passzolnak, hacsak másként nem írjuk.
 - 12–14 pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
 - 15–17 pont: ugrásos emelés, vagy a saját színed ismétlése ugrással.
 - 18–21 pont: ugrás új színben, vagy kiegyensúlyozott 18–19 ponttal [2NT].

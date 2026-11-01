@@ -81,6 +81,32 @@ describe("bidding guide text", () => {
 
 describe("bidding guide files", () => {
 	it.each(POINT_SYSTEMS)(
+		"explains the opener's rebid in every %s guide",
+		async (system) => {
+			for (const locale of LOCALES) {
+				const text = await loadGuide(system, locale);
+				if (!text) throw new Error(`Missing ${system} guide in ${locale}`);
+				const blocks = parseGuide(text);
+				const sections = blocks.flatMap((block, index) =>
+					block.kind === "section" ? [index] : [],
+				);
+				const rebid = sections[2];
+				if (rebid === undefined)
+					throw new Error(`Missing rebid in ${system}, ${locale}`);
+				const explanation = blocks[rebid + 1];
+				expect(explanation?.kind, `${system}, ${locale}`).toBe("paragraph");
+				if (locale === "en")
+					expect(explanation?.parts).toEqual([
+						{
+							kind: "text",
+							text: "After you open one of a suit and partner bids, this is your next call; opponents pass unless stated.",
+						},
+					]);
+			}
+		},
+	);
+
+	it.each(POINT_SYSTEMS)(
 		"uses Hungarian bridge terminology in the %s guide",
 		async (system) => {
 			const text = await loadGuide(system, "hu");

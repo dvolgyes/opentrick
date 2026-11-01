@@ -26,6 +26,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Um salto num naipe novo ([1H] – [2S], [1D] – [3C]): 19 ou mais pontos e um bom naipe quinto. Convida a slam.
 
 ## Redeclaração do abridor
+Após abrir um num naipe e o parceiro responder, esta é a sua próxima declaração; os adversários passam, salvo indicação em contrário.
 - 12–14 pontos: [1NT] com uma mão equilibrada, um apoio simples ou a repetição do próprio naipe.
 - 15–17 pontos: um apoio com salto ou a repetição do próprio naipe com salto.
 - 18–21 pontos: um salto num naipe novo, ou [2NT] com uma mão equilibrada de 18–19 pontos.
