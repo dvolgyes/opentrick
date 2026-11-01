@@ -7100,7 +7100,7 @@ describe("call meanings in the auction", () => {
 		}
 	});
 	it.each<Layout>(["desktop", "sideways", "compact"])(
-		"places dotted underlines on the scaled suit and NT bid text (%s)",
+		"shows the scaled suit and NT bid text of a described call without an underline (%s)",
 		(layout) => {
 			const base = playView();
 			if (!base.auction) throw new Error("missing auction");
@@ -7140,14 +7140,10 @@ describe("call meanings in the auction", () => {
 						expect(strain.right, size).toBeLessThanOrEqual(
 							cell.getBoundingClientRect().right + 0.5,
 						);
-						for (const mark of marks) {
+						for (const mark of marks)
 							expect(getComputedStyle(mark).textDecorationLine, size).toBe(
-								"underline",
+								"none",
 							);
-							expect(getComputedStyle(mark).textDecorationStyle, size).toBe(
-								"dotted",
-							);
-						}
 					}
 					const pass = calls[2];
 					const passText = pass?.querySelector<HTMLElement>(".call-pass");
@@ -7155,11 +7151,11 @@ describe("call meanings in the auction", () => {
 					if (!pass || !passText || !double)
 						throw new Error("missing pass or double");
 					expect(getComputedStyle(pass).textDecorationLine).toBe("none");
-					expect(getComputedStyle(passText).textDecorationLine).toBe(
-						"underline",
-					);
-					expect(getComputedStyle(passText).textDecorationStyle).toBe("dotted");
-					expect(getComputedStyle(double).textDecorationLine).toBe("underline");
+					expect(getComputedStyle(passText).textDecorationLine).toBe("none");
+					expect(getComputedStyle(double).textDecorationLine).toBe("none");
+					// The call stays a button with its meaning.
+					expect(double.tagName).toBe("BUTTON");
+					expect(double.title).toBe("double");
 				}
 			} finally {
 				delete document.documentElement.dataset.suitFontSize;
