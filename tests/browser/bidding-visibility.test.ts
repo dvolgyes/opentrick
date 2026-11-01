@@ -71,7 +71,7 @@ describe.each(["desktop", "compact"] as const)(
 		});
 
 		it("hides the whole box while waiting and restores it for the next turn", () => {
-			let settings = { ...DEFAULT_SETTINGS, hideBidBoxWhenWaiting: true };
+			let settings = { ...DEFAULT_SETTINGS };
 			const { root, section } = renderView(
 				auction,
 				form,

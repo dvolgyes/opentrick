@@ -123,7 +123,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	guidePanel: true,
 	guideButton: false,
 	botBidHint: true,
-	hideBidBoxWhenWaiting: false,
+	hideBidBoxWhenWaiting: true,
 	relayChecks: false,
 	landscapeDesktop: false,
 	portraitMobile: true,

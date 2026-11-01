@@ -63,7 +63,7 @@ describe("player settings", () => {
 			guidePanel: true,
 			guideButton: false,
 			botBidHint: true,
-			hideBidBoxWhenWaiting: false,
+			hideBidBoxWhenWaiting: true,
 			relayChecks: false,
 			landscapeDesktop: false,
 			portraitMobile: true,
@@ -75,9 +75,11 @@ describe("player settings", () => {
 		const storage = memoryStorage();
 		storage.setItem("opentrick.settings.suit-font-size", "S");
 		storage.setItem("opentrick.settings.suit-colors", "standard");
+		storage.setItem("opentrick.settings.hide-bid-box-when-waiting", "0");
 		expect(readSettings(storage)).toMatchObject({
 			suitFontSize: "S",
 			suitColors: "standard",
+			hideBidBoxWhenWaiting: false,
 			theme: "selenized",
 			scheme: "auto",
 			baizeStrength: "medium",
@@ -114,7 +116,7 @@ describe("player settings", () => {
 			guidePanel: false,
 			guideButton: true,
 			botBidHint: false,
-			hideBidBoxWhenWaiting: true,
+			hideBidBoxWhenWaiting: false,
 			relayChecks: true,
 			landscapeDesktop: false,
 			portraitMobile: true,

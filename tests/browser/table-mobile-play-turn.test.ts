@@ -5,6 +5,7 @@ import type { Form, Layout } from "../../src/call/device-class";
 import { type Locale, translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
 import { pageReport } from "../../src/ui/page-report";
+import { DEFAULT_SETTINGS } from "../../src/ui/settings";
 import type { TableView } from "../../src/ui/table-model";
 import {
 	card,
@@ -938,14 +939,20 @@ describe("mobile turn frame", () => {
 
 	it("keeps the bidding box above the bidder's frame", () => {
 		const view = playView();
-		const { root } = renderMobile({
-			...view,
-			phase: "auction",
-			seats: view.seats.map((player) => ({
-				...player,
-				turn: player.seat === "E",
-			})),
-		});
+		const { root } = renderView(
+			{
+				...view,
+				phase: "auction",
+				seats: view.seats.map((player) => ({
+					...player,
+					turn: player.seat === "E",
+				})),
+			},
+			"compact",
+			undefined,
+			undefined,
+			{ marks: () => ({ ...DEFAULT_SETTINGS, hideBidBoxWhenWaiting: false }) },
+		);
 		const overlay = root.querySelector<HTMLElement>(".mobile-bid-overlay");
 		const frame = root.querySelector<HTMLElement>(
 			'.mobile-board-left .mobile-board-name[data-turn-frame="true"] + .hand',
@@ -963,11 +970,13 @@ describe("mobile turn frame", () => {
 
 	it("distinguishes an inactive bidding box and unavailable options", () => {
 		const base = playView();
-		const { root, section } = renderMobile({
-			...base,
-			phase: "auction",
-			bids: [{ call: "P", text: "Pass" }],
-		});
+		const { root, section } = renderView(
+			{ ...base, phase: "auction", bids: [{ call: "P", text: "Pass" }] },
+			"compact",
+			undefined,
+			undefined,
+			{ marks: () => ({ ...DEFAULT_SETTINGS, hideBidBoxWhenWaiting: false }) },
+		);
 		const overlay = root.querySelector<HTMLElement>(".mobile-bid-overlay");
 		if (!overlay) throw new Error("missing bid box");
 		const disabled = overlay.querySelector<HTMLButtonElement>(
@@ -1003,6 +1012,9 @@ describe("mobile turn frame", () => {
 		const { root } = renderView(
 			{ ...playView(), phase: "auction", bids: [] },
 			"desktop",
+			undefined,
+			undefined,
+			{ marks: () => ({ ...DEFAULT_SETTINGS, hideBidBoxWhenWaiting: false }) },
 		);
 		const bidBox = root.querySelector<HTMLElement>(".bid-box");
 		const center = root.querySelector<HTMLElement>(".center");

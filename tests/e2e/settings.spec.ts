@@ -167,14 +167,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Animate the bot during its turn",
 		"In the desktop view, show the bidding guide in the side panel during the auction",
 		"Show the bot's suggested call in the bid box",
+		"Hide the bid box when it is not your turn",
 		"On a computer with a portrait window, show the mobile view",
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
 	await expect(
 		dialog.getByLabel("Show the bidding guide button in the bid box"),
-	).not.toBeChecked();
-	await expect(
-		dialog.getByLabel("Hide the bid box when it is not your turn"),
 	).not.toBeChecked();
 	await expect(
 		dialog.getByLabel(
@@ -208,7 +206,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog
 		.getByLabel("Show the bidding guide button in the bid box")
 		.check();
-	await dialog.getByLabel("Hide the bid box when it is not your turn").check();
+	await dialog
+		.getByLabel("Hide the bid box when it is not your turn")
+		.uncheck();
 	await relayChecks.check();
 
 	await dialog.getByRole("button", { name: "Save settings" }).click();
@@ -294,7 +294,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).toBeChecked();
 	await expect(
 		dialog.getByLabel("Hide the bid box when it is not your turn"),
-	).toBeChecked();
+	).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Check the connection more often"),
 	).toBeChecked();

@@ -161,8 +161,9 @@ Both policies run entirely in a browser worker, with no Python runtime or API ke
 Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
 Enable **Show the bidding guide button in the bid box** in Settings to open the guide for the chosen bidding system from the bid box.
 The button is disabled by default.
+On desktop, the bidding guide is also shown in the side panel during the auction by default.
 The bot's suggested call is shown by default and can also be disabled in Settings.
-To see the playing area while waiting for another player's bid, enable **Hide the bid box when it is not your turn**.
+By default, **Hide the bid box when it is not your turn** keeps the playing area visible while waiting for another player's bid.
 The bid box returns when you can bid again.
 
 ![The bidding guide dialog, opened from the Guide button, lists the opening, response, and rebid ranges of the chosen system.](docs/images/bidding-guide.png)
