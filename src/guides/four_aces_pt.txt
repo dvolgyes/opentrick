@@ -12,7 +12,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - 14½ ou mais pontos: [2C], qualquer distribuição. Artificial e forcing. Com uma mão equilibrada de 14½–16 pontos, marcar [2NT] depois da resposta do parceiro.
 - 16½–18 pontos: [3NT], equilibrada como para [1NT], em vez de [2C].
 
-## Respostas à abertura de um num naipe
+## Respostas à abertura de um num naipe: [1C], [1D], [1H], [1S]
 - 0–3½ pontos: [P].
 - 4–6 pontos: apoiar o naipe maior do parceiro subindo um nível ([1H] – [2H]) com três ou mais cartas. Caso contrário, declarar um naipe novo ao nível de um com quatro ou mais cartas, ou [1NT].
 - 6½–8 pontos: convidativo. Apoiar com salto o naipe maior do parceiro ([1S] – [3S]) com três ou mais cartas, ou declarar um naipe novo. Um naipe novo ao nível de dois exige 6½ ou mais pontos.

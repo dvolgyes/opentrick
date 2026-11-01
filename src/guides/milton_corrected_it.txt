@@ -19,7 +19,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - 22 o più punti: [2C], qualsiasi distribuzione. Artificiale e forzante. Con una mano bilanciata di 22–24 punti, ridichiara [2NT] dopo la risposta del compagno.
 - 25–27 punti: [3NT], bilanciata come per [1NT], invece di [2C].
 
-## Risposte all'apertura di uno a colore
+## Risposte all'apertura di uno a colore: [1C], [1D], [1H], [1S]
 - 0–5 punti: [P].
 - 6–10 punti: appoggia di un livello il nobile del compagno ([1H] – [2H]) con tre o più carte. Altrimenti dichiara un nuovo colore a livello di uno con quattro o più carte, oppure [1NT].
 - [1NT] nega un nobile di quattro carte su [1C] o [1D], quattro picche e tre cuori su [1H], e tre picche su [1S].

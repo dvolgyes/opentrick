@@ -34,18 +34,24 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	"open-2NT": ["Opening bids", "- {range} points: [2NT]"],
 	"open-2C": ["Opening bids", "- {range} points: [2C]"],
 	"open-3NT": ["Opening bids", "- {range} points: [3NT]"],
-	"suit-pass": ["Responses to one of a suit", "- {range} points: [P]"],
-	"suit-low": ["Responses to one of a suit", "- {range} points: raise"],
+	"suit-pass": [
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
+		"- {range} points: [P]",
+	],
+	"suit-low": [
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
+		"- {range} points: raise",
+	],
 	"suit-invite": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"- {range} points: invitational",
 	],
 	"suit-two-level": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"A new suit at the two level needs {range} points.",
 	],
 	"suit-force": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"- {range} points: game forcing",
 	],
 	"nt-weak": ["Responses to [1NT]", "- {range} points: [P], unless"],
@@ -141,27 +147,27 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"With {range} points, opener bids three of the lowest side suit",
 	],
 	"suit-jacoby": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"- [2NT] over [1H] or [1S] (Jacoby 2NT): {range} points",
 	],
 	"suit-3NT": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"- [3NT] over [1H] or [1S]: {range} points",
 	],
 	"suit-game": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"- Four of partner's major ([1H] – [4H]): {range} points",
 	],
 	"suit-2NT-minor": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"- [2NT] over [1C] or [1D]: {range} points",
 	],
 	"suit-3NT-minor": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"[3NT] over [1C] or [1D]: {range} points",
 	],
 	"suit-jump-shift": [
-		"Responses to one of a suit",
+		"Responses to one of a suit: [1C], [1D], [1H], [1S]",
 		"[1D] – [3C]): {range} points and a good five-card suit",
 	],
 	"jacoby-minimum": ["Opener's rebid", "Without one, [4H] with {range} points"],

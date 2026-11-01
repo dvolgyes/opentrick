@@ -12,7 +12,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - 35 points ou plus : [2C], toute distribution. Artificiel et forcing. Avec une main régulière de 35–39 points, annoncez [2NT] après la réponse du partenaire.
 - 40–44 points : [3NT], main régulière comme pour [1NT], au lieu de [2C].
 
-## Réponses à l'ouverture d'un à la couleur
+## Réponses à l'ouverture d'un à la couleur: [1C], [1D], [1H], [1S]
 - 0–9 points : [P].
 - 10–15 points : soutenez la majeure du partenaire d'un niveau ([1H] – [2H]) avec trois cartes ou plus. Sinon, nommez une couleur nouvelle au niveau de un avec quatre cartes ou plus, ou dites [1NT].
 - 16–20 points : invitant. Soutenez à saut la majeure du partenaire ([1S] – [3S]) avec trois cartes ou plus, ou nommez une couleur nouvelle. Une couleur nouvelle au niveau de deux demande 16 points ou plus.

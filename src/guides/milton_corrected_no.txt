@@ -19,7 +19,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - 22 eller flere poeng: [2C], vilkårlig fordeling. Kunstig og krav. Med balanserte 22–24 poeng melder du [2NT] etter makkers svar.
 - 25–27 poeng: [3NT], balansert som for [1NT], i stedet for [2C].
 
-## Svar på åpning med én i farge
+## Svar på åpning med én i farge: [1C], [1D], [1H], [1S]
 - 0–5 poeng: [P].
 - 6–10 poeng: støtt makkers høyfarge ett trinn ([1H] – [2H]) med tre eller flere kort. Ellers melder du en ny farge på ett-trinnet med fire eller flere kort, eller [1NT].
 - [1NT] avkrefter en firekorts høyfarge etter [1C] eller [1D], fire spar og tre hjerter etter [1H], og tre spar etter [1S].

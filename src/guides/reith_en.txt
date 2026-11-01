@@ -12,7 +12,7 @@ This guide uses a natural five-card-major method, similar to Standard American. 
 - 35 or more points: [2C], any shape. Artificial and forcing. With a balanced 35–39 points, rebid [2NT] after partner's answer.
 - 40–44 points: [3NT], balanced as for [1NT], instead of [2C].
 
-## Responses to one of a suit
+## Responses to one of a suit: [1C], [1D], [1H], [1S]
 - 0–9 points: [P].
 - 10–15 points: raise partner's major one level ([1H] – [2H]) with three or more cards. Otherwise bid a new suit at the one level with four or more cards, or [1NT].
 - 16–20 points: invitational. Jump raise partner's major ([1S] – [3S]) with three or more cards, or bid a new suit. A new suit at the two level needs 16 or more points.

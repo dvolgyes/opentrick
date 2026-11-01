@@ -12,7 +12,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - 22 vagy több pont: [2C], bármilyen elosztás. Mesterséges és forszírozó. Kiegyensúlyozott 22–24 ponttal a partner válasza után [2NT] a licited.
 - 25–27 pont: [3NT], kiegyensúlyozott, mint az [1NT] nyitásnál, a [2C] helyett.
 
-## Válaszok egyes színnyitásra
+## Válaszok egyes színnyitásra: [1C], [1D], [1H], [1S]
 - 0–5 pont: [P].
 - 6–10 pont: legalább három lappal emeld egy szinttel a partnered nemes színét ([1H] – [2H]). Egyébként legalább négy lappal licitálj új színt egyes szinten, vagy [1NT] a válaszod.
 - Az [1NT] [1C] vagy [1D] után tagadja a négylapos nemes színt, [1H] után a négy pikket és a három kőrt, [1S] után a három pikket.

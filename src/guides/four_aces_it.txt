@@ -12,7 +12,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - 14½ o più punti: [2C], qualsiasi distribuzione. Artificiale e forzante. Con una mano bilanciata di 14½–16 punti, ridichiara [2NT] dopo la risposta del compagno.
 - 16½–18 punti: [3NT], bilanciata come per [1NT], invece di [2C].
 
-## Risposte all'apertura di uno a colore
+## Risposte all'apertura di uno a colore: [1C], [1D], [1H], [1S]
 - 0–3½ punti: [P].
 - 4–6 punti: appoggia di un livello il nobile del compagno ([1H] – [2H]) con tre o più carte. Altrimenti dichiara un nuovo colore a livello di uno con quattro o più carte, oppure [1NT].
 - 6½–8 punti: invitante. Appoggia a salto il nobile del compagno ([1S] – [3S]) con tre o più carte, oppure dichiara un nuovo colore. Un nuovo colore a livello di due richiede 6½ o più punti.

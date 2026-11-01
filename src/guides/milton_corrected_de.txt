@@ -19,7 +19,7 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - 22 oder mehr Punkte: [2C], beliebige Verteilung. Künstlich und forcierend. Mit ausgeglichenen 22–24 Punkten reizt du nach der Antwort des Partners [2NT].
 - 25–27 Punkte: [3NT], ausgeglichen wie bei [1NT], statt [2C].
 
-## Antworten auf eine Eröffnung in Farbe auf Einerstufe
+## Antworten auf eine Eröffnung in Farbe auf Einerstufe: [1C], [1D], [1H], [1S]
 - 0–5 Punkte: [P].
 - 6–10 Punkte: Hebe die Oberfarbe deines Partners um eine Stufe ([1H] – [2H]) mit drei oder mehr Karten. Sonst reizt du eine neue Farbe auf Einerstufe mit vier oder mehr Karten, oder [1NT].
 - [1NT] verneint über [1C] oder [1D] eine Oberfarbe mit vier Karten, über [1H] vier Pik und drei Coeur, und über [1S] drei Pik.

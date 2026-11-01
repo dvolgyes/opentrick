@@ -12,7 +12,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - 14½ eller flere poeng: [2C], vilkårlig fordeling. Kunstig og krav. Med balanserte 14½–16 poeng melder du [2NT] etter makkers svar.
 - 16½–18 poeng: [3NT], balansert som for [1NT], i stedet for [2C].
 
-## Svar på åpning med én i farge
+## Svar på åpning med én i farge: [1C], [1D], [1H], [1S]
 - 0–3½ poeng: [P].
 - 4–6 poeng: støtt makkers høyfarge ett trinn ([1H] – [2H]) med tre eller flere kort. Ellers melder du en ny farge på ett-trinnet med fire eller flere kort, eller [1NT].
 - 6½–8 poeng: invitasjon. Gi hoppstøtte i makkers høyfarge ([1S] – [3S]) med tre eller flere kort, eller meld en ny farge. En ny farge på to-trinnet krever 6½ eller flere poeng.

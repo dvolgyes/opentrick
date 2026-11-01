@@ -12,7 +12,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - 35 o más puntos: [2C], cualquier distribución. Artificial y forzante. Con una mano equilibrada de 35–39 puntos, redeclara [2NT] tras la respuesta del compañero.
 - 40–44 puntos: [3NT], equilibrada como para [1NT], en lugar de [2C].
 
-## Respuestas a uno a palo
+## Respuestas a uno a palo: [1C], [1D], [1H], [1S]
 - 0–9 puntos: [P].
 - 10–15 puntos: apoya el mayor de tu compañero un nivel ([1H] – [2H]) con tres o más cartas. Si no, declara un palo nuevo a nivel de uno con cuatro o más cartas, o [1NT].
 - 16–20 puntos: invitativo. Apoya con salto el mayor de tu compañero ([1S] – [3S]) con tres o más cartas, o declara un palo nuevo. Un palo nuevo a nivel de dos requiere 16 o más puntos.

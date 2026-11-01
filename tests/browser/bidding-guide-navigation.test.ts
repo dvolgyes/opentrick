@@ -35,6 +35,13 @@ it("links to the transfer and Stayman rules for every system and language", asyn
 			await expect
 				.poll(() => links().length, { message: `${system}, ${locale}` })
 				.toBe(2);
+			const suitResponses = guide.element.querySelectorAll("h3")[1];
+			expect(
+				[...(suitResponses?.querySelectorAll(".guide-bid") ?? [])].map(
+					(bid) => bid.textContent,
+				),
+				`${system}, ${locale}`,
+			).toEqual(["1♣", "1♦", "1♥", "1♠"]);
 			for (const link of links())
 				expect(link.scrollWidth, `${system}, ${locale}`).toBeLessThanOrEqual(
 					link.clientWidth,

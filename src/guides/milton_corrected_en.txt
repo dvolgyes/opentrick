@@ -19,7 +19,7 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - 22 or more points: [2C], any shape. Artificial and forcing. With a balanced 22–24 points, rebid [2NT] after partner's answer.
 - 25–27 points: [3NT], balanced as for [1NT], instead of [2C].
 
-## Responses to one of a suit
+## Responses to one of a suit: [1C], [1D], [1H], [1S]
 - 0–5 points: [P].
 - 6–10 points: raise partner's major one level ([1H] – [2H]) with three or more cards. Otherwise bid a new suit at the one level with four or more cards, or [1NT].
 - [1NT] denies a four-card major over [1C] or [1D], four spades and three hearts over [1H], and three spades over [1S].

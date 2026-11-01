@@ -12,7 +12,7 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - 22 of meer punten: [2C], elke verdeling. Kunstmatig en forcing. Met een evenwichtige hand van 22–24 punten bied je [2NT] na het antwoord van partner.
 - 25–27 punten: [3NT], evenwichtig zoals bij [1NT], in plaats van [2C].
 
-## Antwoorden op een opening van één in een kleur
+## Antwoorden op een opening van één in een kleur: [1C], [1D], [1H], [1S]
 - 0–5 punten: [P].
 - 6–10 punten: verhoog de hoge kleur van je partner met één niveau ([1H] – [2H]) met drie of meer kaarten. Bied anders een nieuwe kleur op het één-niveau met vier of meer kaarten, of [1NT].
 - [1NT] ontkent een hoge kleur met vier kaarten na [1C] of [1D], vier schoppen en drie harten na [1H], en drie schoppen na [1S].

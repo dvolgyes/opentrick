@@ -19,7 +19,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - 22 o más puntos: [2C], cualquier distribución. Artificial y forzante. Con una mano equilibrada de 22–24 puntos, redeclara [2NT] tras la respuesta del compañero.
 - 25–27 puntos: [3NT], equilibrada como para [1NT], en lugar de [2C].
 
-## Respuestas a uno a palo
+## Respuestas a uno a palo: [1C], [1D], [1H], [1S]
 - 0–5 puntos: [P].
 - 6–10 puntos: apoya el mayor de tu compañero un nivel ([1H] – [2H]) con tres o más cartas. Si no, declara un palo nuevo a nivel de uno con cuatro o más cartas, o [1NT].
 - [1NT] niega un mayor de cuatro cartas sobre [1C] o [1D], cuatro picas y tres corazones sobre [1H], y tres picas sobre [1S].

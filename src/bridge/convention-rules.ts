@@ -116,7 +116,7 @@ const MILTON = {
 	"open-2NT": { min: 20, max: 21 }, // "20–21 points: [2NT]"
 	"open-2C": { min: 22 }, // "22 or more points: [2C]"
 	"open-3NT": { min: 25, max: 27 }, // "25–27 points: [3NT]"
-	// ## Responses to one of a suit
+	// ## Responses to one of a suit: [1C], [1D], [1H], [1S]
 	"suit-pass": { min: 0, max: 5 }, // "0–5 points: [P]"
 	"suit-low": { min: 6, max: 10 }, // "6–10 points: raise partner's major"; a minor "one level with 6–10 points"
 	"suit-invite": { min: 10, max: 12 }, // "10–12 points: invitational"; a minor "a jump with 10–12 points"
