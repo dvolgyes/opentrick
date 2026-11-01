@@ -922,6 +922,13 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 				max: shape.max,
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
+		case "at-most-both":
+			return t("at most {max} {suit} and {otherMax} {other}", {
+				max: shape.max,
+				suit: SUIT_SYMBOLS[shape.suit],
+				otherMax: shape.otherMax,
+				other: SUIT_SYMBOLS[shape.other],
+			});
 		case "longer-major":
 			return t(
 				shape.ties

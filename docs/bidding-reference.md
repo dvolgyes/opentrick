@@ -338,7 +338,12 @@ Source: SAYC, "Responses after 1H", "1D and 1C openings", and "Negative doubles"
 - A new suit at the two level: 11 or more points and four or more cards (was 10).
 - Raise of a minor: four or more diamonds to raise [1D], five or more clubs to raise [1C]; 6–10 points for the single raise, 10–12 points for the jump raise.
   There is no forcing minor raise.
-- Over [1C] / [1D]: [2NT] with 13–15 points, balanced, game forcing; [3NT] with 16–17 points, balanced.
+- The details below are derived (2026-11-01) from these rules:
+  - With 10 points and three or more cards in partner's major, the single raise (6–10) and the limit raise (10–12) both fit; the guide gives both, because SAYC's ranges overlap at 10.
+    When the single raise fits, the guide gives no other call, as now.
+  - Over [1C] or [1D], [1NT] denies a four-card major; over [1S], it denies three spades.
+    This follows the rule over [1H]: a hand that can bid a major at the one level or raise does so.
+  - Over a minor, the guide does not order the calls that fit: a one-level major, a raise of the minor and [1NT] can stand side by side, because SAYC does not order them.- Over [1C] / [1D]: [2NT] with 13–15 points, balanced, game forcing; [3NT] with 16–17 points, balanced.
   Both deny a four-card major (proposed; SAYC says "standard").
 - Over [1H] / [1S]:
   - [2NT] (Jacoby 2NT): four or more cards in partner's major and 13 or more points, game forcing.

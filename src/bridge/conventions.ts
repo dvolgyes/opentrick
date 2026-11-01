@@ -67,6 +67,14 @@ export type Shape =
 	  }
 	/** At most `max` cards in partner's `suit`. */
 	| { readonly kind: "at-most"; readonly suit: Suit; readonly max: number }
+	/** At most `max` cards in partner's `suit` and at most `otherMax` cards in `other`. */
+	| {
+			readonly kind: "at-most-both";
+			readonly suit: Suit;
+			readonly max: number;
+			readonly other: Suit;
+			readonly otherMax: number;
+	  }
 	/** The ace or king of `suit` (a feature), and neither in a lower suit other than `trumps`. */
 	| { readonly kind: "feature"; readonly suit: Suit; readonly trumps: Suit }
 	/** No ace or king in a suit other than `trumps`. */
@@ -585,30 +593,54 @@ function suitResponseMeaning(
 	if (call === "P")
 		return { range: ranges["suit-pass"], shape: { kind: "none" } };
 	if (call === "1NT")
-		return { range: ranges["suit-low"], shape: { kind: "none" } };
+		return { range: ranges["suit-low"], shape: oneNotrumpShape(opened) };
 	if (!isBid(call)) return undefined;
 	const level = levelOf(call);
 	const strain = strainOf(call);
 	if (!isSuit(strain)) return undefined;
 	if (strain === opened) {
-		if (!MAJORS.includes(opened)) return undefined;
 		const key =
 			level === 2 ? "suit-low" : level === 3 ? "suit-invite" : undefined;
 		return key === undefined
 			? undefined
 			: {
 					range: ranges[key],
-					shape: { kind: "support", suit: opened, min: SHAPES.support },
+					shape: { kind: "support", suit: opened, min: raiseLength(opened) },
 				};
 	}
 	if (level !== cheapestLevel(strain, `1${opened}`)) return undefined;
-	// The guide: a new suit at the one level from 6–9 points up; "a new suit at the two level needs 10 or more points".
+	// The guide: a new suit at the one level from 6–10 points up; "a new suit at the two level needs 11 or more points".
 	return {
 		range: {
-			min: level === 1 ? ranges["suit-low"].min : ranges["suit-invite"].min,
+			min: level === 1 ? ranges["suit-low"].min : ranges["suit-two-level"].min,
 		},
 		shape: { kind: "cards", suit: strain, min: SHAPES.newSuit },
 	};
+}
+
+/** "with four or more diamonds over [1D] and five or more clubs over [1C]"; three cards raise a major. */
+function raiseLength(opened: Suit): number {
+	if (opened === "D") return SHAPES.raiseDiamonds;
+	if (opened === "C") return SHAPES.raiseClubs;
+	return SHAPES.support;
+}
+
+/**
+ * "[1NT] denies a four-card major over [1C] or [1D], four spades and three hearts over [1H], and three spades over
+ * [1S]."
+ */
+function oneNotrumpShape(opened: Suit): Shape {
+	if (opened === "S")
+		return { kind: "at-most", suit: "S", max: SHAPES.support - 1 };
+	if (opened === "H")
+		return {
+			kind: "at-most-both",
+			suit: "H",
+			max: SHAPES.support - 1,
+			other: "S",
+			otherMax: SHAPES.newSuit - 1,
+		};
+	return { kind: "no-major", min: SHAPES.newSuit };
 }
 
 function notrumpResponseMeaning(
@@ -1404,6 +1436,11 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			);
 		case "at-most":
 			return lengths[shape.suit] <= shape.max;
+		case "at-most-both":
+			return (
+				lengths[shape.suit] <= shape.max &&
+				lengths[shape.other] <= shape.otherMax
+			);
 		case "longer-major":
 			return shape.ties
 				? lengths[shape.suit] >= lengths[shape.other]
@@ -1580,7 +1617,11 @@ function preferred(
 	}
 	if (at.kind === "suit") {
 		// "Raise partner's major one level with three or more cards. Otherwise bid a new suit ... or [1NT]."
-		const raise = fitting.filter(({ call }) => call === `2${at.suit}`);
+		// With 10 points the single and the jump raise both fit; the guide orders no calls over a minor.
+		const raise = fitting.filter(
+			({ call }) =>
+				MAJORS.includes(at.suit) && isBid(call) && strainOf(call) === at.suit,
+		);
 		if (raise.length > 0) return raise;
 	}
 	if (at.kind === "1NT") return notrumpPreferred(ranges, hand, fitting);

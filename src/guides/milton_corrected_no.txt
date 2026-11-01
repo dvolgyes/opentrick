@@ -21,8 +21,10 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 
 ## Svar på åpning med én i farge
 - 0–5 poeng: [P].
-- 6–9 poeng: støtt makkers høyfarge ett trinn ([1H] – [2H]) med tre eller flere kort. Ellers melder du en ny farge på ett-trinnet med fire eller flere kort, eller [1NT].
-- 10–12 poeng: invitasjon. Gi hoppstøtte i makkers høyfarge ([1S] – [3S]) med tre eller flere kort, eller meld en ny farge. En ny farge på to-trinnet krever 10 eller flere poeng.
+- 6–10 poeng: støtt makkers høyfarge ett trinn ([1H] – [2H]) med tre eller flere kort. Ellers melder du en ny farge på ett-trinnet med fire eller flere kort, eller [1NT].
+- [1NT] avkrefter en firekorts høyfarge etter [1C] eller [1D], fire spar og tre hjerter etter [1H], og tre spar etter [1S].
+- Støtt en lavfarge på samme måte, med fire eller flere ruter etter [1D] og fem eller flere kløver etter [1C]: ett trinn med 6–10 poeng, hopp med 10–12 poeng.
+- 10–12 poeng: invitasjon. Gi hoppstøtte i makkers høyfarge ([1S] – [3S]) med tre eller flere kort, eller meld en ny farge. En ny farge på to-trinnet krever 11 eller flere poeng.
 - 13 eller flere poeng: utgangskrav. Meld en ny farge, og fortsett til dere når utgang ([3NT], [4H], [4S]).
 
 ## Åpners gjenmelding

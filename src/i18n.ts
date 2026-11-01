@@ -688,6 +688,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
 			"genau {length} {major}, {min}+ {suit}, ein Single oder Chicane",
 		"at most {max} {suit}": "höchstens {max} {suit}",
+		"at most {max} {suit} and {otherMax} {other}":
+			"höchstens {max} {suit} und {otherMax} {other}",
 		"at least as many {suit} as {other}":
 			"mindestens so viele {suit} wie {other}",
 		"more {suit} than {other}": "mehr {suit} als {other}",
@@ -1392,6 +1394,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
 			"pontosan {length} {major}, {min}+ {suit}, szingli vagy renonsz",
 		"at most {max} {suit}": "legfeljebb {max} {suit}",
+		"at most {max} {suit} and {otherMax} {other}":
+			"legfeljebb {max} {suit} és {otherMax} {other}",
 		"at least as many {suit} as {other}": "legalább annyi {suit}, mint {other}",
 		"more {suit} than {other}": "több {suit}, mint {other}",
 		"weak two, a good {length}-card {suit} suit":
@@ -2086,6 +2090,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
 			"nøyaktig {length} {major}, {min}+ {suit}, en singleton eller renons",
 		"at most {max} {suit}": "høyst {max} {suit}",
+		"at most {max} {suit} and {otherMax} {other}":
+			"høyst {max} {suit} og {otherMax} {other}",
 		"at least as many {suit} as {other}": "minst like mange {suit} som {other}",
 		"more {suit} than {other}": "flere {suit} enn {other}",
 		"weak two, a good {length}-card {suit} suit":

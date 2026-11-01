@@ -14,8 +14,10 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 
 ## Respuestas a uno a palo
 - 0–5 puntos: [P].
-- 6–9 puntos: apoya el mayor de tu compañero un nivel ([1H] – [2H]) con tres o más cartas. Si no, declara un palo nuevo a nivel de uno con cuatro o más cartas, o [1NT].
-- 10–12 puntos: invitativo. Apoya con salto el mayor de tu compañero ([1S] – [3S]) con tres o más cartas, o declara un palo nuevo. Un palo nuevo a nivel de dos requiere 10 o más puntos.
+- 6–10 puntos: apoya el mayor de tu compañero un nivel ([1H] – [2H]) con tres o más cartas. Si no, declara un palo nuevo a nivel de uno con cuatro o más cartas, o [1NT].
+- [1NT] niega un mayor de cuatro cartas sobre [1C] o [1D], cuatro picas y tres corazones sobre [1H], y tres picas sobre [1S].
+- Apoya un menor de la misma forma, con cuatro o más diamantes sobre [1D] y cinco o más tréboles sobre [1C]: un nivel con 6–10 puntos, con salto con 10–12 puntos.
+- 10–12 puntos: invitativo. Apoya con salto el mayor de tu compañero ([1S] – [3S]) con tres o más cartas, o declara un palo nuevo. Un palo nuevo a nivel de dos requiere 11 o más puntos.
 - 13 o más puntos: forzante a manga. Declara un palo nuevo y sigue hasta la manga ([3NT], [4H], [4S]).
 
 ## Redeclaración del abridor

@@ -29,6 +29,7 @@ export type RangeKey =
 	| "suit-pass"
 	| "suit-low"
 	| "suit-invite"
+	| "suit-two-level"
 	| "suit-force"
 	| "nt-weak"
 	| "nt-stayman"
@@ -101,8 +102,9 @@ const MILTON = {
 	"open-3NT": { min: 25, max: 27 }, // "25–27 points: [3NT]"
 	// ## Responses to one of a suit
 	"suit-pass": { min: 0, max: 5 }, // "0–5 points: [P]"
-	"suit-low": { min: 6, max: 9 }, // "6–9 points: raise partner's major"
-	"suit-invite": { min: 10, max: 12 }, // "10–12 points: invitational"
+	"suit-low": { min: 6, max: 10 }, // "6–10 points: raise partner's major"; a minor "one level with 6–10 points"
+	"suit-invite": { min: 10, max: 12 }, // "10–12 points: invitational"; a minor "a jump with 10–12 points"
+	"suit-two-level": { min: 11 }, // "A new suit at the two level needs 11 or more points."
 	"suit-force": { min: 13 }, // "13 or more points: game forcing"
 	// ## Responses to [1NT]
 	"nt-weak": { min: 0, max: 7 }, // "0–7 points: [P], unless ..."; "[2S] (minor transfer): 0–7 points"
@@ -200,6 +202,9 @@ export const SHAPES = {
 	] as readonly HonourTest[],
 	/** "raise partner's major ... with three or more cards" */
 	support: 3,
+	/** "Raise a minor in the same way, with four or more diamonds over [1D] and five or more clubs over [1C]" */
+	raiseDiamonds: 4,
+	raiseClubs: 5,
 	/** "bid a new suit at the one level with four or more cards" */
 	newSuit: 4,
 	/** "[2D] shows five or more hearts, [2H] shows five or more spades (transfers)" */

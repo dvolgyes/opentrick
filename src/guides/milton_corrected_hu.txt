@@ -21,8 +21,10 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 
 ## Válaszok egyes színnyitásra
 - 0–5 pont: [P].
-- 6–9 pont: legalább három lappal emeld egy szinttel a partnered nemes színét ([1H] – [2H]). Egyébként legalább négy lappal licitálj új színt egyes szinten, vagy [1NT] a válaszod.
-- 10–12 pont: invitáló. Legalább három lappal ugrással emeld a partnered nemes színét ([1S] – [3S]), vagy licitálj új színt. Kettes szinten az új színhez legalább 10 pont kell.
+- 6–10 pont: legalább három lappal emeld egy szinttel a partnered nemes színét ([1H] – [2H]). Egyébként legalább négy lappal licitálj új színt egyes szinten, vagy [1NT] a válaszod.
+- Az [1NT] [1C] vagy [1D] után tagadja a négylapos nemes színt, [1H] után a négy pikket és a három kőrt, [1S] után a három pikket.
+- Az alacsony színt ugyanígy emeld, [1D] után legalább négy káróval, [1C] után legalább öt treffel: egy szinttel 6–10 ponttal, ugrással 10–12 ponttal.
+- 10–12 pont: invitáló. Legalább három lappal ugrással emeld a partnered nemes színét ([1S] – [3S]), vagy licitálj új színt. Kettes szinten az új színhez legalább 11 pont kell.
 - Legalább 13 pont: manche-ig forszírozó. Licitálj új színt, és licitálj tovább a manche-ig ([3NT], [4H], [4S]).
 
 ## A nyitó második licitje

@@ -21,8 +21,10 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 
 ## Réponses à l'ouverture d'un à la couleur
 - 0–5 points : [P].
-- 6–9 points : soutenez la majeure du partenaire d'un niveau ([1H] – [2H]) avec trois cartes ou plus. Sinon, nommez une couleur nouvelle au niveau de un avec quatre cartes ou plus, ou dites [1NT].
-- 10–12 points : invitant. Soutenez à saut la majeure du partenaire ([1S] – [3S]) avec trois cartes ou plus, ou nommez une couleur nouvelle. Une couleur nouvelle au niveau de deux demande 10 points ou plus.
+- 6–10 points : soutenez la majeure du partenaire d'un niveau ([1H] – [2H]) avec trois cartes ou plus. Sinon, nommez une couleur nouvelle au niveau de un avec quatre cartes ou plus, ou dites [1NT].
+- [1NT] nie une majeure de quatre cartes sur [1C] ou [1D], quatre piques et trois cœurs sur [1H], et trois piques sur [1S].
+- Soutenez une mineure de la même façon, avec quatre carreaux ou plus sur [1D] et cinq trèfles ou plus sur [1C] : d'un niveau avec 6–10 points, à saut avec 10–12 points.
+- 10–12 points : invitant. Soutenez à saut la majeure du partenaire ([1S] – [3S]) avec trois cartes ou plus, ou nommez une couleur nouvelle. Une couleur nouvelle au niveau de deux demande 11 points ou plus.
 - 13 points ou plus : forcing de manche. Nommez une couleur nouvelle et continuez jusqu'à la manche ([3NT], [4H], [4S]).
 
 ## Redemande de l'ouvreur

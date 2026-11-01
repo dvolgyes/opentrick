@@ -14,8 +14,10 @@ This guide uses a natural five-card-major method, similar to Standard American.
 
 ## Responses to one of a suit
 - 0–5 points: [P].
-- 6–9 points: raise partner's major one level ([1H] – [2H]) with three or more cards. Otherwise bid a new suit at the one level with four or more cards, or [1NT].
-- 10–12 points: invitational. Jump raise partner's major ([1S] – [3S]) with three or more cards, or bid a new suit. A new suit at the two level needs 10 or more points.
+- 6–10 points: raise partner's major one level ([1H] – [2H]) with three or more cards. Otherwise bid a new suit at the one level with four or more cards, or [1NT].
+- [1NT] denies a four-card major over [1C] or [1D], four spades and three hearts over [1H], and three spades over [1S].
+- Raise a minor in the same way, with four or more diamonds over [1D] and five or more clubs over [1C]: one level with 6–10 points, a jump with 10–12 points.
+- 10–12 points: invitational. Jump raise partner's major ([1S] – [3S]) with three or more cards, or bid a new suit. A new suit at the two level needs 11 or more points.
 - 13 or more points: game forcing. Bid a new suit, and continue until game ([3NT], [4H], [4S]).
 
 ## Opener's rebid

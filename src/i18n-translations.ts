@@ -213,6 +213,14 @@ const rows: readonly TranslationRow[] = [
 		"hoogstens {max} {suit}",
 	],
 	[
+		"at most {max} {suit} and {otherMax} {other}",
+		"como máximo {max} {suit} y {otherMax} {other}",
+		"no máximo {max} {suit} e {otherMax} {other}",
+		"au plus {max} {suit} et {otherMax} {other}",
+		"al massimo {max} {suit} e {otherMax} {other}",
+		"hoogstens {max} {suit} en {otherMax} {other}",
+	],
+	[
 		"at least as many {suit} as {other}",
 		"al menos tantas {suit} como {other}",
 		"pelo menos tantas {suit} quanto {other}",

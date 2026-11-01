@@ -112,9 +112,17 @@ describe("guide calls for a hand", () => {
 
 	it.each([
 		["1H P", "K84.Q73.J652.Q64", ["2H"]], // 8, three hearts: raise
-		["1H P", "KJ84.73.Q652.J64", ["1S", "1NT"]], // 7, a new suit at the one level
+		["1H P", "KJ84.73.Q652.J64", ["1S"]], // 7, a new suit at the one level: [1NT] denies four spades
 		["1S P", "84.KJ73.Q652.J64", ["1NT"]], // 7, no new suit at the one level
-		["1H P", "K84.Q73.86.AJ652", ["2C", "3H"]], // 10, invitational
+		["1H P", "K84.Q73.86.AJ652", ["2H", "3H"]], // 10, three hearts: the single and the limit raise overlap
+		["1H P", "Q84.73.K86.AJ652", ["1NT"]], // 10, a new suit at the two level needs 11
+		["1H P", "Q84.73.K86.AQ652", ["2C"]], // 11, five clubs
+		["1S P", "K84.Q73.J652.Q64", ["2S"]], // 8, three spades: raise, not [1NT]
+		["1D P", "K84.73.QJ65.Q642", ["1NT", "2D"]], // 8, four diamonds
+		["1D P", "K84.73.QJ652.A64", ["1NT", "2D", "3D"]], // 10, five diamonds
+		["1C P", "K84.73.Q65.QJ642", ["1NT", "2C"]], // 8, five clubs
+		["1C P", "K84.73.Q652.QJ64", ["1D", "1NT"]], // 8, four clubs do not raise [1C]
+		["1C P", "K84.QJ73.Q65.Q64", ["1H"]], // 10, a four-card major: not [1NT]
 		["1H P", "AQ84.73.K65.KJ62", ["1S", "2C"]], // 13, game forcing
 		["1H P", "8642.73.J652.Q64", ["P"]], // 3
 		["1NT P", "84.QT973.J52.632", ["2D"]], // 3, five hearts: a transfer, not a pass
@@ -413,8 +421,37 @@ describe("guide meaning of a call", () => {
 			"hcp",
 			"1H P 2H",
 			{
-				range: { min: 6, max: 9 },
+				range: { min: 6, max: 10 },
 				shape: { kind: "support", suit: "H", min: 3 },
+			},
+		],
+		[
+			"hcp",
+			"1D P 2D",
+			{
+				range: { min: 6, max: 10 },
+				shape: { kind: "support", suit: "D", min: 4 },
+			},
+		],
+		[
+			"hcp-corrected",
+			"1C P 3C",
+			{
+				range: { min: 10, max: 12 },
+				shape: { kind: "support", suit: "C", min: 5 },
+			},
+		],
+		[
+			"hcp",
+			"1C P 1NT",
+			{ range: { min: 6, max: 10 }, shape: { kind: "no-major", min: 4 } },
+		],
+		[
+			"hcp",
+			"1S P 1NT",
+			{
+				range: { min: 6, max: 10 },
+				shape: { kind: "at-most", suit: "S", max: 2 },
 			},
 		],
 		[
@@ -433,9 +470,22 @@ describe("guide meaning of a call", () => {
 		[
 			"hcp",
 			"1H P 2C",
-			{ range: { min: 10 }, shape: { kind: "cards", suit: "C", min: 4 } },
+			{ range: { min: 11 }, shape: { kind: "cards", suit: "C", min: 4 } },
 		],
-		["hcp", "1H P 1NT", { range: { min: 6, max: 9 }, shape: { kind: "none" } }],
+		[
+			"hcp",
+			"1H P 1NT",
+			{
+				range: { min: 6, max: 10 },
+				shape: {
+					kind: "at-most-both",
+					suit: "H",
+					max: 2,
+					other: "S",
+					otherMax: 3,
+				},
+			},
+		],
 		[
 			"hcp",
 			"1NT P P",
@@ -590,7 +640,7 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H P 1S P"],
 		["hcp", "1H P 4H"], // a jump to game
 		["hcp", "1H P 3C"], // a jump in a new suit
-		["hcp", "1C P 2C"], // a minor raise
+		["hcp", "1C P 4C"], // a minor raise past the jump raise
 		["hcp", "2C P P"],
 		["hcp", "4S"],
 	] as const)(
@@ -1057,7 +1107,7 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H P 2H P 2S"], // a new-suit game try
 		["hcp", "1H P 2H P 3NT"],
 		["hcp", "1H P 2H 2S X"],
-		["hcp", "1D P 2D P 3D"], // a minor raise is not in the guide
+		["hcp", "1D P 2D P 3D"], // opener's re-raise of a minor is not in the guide
 		["hcp", "1H P 3H P 3NT"],
 		["hcp", "1H P 3H 3S 4H"], // after a jump raise and an opponent's call
 		["hcp", "1H P 1S 2C 2S"], // the rebid after an overcall
@@ -1374,6 +1424,10 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"Responses to one of a suit",
 		"- {range} points: invitational",
 	],
+	"suit-two-level": [
+		"Responses to one of a suit",
+		"A new suit at the two level needs {range} points.",
+	],
 	"suit-force": [
 		"Responses to one of a suit",
 		"- {range} points: game forcing",
@@ -1526,12 +1580,6 @@ describe("convention rules agree with the guides", () => {
 					`${key} in convention-rules.ts does not match src/guides/${guideName(system)}_en.txt: no line "${expected}" in "## ${section}"`,
 				).toBe(true);
 			}
-			// A new suit at the two level has the invitational minimum.
-			expect(
-				sectionLines(text, "Responses to one of a suit").join("\n"),
-			).toContain(
-				`A new suit at the two level needs ${rangeText({ min: RANGES[system]["suit-invite"].min })} points.`,
-			);
 		},
 	);
 

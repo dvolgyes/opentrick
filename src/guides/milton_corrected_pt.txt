@@ -21,8 +21,10 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 
 ## Respostas à abertura de um num naipe
 - 0–5 pontos: [P].
-- 6–9 pontos: apoiar o naipe maior do parceiro subindo um nível ([1H] – [2H]) com três ou mais cartas. Caso contrário, declarar um naipe novo ao nível de um com quatro ou mais cartas, ou [1NT].
-- 10–12 pontos: convidativo. Apoiar com salto o naipe maior do parceiro ([1S] – [3S]) com três ou mais cartas, ou declarar um naipe novo. Um naipe novo ao nível de dois exige 10 ou mais pontos.
+- 6–10 pontos: apoiar o naipe maior do parceiro subindo um nível ([1H] – [2H]) com três ou mais cartas. Caso contrário, declarar um naipe novo ao nível de um com quatro ou mais cartas, ou [1NT].
+- [1NT] nega um naipe maior de quatro cartas sobre [1C] ou [1D], quatro espadas e três copas sobre [1H], e três espadas sobre [1S].
+- Apoiar um naipe menor da mesma forma, com quatro ou mais ouros sobre [1D] e cinco ou mais paus sobre [1C]: um nível com 6–10 pontos, com salto com 10–12 pontos.
+- 10–12 pontos: convidativo. Apoiar com salto o naipe maior do parceiro ([1S] – [3S]) com três ou mais cartas, ou declarar um naipe novo. Um naipe novo ao nível de dois exige 11 ou mais pontos.
 - 13 ou mais pontos: forcing de partida. Declarar um naipe novo e continuar até à partida ([3NT], [4H], [4S]).
 
 ## Redeclaração do abridor

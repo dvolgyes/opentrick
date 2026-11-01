@@ -14,8 +14,10 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 
 ## Antwoorden op een opening van één in een kleur
 - 0–5 punten: [P].
-- 6–9 punten: verhoog de hoge kleur van je partner met één niveau ([1H] – [2H]) met drie of meer kaarten. Bied anders een nieuwe kleur op het één-niveau met vier of meer kaarten, of [1NT].
-- 10–12 punten: uitnodigend. Geef een sprongverhoging in de hoge kleur van je partner ([1S] – [3S]) met drie of meer kaarten, of bied een nieuwe kleur. Voor een nieuwe kleur op het twee-niveau heb je 10 of meer punten nodig.
+- 6–10 punten: verhoog de hoge kleur van je partner met één niveau ([1H] – [2H]) met drie of meer kaarten. Bied anders een nieuwe kleur op het één-niveau met vier of meer kaarten, of [1NT].
+- [1NT] ontkent een hoge kleur met vier kaarten na [1C] of [1D], vier schoppen en drie harten na [1H], en drie schoppen na [1S].
+- Verhoog een lage kleur op dezelfde manier, met vier of meer ruiten na [1D] en vijf of meer klaveren na [1C]: één niveau met 6–10 punten, een sprong met 10–12 punten.
+- 10–12 punten: uitnodigend. Geef een sprongverhoging in de hoge kleur van je partner ([1S] – [3S]) met drie of meer kaarten, of bied een nieuwe kleur. Voor een nieuwe kleur op het twee-niveau heb je 11 of meer punten nodig.
 - 13 of meer punten: mancheforcing. Bied een nieuwe kleur en blijf bieden tot de manche ([3NT], [4H], [4S]).
 
 ## Herbod van de openaar
