@@ -183,6 +183,8 @@ interface CallSpot {
 	/** The host gives this seat the turn, as the turn frame shows: the bot animation moves. */
 	turn: boolean;
 	readonly callPresence: HTMLElement;
+	readonly audioMuted: HTMLElement;
+	readonly audioDeaf: HTMLElement;
 	/** The network quality: five bars beside the tile, lit from the bottom. */
 	readonly networkBars: HTMLElement;
 	/** The voice box: shown in place of the avatar while the seat's voice arrives without video. */
@@ -1543,6 +1545,34 @@ export function tableSection(
 			attrs: { role: "img", "data-testid": `call-presence-${seat}` },
 		});
 		callPresence.hidden = true;
+		const audioMuted = el(
+			"span",
+			{
+				className: "tile-audio-indicator tile-audio-muted",
+				attrs: {
+					role: "img",
+					"aria-label": t("Muted"),
+					title: t("Muted"),
+					"data-testid": `audio-muted-${seat}`,
+				},
+			},
+			icon("mic", true),
+		);
+		const audioDeaf = el(
+			"span",
+			{
+				className: "tile-audio-indicator tile-audio-deaf",
+				attrs: {
+					role: "img",
+					"aria-label": t("Can't hear"),
+					title: t("Can't hear"),
+					"data-testid": `audio-deaf-${seat}`,
+				},
+			},
+			icon("speaker", true),
+		);
+		audioMuted.hidden = true;
+		audioDeaf.hidden = true;
 		const networkBars = el(
 			"span",
 			{
@@ -1590,6 +1620,8 @@ export function tableSection(
 			voicebox,
 			botOverlay,
 			callPresence,
+			audioMuted,
+			audioDeaf,
 			caption,
 			networkBars,
 			botControl,
@@ -1610,6 +1642,8 @@ export function tableSection(
 			botPaused,
 			turn: false,
 			callPresence,
+			audioMuted,
+			audioDeaf,
 			networkBars,
 			voicebox,
 			voiceColumns,
@@ -1749,6 +1783,19 @@ export function tableSection(
 		const view = callDisplay?.available ? callDisplay.view : undefined;
 		for (const [seat, spot] of callSpots) {
 			const remote = view?.remotes.find((item) => item.seat === seat);
+			const isBot =
+				latestView?.seats.find((player) => player.seat === seat)?.bot ===
+					true || botControlSeats.includes(seat);
+			const connected =
+				view?.requested.inCall === true &&
+				remote?.status === "connected" &&
+				!isBot;
+			spot.audioMuted.hidden = !connected || remote.peerSendsAudio;
+			spot.audioDeaf.hidden =
+				!connected ||
+				!view.requested.send.audio ||
+				view.mic !== "on" ||
+				remote.peerReceivesAudio;
 			renderVideo(spot, remote?.video);
 			renderVoicebox(spot, seat, remote, view?.form);
 			const status =
@@ -1833,6 +1880,7 @@ export function tableSection(
 				: `🤖 ${t("Switch to bot")}`;
 			spot.botControl.dataset.bot = String(isBot);
 		}
+		renderCallStates();
 		showNameShortcuts();
 		if (latestView) renderMobilePlayers(latestView);
 	}

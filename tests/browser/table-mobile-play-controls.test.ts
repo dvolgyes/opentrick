@@ -443,6 +443,7 @@ describe("compact play controls", () => {
 			audio: undefined,
 			video: seat === "E" ? track : undefined,
 			peerSendsAudio: false,
+			peerReceivesAudio: true,
 			peerSendsVideo: seat === "E",
 			fault: undefined,
 		});

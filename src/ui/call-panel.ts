@@ -366,9 +366,17 @@ export function callControls(
 		node.setAttribute("aria-pressed", String(view.pressed));
 		node.dataset.actual = view.actual;
 		const reason = view.disabledReason;
+		const offHint =
+			!view.pressed && toggle.medium === "audio"
+				? toggle.way === "send"
+					? t("No audio is sent; others can't hear you")
+					: t("Silent; you can't hear anyone")
+				: undefined;
 		setTitle(
 			node,
-			reason === undefined ? t(toggle.name) : `${t(toggle.name)}. ${t(reason)}`,
+			reason === undefined
+				? (offHint ?? t(toggle.name))
+				: `${t(toggle.name)}. ${t(reason)}`,
 		);
 		setIcon(node, toggle.icon, !view.pressed);
 	}
@@ -398,6 +406,12 @@ export function callControls(
 			selfOffMic,
 			"mic",
 			!(display?.available && display.view.mic === "on"),
+		);
+		setTitle(
+			selfOffMic,
+			display?.available && display.view.mic === "on"
+				? t("Send mic audio")
+				: t("No audio is sent; others can't hear you"),
 		);
 		self.dataset.picture = picture;
 		mirrorButton.setAttribute("aria-pressed", String(mirror));

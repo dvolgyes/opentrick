@@ -5,6 +5,38 @@ type TranslationRow = readonly [string, string, string, string, string, string];
 
 const rows: readonly TranslationRow[] = [
 	[
+		"Muted",
+		"Micrófono silenciado",
+		"Microfone silenciado",
+		"Micro coupé",
+		"Microfono disattivato",
+		"Microfoon uit",
+	],
+	[
+		"Can't hear",
+		"No puede oír",
+		"Não consegue ouvir",
+		"N'entend pas",
+		"Non sente",
+		"Kan niet horen",
+	],
+	[
+		"No audio is sent; others can't hear you",
+		"No se envía audio; los demás no pueden oírte",
+		"Não é enviado áudio; os outros não te conseguem ouvir",
+		"Aucun son n'est envoyé ; les autres ne peuvent pas vous entendre",
+		"Non viene inviato audio; gli altri non possono sentirti",
+		"Er wordt geen geluid verzonden; anderen kunnen je niet horen",
+	],
+	[
+		"Silent; you can't hear anyone",
+		"Sin sonido; no puedes oír a nadie",
+		"Som desligado; não consegues ouvir ninguém",
+		"Son coupé ; vous ne pouvez entendre personne",
+		"Audio disattivato; non puoi sentire nessuno",
+		"Geluid uit; je kunt niemand horen",
+	],
+	[
 		"No other human players are present.",
 		"No hay otros jugadores humanos presentes.",
 		"Não há outros jogadores humanos presentes.",

@@ -44,6 +44,7 @@ function remote(
 		audio: undefined,
 		video: undefined,
 		peerSendsAudio: true,
+		peerReceivesAudio: true,
 		peerSendsVideo: false,
 		fault: undefined,
 		...extra,

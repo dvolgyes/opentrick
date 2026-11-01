@@ -27,6 +27,11 @@ export const englishTranslator: Translate = (message, values = {}) =>
 
 const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 	de: {
+		Muted: "Stummgeschaltet",
+		"Can't hear": "Kann nichts hören",
+		"No audio is sent; others can't hear you":
+			"Es wird kein Ton gesendet; die anderen können dich nicht hören",
+		"Silent; you can't hear anyone": "Ton aus; du kannst niemanden hören",
 		Language: "Sprache",
 		Automatic: "Automatisch",
 		North: "Norden",
@@ -771,6 +776,11 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"not in the guide": "nicht im Reizleitfaden",
 	},
 	hu: {
+		Muted: "Némítva",
+		"Can't hear": "Nem hall senkit",
+		"No audio is sent; others can't hear you":
+			"Nem küldesz hangot; a többiek nem hallanak",
+		"Silent; you can't hear anyone": "Néma mód; nem hallasz senkit",
 		Language: "Nyelv",
 		Automatic: "Automatikus",
 		North: "Észak",
@@ -1505,6 +1515,11 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"not in the guide": "nincs az útmutatóban",
 	},
 	no: {
+		Muted: "Mikrofon av",
+		"Can't hear": "Kan ikke høre",
+		"No audio is sent; others can't hear you":
+			"Ingen lyd sendes; de andre kan ikke høre deg",
+		"Silent; you can't hear anyone": "Lyd av; du kan ikke høre noen",
 		Language: "Språk",
 		Automatic: "Automatisk",
 		North: "Nord",

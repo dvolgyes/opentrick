@@ -67,6 +67,7 @@ describe("voice box", () => {
 		audio,
 		video,
 		peerSendsAudio: audio !== undefined,
+		peerReceivesAudio: true,
 		peerSendsVideo: video !== undefined,
 		fault: undefined,
 	});
@@ -117,6 +118,98 @@ describe("voice box", () => {
 		box(root, seat).querySelectorAll("[data-lit]").length;
 	const segments = (root: HTMLElement, seat: Seat) =>
 		box(root, seat).querySelectorAll(".voicebox-segment").length;
+
+	it("shows the audio settings of connected human players over their tiles", () => {
+		const view = playView();
+		const { root, section } = render({
+			...view,
+			seats: view.seats.map((player) =>
+				player.seat === "S" ? { ...player, bot: true } : player,
+			),
+		});
+		const state = callView([
+			{ ...remote("E", undefined), peerReceivesAudio: false },
+			{ ...remote("S", undefined), peerReceivesAudio: false },
+		]);
+		section.renderCall(state);
+		const mic = root.querySelector<HTMLElement>(
+			"[data-testid='audio-muted-E']",
+		);
+		const speaker = root.querySelector<HTMLElement>(
+			"[data-testid='audio-deaf-E']",
+		);
+		expect(mic?.checkVisibility()).toBe(true);
+		expect(mic?.title).toBe("Muted");
+		expect(speaker?.checkVisibility()).toBe(true);
+		expect(speaker?.title).toBe("Can't hear");
+		const camera = document
+			.createElement("canvas")
+			.captureStream()
+			.getVideoTracks()[0];
+		if (!camera) throw new Error("Missing camera track");
+		section.renderCall({
+			...state,
+			view: {
+				...state.view,
+				remotes: [
+					{ ...remote("E", undefined, camera), peerReceivesAudio: false },
+				],
+			},
+		});
+		expect(mic?.checkVisibility()).toBe(true);
+		expect(speaker?.checkVisibility()).toBe(true);
+		camera.stop();
+		expect(
+			root
+				.querySelector<HTMLElement>("[data-testid='audio-muted-S']")
+				?.checkVisibility(),
+		).toBe(false);
+		const tile = root
+			.querySelector<HTMLElement>("[data-testid='tile-E']")
+			?.getBoundingClientRect();
+		if (!mic || !speaker || !tile) throw new Error("Missing audio indicators");
+		expect(mic.getBoundingClientRect().left - tile.left).toBeLessThan(
+			tile.width / 4,
+		);
+		expect(tile.right - speaker.getBoundingClientRect().right).toBeLessThan(
+			tile.width / 4,
+		);
+		section.renderCall({
+			...state,
+			view: {
+				...state.view,
+				mic: "off",
+				remotes: [
+					{
+						...remote("E", undefined),
+						peerSendsAudio: true,
+						peerReceivesAudio: false,
+					},
+				],
+			},
+		});
+		expect(mic.checkVisibility()).toBe(false);
+		expect(speaker.checkVisibility()).toBe(false);
+		expect(
+			root.querySelector<HTMLElement>(".call-self-off [data-medium='audio']")
+				?.title,
+		).toBe("No audio is sent; others can't hear you");
+		section.renderCall({
+			...state,
+			view: {
+				...state.view,
+				requested: {
+					...state.view.requested,
+					receive: { ...state.view.requested.receive, audio: false },
+				},
+			},
+		});
+		expect(
+			root.querySelector<HTMLElement>(
+				".call-panel .call-toggle[data-way='receive'][data-medium='audio']",
+			)?.title,
+		).toBe("Silent; you can't hear anyone");
+	});
 
 	it("shows only player and bot names in desktop captions while retaining call status for accessibility", () => {
 		const view = playView();

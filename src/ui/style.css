@@ -1493,6 +1493,30 @@ main:has(> .room) {
 	display: none;
 }
 
+.tile-audio-indicator {
+	position: absolute;
+	top: 0.5rem;
+	z-index: 3;
+	color: var(--felt-fg);
+	filter: drop-shadow(0 1px 2px var(--overlay-shadow));
+}
+
+.tile-audio-indicator[hidden] {
+	display: none;
+}
+
+.tile-audio-indicator .icon {
+	width: 1.6rem;
+	height: 1.6rem;
+}
+
+.tile-audio-muted {
+	left: 0.5rem;
+}
+.tile-audio-deaf {
+	right: 0.5rem;
+}
+
 /* For a viewer outside the call: the player's microphone and camera, large and centred on the tile. */
 .tile-call-presence {
 	position: absolute;

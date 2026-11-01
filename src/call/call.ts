@@ -73,6 +73,8 @@ export interface RemoteView {
 	readonly video: MediaStreamTrack | undefined;
 	/** The peer's last announcement has its microphone switch on. */
 	readonly peerSendsAudio: boolean;
+	/** The peer's last announcement has its audio reception switch on. */
+	readonly peerReceivesAudio: boolean;
 	/** The peer's last announcement has its camera switch on. */
 	readonly peerSendsVideo: boolean;
 	/** The name of the error that made the link unavailable. */
@@ -356,6 +358,7 @@ export class CallController {
 		const base = {
 			seat,
 			peerSendsAudio: peer?.prefs.send.audio ?? false,
+			peerReceivesAudio: peer?.prefs.receive.audio ?? false,
 			peerSendsVideo: peer?.prefs.send.video ?? false,
 			fault: link?.fault,
 			audio: undefined,
