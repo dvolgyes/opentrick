@@ -23,7 +23,14 @@ import {
 } from "../../src/call/signaling";
 import { SEATS, type Seat } from "../../src/protocol";
 import type { Result } from "../../src/result";
-import { AUDIO, BOTH, FakeLink, party, session } from "./call-fakes";
+import {
+	AUDIO,
+	BOTH,
+	FakeConnections,
+	type FakeLink,
+	party,
+	session,
+} from "./call-fakes";
 import { ROOM_ID } from "./fixtures";
 
 /** Delays in the range of the C2 P9 measure: an inbox join of about 60 ms, RPC to delivery about 70 ms. */
@@ -33,8 +40,6 @@ const RPC_MS = 20;
 const DELIVERY_MS = 50;
 /** Long enough for every exchange in these tests to finish. */
 const SETTLE_MS = 5_000;
-
-const CANDIDATE = { candidate: "", sdpMid: "0", sdpMLineIndex: 0 };
 
 function pause(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -200,13 +205,14 @@ class Player {
 		readonly seat: Seat,
 		readonly generation: number,
 		broker: Broker,
+		connections: FakeConnections,
 		newSession: () => string,
 	) {
 		this.mesh = new CallMesh({
 			openSignaling: (inbox, handlers) =>
 				createCallSignaling(broker, inbox, handlers),
 			createLink: (options) => {
-				const link = new FakeLink(options);
+				const link = connections.open(seat, options);
 				this.links.push(link);
 				return link;
 			},
@@ -232,6 +238,7 @@ class Player {
 
 class Table {
 	readonly broker = new Broker();
+	readonly connections = new FakeConnections();
 	readonly #players: Player[] = [];
 	#sessions = 0;
 
@@ -240,8 +247,12 @@ class Table {
 		const generation = (this.broker.holders[seat] ?? 0) + 1;
 		this.broker.holders[seat] = generation;
 		this.broker.online.add(seat);
-		const player = new Player(seat, generation, this.broker, () =>
-			session(++this.#sessions),
+		const player = new Player(
+			seat,
+			generation,
+			this.broker,
+			this.connections,
+			() => session(++this.#sessions),
 		);
 		this.#players.push(player);
 		if (quiet) this.publish(player);
@@ -321,7 +332,7 @@ afterEach(() => {
 });
 
 describe("CallMesh convergence (call/layout plan §4.4 step 3)", () => {
-	it("connects A before B with one offer from the impolite side", async () => {
+	it("connects A before B, with N as the impolite side", async () => {
 		const north = table.take("N");
 		const east = table.take("E");
 		north.mesh.join(AUDIO);
@@ -332,12 +343,12 @@ describe("CallMesh convergence (call/layout plan §4.4 step 3)", () => {
 		await settle();
 		expectConnected(north, east);
 		expect(north.live("E")[0]?.options.polite).toBe(false);
-		expect(table.broker.count("offer")).toBe(1);
+		expect(east.live("N")[0]?.options.polite).toBe(true);
 		expect(north.mesh.peer("E")).toEqual(AUDIO);
 		expect(east.mesh.peer("N")).toEqual(AUDIO);
 	});
 
-	it("connects B before A with one offer from the impolite side", async () => {
+	it("connects B before A", async () => {
 		const north = table.take("N");
 		const east = table.take("E");
 		east.mesh.join(AUDIO);
@@ -345,8 +356,6 @@ describe("CallMesh convergence (call/layout plan §4.4 step 3)", () => {
 		north.mesh.join(AUDIO);
 		await settle();
 		expectConnected(north, east);
-		expect(table.broker.count("offer", { from: "N" })).toBe(1);
-		expect(table.broker.count("offer")).toBe(1);
 	});
 
 	it("connects two seats that join in the same tick", async () => {
@@ -356,10 +365,9 @@ describe("CallMesh convergence (call/layout plan §4.4 step 3)", () => {
 		east.mesh.join(AUDIO);
 		await settle();
 		expectConnected(north, east);
-		expect(table.broker.count("offer")).toBe(1);
 	});
 
-	it("connects four seats that join in the same tick with six offers and no extra traffic", async () => {
+	it("connects four seats that join in the same tick with only announcements", async () => {
 		const players = SEATS.map((seat) => table.take(seat));
 		for (const player of players) player.mesh.join(AUDIO);
 		await settle();
@@ -369,9 +377,7 @@ describe("CallMesh convergence (call/layout plan §4.4 step 3)", () => {
 		const types = table.broker.sent.map((traffic) => traffic.message.type);
 		expect(types.filter((type) => type === "join")).toHaveLength(12);
 		expect(types.filter((type) => type === "prefs")).toHaveLength(12);
-		expect(types.filter((type) => type === "offer")).toHaveLength(6);
-		expect(types.filter((type) => type === "answer")).toHaveLength(6);
-		expect(types).toHaveLength(36);
+		expect(types).toHaveLength(24);
 	});
 
 	it("re-announces after a reconnect and receives a preference change missed during the outage", async () => {
@@ -398,7 +404,6 @@ describe("CallMesh convergence (call/layout plan §4.4 step 3)", () => {
 		expect(east.mesh.peer("N")).toEqual(BOTH);
 		expect(east.live("N")[0]?.remote).toEqual(BOTH);
 		expectConnected(north, east);
-		expect(table.broker.count("offer")).toBe(1);
 	});
 
 	it("recovers a lost join with one addressed resync after 3 s", async () => {
@@ -433,27 +438,6 @@ describe("CallMesh convergence (call/layout plan §4.4 step 3)", () => {
 		table.publish(north);
 		await settle();
 		expectConnected(north, east);
-	});
-
-	it("replaces a lost offer exactly once after the peer's reconnect resync", async () => {
-		const north = table.take("N");
-		const east = table.take("E");
-		let offers = 0;
-		table.broker.drop = (traffic) =>
-			traffic.message.type === "offer" && offers++ === 0;
-		north.mesh.join(AUDIO);
-		east.mesh.join(AUDIO);
-		await settle();
-		expect(north.live("E").map((link) => link.connected)).toEqual([false]);
-		expect(east.live("N").map((link) => link.connected)).toEqual([false]);
-		table.broker.outage("E");
-		await settle(100);
-		table.broker.restore("E");
-		await settle();
-		expectConnected(north, east);
-		expect(north.live("E")[0]?.offers).toEqual([1, 2]);
-		expect(east.live("N")[0]?.offers).toEqual([]);
-		expect(table.broker.count("offer")).toBe(2);
 	});
 });
 
@@ -543,7 +527,7 @@ describe("CallMesh announcements", () => {
 		]);
 	});
 
-	it("restarts a failed link to a seat in the call record without Retry", async () => {
+	it("greets a seat in the call record while its link is down, and stops once the table connection is back", async () => {
 		const north = table.take("N");
 		const east = table.take("E");
 		table.broker.expected.add("N").add("E");
@@ -552,16 +536,21 @@ describe("CallMesh announcements", () => {
 		east.mesh.join(AUDIO);
 		await settle();
 		expectConnected(north, east);
+		const resyncs = table.broker.count("resync");
 		north.live("E")[0]?.fail();
 		east.live("N")[0]?.fail();
 		await settle(SILENCE_MS + SETTLE_MS);
+		expect(table.broker.count("resync")).toBeGreaterThan(resyncs);
+		north.live("E")[0]?.recover();
+		east.live("N")[0]?.recover();
+		await settle();
 		expectConnected(north, east);
-		// Both sides greet at the same time, so the impolite side can restart once for each greeting.
-		expect(north.live("E")[0]?.offers.length).toBeGreaterThan(1);
-		expect(east.live("N")[0]?.offers).toEqual([]);
-		// Only Retry starts a new connect window, so the failed link keeps showing that it is unavailable.
+		// Only Retry starts a new connect window.
 		expect(north.live("E")[0]?.renewals).toBe(0);
 		expect(east.live("N")[0]?.renewals).toBe(0);
+		const after = table.broker.count("resync");
+		await settle(120_000);
+		expect(table.broker.count("resync")).toBe(after);
 	});
 
 	it("answers a join and a resync from one seat within 300 ms with one prefs message", async () => {
@@ -609,38 +598,33 @@ describe("CallMesh announcements", () => {
 		});
 	});
 
-	it("Retry restarts the link from the polite side and announces a resync", async () => {
-		const north = table.take("N");
-		const east = table.take("E");
-		north.mesh.join(AUDIO);
-		east.mesh.join(AUDIO);
-		await settle();
-		north.live("E")[0]?.fail();
-		east.live("N")[0]?.fail();
-		east.mesh.retry("N");
-		await settle();
-		expectConnected(north, east);
-		expect(east.live("N")[0]?.offers).toEqual([2]);
-		expect(east.live("N")[0]?.renewals).toBe(1);
-		expect(table.broker.count("resync", { from: "E", addressed: false })).toBe(
-			1,
-		);
-	});
-
-	it("Retry renews the link from the impolite side and offers once", async () => {
-		const north = table.take("N");
-		const east = table.take("E");
-		north.mesh.join(AUDIO);
-		east.mesh.join(AUDIO);
-		await settle();
-		north.live("E")[0]?.fail();
-		east.live("N")[0]?.fail();
-		north.mesh.retry("E");
-		await settle();
-		expectConnected(north, east);
-		expect(north.live("E")[0]?.renewals).toBe(1);
-		expect(north.live("E")[0]?.offers).toEqual([1, 2]);
-	});
+	it.each([
+		["N", "E"],
+		["E", "N"],
+	] as const)(
+		"Retry at %s renews only the link to %s and announces a resync",
+		async (at, to) => {
+			const north = table.take("N");
+			const east = table.take("E");
+			north.mesh.join(AUDIO);
+			east.mesh.join(AUDIO);
+			await settle();
+			north.live("E")[0]?.fail();
+			east.live("N")[0]?.fail();
+			const [player, other] = at === "N" ? [north, east] : [east, north];
+			player.mesh.retry(to);
+			await settle();
+			expect(player.live(to)[0]?.renewals).toBe(1);
+			expect(other.live(at)[0]?.renewals).toBe(0);
+			expect(table.broker.count("resync", { from: at, addressed: false })).toBe(
+				1,
+			);
+			north.live("E")[0]?.recover();
+			east.live("N")[0]?.recover();
+			await settle();
+			expectConnected(north, east);
+		},
+	);
 });
 
 describe("CallMesh membership and lifecycle", () => {
@@ -650,14 +634,12 @@ describe("CallMesh membership and lifecycle", () => {
 		north.mesh.join(AUDIO);
 		east.mesh.join(AUDIO);
 		await settle();
-		const [oldLink] = north.live("E");
 		const before = table.broker.sent.length;
 		table.take("E");
 		expect(north.live("E")).toEqual([]);
 		expect(north.mesh.peer("E")).toBeUndefined();
 		expect(east.mesh.status).toBe("outside");
 		expect(east.live("N")).toEqual([]);
-		oldLink?.options.send({ type: "offer", negotiation: 9, sdp: "v=0" });
 		table.broker.deliver(
 			north.inbox,
 			envelope("E", 1, north, announce("join", session(50))),
@@ -679,38 +661,6 @@ describe("CallMesh membership and lifecycle", () => {
 		await settle();
 		expect(north.mesh.peer("E")).toBeUndefined();
 		expect(north.links).toEqual([]);
-	});
-
-	it("routes ICE batches only to the link of the current session", async () => {
-		const north = table.take("N");
-		const east = table.take("E");
-		north.mesh.join(AUDIO);
-		east.mesh.join(AUDIO);
-		await settle();
-		east.live("N")[0]?.options.send({
-			type: "ice",
-			negotiation: 1,
-			candidates: [CANDIDATE],
-		});
-		await settle();
-		const link = north.live("E")[0];
-		expect(link?.received.at(-1)).toEqual({
-			type: "ice",
-			negotiation: 1,
-			candidates: [CANDIDATE],
-		});
-		const received = link?.received.length;
-		table.broker.deliver(
-			north.inbox,
-			envelope("E", 1, north, {
-				type: "ice",
-				session: session(2),
-				toSession: session(77),
-				negotiation: 1,
-				candidates: [CANDIDATE],
-			}),
-		);
-		expect(link?.received.length).toBe(received);
 	});
 
 	it("ends the link to a peer that stays offline for 10 s and keeps one that returns", async () => {

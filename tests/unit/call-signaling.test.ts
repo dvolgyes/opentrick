@@ -16,7 +16,6 @@ import { ROOM_ID } from "./fixtures";
 
 const INBOX: InboxIdentity = { roomId: ROOM_ID, seat: "N", generation: 3 };
 const SESSION = "0f8e2c1a-1b2c-4d3e-8f90-a1b2c3d4e5f6";
-const OTHER_SESSION = "11111111-2222-4333-8444-555555555555";
 const PREFS = {
 	inCall: true,
 	send: { audio: true, video: false },
@@ -30,16 +29,8 @@ function announce(
 	return { type, session: SESSION, prefs: PREFS, prefVersion, form: "desktop" };
 }
 
-const OFFER: CallMessage = {
-	type: "offer",
-	session: SESSION,
-	toSession: OTHER_SESSION,
-	negotiation: 1,
-	sdp: "v=0",
-	prefs: PREFS,
-	prefVersion: 0,
-	form: "desktop",
-};
+/** A message to one seat. */
+const RESYNC_E: CallMessage = announce("resync");
 const LEAVE: CallMessage = { type: "leave", session: SESSION };
 
 const OK: Result<number> = { ok: true, value: 1 };
@@ -156,7 +147,7 @@ describe("call signaling: sending", () => {
 
 	it("sends in call order with one request in flight", async () => {
 		signaling.send(null, announce("join"));
-		signaling.send("E", OFFER);
+		signaling.send("E", RESYNC_E);
 		signaling.send(null, LEAVE);
 		expect(transport.sends).toHaveLength(1);
 		expect(transport.sends[0]?.signal).toEqual({
@@ -196,7 +187,7 @@ describe("call signaling: sending", () => {
 
 	it("retries a transient failure first, with backoff, then continues in order", async () => {
 		signaling.send(null, announce("join"));
-		signaling.send("E", OFFER);
+		signaling.send("E", RESYNC_E);
 		await transport.answer({ ok: false, code: "network" });
 		await vi.advanceTimersByTimeAsync(999);
 		expect(transport.sends).toHaveLength(0);
@@ -207,7 +198,7 @@ describe("call signaling: sending", () => {
 		expect(transport.sends).toHaveLength(0);
 		await vi.advanceTimersByTimeAsync(1);
 		expect((await transport.answer()).message.type).toBe("join");
-		expect((await transport.answer()).message.type).toBe("offer");
+		expect((await transport.answer()).message.type).toBe("resync");
 	});
 
 	it("drops a failed prefs when a newer prefs to the same target waits", async () => {
@@ -235,7 +226,6 @@ describe("call signaling: sending", () => {
 		expect(() => signaling.send("N", announce("join"))).toThrow(
 			"cannot address its sender",
 		);
-		expect(() => signaling.send(null, OFFER)).toThrow("must name its target");
 		expect(transport.sends).toHaveLength(0);
 	});
 });
@@ -247,7 +237,7 @@ describe("call signaling: end of the seat", () => {
 			const transport = new FakeTransport();
 			const { signaling, record } = open(transport);
 			signaling.send(null, announce("join"));
-			signaling.send("E", OFFER);
+			signaling.send("E", RESYNC_E);
 			await transport.answer({ ok: false, code });
 			expect(record.ends).toEqual([code]);
 			expect(transport.current.removed).toBe(true);
@@ -265,7 +255,7 @@ describe("call signaling: close", () => {
 		const transport = new FakeTransport();
 		const { signaling } = open(transport);
 		signaling.send(null, announce("join"));
-		signaling.send("E", OFFER);
+		signaling.send("E", RESYNC_E);
 		const closed = signaling.close(LEAVE);
 		expect(transport.current.removed).toBe(true);
 		expect(transport.sends).toHaveLength(1);

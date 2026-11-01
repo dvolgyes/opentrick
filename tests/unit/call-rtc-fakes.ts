@@ -1,8 +1,9 @@
 /**
  * Stand-ins for the browser media objects in `peer.ts` and `media.ts` tests. The fake connection follows the
- * JSEP rules that the link relies on: implicit offer creation in `stable` and `have-local-offer`, implicit rollback
- * of a local offer by a remote offer, answer directions as the intersection with the reversed offer, and
- * transceivers created by a remote offer. Its "SDP" is JSON with the ICE ufrag and one direction per m-line.
+ * JSEP rules that the link relies on: `negotiationneeded` after a new section or a direction change in `stable`,
+ * `signalingstatechange` before the remote offer's promise resolves, answer directions as the intersection with the
+ * reversed offer, and transceivers created by a remote offer. Its "SDP" is JSON with one direction per m-line.
+ * `FakeTrysteroPair` negotiates two of them as Trystero does on the table's data channel.
  */
 
 export class FakeTrack extends EventTarget {
@@ -78,18 +79,44 @@ class FakeSender {
 	}
 }
 
+class FakeReceiver {
+	/** The RTP sources of recent frames; `peer.ts` reads their timestamps. */
+	sources: { timestamp: number }[] = [];
+
+	constructor(readonly track: FakeTrack) {}
+
+	getSynchronizationSources(): { timestamp: number }[] {
+		return [...this.sources];
+	}
+}
+
 export class FakeTransceiver {
 	currentDirection: RTCRtpTransceiverDirection | null = null;
 	readonly sender: FakeSender;
-	readonly receiver: { readonly track: FakeTrack };
+	readonly receiver: FakeReceiver;
+	#direction: RTCRtpTransceiverDirection;
+	readonly #changed: () => void;
 
 	constructor(
 		kind: "audio" | "video",
-		public direction: RTCRtpTransceiverDirection,
+		direction: RTCRtpTransceiverDirection,
 		track: MediaStreamTrack | null,
+		changed: () => void,
 	) {
+		this.#direction = direction;
+		this.#changed = changed;
 		this.sender = new FakeSender(track);
-		this.receiver = { track: new FakeTrack(kind) };
+		this.receiver = new FakeReceiver(new FakeTrack(kind));
+	}
+
+	get direction(): RTCRtpTransceiverDirection {
+		return this.#direction;
+	}
+
+	set direction(direction: RTCRtpTransceiverDirection) {
+		if (direction === this.#direction) return;
+		this.#direction = direction;
+		this.#changed();
 	}
 }
 
@@ -100,9 +127,7 @@ interface Section {
 
 interface FakeSdp {
 	readonly type: "offer" | "answer";
-	readonly ufrag: string;
 	readonly sections: readonly Section[];
-	readonly padding?: string;
 }
 
 const SENDS = new Set(["sendrecv", "sendonly"]);
@@ -133,33 +158,33 @@ function intersect(
 	);
 }
 
-export function parseFakeSdp(sdp: string): FakeSdp {
+function parseFakeSdp(sdp: string): FakeSdp {
 	return JSON.parse(sdp) as FakeSdp;
 }
 
-export function invalidState(message: string): DOMException {
+function invalidState(message: string): DOMException {
 	return new DOMException(message, "InvalidStateError");
 }
 
-let ufrags = 0;
-
 export class FakePeerConnection extends EventTarget {
-	signalingState: RTCSignalingState = "stable";
 	connectionState: RTCPeerConnectionState = "new";
-	iceGatheringState: RTCIceGatheringState = "new";
 	localDescription: RTCSessionDescriptionInit | null = null;
 	remoteDescription: RTCSessionDescriptionInit | null = null;
-	/** "instant": gathering completes inside setLocalDescription; "manual": the test calls `finishGathering()`. */
-	gathering: "instant" | "manual" = "instant";
-	/** Added to every local description, to test the size limit. */
-	padding = "";
-	rollbacks = 0;
 	closed = false;
-	readonly candidates: RTCIceCandidateInit[] = [];
 	readonly #transceivers: FakeTransceiver[] = [];
-	#ufrag = "";
-	#remoteUfrag = "";
-	#restart = true;
+	#signalingState: RTCSignalingState = "stable";
+	/** A section or a direction changed since this side's last description. */
+	#needed = false;
+	#announcing = false;
+
+	get signalingState(): RTCSignalingState {
+		return this.#signalingState;
+	}
+
+	/** A `negotiationneeded` is due: the next offer from this side carries a change. */
+	get negotiationNeeded(): boolean {
+		return this.#needed;
+	}
 
 	addTransceiver(
 		trackOrKind: MediaStreamTrack | string,
@@ -169,38 +194,20 @@ export class FakePeerConnection extends EventTarget {
 			typeof trackOrKind === "string" ? trackOrKind : trackOrKind.kind
 		) as "audio" | "video";
 		const track = typeof trackOrKind === "string" ? null : trackOrKind;
-		const transceiver = new FakeTransceiver(
-			kind,
-			init.direction ?? "sendrecv",
-			track,
-		);
-		this.#transceivers.push(transceiver);
-		return transceiver;
+		this.#transceivers.push(this.#transceiver(kind, init.direction, track));
+		this.#changed();
+		return this.#transceivers.at(-1) as FakeTransceiver;
 	}
 
 	getTransceivers(): FakeTransceiver[] {
 		return [...this.#transceivers];
 	}
 
-	restartIce(): void {
-		this.#restart = true;
-	}
-
-	async setLocalDescription(
-		description?: RTCLocalSessionDescriptionInit,
-	): Promise<void> {
+	async setLocalDescription(): Promise<void> {
 		await Promise.resolve();
 		this.#open();
-		if (description?.type === "rollback") {
-			this.signalingState = "stable";
-			return;
-		}
-		if (this.#restart) {
-			this.#ufrag = `u${++ufrags}`;
-			this.#restart = false;
-			this.iceGatheringState = "new";
-		}
-		if (this.signalingState === "have-remote-offer") {
+		this.#needed = false;
+		if (this.#signalingState === "have-remote-offer") {
 			const offer = parseFakeSdp(this.remoteDescription?.sdp ?? "");
 			const sections = offer.sections.map((section, index) => {
 				const transceiver = this.#transceivers[index];
@@ -212,25 +219,15 @@ export class FakePeerConnection extends EventTarget {
 				transceiver.currentDirection = direction;
 				return { kind: section.kind, direction };
 			});
-			this.localDescription = {
-				type: "answer",
-				sdp: this.#sdp("answer", sections),
-			};
-			this.signalingState = "stable";
+			this.localDescription = { type: "answer", sdp: sdp("answer", sections) };
+			this.#signal("stable");
 		} else {
 			const sections = this.#transceivers.map((transceiver) => ({
 				kind: transceiver.receiver.track.kind,
 				direction: transceiver.direction,
 			}));
-			this.localDescription = {
-				type: "offer",
-				sdp: this.#sdp("offer", sections),
-			};
-			this.signalingState = "have-local-offer";
-		}
-		if (this.iceGatheringState !== "complete") {
-			this.iceGatheringState =
-				this.gathering === "instant" ? "complete" : "gathering";
+			this.localDescription = { type: "offer", sdp: sdp("offer", sections) };
+			this.#signal("have-local-offer");
 		}
 	}
 
@@ -239,54 +236,38 @@ export class FakePeerConnection extends EventTarget {
 	): Promise<void> {
 		await Promise.resolve();
 		this.#open();
-		const sdp = parseFakeSdp(description.sdp ?? "");
+		const remote = parseFakeSdp(description.sdp ?? "");
+		this.remoteDescription = description;
 		if (description.type === "offer") {
-			if (this.signalingState === "have-local-offer") this.rollbacks++;
-			// An offer with new remote credentials is an ICE restart: the answer gets new ones too.
-			if (sdp.ufrag !== this.#remoteUfrag) this.#restart = true;
-			this.#remoteUfrag = sdp.ufrag;
-			sdp.sections.forEach((section, index) => {
+			if (this.#signalingState !== "stable") {
+				throw invalidState(`offer in ${this.#signalingState}`);
+			}
+			remote.sections.forEach((section, index) => {
 				if (this.#transceivers[index] === undefined) {
 					this.#transceivers.push(
-						new FakeTransceiver(section.kind, "recvonly", null),
+						this.#transceiver(section.kind, "recvonly", null),
 					);
 				}
 			});
-			this.signalingState = "have-remote-offer";
-		} else {
-			if (this.signalingState !== "have-local-offer") {
-				throw invalidState(`answer in ${this.signalingState}`);
+			this.#signal("have-remote-offer");
+			return;
+		}
+		if (this.#signalingState !== "have-local-offer") {
+			throw invalidState(`answer in ${this.#signalingState}`);
+		}
+		remote.sections.forEach((section, index) => {
+			const transceiver = this.#transceivers[index];
+			if (transceiver !== undefined) {
+				transceiver.currentDirection = reversed(section.direction);
 			}
-			sdp.sections.forEach((section, index) => {
-				const transceiver = this.#transceivers[index];
-				if (transceiver !== undefined) {
-					transceiver.currentDirection = reversed(section.direction);
-				}
-			});
-			this.signalingState = "stable";
-		}
-		this.remoteDescription = description;
-	}
-
-	async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
-		await Promise.resolve();
-		if (this.remoteDescription === null)
-			throw invalidState("no remote description");
-		if (candidate.candidate?.includes("refused")) {
-			throw new DOMException("bad candidate", "OperationError");
-		}
-		this.candidates.push(candidate);
+		});
+		this.#signal("stable");
 	}
 
 	close(): void {
 		this.closed = true;
-		this.signalingState = "closed";
+		this.#signalingState = "closed";
 		this.connectionState = "closed";
-	}
-
-	/** The ufrag of the current local description. */
-	get ufrag(): string {
-		return this.#ufrag;
 	}
 
 	setConnection(state: RTCPeerConnectionState): void {
@@ -294,31 +275,95 @@ export class FakePeerConnection extends EventTarget {
 		this.dispatchEvent(new Event("connectionstatechange"));
 	}
 
-	gather(
-		text: string,
-		sdpMid: string | null = "0",
-		sdpMLineIndex: number | null = 0,
-	): void {
-		const candidate = { candidate: text, sdpMid, sdpMLineIndex };
-		this.dispatchEvent(Object.assign(new Event("icecandidate"), { candidate }));
+	#transceiver(
+		kind: "audio" | "video",
+		direction: RTCRtpTransceiverDirection = "sendrecv",
+		track: MediaStreamTrack | null,
+	): FakeTransceiver {
+		return new FakeTransceiver(kind, direction, track, () => this.#changed());
 	}
 
-	finishGathering(): void {
-		this.iceGatheringState = "complete";
-		this.dispatchEvent(new Event("icegatheringstatechange"));
+	/** As in the browser, the event fires before the promise of the description resolves. */
+	#signal(state: RTCSignalingState): void {
+		this.#signalingState = state;
+		this.dispatchEvent(new Event("signalingstatechange"));
+		if (state === "stable") this.#announce();
+	}
+
+	#changed(): void {
+		if (this.closed) return;
+		this.#needed = true;
+		this.#announce();
+	}
+
+	/** One `negotiationneeded` per change, in `stable` only, after the current task. */
+	#announce(): void {
+		if (this.#announcing) return;
+		this.#announcing = true;
+		queueMicrotask(() => {
+			this.#announcing = false;
+			if (this.#needed && this.#signalingState === "stable" && !this.closed) {
+				this.dispatchEvent(new Event("negotiationneeded"));
+			}
+		});
 	}
 
 	#open(): void {
 		if (this.closed) throw invalidState("closed");
 	}
+}
 
-	#sdp(type: "offer" | "answer", sections: readonly Section[]): string {
-		const sdp: FakeSdp = { type, ufrag: this.#ufrag, sections };
-		return JSON.stringify(
-			this.padding === "" ? sdp : { ...sdp, padding: this.padding },
-		);
-	}
+function sdp(type: "offer" | "answer", sections: readonly Section[]): string {
+	return JSON.stringify({ type, sections } satisfies FakeSdp);
 }
 
 export const asConnection = (pc: FakePeerConnection): RTCPeerConnection =>
 	pc as unknown as RTCPeerConnection;
+
+function described(pc: FakePeerConnection): RTCSessionDescriptionInit {
+	if (pc.localDescription === null) throw invalidState("no local description");
+	return pc.localDescription;
+}
+
+/**
+ * The table's connection between two pages, as Trystero renegotiates it: each `negotiationneeded` gives one
+ * offer/answer round over the data channel, one round at a time, so no offers collide. The real collision rule is
+ * covered with Trystero itself (tests/browser/call-peer-link.test.ts).
+ */
+export class FakeTrysteroPair {
+	readonly a = new FakePeerConnection();
+	readonly b = new FakePeerConnection();
+	/** The offering side of each round, in order. */
+	readonly offers: ("a" | "b")[] = [];
+	/** The errors of failed rounds; later rounds still run. */
+	readonly errors: unknown[] = [];
+	#rounds: Promise<void> = Promise.resolve();
+
+	constructor() {
+		this.a.addEventListener("negotiationneeded", () => this.#round("a"));
+		this.b.addEventListener("negotiationneeded", () => this.#round("b"));
+	}
+
+	connect(): void {
+		this.a.setConnection("connected");
+		this.b.setConnection("connected");
+	}
+
+	#round(side: "a" | "b"): void {
+		const [offerer, answerer] =
+			side === "a" ? [this.a, this.b] : [this.b, this.a];
+		this.#rounds = this.#rounds
+			.then(async () => {
+				if (!offerer.negotiationNeeded || offerer.closed || answerer.closed)
+					return;
+				this.offers.push(side);
+				await offerer.setLocalDescription();
+				await answerer.setRemoteDescription(described(offerer));
+				await answerer.setLocalDescription();
+				await offerer.setRemoteDescription(described(answerer));
+			})
+			.catch((error: unknown) => {
+				this.errors.push(error);
+			});
+	}
+}

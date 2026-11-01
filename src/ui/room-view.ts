@@ -208,7 +208,7 @@ export function showRoom(
 					openSignaling: (inbox, callHandlers) =>
 						createCallSignaling(controller.callTransport, inbox, callHandlers),
 					getUserMedia: support.getUserMedia,
-					createConnection: support.createConnection,
+					connection: (remote) => controller.callConnection(remote),
 					newSession: support.newSession,
 				},
 				deviceForm,

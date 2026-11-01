@@ -1,33 +1,15 @@
 import { afterEach, describe, expect, it } from "vitest";
-// @ts-expect-error: Trystero does not export its peer module; the call relies on its renegotiation.
-import createPeer from "../../node_modules/@trystero-p2p/core/dist/peer.mjs";
+import {
+	connectedPair,
+	destroyPairs,
+	type Pair,
+	random,
+	wait,
+} from "./trystero-pair";
 
-// Two real Trystero peers in Chrome, wired to each other in the page as the room's `@_signal` action wires them.
-// The call puts its media sections on this connection and lets Trystero renegotiate them.
+// Directions and tracks changed from both sides of a Trystero connection (tests/browser/trystero-pair.ts).
 
-interface Signal {
-	readonly type: string;
-	readonly sdp: string;
-}
-
-interface TrysteroPeer {
-	readonly connection: RTCPeerConnection;
-	readonly channel: RTCDataChannel | null;
-	signal(signal: Signal): Promise<unknown>;
-	setHandlers(handlers: {
-		signal?: (signal: Signal) => void;
-		connect?: () => void;
-		close?: () => void;
-		error?: (error: Error) => void;
-		data?: (data: ArrayBuffer) => void;
-	}): void;
-	destroy(): void;
-}
-
-const makePeer = createPeer as (
-	initiator: boolean,
-	config: { trickleIce: boolean; rtcConfig: RTCConfiguration },
-) => TrysteroPeer;
+afterEach(destroyPairs);
 
 const DIRECTIONS: readonly RTCRtpTransceiverDirection[] = [
 	"sendrecv",
@@ -35,22 +17,6 @@ const DIRECTIONS: readonly RTCRtpTransceiverDirection[] = [
 	"recvonly",
 	"inactive",
 ];
-
-/** A small seeded generator, so a failing run can be repeated. */
-function random(seed: number): () => number {
-	let state = seed >>> 0;
-	return () => {
-		state = (state + 0x6d2b79f5) >>> 0;
-		let t = state;
-		t = Math.imul(t ^ (t >>> 15), t | 1);
-		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
-}
-
-function wait(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function localTracks(): Record<"audio" | "video", MediaStreamTrack> {
 	const audio = new AudioContext()
@@ -63,61 +29,6 @@ function localTracks(): Record<"audio" | "video", MediaStreamTrack> {
 	const video = canvas.captureStream(10).getVideoTracks()[0];
 	if (audio === undefined || video === undefined) throw new Error("no track");
 	return { audio, video };
-}
-
-interface Pair {
-	readonly a: TrysteroPeer;
-	readonly b: TrysteroPeer;
-	readonly errors: string[];
-	readonly closes: string[];
-	/** Offers and answers sent, from both sides. */
-	descriptions: number;
-}
-
-const pairs: Pair[] = [];
-
-afterEach(() => {
-	for (const pair of pairs.splice(0)) {
-		pair.a.destroy();
-		pair.b.destroy();
-	}
-});
-
-/** The initiator `a` and `b`, connected by a data channel; each signal arrives in order after 0–`delayMs` ms. */
-async function connectedPair(
-	next: () => number,
-	delayMs: number,
-): Promise<Pair> {
-	const config = { trickleIce: false, rtcConfig: { iceServers: [] } };
-	const a = makePeer(true, config);
-	const b = makePeer(false, config);
-	const pair: Pair = { a, b, errors: [], closes: [], descriptions: 0 };
-	pairs.push(pair);
-	const route = (to: TrysteroPeer) => {
-		let line = Promise.resolve();
-		return (signal: Signal) => {
-			pair.descriptions++;
-			const delay = Math.floor(next() * delayMs);
-			line = line.then(async () => {
-				await wait(delay);
-				await to.signal(signal);
-			});
-		};
-	};
-	let open = 0;
-	for (const [name, peer, other] of [
-		["a", a, b],
-		["b", b, a],
-	] as const) {
-		peer.setHandlers({
-			signal: route(other),
-			connect: () => open++,
-			close: () => pair.closes.push(name),
-			error: (error) => pair.errors.push(`${name}: ${error.message}`),
-		});
-	}
-	await expect.poll(() => open, { timeout: 10_000 }).toBe(2);
-	return pair;
 }
 
 const REVERSE: Readonly<

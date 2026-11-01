@@ -9,19 +9,8 @@ import type { MediaSwitches, Prefs } from "./policy";
  * Every parser rebuilds its value from the known fields, so unknown fields never pass through.
  */
 
-export const MAX_SDP_LENGTH = 32 * 1024;
-export const MAX_CANDIDATES = 32;
-export const MAX_CANDIDATE_LENGTH = 1024;
-export const MAX_SDP_MID_LENGTH = 32;
-export const MAX_SDP_MLINE_INDEX = 15;
 /** At most 9 digits in the inbox topic. */
 export const MAX_GENERATION = 999_999_999;
-
-export interface IceCandidate {
-	readonly candidate: string;
-	readonly sdpMid: string | null;
-	readonly sdpMLineIndex: number | null;
-}
 
 /** The sender's current call state. Every message that can introduce or update a peer carries it. */
 export interface Announcement {
@@ -38,33 +27,13 @@ export interface AnnounceMessage extends Announcement {
 	readonly session: string;
 }
 
-export interface DescriptionMessage extends Announcement {
-	readonly type: "offer" | "answer";
-	readonly session: string;
-	readonly toSession: string;
-	/** Per-link counter; an answer for an old negotiation is ignored. */
-	readonly negotiation: number;
-	readonly sdp: string;
-}
-
-export interface IceMessage {
-	readonly type: "ice";
-	readonly session: string;
-	readonly toSession: string;
-	readonly negotiation: number;
-	readonly candidates: readonly IceCandidate[];
-}
-
 export interface LeaveMessage {
 	readonly type: "leave";
 	readonly session: string;
 }
 
-export type CallMessage =
-	| AnnounceMessage
-	| DescriptionMessage
-	| IceMessage
-	| LeaveMessage;
+/** The media itself is negotiated by Trystero on the table's connection (ADR 0009), not with these messages. */
+export type CallMessage = AnnounceMessage | LeaveMessage;
 
 /** One received message with the sender fields that the transport set. */
 export interface CallEnvelope {
@@ -103,10 +72,6 @@ function isIntegerIn(
 
 function isGeneration(value: unknown): value is number {
 	return isIntegerIn(value, 1, MAX_GENERATION);
-}
-
-function isNegotiation(value: unknown): value is number {
-	return isIntegerIn(value, 1, Number.MAX_SAFE_INTEGER);
 }
 
 /** The inbox topic of one seat holder. */
@@ -153,42 +118,6 @@ function parseAnnouncement(value: JsonObject): Announcement | undefined {
 	return { prefs, prefVersion, form };
 }
 
-function parseCandidate(value: unknown): IceCandidate | undefined {
-	if (!isObject(value)) return undefined;
-	const { candidate, sdpMid, sdpMLineIndex } = value;
-	if (typeof candidate !== "string" || candidate.length > MAX_CANDIDATE_LENGTH)
-		return undefined;
-	if (
-		sdpMid !== null &&
-		(typeof sdpMid !== "string" || sdpMid.length > MAX_SDP_MID_LENGTH)
-	) {
-		return undefined;
-	}
-	if (
-		sdpMLineIndex !== null &&
-		!isIntegerIn(sdpMLineIndex, 0, MAX_SDP_MLINE_INDEX)
-	) {
-		return undefined;
-	}
-	return { candidate, sdpMid, sdpMLineIndex };
-}
-
-function parseCandidates(value: unknown): IceCandidate[] | undefined {
-	if (
-		!Array.isArray(value) ||
-		value.length < 1 ||
-		value.length > MAX_CANDIDATES
-	)
-		return undefined;
-	const candidates: IceCandidate[] = [];
-	for (const item of value) {
-		const candidate = parseCandidate(item);
-		if (candidate === undefined) return undefined;
-		candidates.push(candidate);
-	}
-	return candidates;
-}
-
 export function parseCallMessage(value: unknown): CallMessage | undefined {
 	if (!isObject(value) || !isSession(value.session)) return undefined;
 	const { type, session } = value;
@@ -200,34 +129,6 @@ export function parseCallMessage(value: unknown): CallMessage | undefined {
 		case "prefs": {
 			const announcement = parseAnnouncement(value);
 			return announcement && { type, session, ...announcement };
-		}
-		case "offer":
-		case "answer": {
-			const announcement = parseAnnouncement(value);
-			const { toSession, negotiation, sdp } = value;
-			if (
-				announcement === undefined ||
-				!isSession(toSession) ||
-				!isNegotiation(negotiation) ||
-				typeof sdp !== "string" ||
-				sdp.length < 1 ||
-				sdp.length > MAX_SDP_LENGTH
-			) {
-				return undefined;
-			}
-			return { type, session, toSession, negotiation, sdp, ...announcement };
-		}
-		case "ice": {
-			const { toSession, negotiation } = value;
-			const candidates = parseCandidates(value.candidates);
-			if (
-				!isSession(toSession) ||
-				!isNegotiation(negotiation) ||
-				candidates === undefined
-			) {
-				return undefined;
-			}
-			return { type, session, toSession, negotiation, candidates };
 		}
 		default:
 			return undefined;

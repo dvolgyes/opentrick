@@ -4,8 +4,6 @@ import type {
 	AnnounceMessage,
 	Announcement,
 	CallEnvelope,
-	CallMessage,
-	IceCandidate,
 	InboxIdentity,
 } from "./messages";
 import type { Party } from "./policy";
@@ -18,7 +16,7 @@ import type {
 /**
  * Peer discovery and link lifecycle for one seat holder (call/layout plan §4.1, §4.4). The mesh knows which seats
  * are in the call, with which session and preferences, and keeps at most one link per remote seat. It knows
- * nothing about WebRTC: the link factory (`peer.ts`) negotiates media; the mesh only routes its signals.
+ * nothing about WebRTC: the link factory (`peer.ts`) puts the media on the table's connection (ADR 0009).
  */
 
 /** Replies to `join` and `resync` from one seat within this delay go out as one `prefs` message. */
@@ -49,37 +47,21 @@ export interface CallRoomSnapshot extends TableCallSnapshot {
 	readonly expected: ReadonlySet<Seat>;
 }
 
-export type LinkSignal =
-	| {
-			readonly type: "offer" | "answer";
-			readonly negotiation: number;
-			readonly sdp: string;
-	  }
-	| {
-			readonly type: "ice";
-			readonly negotiation: number;
-			readonly candidates: readonly IceCandidate[];
-	  };
-
-/** One media connection to one remote seat (implemented by `peer.ts`). */
+/** The call media to one remote seat (implemented by `peer.ts`). */
 export interface CallLink {
 	readonly connected: boolean;
 	update(local: Party, remote: Party): void;
-	receive(signal: LinkSignal): void;
 	/** Retry starts a new connect window: the link shows `connecting` until it connects or the window ends. */
 	renew(): void;
-	/** A new negotiation with an ICE restart, offered by this side; the state and the connect window stay. */
-	restartIce(): void;
 	close(): void;
 }
 
 export interface LinkOptions {
 	readonly seat: Seat;
-	/** The seat later in N, E, S, W order is polite; the impolite side makes the first offer. */
+	/** The seat later in N, E, S, W order is polite; the impolite side adds the media sections. */
 	readonly polite: boolean;
 	readonly local: Party;
 	readonly remote: Party;
-	send(signal: LinkSignal): void;
 	onState(): void;
 }
 
@@ -243,15 +225,10 @@ export class CallMesh {
 		this.#emit();
 	}
 
-	/** The user asks to reconnect after a failed link: announce again, and restart this link from either side. */
+	/** The user asks to reconnect after a failed link: announce again, and apply this link's plan again. */
 	retry(seat: Seat): void {
 		if (!this.#joined?.announced) return;
-		const peer = this.#peers.get(seat);
-		peer?.link?.renew();
-		// The resync restarts the link of the impolite side.
-		if (peer?.link !== undefined && !this.#impolite(seat)) {
-			peer.link.restartIce();
-		}
+		this.#peers.get(seat)?.link?.renew();
 		this.#announce("resync", null);
 	}
 
@@ -350,28 +327,12 @@ export class CallMesh {
 		const joined = this.#joined;
 		if (joined?.signaling === undefined) return;
 		joined.signaling.send(to, this.#message(type, joined.session));
-		if (type === "resync") {
-			for (const peer of this.#peers.values()) {
-				if (to === null || peer.seat === to) this.#restartIfStuck(peer);
-			}
-		}
 		if (to === null) this.#startSilenceCheck();
-	}
-
-	/** The impolite side of a link that is not connected offers again with an ICE restart. */
-	#restartIfStuck(peer: Peer): void {
-		if (
-			peer.link !== undefined &&
-			!peer.link.connected &&
-			this.#impolite(peer.seat)
-		) {
-			peer.link.restartIce();
-		}
 	}
 
 	/**
 	 * A seat that comes back online may have missed every message meanwhile, for example after a network change:
-	 * one addressed `resync`, which also restarts a stuck link from the impolite side.
+	 * one addressed `resync`.
 	 */
 	#greetReturned(
 		previous: CallRoomSnapshot | undefined,
@@ -522,45 +483,12 @@ export class CallMesh {
 					this.#introduce(from, fromGen, message);
 				} else {
 					this.#refresh(current, message);
-					this.#restartIfStuck(current);
 				}
 				this.#reply(from);
 				break;
 			case "prefs":
 				if (current === undefined) this.#introduce(from, fromGen, message);
 				else this.#refresh(current, message);
-				break;
-			case "offer": {
-				if (message.toSession !== joined.session) return;
-				const peer = current ?? this.#introduce(from, fromGen, message);
-				this.#refresh(peer, message);
-				peer.link?.receive({
-					type: "offer",
-					negotiation: message.negotiation,
-					sdp: message.sdp,
-				});
-				break;
-			}
-			case "answer":
-				if (message.toSession !== joined.session || current === undefined) {
-					return;
-				}
-				this.#refresh(current, message);
-				current.link?.receive({
-					type: "answer",
-					negotiation: message.negotiation,
-					sdp: message.sdp,
-				});
-				break;
-			case "ice":
-				if (message.toSession !== joined.session || current === undefined) {
-					return;
-				}
-				current.link?.receive({
-					type: "ice",
-					negotiation: message.negotiation,
-					candidates: message.candidates,
-				});
 				break;
 			case "leave":
 				if (current !== undefined) this.#forget(from);
@@ -621,11 +549,6 @@ export class CallMesh {
 			polite: !this.#impolite(peer.seat),
 			local,
 			remote: peer.remote,
-			send: (signal) => {
-				if (peer.linkToken === token && this.#peers.get(peer.seat) === peer) {
-					this.#sendLinkSignal(peer, signal);
-				}
-			},
 			onState: () => {
 				if (peer.linkToken === token) this.#emit();
 			},
@@ -637,26 +560,6 @@ export class CallMesh {
 		const link = peer.link;
 		peer.link = undefined;
 		link?.close();
-	}
-
-	#sendLinkSignal(peer: Peer, signal: LinkSignal): void {
-		const joined = this.#joined;
-		if (joined?.signaling === undefined) return;
-		const target = {
-			session: joined.session,
-			toSession: peer.session,
-			negotiation: signal.negotiation,
-		};
-		const message: CallMessage =
-			signal.type === "ice"
-				? { type: "ice", ...target, candidates: signal.candidates }
-				: {
-						type: signal.type,
-						...target,
-						sdp: signal.sdp,
-						...this.#announcement(),
-					};
-		joined.signaling.send(peer.seat, message);
 	}
 
 	#reply(seat: Seat): void {

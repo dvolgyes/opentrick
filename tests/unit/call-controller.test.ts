@@ -13,8 +13,9 @@ import { session } from "./call-fakes";
 import {
 	asConnection,
 	asTrack,
-	FakePeerConnection,
+	type FakePeerConnection,
 	FakeTrack,
+	FakeTrysteroPair,
 	fakeStream,
 } from "./call-rtc-fakes";
 import { ROOM_ID } from "./fixtures";
@@ -86,6 +87,23 @@ class Wire {
 	}
 }
 
+/** The table connection of each pair of seats, which the links of both seats share (ADR 0009). */
+class Tables {
+	readonly #pairs = new Map<string, FakeTrysteroPair>();
+
+	/** The end of the pair's connection at `self`; the earlier seat in SEATS holds end `a`. */
+	end(self: Seat, other: Seat): FakePeerConnection {
+		const first = SEATS.indexOf(self) < SEATS.indexOf(other);
+		const key = first ? `${self}${other}` : `${other}${self}`;
+		let pair = this.#pairs.get(key);
+		if (pair === undefined) {
+			pair = new FakeTrysteroPair();
+			this.#pairs.set(key, pair);
+		}
+		return first ? pair.a : pair.b;
+	}
+}
+
 interface MicRequest {
 	readonly constraints: MediaStreamConstraints;
 	resolve(stream: MediaStream): void;
@@ -103,6 +121,7 @@ class Player {
 	constructor(
 		readonly seat: Seat,
 		wire: Wire,
+		tables: Tables,
 		form: Form = "desktop",
 	) {
 		this.call = new CallController(
@@ -112,9 +131,9 @@ class Player {
 					new Promise((resolve, reject) => {
 						this.requests.push({ constraints, resolve, reject });
 					}),
-				createConnection: () => {
-					const pc = new FakePeerConnection();
-					this.connections.push(pc);
+				connection: (seat) => {
+					const pc = tables.end(this.seat, seat);
+					if (!this.connections.includes(pc)) this.connections.push(pc);
 					return asConnection(pc);
 				},
 				newSession: () => session(++this.#sessions),
@@ -163,25 +182,42 @@ class Player {
 		return track;
 	}
 
-	/** The sending track of the one audio section of the open connection. */
+	/** The sending track of the one audio section of the first connection. */
 	get sending(): MediaStreamTrack | null | undefined {
 		return this.open?.getTransceivers()[0]?.sender.track;
 	}
 
-	/** The section kinds of the open connection, in order. */
+	/** The section kinds of the first connection, in order. */
 	get sections(): string[] | undefined {
 		return this.open?.getTransceivers().map((t) => t.receiver.track.kind);
 	}
 
-	/** The sending track of the open connection's video section, if it has one. */
+	/** The sending track of the first connection's video section, if it has one. */
 	get sendingVideo(): MediaStreamTrack | null | undefined {
 		return this.open
 			?.getTransceivers()
 			.find((t) => t.receiver.track.kind === "video")?.sender.track;
 	}
 
+	/** The table connection to the first seat that this seat linked to. */
 	get open(): FakePeerConnection | undefined {
-		return this.connections.find((pc) => !pc.closed);
+		return this.connections[0];
+	}
+
+	/** The call media stopped: every section is inactive and sends nothing, and the table connections stay open. */
+	get stopped(): boolean {
+		return (
+			this.connections.length > 0 &&
+			this.connections.every(
+				(pc) =>
+					!pc.closed &&
+					pc
+						.getTransceivers()
+						.every(
+							(t) => t.direction === "inactive" && t.sender.track === null,
+						),
+			)
+		);
 	}
 }
 
@@ -200,10 +236,11 @@ function snapshot(
 }
 
 let wire: Wire;
+let tables: Tables;
 let north: Player;
 let east: Player;
 
-/** Joins both seats and lets ICE connect. */
+/** Joins both seats, and the table connection between them connects. */
 async function connected(
 	northPreset: PresetId = "audio",
 	eastPreset: PresetId = "audio",
@@ -217,8 +254,9 @@ async function connected(
 beforeEach(() => {
 	vi.useFakeTimers();
 	wire = new Wire();
-	north = new Player("N", wire);
-	east = new Player("E", wire);
+	tables = new Tables();
+	north = new Player("N", wire, tables);
+	east = new Player("E", wire, tables);
 	north.call.update(snapshot("N"));
 	east.call.update(snapshot("E"));
 });
@@ -291,7 +329,7 @@ describe("CallController (call/layout plan §4.5)", () => {
 
 	it("sends the prepared camera of a compact device to a desktop, and shows the compact device no video", async () => {
 		north.call.dispose();
-		north = new Player("N", wire, "compact");
+		north = new Player("N", wire, tables, "compact");
 		north.call.update(snapshot("N"));
 		north.join("both");
 		expect(north.call.view.requested).toEqual({
@@ -448,7 +486,7 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(north.call.view.mic).toBe("on");
 		expect(north.sending).toBe(asTrack(mic));
 
-		const south = new Player("S", wire);
+		const south = new Player("S", wire, tables);
 		const three = (self: Seat): CallRoomSnapshot => ({
 			...snapshot(self),
 			holders: { N: 1, E: 1, S: 1 },
@@ -493,7 +531,7 @@ describe("CallController (call/layout plan §4.5)", () => {
 		north.call.setSwitch("receive", "audio", false);
 		expect(north.call.view.status).toBe("outside");
 		expect(north.call.view.requested.inCall).toBe(false);
-		expect(north.connections.every((pc) => pc.closed)).toBe(true);
+		expect(north.stopped).toBe(true);
 		await settle();
 		expect(wire.types("N").at(-1)).toBe("leave");
 		expect(east.remote("N")?.status).toBe("out");
@@ -516,7 +554,7 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(north.call.view.status).toBe("outside");
 		expect(north.call.view.requested.inCall).toBe(false);
 		expect(mic.stops).toBe(1);
-		expect(north.connections.every((pc) => pc.closed)).toBe(true);
+		expect(north.stopped).toBe(true);
 	});
 
 	it("stays in the call with a refused microphone", async () => {
@@ -550,7 +588,7 @@ describe("CallController (call/layout plan §4.5)", () => {
 		north.changes.mockClear();
 		north.call.dispose();
 		expect(mic.stops).toBe(1);
-		expect(north.connections.every((pc) => pc.closed)).toBe(true);
+		expect(north.stopped).toBe(true);
 		expect(north.changes).not.toHaveBeenCalled();
 		await settle();
 		expect(wire.types("N").at(-1)).toBe("leave");

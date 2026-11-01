@@ -3,62 +3,22 @@ import {
 	type InboxIdentity,
 	inboxTopic,
 	isSession,
-	MAX_CANDIDATE_LENGTH,
-	MAX_CANDIDATES,
 	MAX_GENERATION,
-	MAX_SDP_LENGTH,
-	MAX_SDP_MID_LENGTH,
-	MAX_SDP_MLINE_INDEX,
 	parseCallMessage,
 	parseEnvelope,
 } from "../../src/call/messages";
 
 const ROOM = "abcdefghijklmnopqrstuv";
 const SESSION_A = "0f8e2c1a-1b2c-4d3e-8f90-a1b2c3d4e5f6";
-const SESSION_B = "11111111-2222-4333-8444-555555555555";
 const PREFS = {
 	inCall: true,
 	send: { audio: true, video: false },
 	receive: { audio: true, video: true },
 };
 const ANNOUNCEMENT = { prefs: PREFS, prefVersion: 3, form: "desktop" };
-const CANDIDATE = {
-	candidate: "candidate:1 1 udp 2122260223 peer.local 9 typ host",
-	sdpMid: "0",
-	sdpMLineIndex: 0,
-};
 
 function join(extra: Record<string, unknown> = {}) {
 	return { type: "join", session: SESSION_A, ...ANNOUNCEMENT, ...extra };
-}
-
-function offer(extra: Record<string, unknown> = {}) {
-	return {
-		type: "offer",
-		session: SESSION_A,
-		toSession: SESSION_B,
-		negotiation: 1,
-		sdp: "v=0",
-		...ANNOUNCEMENT,
-		...extra,
-	};
-}
-
-function ice(extra: Record<string, unknown> = {}) {
-	return {
-		type: "ice",
-		session: SESSION_A,
-		toSession: SESSION_B,
-		negotiation: 2,
-		candidates: [CANDIDATE],
-		...extra,
-	};
-}
-
-function iceWith(candidate: Record<string, unknown>) {
-	return parseCallMessage(
-		ice({ candidates: [{ ...CANDIDATE, ...candidate }] }),
-	);
 }
 
 describe("isSession", () => {
@@ -145,6 +105,10 @@ describe("parseCallMessage: announcements", () => {
 		expect(parseCallMessage(join({ session: undefined }))).toBeUndefined();
 		expect(parseCallMessage(join({ session: "me" }))).toBeUndefined();
 		expect(parseCallMessage(join({ type: "hello" }))).toBeUndefined();
+		// The media is negotiated on the table connection now (ADR 0009).
+		for (const type of ["offer", "answer", "ice"]) {
+			expect(parseCallMessage(join({ type, sdp: "v=0" }))).toBeUndefined();
+		}
 		expect(parseCallMessage([join()])).toBeUndefined();
 		expect(parseCallMessage(null)).toBeUndefined();
 	});
@@ -154,99 +118,6 @@ describe("parseCallMessage: announcements", () => {
 			parseCallMessage({ type: "leave", session: SESSION_A, prefs: PREFS }),
 		).toEqual({ type: "leave", session: SESSION_A });
 		expect(parseCallMessage({ type: "leave" })).toBeUndefined();
-	});
-});
-
-describe("parseCallMessage: descriptions", () => {
-	it.each(["offer", "answer"])("accepts %s", (type) => {
-		expect(parseCallMessage(offer({ type, extra: true }))).toEqual({
-			type,
-			session: SESSION_A,
-			toSession: SESSION_B,
-			negotiation: 1,
-			sdp: "v=0",
-			...ANNOUNCEMENT,
-		});
-	});
-
-	it("limits the SDP length to 1..MAX_SDP_LENGTH", () => {
-		expect(
-			parseCallMessage(offer({ sdp: "x".repeat(MAX_SDP_LENGTH) })),
-		).toBeDefined();
-		expect(
-			parseCallMessage(offer({ sdp: "x".repeat(MAX_SDP_LENGTH + 1) })),
-		).toBeUndefined();
-		expect(parseCallMessage(offer({ sdp: "" }))).toBeUndefined();
-		expect(parseCallMessage(offer({ sdp: 1 }))).toBeUndefined();
-	});
-
-	it("requires a positive negotiation, a target session and the announcement", () => {
-		expect(parseCallMessage(offer({ negotiation: 0 }))).toBeUndefined();
-		expect(parseCallMessage(offer({ negotiation: 2.5 }))).toBeUndefined();
-		expect(parseCallMessage(offer({ toSession: "x" }))).toBeUndefined();
-		expect(parseCallMessage(offer({ form: undefined }))).toBeUndefined();
-	});
-});
-
-describe("parseCallMessage: ICE batches", () => {
-	it("accepts a batch and drops unknown candidate keys", () => {
-		expect(
-			parseCallMessage(
-				ice({ candidates: [{ ...CANDIDATE, usernameFragment: "u" }] }),
-			),
-		).toEqual({
-			type: "ice",
-			session: SESSION_A,
-			toSession: SESSION_B,
-			negotiation: 2,
-			candidates: [CANDIDATE],
-		});
-	});
-
-	it("limits a batch to 1..MAX_CANDIDATES candidates", () => {
-		const many = (n: number) => Array.from({ length: n }, () => CANDIDATE);
-		expect(
-			parseCallMessage(ice({ candidates: many(MAX_CANDIDATES) })),
-		).toBeDefined();
-		expect(
-			parseCallMessage(ice({ candidates: many(MAX_CANDIDATES + 1) })),
-		).toBeUndefined();
-		expect(parseCallMessage(ice({ candidates: [] }))).toBeUndefined();
-		expect(parseCallMessage(ice({ candidates: CANDIDATE }))).toBeUndefined();
-	});
-
-	it("rejects the whole batch when one candidate is invalid", () => {
-		expect(
-			parseCallMessage(ice({ candidates: [CANDIDATE, { candidate: 1 }] })),
-		).toBeUndefined();
-	});
-
-	it("limits the candidate text and accepts the empty end-of-candidates text", () => {
-		expect(iceWith({ candidate: "" })).toBeDefined();
-		expect(
-			iceWith({ candidate: "c".repeat(MAX_CANDIDATE_LENGTH) }),
-		).toBeDefined();
-		expect(
-			iceWith({ candidate: "c".repeat(MAX_CANDIDATE_LENGTH + 1) }),
-		).toBeUndefined();
-	});
-
-	it("accepts a null or bounded sdpMid", () => {
-		expect(iceWith({ sdpMid: null })).toBeDefined();
-		expect(iceWith({ sdpMid: "m".repeat(MAX_SDP_MID_LENGTH) })).toBeDefined();
-		expect(
-			iceWith({ sdpMid: "m".repeat(MAX_SDP_MID_LENGTH + 1) }),
-		).toBeUndefined();
-		expect(iceWith({ sdpMid: 0 })).toBeUndefined();
-		expect(iceWith({ sdpMid: undefined })).toBeUndefined();
-	});
-
-	it("accepts a null or bounded sdpMLineIndex", () => {
-		expect(iceWith({ sdpMLineIndex: null })).toBeDefined();
-		expect(iceWith({ sdpMLineIndex: MAX_SDP_MLINE_INDEX })).toBeDefined();
-		expect(iceWith({ sdpMLineIndex: MAX_SDP_MLINE_INDEX + 1 })).toBeUndefined();
-		expect(iceWith({ sdpMLineIndex: -1 })).toBeUndefined();
-		expect(iceWith({ sdpMLineIndex: undefined })).toBeUndefined();
 	});
 });
 

@@ -35,7 +35,7 @@ export interface CallSignalingHandlers {
 }
 
 export interface CallSignaling {
-	/** `to` null sends to every other current holder; offers, answers and ICE batches name one seat. */
+	/** `to` null sends to every other current holder; a seat sends to that holder only. */
 	send(to: Seat | null, message: CallMessage): void;
 	/** Stops sending and receiving; the optional farewell gets one send attempt after the request in flight. */
 	close(farewell?: CallMessage): Promise<void>;
@@ -75,12 +75,6 @@ interface Outgoing {
 	readonly to: Seat | null;
 	readonly message: CallMessage;
 }
-
-const NAMED_TARGET: ReadonlySet<CallMessage["type"]> = new Set([
-	"offer",
-	"answer",
-	"ice",
-]);
 
 function octets(value: unknown): number {
 	const text = JSON.stringify(value);
@@ -157,9 +151,6 @@ class InboxSignaling implements CallSignaling {
 		}
 		if (to === this.#inbox.seat) {
 			throw new Error("a call message cannot address its sender");
-		}
-		if (to === null && NAMED_TARGET.has(message.type)) {
-			throw new Error(`a ${message.type} message must name its target`);
 		}
 	}
 

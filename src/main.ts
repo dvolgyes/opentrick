@@ -1,6 +1,6 @@
 import "./ui/style.css";
 import type { BuildInfo } from "./build";
-import { parseStunUrls, rtcConfiguration } from "./call/ice";
+import { parseStunUrls } from "./call/ice";
 import { communityTransport } from "./community/transport";
 import { detectLocale, translator } from "./i18n";
 import { readMeshConfig } from "./p2p/config";
@@ -70,7 +70,6 @@ function callSupport(stunList: string | undefined): CallSupport {
 	if (typeof RTCPeerConnection !== "function") {
 		return { available: false, reason: t("This browser cannot make calls.") };
 	}
-	const configuration = rtcConfiguration(stun.urls);
 	const devices = navigator.mediaDevices as MediaDevices | undefined;
 	return {
 		available: true,
@@ -100,7 +99,6 @@ function callSupport(stunList: string | undefined): CallSupport {
 				return () => devices.removeEventListener("devicechange", listener);
 			},
 		},
-		createConnection: () => new RTCPeerConnection(configuration),
 		newSession: () => crypto.randomUUID(),
 		granted: (medium) => granted(medium === "audio" ? "microphone" : "camera"),
 	};

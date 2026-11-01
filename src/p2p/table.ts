@@ -441,6 +441,22 @@ export class TableController {
 	}
 
 	/**
+	 * The table's WebRTC connection to the seat's current holder, for the call media (ADR 0009): the peer that the
+	 * roster binds to the seat at its current generation, as in `callSnapshot`. Undefined while there is none.
+	 */
+	callConnection(seat: Seat): RTCPeerConnection | undefined {
+		const table = this.#closed() ? null : this.#replication?.log?.table;
+		const row = table?.seats.find((candidate) => candidate.seat === seat);
+		if (row === undefined || row.holder === null) return undefined;
+		const binding = this.#bindings().find(
+			(candidate) => candidate.seat === seat && candidate.gen === row.gen,
+		);
+		return binding === undefined
+			? undefined
+			: this.#mesh?.connection(binding.peer);
+	}
+
+	/**
 	 * Cleans up expired tables, restores an explicit URL seat, and joins the mesh.
 	 * A valid setup URL can revive a tombstoned room when this browser has no remaining replica.
 	 */

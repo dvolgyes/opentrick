@@ -36,7 +36,8 @@ import type { OpenCallSignaling } from "./signaling";
 export interface CallDeps {
 	readonly openSignaling: OpenCallSignaling;
 	readonly getUserMedia: GetUserMedia;
-	readonly createConnection: () => RTCPeerConnection;
+	/** The table's WebRTC connection to the seat's current holder; the call media goes on it (ADR 0009). */
+	readonly connection: (seat: Seat) => RTCPeerConnection | undefined;
 	readonly newSession: () => string;
 }
 
@@ -145,11 +146,12 @@ export class CallController {
 		return () => this.#listeners.delete(listener);
 	}
 
-	/** The room changed; a lost seat ends the call. */
+	/** The room changed; a lost seat ends the call, and a link moves to the seat's new table connection. */
 	update(snapshot: CallRoomSnapshot): void {
 		this.#self = snapshot.self?.seat;
 		this.#room = snapshot;
 		this.#mesh.update(snapshot);
+		for (const link of this.#links.values()) link.rebind();
 	}
 
 	/** The local user confirmed Join with the switches of the chooser. All available switches off stays outside. */
@@ -285,7 +287,7 @@ export class CallController {
 	#createLink(options: LinkOptions): CallLink {
 		const link = new PeerLink({
 			...options,
-			connection: this.#deps.createConnection(),
+			connection: () => this.#deps.connection(options.seat),
 			tracks: {
 				audio:
 					this.#prefs.inCall && this.#prefs.send.audio
@@ -303,9 +305,7 @@ export class CallController {
 				return link.connected;
 			},
 			update: (local, remote) => link.update(local, remote),
-			receive: (signal) => link.receive(signal),
 			renew: () => link.renew(),
-			restartIce: () => link.restartIce(),
 			close: () => {
 				if (this.#links.get(options.seat) === link) {
 					this.#links.delete(options.seat);

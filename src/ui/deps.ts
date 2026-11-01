@@ -18,7 +18,6 @@ export type CallSupport =
 			readonly available: true;
 			readonly getUserMedia: GetUserMedia;
 			readonly cameras: CameraDevices;
-			readonly createConnection: () => RTCPeerConnection;
 			readonly newSession: () => string;
 			/**
 			 * The browser already allows this page to capture the medium, so a capture starts without a question.
