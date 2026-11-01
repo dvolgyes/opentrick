@@ -113,6 +113,25 @@
 	--voice-panel: rgb(0 0 0 / 55%);
 	--voice-frame: rgb(46 204 64 / 35%);
 	--voice-off: #173a26;
+	/* The bot animation (src/ui/bridge-rain.css): one green palette in every theme. */
+	--rain-bg-center: #10321a;
+	--rain-bg-middle: #06150c;
+	--rain-bg-edge: #020805;
+	--rain-vignette-left: rgb(0 5 2 / 45%);
+	--rain-vignette-right: rgb(0 5 2 / 50%);
+	--rain-vignette-bottom: rgb(0 5 2 / 65%);
+	--rain-vignette-top: rgb(0 5 2 / 60%);
+	--rain-scanline: #000000;
+	--rain-card-line: rgb(157 244 158 / 67%);
+	--rain-card-inner-line: rgb(145 230 156 / 14%);
+	--rain-ace-line: #aeffb5;
+	--rain-card-light: rgb(30 90 44 / 92%);
+	--rain-card-dark: rgb(4 26 14 / 97%);
+	--rain-card-end: rgb(21 62 30 / 95%);
+	--rain-card-fg: #bdffd0;
+	--rain-card-glow: rgb(83 234 113 / 12%);
+	--rain-card-inner-glow: rgb(109 232 129 / 8%);
+	--rain-pip-glow: rgb(88 216 120 / 38%);
 	color-scheme: light;
 }
 

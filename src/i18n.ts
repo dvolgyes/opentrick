@@ -334,6 +334,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show the network quality": "Netzwerkqualität zeigen",
 		"Show the voice box for a player without video":
 			"Sprachanzeige für Spieler ohne Video zeigen",
+		"Animate the bot during its turn": "Den Bot während seines Zugs animieren",
 		"Screen orientation": "Bildschirmausrichtung",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Auf einem Smartphone oder Tablet im Querformat die Desktop-Ansicht zeigen",
@@ -1091,6 +1092,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show the network quality": "Hálózati minőség mutatása",
 		"Show the voice box for a player without video":
 			"Hangjelző mutatása a videó nélküli játékosnál",
+		"Animate the bot during its turn": "A bot animálása, amikor ő következik",
 		"Screen orientation": "Képernyő tájolása",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Telefonon vagy táblagépen fekvő tájolásban az asztali nézet mutatása",
@@ -1783,6 +1785,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Show the network quality": "Vis nettverkskvaliteten",
 		"Show the voice box for a player without video":
 			"Vis stemmeindikatoren for en spiller uten video",
+		"Animate the bot during its turn": "Animer boten når det er dens tur",
 		"Screen orientation": "Skjermretning",
 		"On a phone or tablet in landscape, show the desktop view":
 			"Vis skrivebordsvisningen på en telefon eller et nettbrett i liggende format",

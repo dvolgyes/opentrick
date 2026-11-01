@@ -4377,6 +4377,86 @@ describe("turn marks and network quality from the settings", () => {
 		expect(shown(marks({}))).toBe(true);
 		expect(shown(marks({ networkQuality: false }))).toBe(false);
 	});
+
+	describe("the bot animation", () => {
+		// East is a bot; the host gives the turn to the seat in `turn`.
+		const botView = (turn: Seat): TableView => {
+			const base = playView();
+			return {
+				...base,
+				seats: base.seats.map((player) => ({
+					...player,
+					bot: player.seat === "E",
+					turn: player.seat === turn,
+				})),
+			};
+		};
+		const cardPositions = (tile: HTMLElement) =>
+			[...tile.querySelectorAll<HTMLElement>(".bridge-rain-card")]
+				.map((card) => card.style.transform)
+				.join(";");
+		const frames = () =>
+			new Promise((resolve) =>
+				requestAnimationFrame(() => requestAnimationFrame(resolve)),
+			);
+
+		it("moves in place of the bot image on the bot's turn and freezes after it", async () => {
+			const { root, section } = renderView(
+				botView("S"),
+				"desktop",
+				undefined,
+				undefined,
+				marks({}),
+			);
+			section.setBotControls(false, ["E"]);
+			const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
+			if (tile === null) throw new Error("no tile of East");
+			const animation = tile.querySelector<HTMLElement>(
+				"[data-testid='bot-animation']",
+			);
+			expect(tile.querySelector<HTMLElement>(".bot-artwork")?.hidden).toBe(
+				true,
+			);
+			expect(animation?.checkVisibility()).toBe(true);
+			// Before its turn the scene is drawn but still.
+			await expect.poll(() => animation?.dataset.state).toBe("still");
+			const still = cardPositions(tile);
+			expect(still).not.toBe("");
+			await frames();
+			expect(cardPositions(tile)).toBe(still);
+
+			section.render(botView("E"));
+			expect(animation?.dataset.state).toBe("moving");
+			await expect.poll(() => cardPositions(tile)).not.toBe(still);
+
+			section.render(botView("W"));
+			expect(animation?.dataset.state).toBe("still");
+			const frozen = cardPositions(tile);
+			await frames();
+			expect(cardPositions(tile)).toBe(frozen);
+		});
+
+		it("leaves the bot image while its setting is off", () => {
+			const { root, section } = renderView(
+				botView("E"),
+				"desktop",
+				undefined,
+				undefined,
+				marks({ botAnimation: false }),
+			);
+			section.setBotControls(false, ["E"]);
+			const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
+			expect(
+				tile?.querySelector<HTMLElement>(".bot-artwork")?.checkVisibility(),
+			).toBe(true);
+			expect(
+				tile
+					?.querySelector<HTMLElement>("[data-testid='bot-animation']")
+					?.checkVisibility(),
+			).toBe(false);
+			expect(tile?.querySelector(".bridge-rain")).toBeNull();
+		});
+	});
 });
 
 describe("compact play controls", () => {
@@ -4394,6 +4474,10 @@ describe("compact play controls", () => {
 				),
 			},
 			"desktop",
+			undefined,
+			undefined,
+			// The image shows only without the bot animation.
+			{ marks: () => ({ ...DEFAULT_SETTINGS, botAnimation: false }) },
 		);
 		section.setBotControls(false, ["E"]);
 		const name = root.querySelector<HTMLElement>(

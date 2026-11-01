@@ -73,6 +73,22 @@
 				"src/p2p/topic-mapping.ts"
 			],
 			"modifications": "Combined signaling strategy, configured endpoints, reconnection, and message validation; details in each file's header."
+		},
+		{
+			"id": "noto-sans-symbols-2",
+			"name": "Noto Sans Symbols 2 Regular (subset)",
+			"kind": "font subset",
+			"authors": ["The Noto Project Authors"],
+			"copyright": "Copyright 2022 The Noto Project Authors (https://github.com/notofonts/symbols)",
+			"license": "OFL-1.1",
+			"homepage": "https://github.com/notofonts/symbols",
+			"source": "https://github.com/google/fonts/tree/main/ofl/notosanssymbols2",
+			"licenseFile": "NotoSansSymbols2-OFL.txt",
+			"usedBy": [
+				"src/ui/assets/bridge-rain-symbols.woff",
+				"src/ui/bridge-rain.css"
+			],
+			"modifications": "Subset to the 342 game symbols of the bot animation and compressed as WOFF under the family name BridgeRainSymbols; no outlines changed."
 		}
 	]
 }

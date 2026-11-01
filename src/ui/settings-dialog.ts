@@ -68,6 +68,7 @@ const FLAG_LABELS = {
 	playTurnText: "Show as text whose turn it is to play",
 	networkQuality: "Show the network quality",
 	voicebox: "Show the voice box for a player without video",
+	botAnimation: "Animate the bot during its turn",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
 const ORIENTATION_LABELS = {
@@ -489,6 +490,7 @@ export function settingsDialog(
 			playTurnText: flags.playTurnText.checked,
 			networkQuality: flags.networkQuality.checked,
 			voicebox: flags.voicebox.checked,
+			botAnimation: flags.botAnimation.checked,
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,
 			portraitMobile: orientation.portraitMobile.checked,

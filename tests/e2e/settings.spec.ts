@@ -137,6 +137,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Show as text whose turn it is to play",
 		"Show the network quality",
 		"Show the voice box for a player without video",
+		"Animate the bot during its turn",
 		"On a computer with a portrait window, show the mobile view",
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
@@ -160,6 +161,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog
 		.getByLabel("Show the voice box for a player without video")
 		.uncheck();
+	await dialog.getByLabel("Animate the bot during its turn").uncheck();
 	await relayChecks.check();
 
 	await dialog.getByRole("button", { name: "Save settings" }).click();
@@ -178,6 +180,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.bid-turn-frame",
 		"opentrick.settings.bid-turn-text",
 		"opentrick.settings.bidder",
+		"opentrick.settings.bot-animation",
 		"opentrick.settings.bot-bid-delay-ms",
 		"opentrick.settings.bot-card-delay-ms",
 		"opentrick.settings.card-points",
@@ -223,6 +226,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Show the network quality")).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Show the voice box for a player without video"),
+	).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Animate the bot during its turn"),
 	).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Check the connection more often"),

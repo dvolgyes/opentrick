@@ -2013,6 +2013,14 @@ const rows: readonly TranslationRow[] = [
 		"Mostra l'indicatore vocale di un giocatore senza video",
 		"Stemindicator tonen voor een speler zonder video",
 	],
+	[
+		"Animate the bot during its turn",
+		"Animar el bot durante su turno",
+		"Animar o bot durante a sua vez",
+		"Animer le robot pendant son tour",
+		"Anima il bot durante il suo turno",
+		"De bot animeren tijdens zijn beurt",
+	],
 
 	[
 		"Save settings",

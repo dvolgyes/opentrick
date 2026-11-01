@@ -15,6 +15,7 @@ import { SEAT_NAMES, SEATS, type Seat } from "../protocol";
 import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?url";
 import cardBackRed from "./assets/bridge-call-card-back-red.svg?url";
 import { guideDialog } from "./bidding-guide";
+import { type BotAnimation, botAnimation } from "./bot-animation";
 import {
 	type CallDisplay,
 	type RemoteCallPresence,
@@ -118,7 +119,10 @@ export interface TableOptions {
 	readonly cardPoints?: () => boolean;
 	/** The language of the bidding guide. */
 	readonly locale?: Locale;
-	/** The turn frames, the turn texts, the network quality and the voice box to show; the table reads it at each render. */
+	/**
+	 * The turn frames, the turn texts, the network quality, the voice box and the bot animation to show; the table reads
+	 * it at each render.
+	 */
 	readonly marks?: () => TableMarks;
 	/** Measures the voices for the voice box; the owner stops it. A table without one makes its own. */
 	readonly voiceMeters?: VoiceMeters;
@@ -132,6 +136,7 @@ export type TableMarks = Pick<
 	| "playTurnText"
 	| "networkQuality"
 	| "voicebox"
+	| "botAnimation"
 >;
 
 export type PlayedCardStyle =
@@ -157,6 +162,10 @@ interface CallSpot {
 	readonly botOverlay: HTMLElement;
 	readonly botArtwork: HTMLImageElement;
 	readonly botFallback: HTMLElement;
+	/** In place of the bot image while its setting is on. */
+	readonly botAnimation: BotAnimation;
+	/** The host gives this seat the turn, as the turn frame shows: the bot animation moves. */
+	turn: boolean;
 	readonly callPresence: HTMLElement;
 	/** The network quality: five bars beside the tile, lit from the bottom. */
 	readonly networkBars: HTMLElement;
@@ -1435,11 +1444,18 @@ export function tableSection(
 		});
 		botArtworkImage.hidden = true;
 		const botFallback = el("span", { className: "bot-overlay-fallback" }, "🤖");
+		// Without its font the animation gives way to the image.
+		const animation = botAnimation(() => {
+			const known = callSpots.get(seat);
+			if (known !== undefined)
+				showBotPicture(known, botControlSeats.includes(seat));
+		});
 		const botOverlay = el(
 			"span",
 			{ className: "bot-overlay", attrs: { "aria-hidden": "true" } },
 			botArtworkImage,
 			botFallback,
+			animation.element,
 		);
 		botOverlay.hidden = true;
 		video.muted = true;
@@ -1453,10 +1469,6 @@ export function tableSection(
 		botControl.className = "tile-bot-control";
 		botControl.hidden = !botControlHost;
 		const isBot = botControlSeats.includes(seat);
-		const artworkUrl = robotArtwork();
-		if (artworkUrl !== undefined) botArtworkImage.src = artworkUrl;
-		botArtworkImage.hidden = !isBot || artworkUrl === undefined;
-		botFallback.hidden = artworkUrl !== undefined;
 		botControl.textContent = isBot
 			? `👱 ${t("Switch to player")}`
 			: `🤖 ${t("Switch to bot")}`;
@@ -1529,6 +1541,8 @@ export function tableSection(
 			botOverlay,
 			botArtwork: botArtworkImage,
 			botFallback,
+			botAnimation: animation,
+			turn: false,
 			callPresence,
 			networkBars,
 			voicebox,
@@ -1540,7 +1554,28 @@ export function tableSection(
 			track: undefined,
 		};
 		callSpots.set(seat, spot);
+		showBotPicture(spot, isBot);
 		return spot;
+	}
+
+	/**
+	 * The picture of a bot seat. With its setting on, the bot animation stands in place of the image; it moves only
+	 * while the seat has the turn and is frozen otherwise.
+	 */
+	function showBotPicture(spot: CallSpot, isBot: boolean): void {
+		const artworkUrl = robotArtwork();
+		const animated = shownMarks.botAnimation && !spot.botAnimation.failed();
+		if (artworkUrl !== undefined) spot.botArtwork.src = artworkUrl;
+		spot.botArtwork.hidden = !isBot || artworkUrl === undefined || animated;
+		spot.botFallback.hidden = artworkUrl !== undefined || animated;
+		spot.botAnimation.element.hidden = !isBot || !animated;
+		spot.botAnimation.show(
+			!isBot || !animated || spot.botOverlay.hidden
+				? "off"
+				: spot.turn
+					? "moving"
+					: "still",
+		);
 	}
 
 	/** Each opponent is one column: the video tile above the hand, both on the same centre line. */
@@ -1554,6 +1589,8 @@ export function tableSection(
 		const spot = callSpot(seat.seat);
 		spot.botOverlay.hidden = !seat.bot;
 		spot.tile.dataset.bot = String(seat.bot);
+		spot.turn = seat.turn;
+		showBotPicture(spot, botControlSeats.includes(seat.seat));
 		videoSlots[seat.position].replaceChildren(spot.tile);
 		place.replaceChildren(seatElement(seat, spot.state, lobby, back));
 	}
@@ -1705,14 +1742,11 @@ export function tableSection(
 	function setBotControls(hosting: boolean, bots: readonly Seat[]): void {
 		botControlHost = hosting;
 		botControlSeats = bots;
-		const artworkUrl = robotArtwork();
 		updateAutoplayControl();
 		for (const [seat, spot] of callSpots) {
 			const isBot = bots.includes(seat);
-			if (artworkUrl !== undefined) spot.botArtwork.src = artworkUrl;
-			spot.botArtwork.hidden = !isBot || artworkUrl === undefined;
-			spot.botFallback.hidden = artworkUrl !== undefined;
 			spot.botOverlay.hidden = !isBot;
+			showBotPicture(spot, isBot);
 			spot.botControl.hidden = !hosting;
 			spot.botControl.textContent = isBot
 				? `👱 ${t("Switch to player")}`

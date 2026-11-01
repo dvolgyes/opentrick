@@ -1,0 +1,163 @@
+/*
+ * The bot animation of src/ui/bridge-rain.ts. Its colours are the --rain-* tokens of themes.css. There are no CSS
+ * animations or transitions: the script owns the time, so a frozen scene stays still.
+ */
+@font-face {
+	font-family: "BridgeRainSymbols";
+	src: url("./assets/bridge-rain-symbols.woff") format("woff");
+	font-weight: 400;
+	font-style: normal;
+	font-display: block;
+}
+
+.bridge-rain {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	isolation: isolate;
+	pointer-events: none;
+	user-select: none;
+	background: radial-gradient(
+		ellipse at 50% 44%,
+		var(--rain-bg-center),
+		var(--rain-bg-middle) 40%,
+		var(--rain-bg-edge) 80%
+	);
+}
+
+.bridge-rain,
+.bridge-rain * {
+	box-sizing: border-box;
+}
+
+/* The vignette and the scanlines stay still. */
+.bridge-rain::before,
+.bridge-rain::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.bridge-rain::before {
+	z-index: 2;
+	background:
+		linear-gradient(
+			90deg,
+			var(--rain-vignette-left),
+			transparent 22%,
+			transparent 75%,
+			var(--rain-vignette-right)
+		),
+		linear-gradient(
+			0deg,
+			var(--rain-vignette-bottom),
+			transparent 24%,
+			transparent 70%,
+			var(--rain-vignette-top)
+		);
+}
+
+.bridge-rain::after {
+	z-index: 3;
+	opacity: 0.12;
+	background: repeating-linear-gradient(
+		0deg,
+		transparent 0,
+		transparent 3px,
+		var(--rain-scanline) 4px
+	);
+}
+
+.bridge-rain-canvas {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* The perspective is on the common parent of the cards, not on each card. */
+.bridge-rain-cards {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	perspective: 740px;
+	perspective-origin: 50% 45%;
+	transform-style: preserve-3d;
+}
+
+.bridge-rain-card {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 88px;
+	height: 126px;
+	border: 1px solid var(--rain-card-line);
+	border-radius: 6px;
+	background: linear-gradient(
+		135deg,
+		var(--rain-card-light),
+		var(--rain-card-dark) 56%,
+		var(--rain-card-end)
+	);
+	color: var(--rain-card-fg);
+	box-shadow:
+		0 0 15px var(--rain-card-glow),
+		inset 0 0 12px var(--rain-card-inner-glow);
+	font-family: Georgia, "Times New Roman", serif;
+	will-change: transform;
+	backface-visibility: visible;
+	contain: layout style;
+}
+
+.bridge-rain-card::after {
+	content: "";
+	position: absolute;
+	inset: 6px;
+	border: 1px solid var(--rain-card-inner-line);
+	border-radius: 2px;
+}
+
+.bridge-rain-corner {
+	position: absolute;
+	top: 7px;
+	left: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	font-size: 20px;
+	line-height: 0.98;
+}
+
+.bridge-rain-corner small {
+	font-size: 15px;
+	line-height: 1.3;
+}
+
+.bridge-rain-corner-bottom {
+	top: auto;
+	right: 8px;
+	bottom: 7px;
+	left: auto;
+	transform: rotate(180deg);
+}
+
+.bridge-rain-pip {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	font-size: 49px;
+	text-shadow: 0 0 18px var(--rain-pip-glow);
+}
+
+.bridge-rain-card[data-ace="true"] {
+	border-color: var(--rain-ace-line);
+}
+
+.bridge-rain-card[data-ace="true"] .bridge-rain-pip {
+	font-size: 61px;
+}

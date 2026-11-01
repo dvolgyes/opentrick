@@ -81,6 +81,8 @@ export interface Settings extends BotTiming {
 	readonly networkQuality: boolean;
 	/** Green bars on the tile of a player whose voice arrives without video (src/ui/voice-meter.ts). */
 	readonly voicebox: boolean;
+	/** The animation in place of the bot image, which moves during the bot's turn (src/ui/bot-animation.ts). */
+	readonly botAnimation: boolean;
 	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
 	readonly relayChecks: boolean;
 	/** A phone or tablet in landscape gets the desktop view (src/call/device-class.ts). */
@@ -109,6 +111,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	playTurnText: true,
 	networkQuality: true,
 	voicebox: true,
+	botAnimation: true,
 	relayChecks: false,
 	landscapeDesktop: false,
 	portraitMobile: true,
@@ -127,6 +130,7 @@ const FLAGS = {
 	playTurnText: "play-turn-text",
 	networkQuality: "network-quality",
 	voicebox: "voicebox",
+	botAnimation: "bot-animation",
 	relayChecks: "relay-checks",
 	landscapeDesktop: "landscape-desktop",
 	portraitMobile: "portrait-mobile",
