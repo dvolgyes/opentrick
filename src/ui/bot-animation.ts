@@ -14,8 +14,14 @@ export interface BotAnimation {
 	destroy(): void;
 }
 
-/** `onFailure` runs once if the scene cannot start, for example without its font. */
-export function botAnimation(onFailure: () => void): BotAnimation {
+/**
+ * Each bot has its own `seed`, so two bots never show the same scene. `onFailure` runs once if the scene cannot
+ * start, for example without its font.
+ */
+export function botAnimation(
+	seed: number,
+	onFailure: () => void,
+): BotAnimation {
 	const element = el("span", {
 		className: "bot-animation",
 		attrs: { "data-testid": "bot-animation" },
@@ -39,7 +45,7 @@ export function botAnimation(onFailure: () => void): BotAnimation {
 			if (state !== "off" && rain === undefined && !starting && !failed) {
 				starting = true;
 				// The font loads first, and the turn can change meanwhile: the scene takes the last state.
-				BridgeRain.create(element, { density: 12 }).then(
+				BridgeRain.create(element, { density: 12, seed }).then(
 					(scene) => {
 						if (destroyed) {
 							scene.destroy();

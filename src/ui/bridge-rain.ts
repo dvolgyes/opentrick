@@ -10,6 +10,13 @@
 
 const FONT_FAMILY = "BridgeRainSymbols";
 const FONT_SAMPLE = "🂡🀀🀱♔🨀⚀";
+// The longest wait, in seconds of motion, before a symbol stream or a card enters from the top.
+const STREAM_ENTRY = 2.5;
+const CARD_ENTRY = 3;
+// A motion time after every entry, for a scene that never moves.
+const FILLED_TIME = 17.3;
+// The perspective of .bridge-rain-cards in bridge-rain.css; a card waits out of sight above the element.
+const PERSPECTIVE = 740;
 // One font-loading promise per document.
 const fontReady = new WeakMap<Document, Promise<void>>();
 
@@ -27,7 +34,7 @@ export interface BridgeRainOptions {
 	readonly actionMultiplier?: number;
 	/** The cap of the canvas resolution, clamped to 1–3. */
 	readonly maxPixelRatio?: number;
-	/** The seed of the foreground cards. */
+	/** The seed of the foreground cards and of the symbol rain; two scenes with different seeds look different. */
 	readonly seed?: number;
 	/** Freeze while the browser asks for reduced motion. */
 	readonly respectReducedMotion?: boolean;
@@ -55,6 +62,7 @@ export interface BridgeRainState {
 interface RainCard {
 	readonly element: HTMLElement;
 	readonly x: number;
+	// 0–1: the share of the longest entry delay.
 	readonly y: number;
 	readonly z: number;
 	readonly fall: number;
@@ -66,7 +74,8 @@ interface RainCard {
 interface Stream {
 	readonly x: number;
 	readonly seed: number;
-	readonly offset: number;
+	// Seconds of motion before the head enters at the top.
+	readonly delay: number;
 	readonly speed: number;
 	readonly length: number;
 	readonly rowHeight: number;
@@ -170,14 +179,16 @@ export class BridgeRain {
 	readonly #cardSpace: HTMLElement;
 	readonly #observer: ResizeObserver;
 	#seed: number;
+	// The streams are rebuilt at each resize, so they keep the first seed. It stays small for the sine noise.
+	readonly #rainSeed: number;
 	#mode: BridgeRainMode = "idle";
 	// The owner's intent; the environment can still hold the frames.
 	#playing = false;
 	#destroyed = false;
 	// Active seconds, independent of the speed.
 	#time = 0;
-	// The scene starts populated, not empty.
-	#motionTime = 17.3;
+	// The scene starts blank and fills from the top once it moves; set in the constructor.
+	#motionTime: number;
 	#lastStamp: number | null = null;
 	#frameId: number | null = null;
 	#width = 0;
@@ -210,6 +221,7 @@ export class BridgeRain {
 			"maxPixelRatio",
 		);
 		this.#seed = bounded(options.seed ?? 87431, 0, 0xffffffff, "seed") >>> 0;
+		this.#rainSeed = this.#seed % 100003;
 		this.#respectReducedMotion = options.respectReducedMotion ?? true;
 		this.#doc = container.ownerDocument;
 		const win = this.#doc.defaultView;
@@ -217,6 +229,8 @@ export class BridgeRain {
 			throw new TypeError("The bridge rain needs an element of a window.");
 		this.#win = win;
 		this.#motionPreference = win.matchMedia("(prefers-reduced-motion: reduce)");
+		// A scene that cannot move would stay blank, so it starts after every entry delay.
+		this.#motionTime = this.#reducedMotion() ? FILLED_TIME : 0;
 
 		this.#root = this.#doc.createElement("div");
 		this.#root.className = "bridge-rain";
@@ -440,12 +454,12 @@ export class BridgeRain {
 		const spacing = this.#columnSpacing;
 		this.#streams = [0, 1].flatMap((layer) =>
 			Array.from({ length: Math.ceil(this.#width / spacing) }, (_, i) => {
-				const seed = i * 31 + layer * 1709 + 7;
+				const seed = this.#rainSeed + i * 31 + layer * 1709 + 7;
 				return {
 					// The back columns sit halfway between the front columns.
 					x: (i + (layer ? 0.25 : 0.75)) * spacing,
 					seed,
-					offset: noise(seed + 1) * 2200,
+					delay: noise(seed + 1) * STREAM_ENTRY,
 					speed: (layer ? 27 : 14) + noise(seed + 18) * (layer ? 42 : 24),
 					length: (layer ? 28 : 22) + Math.floor(noise(seed + 80) * 24),
 					rowHeight: layer ? 19 : 16,
@@ -471,9 +485,10 @@ export class BridgeRain {
 
 		// Each trail is rebuilt from the clock, not faded in a buffer, so the same time draws the same frame.
 		for (const stream of this.#streams) {
+			if (t < stream.delay) continue;
 			ctx.font = `${stream.size}px "${FONT_FAMILY}"`;
 			const cycle = h + stream.length * stream.rowHeight + 45;
-			const head = ((stream.offset + t * stream.speed) % cycle) - 24;
+			const head = (((t - stream.delay) * stream.speed) % cycle) - 24;
 			const tick = Math.floor(t * (1.2 + noise(stream.seed) * 1.4));
 			for (let j = 0; j < stream.length; j++) {
 				const y = head - j * stream.rowHeight;
@@ -506,7 +521,13 @@ export class BridgeRain {
 				(card.x - 0.5) * (w + 420) +
 				Math.sin(t * 0.22 + card.phase) * 25 +
 				camera;
-			const y = ((card.y * span + t * card.fall) % span) - span / 2;
+			// The card waits just above the element, scaled by its depth, and falls in after its delay.
+			const entry = (-0.55 * h * (PERSPECTIVE - card.z)) / PERSPECTIVE - 90;
+			const delay = card.y * CARD_ENTRY;
+			const y =
+				t < delay
+					? entry
+					: ((entry + span / 2 + (t - delay) * card.fall) % span) - span / 2;
 			const rx = 15 + Math.sin(t * 0.31 + card.phase) * 15;
 			const ry = card.yaw + Math.sin(t * 0.27 + card.phase) * 21;
 			const rz = card.tilt + Math.sin(t * 0.18 + card.phase) * 10;

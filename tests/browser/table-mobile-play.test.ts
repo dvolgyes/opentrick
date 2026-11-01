@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { cdp, page, userEvent } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
@@ -4399,6 +4399,31 @@ describe("turn marks and network quality from the settings", () => {
 			new Promise((resolve) =>
 				requestAnimationFrame(() => requestAnimationFrame(resolve)),
 			);
+		// The cards inside the picture, and whether the canvas has any symbol of the rain.
+		const cardsInSight = (tile: HTMLElement) => {
+			const frame = tile
+				.querySelector<HTMLElement>("[data-testid='bot-animation']")
+				?.getBoundingClientRect();
+			if (frame === undefined) return 0;
+			return [...tile.querySelectorAll<HTMLElement>(".bridge-rain-card")]
+				.map((card) => card.getBoundingClientRect())
+				.filter(
+					(card) =>
+						card.bottom > frame.top &&
+						card.top < frame.bottom &&
+						card.right > frame.left &&
+						card.left < frame.right,
+				).length;
+		};
+		const rainDrawn = (tile: HTMLElement) => {
+			const canvas = tile.querySelector<HTMLCanvasElement>(
+				".bridge-rain-canvas",
+			);
+			const pixels = canvas
+				?.getContext("2d")
+				?.getImageData(0, 0, canvas.width, canvas.height).data;
+			return pixels?.some((value, index) => index % 4 === 3 && value > 0);
+		};
 
 		it("moves in place of the bot image on the bot's turn and freezes after it", async () => {
 			const { root, section } = renderView(
@@ -4418,22 +4443,78 @@ describe("turn marks and network quality from the settings", () => {
 				true,
 			);
 			expect(animation?.checkVisibility()).toBe(true);
-			// Before its turn the scene is drawn but still.
+			// Before its first turn the scene is blank green and still.
 			await expect.poll(() => animation?.dataset.state).toBe("still");
 			const still = cardPositions(tile);
 			expect(still).not.toBe("");
+			expect(cardsInSight(tile)).toBe(0);
+			expect(rainDrawn(tile)).toBe(false);
 			await frames();
 			expect(cardPositions(tile)).toBe(still);
 
+			// On its turn the rain and the cards enter from the top.
 			section.render(botView("E"));
 			expect(animation?.dataset.state).toBe("moving");
 			await expect.poll(() => cardPositions(tile)).not.toBe(still);
+			await expect.poll(() => rainDrawn(tile)).toBe(true);
+			await expect
+				.poll(() => cardsInSight(tile), { timeout: 10_000 })
+				.toBeGreaterThan(0);
 
 			section.render(botView("W"));
 			expect(animation?.dataset.state).toBe("still");
 			const frozen = cardPositions(tile);
 			await frames();
 			expect(cardPositions(tile)).toBe(frozen);
+		});
+
+		it("gives each bot its own cards and symbol rain", async () => {
+			// With reduced motion both scenes start filled at the same time, so only the seeds differ.
+			await cdp().send("Emulation.setEmulatedMedia", {
+				features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+			});
+			onTestFinished(async () => {
+				await cdp().send("Emulation.setEmulatedMedia", { features: [] });
+			});
+			const base = botView("S");
+			const view: TableView = {
+				...base,
+				seats: base.seats.map((player) => ({
+					...player,
+					bot: player.seat === "E" || player.seat === "W",
+				})),
+			};
+			const { root, section } = renderView(
+				view,
+				"desktop",
+				undefined,
+				undefined,
+				marks({}),
+			);
+			section.setBotControls(false, ["E", "W"]);
+			const scene = (seat: Seat) => {
+				const tile = root.querySelector<HTMLElement>(
+					`[data-testid='tile-${seat}']`,
+				);
+				if (tile === null) throw new Error(`no tile of ${seat}`);
+				return tile;
+			};
+			await expect
+				.poll(() =>
+					[scene("E"), scene("W")].map(
+						(tile) =>
+							tile.querySelector<HTMLElement>("[data-testid='bot-animation']")
+								?.dataset.state,
+					),
+				)
+				.toEqual(["still", "still"]);
+			expect(rainDrawn(scene("E"))).toBe(true);
+			const rain = (seat: Seat) =>
+				scene(seat)
+					.querySelector<HTMLCanvasElement>(".bridge-rain-canvas")
+					?.toDataURL();
+			expect(cardPositions(scene("E"))).not.toBe(cardPositions(scene("W")));
+			expect(rain("E")).not.toBe(rain("W"));
 		});
 
 		it("leaves the bot image while its setting is off", () => {

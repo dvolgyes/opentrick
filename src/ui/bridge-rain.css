@@ -31,35 +31,12 @@
 	box-sizing: border-box;
 }
 
-/* The vignette and the scanlines stay still. */
-.bridge-rain::before,
+/* The scanlines stay still. A tile is too small for the vignette of the full-screen original. */
 .bridge-rain::after {
 	content: "";
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
-}
-
-.bridge-rain::before {
-	z-index: 2;
-	background:
-		linear-gradient(
-			90deg,
-			var(--rain-vignette-left),
-			transparent 22%,
-			transparent 75%,
-			var(--rain-vignette-right)
-		),
-		linear-gradient(
-			0deg,
-			var(--rain-vignette-bottom),
-			transparent 24%,
-			transparent 70%,
-			var(--rain-vignette-top)
-		);
-}
-
-.bridge-rain::after {
 	z-index: 3;
 	opacity: 0.12;
 	background: repeating-linear-gradient(

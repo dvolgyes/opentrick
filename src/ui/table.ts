@@ -314,6 +314,14 @@ function cardBackFor(board: number): string {
 /** The segments of the voice box columns: a taller middle column between two shorter ones, as on KITT. */
 const VOICE_COLUMNS = [7, 11, 7] as const;
 
+/** One bot animation seed per seat, so two bots at the table never show the same scene. */
+const BOT_ANIMATION_SEEDS: Readonly<Record<Seat, number>> = {
+	N: 87431,
+	E: 52021,
+	S: 31337,
+	W: 74093,
+};
+
 /** The lit bars of each network quality; none is lit before this page measured the player. */
 const NETWORK_BARS: Readonly<Record<RoundTripView["quality"], number>> = {
 	excellent: 5,
@@ -1444,8 +1452,8 @@ export function tableSection(
 		});
 		botArtworkImage.hidden = true;
 		const botFallback = el("span", { className: "bot-overlay-fallback" }, "🤖");
-		// Without its font the animation gives way to the image.
-		const animation = botAnimation(() => {
+		// Each seat has its own scene, and without its font the animation gives way to the image.
+		const animation = botAnimation(BOT_ANIMATION_SEEDS[seat], () => {
 			const known = callSpots.get(seat);
 			if (known !== undefined)
 				showBotPicture(known, botControlSeats.includes(seat));
