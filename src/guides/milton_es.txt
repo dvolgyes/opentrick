@@ -19,6 +19,9 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Apoya un menor de la misma forma, con cuatro o más diamantes sobre [1D] y cinco o más tréboles sobre [1C]: un nivel con 6–10 puntos, con salto con 10–12 puntos.
 - 10–12 puntos: invitativo. Apoya con salto el mayor de tu compañero ([1S] – [3S]) con tres o más cartas, o declara un palo nuevo. Un palo nuevo a nivel de dos requiere 11 o más puntos.
 - 13 o más puntos: forzante a manga. Declara un palo nuevo y sigue hasta la manga ([3NT], [4H], [4S]).
+- [2NT] sobre [1H] o [1S] (Jacoby 2NT): 13 o más puntos y cuatro o más cartas en el mayor de tu compañero, forzante a manga.
+- [3NT] sobre [1H] o [1S]: 15–17 puntos, mano equilibrada, con exactamente dos cartas en el mayor de tu compañero.
+- Cuatro del mayor de tu compañero ([1H] – [4H]): 6–9 puntos, cinco o más cartas en el palo y un semifallo o fallo. Este apoyo es preventivo.
 
 ## Redeclaración del abridor
 - 12–14 puntos: [1NT] con mano equilibrada, un apoyo simple o la repetición de tu propio palo.
@@ -27,6 +30,7 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Tras un apoyo simple de tu mayor ([1H] – [2H]) y un paso: [P] con 12–14 puntos; [3H] con 15–17 puntos es un intento de manga e invita a manga; [4H] con 18–21 puntos.
 - Si un contrario declara o dobla tras el apoyo: [3H] con 12–17 puntos y seis o más cartas en el palo es competitivo y no invita a manga; [4H] con 18–21 puntos.
 - Tras un apoyo con salto de tu mayor ([1H] – [3H]) y un paso, tu compañero tiene al menos 10 puntos: [4H] con 15–21 puntos (25 o más entre los dos); si no, [P] con 12–14 puntos.
+- Tras Jacoby [2NT] ([1H] – [2NT]) y un paso: tres de un palo nuevo muestra un semifallo o fallo, el más bajo con dos. Sin ninguno, [4H] con 12–14 puntos, [3NT] con 15–17 puntos o [3H] con 18–21 puntos.
 
 ## Respuestas a [1NT]
 - 0–7 puntos: [P], salvo que encaje una transferencia, Stayman débil o [2S].
@@ -82,6 +86,9 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Puntos Milton: llevan el nombre de Milton Work, que popularizó el recuento desde aproximadamente 1927.
 - Dos débil: Howard Schenken lo desarrolló a principios de los años 1940.
 - Valor (feature): un nombre descriptivo para el as o el rey de un palo lateral; el abridor lo muestra tras la pregunta [2NT].
+- Apoyo limitado (limit raise): un nombre descriptivo para el apoyo con salto ([1S] – [3S]); muestra un rango limitado de puntos (10–12).
+- Jacoby 2NT: se atribuye normalmente a Oswald Jacoby; algunos lo atribuyen a Leo Baron.
+- Apoyo preventivo (preemptive raise): un nombre descriptivo para el apoyo a manga ([1H] – [4H]); quita espacio de subasta a los contrarios.
 - Stayman: lleva el nombre de Sam Stayman, que lo publicó en 1945. Jack Marx y George Rapée tuvieron la idea antes que él.
 - Stayman débil: un nombre descriptivo; también llamado garbage Stayman.
 - Transferencias Jacoby: llevan el nombre de Oswald Jacoby, que escribió sobre ellas en 1956. La transferencia a menor es la forma de SAYC.

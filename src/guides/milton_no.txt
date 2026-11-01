@@ -19,6 +19,9 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Støtt en lavfarge på samme måte, med fire eller flere ruter etter [1D] og fem eller flere kløver etter [1C]: ett trinn med 6–10 poeng, hopp med 10–12 poeng.
 - 10–12 poeng: invitasjon. Gi hoppstøtte i makkers høyfarge ([1S] – [3S]) med tre eller flere kort, eller meld en ny farge. En ny farge på to-trinnet krever 11 eller flere poeng.
 - 13 eller flere poeng: utgangskrav. Meld en ny farge, og fortsett til dere når utgang ([3NT], [4H], [4S]).
+- [2NT] etter [1H] eller [1S] (Jacoby 2NT): 13 eller flere poeng og fire eller flere kort i makkers høyfarge, utgangskrav.
+- [3NT] etter [1H] eller [1S]: 15–17 poeng, balansert hånd, med nøyaktig to kort i makkers høyfarge.
+- Fire i makkers høyfarge ([1H] – [4H]): 6–9 poeng, fem eller flere kort i fargen og en singleton eller renons. Denne støtten er en sperremelding.
 
 ## Åpners gjenmelding
 - 12–14 poeng: [1NT] med balansert hånd, enkel støtte, eller gjenmelding av egen farge.
@@ -27,6 +30,7 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Etter enkel støtte i høyfargen din ([1H] – [2H]) og pass: [P] med 12–14 poeng; [3H] med 15–17 poeng er et utgangsforsøk og inviterer til utgang; [4H] med 18–21 poeng.
 - Hvis en motspiller melder eller dobler etter støtten: [3H] med 12–17 poeng og seks eller flere kort i fargen er en konkurransemelding og inviterer ikke til utgang; [4H] med 18–21 poeng.
 - Etter hoppstøtte i høyfargen din ([1H] – [3H]) og pass har makker minst 10 poeng: [4H] med 15–21 poeng (25 eller flere sammen), ellers [P] med 12–14 poeng.
+- Etter Jacoby [2NT] ([1H] – [2NT]) og pass: tre i en ny farge viser en singleton eller renons, den laveste med to. Uten en slik, [4H] med 12–14 poeng, [3NT] med 15–17 poeng, eller [3H] med 18–21 poeng.
 
 ## Svar på [1NT]
 - 0–7 poeng: [P], med mindre en overføring, svak Stayman eller [2S] passer.
@@ -82,6 +86,9 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Milton-poeng: oppkalt etter Milton Work, som gjorde tellingen populær fra omkring 1927.
 - Svak to-åpning: Howard Schenken utviklet den tidlig på 1940-tallet.
 - Feature: et beskrivende navn på ess eller konge i en sidefarge; åpner viser det etter spørsmålet [2NT].
+- Limitstøtte (limit raise): et beskrivende navn på hoppstøtten ([1S] – [3S]); den viser et begrenset poengområde (10–12).
+- Jacoby 2NT: vanligvis tilskrevet Oswald Jacoby; noen nevner Leo Baron.
+- Sperrestøtte (preemptive raise): et beskrivende navn på støtten til utgang ([1H] – [4H]); den tar meldeplass fra motspillerne.
 - Stayman: oppkalt etter Sam Stayman, som publiserte den i 1945. Jack Marx og George Rapée hadde ideen før ham.
 - Svak Stayman: et beskrivende navn; også kalt garbage Stayman.
 - Jacoby-overføringer: oppkalt etter Oswald Jacoby, som skrev om dem i 1956. Lavfargeoverføringen er SAYC-formen.

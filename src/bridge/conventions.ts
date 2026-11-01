@@ -79,6 +79,22 @@ export type Shape =
 	| { readonly kind: "feature"; readonly suit: Suit; readonly trumps: Suit }
 	/** No ace or king in a suit other than `trumps`. */
 	| { readonly kind: "no-feature"; readonly trumps: Suit }
+	/** A singleton or void in `suit`, and none in a lower suit other than `trumps`. */
+	| { readonly kind: "shortness"; readonly suit: Suit; readonly trumps: Suit }
+	/** No singleton or void. */
+	| { readonly kind: "no-shortness" }
+	/** Balanced, with exactly `length` cards in partner's `suit`. */
+	| {
+			readonly kind: "balanced-with";
+			readonly suit: Suit;
+			readonly length: number;
+	  }
+	/** `min` or more cards in partner's `suit`, and a singleton or void. */
+	| {
+			readonly kind: "short-support";
+			readonly suit: Suit;
+			readonly min: number;
+	  }
 	/** More cards in `suit` than in `other`, or with `ties` at least as many. */
 	| {
 			readonly kind: "longer-major";
@@ -176,6 +192,8 @@ type Position =
 	| { readonly kind: "weak-two"; readonly suit: Suit }
 	/** Opener's answer after a weak two in `suit`, a pass, partner's [2NT] ask and a pass. */
 	| { readonly kind: "weak-answer"; readonly suit: Suit }
+	/** Opener's answer after one of the major `suit`, a pass, partner's Jacoby [2NT] and a pass. */
+	| { readonly kind: "jacoby-answer"; readonly suit: Suit }
 	/** Opener's second call after one of `opened`, a pass, and partner's `response`. */
 	| { readonly kind: "rebid"; readonly opened: Suit; readonly response: Bid }
 	/**
@@ -241,6 +259,7 @@ const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
 	"1NT",
 	"2C",
 	"weak-answer",
+	"jacoby-answer",
 	"stayman-answer",
 	"transfer-answer",
 	"relay",
@@ -495,6 +514,8 @@ function position(calls: readonly Call[]): Position | undefined {
 		strain !== "C"
 	)
 		return { kind: "weak-answer", suit: strain };
+	if (after === "P 2NT P" && opened !== undefined && MAJORS.includes(opened))
+		return { kind: "jacoby-answer", suit: opened };
 	const later =
 		opening === "1NT"
 			? (transferPosition(calls.slice(start + 1)) ??
@@ -594,10 +615,39 @@ function suitResponseMeaning(
 		return { range: ranges["suit-pass"], shape: { kind: "none" } };
 	if (call === "1NT")
 		return { range: ranges["suit-low"], shape: oneNotrumpShape(opened) };
+	const major = MAJORS.includes(opened);
+	// "[2NT] over [1H] or [1S] (Jacoby 2NT): 13 or more points and four or more cards in partner's major"
+	if (call === "2NT")
+		return major
+			? {
+					range: ranges["suit-jacoby"],
+					shape: { kind: "support", suit: opened, min: SHAPES.jacoby },
+				}
+			: undefined;
+	// "[3NT] over [1H] or [1S]: 15–17 points, balanced, with exactly two cards in partner's major."
+	if (call === "3NT")
+		return major
+			? {
+					range: ranges["suit-3NT"],
+					shape: {
+						kind: "balanced-with",
+						suit: opened,
+						length: SHAPES.support - 1,
+					},
+				}
+			: undefined;
 	if (!isBid(call)) return undefined;
 	const level = levelOf(call);
 	const strain = strainOf(call);
 	if (!isSuit(strain)) return undefined;
+	// "Four of partner's major ([1H] – [4H]): 6–9 points, five or more cards in the major and a singleton or void."
+	if (strain === opened && level === 4)
+		return major
+			? {
+					range: ranges["suit-game"],
+					shape: { kind: "short-support", suit: opened, min: SHAPES.gameRaise },
+				}
+			: undefined;
 	if (strain === opened) {
 		const key =
 			level === 2 ? "suit-low" : level === 3 ? "suit-invite" : undefined;
@@ -1048,6 +1098,25 @@ function weakAnswerMeaning(
 	return meanings;
 }
 
+/** Opener's answer to Jacoby [2NT] after one of the major `trumps`. */
+function jacobyAnswerMeaning(
+	ranges: Ranges,
+	trumps: Suit,
+): Partial<Record<Call, CallMeaning>> {
+	// "three of a new suit shows a singleton or void, the lower one with two. Without one, [4H] with 12–14 points,
+	// [3NT] with 15–17 points, or [3H] with 18–21 points."
+	const flat: Shape = { kind: "no-shortness" };
+	const meanings: Partial<Record<Call, CallMeaning>> = {
+		[`4${trumps}`]: { range: ranges["jacoby-minimum"], shape: flat },
+		"3NT": { range: ranges["jacoby-middle"], shape: flat },
+		[`3${trumps}`]: { range: ranges["jacoby-maximum"], shape: flat },
+	};
+	for (const suit of SUITS)
+		if (suit !== trumps)
+			meanings[`3${suit}`] = { shape: { kind: "shortness", suit, trumps } };
+	return meanings;
+}
+
 function rebidMeaning(
 	ranges: Ranges,
 	opened: Suit,
@@ -1241,6 +1310,8 @@ function meaningAt(
 			return weakTwoResponseMeaning(ranges, at.suit, call);
 		case "weak-answer":
 			return weakAnswerMeaning(ranges, at.suit)[call];
+		case "jacoby-answer":
+			return jacobyAnswerMeaning(ranges, at.suit)[call];
 		case "rebid":
 			return rebidMeaning(ranges, at.opened, at.response, call);
 		case "reraise":
@@ -1416,6 +1487,22 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 		case "no-feature":
 			return SUITS.every(
 				(suit) => suit === shape.trumps || !hasFeature(hand, suit),
+			);
+		case "shortness":
+			return (
+				lengths[shape.suit] <= SHAPES.shortSide &&
+				SUITS.slice(SUITS.indexOf(shape.suit) + 1).every(
+					(suit) => suit === shape.trumps || lengths[suit] > SHAPES.shortSide,
+				)
+			);
+		case "no-shortness":
+			return SUITS.every((suit) => lengths[suit] > SHAPES.shortSide);
+		case "balanced-with":
+			return isBalanced(hand) && lengths[shape.suit] === shape.length;
+		case "short-support":
+			return (
+				lengths[shape.suit] >= shape.min &&
+				SUITS.some((suit) => lengths[suit] <= SHAPES.shortSide)
 			);
 		case "two-suits":
 			return (
@@ -1618,10 +1705,15 @@ function preferred(
 	if (at.kind === "suit") {
 		// "Raise partner's major one level with three or more cards. Otherwise bid a new suit ... or [1NT]."
 		// With 10 points the single and the jump raise both fit; the guide orders no calls over a minor.
+		// Jacoby [2NT] is a raise; the preemptive raise to game comes before the single raise.
 		const raise = fitting.filter(
 			({ call }) =>
-				MAJORS.includes(at.suit) && isBid(call) && strainOf(call) === at.suit,
+				MAJORS.includes(at.suit) &&
+				isBid(call) &&
+				(strainOf(call) === at.suit || call === "2NT"),
 		);
+		const game = raise.filter(({ call }) => call === `4${at.suit}`);
+		if (game.length > 0) return game;
 		if (raise.length > 0) return raise;
 	}
 	if (at.kind === "1NT") return notrumpPreferred(ranges, hand, fitting);

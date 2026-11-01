@@ -26,6 +26,9 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Az alacsony színt ugyanígy emeld, [1D] után legalább négy káróval, [1C] után legalább öt treffel: egy szinttel 6–10 ponttal, ugrással 10–12 ponttal.
 - 10–12 pont: invitáló. Legalább három lappal ugrással emeld a partnered nemes színét ([1S] – [3S]), vagy licitálj új színt. Kettes szinten az új színhez legalább 11 pont kell.
 - Legalább 13 pont: manche-ig forszírozó. Licitálj új színt, és licitálj tovább a manche-ig ([3NT], [4H], [4S]).
+- [2NT] [1H] vagy [1S] után (Jacoby 2NT): legalább 13 pont és legalább négy lap a partnered nemes színében, manche-ig forszírozó.
+- [3NT] [1H] vagy [1S] után: 15–17 pont, kiegyensúlyozott kéz, pontosan két lappal a partnered nemes színében.
+- A partnered nemes színe négyes szinten ([1H] – [4H]): 6–9 pont, legalább öt lap a színben, és szingli vagy renonsz. Ez az emelés blokk.
 
 ## A nyitó második licitje
 - 12–14 pont: kiegyensúlyozott kézzel [1NT], egyszerű emelés, vagy a saját színed ismétlése.
@@ -34,6 +37,7 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - A nemes színed egyszerű emelése ([1H] – [2H]) és egy passz után: 12–14 ponttal [P]; 15–17 ponttal a [3H] manche-kísérlet, manche-ra invitál; 18–21 ponttal [4H].
 - Ha az emelés után egy ellenfél licitál vagy kontrát mond: 12–17 ponttal és legalább hat lappal a színben a [3H] kompetitív licit, nem invitál manche-ra; 18–21 ponttal [4H].
 - A nemes színed ugrásos emelése ([1H] – [3H]) és egy passz után a partnerednek legalább 10 pontja van: 15–21 ponttal [4H] (együtt legalább 25 pont), különben 12–14 ponttal [P].
+- Jacoby [2NT] ([1H] – [2NT]) és egy passz után: egy új szín hármas szinten szinglit vagy renonszot mutat, kettővel az alacsonyabbat. Ha nincs ilyen, 12–14 ponttal [4H], 15–17 ponttal [3NT], 18–21 ponttal [3H].
 
 ## Válaszok az [1NT] nyitásra
 - 0–7 pont: [P], ha nem illik transzfer, gyenge Stayman vagy [2S].
@@ -89,6 +93,9 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Milton-pontok: Milton Work nevét viseli, aki kb. 1927-től tette népszerűvé ezt a számolást.
 - Gyenge kettes: Howard Schenken dolgozta ki az 1940-es évek elején.
 - Feature: leíró név egy mellékszín ászára vagy királyára; a nyitó a [2NT] kérdés után mutatja meg.
+- Limitemelés (limit raise): leíró név az ugrásos emelésre ([1S] – [3S]); korlátozott pontsávot mutat (10–12).
+- Jacoby 2NT: többnyire Oswald Jacobynak tulajdonítják; egyesek Leo Baronnak.
+- Blokkemelés (preemptive raise): leíró név a manche-ra emelésre ([1H] – [4H]); licitteret vesz el az ellenfelektől.
 - Stayman: Sam Stayman nevét viseli, aki 1945-ben publikálta. Jack Marx és George Rapée már előtte kitalálta.
 - Gyenge Stayman: leíró név; garbage Stayman néven is ismert.
 - Jacoby-transzferek: Oswald Jacoby nevét viselik, aki 1956-ban írt róluk. Az alacsonyszín-transzfer a SAYC változata.

@@ -896,6 +896,23 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 			return t("no ace or king outside {trumps}", {
 				trumps: SUIT_SYMBOLS[shape.trumps],
 			});
+		case "shortness":
+			return t(
+				"a singleton or void in {suit}, none in a lower suit except {trumps}",
+				{ suit: SUIT_SYMBOLS[shape.suit], trumps: SUIT_SYMBOLS[shape.trumps] },
+			);
+		case "no-shortness":
+			return t("no singleton or void");
+		case "balanced-with":
+			return t("balanced, exactly {length} {suit}", {
+				length: shape.length,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
+		case "short-support":
+			return t("{min}+ {suit}, a singleton or void", {
+				min: shape.min,
+				suit: SUIT_SYMBOLS[shape.suit],
+			});
 		case "two-suits":
 			return t("exactly {length} {suit} and {otherLength} {other}", {
 				length: shape.length,

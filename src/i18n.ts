@@ -683,6 +683,12 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{suit} ace or king, none in a lower suit except {trumps}":
 			"{suit}-Ass oder -König, keines in einer niedrigeren Farbe außer {trumps}",
 		"no ace or king outside {trumps}": "kein Ass oder König außer in {trumps}",
+		"a singleton or void in {suit}, none in a lower suit except {trumps}":
+			"Single oder Chicane in {suit}, keines in einer niedrigeren Farbe außer {trumps}",
+		"no singleton or void": "kein Single und kein Chicane",
+		"balanced, exactly {length} {suit}": "ausgeglichen, genau {length} {suit}",
+		"{min}+ {suit}, a singleton or void":
+			"{min}+ {suit}, ein Single oder Chicane",
 		"exactly {length} {suit}, no singleton or void":
 			"genau {length} {suit}, kein Single und kein Chicane",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
@@ -1389,6 +1395,12 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"{suit} ász vagy király, a {trumps} szín kivételével alacsonyabb színben nincs",
 		"no ace or king outside {trumps}":
 			"a {trumps} színen kívül nincs ász vagy király",
+		"a singleton or void in {suit}, none in a lower suit except {trumps}":
+			"{suit} szingli vagy renonsz, a {trumps} szín kivételével alacsonyabb színben nincs",
+		"no singleton or void": "szingli és renonsz nélkül",
+		"balanced, exactly {length} {suit}":
+			"kiegyensúlyozott, pontosan {length} {suit}",
+		"{min}+ {suit}, a singleton or void": "{min}+ {suit}, szingli vagy renonsz",
 		"exactly {length} {suit}, no singleton or void":
 			"pontosan {length} {suit}, szingli és renonsz nélkül",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
@@ -2085,6 +2097,12 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"{suit} ace or king, none in a lower suit except {trumps}":
 			"{suit} ess eller konge, ingen i en lavere farge utenom {trumps}",
 		"no ace or king outside {trumps}": "ikke ess eller konge utenom {trumps}",
+		"a singleton or void in {suit}, none in a lower suit except {trumps}":
+			"singleton eller renons i {suit}, ingen i en lavere farge utenom {trumps}",
+		"no singleton or void": "ingen singleton eller renons",
+		"balanced, exactly {length} {suit}": "balansert, nøyaktig {length} {suit}",
+		"{min}+ {suit}, a singleton or void":
+			"{min}+ {suit}, en singleton eller renons",
 		"exactly {length} {suit}, no singleton or void":
 			"nøyaktig {length} {suit}, ingen singleton eller renons",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":

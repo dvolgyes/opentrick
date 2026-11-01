@@ -124,6 +124,15 @@ describe("guide calls for a hand", () => {
 		["1C P", "K84.73.Q652.QJ64", ["1D", "1NT"]], // 8, four clubs do not raise [1C]
 		["1C P", "K84.QJ73.Q65.Q64", ["1H"]], // 10, a four-card major: not [1NT]
 		["1H P", "AQ84.73.K65.KJ62", ["1S", "2C"]], // 13, game forcing
+		["1H P", "K5.KQ74.A963.J84", ["2NT"]], // 13, four hearts: Jacoby 2NT, not a new suit
+		["1H P", "AQ4.K732.KJ5.Q62", ["2NT"]], // 15, four hearts and no other four-card suit
+		["1H P", "5.KJ754.Q9632.84", ["4H"]], // 6, five hearts and a singleton: preemptive
+		["1S P", "KQ.Q74.AJ63.K842", ["2C", "2D", "3NT"]], // 15, balanced, two spades
+		["1H P 2NT P", "A4.KJ763.K52.Q42", ["4H"]], // 13, no singleton or void
+		["1H P 2NT P", "AQ4.KJ763.K52.Q4", ["3NT"]], // 15
+		["1H P 2NT P", "AK4.AKJ63.K52.Q4", ["3H"]], // 20
+		["1H P 2NT P", "AK4.AKJ63.K852.4", ["3C"]], // 18, a singleton club
+		["1H P 2NT P", "4.AKJ763.5.KQ842", ["3D"]], // 13, two singletons: the lower one
 		["1H P", "8642.73.J652.Q64", ["P"]], // 3
 		["1NT P", "84.QT973.J52.632", ["2D"]], // 3, five hearts: a transfer, not a pass
 		["1NT P", "8432.732.Q98.J52", ["P"]], // 3, no five-card suit
@@ -336,7 +345,6 @@ describe("guide calls for a hand", () => {
 
 	it.each([
 		["2C P", "86542.K732.A5.Q6"], // 9, no good suit and not balanced
-		["1H P", "AQ4.K732.KJ5.Q62"], // 15, four hearts but no other four-card suit
 	])("describes %s but gives no call for %s", (auction, cardsText) => {
 		expect(suggested("hcp", cardsText, auction)).toEqual([]);
 	});
@@ -461,6 +469,47 @@ describe("guide meaning of a call", () => {
 				range: { min: 10, max: 12 },
 				shape: { kind: "support", suit: "H", min: 3 },
 			},
+		],
+		[
+			"hcp",
+			"1S P 2NT",
+			{ range: { min: 13 }, shape: { kind: "support", suit: "S", min: 4 } },
+		],
+		[
+			"hcp",
+			"1H P 3NT",
+			{
+				range: { min: 15, max: 17 },
+				shape: { kind: "balanced-with", suit: "H", length: 2 },
+			},
+		],
+		[
+			"hcp",
+			"1S P 4S",
+			{
+				range: { min: 6, max: 9 },
+				shape: { kind: "short-support", suit: "S", min: 5 },
+			},
+		],
+		[
+			"hcp",
+			"1H P 2NT P 3S",
+			{ shape: { kind: "shortness", suit: "S", trumps: "H" } },
+		],
+		[
+			"hcp",
+			"1S P 2NT P 4S",
+			{ range: { min: 12, max: 14 }, shape: { kind: "no-shortness" } },
+		],
+		[
+			"hcp",
+			"1S P 2NT P 3NT",
+			{ range: { min: 15, max: 17 }, shape: { kind: "no-shortness" } },
+		],
+		[
+			"hcp",
+			"1H P 2NT P 3H",
+			{ range: { min: 18, max: 21 }, shape: { kind: "no-shortness" } },
 		],
 		[
 			"hcp-corrected",
@@ -638,7 +687,7 @@ describe("guide meaning of a call", () => {
 		["other", "1NT"],
 		["hcp", "1H X 2H"],
 		["hcp", "1H P 1S P"],
-		["hcp", "1H P 4H"], // a jump to game
+		["hcp", "1H P 4S"], // a jump to game in a new suit
 		["hcp", "1H P 3C"], // a jump in a new suit
 		["hcp", "1C P 4C"], // a minor raise past the jump raise
 		["hcp", "2C P P"],
@@ -1380,6 +1429,27 @@ describe("guide calls and meanings agree", () => {
 		}
 		expect(answered).toBeGreaterThan(30);
 	}, 30_000);
+
+	it("gives the major-suit opener exactly one answer to Jacoby [2NT]", () => {
+		let answered = 0;
+		for (let game = 0; game < 200; game += 1) {
+			const deal = dealCards(randomBelowFrom(seeded(game + 1)));
+			for (const seat of SEATS)
+				for (const system of RULE_SYSTEMS) {
+					const text = cardsText(deal[seat]);
+					const opening = suggested(system, text, "")?.find((call) =>
+						["1H", "1S"].includes(call),
+					);
+					if (opening === undefined) continue;
+					expect(
+						suggested(system, text, `${opening} P 2NT P`),
+						`${system} ${text} after ${opening}`,
+					).toHaveLength(1);
+					answered += 1;
+				}
+		}
+		expect(answered).toBeGreaterThan(30);
+	}, 30_000);
 });
 
 /** The inverse of hand(): "AQ4.KJ5.Q862.K73". */
@@ -1524,6 +1594,21 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 		"Responses to a weak two",
 		"With {range} points, opener bids three of the lowest side suit",
 	],
+	"suit-jacoby": [
+		"Responses to one of a suit",
+		"- [2NT] over [1H] or [1S] (Jacoby 2NT): {range} points",
+	],
+	"suit-3NT": [
+		"Responses to one of a suit",
+		"- [3NT] over [1H] or [1S]: {range} points",
+	],
+	"suit-game": [
+		"Responses to one of a suit",
+		"- Four of partner's major ([1H] – [4H]): {range} points",
+	],
+	"jacoby-minimum": ["Opener's rebid", "Without one, [4H] with {range} points"],
+	"jacoby-middle": ["Opener's rebid", ", [3NT] with {range} points"],
+	"jacoby-maximum": ["Opener's rebid", "or [3H] with {range} points."],
 	"overcall-one": [
 		"Competitive bids",
 		"- An overcall at the one level: {range} points",

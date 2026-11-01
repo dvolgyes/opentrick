@@ -19,6 +19,9 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Hebe eine Unterfarbe genauso, mit vier oder mehr Karo über [1D] und fünf oder mehr Treff über [1C]: um eine Stufe mit 6–10 Punkten, mit Sprung mit 10–12 Punkten.
 - 10–12 Punkte: einladend. Hebe die Oberfarbe deines Partners mit Sprung ([1S] – [3S]) mit drei oder mehr Karten, oder reize eine neue Farbe. Eine neue Farbe auf Zweierstufe braucht 11 oder mehr Punkte.
 - 13 oder mehr Punkte: partieforcierend. Reize eine neue Farbe und reize weiter bis zur Partie ([3NT], [4H], [4S]).
+- [2NT] über [1H] oder [1S] (Jacoby 2NT): 13 oder mehr Punkte und vier oder mehr Karten in der Oberfarbe deines Partners, partieforcierend.
+- [3NT] über [1H] oder [1S]: 15–17 Punkte, ausgeglichen, mit genau zwei Karten in der Oberfarbe deines Partners.
+- Vier in der Oberfarbe deines Partners ([1H] – [4H]): 6–9 Punkte, fünf oder mehr Karten in der Farbe und ein Single oder Chicane. Diese Hebung ist eine Sperre.
 
 ## Wiedergebot des Eröffners
 - 12–14 Punkte: [1NT] mit ausgeglichener Hand, eine einfache Hebung oder die Wiederholung deiner eigenen Farbe.
@@ -27,6 +30,7 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Nach einer einfachen Hebung deiner Oberfarbe ([1H] – [2H]) und einem Passe: [P] mit 12–14 Punkten; [3H] mit 15–17 Punkten ist ein Partieversuch und lädt zur Partie ein; [4H] mit 18–21 Punkten.
 - Wenn ein Gegner nach der Hebung reizt oder kontriert: [3H] mit 12–17 Punkten und sechs oder mehr Karten in der Farbe ist kompetitiv und lädt nicht zur Partie ein; [4H] mit 18–21 Punkten.
 - Nach einer Sprunghebung deiner Oberfarbe ([1H] – [3H]) und einem Passe hat dein Partner mindestens 10 Punkte: [4H] mit 15–21 Punkten (zusammen 25 oder mehr), sonst [P] mit 12–14 Punkten.
+- Nach Jacoby [2NT] ([1H] – [2NT]) und einem Passe: drei in einer neuen Farbe zeigt ein Single oder Chicane, mit zwei die niedrigere Farbe. Ohne eines [4H] mit 12–14 Punkten, [3NT] mit 15–17 Punkten oder [3H] mit 18–21 Punkten.
 
 ## Antworten auf [1NT]
 - 0–7 Punkte: [P], außer ein Transfer, schwaches Stayman oder [2S] passt.
@@ -82,6 +86,9 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Milton-Punkte: benannt nach Milton Work, der die Zählung ab etwa 1927 bekannt machte.
 - Schwache Zwei: Howard Schenken entwickelte sie Anfang der 1940er-Jahre.
 - Feature: ein beschreibender Name für Ass oder König in einer Nebenfarbe; der Eröffner zeigt es nach der Frage [2NT].
+- Limit-Hebung (limit raise): ein beschreibender Name für die Sprunghebung ([1S] – [3S]); sie zeigt einen begrenzten Punktbereich (10–12).
+- Jacoby 2NT: meist Oswald Jacoby zugeschrieben; manche nennen Leo Baron.
+- Sperrhebung (preemptive raise): ein beschreibender Name für die Hebung zur Partie ([1H] – [4H]); sie nimmt den Gegnern Reizraum.
 - Stayman: benannt nach Sam Stayman, der die Konvention 1945 veröffentlichte. Jack Marx und George Rapée hatten die Idee vor ihm.
 - Schwaches Stayman: ein beschreibender Name; auch Garbage Stayman genannt.
 - Jacoby-Transfers: benannt nach Oswald Jacoby, der 1956 darüber schrieb. Der Unterfarben-Transfer ist die SAYC-Form.

@@ -19,6 +19,9 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Appoggia un minore allo stesso modo, con quattro o più quadri su [1D] e cinque o più fiori su [1C]: di un livello con 6–10 punti, a salto con 10–12 punti.
 - 10–12 punti: invitante. Appoggia a salto il nobile del compagno ([1S] – [3S]) con tre o più carte, oppure dichiara un nuovo colore. Un nuovo colore a livello di due richiede 11 o più punti.
 - 13 o più punti: forzante a manche. Dichiara un nuovo colore e prosegui fino alla manche ([3NT], [4H], [4S]).
+- [2NT] su [1H] o [1S] (Jacoby 2NT): 13 o più punti e quattro o più carte nel nobile del compagno, forzante a manche.
+- [3NT] su [1H] o [1S]: 15–17 punti, mano bilanciata, con esattamente due carte nel nobile del compagno.
+- Quattro nel nobile del compagno ([1H] – [4H]): 6–9 punti, cinque o più carte nel colore e un singolo o un vuoto. Questo appoggio è uno sbarramento.
 
 ## Ridichiarazione dell'apertore
 - 12–14 punti: [1NT] con una mano bilanciata, un appoggio semplice, oppure la ripetizione del tuo colore.
@@ -27,6 +30,7 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Dopo un appoggio semplice del tuo nobile ([1H] – [2H]) e un passo: [P] con 12–14 punti; [3H] con 15–17 punti è un tentativo di manche e invita a manche; [4H] con 18–21 punti.
 - Se un avversario dichiara o contra dopo l'appoggio: [3H] con 12–17 punti e sei o più carte nel colore è competitivo e non invita a manche; [4H] con 18–21 punti.
 - Dopo un appoggio a salto del tuo nobile ([1H] – [3H]) e un passo, il compagno ha almeno 10 punti: [4H] con 15–21 punti (25 o più in due), altrimenti [P] con 12–14 punti.
+- Dopo Jacoby [2NT] ([1H] – [2NT]) e un passo: tre in un nuovo colore mostra un singolo o un vuoto, il più basso con due. Senza, [4H] con 12–14 punti, [3NT] con 15–17 punti oppure [3H] con 18–21 punti.
 
 ## Risposte a [1NT]
 - 0–7 punti: [P], salvo che vada bene un transfer, la Stayman debole o [2S].
@@ -82,6 +86,9 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Punti Milton: dal nome di Milton Work, che rese popolare il conteggio a partire dal 1927 circa.
 - Due debole: Howard Schenken lo sviluppò all'inizio degli anni 1940.
 - Valore (feature): un nome descrittivo per l'asso o il re di un colore laterale; l'apertore lo mostra dopo la domanda [2NT].
+- Appoggio limite (limit raise): un nome descrittivo per l'appoggio a salto ([1S] – [3S]); mostra una fascia limitata di punti (10–12).
+- Jacoby 2NT: di solito attribuito a Oswald Jacoby; alcuni lo attribuiscono a Leo Baron.
+- Appoggio di sbarramento (preemptive raise): un nome descrittivo per l'appoggio a manche ([1H] – [4H]); toglie spazio licitativo agli avversari.
 - Stayman: dal nome di Sam Stayman, che la pubblicò nel 1945. Jack Marx e George Rapée ebbero l'idea prima di lui.
 - Stayman debole: un nome descrittivo; detta anche garbage Stayman.
 - Transfer Jacoby: dal nome di Oswald Jacoby, che ne scrisse nel 1956. Il transfer minore è la forma del SAYC.

@@ -351,6 +351,12 @@ Source: SAYC, "Responses after 1H", "1D and 1C openings", and "Negative doubles"
   - Opener answers Jacoby [2NT]: three of a new suit shows a singleton or void; without one, four of the major with 12–14 points, [3NT] with 15–17 points, three of the major with 18–21 points (SAYC gives only "4M = minimum"; the other two are proposed, in the guide's ranges).
   - [3NT]: 15–17 points, balanced, exactly two cards in partner's major.
   - Four of the major: five or more cards, a singleton or void, and fewer than 10 points (preemptive).
+  - The details below are derived (2026-11-01) from these rules:
+    - Four of the major needs 6–9 points, because the guide passes with 0–5 points.
+      When it fits, the guide gives only four of the major, not the single raise.
+    - Jacoby [2NT] counts as a raise: with four-card support and 13 or more points, the guide gives [2NT] and not a new suit.
+    - [3NT] and a new suit can both fit; the guide gives both, because SAYC does not order them.
+    - With two singletons or voids, opener shows the lower one, the same tie rule as for a feature after a weak two.
 - Jump shift (for example [1H] – [2S], [1H] – [3C]): a strong hand that invites slam.
   SAYC gives no number; proposed: 19 or more points with a good five-card suit.
 - Negative double, after partner opens one of a suit and the next player overcalls in a suit up to [2S]:
@@ -497,6 +503,7 @@ Each remark below has a source; a remark with a doubtful date says less, not mor
 | [2S] minor transfer | SAYC's relay to [3C]; the name says that responder transfers the contract to a minor. | SAYC |
 | Jacoby [2NT] | Usually credited to Oswald Jacoby; some credit Leo Baron. | [Wikipedia: Jacoby 2NT](https://en.wikipedia.org/wiki/Jacoby_2NT) |
 | Limit raise | A descriptive name: the raise shows a limited point range (10–12). | SAYC |
+| Preemptive raise | A descriptive name: the raise to game takes bidding space from the opponents. | SAYC (the bid) |
 | Negative double | Alvin Roth and Tobias Stone gave it this meaning in 1957; it was first called "Sputnik", because it was as new as the satellite. | [Wikipedia: Negative double](https://en.wikipedia.org/wiki/Negative_double) |
 | Blackwood | Named after Easley Blackwood, who published it in 1933. | [Wikipedia: Blackwood convention](https://en.wikipedia.org/wiki/Blackwood_convention) |
 | Gerber | Named after John Gerber, who brought it to North America in 1938. | [Wikipedia: Gerber convention](https://en.wikipedia.org/wiki/Gerber_convention) |

@@ -19,6 +19,9 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Apoiar um naipe menor da mesma forma, com quatro ou mais ouros sobre [1D] e cinco ou mais paus sobre [1C]: um nível com 6–10 pontos, com salto com 10–12 pontos.
 - 10–12 pontos: convidativo. Apoiar com salto o naipe maior do parceiro ([1S] – [3S]) com três ou mais cartas, ou declarar um naipe novo. Um naipe novo ao nível de dois exige 11 ou mais pontos.
 - 13 ou mais pontos: forcing de partida. Declarar um naipe novo e continuar até à partida ([3NT], [4H], [4S]).
+- [2NT] sobre [1H] ou [1S] (Jacoby 2NT): 13 ou mais pontos e quatro ou mais cartas no naipe maior do parceiro, forcing de partida.
+- [3NT] sobre [1H] ou [1S]: 15–17 pontos, mão equilibrada, com exatamente duas cartas no naipe maior do parceiro.
+- Quatro no naipe maior do parceiro ([1H] – [4H]): 6–9 pontos, cinco ou mais cartas no naipe e um singleton ou void. Este apoio é preventivo.
 
 ## Redeclaração do abridor
 - 12–14 pontos: [1NT] com uma mão equilibrada, um apoio simples ou a repetição do próprio naipe.
@@ -27,6 +30,7 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Depois de um apoio simples do naipe maior de abertura ([1H] – [2H]) e um passe: [P] com 12–14 pontos; [3H] com 15–17 pontos é uma tentativa de partida e convida à partida; [4H] com 18–21 pontos.
 - Se um adversário declarar ou contrar depois do apoio: [3H] com 12–17 pontos e seis ou mais cartas no naipe é competitivo e não convida à partida; [4H] com 18–21 pontos.
 - Depois de um apoio com salto do naipe maior de abertura ([1H] – [3H]) e um passe, o parceiro tem pelo menos 10 pontos: [4H] com 15–21 pontos (25 ou mais em conjunto); caso contrário, [P] com 12–14 pontos.
+- Depois de Jacoby [2NT] ([1H] – [2NT]) e um passe: três num naipe novo mostra um singleton ou void, o mais baixo com dois. Sem nenhum, [4H] com 12–14 pontos, [3NT] com 15–17 pontos ou [3H] com 18–21 pontos.
 
 ## Respostas a [1NT]
 - 0–7 pontos: [P], salvo se servir uma transferência, o Stayman fraco ou [2S].
@@ -82,6 +86,9 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Pontos Milton: o nome vem de Milton Work, que popularizou a contagem a partir de cerca de 1927.
 - Dois fraco: Howard Schenken desenvolveu-o no início da década de 1940.
 - Valor (feature): um nome descritivo para o ás ou o rei de um naipe lateral; o abridor mostra-o depois da pergunta [2NT].
+- Apoio limite (limit raise): um nome descritivo para o apoio com salto ([1S] – [3S]); mostra uma faixa limitada de pontos (10–12).
+- Jacoby 2NT: atribuído normalmente a Oswald Jacoby; alguns atribuem-no a Leo Baron.
+- Apoio preventivo (preemptive raise): um nome descritivo para o apoio à partida ([1H] – [4H]); tira espaço de leilão aos adversários.
 - Stayman: o nome vem de Sam Stayman, que o publicou em 1945. Jack Marx e George Rapée tiveram a ideia antes dele.
 - Stayman fraco: um nome descritivo; também chamado garbage Stayman.
 - Transferências Jacoby: o nome vem de Oswald Jacoby, que escreveu sobre elas em 1956. A transferência para menor é a forma do SAYC.

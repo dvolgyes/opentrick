@@ -19,6 +19,9 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Soutenez une mineure de la même façon, avec quatre carreaux ou plus sur [1D] et cinq trèfles ou plus sur [1C] : d'un niveau avec 6–10 points, à saut avec 10–12 points.
 - 10–12 points : invitant. Soutenez à saut la majeure du partenaire ([1S] – [3S]) avec trois cartes ou plus, ou nommez une couleur nouvelle. Une couleur nouvelle au niveau de deux demande 11 points ou plus.
 - 13 points ou plus : forcing de manche. Nommez une couleur nouvelle et continuez jusqu'à la manche ([3NT], [4H], [4S]).
+- [2NT] sur [1H] ou [1S] (Jacoby 2NT) : 13 points ou plus et quatre cartes ou plus dans la majeure du partenaire, forcing de manche.
+- [3NT] sur [1H] ou [1S] : 15–17 points, main régulière, avec exactement deux cartes dans la majeure du partenaire.
+- Quatre dans la majeure du partenaire ([1H] – [4H]) : 6–9 points, cinq cartes ou plus dans la couleur et un singleton ou une chicane. Ce soutien est un barrage.
 
 ## Redemande de l'ouvreur
 - 12–14 points : [1NT] avec une main régulière, un soutien simple ou la répétition de votre couleur.
@@ -27,6 +30,7 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Après un soutien simple de votre majeure ([1H] – [2H]) et un passe : [P] avec 12–14 points ; [3H] avec 15–17 points est un essai de manche et invite à la manche ; [4H] avec 18–21 points.
 - Si un adversaire enchérit ou contre après le soutien : [3H] avec 12–17 points et six cartes ou plus dans la couleur est compétitif et n'invite pas à la manche ; [4H] avec 18–21 points.
 - Après un soutien à saut de votre majeure ([1H] – [3H]) et un passe, le partenaire a au moins 10 points : [4H] avec 15–21 points (25 ou plus à deux), sinon [P] avec 12–14 points.
+- Après Jacoby [2NT] ([1H] – [2NT]) et un passe : trois dans une couleur nouvelle montre un singleton ou une chicane, la plus basse avec deux. Sans cela, [4H] avec 12–14 points, [3NT] avec 15–17 points ou [3H] avec 18–21 points.
 
 ## Réponses à [1NT]
 - 0–7 points : [P], sauf si un transfert, le Stayman faible ou [2S] convient.
@@ -82,6 +86,9 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Points Milton : nommés d'après Milton Work, qui a popularisé ce décompte à partir de 1927 environ.
 - Deux faible : Howard Schenken l'a mis au point au début des années 1940.
 - Feature : un nom descriptif pour l'as ou le roi d'une couleur latérale ; l'ouvreur le montre après la question [2NT].
+- Soutien limite (limit raise) : un nom descriptif pour le soutien à saut ([1S] – [3S]) ; il montre une zone de points limitée (10–12).
+- Jacoby 2NT : généralement attribué à Oswald Jacoby ; certains l'attribuent à Leo Baron.
+- Soutien de barrage (preemptive raise) : un nom descriptif pour le soutien à la manche ([1H] – [4H]) ; il prend de l'espace d'enchères aux adversaires.
 - Stayman : nommé d'après Sam Stayman, qui l'a publié en 1945. Jack Marx et George Rapée avaient eu l'idée avant lui.
 - Stayman faible : un nom descriptif ; aussi appelé garbage Stayman.
 - Transferts Jacoby : nommés d'après Oswald Jacoby, qui les a décrits en 1956. Le transfert mineur est la forme du SAYC.

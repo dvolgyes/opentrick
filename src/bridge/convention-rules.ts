@@ -31,6 +31,9 @@ export type RangeKey =
 	| "suit-invite"
 	| "suit-two-level"
 	| "suit-force"
+	| "suit-jacoby"
+	| "suit-3NT"
+	| "suit-game"
 	| "nt-weak"
 	| "nt-stayman"
 	| "nt-weak-stayman"
@@ -69,6 +72,9 @@ export type RangeKey =
 	| "reraise-compete"
 	| "jump-raise-pass"
 	| "jump-raise-game"
+	| "jacoby-minimum"
+	| "jacoby-middle"
+	| "jacoby-maximum"
 	| "weak-2NT"
 	| "weak-2NT-minimum"
 	| "weak-2NT-maximum"
@@ -106,6 +112,9 @@ const MILTON = {
 	"suit-invite": { min: 10, max: 12 }, // "10–12 points: invitational"; a minor "a jump with 10–12 points"
 	"suit-two-level": { min: 11 }, // "A new suit at the two level needs 11 or more points."
 	"suit-force": { min: 13 }, // "13 or more points: game forcing"
+	"suit-jacoby": { min: 13 }, // "[2NT] over [1H] or [1S] (Jacoby 2NT): 13 or more points"
+	"suit-3NT": { min: 15, max: 17 }, // "[3NT] over [1H] or [1S]: 15–17 points, balanced"
+	"suit-game": { min: 6, max: 9 }, // "Four of partner's major ([1H] – [4H]): 6–9 points"
 	// ## Responses to [1NT]
 	"nt-weak": { min: 0, max: 7 }, // "0–7 points: [P], unless ..."; "[2S] (minor transfer): 0–7 points"
 	"nt-stayman": { min: 8 }, // "[2C] (Stayman): 8 or more points"
@@ -149,6 +158,9 @@ const MILTON = {
 	"reraise-compete": { min: 12, max: 17 }, // "If an opponent bids or doubles after the raise: [3H] with 12–17 points"
 	"jump-raise-pass": { min: 12, max: 14 }, // "After a jump raise ... otherwise [P] with 12–14 points"
 	"jump-raise-game": { min: 15, max: 21 }, // "[4H] with 15–21 points (25 or more together)"
+	"jacoby-minimum": { min: 12, max: 14 }, // "After Jacoby [2NT] ... Without one, [4H] with 12–14 points"
+	"jacoby-middle": { min: 15, max: 17 }, // "[3NT] with 15–17 points"
+	"jacoby-maximum": { min: 18, max: 21 }, // "or [3H] with 18–21 points"
 	// ## Responses to a weak two
 	"weak-2NT": { min: 15 }, // "[2NT]: 15 or more points, asks opener"
 	"weak-2NT-minimum": { min: 5, max: 8 }, // "opener bids three of the suit with 5–8 points"
@@ -225,6 +237,10 @@ export const SHAPES = {
 	slamTry: 6,
 	/** "or jumps to three of it with 17 points and four or more cards (super-accept)" */
 	superAccept: 4,
+	/** "[2NT] over [1H] or [1S] (Jacoby 2NT): ... four or more cards in partner's major" */
+	jacoby: 4,
+	/** "Four of partner's major ([1H] – [4H]): ... five or more cards in the major and a singleton or void" */
+	gameRaise: 5,
 	/** "After the transfer ... three of the major with six or more cards" */
 	transferLong: 6,
 	/** "a new suit ... a singleton or void": at most this many cards in some suit. */

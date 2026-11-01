@@ -26,6 +26,9 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - Raise a minor in the same way, with four or more diamonds over [1D] and five or more clubs over [1C]: one level with 6–10 points, a jump with 10–12 points.
 - 10–12 points: invitational. Jump raise partner's major ([1S] – [3S]) with three or more cards, or bid a new suit. A new suit at the two level needs 11 or more points.
 - 13 or more points: game forcing. Bid a new suit, and continue until game ([3NT], [4H], [4S]).
+- [2NT] over [1H] or [1S] (Jacoby 2NT): 13 or more points and four or more cards in partner's major, game forcing.
+- [3NT] over [1H] or [1S]: 15–17 points, balanced, with exactly two cards in partner's major.
+- Four of partner's major ([1H] – [4H]): 6–9 points, five or more cards in the major and a singleton or void. This raise is preemptive.
 
 ## Opener's rebid
 - 12–14 points: [1NT] with a balanced hand, a single raise, or a rebid of your own suit.
@@ -34,6 +37,7 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - After a single raise of your major ([1H] – [2H]) and a pass: [P] with 12–14 points; [3H] with 15–17 points is a game try and invites game; [4H] with 18–21 points.
 - If an opponent bids or doubles after the raise: [3H] with 12–17 points and six or more cards in the suit is competitive and does not invite game; [4H] with 18–21 points.
 - After a jump raise of your major ([1H] – [3H]) and a pass, partner has at least 10 points: [4H] with 15–21 points (25 or more together), otherwise [P] with 12–14 points.
+- After Jacoby [2NT] ([1H] – [2NT]) and a pass: three of a new suit shows a singleton or void, the lower one with two. Without one, [4H] with 12–14 points, [3NT] with 15–17 points, or [3H] with 18–21 points.
 
 ## Responses to [1NT]
 - 0–7 points: [P], unless a transfer, weak Stayman or [2S] fits.
@@ -89,6 +93,9 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - Milton points: named after Milton Work, who made the count popular from about 1927.
 - Weak two: Howard Schenken developed it in the early 1940s.
 - Feature: a descriptive name for the ace or king of a side suit; opener shows it after the [2NT] ask.
+- Limit raise: a descriptive name for the jump raise ([1S] – [3S]); it shows a limited range of points (10–12).
+- Jacoby 2NT: usually credited to Oswald Jacoby; some credit Leo Baron.
+- Preemptive raise: a descriptive name for the raise to game ([1H] – [4H]); it takes bidding space from the opponents.
 - Stayman: named after Sam Stayman, who published it in 1945. Jack Marx and George Rapée had the idea before him.
 - Weak Stayman: a descriptive name; also called garbage Stayman.
 - Jacoby transfers: named after Oswald Jacoby, who wrote about them in 1956. The minor transfer is the SAYC form.
