@@ -122,9 +122,15 @@
 }
 
 /* The turn frame uses the red of each theme; Gruvbox retains its existing colour. */
-:root[data-theme="solarized"] { --turn-frame: #ef4b43; }
-:root[data-theme="selenized"] { --turn-frame: #f23e38; }
-:root[data-theme="gruvbox"] { --turn-frame: #ff7878; }
+:root[data-theme="solarized"] {
+	--turn-frame: #ef4b43;
+}
+:root[data-theme="selenized"] {
+	--turn-frame: #f23e38;
+}
+:root[data-theme="gruvbox"] {
+	--turn-frame: #ff7878;
+}
 
 /* Solarized light: the base3 page and sheets, base02 text, a teal-green felt, and the Solarized red, green and orange
    darkened to stay readable on base3. */
