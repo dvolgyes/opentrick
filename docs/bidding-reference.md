@@ -529,3 +529,39 @@ Each remark below has a source; a remark with a doubtful date says less, not mor
 | Negative double | Alvin Roth and Tobias Stone gave it this meaning in 1957; it was first called "Sputnik", because it was as new as the satellite. | [Wikipedia: Negative double](https://en.wikipedia.org/wiki/Negative_double) |
 | Blackwood | Named after Easley Blackwood, who published it in 1933. | [Wikipedia: Blackwood convention](https://en.wikipedia.org/wiki/Blackwood_convention) |
 | Gerber | Named after John Gerber, who brought it to North America in 1938. | [Wikipedia: Gerber convention](https://en.wikipedia.org/wiki/Gerber_convention) |
+
+## State after the decided rules
+
+The tables above show the guide of 2026-10-31, before the decisions.
+On 2026-11-01, after commit c66a991, each example hand was run again through `conventionCalls`.
+The rows below give other calls now; all other rows give the same calls as before.
+
+| ID | Auction | Source call | HCP before → now | Corrected before → now | Verdict now |
+| --- | --- | --- | --- | --- | --- |
+| C1 | `1NT P` | P | 3: 2S → P | 2: 2S → P | AGREE (Q1) |
+| C6 | `1NT P` | P | 5: 2S → P | 5: 2S → P | AGREE (Q1) |
+| C12 | `1NT P` | Transfer to clubs, then [3NT] | 15: 3NT (no change) | 16: 4NT → 4C (Gerber) | DIFFERENT (Q6) |
+| C13 | `1NT P` | 3NT | 8: 2NT → 3C | 9: 2NT → 3C | DIFFERENT; [3C] invites [3NT] (Q6) |
+| J2 | `1NT P` | 2C (weak Stayman) | 0: 2S → 2C | 3: 2S → 2C | AGREE (Q5) |
+| S3R | `1NT P` | 2C | 11: 2D → 2C | 13: 2D → 2C | AGREE (Q2) |
+| T4R | `1NT P` | 2C | 9: 2H → 2C | 10: 2H → 2C | AGREE (Q2) |
+| T2O | `1NT P 2H P` | 3S (super-accept) | 17: 2S → 3S | 17: 2S → 3S | AGREE (Q4) |
+| R2 | `1H P` | 3H (2H also fits) | 10: 2D, 3H → 2H, 3H | 10: 2D, 3H → 2H, 3H | AGREE (Q8) |
+| R3 | `1H P` | 1NT | 10: 2C, 2D → 1NT | 12: 2C, 2D (no change) | AGREE; with 12 corrected points a two-level suit fits (Q8) |
+| R4 | `1D P` | 3D | 10: 2C → 1NT, 2D, 3D | 10: 2C → 1NT, 2D, 3D | AGREE; 10 points is in the range of each call (Q9) |
+| R5 | `1C P` | 2C | 9: 1NT → 1NT, 2C | 9: 1NT → 1NT, 2C | AGREE (Q9) |
+| R6 | `1H P` | 2NT (Jacoby) | 13: 2D → 2NT | 13: 2D → 2NT | AGREE (Q10) |
+| R7 | `1H P` | 4H | 6: 2H → 4H | 9: 2H → 4H | AGREE (Q10) |
+| R8 | `1D P` | 2NT | 13: 2C → 2C, 2NT | 12: 2C (no change) | AGREE in HCP; the corrected count is below 13 (Q10) |
+| R9 | `1C 1S` | X | 9: not described → X | 9: not described → X | AGREE (Q10) |
+| W2 | `2D P 2NT P` | 3H | 9: not described → 3H | 10: not described → 3H | AGREE (Q7) |
+
+The rules compared above changed in the same way:
+
+- Q1–Q6: the [2S] length rule, Stayman first with 5-4 in the majors, the 5-5 transfers, the super-accept, weak Stayman, responder's second call, [3C] / [3D], [3H] / [3S] and [4C] Gerber are now in the guide.
+- Q7: opener's answer to the [2NT] ask is now in the guide.
+  A new suit over a weak two is still not described.
+- Q8–Q10: the SAYC ranges of the responses to one of a suit, the minor raises, Jacoby [2NT], [2NT] / [3NT] over a minor, [3NT] over a major, the preemptive raise, the jump shift and the negative double are now in the guide.
+- Q11: opener's rebid ranges did not change.
+- These items are still not described: the reverse, Michaels and the unusual [2NT], the advancer after a takeout double, and the natural bids after an overcall of [1NT].
+- The planned remarks on the names and origins are in the guide, in the section "Names of the conventions".
