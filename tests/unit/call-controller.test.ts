@@ -409,8 +409,9 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(east.remote("N")?.peerSendsAudio).toBe(true);
 	});
 
-	it("shows a seat that the call record has in the call, but without a link, as connecting or as having no direct connection", async () => {
+	it("shows a seat that the call record has in the call, but without a link, as not answering or as having no direct connection", async () => {
 		// The record shows East and South in the call; East has a direct channel, South has none.
+		// East's page does not answer: it did not join, as while it offers "Rejoin the call".
 		north.call.update({
 			...snapshot("N", ["E", "S"]),
 			holders: { N: 1, E: 1, S: 1 },
@@ -419,7 +420,7 @@ describe("CallController (call/layout plan §4.5)", () => {
 		north.join("audio");
 		await settle();
 		expect(north.call.view.status).toBe("subscribed");
-		expect(north.remote("E")?.status).toBe("connecting");
+		expect(north.remote("E")?.status).toBe("unanswered");
 		expect(north.remote("S")?.status).toBe("unreachable");
 		expect(north.remote("W")?.status).toBe("out");
 
@@ -429,7 +430,7 @@ describe("CallController (call/layout plan §4.5)", () => {
 			holders: { N: 1, E: 1, S: 1 },
 			online: new Set<Seat>(["N", "E", "S"]),
 		});
-		expect(north.remote("S")?.status).toBe("connecting");
+		expect(north.remote("S")?.status).toBe("unanswered");
 		// The record no longer has South in the call.
 		north.call.update({
 			...snapshot("N", ["E"]),

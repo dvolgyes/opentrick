@@ -352,6 +352,8 @@ export function remoteCallStatus(
 			return status(t("Not in call"));
 		case "unreachable":
 			return status(t("In the call; no direct connection yet"));
+		case "unanswered":
+			return status(t("Joined earlier; no answer yet"));
 		case "connecting":
 			return status(t("Connecting"));
 		case "reconnecting":

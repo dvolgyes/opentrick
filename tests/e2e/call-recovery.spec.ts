@@ -245,9 +245,10 @@ test("4: a browser that must ask for the microphone again offers Rejoin the call
 		callSent: 0,
 	});
 	expect(await requestsFor(tab.S, "audio")).toBe(0);
+	// South's call record still shows it in the call, but its page does not answer before the click.
 	for (const seat of ["W", "N", "E"] as const)
 		await expect(caption(tab[seat], "S")).toHaveText(
-			exactCaption(`${seatLabel("S")} · Not in call`),
+			exactCaption(`${seatLabel("S")} · Joined earlier; no answer yet`),
 			{
 				timeout: GONE_MS,
 			},

@@ -45,12 +45,15 @@ export interface CallDeps {
  * `waiting`: the local user is joining, or signaling is down, and the seat was not heard yet.
  * `out`: the seat is not in the call.
  * `unreachable`: the call record shows the seat in the call, but this page has no direct data channel to it.
+ * `unanswered`: the call record shows the seat in the call and its direct data channel is open, but its page did
+ * not answer yet: a greeting was lost, or the page waits for "Rejoin the call".
  */
 export type RemoteStatus =
 	| "unknown"
 	| "waiting"
 	| "out"
 	| "unreachable"
+	| "unanswered"
 	| LinkState;
 
 export interface RemoteView {
@@ -348,7 +351,7 @@ export class CallController {
 			// The call record shows the seat in the call, but no link exists yet: the mesh greets it.
 			if (this.#room?.expected.has(seat) === true) {
 				const online = this.#room.online.has(seat);
-				return { ...base, status: online ? "connecting" : "unreachable" };
+				return { ...base, status: online ? "unanswered" : "unreachable" };
 			}
 			const heard = peer !== undefined || status === "subscribed";
 			return { ...base, status: heard ? "out" : "waiting" };

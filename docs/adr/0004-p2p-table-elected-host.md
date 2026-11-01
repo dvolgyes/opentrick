@@ -163,7 +163,8 @@ Call signaling:
 - The replicated call record (call/layout plan §12 R2) is the call presence (owner decision, 2026-11-01; before it, there was no call presence, a deliberate deviation from the call/layout handover).
   The table shows the record to every seat.
   A page in the call greets each seat that the record shows in the call with an addressed `resync` until the two pages connect, at a wait that doubles from 3 s to 30 s.
-  A seat in the record without a link shows "Connecting" while a direct data channel to it is open, and "In the call; no direct connection yet" without one.
+  A seat in the record without a link shows "Joined earlier; no answer yet" while a direct data channel to it is open, because its page can also wait for "Rejoin the call", and "In the call; no direct connection yet" without one.
+  The resync restarts a failed link with an ICE restart, but only Retry starts a new connect window, so a link that cannot connect still shows Retry.
   The record carries no call signaling: offers, answers and candidates go only over the direct data channel, so the host cannot change them.
   The `join` and `resync` messages still give discovery, and a peer that stays offline at its generation leaves the call.
 

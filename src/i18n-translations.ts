@@ -1067,6 +1067,14 @@ const rows: readonly TranslationRow[] = [
 		"In de oproep; nog geen directe verbinding",
 	],
 	[
+		"Joined earlier; no answer yet",
+		"Se unió antes; aún sin respuesta",
+		"Entrou antes; ainda sem resposta",
+		"A rejoint plus tôt ; pas encore de réponse",
+		"Entrato in precedenza; ancora nessuna risposta",
+		"Eerder deelgenomen; nog geen antwoord",
+	],
+	[
 		"Direct connections",
 		"Conexiones directas",
 		"Ligações diretas",

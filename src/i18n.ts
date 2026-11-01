@@ -438,6 +438,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Direct connection unavailable": "Direktverbindung nicht verfügbar",
 		"In the call; no direct connection yet":
 			"Im Anruf; noch keine Direktverbindung",
+		"Joined earlier; no answer yet": "Früher beigetreten; noch keine Antwort",
 		"Audio reception off": "Audioempfang aus",
 		"Mic off": "Mikrofon aus",
 		"Audio + video": "Audio + Video",
@@ -1262,6 +1263,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Direct connection unavailable": "Közvetlen kapcsolat nem érhető el",
 		"In the call; no direct connection yet":
 			"Hívásban; még nincs közvetlen kapcsolat",
+		"Joined earlier; no answer yet": "Korábban csatlakozott; még nem válaszol",
 		"Audio reception off": "Hangfogadás kikapcsolva",
 		"Mic off": "Mikrofon kikapcsolva",
 		"Audio + video": "Hang + videó",
@@ -1870,6 +1872,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"Direct connection unavailable": "Direkte tilkobling er utilgjengelig",
 		"In the call; no direct connection yet":
 			"I samtalen; ingen direkte tilkobling ennå",
+		"Joined earlier; no answer yet": "Ble med tidligere; ikke svar ennå",
 		"In the call; waiting for others to join.":
 			"I samtalen; venter på at de andre skal bli med.",
 		"Call messages are interrupted; reconnecting…":
