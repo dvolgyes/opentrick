@@ -33,6 +33,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 	expect(order).toEqual([
 		"Language",
 		"Bidding system",
+		"Turn display",
 		"Appearance",
 		"Theme",
 		"Board texture",
@@ -42,11 +43,36 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		"Suit and rank font size",
 		"Suit colours",
 		"Screen orientation",
-		"Turn and network display",
+		"Network",
 		"Bidding bot",
 		"Bot timing",
-		"Connection",
 	]);
+	const turn = dialog.getByRole("group", { name: "Turn display" });
+	for (const label of [
+		"Frame the player whose turn it is to bid",
+		"Frame the player whose turn it is to play",
+		"Show as text whose turn it is to bid",
+		"Show as text whose turn it is to play",
+		"Animate the bot during its turn",
+		"Show the bidding guide button in the bid box",
+		"Show the bot's suggested call in the bid box",
+		"Hide the bid box when it is not your turn",
+	])
+		await expect(turn.getByLabel(label)).toHaveCount(1);
+	const network = dialog.getByRole("group", { name: "Network", exact: true });
+	for (const label of [
+		"Show the network quality",
+		"Show the voice box for a player without video",
+		"Check the connection more often",
+	])
+		await expect(network.getByLabel(label)).toHaveCount(1);
+	await expect(
+		dialog
+			.getByRole("group", { name: "Bidding system" })
+			.getByLabel(
+				"In the desktop view, show the bidding guide in the side panel during the auction",
+			),
+	).toHaveCount(1);
 }
 
 for (const [form, options] of [
@@ -71,6 +97,7 @@ for (const [form, options] of [
 			const dialog = page.getByTestId("settings-dialog");
 			await openTable(page);
 			await expect(dialog).toBeVisible();
+			await expectSettingsOrder(dialog);
 			// Cancel keeps the first run, so the next table screen asks again.
 			await dialog.getByRole("button", { name: "Cancel" }).click();
 			await expect(dialog).toBeHidden();

@@ -354,7 +354,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 
 		"Save settings": "Einstellungen speichern",
 		Settings: "Einstellungen",
-		"Turn and network display": "Anzeige von Zug und Netzwerk",
+		"Turn display": "Zuganzeige",
 		Connection: "Verbindung",
 		"Check the connection more often": "Die Verbindung öfter prüfen",
 		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
@@ -1126,7 +1126,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 
 		"Save settings": "Beállítások mentése",
 		Settings: "Beállítások",
-		"Turn and network display": "Soron következő és hálózat kijelzése",
+		"Turn display": "A soron következő kijelzése",
 		Connection: "Kapcsolat",
 		"Check the connection more often": "A kapcsolat gyakoribb ellenőrzése",
 		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":
@@ -1833,7 +1833,7 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 
 		"Save settings": "Lagre innstillinger",
 		Settings: "Innstillinger",
-		"Turn and network display": "Visning av tur og nettverk",
+		"Turn display": "Visning av tur",
 		Connection: "Tilkobling",
 		"Check the connection more often": "Sjekk tilkoblingen oftere",
 		"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.":

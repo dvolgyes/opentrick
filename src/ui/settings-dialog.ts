@@ -61,15 +61,20 @@ const SUIT_COLOR_NAMES = {
 	readonly [string, string, string, string]
 >;
 
-const FLAG_LABELS = {
+const TURN_LABELS = {
 	bidTurnFrame: "Frame the player whose turn it is to bid",
 	playTurnFrame: "Frame the player whose turn it is to play",
 	bidTurnText: "Show as text whose turn it is to bid",
 	playTurnText: "Show as text whose turn it is to play",
-	networkQuality: "Show the network quality",
-	voicebox: "Show the voice box for a player without video",
 	botAnimation: "Animate the bot during its turn",
 } as const satisfies Partial<Record<keyof Settings, string>>;
+
+const NETWORK_LABELS = {
+	networkQuality: "Show the network quality",
+	voicebox: "Show the voice box for a player without video",
+} as const satisfies Partial<Record<keyof Settings, string>>;
+
+const FLAG_LABELS = { ...TURN_LABELS, ...NETWORK_LABELS };
 
 const BIDDING_HELP_LABELS = {
 	guidePanel:
@@ -193,13 +198,11 @@ export function settingsDialog(
 	) as Record<keyof typeof BIDDING_HELP_LABELS, HTMLInputElement>;
 	points.element.append(
 		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),
-		...Object.entries(BIDDING_HELP_LABELS).map(([field, label]) =>
-			el(
-				"label",
-				{},
-				biddingHelp[field as keyof typeof BIDDING_HELP_LABELS],
-				` ${t(label)}`,
-			),
+		el(
+			"label",
+			{},
+			biddingHelp.guidePanel,
+			` ${t(BIDDING_HELP_LABELS.guidePanel)}`,
 		),
 	);
 	const scheme = radios(
@@ -394,6 +397,28 @@ export function settingsDialog(
 		el("h2", { attrs: { id: "settings-title" } }, t("Settings")),
 		el("label", { className: "settings-row" }, `${t("Language")} `, language),
 		points.element,
+		el(
+			"fieldset",
+			{},
+			el("legend", {}, t("Turn display")),
+			...Object.entries(TURN_LABELS).map(([field, label]) =>
+				el(
+					"label",
+					{},
+					flags[field as keyof typeof TURN_LABELS],
+					` ${t(label)}`,
+				),
+			),
+			...(["guideButton", "botBidHint", "hideBidBoxWhenWaiting"] as const).map(
+				(field) =>
+					el(
+						"label",
+						{},
+						biddingHelp[field],
+						` ${t(BIDDING_HELP_LABELS[field])}`,
+					),
+			),
+		),
 		scheme.element,
 		theme.element,
 		baizeControl,
@@ -418,13 +443,24 @@ export function settingsDialog(
 		el(
 			"fieldset",
 			{},
-			el("legend", {}, t("Turn and network display")),
-			...Object.entries(FLAG_LABELS).map(([field, label]) =>
+			el("legend", {}, t("Network")),
+			...Object.entries(NETWORK_LABELS).map(([field, label]) =>
 				el(
 					"label",
 					{},
-					flags[field as keyof typeof FLAG_LABELS],
+					flags[field as keyof typeof NETWORK_LABELS],
 					` ${t(label)}`,
+				),
+			),
+			el("label", {}, relayChecks, ` ${t("Check the connection more often")}`),
+			el(
+				"p",
+				{
+					className: "settings-hint",
+					attrs: { id: "settings-relay-checks" },
+				},
+				t(
+					"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.",
 				),
 			),
 		),
@@ -439,22 +475,6 @@ export function settingsDialog(
 				{ className: "settings-hint" },
 				t(
 					"Thinking time counts toward the minimum delay. Bot settings apply when this browser runs the bots.",
-				),
-			),
-		),
-		el(
-			"fieldset",
-			{},
-			el("legend", {}, t("Connection")),
-			el("label", {}, relayChecks, ` ${t("Check the connection more often")}`),
-			el(
-				"p",
-				{
-					className: "settings-hint",
-					attrs: { id: "settings-relay-checks" },
-				},
-				t(
-					"Turn this on if your network connection is unstable, for example on a train, on weak mobile data or on Wi-Fi that drops. The page then finds a lost connection sooner, and it sends a few more messages to the public relays.",
 				),
 			),
 		),

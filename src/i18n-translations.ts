@@ -2096,12 +2096,12 @@ const rows: readonly TranslationRow[] = [
 		"Instellingen",
 	],
 	[
-		"Turn and network display",
-		"Turno y red",
-		"Vez e rede",
-		"Tour et réseau",
-		"Turno e rete",
-		"Beurt en netwerk",
+		"Turn display",
+		"Indicador de turno",
+		"Indicação da vez",
+		"Affichage du tour",
+		"Indicazione del turno",
+		"Beurtweergave",
 	],
 	[
 		"Connection",
