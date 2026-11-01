@@ -148,6 +148,21 @@ it("merges four solos into one game, with partners preserved and no duplicate se
 	}
 });
 
+it("a host with an unanswered proposal yields to a proposal for its own group instead of waiting for the timeout", async () => {
+	const net = new Network();
+	for (let index = 0; index < 4; index++) await net.add(index);
+	await net.advance(20_000, false);
+	expect(net.games).toHaveLength(4);
+});
+
+it("a host whose proposal went to a group that has since changed accepts a new proposal", async () => {
+	const net = new Network();
+	for (let index = 0; index < 3; index++) await net.add(index);
+	await net.advance(15_000, false);
+	for (const session of net.sessions)
+		expect(session.saved.group?.members).toHaveLength(3);
+});
+
 it("shows fresh replacement offers from discovery and expires stale ones", async () => {
 	const net = new Network();
 	const session = await net.add(0);

@@ -764,7 +764,10 @@ export class CommunitySession {
 				return;
 			if (this.#pending) {
 				if (this.#pending.merge.id === merge.id) this.#refresh();
-				return;
+				if (!this.#yields(merge)) return;
+				// Only a higher group can propose, so proposals form no cycle and yielding cannot leave every host waiting.
+				this.decline();
+				if (this.#pending) return;
 			}
 			if (
 				!sameGroup(group, merge.source) &&
@@ -838,6 +841,20 @@ export class CommunitySession {
 			pending.accepts.add(value.member);
 			void this.#openTarget();
 		} else if (value.k === "decline") this.#refused(value.member);
+	}
+
+	/** Our own proposal is still unanswered: its group may have changed or be busy with a proposal of its own. */
+	#yields(merge: Merge): boolean {
+		const pending = this.#pending;
+		const group = this.#saved.group;
+		return (
+			!!pending &&
+			!!group &&
+			pending.merge.id !== merge.id &&
+			pending.merge.destination.host === this.#saved.self &&
+			!pending.accepts.has(pending.merge.source.host) &&
+			sameGroup(group, merge.source)
+		);
 	}
 
 	async #openTarget(): Promise<void> {
