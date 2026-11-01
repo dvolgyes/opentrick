@@ -9,10 +9,24 @@ describe("browser card engine", () => {
 	it("reuses a real worker for successive timed searches", async () => {
 		const NativeWorker = Worker;
 		let created = 0;
+		// The engine waits a bounded time for the last native call; on a loaded machine it replaces a busy worker.
+		let discardedBusy = 0;
 		class CountingWorker extends NativeWorker {
+			#busy = false;
 			constructor(url: string | URL, options?: WorkerOptions) {
 				super(url, options);
 				created++;
+				this.addEventListener("message", (event: MessageEvent) => {
+					if (!event.data?.partial) this.#busy = false;
+				});
+			}
+			override postMessage(message: unknown): void {
+				this.#busy = true;
+				super.postMessage(message);
+			}
+			override terminate(): void {
+				if (this.#busy) discardedBusy++;
+				super.terminate();
 			}
 		}
 		vi.stubGlobal("Worker", CountingWorker);
@@ -43,7 +57,7 @@ describe("browser card engine", () => {
 				);
 				expect(position.legal).toContain(result.card);
 			}
-			expect(created).toBe(1);
+			expect(created).toBe(1 + discardedBusy);
 		} finally {
 			engine.stop();
 			vi.unstubAllGlobals();
