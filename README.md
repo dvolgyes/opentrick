@@ -159,7 +159,11 @@ The **BRL SL (WBridge5 imitation)** option is the default, because human partner
 BRL's RL/FSP learned system remains available for bot partnerships and future work.
 Both policies run entirely in a browser worker, with no Python runtime or API key.
 Their learned conventions can differ from the standard guide; see [the bidding engine guide](docs/bidding-engine.md) for partnership limits and evaluation.
-The **Guide** button in the bid box opens the bidding guide for the bidding system chosen in Settings.
+Enable **Show the bidding guide button in the bid box** in Settings to open the guide for the chosen bidding system from the bid box.
+The button is disabled by default.
+The bot's suggested call is shown by default and can also be disabled in Settings.
+To see the playing area while waiting for another player's bid, enable **Hide the bid box when it is not your turn**.
+The bid box returns when you can bid again.
 
 ![The bidding guide dialog, opened from the Guide button, lists the opening, response, and rebid ranges of the chosen system.](docs/images/bidding-guide.png)
 

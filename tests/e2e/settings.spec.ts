@@ -144,6 +144,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	])
 		await expect(dialog.getByLabel(flag)).toBeChecked();
 	await expect(
+		dialog.getByLabel("Show the bidding guide button in the bid box"),
+	).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Hide the bid box when it is not your turn"),
+	).not.toBeChecked();
+	await expect(
 		dialog.getByLabel(
 			"On a phone or tablet in landscape, show the desktop view",
 		),
@@ -172,6 +178,10 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog
 		.getByLabel("Show the bot's suggested call in the bid box")
 		.uncheck();
+	await dialog
+		.getByLabel("Show the bidding guide button in the bid box")
+		.check();
+	await dialog.getByLabel("Hide the bid box when it is not your turn").check();
 	await relayChecks.check();
 
 	await dialog.getByRole("button", { name: "Save settings" }).click();
@@ -195,7 +205,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.bot-bid-hint",
 		"opentrick.settings.bot-card-delay-ms",
 		"opentrick.settings.card-points",
+		"opentrick.settings.guide-button",
 		"opentrick.settings.guide-panel",
+		"opentrick.settings.hide-bid-box-when-waiting",
 		"opentrick.settings.landscape-desktop",
 		"opentrick.settings.network-quality",
 		"opentrick.settings.panel-texture",
@@ -250,6 +262,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(
 		dialog.getByLabel("Show the bot's suggested call in the bid box"),
 	).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Show the bidding guide button in the bid box"),
+	).toBeChecked();
+	await expect(
+		dialog.getByLabel("Hide the bid box when it is not your turn"),
+	).toBeChecked();
 	await expect(
 		dialog.getByLabel("Check the connection more often"),
 	).toBeChecked();

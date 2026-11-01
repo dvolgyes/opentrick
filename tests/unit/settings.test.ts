@@ -61,7 +61,9 @@ describe("player settings", () => {
 			voicebox: true,
 			botAnimation: true,
 			guidePanel: true,
+			guideButton: false,
 			botBidHint: true,
+			hideBidBoxWhenWaiting: false,
 			relayChecks: false,
 			landscapeDesktop: false,
 			portraitMobile: true,
@@ -110,7 +112,9 @@ describe("player settings", () => {
 			voicebox: false,
 			botAnimation: false,
 			guidePanel: false,
+			guideButton: true,
 			botBidHint: false,
+			hideBidBoxWhenWaiting: true,
 			relayChecks: true,
 			landscapeDesktop: false,
 			portraitMobile: true,
@@ -145,6 +149,8 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.paper-strength", "invalid");
 		storage.setItem("opentrick.settings.shadow-strength", "invalid");
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
+		storage.setItem("opentrick.settings.guide-button", "<script>");
+		storage.setItem("opentrick.settings.hide-bid-box-when-waiting", "yes");
 		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
 	});
 

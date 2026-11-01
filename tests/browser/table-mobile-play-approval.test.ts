@@ -895,7 +895,13 @@ describe("bot bid in the bid box", () => {
 				form,
 				undefined,
 				undefined,
-				{ marks: () => ({ ...DEFAULT_SETTINGS, botBidHint: false }) },
+				{
+					marks: () => ({
+						...DEFAULT_SETTINGS,
+						guideButton: true,
+						botBidHint: false,
+					}),
+				},
 			);
 			section.showBotBid("1S");
 			expect(row(root).map((node) => node.textContent)).toEqual(["Guide"]);

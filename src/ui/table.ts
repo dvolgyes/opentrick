@@ -148,7 +148,9 @@ export type TableMarks = Pick<
 	| "voicebox"
 	| "botAnimation"
 	| "guidePanel"
+	| "guideButton"
 	| "botBidHint"
+	| "hideBidBoxWhenWaiting"
 >;
 
 export type PlayedCardStyle =
@@ -1957,6 +1959,7 @@ export function tableSection(
 			compact,
 			shownPointSystem,
 			guideBlocked,
+			shownMarks.guideButton,
 			shownMarks.botBidHint,
 			botBid,
 		]);
@@ -2089,7 +2092,8 @@ export function tableSection(
 			attrs: { "aria-haspopup": "dialog" },
 		});
 		guideOpen.disabled = guideBlocked;
-		const guideRow = el("div", { className: "bid-guide" }, guideOpen);
+		const guideRow = el("div", { className: "bid-guide" });
+		if (shownMarks.guideButton) guideRow.append(guideOpen);
 		if (shownMarks.botBidHint) {
 			// The bot's call only selects; Confirm still sends it.
 			const suggestion =
@@ -2144,7 +2148,7 @@ export function tableSection(
 				)
 			: undefined;
 		bidBox.replaceChildren(
-			guideRow,
+			...(guideRow.childElementCount > 0 ? [guideRow] : []),
 			levels,
 			calls,
 			el("div", { className: "bid-actions" }, confirm, undo, cancel, status),
@@ -2795,6 +2799,8 @@ export function tableSection(
 		if (guideBlocked && guide.element.open) guide.element.close();
 		shownCardPoints = cardPoints();
 		shownMarks = marks();
+		const hideBidBox =
+			shownMarks.hideBidBoxWhenWaiting && view.bids.length === 0;
 		element.dataset.phase = view.phase;
 		element.dataset.board = String(view.board);
 		element.dataset.at = String(view.at);
@@ -2916,7 +2922,7 @@ export function tableSection(
 				...(view.phase === "auction" && !view.auctionEnd ? [bidBox] : []),
 			);
 			mobileBidOverlay.hidden =
-				view.phase !== "auction" || view.auctionEnd !== undefined;
+				view.phase !== "auction" || view.auctionEnd !== undefined || hideBidBox;
 			placeChildren(
 				mobileBidControls,
 				...(view.phase === "play" ? [playControls, claimPanel] : []),
@@ -2994,8 +3000,9 @@ export function tableSection(
 			view.scoring !== undefined || view.auctionEnd !== undefined;
 		renderScoring(view.scoring);
 		renderAuctionEnd(view.auctionEnd);
-		// The bid box stays on screen for the whole auction; without legal calls it is grayed out.
+		// Without legal calls the box is either hidden or grayed out, according to the player's setting.
 		bidRow.hidden = view.phase !== "auction";
+		bidBox.hidden = hideBidBox;
 		bidBox.classList.toggle("not-turn", view.bids.length === 0);
 		renderBidBox(view);
 		renderScores(view);

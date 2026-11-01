@@ -74,7 +74,9 @@ const FLAG_LABELS = {
 const BIDDING_HELP_LABELS = {
 	guidePanel:
 		"In the desktop view, show the bidding guide in the side panel during the auction",
+	guideButton: "Show the bidding guide button in the bid box",
 	botBidHint: "Show the bot's suggested call in the bid box",
+	hideBidBoxWhenWaiting: "Hide the bid box when it is not your turn",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
 const ORIENTATION_LABELS = {
@@ -512,7 +514,9 @@ export function settingsDialog(
 			voicebox: flags.voicebox.checked,
 			botAnimation: flags.botAnimation.checked,
 			guidePanel: biddingHelp.guidePanel.checked,
+			guideButton: biddingHelp.guideButton.checked,
 			botBidHint: biddingHelp.botBidHint.checked,
+			hideBidBoxWhenWaiting: biddingHelp.hideBidBoxWhenWaiting.checked,
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,
 			portraitMobile: orientation.portraitMobile.checked,

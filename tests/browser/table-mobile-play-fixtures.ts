@@ -2,6 +2,7 @@ import { expect, vi } from "vitest";
 import type { Card } from "../../src/bridge/cards";
 import type { Layout } from "../../src/call/device-class";
 import type { Translate } from "../../src/i18n";
+import { DEFAULT_SETTINGS } from "../../src/ui/settings";
 import {
 	type PlayedCardStyle,
 	type TableHandlers,
@@ -235,7 +236,10 @@ export function renderView(
 			retry: vi.fn(),
 		},
 	};
-	const section = tableSection(handlers, style, t, options);
+	const section = tableSection(handlers, style, t, {
+		marks: () => ({ ...DEFAULT_SETTINGS, guideButton: true }),
+		...options,
+	});
 	const room = document.createElement("section");
 	room.className = "room";
 	// A phone held sideways has the desktop table, like the room (src/ui/room-view.ts).

@@ -2055,6 +2055,22 @@ const rows: readonly TranslationRow[] = [
 		"Het door de bot voorgestelde bod in de biedbox tonen",
 	],
 	[
+		"Show the bidding guide button in the bid box",
+		"Mostrar el botón de la guía de subasta en la caja de subasta",
+		"Mostrar o botão do guia de leilão na caixa de leilão",
+		"Afficher le bouton du guide des enchères dans la boîte à enchères",
+		"Mostra il pulsante della guida nella casella delle dichiarazioni",
+		"De knop voor de biedgids in de biedbox tonen",
+	],
+	[
+		"Hide the bid box when it is not your turn",
+		"Ocultar la caja de subasta cuando no sea tu turno",
+		"Ocultar a caixa de leilão quando não for a sua vez",
+		"Masquer la boîte à enchères quand ce n'est pas votre tour",
+		"Nascondi la casella delle dichiarazioni quando non è il tuo turno",
+		"De biedbox verbergen als je niet aan de beurt bent",
+	],
+	[
 		"Select the bot's call. Confirm sends it.",
 		"Selecciona la voz del bot. Confirmar la envía.",
 		"Seleciona a voz do bot. Confirmar envia-a.",

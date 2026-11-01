@@ -85,8 +85,12 @@ export interface Settings extends BotTiming {
 	readonly botAnimation: boolean;
 	/** On the desktop, the bidding guide covers the side panel below the auction heading during the auction. */
 	readonly guidePanel: boolean;
+	/** Show the button that opens the bidding guide in the bid box. */
+	readonly guideButton: boolean;
 	/** The bid box shows the call that the bot would make for the viewer, beside Guide (src/ui/bot-bid-hint.ts). */
 	readonly botBidHint: boolean;
+	/** Hide the bid box when the viewer has no available call. */
+	readonly hideBidBoxWhenWaiting: boolean;
 	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
 	readonly relayChecks: boolean;
 	/** A phone or tablet in landscape gets the desktop view (src/call/device-class.ts). */
@@ -117,7 +121,9 @@ export const DEFAULT_SETTINGS: Settings = {
 	voicebox: true,
 	botAnimation: true,
 	guidePanel: true,
+	guideButton: false,
 	botBidHint: true,
+	hideBidBoxWhenWaiting: false,
 	relayChecks: false,
 	landscapeDesktop: false,
 	portraitMobile: true,
@@ -138,7 +144,9 @@ const FLAGS = {
 	voicebox: "voicebox",
 	botAnimation: "bot-animation",
 	guidePanel: "guide-panel",
+	guideButton: "guide-button",
 	botBidHint: "bot-bid-hint",
+	hideBidBoxWhenWaiting: "hide-bid-box-when-waiting",
 	relayChecks: "relay-checks",
 	landscapeDesktop: "landscape-desktop",
 	portraitMobile: "portrait-mobile",
