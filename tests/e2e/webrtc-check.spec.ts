@@ -28,8 +28,10 @@ test("the seat page shows that WebRTC works and which kinds of local candidates 
 		await created.close();
 
 		const page = await guest.page(link);
+		// The Network panel of the seat page starts closed; a click shows its lines.
 		const network = page.getByTestId("network");
-		await expect(network).toHaveAttribute("open", "");
+		await expect(network).not.toHaveAttribute("open");
+		await network.locator("summary").click();
 		await expect(line(network, "WebRTC in this browser")).toHaveText("works", {
 			timeout: CONNECT_MS,
 		});
