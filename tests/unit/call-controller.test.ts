@@ -409,6 +409,36 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(east.remote("N")?.peerSendsAudio).toBe(true);
 	});
 
+	it("shows a seat that the call record has in the call, but without a link, as connecting or as having no direct connection", async () => {
+		// The record shows East and South in the call; East has a direct channel, South has none.
+		north.call.update({
+			...snapshot("N", ["E", "S"]),
+			holders: { N: 1, E: 1, S: 1 },
+		});
+		expect(north.remote("S")?.status).toBe("unknown");
+		north.join("audio");
+		await settle();
+		expect(north.call.view.status).toBe("subscribed");
+		expect(north.remote("E")?.status).toBe("connecting");
+		expect(north.remote("S")?.status).toBe("unreachable");
+		expect(north.remote("W")?.status).toBe("out");
+
+		// South's direct channel opens: the greetings start.
+		north.call.update({
+			...snapshot("N", ["E", "S"]),
+			holders: { N: 1, E: 1, S: 1 },
+			online: new Set<Seat>(["N", "E", "S"]),
+		});
+		expect(north.remote("S")?.status).toBe("connecting");
+		// The record no longer has South in the call.
+		north.call.update({
+			...snapshot("N", ["E"]),
+			holders: { N: 1, E: 1, S: 1 },
+			online: new Set<Seat>(["N", "E", "S"]),
+		});
+		expect(north.remote("S")?.status).toBe("out");
+	});
+
 	it("sends a microphone captured after the link exists, and gives a new link the live microphone", async () => {
 		await connected();
 		expect(north.sending).toBeNull();

@@ -429,6 +429,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"In call": "Im Anruf",
 		Reconnecting: "Verbindung wird wiederhergestellt",
 		"Direct connection unavailable": "Direktverbindung nicht verfügbar",
+		"In the call; no direct connection yet":
+			"Im Anruf; noch keine Direktverbindung",
 		"Audio reception off": "Audioempfang aus",
 		"Mic off": "Mikrofon aus",
 		"Audio + video": "Audio + Video",
@@ -1244,6 +1246,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"In call": "A hívásban",
 		Reconnecting: "Újracsatlakozás",
 		"Direct connection unavailable": "Közvetlen kapcsolat nem érhető el",
+		"In the call; no direct connection yet":
+			"Hívásban; még nincs közvetlen kapcsolat",
 		"Audio reception off": "Hangfogadás kikapcsolva",
 		"Mic off": "Mikrofon kikapcsolva",
 		"Audio + video": "Hang + videó",
@@ -1843,6 +1847,8 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"In call": "I samtalen",
 		Reconnecting: "Kobler til igjen",
 		"Direct connection unavailable": "Direkte tilkobling er utilgjengelig",
+		"In the call; no direct connection yet":
+			"I samtalen; ingen direkte tilkobling ennå",
 		"In the call; waiting for others to join.":
 			"I samtalen; venter på at de andre skal bli med.",
 		"Call messages are interrupted; reconnecting…":

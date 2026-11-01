@@ -467,7 +467,14 @@ describe("remote call status (handover §7)", () => {
 
 	it("names each state, and offers Retry only for a failed connection", () => {
 		const texts = (
-			["waiting", "out", "connecting", "reconnecting", "unavailable"] as const
+			[
+				"waiting",
+				"out",
+				"unreachable",
+				"connecting",
+				"reconnecting",
+				"unavailable",
+			] as const
 		).map((state) => {
 			const result = status(remote("E", state));
 			return [result.text, result.connected, result.retry];
@@ -475,6 +482,7 @@ describe("remote call status (handover §7)", () => {
 		expect(texts).toEqual([
 			["Waiting", false, false],
 			["Not in call", false, false],
+			["In the call; no direct connection yet", false, false],
 			["Connecting", false, false],
 			["Reconnecting", false, false],
 			["Direct connection unavailable", false, true],

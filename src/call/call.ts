@@ -41,11 +41,17 @@ export interface CallDeps {
 }
 
 /**
- * `unknown`: the local user is outside the call, so there is no way to know (ADR 0004: no call presence).
+ * `unknown`: the local user is outside the call; the table shows the call record instead (ADR 0004).
  * `waiting`: the local user is joining, or signaling is down, and the seat was not heard yet.
  * `out`: the seat is not in the call.
+ * `unreachable`: the call record shows the seat in the call, but this page has no direct data channel to it.
  */
-export type RemoteStatus = "unknown" | "waiting" | "out" | LinkState;
+export type RemoteStatus =
+	| "unknown"
+	| "waiting"
+	| "out"
+	| "unreachable"
+	| LinkState;
 
 export interface RemoteView {
 	readonly seat: Seat;
@@ -91,6 +97,7 @@ export class CallController {
 	#prefs: Prefs = { inCall: false, ...presetById("watch").switches };
 	#form: Form;
 	#self: Seat | undefined;
+	#room: CallRoomSnapshot | undefined;
 	/** The status that the mesh last announced for this seat. */
 	#told: Party | undefined;
 
@@ -138,6 +145,7 @@ export class CallController {
 	/** The room changed; a lost seat ends the call. */
 	update(snapshot: CallRoomSnapshot): void {
 		this.#self = snapshot.self?.seat;
+		this.#room = snapshot;
 		this.#mesh.update(snapshot);
 	}
 
@@ -336,6 +344,11 @@ export class CallController {
 		};
 		if (status === "outside") return { ...base, status: "unknown" };
 		if (link === undefined) {
+			// The call record shows the seat in the call, but no link exists yet: the mesh greets it.
+			if (this.#room?.expected.has(seat) === true) {
+				const online = this.#room.online.has(seat);
+				return { ...base, status: online ? "connecting" : "unreachable" };
+			}
 			const heard = peer !== undefined || status === "subscribed";
 			return { ...base, status: heard ? "out" : "waiting" };
 		}

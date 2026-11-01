@@ -1058,6 +1058,14 @@ const rows: readonly TranslationRow[] = [
 		"Directe verbinding niet beschikbaar",
 	],
 	[
+		"In the call; no direct connection yet",
+		"En la llamada; aún sin conexión directa",
+		"Na chamada; ainda sem ligação direta",
+		"Dans l'appel ; pas encore de connexion directe",
+		"Nella chiamata; ancora nessuna connessione diretta",
+		"In de oproep; nog geen directe verbinding",
+	],
+	[
 		"Direct connections",
 		"Conexiones directas",
 		"Ligações diretas",
