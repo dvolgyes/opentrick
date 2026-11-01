@@ -80,6 +80,7 @@ describe("bidding guide text", () => {
 });
 
 describe("bidding guide files", () => {
+	// The first load of each guide goes through Vite's transform, which waits behind the other projects of a full run.
 	it.each(GUIDES)(
 		"has %s in each language, with the same bids as the English guide",
 		async (guide) => {
@@ -102,6 +103,7 @@ describe("bidding guide files", () => {
 				expect(parseGuide(text)[0]?.kind, locale).toBe("title");
 			}
 		},
+		30_000,
 	);
 
 	it.each(GUIDES)(
