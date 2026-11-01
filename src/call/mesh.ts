@@ -678,7 +678,7 @@ export class CallMesh {
 		this.#greeted.delete(seat);
 	}
 
-	/** Replaces call presence (ADR 0004): a peer that stays offline at its generation leaves the call. */
+	/** A peer that stays offline at its generation leaves the call (ADR 0004), whatever the call record shows. */
 	#watchVanished(): void {
 		const online = this.#snapshot?.online;
 		for (const peer of this.#peers.values()) {

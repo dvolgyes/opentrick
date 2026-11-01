@@ -160,9 +160,12 @@ Call signaling:
   A message from an unbound peer or an old generation is dropped.
 - During a host change, the call keeps the last roster that it had, so the call between the remaining seats goes on.
 - The consent rules of the call/layout handover apply: a receiver can ask its partner not to send video or audio, and the partner then sends no track for that pair.
-- There is no call presence (a deliberate deviation from the call/layout handover).
-  The `join` and `resync` messages give discovery, and a peer that stays offline at its generation leaves the call.
-  Do not add call presence without a new decision.
+- The replicated call record (call/layout plan §12 R2) is the call presence (owner decision, 2026-11-01; before it, there was no call presence, a deliberate deviation from the call/layout handover).
+  The table shows the record to every seat.
+  A page in the call greets each seat that the record shows in the call with an addressed `resync` until the two pages connect, at a wait that doubles from 3 s to 30 s.
+  A seat in the record without a link shows "Connecting" while a direct data channel to it is open, and "In the call; no direct connection yet" without one.
+  The record carries no call signaling: offers, answers and candidates go only over the direct data channel, so the host cannot change them.
+  The `join` and `resync` messages still give discovery, and a peer that stays offline at its generation leaves the call.
 
 ## Consequences
 
