@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Form } from "../../src/call/device-class";
 import type { LinkSignal } from "../../src/call/mesh";
 import { MAX_CANDIDATES, MAX_SDP_LENGTH } from "../../src/call/messages";
 import {
@@ -9,12 +10,14 @@ import {
 	PeerLink,
 } from "../../src/call/peer";
 import {
+	join,
 	MEDIA,
 	type Medium,
 	mediaPlan,
 	type Party,
 	PRESETS,
 	type PresetId,
+	type Switches,
 	setSwitch,
 } from "../../src/call/policy";
 import type { Seat } from "../../src/protocol";
@@ -584,6 +587,43 @@ describe("PeerLink video and asymmetric combinations (call/layout plan C6)", () 
 			}
 		},
 	);
+
+	// The four switches are independent, so a side can also send only video or only audio (owner question,
+	// 2026-11-01): every combination of switches and forms, not only the presets.
+	const flags = [false, true];
+	const combinations = flags.flatMap((sendAudio) =>
+		flags.flatMap((receiveAudio) =>
+			flags.flatMap((sendVideo) =>
+				flags.map(
+					(receiveVideo): Switches => ({
+						send: { audio: sendAudio, video: sendVideo },
+						receive: { audio: receiveAudio, video: receiveVideo },
+					}),
+				),
+			),
+		),
+	);
+	const forms: readonly Form[] = ["desktop", "compact"];
+	const parties = forms.flatMap((form) =>
+		combinations.map((selection) => ({ prefs: join(selection, form), form })),
+	);
+
+	it("follows the plan in one offer/answer round for every pair of switch combinations and forms", async () => {
+		for (const north of parties) {
+			for (const east of parties) {
+				const pair = new Pair(north, east);
+				await settle();
+				const case_ = JSON.stringify({ north, east });
+				expect(pair.types("N"), case_).toEqual(["offer"]);
+				expect(pair.types("E"), case_).toEqual(["answer"]);
+				for (const medium of MEDIA) {
+					expect(observed(pair, medium), `${medium} ${case_}`).toEqual(
+						expected(north, east, medium),
+					);
+				}
+			}
+		}
+	});
 
 	it("has a video section that carries both cameras for two desktops on Both", async () => {
 		const pair = new Pair(BOTH, BOTH);
