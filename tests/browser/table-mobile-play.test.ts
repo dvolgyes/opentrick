@@ -7310,7 +7310,7 @@ describe("convention hint", () => {
 	});
 
 	it("shows no hint where the guide does not describe the call, or with no call chosen", () => {
-		// The guide does not describe responder's call after an overcall.
+		// After an overcall the guide describes only the negative double and a new suit at the two level, not [2NT].
 		const { root } = renderView(
 			bidView(["1H", "1S"]),
 			"desktop",
@@ -7319,7 +7319,7 @@ describe("convention hint", () => {
 			hcp,
 		);
 		expect(hint(root)).toBeUndefined();
-		pickBid(root, "2", "C");
+		pickBid(root, "2", "NT");
 		expect(hint(root)).toBeUndefined();
 	});
 

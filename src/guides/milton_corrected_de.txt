@@ -82,6 +82,9 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - [1NT] als Gegenreizung: 15–18 Punkte, ausgeglichen, mit einem Stopper in der Farbe der Gegner.
 - [X] (Informationskontra): 12 oder mehr Punkte, kurz in der Farbe der Gegner, mit Unterstützung für die anderen Farben; oder jede Hand mit 17 oder mehr Punkten.
 - [XX], nachdem die Eröffnung deines Partners kontriert wurde: 10 oder mehr Punkte.
+- [X], nachdem dein Partner mit einer Farbe auf Einerstufe eröffnet hat und der nächste Spieler in einer Farbe bis [2S] gegenreizt (negatives Kontra): genau vier Karten in jeder Oberfarbe, die noch niemand gereizt hat, wenn du sie auf Einerstufe reizen kannst. Wenn du sie erst auf Zweierstufe oder höher reizen kannst: vier Karten, oder fünf Karten mit 6–10 Punkten. 6 oder mehr Punkte nach einer Gegenreizung auf Einerstufe, 8 oder mehr Punkte nach einer Gegenreizung auf Zweierstufe. Ohne eine solche Oberfarbe steht [X] nicht im Leitfaden.
+- Eine neue Farbe auf Zweierstufe nach einer Gegenreizung, ohne Sprung: fünf oder mehr Karten und 10 oder mehr Punkte.
+- Die Antwort des Eröffners auf das negative Kontra, nach einem Passe: mit vier oder mehr Karten in einer Oberfarbe, die das Kontra zeigt, reize sie auf der niedrigsten Stufe mit 12–15 Punkten, oder eine Stufe höher mit 16–18 Punkten. Mit 19 oder mehr Punkten reize die Farbe der Gegner auf der niedrigsten Stufe. Für die anderen Hände gibt der Leitfaden kein Gebot an.
 
 ## Ziele für die Partnerschaft
 - 25 Punkte: Partie in [3NT], [4H] oder [4S].
@@ -105,3 +108,4 @@ Dieser Leitfaden verwendet eine natürliche Methode mit Fünferoberfarben, ähnl
 - Super-Accept: ein beschreibender Name für den Sprung des Eröffners auf drei in der Oberfarbe nach einem Transfer; er zeigt Unterstützung mit vier Karten und ein Maximum.
 - Blackwood: benannt nach Easley Blackwood, der die Konvention 1933 veröffentlichte.
 - Gerber: benannt nach John Gerber, der die Konvention 1938 nach Nordamerika brachte.
+- Negatives Kontra: Alvin Roth und Tobias Stone gaben dem Kontra 1957 diese Bedeutung. Sie nannten es zuerst Sputnik, weil es so neu war wie der Satellit.

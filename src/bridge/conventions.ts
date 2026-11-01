@@ -5,8 +5,9 @@
  *
  * The guides describe the opening, the first response to one of a suit, [1NT], [2C] or a weak two, opener's
  * rebid, opener's re-raise after a single or a jump raise of the major, opener's answer to Stayman, a transfer, [2S] and a notrump invitation, the overcalls and the takeout double of one of a suit, the
- * redouble after partner's opening is doubled, and Blackwood. Each of them only when the other side passed, except
- * the overcalls, the double, the redouble, the re-raise, SAYC notrump transfers after doubles and the [4NT] ask. Any other position, a hand with a suit longer than
+ * redouble after partner's opening is doubled, the negative double and a new suit at the two level after partner's
+ * opening and an overcall, opener's answer to the negative double, and Blackwood. Each of them only when the other side passed, except
+ * the overcalls, the double, the redouble, the negative double and the new suit after it, the re-raise, SAYC notrump transfers after doubles and the [4NT] ask. Any other position, a hand with a suit longer than
  * SHAPES.longestChecked, and the "other" system are not described, and the functions return undefined. Where the
  * guide describes only some hands, such as an overcall, conventionCalls returns undefined for a hand that fits no
  * call. The module returns data; the callers write the text.
@@ -156,6 +157,15 @@ export type Shape =
 	| { readonly kind: "ask" }
 	/** Balanced, with a stopper of SHAPES.stoppers in the opponents' `suit`. */
 	| { readonly kind: "stopper"; readonly suit: Suit }
+	/**
+	 * The negative double: exactly SHAPES.negative cards in each major of `suits`, or, when `five` is set, one more card
+	 * with `five` points.
+	 */
+	| {
+			readonly kind: "negative";
+			readonly suits: readonly Suit[];
+			readonly five?: PointRange;
+	  }
 	/** Short in the opponents' `suit` with support for the others, or any hand in `strong`. */
 	| {
 			readonly kind: "takeout";
@@ -249,6 +259,14 @@ type Position =
 	| { readonly kind: "overcall"; readonly opened: Suit }
 	/** Responder's call after partner's one of a suit was doubled. */
 	| { readonly kind: "redouble" }
+	/** Responder's call after partner's one of `opened` and the next player's `overcall` in a suit up to [2S]. */
+	| { readonly kind: "negative"; readonly opened: Suit; readonly overcall: Bid }
+	/** Opener's call after the `overcall`, responder's negative double, which shows the majors `suits`, and a pass. */
+	| {
+			readonly kind: "negative-answer";
+			readonly overcall: Bid;
+			readonly suits: readonly Suit[];
+	  }
 	/** The answer to an ask for aces or kings by steps: `first` shows 0 or 4, each step above it one more. */
 	| { readonly kind: "aces"; readonly honour: "A" | "K"; readonly first: Bid };
 
@@ -275,7 +293,11 @@ const EVERY_HAND: ReadonlySet<Position["kind"]> = new Set([
 ]);
 
 /** The positions in which the guide describes only some calls; fitsCall does not judge the others. */
-const SOME_CALLS: ReadonlySet<Position["kind"]> = new Set(["2NT"]);
+const SOME_CALLS: ReadonlySet<Position["kind"]> = new Set([
+	"2NT",
+	"negative",
+	"negative-answer",
+]);
 
 const MAJORS: readonly Suit[] = ["S", "H"];
 const MINORS: readonly Suit[] = ["D", "C"];
@@ -469,6 +491,32 @@ function responsePosition(opening: Bid): Position | undefined {
 	return undefined;
 }
 
+/** The majors that neither one of `opened` nor the overcall in `overcalled` bid. */
+function unbidMajors(opened: Suit, overcalled: string): readonly Suit[] {
+	return MAJORS.filter((major) => major !== opened && major !== overcalled);
+}
+
+/**
+ * Responder's position after partner's one of `opened` and an overcall in a suit up to [2S], and opener's position
+ * after the negative double and a pass, from the calls `after` the opening. Undefined for the other auctions.
+ */
+function negativePosition(
+	opened: Suit,
+	after: readonly Call[],
+): Position | undefined {
+	const [overcall, double, pass, ...rest] = after;
+	if (overcall === undefined || !isBid(overcall) || rest.length !== 0)
+		return undefined;
+	const strain = strainOf(overcall);
+	if (!isSuit(strain) || strain === opened || levelOf(overcall) > 2)
+		return undefined;
+	if (double === undefined) return { kind: "negative", opened, overcall };
+	const suits = unbidMajors(opened, strain);
+	return double === "X" && pass === "P" && suits.length > 0
+		? { kind: "negative-answer", overcall, suits }
+		: undefined;
+}
+
 /**
  * The position of the next call, from the calls after the opening. Undefined for an auction that the guide does not
  * describe.
@@ -504,6 +552,11 @@ function position(calls: readonly Call[]): Position | undefined {
 				? undefined
 				: { kind: "redouble" };
 	if (after === "P") return responsePosition(opening);
+	const contested =
+		opened === undefined
+			? undefined
+			: negativePosition(opened, calls.slice(start + 1));
+	if (contested !== undefined) return contested;
 	if (opening === "1NT" && after === "P 2S P 3C P")
 		return { kind: "relay-answer" };
 	const strain = strainOf(opening);
@@ -1281,6 +1334,78 @@ function overcallMeaning(
 	};
 }
 
+/**
+ * "[X] after partner opens one of a suit and the next player overcalls in a suit up to [2S] (negative double)", and
+ * "A new suit at the two level after an overcall, without a jump: five or more cards and 10 or more points."
+ */
+function negativeMeaning(
+	ranges: Ranges,
+	opened: Suit,
+	overcall: Bid,
+	call: Call,
+): CallMeaning | undefined {
+	const overcalled = strainOf(overcall);
+	if (call === "X") {
+		// "Without such a major, [X] is not in the guide."
+		const suits = unbidMajors(opened, overcalled);
+		if (suits.length === 0) return undefined;
+		const range =
+			ranges[levelOf(overcall) === 1 ? "negative-one" : "negative-two"];
+		// "exactly four cards ..., if you can bid it at the one level. If you can bid it only at the two level or
+		// higher: four cards, or five cards with 6–10 points." The unbid majors are both above a minor overcall.
+		return suits.every((suit) => cheapestLevel(suit, overcall) === 1)
+			? { range, shape: { kind: "negative", suits } }
+			: {
+					range,
+					shape: { kind: "negative", suits, five: ranges["negative-five"] },
+				};
+	}
+	if (!isBid(call)) return undefined;
+	const strain = strainOf(call);
+	return isSuit(strain) &&
+		strain !== opened &&
+		strain !== overcalled &&
+		levelOf(call) === 2 &&
+		cheapestLevel(strain, overcall) === 2
+		? {
+				range: ranges["contested-new-suit"],
+				shape: { kind: "cards", suit: strain, min: SHAPES.contestedNewSuit },
+			}
+		: undefined;
+}
+
+/**
+ * "Opener's answer to the negative double, after a pass: with four or more cards in a major that the double shows,
+ * bid it at the lowest level with 12–15 points, or one level higher with 16–18 points. With 19 or more points, bid
+ * the opponents' suit at the lowest level."
+ */
+function negativeAnswerMeaning(
+	ranges: Ranges,
+	overcall: Bid,
+	suits: readonly Suit[],
+	call: Call,
+): CallMeaning | undefined {
+	if (!isBid(call)) return undefined;
+	const strain = strainOf(call);
+	const level = levelOf(call);
+	if (strain === strainOf(overcall))
+		return level === cheapestLevel(strain, overcall)
+			? { range: ranges["negative-cuebid"], shape: { kind: "none" } }
+			: undefined;
+	const suit = suits.find((major) => major === strain);
+	if (suit === undefined) return undefined;
+	const lowest = cheapestLevel(suit, overcall);
+	const range =
+		level === lowest
+			? ranges["negative-minimum"]
+			: level === lowest + 1
+				? ranges["negative-jump"]
+				: undefined;
+	return range === undefined
+		? undefined
+		: { range, shape: { kind: "cards", suit, min: SHAPES.negativeAnswer } };
+}
+
 /** "[4NT] (Blackwood) asks for aces: [5C] 0 or 4, [5D] 1, [5H] 2, [5S] 3." */
 export const ACE_ANSWERS = stepAnswers("5C");
 
@@ -1392,6 +1517,10 @@ function meaningAt(
 			return call === "XX"
 				? { range: ranges.redouble, shape: { kind: "none" } }
 				: undefined;
+		case "negative":
+			return negativeMeaning(ranges, at.opened, at.overcall, call);
+		case "negative-answer":
+			return negativeAnswerMeaning(ranges, at.overcall, at.suits, call);
 		case "aces": {
 			const counts = stepAnswers(at.first)[call];
 			return counts === undefined
@@ -1609,6 +1738,14 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 			);
 		case "stopper":
 			return isBalanced(hand) && hasStopper(hand, shape.suit);
+		case "negative":
+			return shape.suits.every(
+				(suit) =>
+					lengths[suit] === SHAPES.negative ||
+					(shape.five !== undefined &&
+						lengths[suit] === SHAPES.negative + 1 &&
+						inRange(hand.points, shape.five)),
+			);
 		case "takeout":
 			return (
 				inRange(hand.points, shape.strong) ||

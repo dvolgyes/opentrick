@@ -537,7 +537,7 @@ describe("auction", () => {
 
 	it("explains an overcall, marks a call that the guide does not describe, and gives no meaning to a scale with only a guide", () => {
 		const state = {
-			...tableState(bidding(BOARD, "1C 1H X P")),
+			...tableState(bidding(BOARD, "1C 1H 1S P")),
 			systems: { N: "vienna", E: "hcp", S: "hcp", W: "other" },
 		} as const;
 		expect(view("E", null, { state }).auction?.meanings).toEqual([
@@ -548,6 +548,19 @@ describe("auction", () => {
 				undefined,
 			],
 		]);
+	});
+
+	it.each([
+		["1C 1H X", "6+ HCP, negative double, exactly 4 ♠"],
+		["1C 1D X", "6+ HCP, negative double, exactly 4 ♠ and ♥"],
+		["1D 1S X", "6+ HCP, negative double, 4 ♥, or 5 with 6–10 HCP"],
+		["1D 2C X", "8+ HCP, negative double, 4 ♠ and ♥, or 5 with 6–10 HCP"],
+	])("explains the negative double in %s", (auction, text) => {
+		const state = {
+			...tableState(bidding(BOARD, auction)),
+			systems: { N: "hcp", E: "hcp", S: "hcp", W: "hcp" },
+		} as const;
+		expect(view("E", null, { state }).auction?.meanings[0]?.[2]).toBe(text);
 	});
 
 	it("explains a pass where the guide gives it to the hands that fit no other call", () => {

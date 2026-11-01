@@ -82,6 +82,9 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Intervención de [1NT]: 15–18 puntos, equilibrada, con parada en el palo de los contrarios.
 - [X] (informativo): 12 o más puntos, corto en el palo de los contrarios, con apoyo para los otros palos; o cualquier mano con 17 o más puntos.
 - [XX] después de que doblen la apertura de tu compañero: 10 o más puntos.
+- [X] después de que tu compañero abra de uno a palo y el siguiente jugador intervenga en un palo hasta [2S] (doblo negativo): exactamente cuatro cartas en cada mayor que nadie ha declarado, si puedes declararlo a nivel de uno. Si solo puedes declararlo a nivel de dos o más: cuatro cartas, o cinco cartas con 6–10 puntos. 6 o más puntos después de una intervención a nivel de uno, 8 o más puntos después de una intervención a nivel de dos. Sin un mayor así, [X] no está en la guía.
+- Un palo nuevo a nivel de dos después de una intervención, sin salto: cinco o más cartas y 10 o más puntos.
+- La respuesta del abridor al doblo negativo, tras un paso: con cuatro o más cartas en un mayor que muestra el doblo, decláralo al nivel más bajo con 12–15 puntos, o un nivel más alto con 16–18 puntos. Con 19 o más puntos, declara el palo de los contrarios al nivel más bajo. La guía no da ninguna declaración a las otras manos.
 
 ## Objetivos de la pareja
 - 25 puntos: manga en [3NT], [4H] o [4S].
@@ -105,3 +108,4 @@ Esta guía usa un sistema natural de mayores quintos, similar al Standard Americ
 - Superaceptación (super-accept): un nombre descriptivo para el salto del abridor a tres del mayor tras una transferencia; muestra apoyo de cuatro cartas y un máximo.
 - Blackwood: lleva el nombre de Easley Blackwood, que lo publicó en 1933.
 - Gerber: lleva el nombre de John Gerber, que lo llevó a Norteamérica en 1938.
+- Doblo negativo: Alvin Roth y Tobias Stone le dieron este significado en 1957. Primero lo llamaron Sputnik, porque era tan nuevo como el satélite.

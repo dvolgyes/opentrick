@@ -373,6 +373,20 @@ Source: SAYC, "Responses after 1H", "1D and 1C openings", and "Negative doubles"
   - Points: 6 or more at the one level, 8 or more at the two level (proposed; SAYC gives 6+ in one example only).
   - Opener answers: a minimum bid with 12–15 points, a jump with 16–18 points, a cuebid of the opponents' suit with 19 or more points (SAYC: "< 16", "16-18", "19+").
   - A new suit at the two level after an overcall: five or more cards and 10 or more points (SAYC).
+  - The details below are derived (2026-11-01) from these rules:
+    - An "unbid major" is a major that neither the opener nor the overcaller bid.
+      After [1H] – [1S] or [1S] – [2H] there is no unbid major, so [X] has no guide meaning there.
+    - When responder can bid the unbid major at the one level, [X] shows exactly four cards in it, because a one-level bid shows five.
+      This is the rule after [1C] / [1D] – [1H], and it also applies to both majors after [1C] – [1D].
+    - When responder can bid the unbid major only at the two level or higher, [X] shows four cards, or five cards with 6–10 points.
+      This is the rule after [1C] / [1D] – [1S], and it also applies after a two-level overcall (for example [1H] – [2C] for spades) and after a jump overcall.
+      With five cards and 10 points, [X] and the new suit both fit; the guide gives both.
+    - The new suit at the two level is a bid without a jump, in a suit that neither opponent nor partner bid.
+    - Opener's "minimum bid" and "jump" are bids in a major that the double shows, with four or more cards in it.
+      With 19 or more points opener bids the opponents' suit at the lowest level, whatever the shape.
+      With 12–18 points and no four-card major that the double shows, the guide gives opener no call (SAYC says only "natural").
+      With four cards in both majors after [1C] – [1D] – [X], the guide gives both majors.
+    - The guide describes these calls only when the fourth player passes; it does not describe the other calls after an overcall, such as a raise or [1NT].
 
 ### Decided: opener's rebid ranges stay
 

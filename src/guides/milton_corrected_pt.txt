@@ -82,6 +82,9 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - [1NT] em intervenção: 15–18 pontos, mão equilibrada, com paragem no naipe dos adversários.
 - [X] (informativo): 12 ou mais pontos, curto no naipe dos adversários, com apoio para os outros naipes; ou qualquer mão com 17 ou mais pontos.
 - [XX] após um contra sobre a abertura do parceiro: 10 ou mais pontos.
+- [X] depois de o parceiro abrir de um num naipe e o jogador seguinte intervir num naipe até [2S] (contra negativo): exatamente quatro cartas em cada naipe maior que ninguém marcou, se o puderes marcar ao nível de um. Se só o puderes marcar ao nível de dois ou mais: quatro cartas, ou cinco cartas com 6–10 pontos. 6 ou mais pontos depois de uma intervenção ao nível de um, 8 ou mais pontos depois de uma intervenção ao nível de dois. Sem um naipe maior assim, [X] não está no guia.
+- Um naipe novo ao nível de dois depois de uma intervenção, sem salto: cinco ou mais cartas e 10 ou mais pontos.
+- A resposta do abridor ao contra negativo, depois de um passe: com quatro ou mais cartas num naipe maior que o contra mostra, marca-o ao nível mais baixo com 12–15 pontos, ou um nível acima com 16–18 pontos. Com 19 ou mais pontos, marca o naipe dos adversários ao nível mais baixo. O guia não dá nenhuma marcação às outras mãos.
 
 ## Objetivos da parceria
 - 25 pontos: partida em [3NT], [4H] ou [4S].
@@ -105,3 +108,4 @@ Este guia usa um método natural com maiores quintos, semelhante ao Standard Ame
 - Superaceitação (super-accept): um nome descritivo para o salto do abridor para três no naipe maior depois de uma transferência; mostra apoio de quatro cartas e um máximo.
 - Blackwood: o nome vem de Easley Blackwood, que o publicou em 1933.
 - Gerber: o nome vem de John Gerber, que o levou para a América do Norte em 1938.
+- Contra negativo: Alvin Roth e Tobias Stone deram este significado ao contra em 1957. Primeiro chamaram-lhe Sputnik, porque era tão novo como o satélite.

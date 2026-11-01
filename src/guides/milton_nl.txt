@@ -75,6 +75,9 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - [1NT] als volgbod: 15–18 punten, evenwichtig, met een stopper in de kleur van de tegenstanders.
 - [X] (informatief): 12 of meer punten, kort in de kleur van de tegenstanders, met steun voor de andere kleuren; of elke hand met 17 of meer punten.
 - [XX] nadat de opening van je partner gedoubleerd is: 10 of meer punten.
+- [X] nadat je partner één in een kleur opent en de volgende speler volgt in een kleur tot en met [2S] (negatief doublet): precies vier kaarten in elke hoge kleur die niemand geboden heeft, als je die op het één-niveau kunt bieden. Als je die pas op het twee-niveau of hoger kunt bieden: vier kaarten, of vijf kaarten met 6–10 punten. 6 of meer punten na een volgbod op het één-niveau, 8 of meer punten na een volgbod op het twee-niveau. Zonder zo'n hoge kleur staat [X] niet in de gids.
+- Een nieuwe kleur op het twee-niveau na een volgbod, zonder sprong: vijf of meer kaarten en 10 of meer punten.
+- Het antwoord van de openaar op het negatief doublet, na een pas: met vier of meer kaarten in een hoge kleur die het doublet toont, bied die op het laagste niveau met 12–15 punten, of een niveau hoger met 16–18 punten. Met 19 of meer punten, bied de kleur van de tegenstanders op het laagste niveau. De gids geeft geen bieding aan de andere handen.
 
 ## Richtwaarden voor het paar
 - 25 punten: manche in [3NT], [4H] of [4S].
@@ -98,3 +101,4 @@ Deze gids gebruikt een natuurlijk systeem met vijfkaart hoge kleuren, vergelijkb
 - Super-accept: een beschrijvende naam voor de sprong van de openaar naar drie in de hoge kleur na een transfer; die belooft vier kaarten steun en een maximum.
 - Blackwood: genoemd naar Easley Blackwood, die de conventie in 1933 publiceerde.
 - Gerber: genoemd naar John Gerber, die de conventie in 1938 naar Noord-Amerika bracht.
+- Negatief doublet: Alvin Roth en Tobias Stone gaven het doublet deze betekenis in 1957. Ze noemden het eerst Spoetnik, omdat het zo nieuw was als de satelliet.

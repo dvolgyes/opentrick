@@ -87,6 +87,13 @@ export type RangeKey =
 	| "takeout"
 	| "takeout-strong"
 	| "redouble"
+	| "negative-one"
+	| "negative-two"
+	| "negative-five"
+	| "contested-new-suit"
+	| "negative-minimum"
+	| "negative-jump"
+	| "negative-cuebid"
 	| "slam-small"
 	| "slam-grand";
 
@@ -178,6 +185,13 @@ const MILTON = {
 	takeout: { min: 12 }, // "[X] (takeout): 12 or more points"
 	"takeout-strong": { min: 17 }, // "or any hand with 17 or more points"
 	redouble: { min: 10 }, // "[XX] after partner's opening is doubled: 10 or more points"
+	"negative-one": { min: 6 }, // "6 or more points after an overcall at the one level"
+	"negative-two": { min: 8 }, // "8 or more points after an overcall at the two level"
+	"negative-five": { min: 6, max: 10 }, // "four cards, or five cards with 6–10 points"
+	"contested-new-suit": { min: 10 }, // "A new suit at the two level after an overcall ... 10 or more points"
+	"negative-minimum": { min: 12, max: 15 }, // "bid it at the lowest level with 12–15 points"
+	"negative-jump": { min: 16, max: 18 }, // "or one level higher with 16–18 points"
+	"negative-cuebid": { min: 19 }, // "With 19 or more points, bid the opponents' suit"
 	// ## Targets for the partnership; the [4NT] ask states them
 	"slam-small": { min: 33 }, // "33 points: small slam."
 	"slam-grand": { min: 37 }, // "37 points: grand slam."
@@ -278,6 +292,12 @@ export const SHAPES = {
 	/** "[X] (takeout): ... short in the opponents' suit, with support for the other suits": at most two cards, and three. */
 	takeoutShort: 2,
 	takeoutSupport: 3,
+	/** "[X] ... (negative double): exactly four cards in each major that no one has bid ... or five cards" */
+	negative: 4,
+	/** "A new suit at the two level after an overcall, without a jump: five or more cards" */
+	contestedNewSuit: 5,
+	/** "Opener's answer to the negative double ...: with four or more cards in a major that the double shows" */
+	negativeAnswer: 4,
 	/** The guides do not describe a hand with a longer suit, so it is not checked. */
 	longestChecked: 7,
 } as const;

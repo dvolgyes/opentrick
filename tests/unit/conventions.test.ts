@@ -138,6 +138,20 @@ describe("guide calls for a hand", () => {
 		["1H P 2NT P", "AK4.AKJ63.K52.Q4", ["3H"]], // 20
 		["1H P 2NT P", "AK4.AKJ63.K852.4", ["3C"]], // 18, a singleton club
 		["1H P 2NT P", "4.AKJ763.5.KQ842", ["3D"]], // 13, two singletons: the lower one
+		["1C 1H", "KJ84.73.Q652.J64", ["X"]], // 7, exactly four spades: negative double
+		["1C 1D", "KJ84.Q973.65.J64", ["X"]], // 7, four cards in both majors
+		["1D 1S", "84.KJ73.Q652.J64", ["X"]], // 7, four hearts
+		["1D 1S", "84.KJ732.Q65.J64", ["X"]], // 7, five hearts: too weak for [2H]
+		["1D 1S", "84.KJ732.A65.Q64", ["X", "2H"]], // 10, five hearts: both fit
+		["1D 1S", "84.AKJ73.Q65.K64", ["2H"]], // 13, five hearts: a new suit, not [X]
+		["1H 2C", "KJ84.73.Q652.Q64", ["X"]], // 8, four spades after a two-level overcall
+		["1D 2C", "KJ842.Q973.A5.64", ["X", "2S"]], // 10, five spades and four hearts
+		["1C 1H X P", "AQ84.K73.Q65.Q64", ["1S"]], // 13, four spades
+		["1C 1H X P", "AQ84.K7.KQ5.Q642", ["2S"]], // 16, four spades: a jump
+		["1C 1H X P", "AQ84.K7.AKQ5.Q64", ["2H"]], // 20: the opponents' suit
+		["1C 1D X P", "AQ84.K732.Q6.Q64", ["1H", "1S"]], // 13, four cards in both majors
+		["1D 1S X P", "A4.KQ73.KJ65.Q64", ["2H"]], // 15, four hearts
+		["1D 1S X P", "A4.KQ73.AJ65.Q64", ["3H"]], // 16, four hearts: a jump
 		["1H P", "8642.73.J652.Q64", ["P"]], // 3
 		["1NT P", "84.QT973.J52.632", ["2D"]], // 3, five hearts: a transfer, not a pass
 		["1NT P", "8432.732.Q98.J52", ["P"]], // 3, no five-card suit
@@ -185,6 +199,8 @@ describe("guide calls for a hand", () => {
 		["other", "", "AQ4.KJ5.Q862.K73"],
 		["hcp", "", "KQT98732.4.J52.6"], // an eight-card suit
 		["hcp", "1H 1S", "K84.Q73.J652.Q64"],
+		["hcp", "1C 1H", "KJ842.73.Q65.J64"], // five spades: [1S] after an overcall is not in the guide
+		["hcp", "1C 1H X P", "AQ8.K73.KQ5.Q642"], // 16, three spades: no answer to the negative double fits
 		["hcp", "1H P 1S 2C", "K84.Q73.J652.Q64"], // the rebid after an overcall
 		["hcp", "1D P 2D P", "K84.Q73.J652.Q64"], // the rebid after a minor raise
 		["hcp", "1H P 1S P 2C P", "K84.Q73.J652.Q64"], // responder's second call
@@ -366,8 +382,10 @@ describe("a hand against the meaning of one call", () => {
 		["hcp", "A2.KQ952.K3.Q432", "1H P 1S P", "P", false], // the new suit forces a rebid
 		["hcp", "AKQ2.AKQ52.K3.Q4", "2C P 2D P", "P", false], // [2C] forces to game
 		["hcp", "AQ4.84.Q862.K732", "2C P", "P", false], // the guide always answers [2C]
-		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "7NT", undefined], // the guide does not describe the position
-		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "2C", undefined], // the guide does not describe the position
+		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "7NT", undefined], // the guide describes only some calls after an overcall
+		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "2C", false], // 7, three clubs: the new suit needs five cards and 10 points
+		["hcp", "Q2.KJ92.Q874.432", "1H 1S", "X", undefined], // no major that no one has bid
+		["hcp", "KJ84.73.Q652.J64", "1H 2C", "X", false], // 7: after a two-level overcall [X] needs 8
 		["hcp", "Q2.KJ92.Q874.432", "1H P 3H P", "4NT", true], // the ask fits any hand
 		["hcp", "A2.KJ92.Q874.432", "2NT P", "3NT", undefined], // after [2NT] the guide describes only Gerber
 		["hcp", "A2.K92.KQ8743.43", "2NT P", "4C", true], // 12, unbalanced: Gerber
@@ -514,6 +532,54 @@ describe("guide meaning of a call", () => {
 			"1D P 3C",
 			{ range: { min: 19 }, shape: { kind: "good-suit", suit: "C", min: 5 } },
 		],
+		[
+			"hcp",
+			"1C 1H X",
+			{ range: { min: 6 }, shape: { kind: "negative", suits: ["S"] } },
+		],
+		[
+			"hcp",
+			"1C 1D X",
+			{ range: { min: 6 }, shape: { kind: "negative", suits: ["S", "H"] } },
+		],
+		[
+			"hcp",
+			"1D 1S X",
+			{
+				range: { min: 6 },
+				shape: { kind: "negative", suits: ["H"], five: { min: 6, max: 10 } },
+			},
+		],
+		[
+			"hcp",
+			"1H 2C X",
+			{
+				range: { min: 8 },
+				shape: { kind: "negative", suits: ["S"], five: { min: 6, max: 10 } },
+			},
+		],
+		[
+			"hcp",
+			"1H 1S 2C",
+			{ range: { min: 10 }, shape: { kind: "cards", suit: "C", min: 5 } },
+		],
+		[
+			"hcp",
+			"1C 1H X P 1S",
+			{
+				range: { min: 12, max: 15 },
+				shape: { kind: "cards", suit: "S", min: 4 },
+			},
+		],
+		[
+			"hcp",
+			"1C 1H X P 2S",
+			{
+				range: { min: 16, max: 18 },
+				shape: { kind: "cards", suit: "S", min: 4 },
+			},
+		],
+		["hcp", "1C 1H X P 2H", { range: { min: 19 }, shape: { kind: "none" } }],
 		[
 			"hcp",
 			"1S P 4S",
@@ -1194,6 +1260,9 @@ describe("guide meaning of a call", () => {
 		["hcp", "1H 2H"], // a cue bid
 		["hcp", "1H 2S"], // a jump overcall
 		["hcp", "1H 1S 2H"],
+		["hcp", "1H 1S X"], // no major that no one has bid
+		["hcp", "1C 1H 2S"], // a jump in a new suit after an overcall
+		["hcp", "1C 1H X 1S 2S"], // the fourth player did not pass
 		["hcp", "1NT 2C"],
 		["hcp", "1NT X"],
 		["hcp", "2H 2S"],
@@ -1663,6 +1732,28 @@ const GUIDE_LINES: Readonly<Record<RangeKey, readonly [string, string]>> = {
 	redouble: [
 		"Competitive bids",
 		"- [XX] after partner's opening is doubled: {range} points.",
+	],
+	"negative-one": [
+		"Competitive bids",
+		"{range} points after an overcall at the one level",
+	],
+	"negative-two": [
+		"Competitive bids",
+		"{range} points after an overcall at the two level",
+	],
+	"negative-five": ["Competitive bids", "or five cards with {range} points"],
+	"contested-new-suit": [
+		"Competitive bids",
+		"without a jump: five or more cards and {range} points",
+	],
+	"negative-minimum": [
+		"Competitive bids",
+		"at the lowest level with {range} points",
+	],
+	"negative-jump": ["Competitive bids", "one level higher with {range} points"],
+	"negative-cuebid": [
+		"Competitive bids",
+		"With {range} points, bid the opponents' suit",
 	],
 	"slam-small": ["Targets for the partnership", "- {min} points: small slam."],
 	"slam-grand": ["Targets for the partnership", "- {min} points: grand slam."],

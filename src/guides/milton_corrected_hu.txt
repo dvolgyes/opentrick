@@ -82,6 +82,9 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - [1NT] közbelicit: 15–18 pont, kiegyensúlyozott, fogással az ellenfelek színében.
 - [X] (informatív): legalább 12 pont, rövidség az ellenfelek színében, támogatás a többi színben; vagy bármilyen kéz legalább 17 ponttal.
 - [XX], ha a partnered nyitását megkontrázták: legalább 10 pont.
+- [X], ha a partnered egyes színnyitása után a következő játékos legfeljebb [2S] szintig színnel licitál közbe (negatív kontra): pontosan négy lap minden olyan nemes színben, amelyet még senki nem licitált, ha egyes szinten licitálhatod. Ha csak kettes vagy magasabb szinten licitálhatod: négy lap, vagy öt lap 6–10 ponttal. Egyes szintű közbelicit után legalább 6 pont, kettes szintű közbelicit után legalább 8 pont. Ilyen nemes szín nélkül az [X] nincs benne az útmutatóban.
+- Új szín kettes szinten közbelicit után, ugrás nélkül: legalább öt lap és legalább 10 pont.
+- A nyitó válasza a negatív kontrára, egy passz után: ha legalább négy lapod van egy nemes színben, amelyet a kontra mutat, licitáld a legalacsonyabb szinten 12–15 ponttal, vagy egy szinttel magasabban 16–18 ponttal. Legalább 19 ponttal licitáld az ellenfelek színét a legalacsonyabb szinten. A többi lapra az útmutató nem ad licitet.
 
 ## A pár céljai
 - 25 pont: [3NT], [4H] vagy [4S] manche.
@@ -105,3 +108,4 @@ Ez az útmutató természetes, ötlapos nemesszín-nyitású rendszert használ,
 - Szuperelfogadás (super-accept): leíró név a nyitó ugrására a nemes szín hármas szintjére transzfer után; négylapos támogatást és maximumot mutat.
 - Blackwood: Easley Blackwood nevét viseli, aki 1933-ban publikálta.
 - Gerber: John Gerber nevét viseli, aki 1938-ban hozta el Észak-Amerikába.
+- Negatív kontra: Alvin Roth és Tobias Stone 1957-ben adta a kontrának ezt a jelentést. Először Szputnyiknak nevezték, mert olyan új volt, mint a műhold.

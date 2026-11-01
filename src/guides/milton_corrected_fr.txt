@@ -82,6 +82,9 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Intervention à [1NT] : 15–18 points, main régulière, avec un arrêt dans la couleur adverse.
 - [X] (contre d'appel) : 12 points ou plus, court dans la couleur adverse, avec du soutien dans les autres couleurs ; ou toute main de 17 points ou plus.
 - [XX] quand l'ouverture du partenaire est contrée : 10 points ou plus.
+- [X] après l'ouverture d'un à la couleur du partenaire et une intervention du joueur suivant dans une couleur jusqu'à [2S] (contre Spoutnik) : exactement quatre cartes dans chaque majeure que personne n'a nommée, si tu peux la nommer au niveau de un. Si tu peux la nommer seulement au niveau de deux ou plus : quatre cartes, ou cinq cartes avec 6–10 points. 6 points ou plus après une intervention au niveau de un, 8 points ou plus après une intervention au niveau de deux. Sans une telle majeure, [X] n'est pas dans le guide.
+- Une couleur nouvelle au niveau de deux après une intervention, sans saut : cinq cartes ou plus et 10 points ou plus.
+- La réponse de l'ouvreur au contre Spoutnik, après un passe : avec quatre cartes ou plus dans une majeure que le contre montre, nomme-la au niveau le plus bas avec 12–15 points, ou un niveau plus haut avec 16–18 points. Avec 19 points ou plus, nomme la couleur adverse au niveau le plus bas. Le guide ne donne aucune enchère aux autres mains.
 
 ## Objectifs de la ligne
 - 25 points : manche à [3NT], [4H] ou [4S].
@@ -105,3 +108,4 @@ Ce guide utilise un système naturel à majeure cinquième, proche du Standard A
 - Super-acceptation (super-accept) : un nom descriptif pour le saut de l'ouvreur à trois dans la majeure après un transfert ; il montre un soutien de quatre cartes et un maximum.
 - Blackwood : nommé d'après Easley Blackwood, qui l'a publié en 1933.
 - Gerber : nommé d'après John Gerber, qui l'a introduit en Amérique du Nord en 1938.
+- Contre Spoutnik (contre négatif) : Alvin Roth et Tobias Stone ont donné ce sens au contre en 1957. Ils l'ont d'abord appelé Spoutnik, car il était aussi nouveau que le satellite.

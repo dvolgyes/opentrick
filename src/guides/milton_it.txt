@@ -75,6 +75,9 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Intervento a [1NT]: 15–18 punti, bilanciata, con fermo nel colore avversario.
 - [X] (informativo): 12 o più punti, corto nel colore avversario, con appoggio per gli altri colori; oppure qualsiasi mano con 17 o più punti.
 - [XX] dopo il contro sull'apertura del compagno: 10 o più punti.
+- [X] dopo l'apertura di uno a colore del compagno e un intervento del giocatore successivo in un colore fino a [2S] (contro negativo): esattamente quattro carte in ogni nobile che nessuno ha dichiarato, se puoi dichiararlo a livello di uno. Se puoi dichiararlo solo a livello di due o più: quattro carte, oppure cinque carte con 6–10 punti. 6 o più punti dopo un intervento a livello di uno, 8 o più punti dopo un intervento a livello di due. Senza un nobile così, [X] non è nella guida.
+- Un nuovo colore a livello di due dopo un intervento, senza salto: cinque o più carte e 10 o più punti.
+- La risposta dell'apertore al contro negativo, dopo un passo: con quattro o più carte in un nobile che il contro mostra, dichiaralo al livello più basso con 12–15 punti, oppure un livello più in alto con 16–18 punti. Con 19 o più punti, dichiara il colore avversario al livello più basso. La guida non indica alcuna dichiarazione per le altre mani.
 
 ## Obiettivi della coppia
 - 25 punti: manche a [3NT], [4H] o [4S].
@@ -98,3 +101,4 @@ Questa guida usa un sistema naturale a quinta nobile, simile allo Standard Ameri
 - Superaccettazione (super-accept): un nome descrittivo per il salto dell'apertore a tre nel nobile dopo un transfer; mostra un appoggio di quattro carte e un massimo.
 - Blackwood: dal nome di Easley Blackwood, che la pubblicò nel 1933.
 - Gerber: dal nome di John Gerber, che la portò in Nord America nel 1938.
+- Contro negativo: Alvin Roth e Tobias Stone diedero questo significato al contro nel 1957. Lo chiamarono prima Sputnik, perché era nuovo come il satellite.

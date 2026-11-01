@@ -75,6 +75,9 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - [1NT] som innmelding: 15–18 poeng, balansert, med hold i motstandernes farge.
 - [X] (opplysende): 12 eller flere poeng, kort i motstandernes farge, med støtte i de andre fargene; eller en hvilken som helst hånd med 17 eller flere poeng.
 - [XX] etter at makkers åpning er doblet: 10 eller flere poeng.
+- [X] etter at makker åpner med én i farge og neste spiller melder inn i en farge opp til [2S] (negativ dobling): nøyaktig fire kort i hver høyfarge som ingen har meldt, hvis du kan melde den på ett-trinnet. Hvis du kan melde den bare på to-trinnet eller høyere: fire kort, eller fem kort med 6–10 poeng. 6 eller flere poeng etter en innmelding på ett-trinnet, 8 eller flere poeng etter en innmelding på to-trinnet. Uten en slik høyfarge står [X] ikke i veiledningen.
+- En ny farge på to-trinnet etter en innmelding, uten hopp: fem eller flere kort og 10 eller flere poeng.
+- Åpners svar på den negative doblingen, etter pass: med fire eller flere kort i en høyfarge som doblingen viser, meld den på laveste trinn med 12–15 poeng, eller ett trinn høyere med 16–18 poeng. Med 19 eller flere poeng, meld motstandernes farge på laveste trinn. Veiledningen gir ingen melding til de andre hendene.
 
 ## Poengmål for paret
 - 25 poeng: utgang i [3NT], [4H] eller [4S].
@@ -98,3 +101,4 @@ Denne guiden bruker et naturlig system med femkorts høyfarger, som ligner Stand
 - Superaksept (super-accept): et beskrivende navn på åpners hopp til tre i høyfargen etter en overføring; det viser firekorts støtte og maksimum.
 - Blackwood: oppkalt etter Easley Blackwood, som publiserte den i 1933.
 - Gerber: oppkalt etter John Gerber, som brakte den til Nord-Amerika i 1938.
+- Negativ dobling: Alvin Roth og Tobias Stone ga doblingen denne betydningen i 1957. De kalte den først Sputnik, fordi den var like ny som satellitten.

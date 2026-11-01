@@ -737,6 +737,14 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"balanced, a {suit} stopper": "ausgeglichen, Stopper in {suit}",
 		"takeout, short in {suit}, or {strong}":
 			"Informationskontra, kurz in {suit}, oder {strong}",
+		"negative double, exactly {length} {suit}":
+			"negatives Kontra, genau {length} {suit}",
+		"negative double, exactly {length} {suit} and {other}":
+			"negatives Kontra, genau {length} {suit} und {other}",
+		"negative double, {length} {suit}, or {more} with {five}":
+			"negatives Kontra, {length} {suit}, oder {more} mit {five}",
+		"negative double, {length} {suit} and {other}, or {more} with {five}":
+			"negatives Kontra, {length} {suit} und {other}, oder {more} mit {five}",
 		"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}":
 			"Blackwood, fragt nach Assen: ein Kleinschlemm braucht zusammen etwa {small}, ein Großschlemm etwa {grand}",
 		"Blackwood: {small}/{grand}": "Blackwood: {small}/{grand}",
@@ -1446,6 +1454,14 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"balanced, a {suit} stopper": "kiegyensúlyozott, {suit} fogással",
 		"takeout, short in {suit}, or {strong}":
 			"informatív, rövid {suit}, vagy {strong}",
+		"negative double, exactly {length} {suit}":
+			"negatív kontra, pontosan {length} {suit}",
+		"negative double, exactly {length} {suit} and {other}":
+			"negatív kontra, pontosan {length} {suit} és {other}",
+		"negative double, {length} {suit}, or {more} with {five}":
+			"negatív kontra, {length} {suit}, vagy {more} és {five}",
+		"negative double, {length} {suit} and {other}, or {more} with {five}":
+			"negatív kontra, {length} {suit} és {other}, vagy {more} és {five}",
 		"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}":
 			"Blackwood, az ászokat kérdezi: kisszlemhez együtt kb. {small} kell, nagyszlemhez kb. {grand}",
 		"Blackwood: {small}/{grand}": "Blackwood: {small}/{grand}",
@@ -2148,6 +2164,14 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"balanced, a {suit} stopper": "balansert, hold i {suit}",
 		"takeout, short in {suit}, or {strong}":
 			"opplysende, kort i {suit}, eller {strong}",
+		"negative double, exactly {length} {suit}":
+			"negativ dobling, nøyaktig {length} {suit}",
+		"negative double, exactly {length} {suit} and {other}":
+			"negativ dobling, nøyaktig {length} {suit} og {other}",
+		"negative double, {length} {suit}, or {more} with {five}":
+			"negativ dobling, {length} {suit}, eller {more} med {five}",
+		"negative double, {length} {suit} and {other}, or {more} with {five}":
+			"negativ dobling, {length} {suit} og {other}, eller {more} med {five}",
 		"Blackwood, asks for aces: a small slam needs about {small} together, a grand slam about {grand}":
 			"Blackwood, spør etter ess: lilleslem krever omtrent {small} til sammen, storeslem omtrent {grand}",
 		"Blackwood: {small}/{grand}": "Blackwood: {small}/{grand}",

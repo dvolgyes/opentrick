@@ -75,6 +75,9 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - [1NT] overcall: 15–18 points, balanced, with a stopper in the opponents' suit.
 - [X] (takeout): 12 or more points, short in the opponents' suit, with support for the other suits; or any hand with 17 or more points.
 - [XX] after partner's opening is doubled: 10 or more points.
+- [X] after partner opens one of a suit and the next player overcalls in a suit up to [2S] (negative double): exactly four cards in each major that no one has bid, if you can bid it at the one level. If you can bid it only at the two level or higher: four cards, or five cards with 6–10 points. 6 or more points after an overcall at the one level, 8 or more points after an overcall at the two level. Without such a major, [X] is not in the guide.
+- A new suit at the two level after an overcall, without a jump: five or more cards and 10 or more points.
+- Opener's answer to the negative double, after a pass: with four or more cards in a major that the double shows, bid it at the lowest level with 12–15 points, or one level higher with 16–18 points. With 19 or more points, bid the opponents' suit at the lowest level. The guide gives no call to the other hands.
 
 ## Targets for the partnership
 - 25 points: game in [3NT], [4H] or [4S].
@@ -98,3 +101,4 @@ This guide uses a natural five-card-major method, similar to Standard American.
 - Super-accept: a descriptive name for opener's jump to three of the major after a transfer; it shows four-card support and a maximum.
 - Blackwood: named after Easley Blackwood, who published it in 1933.
 - Gerber: named after John Gerber, who brought it to North America in 1938.
+- Negative double: Alvin Roth and Tobias Stone gave the double this meaning in 1957. They first called it Sputnik, because it was as new as the satellite.

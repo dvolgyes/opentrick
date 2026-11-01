@@ -5,7 +5,7 @@ import {
 	type Suit,
 	suitOf,
 } from "../bridge/cards";
-import type { PointRange } from "../bridge/convention-rules";
+import { type PointRange, SHAPES } from "../bridge/convention-rules";
 import {
 	ACE_ANSWERS,
 	type CallMeaning,
@@ -964,6 +964,28 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 			return t("balanced, a {suit} stopper", {
 				suit: SUIT_SYMBOLS[shape.suit],
 			});
+		case "negative": {
+			const [suit = "", other] = shape.suits.map(
+				(major) => SUIT_SYMBOLS[major],
+			);
+			const values = {
+				length: SHAPES.negative,
+				suit,
+				other: other ?? "",
+				more: SHAPES.negative + 1,
+				five: shape.five === undefined ? "" : rangeText(shape.five, system, t),
+			};
+			if (shape.five === undefined)
+				return other === undefined
+					? t("negative double, exactly {length} {suit}", values)
+					: t("negative double, exactly {length} {suit} and {other}", values);
+			return other === undefined
+				? t("negative double, {length} {suit}, or {more} with {five}", values)
+				: t(
+						"negative double, {length} {suit} and {other}, or {more} with {five}",
+						values,
+					);
+		}
 		case "takeout":
 			return t("takeout, short in {suit}, or {strong}", {
 				suit: SUIT_SYMBOLS[shape.suit],
