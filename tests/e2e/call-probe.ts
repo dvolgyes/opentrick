@@ -7,16 +7,16 @@ import type { SeatKey } from "./room";
  * the browser APIs that a call uses and counts their use. It records only counts, states, times, track ids and
  * byte or frame totals, never session descriptions, addresses or message contents.
  *
- * A tab has two kinds of peer connection: the game links of the table mesh (Trystero, one data channel each) and
- * the call links (media only, src/call/peer.ts). The probe tells them apart by what the page does with them: a
- * data channel makes a game link, a transceiver makes a call link.
+ * Each peer connection of a tab is a game link of the table mesh (Trystero, one data channel). The call puts its
+ * media sections on the same connection (src/call/peer.ts, ADR 0009). The probe marks what the page does with a
+ * connection: a data channel makes it a game link, a transceiver makes it a media link too.
  */
 
-export type LinkKind = "mesh" | "call";
-
 export interface PeerRecord {
-	/** Unknown until the page opens a data channel or a transceiver on the connection. */
-	kind: LinkKind | undefined;
+	/** The connection has a data channel: a game link. */
+	channel: boolean;
+	/** The connection has a media section: a call link. */
+	media: boolean;
 	/** When the page closed the connection. */
 	closedAt: number | null;
 	/** The connection states it went through. */
@@ -27,8 +27,15 @@ export interface CallProbe {
 	/** Every peer connection of this tab, in creation order, with its record at the same index. */
 	readonly connections: RTCPeerConnection[];
 	readonly records: PeerRecord[];
-	/** The call links, in the order the probe recognized them. */
+	/** The connections with media sections, in the order the probe recognized them. */
 	readonly peers: RTCPeerConnection[];
+	/**
+	 * The connection is open and has a section that this page lets send or receive (its direction), and that the
+	 * last negotiation left active (its current direction). A pair where neither side sends has only inactive
+	 * sections. Leave sets the directions inactive at once; the negotiation follows, or never comes when the page
+	 * left the room, because Trystero keeps an idle connection open for about two minutes without signaling.
+	 */
+	readonly carriesMedia: (peer: RTCPeerConnection) => boolean;
 	readonly tracks: MediaStreamTrack[];
 	/** The devices of each capture request, in order. */
 	readonly requests: { readonly audio: boolean; readonly video: boolean }[];
@@ -40,15 +47,13 @@ export interface CallProbe {
 	captureDelayMs: number;
 	/** Holds each call message back this long before it goes on the data channel. */
 	callSendDelayMs: number;
-	/**
-	 * Each later call link may use relay candidates only. There is no relay server, so its ICE checks really
-	 * fail; the game links stay normal.
-	 */
-	callRelayOnly: boolean;
 }
 
 export interface ProbeCounts {
-	/** Call links, ever and still open. */
+	/**
+	 * Connections that ever had a media section, and those that are open with a negotiated section that is not
+	 * inactive. Leave sets the sections inactive and keeps the connection, because it is the game link.
+	 */
 	readonly peers: number;
 	readonly openPeers: number;
 	readonly captures: number;
@@ -66,6 +71,19 @@ export function installCallProbe(): void {
 		connections: [],
 		records: [],
 		peers: [],
+		carriesMedia: (peer) => {
+			const active = ["sendrecv", "sendonly", "recvonly"];
+			return (
+				peer.connectionState !== "closed" &&
+				peer
+					.getTransceivers()
+					.some(
+						(transceiver) =>
+							active.includes(transceiver.direction) &&
+							active.includes(transceiver.currentDirection ?? ""),
+					)
+			);
+		},
 		tracks: [],
 		requests: [],
 		callSent: [],
@@ -73,7 +91,6 @@ export function installCallProbe(): void {
 		captures: 0,
 		captureDelayMs: 0,
 		callSendDelayMs: 0,
-		callRelayOnly: false,
 	};
 	Object.defineProperty(window, "__callProbe", { value: probe });
 
@@ -134,30 +151,23 @@ export function installCallProbe(): void {
 	// No private class members here: Playwright compiles them to helper functions that the page does not have,
 	// and the first new connection would throw.
 	const recordOf = new WeakMap<RTCPeerConnection, PeerRecord>();
-	const classify = (connection: RTCPeerConnection, kind: LinkKind): void => {
+	const markChannel = (connection: RTCPeerConnection): void => {
 		const record = recordOf.get(connection);
-		if (record === undefined || record.kind !== undefined) return;
-		record.kind = kind;
-		if (kind !== "call") return;
+		if (record !== undefined) record.channel = true;
+	};
+	const markMedia = (connection: RTCPeerConnection): void => {
+		const record = recordOf.get(connection);
+		if (record === undefined || record.media) return;
+		record.media = true;
 		probe.peers.push(connection);
-		if (!probe.callRelayOnly) return;
-		// Before ICE gathering starts: the offering side is classified at addTransceiver, the answering side at
-		// the remote offer. The other settings stay as they are, because a change to them throws.
-		const current = connection.getConfiguration();
-		connection.setConfiguration({
-			iceServers: current.iceServers,
-			bundlePolicy: current.bundlePolicy,
-			rtcpMuxPolicy: current.rtcpMuxPolicy,
-			iceCandidatePoolSize: current.iceCandidatePoolSize,
-			iceTransportPolicy: "relay",
-		});
 	};
 	const Native = window.RTCPeerConnection;
 	window.RTCPeerConnection = class extends Native {
 		constructor(configuration?: RTCConfiguration) {
 			super(configuration);
 			const record: PeerRecord = {
-				kind: undefined,
+				channel: false,
+				media: false,
 				closedAt: null,
 				states: [],
 			};
@@ -168,12 +178,12 @@ export function installCallProbe(): void {
 				record.states.push(this.connectionState),
 			);
 			this.addEventListener("datachannel", (event: RTCDataChannelEvent) => {
-				classify(this, "mesh");
+				markChannel(this);
 				watch(event.channel);
 			});
-			// The answering side of a call link gets its transceivers from the remote offer.
+			// The answering side gets its media sections from the remote offer.
 			this.addEventListener("signalingstatechange", () => {
-				if (this.getTransceivers().length > 0) classify(this, "call");
+				if (this.getTransceivers().length > 0) markMedia(this);
 			});
 		}
 
@@ -182,7 +192,7 @@ export function installCallProbe(): void {
 			options?: RTCDataChannelInit,
 		): RTCDataChannel {
 			const channel = super.createDataChannel(label, options);
-			classify(this, "mesh");
+			markChannel(this);
 			watch(channel);
 			return channel;
 		}
@@ -191,7 +201,7 @@ export function installCallProbe(): void {
 			trackOrKind: MediaStreamTrack | string,
 			init?: RTCRtpTransceiverInit,
 		): RTCRtpTransceiver {
-			classify(this, "call");
+			markMedia(this);
 			return super.addTransceiver(trackOrKind, init);
 		}
 
@@ -224,8 +234,7 @@ export function counts(page: Page): Promise<ProbeCounts> {
 		const probe = (window as unknown as { __callProbe: CallProbe }).__callProbe;
 		return {
 			peers: probe.peers.length,
-			openPeers: probe.peers.filter((peer) => peer.connectionState !== "closed")
-				.length,
+			openPeers: probe.peers.filter(probe.carriesMedia).length,
 			captures: probe.captures,
 			liveTracks: probe.tracks.filter((track) => track.readyState === "live")
 				.length,
@@ -248,9 +257,9 @@ export function links(
 		let unknown = 0;
 		for (const [index, connection] of probe.connections.entries()) {
 			if (connection.connectionState !== "connected") continue;
-			const kind = probe.records[index]?.kind;
-			if (kind === "mesh") mesh += 1;
-			if (kind === undefined) unknown += 1;
+			const record = probe.records[index];
+			if (record?.channel === true) mesh += 1;
+			else if (record?.media !== true) unknown += 1;
 		}
 		return { mesh, unknown };
 	});
@@ -258,15 +267,16 @@ export function links(
 
 /**
  * Cuts the game links of this tab, as a network change would: it closes every connected game connection, as the
- * harness `dropLinks` does. Trystero learns of the cut from the ICE state event. Call links and the offer that
- * Trystero keeps ready for the trackers stay open. Returns the number of links cut.
+ * harness `dropLinks` does. Trystero learns of the cut from the ICE state event. The call media on these
+ * connections stops with them; the offer that Trystero keeps ready for the trackers stays open. Returns the
+ * number of links cut.
  */
 export function cutGameLinks(page: Page): Promise<number> {
 	return page.evaluate(() => {
 		const probe = (window as unknown as { __callProbe: CallProbe }).__callProbe;
 		let closed = 0;
 		for (const [index, connection] of probe.connections.entries()) {
-			if (probe.records[index]?.kind !== "mesh") continue;
+			if (probe.records[index]?.channel !== true) continue;
 			if (connection.connectionState !== "connected") continue;
 			connection.close();
 			// close() fires no state event on this side; Trystero reads the state on this event and drops the link.
@@ -294,24 +304,6 @@ export async function setCallSendDelay(page: Page, ms: number): Promise<void> {
 			window as unknown as { __callProbe: CallProbe }
 		).__callProbe.callSendDelayMs = ms;
 	}, ms);
-}
-
-/** From now on, each new call link of this tab may use relay candidates only (`CallProbe.callRelayOnly`). */
-export async function setCallRelayOnly(page: Page, on: boolean): Promise<void> {
-	await page.evaluate((on) => {
-		(
-			window as unknown as { __callProbe: CallProbe }
-		).__callProbe.callRelayOnly = on;
-	}, on);
-}
-
-/** The ICE transport policy of each call link of the tab that is not closed. */
-export function callTransportPolicies(page: Page): Promise<string[]> {
-	return page.evaluate(() =>
-		(window as unknown as { __callProbe: CallProbe }).__callProbe.peers
-			.filter((peer) => peer.connectionState !== "closed")
-			.map((peer) => peer.getConfiguration().iceTransportPolicy ?? "all"),
-	);
 }
 
 /**
@@ -407,28 +399,40 @@ export function requestsFor(page: Page, kind: Kind): Promise<number> {
 	);
 }
 
-/** The bytes of the medium that each open call link received, by probe index. */
+/**
+ * The bytes of the medium that each open call link (`carriesMedia`) received, by probe index. With `every`, each
+ * connection that is not closed and ever had a media section counts, also one that this page set inactive.
+ */
 export function peerBytes(
 	page: Page,
 	kind: Kind,
+	every = false,
 ): Promise<Record<number, number>> {
-	return page.evaluate(async (kind) => {
-		const probe = (window as unknown as { __callProbe: CallProbe }).__callProbe;
-		const bytes: Record<number, number> = {};
-		for (const [index, peer] of probe.peers.entries()) {
-			if (peer.connectionState === "closed") continue;
-			let total = 0;
-			const report = await peer.getStats();
-			report.forEach(
-				(entry: { type: string; kind?: string; bytesReceived?: number }) => {
-					if (entry.type === "inbound-rtp" && entry.kind === kind)
-						total += entry.bytesReceived ?? 0;
-				},
-			);
-			bytes[index] = total;
-		}
-		return bytes;
-	}, kind);
+	return page.evaluate(
+		async ({ kind, every }) => {
+			const probe = (window as unknown as { __callProbe: CallProbe })
+				.__callProbe;
+			const bytes: Record<number, number> = {};
+			for (const [index, peer] of probe.peers.entries()) {
+				if (
+					peer.connectionState === "closed" ||
+					(!every && !probe.carriesMedia(peer))
+				)
+					continue;
+				let total = 0;
+				const report = await peer.getStats();
+				report.forEach(
+					(entry: { type: string; kind?: string; bytesReceived?: number }) => {
+						if (entry.type === "inbound-rtp" && entry.kind === kind)
+							total += entry.bytesReceived ?? 0;
+					},
+				);
+				bytes[index] = total;
+			}
+			return bytes;
+		},
+		{ kind, every },
+	);
 }
 
 /** The audio bytes this tab received over all its open call links. */
@@ -441,13 +445,16 @@ export async function receivedAudioBytes(page: Page): Promise<number> {
 
 /**
  * The audio bytes each open call link received in two seconds, sorted. The first half second lets the packets
- * in flight land. A tone at 8 kbit/s and more gives about 2000 bytes; silence gives 0.
+ * in flight land. A tone at 8 kbit/s and more gives about 2000 bytes; silence gives 0. `every` as in `peerBytes`.
  */
-export async function peerAudioGrowth(page: Page): Promise<number[]> {
+export async function peerAudioGrowth(
+	page: Page,
+	every = false,
+): Promise<number[]> {
 	await page.waitForTimeout(500);
-	const before = await peerBytes(page, "audio");
+	const before = await peerBytes(page, "audio", every);
 	await page.waitForTimeout(2_000);
-	const after = await peerBytes(page, "audio");
+	const after = await peerBytes(page, "audio", every);
 	return Object.entries(after)
 		.map(([index, total]) => total - (before[Number(index)] ?? 0))
 		.sort((a, b) => a - b);

@@ -10,7 +10,6 @@ import type { SubmitResult } from "../../src/p2p/outbox";
 import type { TableView } from "../../src/p2p/table";
 import type { Seat } from "../../src/protocol";
 import {
-	callTransportPolicies,
 	caption,
 	counts,
 	exactCaption,
@@ -24,7 +23,6 @@ import {
 	requestsFor,
 	SEAT_NAMES,
 	SOUND,
-	setCallRelayOnly,
 } from "./call-probe";
 import type { CallReceived, CallView, Harness } from "./harness/main";
 import { Player, reportNetwork } from "./player";
@@ -33,7 +31,6 @@ import {
 	CONNECT_MS,
 	createRoom,
 	expectSeat,
-	makeCall,
 	pick,
 	pressOffScreen,
 	rosterSeat,
@@ -53,8 +50,6 @@ test.describe.configure({ mode: "serial" });
 const SEATS = ["W", "N", "E", "S"] as const satisfies readonly SeatKey[];
 const IN_CALL = ["W", "N", "E"] as const satisfies readonly SeatKey[];
 
-/** The ICE timeout (20 s) plus the time to set up the links; `expect.timeout` is shorter. */
-const UNAVAILABLE_WITHIN_MS = 25_000;
 /** A closed page goes offline in the roster (acceptance.spec.ts), and then out of the call (VANISHED_MS 10 s). */
 const GONE_MS = 40_000;
 
@@ -244,26 +239,6 @@ const session = (): string => crypto.randomUUID();
 
 const table = (page: Page) => page.getByTestId("table");
 
-async function expectAt(at: number): Promise<void> {
-	for (const page of Object.values(tab))
-		await expect(table(page)).toHaveAttribute("data-at", String(at));
-}
-
-async function bid(seat: SeatKey, at: number, code: string): Promise<void> {
-	await expectAt(at);
-	await makeCall(tab[seat], code);
-}
-
-/** In the tab of `seat`, plays the first card that the tab offers from the hand of `from`. */
-async function play(seat: SeatKey, from: SeatKey, at: number): Promise<void> {
-	await expectAt(at);
-	await tab[seat]
-		.getByTestId(`hand-${from}`)
-		.locator("button.card:enabled")
-		.first()
-		.click();
-}
-
 // Addresses in the text a person or a report could see: IPv4, IPv6 (full or with "::"), and the mDNS names that
 // browsers give as host candidates.
 const ADDRESS_PATTERNS = [
@@ -348,7 +323,7 @@ test("1: West, North and East join with audio; South's seat is held by a modifie
 		);
 });
 
-test("2: frames from a page without a seat, or for another generation, of an unknown type, or without a target reach the browsers and change nothing", async ({
+test("2: frames from a page without a seat, or for another generation, or of an unknown type reach the browsers and change nothing", async ({
 	browser,
 }) => {
 	const page = await openHarness(browser);
@@ -406,7 +381,8 @@ test("2: frames from a page without a seat, or for another generation, of an unk
 			message: { type: "hello", session: session() },
 		},
 		{
-			what: "an offer without a target session",
+			// The media is negotiated on the table connection (ADR 0009); the call has no offer of its own.
+			what: "a call offer",
 			from: south.page,
 			fromGen: gen.S,
 			toLater: 0,
@@ -436,7 +412,7 @@ test("2: frames from a page without a seat, or for another generation, of an unk
 	visitor = undefined;
 });
 
-test("3: malformed or misaddressed frames from South's own seat reach the browsers and change nothing", async () => {
+test("3: malformed frames from South's own seat reach the browsers and change nothing", async () => {
 	const gen = await generations();
 	const scene = await callScene(IN_CALL);
 	const before = await receivedBy(IN_CALL);
@@ -465,47 +441,11 @@ test("3: malformed or misaddressed frames from South's own seat reach the browse
 		],
 		["leave without a session", { type: "leave" }],
 	];
-	const description = (type: "offer" | "answer") => ({
-		type,
-		session: session(),
-		toSession: session(),
-		negotiation: 1,
-		sdp: "v=0",
-		...ANNOUNCE,
-	});
-	const toOne: [string, SeatKey, unknown][] = [
-		[
-			"ice without candidates",
-			"W",
-			{
-				type: "ice",
-				session: session(),
-				toSession: session(),
-				negotiation: 1,
-				candidates: [],
-			},
-		],
-		["an offer to a session that does not exist", "W", description("offer")],
-		["an answer to a session that does not exist", "N", description("answer")],
-		[
-			"ice to a session that does not exist",
-			"E",
-			{
-				type: "ice",
-				session: session(),
-				toSession: session(),
-				negotiation: 1,
-				candidates: [{ candidate: "", sdpMid: "0", sdpMLineIndex: 0 }],
-			},
-		],
-	];
 	for (const [, message] of toAll)
 		for (const seat of IN_CALL)
 			await raw(south.page, seat, gen[seat], gen.S, message);
-	for (const [, to, message] of toOne)
-		await raw(south.page, to, gen[to], gen.S, message);
 
-	await expectArrived(before, toAll.length * IN_CALL.length + toOne.length);
+	await expectArrived(before, toAll.length * IN_CALL.length);
 	await tab.W.waitForTimeout(1_500);
 	expect(await callScene(IN_CALL)).toEqual(scene);
 });
@@ -517,7 +457,8 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 		E: (await counts(tab.E)).peers,
 	};
 	// The positive control: South's own join through call signaling reaches each in-call seat. North and East
-	// make the first offer to South (the earlier seat offers); West waits for South's offer.
+	// add the media sections to their table connection to South (the earlier seat adds them); West waits for
+	// South's sections.
 	await south.page.evaluate(() => (window.lbHarness as Harness).callOpen());
 	await south.page.evaluate(() => (window.lbHarness as Harness).callSend(null));
 	for (const seat of IN_CALL)
@@ -610,7 +551,7 @@ test("5: when one player leaves, the other three pairs keep their sound", async 
 	}
 });
 
-test("6: leaving the room during the call ends the tracks and the links; back in the room, the player rejoins with the stored status", async () => {
+test("6: leaving the room during the call ends the tracks and the media; back in the room, the player rejoins with the stored status", async () => {
 	await tab.E.evaluate(() => {
 		location.hash = "";
 	});
@@ -623,6 +564,12 @@ test("6: leaving the room during the call ends the tracks and the links; back in
 			return { openPeers, liveTracks };
 		})
 		.toEqual({ openPeers: 0, liveTracks: 0 });
+	// Trystero can keep a connection open for a while after the room is left; no audio arrives on it.
+	await expect
+		.poll(async () => Math.max(0, ...(await peerAudioGrowth(tab.E, true))), {
+			timeout: 20_000,
+		})
+		.toBeLessThan(100);
 	for (const seat of ["W", "N"] as const) {
 		await expect(caption(tab[seat], "E")).toHaveText(
 			exactCaption(`${seatLabel("E")} · Not in call`),
@@ -644,57 +591,7 @@ test("6: leaving the room during the call ends the tracks and the links; back in
 	await expectConnected(IN_CALL);
 });
 
-test("7: a browser limited to relays gets Retry for each of its pairs, the other pairs connect, and its player still bids and plays", async () => {
-	test.setTimeout(240_000);
-	await leaveButton(tab.N).click();
-	await expect(joinButton(tab.N)).toBeVisible();
-	for (const seat of ["W", "E"] as const)
-		await expect(caption(tab[seat], "N")).toHaveText(
-			exactCaption(`${seatLabel("N")} · Not in call`),
-		);
-	await setCallRelayOnly(tab.N, true);
-	await joinWith(tab.S, "Audio only");
-	const others = ["W", "E", "S"] as const;
-	await expectConnected(others);
-
-	await joinWith(tab.N, "Audio only");
-	await expect
-		.poll(() => callTransportPolicies(tab.N))
-		.toEqual(["relay", "relay", "relay"]);
-	for (const seat of others) {
-		await expect(
-			tab.N.getByTestId(`call-retry-${seat}`),
-			`North offers Retry for ${seat}`,
-		).toBeVisible({ timeout: UNAVAILABLE_WITHIN_MS });
-		await expect(caption(tab.N, seat)).toHaveText(
-			exactCaption(`${seatLabel(seat)} · Direct connection unavailable`),
-		);
-		await expect(caption(tab[seat], "N")).toHaveText(
-			exactCaption(`${seatLabel("N")} · Direct connection unavailable`),
-			{ timeout: UNAVAILABLE_WITHIN_MS },
-		);
-	}
-	expect(await connectedTo(tab.N)).toEqual([]);
-	for (const seat of others)
-		expect(await connectedTo(tab[seat])).toEqual(
-			names(...others.filter((other) => other !== seat)),
-		);
-
-	// Board 1 (dealt in test 1): North opens 1♣, the others pass, East leads, and North plays from dummy and hand.
-	await bid("N", 0, "1C");
-	await bid("E", 1, "P");
-	await bid("S", 2, "P");
-	await bid("W", 3, "P");
-	for (const page of Object.values(tab))
-		await expect(table(page)).toHaveAttribute("data-phase", "play");
-	await play("E", "E", 4);
-	await play("N", "S", 5);
-	await play("W", "W", 6);
-	await play("N", "N", 7);
-	await expectAt(8);
-});
-
-test("8: no page and no console message shows an address", async () => {
+test("7: no page and no console message shows an address", async () => {
 	// The detector finds documentation addresses (RFC 5737, RFC 3849) and an mDNS name, and nothing else here.
 	for (const sample of [
 		"from 192.0.2.1 port 9",
@@ -715,7 +612,7 @@ test("8: no page and no console message shows an address", async () => {
 	).toBe(0);
 });
 
-test("9: no page reported an error", () => {
+test("8: no page reported an error", () => {
 	for (const player of [...Object.values(players), newcomer]) {
 		expect(player.errors).toEqual([]);
 	}

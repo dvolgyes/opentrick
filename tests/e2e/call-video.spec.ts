@@ -161,6 +161,31 @@ function audioOnlyPeers(page: Page): Promise<number> {
 	});
 }
 
+/**
+ * The probe index and states of each game link of the tab that is connected and was never disconnected,
+ * failed or closed.
+ */
+function gameLinks(
+	page: Page,
+): Promise<{ readonly index: number; readonly states: string[] }[]> {
+	return page.evaluate(() => {
+		const probe = (window as unknown as { __callProbe: CallProbe }).__callProbe;
+		return probe.connections.flatMap((connection, index) => {
+			const record = probe.records[index];
+			if (
+				record?.channel !== true ||
+				connection.connectionState !== "connected"
+			)
+				return [];
+			return record.states.some(
+				(state) => state !== "connecting" && state !== "connected",
+			)
+				? []
+				: [{ index, states: [...record.states] }];
+		});
+	});
+}
+
 /** The tab's camera tracks that are still live. */
 function liveCameras(page: Page): Promise<number> {
 	return page.evaluate(
@@ -576,7 +601,7 @@ test("6: a phone gets audio only next to camera senders, also when an offer forc
 	await expectRound(ROUND_C);
 
 	// North adds a sendrecv video section with a drawn track to its connection to South, and keeps it from
-	// being turned off; its next offer carries it.
+	// being turned off; Trystero offers it on the table connection, and the microphone toggle offers it again.
 	await tab.N.evaluate(() => {
 		const probe = (window as unknown as { __callProbe: CallProbe }).__callProbe;
 		const peer = probe.peers.find(
@@ -664,7 +689,33 @@ test("7: a desktop that becomes compact keeps sending its camera and the audio, 
 	expect(await liveCameras(tab.W)).toBe(1);
 });
 
-test("8: the phone leaves with its icon: its microphone and connections end, and the desktops see Not in call", async () => {
+test("8: ten See cameras toggles at two desktops at once close no table connection, the audio flows, and the video follows the last switches", async () => {
+	// The media goes over the table connections (ADR 0009): each toggle renegotiates them from both sides at once.
+	const round = { W: "both", N: "both", E: "camera" } as const;
+	await expectRound(round);
+	const before = await Promise.all(SEATS.map((seat) => gameLinks(tab[seat])));
+	for (const links of before) expect(links).toHaveLength(3);
+
+	const pair = ["W", "N"] as const;
+	await Promise.all(
+		pair.map(async (seat) => {
+			for (let click = 0; click < 10; click++)
+				await toggle(tab[seat], "See cameras: receive video").click();
+		}),
+	);
+	for (const seat of pair)
+		await expect(
+			toggle(tab[seat], "See cameras: receive video"),
+		).toHaveAttribute("aria-pressed", "true");
+	await expectRound(round);
+	for (const seat of SEATS) await expectAudioArrives(tab[seat]);
+	// The same game links, never interrupted: a refused description would have closed the table peer.
+	expect(await Promise.all(SEATS.map((seat) => gameLinks(tab[seat])))).toEqual(
+		before,
+	);
+});
+
+test("9: the phone leaves with its icon: its microphone and media end, and the desktops see Not in call", async () => {
 	await leaveButton(tab.S).click();
 	await expect(joinButton(tab.S)).toBeVisible();
 	await expect

@@ -39,14 +39,14 @@ import {
 
 /**
  * The audio call between real browsers (call/layout plan C5a and C5b), on one P2P table through the public
- * trackers. Call messages travel on the game links' data channels; the media goes over a call link per pair.
- * West, North and South may use the microphone (a generated tone); East may not until test 9. South is a phone.
- * A probe in each tab (call-probe.ts) counts the call activity: call links, microphone requests and call
- * messages. Each seat's call status is stored in the table (plan §12 R2), so a reload joins the call again.
+ * trackers. Call messages travel on the game links' data channels, and the media goes over the same connection
+ * (ADR 0009). West, North and South may use the microphone (a generated tone); East may not until test 9. South
+ * is a phone. A probe in each tab (call-probe.ts) counts the call activity: connections with media sections,
+ * microphone requests and call messages. Each seat's call status is stored in the table (plan §12 R2), so a reload joins the call again.
  */
 test.describe.configure({ mode: "serial" });
 
-/** The probe index, close time and states of each call link. */
+/** The probe index, close time and states of each connection with media sections. */
 function peerLog(
 	page: Page,
 ): Promise<{ index: number; closedAt: number | null; states: string[] }[]> {
@@ -54,7 +54,7 @@ function peerLog(
 		const probe = (window as unknown as { __callProbe: CallProbe }).__callProbe;
 		return probe.connections.flatMap((_, index) => {
 			const record = probe.records[index];
-			return record?.kind === "call"
+			return record?.media === true
 				? [{ index, closedAt: record.closedAt, states: [...record.states] }]
 				: [];
 		});
@@ -347,16 +347,18 @@ test("4: Listen only needs no microphone, and a refused microphone stays out of 
 	await expectAudioArrives(tab.E);
 });
 
-test("5: Leave stops the microphone and the connections, and the others see Not in call", async () => {
+test("5: Leave stops the microphone and the media, keeps the game links, and the others see Not in call", async () => {
 	await leaveButton(tab.N).click();
 	await expect(joinButton(tab.N)).toBeVisible();
 	await expect(panel(tab.N)).toHaveAttribute("data-status", "outside");
+	// The media sections go inactive; the connections stay, because they are the game links.
 	await expect
 		.poll(async () => {
 			const north = await counts(tab.N);
 			return { openPeers: north.openPeers, liveTracks: north.liveTracks };
 		})
 		.toEqual({ openPeers: 0, liveTracks: 0 });
+	expect(await links(tab.N)).toEqual({ mesh: 3, unknown: 0 });
 	await expect(caption(tab.W, "N")).toHaveText(
 		exactCaption(`${seatLabel("N")} · Not in call`),
 	);
@@ -368,11 +370,11 @@ test("5: Leave stops the microphone and the connections, and the others see Not 
 
 test("6: after East's game links and relays are cut for longer than 10 s, the call comes back and the audio flows again", async () => {
 	test.setTimeout(240_000);
-	// A network change: the data channels that carry the call messages close, and no relay can be reached.
-	// The call link itself stays open, as in plan §12 R1 only the game links are cut.
+	// A network change: the game links close, and no relay can be reached. The media goes over the game links
+	// (ADR 0009), so it stops with them.
 	await players.E.network.block();
 	expect(await cutGameLinks(tab.E)).toBe(3);
-	// Without game links East is offline for the others; after 10 s each side drops the call link.
+	// Without game links East is offline for the others; after 10 s each side drops it from the call.
 	await expect(caption(tab.W, "E")).toHaveText(
 		exactCaption(`${seatLabel("E")} · Not in call`),
 		{
@@ -632,18 +634,18 @@ test("12: rapid toggles at two seats at once end in each seat's last choice", as
 			toggle(tab[seat], "Hear others: receive audio"),
 		).toHaveAttribute("aria-pressed", "true");
 		await expect.poll(async () => (await counts(tab[seat])).liveTracks).toBe(0);
-		// The toggles renegotiate the existing links; they make no new ones.
-		expect(await counts(tab[seat])).toMatchObject({
-			peers: peers[seat],
-			openPeers: 3,
-		});
+		// The toggles renegotiate the existing table connections; they make no new ones and close none. West and
+		// North send nothing to each other now, so the section of their pair is inactive (ADR 0009).
+		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
+		expect((await counts(tab[seat])).peers).toBe(peers[seat]);
+		expect(await links(tab[seat])).toEqual({ mesh: 3, unknown: 0 });
 		await expect(caption(tab.E, seat)).toHaveText(
 			exactCaption(`${seatLabel(seat)} · Mic off`),
 		);
 	}
-	// West still hears East and South, and nothing from North, whose microphone is off.
-	const [silent, ...heard] = await peerAudioGrowth(tab.W);
-	expect(silent).toBeLessThan(100);
+	// West still hears East and South over the two pairs that carry media.
+	const heard = await peerAudioGrowth(tab.W);
+	expect(heard).toHaveLength(2);
 	for (const bytes of heard) expect(bytes).toBeGreaterThan(SOUND);
 
 	for (const seat of pair) {
@@ -657,6 +659,8 @@ test("12: rapid toggles at two seats at once end in each seat's last choice", as
 		);
 		expect((await counts(tab[seat])).liveTracks).toBe(1);
 	}
+	for (const seat of pair)
+		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(3);
 });
 
 test("13: a reload joins the call again, and the peers drop the old link at once", async () => {

@@ -20,10 +20,9 @@ import {
 } from "./room";
 
 /**
- * The host's page reloads while one player sends video to another. Call signaling goes directly between the two
- * seats, and each seat pair has its own media connection, so the stream does not go through the host and must
- * not stop. North hosts and is in the call with audio only; South sends its camera; East sees cameras; West only
- * plays.
+ * The host's page reloads while one player sends video to another. The media goes on the table connection of
+ * each seat pair (ADR 0009), so the stream does not go through the host and must not stop. North hosts and is in
+ * the call with audio only; South sends its camera; East sees cameras; West only plays.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -160,7 +159,7 @@ test("South's video reaches East without a gap while the host North reloads", as
 		exactCaption(`${seatLabel("N")} · Audio only`),
 		{ timeout: CONNECT_MS },
 	);
-	// East built a new media connection to the reloaded North; the one to South stayed.
+	// East's new table connection to the reloaded North carries media sections; the one to South stayed.
 	expect((await counts(tab.E)).peers).toBeGreaterThan(peersBefore);
 	const after = await southFrames(tab.E, 3);
 	expect(after.track).toBe(during.track);
