@@ -327,11 +327,17 @@ describe("PeerLink state and lifecycle (call/layout plan §4.5)", () => {
 	it("shows reconnecting without a table connection, and moves to the new connection on rebind", async () => {
 		const pair = await connectedPair();
 		const old = pair.a;
+		const oldSection = pair.ta;
 		pair.offline = true;
 		pair.north.rebind();
 		pair.east.rebind();
 		expect(pair.north.state).toBe("reconnecting");
 		expect(pair.north.remoteAudio).toBeUndefined();
+		// Trystero can keep the old connection open after the page leaves the table; it carries no media of the link.
+		await settle();
+		expect(old.closed).toBe(false);
+		expect(oldSection.direction).toBe("inactive");
+		expect(oldSection.sender.track).toBeNull();
 
 		pair.table = new FakeTrysteroPair();
 		pair.offline = false;

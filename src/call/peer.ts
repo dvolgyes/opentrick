@@ -164,7 +164,11 @@ export class PeerLink implements CallLink {
 		clearTimeout(this.#connectTimer);
 		this.#pollFrames(false);
 		this.#listeners?.abort();
-		const pc = this.#pc;
+		this.#release(this.#pc);
+	}
+
+	/** Every section of `pc` goes inactive and sends nothing; the connection stays open. */
+	#release(pc: RTCPeerConnection | undefined): void {
 		if (pc === undefined || pc.signalingState === "closed") return;
 		for (const transceiver of pc.getTransceivers()) {
 			if (transceiver.currentDirection === "stopped") continue;
@@ -175,6 +179,8 @@ export class PeerLink implements CallLink {
 
 	#bind(pc: RTCPeerConnection | undefined): void {
 		this.#listeners?.abort();
+		// Trystero can keep the old connection open after the page left the table, so the media must not stay on it.
+		this.#release(this.#pc);
 		this.#pc = pc;
 		this.#watched = new Set();
 		if (pc === undefined) {
