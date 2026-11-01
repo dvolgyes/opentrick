@@ -185,13 +185,17 @@ class Player {
 	}
 }
 
-/** Both seats held at generation 1 and present. */
-function snapshot(self: Seat | null): CallRoomSnapshot {
+/** Both seats held at generation 1 and present; `expected` are the seats in the call record. */
+function snapshot(
+	self: Seat | null,
+	expected: readonly Seat[] = [],
+): CallRoomSnapshot {
 	return {
 		roomId: ROOM_ID,
 		self: self === null ? null : { seat: self, generation: 1 },
 		holders: { N: 1, E: 1 },
 		online: new Set<Seat>(["N", "E"]),
+		expected: new Set(expected),
 	};
 }
 

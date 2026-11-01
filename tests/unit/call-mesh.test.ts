@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	CallMesh,
 	type CallRoomSnapshot,
+	GREET_MAX_MS,
 	REPLY_COALESCE_MS,
 	SILENCE_MS,
 	STALE_SNAPSHOT_MS,
@@ -69,6 +70,8 @@ interface BrokerInbox {
 class Broker implements CallTransport {
 	readonly holders: Partial<Record<Seat, number>> = {};
 	readonly online = new Set<Seat>();
+	/** Seats whose replicated call record shows them in the call. */
+	readonly expected = new Set<Seat>();
 	/** Every copy the broker wrote, in write order. */
 	readonly sent: Traffic[] = [];
 	readonly log: string[] = [];
@@ -254,7 +257,7 @@ class Table {
 	}
 
 	snapshot(player: Player): CallRoomSnapshot {
-		const { holders, online } = this.broker;
+		const { holders, online, expected } = this.broker;
 		return {
 			roomId: ROOM_ID,
 			self:
@@ -263,6 +266,7 @@ class Table {
 					: null,
 			holders: { ...holders },
 			online: new Set(online),
+			expected: new Set([...expected].filter((seat) => seat !== player.seat)),
 		};
 	}
 }
@@ -499,6 +503,62 @@ describe("CallMesh announcements", () => {
 		expect(addressed()).toEqual(["resync:E", "resync:S"]);
 		await settle(60_000);
 		expect(addressed()).toEqual(["resync:E", "resync:S"]);
+	});
+
+	it("connects seats in the call record after their greetings were lost for 60 s, then stops greeting", async () => {
+		const north = table.take("N");
+		const east = table.take("E");
+		table.broker.expected.add("N").add("E");
+		table.publish();
+		let lost = true;
+		table.broker.drop = () => lost;
+		north.mesh.join(AUDIO);
+		east.mesh.join(AUDIO);
+		await settle(60_000);
+		expect(north.mesh.peer("E")).toBeUndefined();
+		lost = false;
+		await settle(GREET_MAX_MS + SETTLE_MS);
+		expectConnected(north, east);
+		const resyncs = table.broker.count("resync");
+		await settle(120_000);
+		expect(table.broker.count("resync")).toBe(resyncs);
+	});
+
+	it("greets a silent seat in the call record at a doubling wait up to 30 s", async () => {
+		const north = table.take("N");
+		table.take("E");
+		table.broker.expected.add("E");
+		table.publish();
+		north.mesh.join(AUDIO);
+		const times: number[] = [];
+		for (let second = 1; second <= 120; second++) {
+			const before = table.broker.count("resync", { to: "E" });
+			await settle(1_000);
+			const after = table.broker.count("resync", { to: "E" });
+			for (let n = before; n < after; n++) times.push(second);
+		}
+		// The join goes out after the 60 ms subscription, so the first greeting falls in the fourth second.
+		expect(times.map((time, index) => time - (times[index - 1] ?? 0))).toEqual([
+			4, 6, 12, 24, 30, 30,
+		]);
+	});
+
+	it("restarts a failed link to a seat in the call record without Retry", async () => {
+		const north = table.take("N");
+		const east = table.take("E");
+		table.broker.expected.add("N").add("E");
+		table.publish();
+		north.mesh.join(AUDIO);
+		east.mesh.join(AUDIO);
+		await settle();
+		expectConnected(north, east);
+		north.live("E")[0]?.fail();
+		east.live("N")[0]?.fail();
+		await settle(SILENCE_MS + SETTLE_MS);
+		expectConnected(north, east);
+		// Both sides greet at the same time, so the impolite side can restart once for each greeting.
+		expect(north.live("E")[0]?.offers.length).toBeGreaterThan(1);
+		expect(east.live("N")[0]?.offers).toEqual([]);
 	});
 
 	it("answers a join and a resync from one seat within 300 ms with one prefs message", async () => {

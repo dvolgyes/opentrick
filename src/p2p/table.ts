@@ -1,6 +1,6 @@
 import { botSeatClaims, botSeatHolder, soloSeat } from "../bot/seats";
 import { type BuildInfo, isBuildDate, newerBuildDate } from "../build";
-import type { CallRoomSnapshot } from "../call/mesh";
+import type { TableCallSnapshot } from "../call/mesh";
 import type { CallTransport } from "../call/signaling";
 import type { GameModule } from "../game/module";
 import { playerConfig, unnamedPlayer } from "../players";
@@ -412,7 +412,7 @@ export class TableController {
 	 * The call's view of the table: holders from the replica, and online = the seats whose peer the roster binds
 	 * at the current generation and that have a data channel to this page.
 	 */
-	callSnapshot(): CallRoomSnapshot {
+	callSnapshot(): TableCallSnapshot {
 		const table = this.#closed() ? null : this.#replication?.log?.table;
 		const holders: Partial<Record<Seat, number>> = {};
 		for (const row of table?.seats ?? []) {

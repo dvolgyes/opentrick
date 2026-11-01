@@ -34,6 +34,7 @@ import {
 	networkLines,
 	presentSeats,
 	type RoomViewInput,
+	recordedInCall,
 	roomView,
 	TEXT,
 } from "../../src/ui/model";
@@ -822,6 +823,46 @@ describe("seats", () => {
 		expect([...callSeats("W", roster)].sort()).toEqual(["E", "W"]);
 		expect(SEATS.filter((seat) => botPlays(roster, seat))).toEqual(["N"]);
 		expect([...callSeats(null, null)]).toEqual([]);
+	});
+
+	it("takes a seat's call record only when it is in the call, belongs to the current holder, and the seat can call", () => {
+		const roster: Roster = {
+			k: "roster",
+			auth: AUTH,
+			seats: [
+				{ seat: "N", holder: "h-n", gen: 1, acked: 0 },
+				{ seat: "E", holder: "h-e2", gen: 2, acked: 0 },
+				{ seat: "S", holder: "h-s", gen: 1, acked: 0 },
+				{ seat: "W", holder: "h-w", gen: 1, acked: 0 },
+			],
+			peers: [],
+			bots: [],
+			autoplaySeats: [],
+		};
+		const record = (holder: string, inCall: boolean) => ({
+			version: 1,
+			prefs: {
+				inCall,
+				send: { audio: true, video: false },
+				receive: { audio: true, video: true },
+			},
+			form: "desktop" as const,
+			holder,
+		});
+		const records = {
+			N: record("h-n", true),
+			// The previous holder of East joined the call.
+			E: record("h-e1", true),
+			S: record("h-s", false),
+			W: record("h-w", true),
+		};
+		expect(
+			Object.keys(recordedInCall(records, roster, new Set(SEATS))),
+		).toEqual(["N", "W"]);
+		expect(
+			Object.keys(recordedInCall(records, roster, new Set<Seat>(["N"]))),
+		).toEqual(["N"]);
+		expect(recordedInCall(records, null, new Set(SEATS))).toEqual({});
 	});
 });
 

@@ -1,4 +1,5 @@
 import { botSeats } from "../bot/seats";
+import type { CallRecords } from "../call/record";
 import { isChatCommand, isChatEvent } from "../game/bridge";
 import { parseChatEvent } from "../game/chat";
 import { englishTranslator as english, type Translate } from "../i18n";
@@ -847,6 +848,30 @@ export function callSeats(
 	}
 	for (const seat of SEATS) if (botPlays(roster, seat)) seats.delete(seat);
 	return seats;
+}
+
+/**
+ * The call records (plan §12 R2) that show a seat in the call: the record belongs to the seat's current holder,
+ * and the seat is one of `callSeats`.
+ */
+export function recordedInCall(
+	records: CallRecords,
+	roster: Roster | null,
+	inCallSeats: ReadonlySet<Seat>,
+): CallRecords {
+	const inCall: CallRecords = {};
+	for (const seat of SEATS) {
+		const record = records[seat];
+		const holder = roster?.seats.find((row) => row.seat === seat)?.holder;
+		if (
+			record?.prefs.inCall === true &&
+			record.holder === holder &&
+			inCallSeats.has(seat)
+		) {
+			inCall[seat] = record;
+		}
+	}
+	return inCall;
 }
 
 export function roomView(input: RoomViewInput): RoomView {

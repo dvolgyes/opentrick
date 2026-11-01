@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type CallRoomSnapshot, returnedSeats } from "../../src/call/mesh";
+import { returnedSeats, type TableCallSnapshot } from "../../src/call/mesh";
 import {
 	type CallMessage,
 	inboxTopic,
@@ -98,7 +98,7 @@ describe("inbound call frames", () => {
 	});
 });
 
-function snapshot(online: readonly Seat[]): CallRoomSnapshot {
+function snapshot(online: readonly Seat[]): TableCallSnapshot {
 	return {
 		roomId: TABLE,
 		self: { seat: "N", generation: 3 },

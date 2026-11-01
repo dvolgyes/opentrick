@@ -81,6 +81,7 @@ import {
 	type PendingLine,
 	presentSeats,
 	type RosterRow,
+	recordedInCall,
 	releaseText,
 	roomView,
 	type SummaryInput,
@@ -1492,7 +1493,24 @@ export function showRoom(
 		const inCall = call?.view.requested.inCall === true;
 		callPresence.update(!onlyBots, inCall);
 		const botAlone = botPlays(view.roster, seat);
-		const snapshot = controller.callSnapshot();
+		const state =
+			view.table === null
+				? undefined
+				: (parseBridgeState(view.table.state, tableId) ?? null);
+		const callRecords = recordedInCall(
+			state?.media ?? {},
+			view.roster,
+			inCallSeats,
+		);
+		const snapshot = {
+			...controller.callSnapshot(),
+			expected: new Set(
+				SEATS.filter(
+					(targetSeat) =>
+						targetSeat !== seat && callRecords[targetSeat] !== undefined,
+				),
+			),
+		};
 		call?.update(
 			botAlone || (onlyBots && !inCall)
 				? { ...snapshot, self: null }
@@ -1568,24 +1586,10 @@ export function showRoom(
 			transcript.replaceChildren(...model.transcript.map(transcriptItem));
 			pending.replaceChildren(...model.pending.map(pendingItem));
 		}
-		const state =
-			view.table === null
-				? undefined
-				: (parseBridgeState(view.table.state, tableId) ?? null);
 		remoteCallPresence = {};
 		for (const targetSeat of SEATS) {
-			const record = state?.media[targetSeat];
-			const currentHolder = view.roster?.seats.find(
-				(row) => row.seat === targetSeat,
-			);
-			if (
-				record === undefined ||
-				!record.prefs.inCall ||
-				record.holder !== currentHolder?.holder ||
-				!inCallSeats.has(targetSeat)
-			) {
-				continue;
-			}
+			const record = callRecords[targetSeat];
+			if (record === undefined) continue;
 			remoteCallPresence[targetSeat] = {
 				sendsAudio: record.prefs.send.audio,
 				sendsVideo: record.prefs.send.video,

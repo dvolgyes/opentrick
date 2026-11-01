@@ -29,9 +29,11 @@ export const SILENCE_MS = 3000;
 export const STALE_SNAPSHOT_MS = 3000;
 /** A peer that is offline at its current generation this long is out of the call. */
 export const VANISHED_MS = 10_000;
+/** The longest wait between two greetings to a seat in the call record that is not connected. */
+export const GREET_MAX_MS = 30_000;
 
-/** What the room tells the call, on every change (plan §4.1). */
-export interface CallRoomSnapshot {
+/** What the table tells the call (`table.ts`). */
+export interface TableCallSnapshot {
 	readonly roomId: string;
 	/** Null when this tab is superseded, the room expired, or the room stopped. */
 	readonly self: { readonly seat: Seat; readonly generation: number } | null;
@@ -39,6 +41,12 @@ export interface CallRoomSnapshot {
 	readonly holders: Partial<Record<Seat, number>>;
 	/** Seats whose current holder is present in the room channel. */
 	readonly online: ReadonlySet<Seat>;
+}
+
+/** What the room tells the call, on every change (plan §4.1). */
+export interface CallRoomSnapshot extends TableCallSnapshot {
+	/** Other seats whose replicated call record (plan §12 R2) shows their current holder in the call. */
+	readonly expected: ReadonlySet<Seat>;
 }
 
 export type LinkSignal =
@@ -112,8 +120,8 @@ function remoteParty(announcement: Announcement): Party {
 
 /** Other held seats that are online in `next` but were not in `previous` (none before a first snapshot). */
 export function returnedSeats(
-	previous: CallRoomSnapshot | undefined,
-	next: CallRoomSnapshot,
+	previous: TableCallSnapshot | undefined,
+	next: TableCallSnapshot,
 	self: Seat,
 ): Seat[] {
 	if (previous === undefined) return [];
@@ -146,6 +154,8 @@ export class CallMesh {
 	/** Returned seats that were greeted and have not answered yet. */
 	readonly #greeted = new Map<Seat, ReturnType<typeof setTimeout>>();
 	#silence: ReturnType<typeof setTimeout> | undefined;
+	/** Seats in the call record that are online and not connected → their next greeting. */
+	readonly #greetings = new Map<Seat, ReturnType<typeof setTimeout>>();
 	#heard = new Set<Seat>();
 	#problem: FailureCode | undefined;
 
@@ -304,6 +314,8 @@ export class CallMesh {
 		this.#replies.clear();
 		clearTimeout(this.#silence);
 		this.#silence = undefined;
+		for (const timer of this.#greetings.values()) clearTimeout(timer);
+		this.#greetings.clear();
 	}
 
 	#onStatus(joined: Joined, status: SignalingStatus): void {
@@ -393,7 +405,10 @@ export class CallMesh {
 		);
 	}
 
-	/** A send can be lost silently: one addressed `resync` per seat that stays silent, never more. */
+	/**
+	 * A send can be lost silently: one addressed `resync` per seat that stays silent, never more. A seat in the call
+	 * record gets its greetings from `#keepGreeting` instead.
+	 */
 	#startSilenceCheck(): void {
 		clearTimeout(this.#silence);
 		this.#heard = new Set();
@@ -407,12 +422,50 @@ export class CallMesh {
 					seat !== self.seat &&
 					snapshot.holders[seat] !== undefined &&
 					snapshot.online.has(seat) &&
-					!this.#heard.has(seat)
+					!this.#heard.has(seat) &&
+					!this.#greetings.has(seat)
 				) {
 					this.#announce("resync", seat);
 				}
 			}
 		}, SILENCE_MS);
+	}
+
+	/**
+	 * The call record says that a seat is in the call and its data channel is open, but its link is not connected:
+	 * a greeting was lost, or the link failed. It is greeted until the link connects, at a wait that doubles from
+	 * SILENCE_MS to GREET_MAX_MS; a seat that goes offline, leaves the record, or drops a link starts at SILENCE_MS.
+	 */
+	#keepGreeting(): void {
+		const snapshot = this.#snapshot;
+		const self = this.#self;
+		for (const seat of SEATS) {
+			const wanted =
+				this.#joined?.announced === true &&
+				snapshot !== undefined &&
+				self !== undefined &&
+				seat !== self.seat &&
+				snapshot.holders[seat] !== undefined &&
+				snapshot.expected.has(seat) &&
+				snapshot.online.has(seat) &&
+				this.#peers.get(seat)?.link?.connected !== true;
+			if (!wanted) {
+				clearTimeout(this.#greetings.get(seat));
+				this.#greetings.delete(seat);
+			} else if (!this.#greetings.has(seat)) {
+				this.#greetAfter(seat, SILENCE_MS);
+			}
+		}
+	}
+
+	#greetAfter(seat: Seat, wait: number): void {
+		this.#greetings.set(
+			seat,
+			setTimeout(() => {
+				this.#announce("resync", seat);
+				this.#greetAfter(seat, Math.min(wait * 2, GREET_MAX_MS));
+			}, wait),
+		);
 	}
 
 	/** Membership invariant (plan §4.1): only a current holder at the sending generation is heard. */
@@ -653,6 +706,7 @@ export class CallMesh {
 	}
 
 	#emit(): void {
+		this.#keepGreeting();
 		for (const listener of this.#listeners) listener();
 	}
 }
