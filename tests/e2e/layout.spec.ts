@@ -678,15 +678,13 @@ test("2: desktop, during play: dummy's cards and the trick keep apart from the r
 		await expect(page.getByTestId("trick")).toBeVisible();
 		await expect(page.getByTestId("bid-box")).toBeHidden();
 		// Dummy's turn: declarer North acts; only the declarer may claim, at any turn (tests/unit/table-model.test.ts).
-		// Only East has played a card, so only East may ask to undo (src/bridge/engine.ts `undoPosition`). The
-		// desktop shows the play controls only to a seat that can use one of them (src/ui/table.ts).
+		// Only East has played a card, so only East may ask to undo (src/bridge/engine.ts `undoPosition`).
 		const claimAll = page.getByRole("button", { name: "Claim all" });
 		const undo = page.getByRole("button", { name: "Undo" });
 		if (seat === "N") await expect(claimAll).toBeEnabled();
-		else if (seat === "E") await expect(claimAll).toBeDisabled();
-		else await expect(claimAll).toBeHidden();
+		else await expect(claimAll).toBeDisabled();
 		if (seat === "E") await expect(undo).toBeEnabled();
-		else await expect(undo).toBeHidden();
+		else await expect(undo).toBeDisabled();
 		await expectDesktopLayout(seat);
 		await expectSlotWithoutScroll(page);
 		await expectDesktopFit(seat, ALL_DESK_PARTS);

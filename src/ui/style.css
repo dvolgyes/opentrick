@@ -3209,15 +3209,15 @@ button.call-join[data-in-call="true"] {
 	box-shadow: 0 0.5rem 2rem var(--shadow);
 }
 
-.exit-dialog.approval {
+:is(.exit-dialog, .undo-confirm-dialog).approval {
 	box-sizing: border-box;
 	width: min(36rem, calc(100vw - 1rem));
 	max-width: calc(100vw - 1rem);
 	padding: clamp(1.25rem, 3vw, 2rem);
 	box-shadow: 0 0.5rem 2rem var(--shadow);
 }
-.exit-dialog::backdrop { background: var(--scrim); }
-.exit-dialog .approval-actions button { flex-basis: 0; min-width: 0; }
+:is(.exit-dialog, .undo-confirm-dialog)::backdrop { background: var(--scrim); }
+:is(.exit-dialog, .undo-confirm-dialog) .approval-actions button { flex-basis: 0; min-width: 0; }
 
 /* Absent players: a notice in the middle of a desktop felt that lets clicks through, or a panel below a phone's board. */
 .waiting-overlay {
@@ -4307,6 +4307,14 @@ main:has(> .room[data-form="compact"]) {
 	align-items: center;
 	justify-content: space-between;
 	gap: 0.4rem;
+}
+
+.mobile-room-controls:empty {
+	display: none;
+}
+
+.mobile-room-controls .room-bot-controls:not(:has(> :not([hidden], .settings-button))) {
+	display: none;
 }
 
 .mobile-auction-topbar .icon-group {
@@ -5442,7 +5450,7 @@ main[data-screen="table"][data-layout="sideways"] .auction-scroll .auction {
 /* Before the first board, a phone shows the top controls and the board of the game. */
 [data-form="compact"]
 	.bridge-table[data-phase="waiting"]
-	:is(.felt, .mobile-auction > :not(.mobile-auction-board, .mobile-auction-topbar)) {
+	:is(.felt, .mobile-auction > :not(.mobile-auction-board, .mobile-auction-topbar, .mobile-room-controls)) {
 	display: none;
 }
 

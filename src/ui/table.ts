@@ -77,6 +77,8 @@ export interface TableSection {
 	readonly autoplayControl: HTMLElement;
 	/** The status of a guest's bot request, placed below the room controls. */
 	readonly autoplayStatus: HTMLElement;
+	/** The room's action row moves here while the upright phone board is visible. */
+	readonly mobileActions: HTMLElement;
 	/**
 	 * The room places this in its Host controls. On an upright phone the host's list of connected players and bot
 	 * switches moves here, so the board has the room.
@@ -502,11 +504,11 @@ export function tableSection(
 	}
 	// An undo request goes to the other players at once, so the player confirms it first.
 	let undoConfirmBoard: number | undefined;
-	const undoConfirmTitle = el("h3", { attrs: { id: "undo-confirm-title" } });
+	const undoConfirmTitle = el("h2", { attrs: { id: "undo-confirm-title" } });
 	const undoConfirmDialog: HTMLDialogElement = el(
 		"dialog",
 		{
-			className: "autoplay-dialog",
+			className: "approval undo-confirm-dialog",
 			attrs: {
 				"aria-labelledby": "undo-confirm-title",
 				"data-testid": "undo-confirm",
@@ -515,9 +517,10 @@ export function tableSection(
 		undoConfirmTitle,
 		el(
 			"div",
-			{ className: "autoplay-dialog-actions" },
+			{ className: "approval-actions" },
 			button(t("Cancel"), () => undoConfirmDialog.close(), {
-				attrs: { "data-testid": "undo-confirm-cancel" },
+				className: "approval-accept",
+				attrs: { "data-testid": "undo-confirm-cancel", autofocus: "" },
 			}),
 			button(
 				t("Ask to undo"),
@@ -528,7 +531,10 @@ export function tableSection(
 					if (latestView?.undo.canRequest && latestView.board === board)
 						handlers.undoRequest(board);
 				},
-				{ attrs: { "data-testid": "undo-confirm-send" } },
+				{
+					className: "approval-reject",
+					attrs: { "data-testid": "undo-confirm-send" },
+				},
 			),
 		),
 	);
@@ -916,6 +922,7 @@ export function tableSection(
 		mobileExit,
 		mobileShareStatus,
 	);
+	const mobileActions = el("div", { className: "mobile-room-controls" });
 	// The round line opens the previous game statistics, as the desktop sidebar shows them.
 	const mobileRoundLine = el("summary", { attrs: { "aria-live": "polite" } });
 	const mobileScores = el("table", {
@@ -1012,6 +1019,7 @@ export function tableSection(
 			attrs: { "data-testid": "mobile-auction" },
 		},
 		mobileTopbar,
+		mobileActions,
 		mobileRoundStatus,
 		mobileBids,
 		mobileBoard,
@@ -1759,7 +1767,6 @@ export function tableSection(
 			seatNodes.set(seat.position, cached);
 		}
 		if (!cached) throw new Error("Missing seat node");
-		// The claim controls sit in the sidebar, and only while the viewer is about to play a card.
 		if (seat.position === "bottom") {
 			if (cached.node.parentElement !== mobileHand)
 				placeChildren(place, cached.node);
@@ -3122,19 +3129,9 @@ export function tableSection(
 			: undefined;
 		renderApproval(view, below);
 		renderWaiting(view, below);
-		const bottom = view.seats.find((seat) => seat.position === "bottom");
-		const ownTurn = bottom?.turn === true && !bottom.tags.includes("Dummy");
 		const gameOver = view.phase === "complete";
 		const playing = view.phase === "play";
-		playControls.hidden =
-			mobileGameActive && playing
-				? false
-				: (!playing && !gameOver) ||
-					(!ownTurn &&
-						!view.undo.canRequest &&
-						!view.undo.canVote &&
-						!view.undo.canCancel &&
-						!view.claim.canRequest);
+		playControls.hidden = !playing && !gameOver;
 		// "Claim …" offers a button for each count, so it waits until few tricks remain; "Claim all" stays.
 		claim.hidden = view.phase !== "play" || !view.claim.choosable;
 		claimAll.hidden = view.phase !== "play";
@@ -3187,8 +3184,6 @@ export function tableSection(
 		claimRequestId = view.claim.requestId;
 		undoMessage.textContent = view.undo.message;
 		undoMessage.hidden = view.undo.message === "";
-		playUndo.hidden =
-			!view.undo.canRequest || view.undo.requestId !== undefined;
 		playUndo.disabled = !view.undo.canRequest;
 		compactUndo.hidden = view.phase === "auction";
 		compactUndo.disabled = !view.undo.canRequest;
@@ -3328,6 +3323,7 @@ export function tableSection(
 		element,
 		autoplayControl,
 		autoplayStatus,
+		mobileActions,
 		hostPlayers,
 		sidebar,
 		sidebarEnd,

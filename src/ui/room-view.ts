@@ -397,6 +397,7 @@ export function showRoom(
 		className: "bot-status",
 		attrs: { role: "status", "data-testid": "bot-status" },
 	});
+	botStatus.hidden = true;
 	const botAlert = el("p", {
 		className: "bot-alert",
 		attrs: { role: "status", "data-testid": "bot-alert" },
@@ -1073,6 +1074,13 @@ export function showRoom(
 		{ attrs: { "data-testid": "retry-bots" } },
 	);
 	retryBots.hidden = true;
+	const botControls = el(
+		"div",
+		{ className: "room-control-row room-bot-controls" },
+		openSettings,
+		openHostControls,
+		table.autoplayControl,
+	);
 	const resetControls = el(
 		"section",
 		{ className: "room-controls", attrs: { "data-testid": "room-controls" } },
@@ -1088,13 +1096,7 @@ export function showRoom(
 			copyRoomLink,
 			exit,
 		),
-		el(
-			"div",
-			{ className: "room-control-row room-bot-controls" },
-			openSettings,
-			openHostControls,
-			table.autoplayControl,
-		),
+		botControls,
 		table.autoplayStatus,
 		botAlert,
 		retryBots,
@@ -1188,7 +1190,17 @@ export function showRoom(
 		root.dataset.layout = value;
 		room.dataset.layout = value;
 		table.setForm(value);
+		placeBotControls();
 	};
+	function placeBotControls(): void {
+		const board = table.mobileActions.parentElement;
+		if (room.dataset.form === "compact" && board && !board.hidden) {
+			if (botControls.parentElement !== table.mobileActions)
+				table.mobileActions.append(botControls);
+		} else if (botControls.parentElement !== resetControls) {
+			resetControls.insertBefore(botControls, table.autoplayStatus);
+		}
+	}
 	setRoomLayout(deviceLayout);
 	const updateRoomCanvasScale = (): void => {
 		const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
@@ -1839,6 +1851,7 @@ export function showRoom(
 		if (tableKey !== shownTable) {
 			shownTable = tableKey;
 			table.render(tableModel);
+			placeBotControls();
 			biddingViewport.update();
 			if (tableModel.board !== 0) firstDealSent = false;
 			const first = tableModel.nextBoard;

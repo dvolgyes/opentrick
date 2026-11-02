@@ -119,6 +119,12 @@ describe("table layout", () => {
 		).toBe(true);
 	});
 
+	it("lets a defender undo their card when the declarer is a bot", () => {
+		const defender = view("E", LED, { bots: new Set<Seat>(["N"]) });
+		expect(defender.undo.canRequest).toBe(true);
+		expect(defender.undo.question).toBe("Ask to undo your last played card?");
+	});
+
 	it("names the action that an undo request would take back, and nothing while no request can be sent", () => {
 		expect(view("N", bidding(BOARD, "1C")).undo.question).toBe(
 			"Ask to undo your last bid?",

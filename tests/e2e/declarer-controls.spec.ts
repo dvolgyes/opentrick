@@ -83,17 +83,24 @@ test("a hosting declarer with three bots can play and reach the claim buttons", 
 		await expect(
 			page.getByRole("button", { name: "Claim …", exact: true }),
 		).toBeHidden();
+		const undo = page.getByTestId("undo-request");
+		await expectReachable(page, undo);
+		await undo.click();
+		await expect(page.getByTestId("undo-confirm")).toContainText(
+			"Ask to undo your last played card?",
+		);
+		await page.getByTestId("undo-confirm-cancel").click();
 
 		// The sidebar reads top to bottom: the room buttons with Host controls, bidding, tricks, the controls,
-		// statistics, and the bot status last.
+		// and statistics. The bot status is not displayed.
 		const parts = {
 			hostControls: page.getByTestId("host-controls"),
 			bidding: page.getByTestId("bid-history"),
 			tricks: page.getByTestId("tricks-panel"),
 			claim: page.getByRole("button", { name: "Claim all", exact: true }),
 			statistics: page.getByTestId("scores"),
-			botStatus: page.getByTestId("bot-status"),
 		};
+		await expect(page.getByTestId("bot-status")).toBeHidden();
 		const tops: Record<string, number> = {};
 		for (const [part, locator] of Object.entries(parts)) {
 			await expect(locator, part).toBeVisible();

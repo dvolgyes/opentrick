@@ -1095,7 +1095,6 @@ function undoPanelView(
 	seat: Seat,
 	config: RoomConfig,
 	terminal: boolean,
-	declarerIsBot: boolean,
 	outbox: readonly OutboxItem[],
 	t: Translate,
 ): UndoPanelView {
@@ -1106,7 +1105,6 @@ function undoPanelView(
 		const position = board === null ? undefined : undoPosition(board, seat);
 		const canRequest =
 			!terminal &&
-			!declarerIsBot &&
 			!sending &&
 			state.claim === null &&
 			state.claimResult === null &&
@@ -1337,7 +1335,6 @@ export function tableView(input: TableViewInput): TableView {
 		seat,
 		config,
 		!localActionAllowed,
-		declarerIsBot,
 		input.outbox,
 		t,
 	);

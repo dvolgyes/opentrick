@@ -1449,15 +1449,16 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 		"no ace or king outside {trumps}":
 			"a {trumps} színen kívül nincs ász vagy király",
 		"a singleton or void in {suit}, none in a lower suit except {trumps}":
-			"{suit} szingli vagy renonsz, a {trumps} szín kivételével alacsonyabb színben nincs",
-		"no singleton or void": "szingli és renonsz nélkül",
+			"{suit} szingli vagy színhiány, a {trumps} szín kivételével alacsonyabb színben nincs",
+		"no singleton or void": "szingli és színhiány nélkül",
 		"balanced, exactly {length} {suit}":
 			"kiegyensúlyozott, pontosan {length} {suit}",
-		"{min}+ {suit}, a singleton or void": "{min}+ {suit}, szingli vagy renonsz",
+		"{min}+ {suit}, a singleton or void":
+			"{min}+ {suit}, szingli vagy színhiány",
 		"exactly {length} {suit}, no singleton or void":
-			"pontosan {length} {suit}, szingli és renonsz nélkül",
+			"pontosan {length} {suit}, szingli és színhiány nélkül",
 		"exactly {length} {major}, {min}+ {suit}, a singleton or void":
-			"pontosan {length} {major}, {min}+ {suit}, szingli vagy renonsz",
+			"pontosan {length} {major}, {min}+ {suit}, szingli vagy színhiány",
 		"at most {max} {suit}": "legfeljebb {max} {suit}",
 		"at most {max} {suit} and {otherMax} {other}":
 			"legfeljebb {max} {suit} és {otherMax} {other}",
