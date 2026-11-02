@@ -24,7 +24,7 @@ test("four bots play a complete board without fetching the play worker for every
 	await page.getByTestId("host-autoplay-toggle").click();
 	await page.getByTestId("autoplay-confirm-enable").click();
 	await expect(page.getByTestId("host-autoplay-toggle")).toHaveText(
-		"Disable bot",
+		"Disable autoplay",
 	);
 	const table = page.getByTestId("table");
 	await expect(table).toHaveAttribute("data-phase", "complete", {

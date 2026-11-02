@@ -15,7 +15,6 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	}
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
-	await page.getByRole("button", { name: "Pause bots", exact: true }).click();
 
 	const settings = page.getByTestId("settings-dialog");
 	const open = async () => {
@@ -36,7 +35,6 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	await settings.getByRole("button", { name: "Save settings" }).click();
 	await expect(settings).toBeHidden();
 	expect(new URL(page.url()).searchParams.get("r")).toBe("rl-fsp");
-	await page.getByRole("button", { name: "Resume bots", exact: true }).click();
 	await expect(page.getByTestId("bot-status")).toContainText(
 		"Local BRL · rl-fsp",
 	);

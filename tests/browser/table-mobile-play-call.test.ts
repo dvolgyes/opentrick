@@ -838,7 +838,7 @@ describe("mobile top bar and round status", () => {
 		expect(table.checkVisibility()).toBe(false);
 	});
 
-	it("puts Reload beside Exit, and each button calls its own handler", () => {
+	it("puts Settings beside Exit, and each button calls its own handler", () => {
 		const { root, handlers } = renderMobile(roundView());
 		const topbar = root.querySelector<HTMLElement>(".mobile-auction-topbar");
 		const named = (name: string) =>
@@ -846,11 +846,11 @@ describe("mobile top bar and round status", () => {
 				(control) =>
 					(control.getAttribute("aria-label") ?? control.textContent) === name,
 			);
-		named("Reload")?.click();
-		expect(handlers.reload).toHaveBeenCalledOnce();
+		named("Settings")?.click();
+		expect(handlers.settings).toHaveBeenCalledOnce();
 		expect(handlers.exit).not.toHaveBeenCalled();
 		named("Exit")?.click();
 		expect(handlers.exit).toHaveBeenCalledOnce();
-		expect(handlers.reload).toHaveBeenCalledOnce();
+		expect(handlers.settings).toHaveBeenCalledOnce();
 	});
 });

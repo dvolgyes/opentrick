@@ -78,7 +78,7 @@ test("one browser: create, three seats from one link, ordered messages", async (
 	}
 });
 
-test("the game shows the commit date of its build, and the commit on hover", async ({
+test("the game keeps build metadata without displaying its date", async ({
 	page,
 }) => {
 	const commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
@@ -90,7 +90,7 @@ test("the game shows the commit date of its build, and the commit on hover", asy
 	const version = page
 		.locator(".room-header-controls")
 		.getByTestId("build-version");
-	await expect(version).toBeVisible();
+	await expect(version).toBeHidden();
 	await expect(version).toHaveText(
 		/^[A-Z][a-z]{2} \d{1,2},'\d{2}, [0-2]\d:[0-5]\d$/,
 	);

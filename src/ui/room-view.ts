@@ -364,7 +364,7 @@ export function showRoom(
 			botRunner.setSeatEnabled(targetSeat, true);
 			setBotsPaused(false);
 			botRunner.resume();
-			botStatus.textContent = deps.t("Autoplay uses the local bridge engine.");
+			setBotStatus(deps.t("Autoplay uses the local bridge engine."));
 			return "enabled";
 		}
 		setBotsPaused(false);
@@ -374,7 +374,7 @@ export function showRoom(
 			await controller.setBotSeat(targetSeat, false);
 			return "failed";
 		}
-		botStatus.textContent = deps.t("Autoplay uses the local bridge engine.");
+		setBotStatus(deps.t("Autoplay uses the local bridge engine."));
 		return "enabled";
 	});
 
@@ -397,6 +397,15 @@ export function showRoom(
 		className: "bot-status",
 		attrs: { role: "status", "data-testid": "bot-status" },
 	});
+	const botAlert = el("p", {
+		className: "bot-alert",
+		attrs: { role: "status", "data-testid": "bot-alert" },
+	});
+	function setBotStatus(text: string, kind: "info" | "error" = "info"): void {
+		botStatus.dataset.kind = kind;
+		botStatus.textContent = text;
+		botAlert.textContent = kind === "error" ? text : "";
+	}
 	const settings = settingsDialog(deps, handlers.reload, applySettings, () => ({
 		bidder: (
 			botSettings ??
@@ -404,6 +413,44 @@ export function showRoom(
 		).bidder,
 		editable: controller.view().hosting,
 	}));
+	const exitDialog: HTMLDialogElement = el(
+		"dialog",
+		{
+			className: "approval exit-dialog",
+			attrs: {
+				"aria-labelledby": "exit-confirm-title",
+				"aria-describedby": "exit-confirm-description",
+			},
+		},
+		el("h2", { attrs: { id: "exit-confirm-title" } }, `${deps.t("Exit")}?`),
+		el(
+			"p",
+			{
+				className: "approval-question",
+				attrs: { id: "exit-confirm-description" },
+			},
+			deps.t("Leave this game and return to the home screen?"),
+		),
+		el(
+			"div",
+			{ className: "approval-actions" },
+			button(deps.t("Cancel"), () => exitDialog.close(), {
+				className: "approval-accept",
+				attrs: { autofocus: "" },
+			}),
+			button(
+				deps.t("Exit"),
+				() => {
+					exitDialog.close();
+					handlers.home();
+				},
+				{ className: "approval-reject" },
+			),
+		),
+	);
+	const confirmExit = () => {
+		if (!exitDialog.open) exitDialog.showModal();
+	};
 
 	function applySettings(bidder?: LocalBidder): void {
 		if (bidder !== undefined && controller.view().hosting) {
@@ -425,7 +472,7 @@ export function showRoom(
 				...botTiming(settings),
 			};
 			botRunner?.updateSettings(botSettings);
-			if (botRunner && !botsPaused) botStatus.textContent = runningBotStatus();
+			if (botRunner && !botsPaused) setBotStatus(runningBotStatus());
 		}
 		// A new orientation choice changes the view at once.
 		deviceWatch.check();
@@ -530,7 +577,7 @@ export function showRoom(
 	function manageBotSeat(targetSeat: Seat, enabled: boolean): void {
 		void controller.setBotSeat(targetSeat, enabled).then((ok) => {
 			if (!ok) {
-				botStatus.textContent = deps.t("The host could not change that seat.");
+				setBotStatus(deps.t("The host could not change that seat."), "error");
 				return;
 			}
 			botSeatOverrides.set(targetSeat, enabled);
@@ -552,9 +599,10 @@ export function showRoom(
 				botRunner?.setSeatEnabled(targetSeat, false);
 			}
 			if (botRunner)
-				botStatus.textContent = botsPaused
-					? deps.t("Bots paused.")
-					: runningBotStatus();
+				setBotStatus(
+					botsPaused ? deps.t("Bots paused.") : runningBotStatus(),
+					botsPaused ? "error" : "info",
+				);
 			render();
 		});
 	}
@@ -627,8 +675,9 @@ export function showRoom(
 					desired.has(targetSeat),
 				);
 				if (!ok) {
-					botStatus.textContent = deps.t(
-						"The host could not restore the saved bot seats.",
+					setBotStatus(
+						deps.t("The host could not restore the saved bot seats."),
+						"error",
 					);
 					break;
 				}
@@ -648,8 +697,8 @@ export function showRoom(
 
 	const table = tableSection(
 		{
-			exit: handlers.home,
-			reload: handlers.reload,
+			exit: confirmExit,
+			settings: () => settings.open(),
 			async shareUrl() {
 				if (navigator.share === undefined)
 					throw new Error("Web Share API is unavailable");
@@ -1006,34 +1055,28 @@ export function showRoom(
 		() => hostControls.showModal(),
 		{ attrs: { "data-testid": "host-controls" } },
 	);
-	const reload = button(deps.t("Reload"), handlers.reload, {
-		className: "sidebar-reload",
-	});
-	const exit = button(deps.t("Exit"), handlers.home, {
+	const exit = button(deps.t("Exit"), confirmExit, {
 		className: "sidebar-exit",
 	});
-	const pauseBots = button(deps.t("Pause bots"), () => {
-		if (!botRunner) return;
-		botRunner.pause();
-		setBotsPaused(true);
-		botStatus.textContent = deps.t("Bots paused.");
-		render();
-	});
-	const resumeBots = button(deps.t("Resume bots"), () => {
-		if (!botRunner) {
+	const retryBots = button(
+		deps.t("Retry"),
+		() => {
 			setBotsPaused(false);
-			void startHostBots();
-			return;
-		}
-		botRunner.resume();
-		setBotsPaused(false);
-		botStatus.textContent = runningBotStatus();
-		render();
-	});
+			if (!botRunner) {
+				void startHostBots().then(() => render());
+				return;
+			}
+			botRunner.resume();
+			setBotStatus(runningBotStatus());
+			render();
+		},
+		{ attrs: { "data-testid": "retry-bots" } },
+	);
+	retryBots.hidden = true;
 	const resetControls = el(
 		"section",
 		{ className: "room-controls", attrs: { "data-testid": "room-controls" } },
-		// The build date and the language picker head the sidebar, so they scale with the room canvas.
+		// The language picker heads the sidebar, so it scales with the room canvas.
 		el(
 			"div",
 			{ className: "room-control-row room-header-controls" },
@@ -1043,7 +1086,6 @@ export function showRoom(
 			"div",
 			{ className: "room-control-row room-primary-controls" },
 			copyRoomLink,
-			reload,
 			exit,
 		),
 		el(
@@ -1051,11 +1093,11 @@ export function showRoom(
 			{ className: "room-control-row room-bot-controls" },
 			openSettings,
 			openHostControls,
-			pauseBots,
-			resumeBots,
 			table.autoplayControl,
 		),
 		table.autoplayStatus,
+		botAlert,
+		retryBots,
 	);
 	const resetStatus = el("p", { className: "note", attrs: { role: "status" } });
 	const resetApprove = button(deps.t("Approve reset"), () => {
@@ -1179,7 +1221,7 @@ export function showRoom(
 		},
 	);
 	root.replaceChildren(room);
-	root.append(settings.element, hostControls, players.element);
+	root.append(settings.element, hostControls, players.element, exitDialog);
 	if (camera) root.append(camera.element);
 	// At the first play, the player chooses the settings before anything else; until a save, each table asks again.
 	if (!settingsSaved(deps.browser)) settings.open();
@@ -1194,8 +1236,9 @@ export function showRoom(
 		const configured = view.roster?.bots ?? configuredBotSeats(config);
 		if (configured.length === 0 && requiredSeat === undefined) return false;
 		if (!view.hosting) {
-			botStatus.textContent = deps.t(
-				"Only the current host can run bots in this browser.",
+			setBotStatus(
+				deps.t("Only the current host can run bots in this browser."),
+				"error",
 			);
 			return false;
 		}
@@ -1213,9 +1256,7 @@ export function showRoom(
 			}
 			botRunner = undefined;
 			setBotsPaused(true);
-			botStatus.textContent = deps.t(
-				"The local bot failed. Resume bots to try again.",
-			);
+			setBotStatus(deps.t("The local bot failed."), "error");
 			render();
 		});
 		// A reload after a pause starts the runner paused, so it restores the bot seats without playing.
@@ -1225,18 +1266,21 @@ export function showRoom(
 		) {
 			runner.stop();
 			botStarting = false;
-			botStatus.textContent = deps.t(
-				"Bots could not start. Check that this page is the ready host.",
+			setBotStatus(
+				deps.t("Bots could not start. Check that this page is the ready host."),
+				"error",
 			);
+			render();
 			return false;
 		}
 		botStarting = false;
 		botRunner = runner;
-		// Resume bots can run while the runner starts.
+		// A retry can run while the runner starts.
 		if (!botsPaused) runner.resume();
-		botStatus.textContent = botsPaused
-			? deps.t("Bots paused.")
-			: runningBotStatus();
+		setBotStatus(
+			botsPaused ? deps.t("Bots paused.") : runningBotStatus(),
+			botsPaused ? "error" : "info",
+		);
 		return true;
 	}
 
@@ -1474,22 +1518,17 @@ export function showRoom(
 		if (!view.hosting && hostControls.open) hostControls.close();
 		if (!view.hosting && players.element.open) players.element.close();
 		if (view.hosting) showPlayerBuilds(view.roster?.bots ?? []);
-		pauseBots.hidden =
-			!view.hosting || activeBots.length === 0 || botsPaused || !botRunner;
-		resumeBots.hidden =
-			!view.hosting ||
-			activeBots.length === 0 ||
-			(!botsPaused && botRunner !== undefined);
 		if (botRunner && !view.hosting) {
 			botRunner.stop();
 			botRunner = undefined;
-			botStatus.textContent = deps.t("Host changed. Bots stopped.");
+			setBotStatus(deps.t("Host changed. Bots stopped."), "error");
 		}
 		// While the first start runs, the runner does not exist yet, but the bots are not stopped.
 		const botsStopped =
 			view.hosting &&
 			activeBots.length > 0 &&
 			(botsPaused || (botAutoAttempted && !botStarting && !botRunner));
+		retryBots.hidden = !botsStopped;
 		if (
 			!botAutoAttempted &&
 			!botRestorePending &&

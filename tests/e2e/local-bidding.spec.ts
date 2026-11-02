@@ -33,7 +33,7 @@ for (const policy of ["sl", "rl-fsp"] as const)
 		const autoplay = page.getByTestId("host-autoplay-toggle");
 		await autoplay.click();
 		await page.getByTestId("autoplay-confirm-enable").click();
-		await expect(autoplay).toHaveText("Disable bot");
+		await expect(autoplay).toHaveText("Disable autoplay");
 		await page.getByRole("button", { name: "Settings", exact: true }).click();
 		const settings = page.getByTestId("settings-dialog");
 		await settings.getByLabel("Solarized", { exact: true }).check();

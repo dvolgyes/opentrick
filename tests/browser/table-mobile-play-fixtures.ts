@@ -219,7 +219,7 @@ export function renderView(
 ) {
 	const handlers: TableHandlers = {
 		exit: vi.fn(),
-		reload: vi.fn(),
+		settings: vi.fn(),
 		shareUrl: vi.fn(async () => {}),
 		act: vi.fn(),
 		undoRequest: vi.fn(),

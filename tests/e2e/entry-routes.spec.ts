@@ -197,6 +197,10 @@ test("static project-site bookmarks load every entry directly with the correct a
 	await expect(settings).toBeVisible();
 	await settings.getByRole("button", { name: "Cancel", exact: true }).click();
 	await page.getByRole("button", { name: "Exit", exact: true }).click();
+	await page
+		.getByRole("dialog", { name: "Exit?" })
+		.getByRole("button", { name: "Exit", exact: true })
+		.click();
 	await expect(page).toHaveURL(site);
 	await expect(page.getByTestId("create")).toBeVisible();
 	await page.goto(`${site}join`);

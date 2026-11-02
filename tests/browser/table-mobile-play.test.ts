@@ -662,7 +662,7 @@ describe("played card styles", () => {
 			const toggle =
 				section.autoplayControl.querySelector<HTMLButtonElement>("button");
 			if (!toggle) throw new Error("missing autoplay toggle");
-			expect(toggle.textContent).toBe("Enable bot");
+			expect(toggle.textContent).toBe("Enable autoplay");
 			expect(toggle.title).toBe("Temporarily replace player with a bot");
 			expect(
 				root.querySelector(".seat-label button.player-autoplay-toggle"),
@@ -680,7 +680,7 @@ describe("played card styles", () => {
 				?.click();
 			expect(handlers.requestAutoplay).toHaveBeenCalledExactlyOnceWith(true);
 			section.setPlayerAutoplay(true, true, false, "");
-			expect(toggle.textContent).toBe("Disable bot");
+			expect(toggle.textContent).toBe("Disable autoplay");
 			toggle.click();
 			expect(dialog?.open).toBe(false);
 			expect(handlers.requestAutoplay).toHaveBeenLastCalledWith(false);
@@ -702,7 +702,7 @@ describe("played card styles", () => {
 			const toggle =
 				section.autoplayControl.querySelector<HTMLButtonElement>("button");
 			if (!toggle) throw new Error("missing host autoplay toggle");
-			expect(toggle.textContent).toBe("Enable bot");
+			expect(toggle.textContent).toBe("Enable autoplay");
 			expect(
 				root.querySelector(".seat-label button.host-autoplay-toggle"),
 			).toBeNull();
@@ -724,7 +724,7 @@ describe("played card styles", () => {
 				?.click();
 			expect(handlers.setBotSeat).toHaveBeenCalledExactlyOnceWith("N", true);
 			section.setBotControls(true, ["N"], false);
-			expect(toggle.textContent).toBe("Disable bot");
+			expect(toggle.textContent).toBe("Disable autoplay");
 			toggle.click();
 			expect(dialog?.open).toBe(false);
 			expect(handlers.setBotSeat).toHaveBeenLastCalledWith("N", false);

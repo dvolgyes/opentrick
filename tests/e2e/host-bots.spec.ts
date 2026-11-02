@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { deriveTableId } from "../../src/p2p/keys";
 import { mockBotBidding } from "./bot-mock";
 
 import { NetworkSwitch } from "./network";
@@ -13,6 +14,18 @@ import {
 } from "./room";
 
 test.describe.configure({ mode: "serial" });
+
+/** Restores the paused state saved by earlier versions of the game. */
+async function reloadLegacyPause(page: Page): Promise<void> {
+	const key = new URLSearchParams(new URL(page.url()).hash.slice(1)).get("k");
+	if (!key) throw new Error("table key missing");
+	const tableId = await deriveTableId(key);
+	await page.evaluate(
+		(id) => localStorage.setItem(`opentrick.bots-paused.${id}`, "1"),
+		tableId,
+	);
+	await page.reload();
+}
 
 test("a solo host reloads and plays with three local bots while the relays are offline", async ({
 	page,
@@ -65,7 +78,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	await page.getByTestId("host-autoplay-toggle").click();
 	await page.getByTestId("autoplay-confirm-enable").click();
 	await expect(page.getByTestId("host-autoplay-toggle")).toHaveText(
-		"Disable bot",
+		"Disable autoplay",
 	);
 	const roomUrl = new URL(page.url());
 	expect(roomUrl.searchParams.get("b")).toBe("NESW");
@@ -76,22 +89,17 @@ test("host bots play two consecutive boards from auction through the final trick
 	const pausedLabels = ["N", "E", "S"].map((seat) =>
 		page.getByTestId(`tile-${seat}`).getByTestId("bot-paused"),
 	);
-	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
 	for (const label of pausedLabels) await expect(label).toBeHidden();
-	await page.getByRole("button", { name: "Pause bots" }).click();
-	await expect(page.getByRole("button", { name: "Resume bots" })).toBeVisible();
-	for (const label of pausedLabels) await expect(label).toBeVisible();
-	await page.reload();
-	await expect(page.getByRole("button", { name: "Resume bots" })).toBeVisible({
+	await reloadLegacyPause(page);
+	await expect(page.getByTestId("retry-bots")).toBeVisible({
 		timeout: CONNECT_MS,
 	});
-	await expect(page.getByRole("button", { name: "Pause bots" })).toBeHidden();
 	for (const label of pausedLabels) await expect(label).toBeVisible();
 	const pausedRequests = requests;
 	await page.waitForTimeout(3_000);
 	expect(requests).toBe(pausedRequests);
-	await page.getByRole("button", { name: "Resume bots" }).click();
-	await expect(page.getByRole("button", { name: "Pause bots" })).toBeVisible();
+	await page.getByTestId("retry-bots").click();
+	await expect(page.getByTestId("retry-bots")).toBeHidden();
 	for (const label of pausedLabels) await expect(label).toBeHidden();
 
 	await expect
@@ -279,13 +287,8 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		).toBeVisible({
 			timeout: CONNECT_MS,
 		});
-		await expect(
-			hostPage.getByRole("button", { name: "Pause bots" }),
-		).toBeVisible();
-		await hostPage.getByRole("button", { name: "Pause bots" }).click();
-		await expect(
-			hostPage.getByRole("button", { name: "Resume bots" }),
-		).toBeVisible();
+		await reloadLegacyPause(hostPage);
+		await expect(hostPage.getByTestId("retry-bots")).toBeVisible();
 		await hostPage
 			.getByTestId("tile-E")
 			.getByRole("button", { name: /Switch to bot$/ })
@@ -301,7 +304,7 @@ test("switching the current bidder to a bot starts it immediately", async ({
 			hostPage.getByTestId("tile-E").locator(".bot-overlay"),
 		).toBeVisible();
 		const autoplay = hostPage.getByTestId("host-autoplay-toggle");
-		await expect(autoplay).toHaveText("Enable bot");
+		await expect(autoplay).toHaveText("Enable autoplay");
 		const controlLayout = await hostPage
 			.locator(".room-bot-controls")
 			.evaluate((row) => {
@@ -311,7 +314,7 @@ test("switching the current bidder to a bot starts it immediately", async ({
 				);
 				const boxes = buttons.map((button) => button.getBoundingClientRect());
 				return (
-					buttons.length === 4 &&
+					buttons.length === 3 &&
 					boxes.every(
 						(box) =>
 							box.left >= rowBox.left - 1 && box.right <= rowBox.right + 1,
@@ -334,10 +337,10 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		await autoplay.click();
 		await expect(hostPage.getByTestId("autoplay-confirm")).toBeVisible();
 		await hostPage.getByTestId("autoplay-cancel").click();
-		await expect(autoplay).toHaveText("Enable bot");
+		await expect(autoplay).toHaveText("Enable autoplay");
 		await autoplay.click();
 		await hostPage.getByTestId("autoplay-confirm-enable").click();
-		await expect(autoplay).toHaveText("Disable bot");
+		await expect(autoplay).toHaveText("Disable autoplay");
 		await southPage
 			.getByTestId("bid-box")
 			.getByRole("button", { name: "Pass", exact: true })
@@ -536,7 +539,9 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		).toBeVisible();
 		await autoplay.click();
 		await northPage.getByTestId("autoplay-confirm-enable").click();
-		await expect(autoplay).toHaveText("Disable bot", { timeout: CONNECT_MS });
+		await expect(autoplay).toHaveText("Disable autoplay", {
+			timeout: CONNECT_MS,
+		});
 		await expect(botSwitch).toBeVisible();
 		await expect(hostPage.getByTestId("voicebox-N")).toBeVisible();
 		await expect(
@@ -566,7 +571,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		// The reloaded host still knows that the player asked for the bot, so the player can stop it.
 		await autoplay.click();
 		await expect(botSwitch).toBeHidden({ timeout: CONNECT_MS });
-		await expect(autoplay).toHaveText("Enable bot");
+		await expect(autoplay).toHaveText("Enable autoplay");
 		// The player stopped the bot, so the roster without it does not blame the host.
 		await expect(northPage.locator(".player-autoplay-status")).toHaveText(
 			"Autoplay stopped.",
@@ -585,11 +590,13 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		// When the host stops the bot instead, the player's page says so.
 		await autoplay.click();
 		await northPage.getByTestId("autoplay-confirm-enable").click();
-		await expect(autoplay).toHaveText("Disable bot", { timeout: CONNECT_MS });
+		await expect(autoplay).toHaveText("Disable autoplay", {
+			timeout: CONNECT_MS,
+		});
 		await expect(botSwitch).toBeVisible();
 		// The host stops the bot at once, often before North's page gets a roster that shows it.
 		await botSwitch.click();
-		await expect(autoplay).toHaveText("Enable bot", {
+		await expect(autoplay).toHaveText("Enable autoplay", {
 			timeout: CONNECT_MS,
 		});
 		await expect(northPage.locator(".player-autoplay-status")).toHaveText(

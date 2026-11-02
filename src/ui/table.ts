@@ -56,7 +56,7 @@ import {
 
 export interface TableHandlers {
 	exit(): void;
-	reload(): void;
+	settings(): void;
 	shareUrl(): Promise<void>;
 	act(action: Action): void;
 	undoRequest(board: number): void;
@@ -870,11 +870,11 @@ export function tableSection(
 		return controls;
 	})();
 	// Icons keep the top bar within a 360 px phone in every language; the names stay for assistive technology.
-	const mobileReload = button("", handlers.reload, {
-		className: "icon-button mobile-auction-reload",
-		attrs: { "aria-label": t("Reload"), title: t("Reload") },
+	const mobileSettings = button("", handlers.settings, {
+		className: "icon-button mobile-auction-settings",
+		attrs: { "aria-label": t("Settings"), title: t("Settings") },
 	});
-	mobileReload.append(icon("reload"));
+	mobileSettings.append(icon("settings"));
 	const mobileExit = button("", handlers.exit, {
 		className: "icon-button mobile-auction-exit",
 		attrs: { "aria-label": t("Exit"), title: t("Exit") },
@@ -912,7 +912,7 @@ export function tableSection(
 		{ className: "mobile-auction-topbar" },
 		audioGroup,
 		mobileShare,
-		mobileReload,
+		mobileSettings,
 		mobileExit,
 		mobileShareStatus,
 	);
@@ -1124,7 +1124,9 @@ export function tableSection(
 		autoplayButton.dataset.testid = botControlHost
 			? "host-autoplay-toggle"
 			: "player-autoplay-toggle";
-		autoplayButton.textContent = t(enabled ? "Disable bot" : "Enable bot");
+		autoplayButton.textContent = t(
+			enabled ? "Disable autoplay" : "Enable autoplay",
+		);
 		autoplayStatus.textContent = botControlHost ? "" : playerAutoplayStatus;
 	}
 	/** The tag and player name of each seat, as the last table view gave them ("E - David"). */
@@ -3059,9 +3061,9 @@ export function tableSection(
 			])
 				target.setAttribute("aria-hidden", "true");
 		}
+		if (mobileBoardActive && mobileTopbar.firstElementChild !== audioGroup)
+			mobileTopbar.prepend(audioGroup);
 		if (mobileGameActive) {
-			if (mobileTopbar.firstElementChild !== audioGroup)
-				mobileTopbar.prepend(audioGroup);
 			placeChildren(mobileBidsFold, mobileBidsTitle, bidHistory);
 			if (bidUndoControls.nextElementSibling !== mobileBoard)
 				mobileBoard.before(bidUndoControls);
@@ -3090,7 +3092,11 @@ export function tableSection(
 			renderMobileTricks(view);
 			renderMobileRoundStatus(view);
 		} else {
-			if (!sideways && call.row.firstElementChild !== audioGroup)
+			if (
+				!mobileBoardActive &&
+				!sideways &&
+				call.row.firstElementChild !== audioGroup
+			)
 				call.row.prepend(audioGroup);
 			mobileBidOverlay.hidden = true;
 			if (bidUndoControls.parentElement !== bidHistory)

@@ -1987,10 +1987,9 @@ main:has(> .room) {
 	justify-content: flex-start;
 }
 
-/* During a phone's auction and play the top bar holds Send link to players, Reload and Exit, so the controls below do not repeat them. */
-[data-form="compact"]:has(
-	.bridge-table:is([data-phase="auction"], [data-phase="play"])
-) :is(.sidebar-copy-link, .sidebar-reload, .sidebar-exit) {
+/* When the compact board is visible its top bar holds the link, settings and exit controls. */
+[data-form="compact"]:has(.bridge-table .mobile-auction:not([hidden]))
+	:is(.sidebar-copy-link, .sidebar-exit, .room-bot-controls .settings-button) {
 	display: none;
 }
 
@@ -2014,6 +2013,18 @@ main:has(> .room) {
 	font-size: 0.53rem;
 }
 
+.room[data-form="compact"]:has(.bridge-table .mobile-auction:not([hidden])) .room-bot-controls {
+	gap: 0.4rem;
+}
+.room[data-form="compact"]:has(.bridge-table .mobile-auction:not([hidden])) .room-bot-controls > :not([hidden]) {
+	flex: 1 1 0;
+	min-width: 0;
+}
+.room[data-form="compact"] .room-bot-controls button {
+	width: 100%;
+	white-space: normal;
+}
+
 .autoplay-control:not([hidden]) {
 	display: flex;
 	flex-wrap: wrap;
@@ -2031,7 +2042,13 @@ main:has(> .room) {
 
 /* The debug and bot status lines take no room while they are empty. */
 .debug-status:empty,
+.bot-alert:empty,
 .bot-status:empty {
+	display: none;
+}
+.bot-status[data-kind="error"],
+.room[data-form="compact"] .bot-status[data-kind="info"],
+.room[data-form="compact"] .banner .detail {
 	display: none;
 }
 
@@ -3192,6 +3209,16 @@ button.call-join[data-in-call="true"] {
 	box-shadow: 0 0.5rem 2rem var(--shadow);
 }
 
+.exit-dialog.approval {
+	box-sizing: border-box;
+	width: min(36rem, calc(100vw - 1rem));
+	max-width: calc(100vw - 1rem);
+	padding: clamp(1.25rem, 3vw, 2rem);
+	box-shadow: 0 0.5rem 2rem var(--shadow);
+}
+.exit-dialog::backdrop { background: var(--scrim); }
+.exit-dialog .approval-actions button { flex-basis: 0; min-width: 0; }
+
 /* Absent players: a notice in the middle of a desktop felt that lets clicks through, or a panel below a phone's board. */
 .waiting-overlay {
 	position: absolute;
@@ -3481,7 +3508,7 @@ button.call-join[data-in-call="true"] {
 }
 
 .room-header-controls .build-version {
-	font-size: 0.6rem;
+	display: none;
 }
 
 .room-header-controls .language-control label {
@@ -4287,7 +4314,7 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .mobile-auction-topbar .icon-group button,
-.mobile-auction-reload,
+.mobile-auction-settings,
 .mobile-auction-exit,
 .mobile-auction-share {
 	min-width: 2.6rem;
@@ -5412,10 +5439,10 @@ main[data-screen="table"][data-layout="sideways"] .auction-scroll .auction {
 	display: none;
 }
 
-/* Before the first board, a phone keeps its status and its call row, and shows only the board of the game. */
+/* Before the first board, a phone shows the top controls and the board of the game. */
 [data-form="compact"]
 	.bridge-table[data-phase="waiting"]
-	:is(.felt, .mobile-auction > :not(.mobile-auction-board)) {
+	:is(.felt, .mobile-auction > :not(.mobile-auction-board, .mobile-auction-topbar)) {
 	display: none;
 }
 

@@ -451,7 +451,7 @@ async function expectRoomCanvasFit(page: Page, hosting = false): Promise<void> {
 }
 
 /**
- * The build date and the language picker share the sidebar's top row, above its buttons. The host's Debug and Reload
+ * The language picker sits above the sidebar buttons, with the build date hidden. The host's Debug and Reload
  * players are not in the sidebar: the host opens them with Host controls.
  */
 async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
@@ -465,37 +465,24 @@ async function expectHeaderRow(page: Page, hosting: boolean): Promise<void> {
 		hostControls: byTestId("host-controls"),
 	});
 	const sidebar = shown(rects, "sidebar");
-	const version = shown(rects, "version");
 	const language = shown(rects, "language");
 	const copy = shown(rects, "copy");
+	expect(rects.version, "the build date is hidden").toBeUndefined();
 	expect(rects.debug, "no Debug in the sidebar").toBeUndefined();
 	expect(rects.reload, "no Reload players in the sidebar").toBeUndefined();
 	expect(
 		rects.hostControls === undefined,
 		"Host controls only for the host",
 	).toBe(!hosting);
-	for (const [name, rect] of [
-		["version", version],
-		["language", language],
-	] as const) {
-		expect(rect.x, `${name} left edge`).toBeGreaterThanOrEqual(
-			sidebar.x - SUBPIXEL,
-		);
-		expect(right(rect), `${name} right edge`).toBeLessThanOrEqual(
-			right(sidebar) + SUBPIXEL,
-		);
-		expect(bottom(rect), `${name} above the buttons`).toBeLessThanOrEqual(
-			copy.y + SUBPIXEL,
-		);
-	}
-	expect(right(version), "the date before the language").toBeLessThanOrEqual(
-		language.x + SUBPIXEL,
+	expect(language.x, "language left edge").toBeGreaterThanOrEqual(
+		sidebar.x - SUBPIXEL,
 	);
-	expect(
-		Math.min(bottom(version), bottom(language)) -
-			Math.max(version.y, language.y),
-		"the date and the language in one row",
-	).toBeGreaterThan(SUBPIXEL);
+	expect(right(language), "language right edge").toBeLessThanOrEqual(
+		right(sidebar) + SUBPIXEL,
+	);
+	expect(bottom(language), "language above the buttons").toBeLessThanOrEqual(
+		copy.y + SUBPIXEL,
+	);
 }
 
 /**

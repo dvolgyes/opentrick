@@ -42,6 +42,10 @@ test("a page without a host shows the tracker, relay and connection counts in th
 		});
 		await expect(page.getByTestId("banner-detail")).toHaveText(SUMMARY);
 		await expect(page.getByTestId("network")).not.toHaveAttribute("open");
+		await page.setViewportSize({ width: 360, height: 800 });
+		await expect(page.locator(".room")).toHaveAttribute("data-form", "compact");
+		await expect(page.getByTestId("banner")).toBeVisible();
+		await expect(page.getByTestId("banner-detail")).toBeHidden();
 		expect(guest.errors).toEqual([]);
 	} finally {
 		await host.close();
