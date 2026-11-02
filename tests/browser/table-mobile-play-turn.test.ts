@@ -813,6 +813,87 @@ describe("card flight", () => {
 	});
 
 	it.each([
+		["compact", 0],
+		["compact", 25],
+		["compact", 40],
+		["compact", 100],
+		["desktop", 25],
+		["sideways", 25],
+	] as const)(
+		"adjusts animated landing spacing for %s at %s percent",
+		(layout, percent) => {
+			vi.useFakeTimers();
+			const random = vi.spyOn(Math, "random").mockReturnValue(0);
+			try {
+				for (const [seat, position] of [
+					["N", "bottom"],
+					["S", "top"],
+					["E", "left"],
+					["W", "right"],
+				] as const) {
+					const base = { ...playView(), trick: undefined };
+					const next = {
+						...base,
+						at: base.at + 1,
+						trick: {
+							finished: false,
+							cards: [
+								{
+									seat,
+									position,
+									card: "SA" as const,
+									text: "♠A",
+									rank: "A",
+									symbol: "♠",
+								},
+							],
+						},
+					};
+					const initial = renderView(next, layout);
+					const reference = initial.root
+						.querySelector<HTMLElement>(".trick .played")
+						?.getBoundingClientRect();
+					if (!reference) throw new Error("missing static card");
+					initial.section.dispose();
+					const { root, section } = renderView(
+						base,
+						layout,
+						undefined,
+						undefined,
+						{
+							cardPlayRotationDegrees: () => 0,
+							cardPlayCenterPercent: () => percent,
+						},
+					);
+					section.render(next);
+					const target = root.querySelector<HTMLElement>(".trick .played");
+					if (!target) throw new Error("missing animated card");
+					const actual = target.getBoundingClientRect();
+					const horizontal = position === "left" || position === "right";
+					const delta = horizontal
+						? actual.left +
+							actual.width / 2 -
+							reference.left -
+							reference.width / 2
+						: actual.top +
+							actual.height / 2 -
+							reference.top -
+							reference.height / 2;
+					const direction = position === "left" || position === "top" ? 1 : -1;
+					const inward = percent / 100 - (layout === "compact" ? 0.25 : 0);
+					expect(delta, `${layout} ${percent}% ${position}`).toBeCloseTo(
+						direction * inward * target.offsetHeight,
+						0,
+					);
+					section.dispose();
+				}
+			} finally {
+				random.mockRestore();
+			}
+		},
+	);
+
+	it.each([
 		["N", "bottom", false],
 		["S", "top", false],
 		["E", "left", true],

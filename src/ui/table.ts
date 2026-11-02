@@ -182,6 +182,8 @@ export type PlayedCardStyle =
 const PLAYED_CARD_STYLE: PlayedCardStyle = "corners-oriented";
 
 const TRICK_SWEEP_MS = 1000;
+// A phone's compact trick grid has less space between cards than the desktop grid.
+const PHONE_LANDING_OUTWARD = 0.25;
 
 /**
  * The call nodes of one remote seat. They outlive the table's re-rendering and only move with their place, so
@@ -3097,7 +3099,8 @@ export function tableSection(
 			const seat = node.dataset.seat as Seat;
 			const offset = landingOffsets.get(seat);
 			if (offset) {
-				const centerShift = offset.centerPercent / 100;
+				const centerShift =
+					offset.centerPercent / 100 - (compact ? PHONE_LANDING_OUTWARD : 0);
 				const horizontal = node.classList.contains("pos-left")
 					? centerShift
 					: node.classList.contains("pos-right")

@@ -65,12 +65,18 @@ test("phone bots wait for the played-card animation before the next play", async
 	});
 	try {
 		await context.addInitScript(() => {
+			Math.random = () => 0.5;
 			localStorage.setItem("opentrick.settings.bidder", "sl");
 			localStorage.setItem("opentrick.settings.bot-card-delay-ms", "0");
 			localStorage.setItem("opentrick.settings.bot-bid-delay-ms", "0");
 			localStorage.setItem("opentrick.settings.auction-pause-ms", "0");
 			localStorage.setItem("opentrick.settings.play-time-ms", "1000");
 			localStorage.setItem("opentrick.settings.card-play-duration-ms", "2000");
+			localStorage.setItem(
+				"opentrick.settings.card-play-rotation-degrees",
+				"0",
+			);
+			localStorage.setItem("opentrick.settings.trick-winner-pause-ms", "5000");
 		});
 		const page = await context.newPage();
 		await mockBotBidding(
@@ -115,6 +121,15 @@ test("phone bots wait for the played-card animation before the next play", async
 				timeout: 10_000,
 			})
 			.toBeGreaterThan(at);
+		const top = page.locator(".trick-collection-overlay .played.pos-top");
+		const bottom = page.locator(".trick-collection-overlay .played.pos-bottom");
+		await expect(top).toBeVisible({ timeout: 30_000 });
+		const [topBox, bottomBox] = await Promise.all([
+			top.boundingBox(),
+			bottom.boundingBox(),
+		]);
+		if (!topBox || !bottomBox) throw new Error("missing completed trick cards");
+		expect(topBox.y + topBox.height).toBeLessThanOrEqual(bottomBox.y);
 	} finally {
 		await context.close();
 	}
