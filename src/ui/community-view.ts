@@ -348,7 +348,11 @@ export function showCommunity(
 						{ className: "community-panel" },
 						status,
 						discovery.element,
-						el("h2", {}, deps.t("Players")),
+						el(
+							"h2",
+							{ className: "community-players-heading" },
+							deps.t("Players"),
+						),
 						members,
 						replacements,
 						preferences,
@@ -408,7 +412,9 @@ export function showCommunity(
 						el(
 							"div",
 							{ className: "community-actions" },
-							button(deps.t("Cancel"), navigation.createNew),
+							button(deps.t("Go back"), navigation.createNew, {
+								className: "community-back",
+							}),
 							el(
 								"a",
 								{

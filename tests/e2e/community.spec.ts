@@ -89,6 +89,62 @@ function gameKey(page: Page): string | null {
 	);
 }
 
+test("mobile community screen is compact and returns home", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages } = await players(browser, baseURL, 1);
+	try {
+		const page = pages[0];
+		if (!page) throw new Error("page missing");
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/join");
+		await expect(page.getByTestId("community-status")).toHaveText(
+			"Searching for compatible players…",
+		);
+		await expect(page.getByTestId("build-version").last()).toBeHidden();
+		await expect(
+			page.getByText("Free to play · No account needed"),
+		).toBeHidden();
+		await expect(page.getByRole("heading", { name: "Players" })).toBeHidden();
+		const title = page.getByRole("heading", { name: "Community game" });
+		const art = page.locator(".community-art");
+		for (const width of [320, 390]) {
+			await page.setViewportSize({ width, height: 844 });
+			const titleBox = await title.boundingBox();
+			const artBox = await art.boundingBox();
+			if (!titleBox || !artBox) throw new Error("community heading missing");
+			expect(titleBox.x).toBeGreaterThanOrEqual(artBox.x + artBox.width);
+			expect(
+				Math.abs(
+					titleBox.y + titleBox.height / 2 - artBox.y - artBox.height / 2,
+				),
+			).toBeLessThan(5);
+			expect(
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= innerWidth,
+				),
+			).toBe(true);
+		}
+		const back = page.getByRole("button", { name: "Go back", exact: true });
+		await expect(back).toBeVisible();
+		const color = await back.evaluate(
+			(node) => getComputedStyle(node).backgroundColor,
+		);
+		const [red, green, blue] = color.match(/\d+/g)?.map(Number) ?? [];
+		if (red === undefined || green === undefined || blue === undefined)
+			throw new Error(`Unexpected color: ${color}`);
+		expect(red).toBeGreaterThan(green * 1.3);
+		expect(red).toBeGreaterThan(blue * 1.3);
+		await back.click();
+		await expect(page).toHaveURL(/\/create\/?$/);
+		await expect(page.getByTestId("create")).toBeVisible();
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
 test("redesigned community waiting screen preserves search and actions", async ({
 	browser,
 	baseURL,
@@ -127,7 +183,7 @@ test("redesigned community waiting screen preserves search and actions", async (
 			page.getByTestId("community-members").locator("img"),
 		).toHaveCount(0);
 		await expect(
-			page.getByRole("button", { name: "Cancel", exact: true }),
+			page.getByRole("button", { name: "Go back", exact: true }),
 		).toBeVisible();
 		await expect(
 			page.getByRole("link", { name: "Play with bots" }),
@@ -281,14 +337,14 @@ test("solo online entry starts searching without a separate community setup form
 		page.getByRole("button", { name: "Reload", exact: true }),
 	).toHaveCount(0);
 	await expect(
-		page.getByRole("button", { name: "Cancel", exact: true }),
+		page.getByRole("button", { name: "Go back", exact: true }),
 	).toBeVisible();
 	await expect(
 		page.getByRole("link", { name: "Play with bots" }),
 	).toHaveAttribute("href", "/solo");
 });
 
-test("a join bookmark can cancel or start bots after reload", async ({
+test("a join bookmark can return home or start bots after reload", async ({
 	browser,
 	baseURL,
 }) => {
@@ -308,9 +364,9 @@ test("a join bookmark can cancel or start bots after reload", async ({
 		);
 		expect(page.url()).toBe(reservation);
 		await expect(page.getByTestId("community").getByRole("button")).toHaveText([
-			"Cancel",
+			"Go back",
 		]);
-		await page.getByRole("button", { name: "Cancel", exact: true }).click();
+		await page.getByRole("button", { name: "Go back", exact: true }).click();
 		await expect(page).toHaveURL(/\/create\/?$/);
 		await expect(page.getByTestId("create")).toBeVisible();
 	} finally {

@@ -131,9 +131,9 @@ test("static project-site bookmarks load every entry directly with the correct a
 		"Searching for compatible players…",
 	);
 	await expect(page.getByTestId("community").getByRole("button")).toHaveText([
-		"Cancel",
+		"Go back",
 	]);
-	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await page.getByRole("button", { name: "Go back", exact: true }).click();
 	await expect(page).toHaveURL(`${site}create/`);
 	await expect(page.getByTestId("create")).toBeVisible();
 	expect(errors).toEqual([]);
@@ -218,6 +218,21 @@ for (const locale of [
 					exact: true,
 				}),
 			).toBeVisible();
+			await expect(
+				page.getByRole("button", {
+					name: translator(locale)("Go back"),
+					exact: true,
+				}),
+			).toBeVisible();
+			const art = await page.locator(".community-art").boundingBox();
+			const heading = await page
+				.getByRole("heading", { name: translator(locale)("Community game") })
+				.boundingBox();
+			if (!art || !heading) throw new Error("community heading missing");
+			expect(heading.x).toBeGreaterThanOrEqual(art.x + art.width);
+			expect(
+				Math.abs(heading.y + heading.height / 2 - art.y - art.height / 2),
+			).toBeLessThan(5);
 		}
 	});
 }

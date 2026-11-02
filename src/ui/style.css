@@ -559,6 +559,7 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 .community-panel summary { cursor: pointer; font-weight: 600; }
 .community-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
 .community-actions .button, .community-actions button { min-height: 2.75rem; }
+.community-back { border-color: var(--opening-back); background: var(--opening-back); color: var(--opening-paper); }
 .community-join { margin-top: 1rem; }
 @media (min-width: 601px) {
 	:is(.create-screen, .community-screen) { font-size: 0.9375rem; line-height: 1.55; }
@@ -576,10 +577,14 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 	.create-header .language-control { width: 100%; min-width: 0; margin: 0; justify-content: flex-end; }
 	.create-header .language-control label { min-width: 0; max-width: 100%; margin: 0; }
 	.create-header .language-control select { width: 100%; min-width: 0; }
-	.community-header .language-control { flex-wrap: wrap; gap: 0; }
-	.community-header .build-version { font-size: 0.65rem; }
+	.community-header .build-version { display: none; }
 	.help-sections { grid-template-columns: 1fr; }
-	.community-content { margin-top: 1.5rem; }
+	.community-content { margin-top: 0.75rem; }
+	.community-intro { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: 0.5rem 1rem; align-items: center; margin-bottom: 1rem; }
+	.community-intro .community-art { width: 4rem; height: 4rem; margin: 0; }
+	.community-intro .community-eyebrow, .community-players-heading { display: none; }
+	.community-intro h1 { margin: 0; font-size: clamp(1.8rem, 7vw, 2.5rem); }
+	.community-intro p:last-child { grid-column: 1 / -1; margin: 0; }
 	.community-table .seat-grid:not(.with-center) .seat-card:is([data-position="top"], [data-position="bottom"]) { width: calc(50% - 0.35rem); }
 	.opening-hero { display: block; min-height: 0; padding: 1.5rem; }
 	.opening-illustration { display: none; }
