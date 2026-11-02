@@ -193,6 +193,12 @@ test("static project-site bookmarks load every entry directly with the correct a
 	await page.reload();
 	await expect(page.getByTestId("table")).toHaveAttribute("data-board", "1");
 	expect(page.url()).toBe(game);
+	const settings = page.getByTestId("settings-dialog");
+	await expect(settings).toBeVisible();
+	await settings.getByRole("button", { name: "Cancel", exact: true }).click();
+	await page.getByRole("button", { name: "Exit", exact: true }).click();
+	await expect(page).toHaveURL(site);
+	await expect(page.getByTestId("create")).toBeVisible();
 	await page.goto(`${site}join`);
 	await expect(page.getByTestId("community-status")).toHaveText(
 		"Searching for compatible players…",

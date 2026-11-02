@@ -877,7 +877,7 @@ export function tableSection(
 	mobileReload.append(icon("reload"));
 	const mobileExit = button("", handlers.exit, {
 		className: "icon-button mobile-auction-exit",
-		attrs: { "aria-label": t("New table"), title: t("New table") },
+		attrs: { "aria-label": t("Exit"), title: t("Exit") },
 	});
 	mobileExit.append(icon("exit"));
 	const mobileShareStatus = el("span", {

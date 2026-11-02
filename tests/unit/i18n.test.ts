@@ -131,6 +131,22 @@ describe("localization", () => {
 			expect(translator(locale)("Send link to players")).toBe(text);
 	});
 
+	it("labels the game exit in every supported language", () => {
+		const cases = [
+			["en", "Exit"],
+			["de", "Verlassen"],
+			["hu", "Kilépés"],
+			["no", "Avslutt"],
+			["es", "Salir"],
+			["pt", "Sair"],
+			["fr", "Quitter"],
+			["it", "Esci"],
+			["nl", "Afsluiten"],
+		] as const satisfies readonly (readonly [Locale, string])[];
+		for (const [locale, text] of cases)
+			expect(translator(locale)("Exit")).toBe(text);
+	});
+
 	it("says in every supported language that the call button joins a call and does not start one", () => {
 		const cases = [
 			["en", "Join call"],

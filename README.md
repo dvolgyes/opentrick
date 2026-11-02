@@ -220,32 +220,6 @@ The card thinking budget defaults to five seconds and can be set from one to six
 Older fractional timing choices are rounded to the nearest allowed second.
 Settings are kept in this browser and are never sent to the table.
 
-## Development
-
-Use Node.js 22, as in the deploy workflow.
-
-```sh
-npm ci
-npm run dev          # local development server
-npm run build        # prepare bidding model files, typecheck, and build dist/
-npm test             # unit tests (Vitest)
-npm run test:e2e     # browser tests (Playwright)
-npm run lint         # Biome checks
-npm run typecheck    # TypeScript without emit
-npm run bot          # run a Node bot that joins a table
-npm run demo:bot     # demo bot script
-npm run benchmark:bidding   # bidding benchmark; also benchmark:sayc, benchmark:play, benchmark:3nt
-```
-
-`npm run prepare:bidder` downloads the two bidding model files (14.7 MB each) into `public/bot-models/` when they are missing.
-The `build` and `test` scripts run it first.
-
-Install the Git hooks with `pre-commit install`, then run `pre-commit run --all` before committing.
-The hooks run Biome, reject DOM HTML sinks such as `innerHTML`, and reject colour literals outside the theme tokens in `src/ui/themes.css`.
-
-Pushing to `main` deploys the static site to GitHub Pages through [the deploy workflow](.github/workflows).
-Design notes are in [docs/](docs/), and architecture decisions are in [docs/adr/](docs/adr/).
-
 ## License
 
 OpenTrick is all rights reserved, with free access to play the hosted game.

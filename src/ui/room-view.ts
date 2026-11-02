@@ -648,7 +648,7 @@ export function showRoom(
 
 	const table = tableSection(
 		{
-			exit: handlers.createNew,
+			exit: handlers.home,
 			reload: handlers.reload,
 			async shareUrl() {
 				if (navigator.share === undefined)
@@ -1009,7 +1009,7 @@ export function showRoom(
 	const reload = button(deps.t("Reload"), handlers.reload, {
 		className: "sidebar-reload",
 	});
-	const exit = button(deps.t("New table"), handlers.createNew, {
+	const exit = button(deps.t("Exit"), handlers.home, {
 		className: "sidebar-exit",
 	});
 	const pauseBots = button(deps.t("Pause bots"), () => {

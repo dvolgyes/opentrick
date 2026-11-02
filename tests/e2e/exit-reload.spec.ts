@@ -4,7 +4,7 @@ import { createRoom } from "./room";
 
 /*
  * Reload loads the table page again from the server, so a player picks up a new version of the site and stays at the
- * table. Exit loads /create without the setup query or the table link.
+ * table. Exit loads the site root without the setup query or the table link.
  */
 const FORMS = {
 	desktop: {},
@@ -29,7 +29,7 @@ async function hasMark(page: Page): Promise<boolean> {
 }
 
 for (const [form, options] of Object.entries(FORMS)) {
-	test(`on ${form}, Reload loads the table again and Exit opens the create page`, async ({
+	test(`on ${form}, Reload loads the table again and Exit opens the site root`, async ({
 		browser,
 		baseURL,
 	}) => {
@@ -45,14 +45,12 @@ for (const [form, options] of Object.entries(FORMS)) {
 			await expect.poll(() => hasMark(page)).toBe(false);
 			expect(page.url()).toBe(tableUrl);
 			await expect(
-				page.getByRole("button", { name: "New table", exact: true }),
-			).toBeVisible();
+				page.getByRole("button", { name: "Exit", exact: true }),
+			).toBeVisible({ timeout: 1500 });
 
 			await markDocument(page);
-			await page
-				.getByRole("button", { name: "New table", exact: true })
-				.click();
-			await expect(page).toHaveURL(new URL("./create/", baseURL).toString());
+			await page.getByRole("button", { name: "Exit", exact: true }).click();
+			await expect(page).toHaveURL(new URL("./", baseURL).toString());
 			await expect(page.getByTestId("create")).toBeVisible();
 			expect(await hasMark(page)).toBe(false);
 		} finally {

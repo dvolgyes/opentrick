@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { translator } from "../../src/i18n";
 import { mockBotBidding } from "./bot-mock";
 
 import { Player } from "./player";
@@ -66,6 +67,12 @@ for (const locale of [
 			.evaluate((button) => (button as HTMLButtonElement).click());
 		const autoplay = page.getByTestId("host-autoplay-toggle");
 		await expect(autoplay).toBeVisible();
+		await expect(
+			page.getByRole("button", {
+				name: translator(locale)("Exit"),
+				exact: true,
+			}),
+		).toBeVisible();
 		await expectBotControlsInOneRow(page);
 		const pause = page.locator(".room-bot-controls button:visible").nth(2);
 		const pauseLabel = await pause.textContent();
@@ -179,10 +186,10 @@ test("on a phone the host pauses the bots, finds each top-bar button once, and c
 			page.getByRole("button", { name: "Resume bots" }),
 		).toBeVisible();
 		await expectBotControlsInOneRow(page);
-		// During the auction the top bar holds the only Reload, New table and Send link to players; Settings holds the key and the models.
+		// During the auction the top bar holds the only Reload, Exit and Send link to players; Settings holds the key and the models.
 		for (const [name, count] of [
 			["Reload", 1],
-			["New table", 1],
+			["Exit", 1],
 			["Send link to players", 1],
 			["Set API key", 0],
 			["Model", 0],
