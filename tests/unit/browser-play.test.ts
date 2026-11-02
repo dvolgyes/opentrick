@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { BrowserBotAssets } from "../../src/bot/browser-assets";
 import { BrowserPlayEngine } from "../../src/bot/browser-play";
 import { playPosition } from "../../src/bot/play-position";
 import { createBoard } from "../../src/bridge/engine";
@@ -22,6 +23,27 @@ afterEach(() => {
 });
 
 describe("card worker boundary", () => {
+	it("does not start a worker after a pending resource request is cancelled", async () => {
+		vi.stubGlobal("Worker", WorkerStub);
+		let release: ((value: string) => void) | undefined;
+		const worker = new Promise<string>((resolve) => {
+			release = resolve;
+		});
+		const assets = { worker: () => worker } as unknown as BrowserBotAssets;
+		const engine = new BrowserPlayEngine({ assets });
+		const abort = new AbortController();
+		const position = playPosition(
+			bidding(createBoard(1, DEAL), "1NT P P P"),
+			"E",
+		);
+		const result = engine.choose(position, abort.signal);
+		abort.abort();
+		await expect(result).rejects.toMatchObject({ name: "AbortError" });
+		release?.("blob:worker");
+		await worker;
+		await Promise.resolve();
+		expect(WorkerStub.made).toHaveLength(0);
+	});
 	it("reuses a worker after the budget result when the search finishes", async () => {
 		vi.useFakeTimers();
 		vi.stubGlobal("Worker", WorkerStub);

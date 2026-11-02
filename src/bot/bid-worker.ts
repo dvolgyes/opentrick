@@ -10,6 +10,7 @@ interface Request {
 	readonly position: BidPosition;
 	readonly policy: LocalBidder;
 	readonly url: string;
+	readonly bytes?: ArrayBuffer;
 }
 interface WorkerScope {
 	readonly location: Location;
@@ -20,6 +21,8 @@ interface WorkerScope {
 function start(scope: WorkerScope): void {
 	let loaded: { policy: LocalBidder; network: Promise<BidNetwork> } | undefined;
 	const load = async (request: Request): Promise<BidNetwork> => {
+		if (request.bytes !== undefined)
+			return new BidNetwork(request.bytes, request.policy);
 		const url = new URL(request.url);
 		if (
 			!LOCAL_BIDDERS.includes(request.policy) ||

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bidPosition } from "../../src/bot/bid-position";
+import type { BrowserBotAssets } from "../../src/bot/browser-assets";
 import { BrowserBidder } from "../../src/bot/browser-bidder";
 import { createBoard } from "../../src/bridge/engine";
 import { DEAL } from "./bridge-fixtures";
@@ -22,6 +23,59 @@ afterEach(() => {
 });
 
 describe("bidding worker boundary", () => {
+	it("does not start a worker after a pending request is cancelled", async () => {
+		vi.stubGlobal("Worker", WorkerStub);
+		vi.stubGlobal("document", { baseURI: "https://example.com/opentrick/" });
+		let release: ((value: string) => void) | undefined;
+		const worker = new Promise<string>((resolve) => {
+			release = resolve;
+		});
+		const assets = {
+			worker: () => worker,
+			model: () => Promise.resolve(new ArrayBuffer(4)),
+		} as unknown as BrowserBotAssets;
+		const bidder = new BrowserBidder(assets);
+		const abort = new AbortController();
+		const result = bidder.choose(
+			bidPosition(createBoard(1, DEAL), "N"),
+			"sl",
+			abort.signal,
+		);
+		abort.abort();
+		await expect(result).rejects.toMatchObject({ name: "AbortError" });
+		release?.("blob:worker");
+		await worker;
+		await Promise.resolve();
+		expect(WorkerStub.made).toHaveLength(0);
+	});
+	it("recreates a stopped worker with the retained model", async () => {
+		vi.stubGlobal("Worker", WorkerStub);
+		vi.stubGlobal("document", { baseURI: "https://example.com/opentrick/" });
+		const bytes = new ArrayBuffer(4);
+		const assets = {
+			worker: vi.fn().mockResolvedValue("blob:worker"),
+			model: vi.fn().mockResolvedValue(bytes),
+		} as unknown as BrowserBotAssets;
+		const bidder = new BrowserBidder(assets);
+		const position = bidPosition(createBoard(1, DEAL), "N");
+		const first = bidder.choose(position, "sl", new AbortController().signal);
+		await vi.waitFor(() => expect(WorkerStub.made).toHaveLength(1));
+		WorkerStub.made[0]?.onmessage?.({
+			data: { ok: true, analysis: { call: "P" } },
+		});
+		await first;
+		bidder.stop();
+		const second = bidder.choose(position, "sl", new AbortController().signal);
+		await vi.waitFor(() => expect(WorkerStub.made).toHaveLength(2));
+		expect(WorkerStub.made[1]?.postMessage).toHaveBeenCalledWith(
+			expect.objectContaining({ bytes, policy: "sl" }),
+		);
+		WorkerStub.made[1]?.onmessage?.({
+			data: { ok: true, analysis: { call: "P" } },
+		});
+		await expect(second).resolves.toMatchObject({ call: "P" });
+		bidder.stop();
+	});
 	it("rejects an unavailable call even when the worker reports success", async () => {
 		vi.stubGlobal("Worker", WorkerStub);
 		vi.stubGlobal("document", { baseURI: "https://example.com/opentrick/" });

@@ -289,14 +289,27 @@ test("a phone can retry after the local bot fails", async ({
 	try {
 		const page = await player.page("./");
 		let workers = 0;
+		let attempts = 0;
+		await page.route("**/__test_recovery_bid__", (route) => {
+			attempts += 1;
+			return route.fulfill({
+				json:
+					attempts === 1
+						? { ok: false }
+						: {
+								ok: true,
+								analysis: { call: "P", policy: "sl", candidates: [] },
+							},
+			});
+		});
 		await page.route(/\/bid-worker-[^/]+\.js$/, (route) => {
 			workers += 1;
 			return route.fulfill({
 				contentType: "text/javascript",
-				body:
-					workers === 1
-						? "self.onmessage = () => self.postMessage({ok: false});"
-						: 'self.onmessage = ({data}) => self.postMessage({ok: true, analysis: {call: "P", policy: data.policy, candidates: []}});',
+				body: `self.onmessage = async () => {
+					const response = await fetch(new URL("/__test_recovery_bid__", self.location.origin));
+					self.postMessage(await response.json());
+				};`,
 			});
 		});
 		await page.goto("/solo");
@@ -316,7 +329,8 @@ test("a phone can retry after the local bot fails", async ({
 				Number(await page.getByTestId("table").getAttribute("data-at")),
 			)
 			.toBeGreaterThan(before);
-		expect(workers).toBeGreaterThanOrEqual(2);
+		expect(attempts).toBeGreaterThanOrEqual(2);
+		expect(workers).toBe(1);
 	} finally {
 		await player.close();
 	}

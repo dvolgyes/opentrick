@@ -1,4 +1,5 @@
 import { isCard } from "../bridge/cards";
+import type { BrowserBotAssets } from "./browser-assets";
 import { BotRequestAbortedError } from "./errors";
 import { playTimeMs } from "./play-budget";
 import type { PlayAnalysis } from "./play-engine";
@@ -20,8 +21,15 @@ export class BrowserPlayEngine implements PlayChooser {
 	#drainTimer: ReturnType<typeof setTimeout> | undefined;
 	#afterDrain: (() => void) | undefined;
 	readonly #timeMs: number;
-	constructor(options: { readonly timeMs?: number } = {}) {
+	readonly #assets: BrowserBotAssets | undefined;
+	constructor(
+		options: {
+			readonly timeMs?: number;
+			readonly assets?: BrowserBotAssets;
+		} = {},
+	) {
 		this.#timeMs = playTimeMs(options.timeMs);
+		this.#assets = options.assets;
 	}
 
 	stop(): void {
@@ -75,10 +83,12 @@ export class BrowserPlayEngine implements PlayChooser {
 		const waitingForDrain = this.#drainTimer !== undefined;
 		return new Promise((resolve, reject) => {
 			const started = performance.now();
+			let finished = false;
 			let latest: PlayAnalysis | undefined;
 			let worker: Worker | undefined;
 			let waitTimer: ReturnType<typeof setTimeout> | undefined;
 			const finish = () => {
+				finished = true;
 				clearTimeout(timer);
 				clearTimeout(budgetTimer);
 				clearTimeout(waitTimer);
@@ -110,36 +120,50 @@ export class BrowserPlayEngine implements PlayChooser {
 			);
 			this.#cancel = abort;
 			signal.addEventListener("abort", abort, { once: true });
+			const begin = (workerUrl?: string) => {
+				if (finished) return;
+				try {
+					this.#worker ??= new Worker(
+						workerUrl ?? new URL("./play-worker.ts", import.meta.url),
+						{
+							type: "module",
+						},
+					);
+					worker = this.#worker;
+					worker.onerror = () =>
+						fail(new Error("card engine worker could not run"));
+					worker.onmessage = (event: MessageEvent) => {
+						const data = event.data;
+						if (
+							!data?.ok ||
+							!isCard(data.analysis?.card) ||
+							!position.legal.includes(data.analysis.card)
+						) {
+							fail(new Error("card engine returned no valid legal play"));
+							return;
+						}
+						latest = data.analysis as PlayAnalysis;
+						if (!data.partial) accept(latest, false);
+						else if (performance.now() - started >= budget)
+							accept(latest, true);
+					};
+					const remaining = waitingForDrain
+						? Math.max(1, budget - Math.floor(performance.now() - started))
+						: budget;
+					worker.postMessage({ position, timeMs: remaining });
+				} catch {
+					fail(new Error("card engine worker could not run"));
+				}
+			};
 			const start = () => {
 				clearTimeout(waitTimer);
 				this.#afterDrain = undefined;
-				this.#worker ??= new Worker(
-					new URL("./play-worker.ts", import.meta.url),
-					{
-						type: "module",
-					},
-				);
-				worker = this.#worker;
-				worker.onerror = () =>
-					fail(new Error("card engine worker could not run"));
-				worker.onmessage = (event: MessageEvent) => {
-					const data = event.data;
-					if (
-						!data?.ok ||
-						!isCard(data.analysis?.card) ||
-						!position.legal.includes(data.analysis.card)
-					) {
-						fail(new Error("card engine returned no valid legal play"));
-						return;
-					}
-					latest = data.analysis as PlayAnalysis;
-					if (!data.partial) accept(latest, false);
-					else if (performance.now() - started >= budget) accept(latest, true);
-				};
-				const remaining = waitingForDrain
-					? Math.max(1, budget - Math.floor(performance.now() - started))
-					: budget;
-				worker.postMessage({ position, timeMs: remaining });
+				if (this.#worker || !this.#assets) begin();
+				else
+					void this.#assets.worker("play").then(begin, () => {
+						if (!finished)
+							fail(new Error("card engine resources are unavailable"));
+					});
 			};
 			// Give the previous native call a bounded chance to finish before replacing its worker.
 			if (this.#drainTimer !== undefined) {

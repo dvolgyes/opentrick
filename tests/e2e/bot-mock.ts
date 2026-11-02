@@ -22,7 +22,7 @@ export async function mockBotBidding(
 		route.fulfill({
 			contentType: "text/javascript",
 			body: `self.onmessage = async ({data}) => {
-				const response = await fetch(new URL("/__test_bid__", self.location.href), {
+				const response = await fetch(new URL("/__test_bid__", self.location.origin), {
 					method: "POST", body: JSON.stringify(data.position)
 				});
 				const {call} = await response.json();

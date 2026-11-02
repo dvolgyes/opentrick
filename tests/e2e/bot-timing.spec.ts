@@ -168,7 +168,7 @@ test("fast bots honor configured bid, card and final-auction delays and pass the
 		return route.fulfill({
 			contentType: "text/javascript",
 			body: `self.onmessage = async ({data}) => {
-		const response = await fetch(new URL("/__test_play__", self.location.href), { method: "POST", body: JSON.stringify(data) });
+		const response = await fetch(new URL("/__test_play__", self.location.origin), { method: "POST", body: JSON.stringify(data) });
 		const {card} = await response.json();
 		const analysis = {card, samples: 1, effectiveSamples: 1, elapsedMs: 0, evaluations: []};
 		self.postMessage({ok: true, partial: true, analysis});

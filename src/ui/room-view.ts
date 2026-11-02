@@ -1,3 +1,6 @@
+import { BrowserBotAssets } from "../bot/browser-assets";
+import { BrowserBidder } from "../bot/browser-bidder";
+import { BrowserPlayEngine } from "../bot/browser-play";
 import {
 	configuredBotSeats,
 	HostBotRunner,
@@ -257,6 +260,16 @@ export function showRoom(
 	let hostInCall = false;
 	const botSeatOverrides = new Map<Seat, boolean>();
 	let botSettings = initialBotSettings;
+	const botAssets = new BrowserBotAssets();
+	botAssets.preload(
+		(
+			botSettings ??
+			settingsFor(
+				fallbackConfig ?? controller.view().table?.config,
+				readSettings(deps.browser),
+			)
+		).bidder,
+	);
 	let playerAutoplayPending = false;
 	let playerAutoplayStatus = "";
 	let playerAutoplayWasEnabled = false;
@@ -467,6 +480,7 @@ export function showRoom(
 			);
 		}
 		if (botSettings) {
+			botAssets.preload(botSettings.bidder);
 			const settings = readSettings(deps.browser);
 			botSettings = {
 				...botSettings,
@@ -904,7 +918,7 @@ export function showRoom(
 		},
 	);
 	/** A separate local bidder: the bot runner asks its own, and one bidder answers one request at a time. */
-	const botHint = botBidHint(table.showBotBid);
+	const botHint = botBidHint(table.showBotBid, new BrowserBidder(botAssets));
 
 	form.addEventListener("submit", (event) => {
 		event.preventDefault();
@@ -1299,17 +1313,23 @@ export function showRoom(
 		);
 		botStarting = true;
 		botAutoAttempted = true;
-		const runner = new HostBotRunner(controller, botSettings, () => {
-			for (const delegatedSeat of delegatedBotSeats) {
-				delegatedBotSeats.delete(delegatedSeat);
-				botRunner?.setSeatEnabled(delegatedSeat, false);
-				void controller.setBotSeat(delegatedSeat, false);
-			}
-			botRunner = undefined;
-			setBotsPaused(true);
-			setBotStatus(deps.t("The local bot failed."), "error");
-			render();
-		});
+		const runner = new HostBotRunner(
+			controller,
+			botSettings,
+			() => {
+				for (const delegatedSeat of delegatedBotSeats) {
+					delegatedBotSeats.delete(delegatedSeat);
+					botRunner?.setSeatEnabled(delegatedSeat, false);
+					void controller.setBotSeat(delegatedSeat, false);
+				}
+				botRunner = undefined;
+				setBotsPaused(true);
+				setBotStatus(deps.t("The local bot failed."), "error");
+				render();
+			},
+			new BrowserPlayEngine({ assets: botAssets }),
+			new BrowserBidder(botAssets),
+		);
 		runner.setPlayBlocked(table.playPresentationActive());
 		// A reload after a pause starts the runner paused, so it restores the bot seats without playing.
 		if (botsPaused) runner.pause();
@@ -2160,6 +2180,7 @@ export function showRoom(
 		callPresence.stop();
 		botRunner?.stop();
 		botHint.stop();
+		botAssets.dispose();
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
 		table.dispose();
 		deviceWatch.stop();
