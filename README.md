@@ -51,20 +51,21 @@ Do not post it publicly.
 
 ### Find community players
 
-Use the compact **Name: [name] Play with bots / Play online** row in the **Single player** section to choose how to play alone.
-Select **Play online** to enter public matchmaking.
+On the opening page, enter an optional display name and select **Find online players** to enter public matchmaking.
+The waiting screen shows the search status and the seats, and offers **Cancel** and **Play with bots**.
+Select **Help** for the play options, invitation privacy, calls, and recovery.
 The creation and community waiting pages show the number of other browsers directly connected to this browser in the discovery room.
 This local count can differ between browsers and does not count everyone who is online.
 The browser joins discovery on the creation page, reuses that connection for matchmaking, and leaves it for a solo or private game.
-The waiting page for a solo search offers **Create new game**; group invitations are available only for groups with reserved friends.
+Group invitations are available only for groups with reserved friends.
 Bookmark `/` for the site root, `/create` for table setup, `/solo` to start with bots, and `/join` to enter online matchmaking using the saved name.
 On a project site, these paths follow the deployment directory, for example `/opentrick/join`.
 The build includes static entry pages, so these bookmarks also work when opened directly on GitHub Pages.
-For a group, use the regular four-seat creation form.
-The centre buttons, **Bots**, **Online players**, and **Both**, preset the two checkboxes on unnamed seats.
-A name reserves that seat for a human friend and clears both checkboxes.
+For a group, select **Invite friends** and use the four-seat creation form.
+The **Bots**, **Online players**, and **Online, then bot** buttons set the type of each unnamed seat.
+A name reserves that seat for a human friend.
 The presets leave named seats and the creator's seat unchanged.
-Each unnamed seat can also be configured separately; neither checkbox selected reserves it for an invited friend.
+Each seat type can also be selected separately.
 Only a human seat can be the creator's host seat.
 Select **Create game**, then use **Copy group invitation** to bring reserved friends to their chosen seats.
 Matching starts automatically after the invited group has assembled.
@@ -82,7 +83,7 @@ Opposite and adjacent pairs cannot combine without changing their existing seati
 
 Both seat choices are checked during every merge, including the remaining empty seats.
 An online-only seat never becomes a bot, and a bot-only seat never receives an online player.
-Choosing **Both** allows bot fallback after a default two-minute search.
+Choosing **Online, then bot** allows bot fallback after a default two-minute search.
 The **Bot wait** control can adjust this to 0–60 minutes.
 Empty seats fill only when every human's seat choices permit bots and every human's own wait has elapsed.
 Time waiting for invited friends does not count; accumulated search time survives merges and reloads.

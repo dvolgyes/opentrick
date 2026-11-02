@@ -180,7 +180,7 @@ for (const locale of [
 			if (width <= 390) {
 				const boxes = await page
 					.locator(".create-header")
-					.locator(".opening-brand, select, summary")
+					.locator(".opening-brand, select, .opening-help")
 					.evaluateAll((items) =>
 						items.map((item) => {
 							const box = item.getBoundingClientRect();
@@ -199,6 +199,25 @@ for (const locale of [
 				expect(boxes[0]?.right).toBeLessThanOrEqual(boxes[1]?.left ?? 0);
 				expect(boxes[1]?.right).toBeLessThanOrEqual(boxes[2]?.left ?? 0);
 			}
+		}
+		await page.goto("/join");
+		await expect(page.getByTestId("community")).toBeVisible();
+		await expect(
+			page.getByRole("heading", { name: translator(locale)("Community game") }),
+		).toBeVisible();
+		for (const width of [320, 390]) {
+			await page.setViewportSize({ width, height: 844 });
+			expect(
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= innerWidth,
+				),
+			).toBe(true);
+			await expect(
+				page.getByRole("button", {
+					name: translator(locale)("Help"),
+					exact: true,
+				}),
+			).toBeVisible();
 		}
 	});
 }

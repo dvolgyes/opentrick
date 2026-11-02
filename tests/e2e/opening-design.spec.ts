@@ -134,7 +134,7 @@ test("the opening header fits on one mobile row without the build date", async (
 	for (const width of [320, 390]) {
 		await page.setViewportSize({ width, height: 800 });
 		const boxes = await header
-			.locator(".opening-brand, select, summary")
+			.locator(".opening-brand, select, .opening-help")
 			.evaluateAll((items) =>
 				items.map((item) => {
 					const box = item.getBoundingClientRect();
@@ -153,15 +153,15 @@ test("the opening header fits on one mobile row without the build date", async (
 		expect(boxes[0]?.right).toBeLessThanOrEqual(boxes[1]?.left ?? 0);
 		expect(boxes[1]?.right).toBeLessThanOrEqual(boxes[2]?.left ?? 0);
 		expect(boxes[2]?.right ?? Infinity).toBeLessThanOrEqual(width);
-		await header.locator("summary").click();
-		const help = header.locator(".opening-help p");
+		await header.locator(".opening-help").click();
+		const help = page.getByRole("dialog", { name: "How to play" });
 		await expect(help).toBeVisible();
 		const helpBox = await help.boundingBox();
 		expect(helpBox?.x ?? -1).toBeGreaterThanOrEqual(0);
 		expect((helpBox?.x ?? 0) + (helpBox?.width ?? 0)).toBeLessThanOrEqual(
 			width,
 		);
-		await header.locator("summary").click();
+		await help.getByRole("button", { name: "Close" }).click();
 	}
 });
 
@@ -236,10 +236,10 @@ test("the opening page offers three paths and preserves named seats in presets",
 
 test("help explains how to return to a table", async ({ page }) => {
 	await page.goto("/");
-	await page.getByText("Help", { exact: true }).click();
-	await expect(
-		page.getByText("Use the same browser and the full table link to return."),
-	).toBeVisible();
+	await page.getByRole("button", { name: "Help", exact: true }).click();
+	await expect(page.getByRole("dialog", { name: "How to play" })).toContainText(
+		"open the full table link in the same browser",
+	);
 });
 
 test("invitation guidance tells players to open their link", async ({

@@ -20,6 +20,7 @@ import { button, copyToClipboard, el } from "./dom";
 import { showTable } from "./join";
 import { readPersonalName, savePersonalName } from "./personal-name";
 import { seatGrid } from "./seat-grid";
+import { siteHeader } from "./site-header";
 import { sitePath } from "./site-path";
 
 export function showCommunity(
@@ -35,6 +36,35 @@ export function showCommunity(
 	let game: Dispose | undefined;
 	let timer: ReturnType<typeof setInterval> | undefined;
 	let unlock: (() => void) | undefined;
+	const content = el("div", { className: "community-content" });
+	const screen = el(
+		"section",
+		{ className: "community-screen" },
+		siteHeader(deps, true),
+		content,
+	);
+	const intro = (): HTMLElement =>
+		el(
+			"div",
+			{ className: "community-intro" },
+			el(
+				"div",
+				{ className: "community-art", attrs: { "aria-hidden": "true" } },
+				el("span", {}, "♠"),
+				el("span", {}, "♥"),
+			),
+			el(
+				"p",
+				{ className: "community-eyebrow" },
+				deps.t("Free to play · No account needed"),
+			),
+			el("h1", {}, deps.t("Community game")),
+			el(
+				"p",
+				{},
+				deps.t("Keep this page open while your table comes together."),
+			),
+		);
 	const status = el("p", {
 		attrs: { role: "status", "data-testid": "community-status" },
 	});
@@ -166,7 +196,6 @@ export function showCommunity(
 					};
 				}),
 				{
-					center: status,
 					// A browser without a seat in the group sees South at the bottom.
 					bottom:
 						saved.group?.members.find((member) => member.id === saved.self)
@@ -309,77 +338,86 @@ export function showCommunity(
 				},
 				{ ...active, ready: true },
 			);
-			root.replaceChildren(
+			content.replaceChildren(
 				el(
 					"section",
-					{ className: "create", attrs: { "data-testid": "community" } },
-					el("h1", {}, deps.t("Community game")),
-					discovery.element,
-					members,
-					replacements,
-					preferences,
-					...(route.kind === "party" && route.seats.length > 1
-						? [
-								button(
-									deps.t("Copy group invitation"),
-									() => {
-										const current = session?.saved;
-										if (!current) return;
-										const url = new URL(deps.pageUrl());
-										url.search = "";
-										url.hash = partyFragment(
-											current.key,
-											current.owner,
-											current.expected,
-											current.open
-												? {
-														open: current.group
-															? openSeats(current.group)
-															: current.open,
-														names: Object.fromEntries(
-															current.expected.flatMap((seat) => {
-																const name =
-																	current.group?.members.find(
-																		(member) => member.seat === seat,
-																	)?.name ?? current.names?.[seat];
-																return name ? [[seat, name]] : [];
-															}),
-														),
-														waitMs: current.waitMs,
-													}
-												: undefined,
-										);
-										void copyToClipboard(url.href).then((text) => {
-											status.textContent = deps.t(text);
-										});
-									},
-									{ attrs: { "data-testid": "community-invite" } },
-								),
-								el(
-									"p",
-									{},
-									deps.t(
-										"Anyone with this invitation can enter the table. Share it only with your group.",
+					{ attrs: { "data-testid": "community" } },
+					intro(),
+					el(
+						"div",
+						{ className: "community-panel" },
+						status,
+						discovery.element,
+						el("h2", {}, deps.t("Players")),
+						members,
+						replacements,
+						preferences,
+						...(route.kind === "party" && route.seats.length > 1
+							? [
+									button(
+										deps.t("Copy group invitation"),
+										() => {
+											const current = session?.saved;
+											if (!current) return;
+											const url = new URL(deps.pageUrl());
+											url.search = "";
+											url.hash = partyFragment(
+												current.key,
+												current.owner,
+												current.expected,
+												current.open
+													? {
+															open: current.group
+																? openSeats(current.group)
+																: current.open,
+															names: Object.fromEntries(
+																current.expected.flatMap((seat) => {
+																	const name =
+																		current.group?.members.find(
+																			(member) => member.seat === seat,
+																		)?.name ?? current.names?.[seat];
+																	return name ? [[seat, name]] : [];
+																}),
+															),
+															waitMs: current.waitMs,
+														}
+													: undefined,
+											);
+											void copyToClipboard(url.href).then((text) => {
+												status.textContent = deps.t(text);
+											});
+										},
+										{ attrs: { "data-testid": "community-invite" } },
 									),
-								),
-							]
-						: []),
-					el(
-						"p",
-						{},
-						deps.t(
-							"Community games have no audio or video calls. A bot covers an absent player until the board ends.",
+									el(
+										"p",
+										{},
+										deps.t(
+											"Anyone with this invitation can enter the table. Share it only with your group.",
+										),
+									),
+								]
+							: []),
+						el(
+							"p",
+							{},
+							deps.t(
+								"Community games have no audio or video calls. A bot covers an absent player until the board ends.",
+							),
 						),
-					),
-					button(deps.t("Cancel"), navigation.createNew),
-					" ",
-					el(
-						"a",
-						{
-							className: "button",
-							attrs: { href: sitePath(location.pathname, "solo") },
-						},
-						deps.t("Play with bots"),
+						el(
+							"div",
+							{ className: "community-actions" },
+							button(deps.t("Cancel"), navigation.createNew),
+							el(
+								"a",
+								{
+									className: "button",
+									attrs: { href: sitePath(location.pathname, "solo") },
+								},
+								deps.t("Play with bots"),
+							),
+						),
 					),
 				),
 			);
@@ -431,14 +469,10 @@ export function showCommunity(
 		return saved;
 	};
 	const saved = initial ?? load();
-	root.replaceChildren(
-		el(
-			"section",
-			{ className: "create" },
-			el("h1", {}, deps.t("Community game")),
-			discovery.element,
-			status,
-		),
+	root.replaceChildren(screen);
+	content.replaceChildren(
+		intro(),
+		el("div", { className: "community-panel" }, status, discovery.element),
 	);
 	if (saved) void begin(saved);
 	else if (route.kind === "game") {
@@ -472,11 +506,11 @@ export function showCommunity(
 		status.textContent = deps.t(
 			"This browser has no saved reservation for this community game.",
 		);
-		root.append(button(deps.t("Create new game"), navigation.createNew));
+		content.append(button(deps.t("Create new game"), navigation.createNew));
 	} else {
 		const form = el(
 			"form",
-			{ className: "create" },
+			{ className: "create community-join" },
 			el("label", {}, `${deps.t("Your name")} `, name),
 			el("label", {}, `${deps.t("Choose your seat.")} `, seatChoice),
 			el(
@@ -534,7 +568,7 @@ export function showCommunity(
 					: {}),
 			});
 		});
-		root.append(form);
+		content.append(form);
 	}
 	return () => {
 		disposed = true;

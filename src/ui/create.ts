@@ -18,7 +18,6 @@ import type { Bookmark } from "./bookmark";
 import type { AppDeps, Dispose } from "./deps";
 import { discoveryCount } from "./discovery-count";
 import { button, el } from "./dom";
-import { languageControl } from "./language-control";
 import {
 	BIDDER_NAMES,
 	BOT_NAME,
@@ -31,6 +30,7 @@ import {
 import { readPersonalName, savePersonalName } from "./personal-name";
 import { seatGrid } from "./seat-grid";
 import { readSettings } from "./settings";
+import { siteHeader } from "./site-header";
 import { type EntryPage, sitePath } from "./site-path";
 
 /** A solo game: the creator hosts at South against three bots. */
@@ -653,37 +653,7 @@ export function showCreate(
 		el(
 			"section",
 			{ className: "create-screen" },
-			el(
-				"div",
-				{ className: "create-header" },
-				el(
-					"a",
-					{
-						className: "opening-brand",
-						attrs: { href: sitePath(pathname, "home") },
-					},
-					el(
-						"span",
-						{
-							className: "opening-brand-mark",
-							attrs: { "aria-hidden": "true" },
-						},
-						"♠",
-					),
-					el("span", {}, "OpenTrick"),
-				),
-				languageControl(deps),
-				el(
-					"details",
-					{ className: "opening-help" },
-					el("summary", {}, deps.t("Help")),
-					el(
-						"p",
-						{},
-						deps.t("Use the same browser and the full table link to return."),
-					),
-				),
-			),
+			siteHeader(deps),
 			el(
 				"section",
 				{ className: "opening-hero" },

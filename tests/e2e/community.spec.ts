@@ -89,6 +89,73 @@ function gameKey(page: Page): string | null {
 	);
 }
 
+test("redesigned community waiting screen preserves search and actions", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages } = await players(browser, baseURL, 1);
+	try {
+		const page = pages[0];
+		if (!page) throw new Error("page missing");
+		await page.addInitScript(() =>
+			localStorage.setItem(
+				"opentrick.player-name",
+				"<img src=x onerror=alert(1)>",
+			),
+		);
+		await page.goto("/join");
+		await expect(page.getByTestId("community-status")).toHaveText(
+			"Searching for compatible players…",
+		);
+		await expect(
+			page.getByRole("link", { name: "OpenTrick", exact: true }),
+		).toBeVisible({ timeout: 1000 });
+		await expect(
+			page.getByRole("heading", { name: "Community game" }),
+		).toBeVisible();
+		await expect(
+			page.locator(".community-header").getByTestId("build-version"),
+		).toBeVisible();
+		await expect(
+			page.getByTestId("community-members").locator(".seat-card"),
+		).toHaveCount(4);
+		await expect(page.getByTestId("community-members")).toContainText(
+			"<img src=x onerror=alert(1)>",
+		);
+		await expect(
+			page.getByTestId("community-members").locator("img"),
+		).toHaveCount(0);
+		await expect(
+			page.getByRole("button", { name: "Cancel", exact: true }),
+		).toBeVisible();
+		await expect(
+			page.getByRole("link", { name: "Play with bots" }),
+		).toHaveAttribute("href", "/solo");
+		for (const width of [320, 390, 1280]) {
+			await page.setViewportSize({ width, height: 844 });
+			expect(
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= innerWidth,
+				),
+			).toBe(true);
+			await expect(page.getByTestId("community-status")).toBeVisible();
+		}
+		await page.reload();
+		await expect(page.getByTestId("community-status")).toHaveText(
+			"Searching for compatible players…",
+		);
+		await expect(
+			page.getByRole("button", { name: "Help", exact: true }),
+		).toHaveCount(1);
+		await expect(
+			page.locator(".community-header").getByTestId("build-version"),
+		).toBeVisible();
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
 test("discovery connections are visible on setup and reused while searching", async ({
 	browser,
 	baseURL,
