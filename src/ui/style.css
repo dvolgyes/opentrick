@@ -317,7 +317,7 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	padding-top: 3.5rem;
 }
 
-/* The build date and the language share the title row of the create screen; the bidding bot and the scoring share the next row. */
+/* The opening screen places its language control in the header. */
 .create-header,
 .create-options,
 .create-solo-row {
@@ -343,6 +343,11 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 
 .create-header .language-control {
 	position: static;
+	margin-left: auto;
+}
+
+.create-header .build-version {
+	display: none;
 }
 
 /* Keep the name and both bookmarkable actions on one compact row. */
@@ -421,7 +426,6 @@ body:has(.create-screen) {
 	font: 600 1.6rem / 1.2 "Libre Caslon Display", Georgia, serif;
 	text-decoration: none;
 }
-.opening-help { margin-left: auto; }
 .opening-help summary { cursor: pointer; }
 .opening-help p { max-width: 22rem; margin: 0.5rem 0; }
 .opening-hero {
@@ -455,6 +459,7 @@ body:has(.create-screen) {
 }
 .opening-illustration span + span { margin: 1rem 0 0 -1rem; color: var(--opening-red); transform: rotate(16deg); }
 .create-mode { margin-top: 2.5rem; }
+.opening-hero + .create-mode { margin-top: 1.25rem; }
 .create-mode > h2 { font: 400 2rem / 1.2 "Libre Caslon Display", Georgia, serif; margin: 0; }
 .create-solo-row { display: block; }
 .create-solo-row label { white-space: normal; font-weight: 600; }
@@ -487,7 +492,14 @@ body:has(.create-screen) {
 .create-options { display: block; margin-top: 1.5rem; }
 .create-screen :focus-visible { outline: 3px solid var(--opening-red); outline-offset: 3px; }
 @media (max-width: 600px) {
-	.opening-hero { display: block; min-height: 0; padding: 2rem 1.5rem; }
+	.create-header { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 0.5rem; min-height: 0; margin-bottom: 1rem; }
+	.opening-brand { font-size: clamp(1.15rem, 5.5vw, 1.5rem); white-space: nowrap; }
+	.create-header .language-control { width: 100%; min-width: 0; margin: 0; justify-content: flex-end; }
+	.create-header .language-control label { min-width: 0; max-width: 100%; margin: 0; }
+	.create-header .language-control select { width: 100%; min-width: 0; }
+	.opening-help { position: relative; }
+	.opening-help[open] p { position: absolute; z-index: 2; top: 100%; right: 0; width: min(20rem, calc(100vw - 2rem)); padding: 0.75rem; border: 1px solid var(--opening-line); border-radius: 0.4rem; background: var(--opening-paper); }
+	.opening-hero { display: block; min-height: 0; padding: 1.5rem; }
 	.opening-illustration { display: none; }
 	.opening-modes { grid-template-columns: 1fr; }
 	.opening-card { padding: 1rem; }

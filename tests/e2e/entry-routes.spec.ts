@@ -177,6 +177,28 @@ for (const locale of [
 				),
 			).toBe(true);
 			await expect(row.getByTestId("invite-friends")).toBeVisible();
+			if (width <= 390) {
+				const boxes = await page
+					.locator(".create-header")
+					.locator(".opening-brand, select, summary")
+					.evaluateAll((items) =>
+						items.map((item) => {
+							const box = item.getBoundingClientRect();
+							return {
+								left: box.left,
+								right: box.right,
+								middle: box.top + box.height / 2,
+							};
+						}),
+					);
+				expect(boxes).toHaveLength(3);
+				expect(
+					Math.max(...boxes.map((box) => box.middle)) -
+						Math.min(...boxes.map((box) => box.middle)),
+				).toBeLessThan(2);
+				expect(boxes[0]?.right).toBeLessThanOrEqual(boxes[1]?.left ?? 0);
+				expect(boxes[1]?.right).toBeLessThanOrEqual(boxes[2]?.left ?? 0);
+			}
 		}
 	});
 }

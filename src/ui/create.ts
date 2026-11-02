@@ -645,6 +645,7 @@ export function showCreate(
 					},
 					"♠ OpenTrick",
 				),
+				languageControl(deps),
 				el(
 					"details",
 					{ className: "opening-help" },
@@ -655,7 +656,6 @@ export function showCreate(
 						deps.t("Use the same browser and the full table link to return."),
 					),
 				),
-				languageControl(deps),
 			),
 			el(
 				"section",

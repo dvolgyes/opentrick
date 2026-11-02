@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
+import { mockBotBidding } from "./bot-mock";
 import { Player } from "./player";
 import {
 	CONNECT_MS,
@@ -77,14 +78,18 @@ test("one browser: create, three seats from one link, ordered messages", async (
 	}
 });
 
-test("the page shows the commit date of its build, and the commit on hover", async ({
+test("the game shows the commit date of its build, and the commit on hover", async ({
 	page,
 }) => {
 	const commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
 		encoding: "utf8",
 	}).trim();
-	await page.goto("./");
-	const version = page.getByTestId("build-version");
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await mockBotBidding(page, () => "P");
+	await page.goto("/solo");
+	const version = page
+		.locator(".room-header-controls")
+		.getByTestId("build-version");
 	await expect(version).toBeVisible();
 	await expect(version).toHaveText(
 		/^[A-Z][a-z]{2} \d{1,2},'\d{2}, [0-2]\d:[0-5]\d$/,

@@ -1,5 +1,73 @@
 import { expect, test } from "@playwright/test";
 
+test("the opening header fits on one mobile row without the build date", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.evaluate(() => document.fonts.ready);
+	const header = page.locator(".create-header");
+	await expect(header.getByTestId("build-version")).toBeHidden({
+		timeout: 1000,
+	});
+	for (const width of [320, 390]) {
+		await page.setViewportSize({ width, height: 800 });
+		const boxes = await header
+			.locator(".opening-brand, select, summary")
+			.evaluateAll((items) =>
+				items.map((item) => {
+					const box = item.getBoundingClientRect();
+					return {
+						left: box.left,
+						right: box.right,
+						middle: box.top + box.height / 2,
+					};
+				}),
+			);
+		expect(boxes).toHaveLength(3);
+		expect(
+			Math.max(...boxes.map((box) => box.middle)) -
+				Math.min(...boxes.map((box) => box.middle)),
+		).toBeLessThan(2);
+		expect(boxes[0]?.right).toBeLessThanOrEqual(boxes[1]?.left ?? 0);
+		expect(boxes[1]?.right).toBeLessThanOrEqual(boxes[2]?.left ?? 0);
+		expect(boxes[2]?.right ?? Infinity).toBeLessThanOrEqual(width);
+		await header.locator("summary").click();
+		const help = header.locator(".opening-help p");
+		await expect(help).toBeVisible();
+		const helpBox = await help.boundingBox();
+		expect(helpBox?.x ?? -1).toBeGreaterThanOrEqual(0);
+		expect((helpBox?.x ?? 0) + (helpBox?.width ?? 0)).toBeLessThanOrEqual(
+			width,
+		);
+		await header.locator("summary").click();
+	}
+});
+
+test("the welcome area and the space below it are compact", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.evaluate(() => document.fonts.ready);
+	for (const [width, expectedPadding] of [
+		[390, 24],
+		[1280, 64],
+	] as const) {
+		await page.setViewportSize({ width, height: 800 });
+		const hero = page.locator(".opening-hero");
+		const padding = await hero.evaluate((element) =>
+			Number.parseFloat(getComputedStyle(element).paddingTop),
+		);
+		const heroBox = await hero.boundingBox();
+		const modesBox = await page
+			.locator(".opening-hero + .create-mode")
+			.boundingBox();
+		expect(padding).toBeCloseTo(expectedPadding, 1);
+		expect(
+			(modesBox?.y ?? 0) - ((heroBox?.y ?? 0) + (heroBox?.height ?? 0)),
+		).toBeLessThanOrEqual(24);
+	}
+});
+
 test("the opening page offers three paths and preserves named seats in presets", async ({
 	page,
 }) => {
