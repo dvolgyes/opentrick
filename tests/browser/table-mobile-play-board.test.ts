@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { cdp, page } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { Seat } from "../../src/protocol";
@@ -14,6 +14,54 @@ import {
 afterEach(() => document.body.replaceChildren());
 
 describe("board depth and frame colours", () => {
+	it("keeps both card backs available when the asset server is unreachable", async () => {
+		const session = cdp();
+		await session.send("Network.enable");
+		await session.send("Network.setCacheDisabled", { cacheDisabled: true });
+		await session.send("Network.setBlockedURLs", {
+			urls: ["*bridge-call-card-back*"],
+		});
+		try {
+			const base = playView();
+			const { root, section } = renderView(base, "desktop");
+			const colour = async () => {
+				const back = root.querySelector<HTMLImageElement>(".hand .back-art");
+				if (!back) throw new Error("missing card back");
+				await back.decode();
+				const canvas = document.createElement("canvas");
+				canvas.width = 120;
+				canvas.height = 168;
+				const context = canvas.getContext("2d");
+				if (!context) throw new Error("canvas unavailable");
+				context.drawImage(back, 0, 0, canvas.width, canvas.height);
+				const pixels = context.getImageData(
+					0,
+					0,
+					canvas.width,
+					canvas.height,
+				).data;
+				let red = 0;
+				let blue = 0;
+				for (let i = 0; i < pixels.length; i += 4) {
+					if ((pixels[i] ?? 0) > (pixels[i + 2] ?? 0) * 1.3) red++;
+					if ((pixels[i + 2] ?? 0) > (pixels[i] ?? 0) * 1.3) blue++;
+				}
+				return { red, blue };
+			};
+			const odd = await colour();
+			expect(odd.red).toBeGreaterThan(1000);
+			section.render({ ...base, board: 2 });
+			const even = await colour();
+			expect(even.blue).toBeGreaterThan(1000);
+			section.render({ ...base, board: 3 });
+			expect((await colour()).red).toBeGreaterThan(1000);
+			section.dispose();
+		} finally {
+			await session.send("Network.setBlockedURLs", { urls: [] });
+			await session.send("Network.setCacheDisabled", { cacheDisabled: false });
+		}
+	});
+
 	it.each(["desktop", "sideways", "compact"] as const)(
 		"keeps played cards in place as the hands empty on %s",
 		(layout) => {

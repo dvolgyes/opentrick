@@ -12,8 +12,8 @@ import type { RemoteView } from "../call/call";
 import type { Form, Layout } from "../call/device-class";
 import { englishTranslator, type Locale, type Translate } from "../i18n";
 import { SEAT_NAMES, SEATS, type Seat } from "../protocol";
-import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?url";
-import cardBackRed from "./assets/bridge-call-card-back-red.svg?url";
+import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?inline";
+import cardBackRed from "./assets/bridge-call-card-back-red.svg?inline";
 import { guideDialog, guidePanel } from "./bidding-guide";
 import { type BotAnimation, botAnimation } from "./bot-animation";
 import {
