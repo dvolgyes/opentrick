@@ -155,14 +155,20 @@ export function settingsDialog(
 		LOCAL_BIDDERS,
 		BIDDER_NAMES,
 	);
-	const timeInput = (label: string, name: string, minimum: number) => {
+	const timeInput = (
+		label: string,
+		name: string,
+		minimum: number,
+		maximum = 60,
+		step = "1",
+	) => {
 		const input = el("input", {
 			attrs: {
 				type: "number",
 				name,
 				min: String(minimum),
-				max: "60",
-				step: "1",
+				max: String(maximum),
+				step,
 				required: "",
 			},
 		});
@@ -176,6 +182,13 @@ export function settingsDialog(
 			t("Show completed trick for (seconds)"),
 			"trick-display",
 			0,
+		),
+		trickWinnerPauseMs: timeInput(
+			t("Winner highlight pause (seconds)"),
+			"trick-winner-pause",
+			0,
+			5,
+			"0.1",
 		),
 		botCardDelayMs: timeInput(
 			t("Minimum card time (seconds)"),
@@ -420,6 +433,7 @@ export function settingsDialog(
 			el("legend", {}, t("Gameplay")),
 			el("label", {}, trickAnimation, ` ${t("Animate trick collection")}`),
 			timing.trickDisplayMs.element,
+			timing.trickWinnerPauseMs.element,
 			el(
 				"label",
 				{},
@@ -519,7 +533,10 @@ export function settingsDialog(
 			{},
 			el("legend", {}, t("Bot timing")),
 			...Object.entries(timing)
-				.filter(([field]) => field !== "trickDisplayMs")
+				.filter(
+					([field]) =>
+						field !== "trickDisplayMs" && field !== "trickWinnerPauseMs",
+				)
 				.map(([, control]) => control.element),
 			el(
 				"p",
@@ -562,7 +579,7 @@ export function settingsDialog(
 		const times = Object.fromEntries(
 			Object.entries(timing).map(([field, control]) => [
 				field,
-				control.input.valueAsNumber * 1000,
+				Math.round(control.input.valueAsNumber * 1000),
 			]),
 		) as Pick<Settings, keyof typeof timing>;
 		const editable = bidding?.().editable ?? true;

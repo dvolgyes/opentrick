@@ -240,6 +240,7 @@ export function renderView(
 	const section = tableSection(handlers, style, t, {
 		marks: () => ({ ...DEFAULT_SETTINGS, guideButton: true }),
 		trickDisplayMs: () => 0,
+		trickWinnerPauseMs: () => 200,
 		...options,
 	});
 	const room = document.createElement("section");

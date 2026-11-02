@@ -39,6 +39,7 @@ describe("player settings", () => {
 	it("defaults the completed trick display to two seconds and the solo next-board button to visible", () => {
 		expect(readSettings(memoryStorage())).toMatchObject({
 			trickDisplayMs: 2000,
+			trickWinnerPauseMs: 1000,
 			soloNextBoard: true,
 		});
 	});
@@ -72,6 +73,7 @@ describe("player settings", () => {
 			bidConfirmation: true,
 			trickAnimation: true,
 			trickDisplayMs: 2000,
+			trickWinnerPauseMs: 1000,
 			soloAutoAdvance: false,
 			soloNextBoard: true,
 			hideBidBoxWhenWaiting: true,
@@ -136,6 +138,7 @@ describe("player settings", () => {
 			bidConfirmation: false,
 			trickAnimation: false,
 			trickDisplayMs: 4000,
+			trickWinnerPauseMs: 1500,
 			soloAutoAdvance: true,
 			soloNextBoard: false,
 			hideBidBoxWhenWaiting: false,
@@ -147,6 +150,24 @@ describe("player settings", () => {
 		expect(readSettings(storage)).toEqual(settings);
 		for (let index = 0; index < storage.length; index++)
 			expect(storage.key(index)).toMatch(/^opentrick\.settings\./);
+	});
+
+	it("validates and restores the winner highlight pause", () => {
+		const storage = memoryStorage();
+		for (const value of ["-1", "5001", "150", "not a number"]) {
+			storage.setItem("opentrick.settings.trick-winner-pause-ms", value);
+			expect(readSettings(storage).trickWinnerPauseMs).toBe(1000);
+		}
+		for (const value of [0, 1500, 5000]) {
+			writeSettings(storage, {
+				...DEFAULT_SETTINGS,
+				trickWinnerPauseMs: value,
+			});
+			expect(readSettings(storage).trickWinnerPauseMs).toBe(value);
+		}
+		expect(() =>
+			writeSettings(storage, { ...DEFAULT_SETTINGS, trickWinnerPauseMs: 5100 }),
+		).toThrow();
 	});
 
 	it("validates and restores the completed-trick display time", () => {

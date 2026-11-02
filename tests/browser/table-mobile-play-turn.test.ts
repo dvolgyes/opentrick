@@ -948,88 +948,103 @@ describe("finished trick", () => {
 		section.dispose();
 	});
 
-	it("uses the viewer-relative edge midpoint for every winner and viewer", () => {
-		vi.useFakeTimers();
-		const seats = ["N", "E", "S", "W"] as const;
-		for (const viewer of seats)
-			for (const winner of seats) {
-				const { section } = renderView(playView(), "desktop");
-				const original = finishedView();
-				if (!original.completedTrick)
-					throw new Error("missing completed trick");
-				const completedTrick = {
-					...original.completedTrick,
-					winner,
-					winnerPosition: positionOf(viewer, winner),
-					cards: original.completedTrick.cards.map((card) => ({
-						...card,
-						position: positionOf(viewer, card.seat),
-					})),
-				};
-				section.render({ ...original, completedTrick });
-				const overlay = document.querySelector<HTMLElement>(
-					".trick-collection-overlay",
-				);
-				const cards = [
-					...(overlay?.querySelectorAll<HTMLElement>(".played") ?? []),
-				];
-				expect(cards).toHaveLength(4);
-				const endpoints = cards.map((card) => {
-					const animation = card
-						.getAnimations()
-						.find(
-							(item) =>
-								item.effect instanceof KeyframeEffect &&
-								item.effect
-									.getKeyframes()
-									.some((frame) =>
-										String(frame.transform ?? "").includes("translate("),
-									),
-						);
-					const frame = (animation?.effect as KeyframeEffect | undefined)
-						?.getKeyframes()
-						.at(-1);
-					const match = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(
-						String(frame?.transform ?? ""),
+	it.each<Form>(["desktop", "compact"])(
+		"uses the viewer-relative board edge for every winner and viewer on %s",
+		(form) => {
+			vi.useFakeTimers();
+			const seats = ["N", "E", "S", "W"] as const;
+			for (const viewer of seats)
+				for (const winner of seats) {
+					const { section, root } = renderView(playView(), form);
+					const board = root.querySelector<HTMLElement>(
+						form === "compact" ? ".mobile-auction-board" : ".felt",
 					);
-					if (!match) throw new Error("missing collection transform");
-					return [
-						parseFloat(card.style.left) +
-							card.offsetWidth / 2 +
-							Number(match[1]),
-						parseFloat(card.style.top) +
-							card.offsetHeight / 2 +
-							Number(match[2]),
+					if (!board) throw new Error("missing game board");
+					const boardRect = board.getBoundingClientRect();
+					const original = finishedView();
+					if (!original.completedTrick)
+						throw new Error("missing completed trick");
+					const completedTrick = {
+						...original.completedTrick,
+						winner,
+						winnerPosition: positionOf(viewer, winner),
+						cards: original.completedTrick.cards.map((card) => ({
+							...card,
+							position: positionOf(viewer, card.seat),
+						})),
+					};
+					section.render({ ...original, completedTrick });
+					const overlay = document.querySelector<HTMLElement>(
+						".trick-collection-overlay",
+					);
+					if (!overlay) throw new Error("missing collection overlay");
+					const overlayRect = overlay.getBoundingClientRect();
+					expect(overlayRect.left).toBeCloseTo(boardRect.left, 0);
+					expect(overlayRect.top).toBeCloseTo(boardRect.top, 0);
+					expect(overlayRect.width).toBeCloseTo(boardRect.width, 0);
+					expect(overlayRect.height).toBeCloseTo(boardRect.height, 0);
+					expect(getComputedStyle(overlay).overflow).toBe("hidden");
+					const cards = [
+						...(overlay?.querySelectorAll<HTMLElement>(".played") ?? []),
 					];
-				});
-				for (const point of endpoints) {
-					expect(point[0]).toBeCloseTo(endpoints[0]?.[0] ?? 0, 0);
-					expect(point[1]).toBeCloseTo(endpoints[0]?.[1] ?? 0, 0);
+					expect(cards).toHaveLength(4);
+					const endpoints = cards.map((card) => {
+						const animation = card
+							.getAnimations()
+							.find(
+								(item) =>
+									item.effect instanceof KeyframeEffect &&
+									item.effect
+										.getKeyframes()
+										.some((frame) =>
+											String(frame.transform ?? "").includes("translate("),
+										),
+							);
+						const frame = (animation?.effect as KeyframeEffect | undefined)
+							?.getKeyframes()
+							.at(-1);
+						const match = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(
+							String(frame?.transform ?? ""),
+						);
+						if (!match) throw new Error("missing collection transform");
+						return [
+							parseFloat(card.style.left) +
+								card.offsetWidth / 2 +
+								Number(match[1]),
+							parseFloat(card.style.top) +
+								card.offsetHeight / 2 +
+								Number(match[2]),
+						];
+					});
+					for (const point of endpoints) {
+						expect(point[0]).toBeCloseTo(endpoints[0]?.[0] ?? 0, 0);
+						expect(point[1]).toBeCloseTo(endpoints[0]?.[1] ?? 0, 0);
+					}
+					const [x, y] = endpoints[0] ?? [0, 0];
+					const width = boardRect.width;
+					const height = boardRect.height;
+					switch (completedTrick.winnerPosition) {
+						case "top":
+							expect(x).toBeCloseTo(width / 2, 0);
+							expect(y).toBeLessThan(0);
+							break;
+						case "bottom":
+							expect(x).toBeCloseTo(width / 2, 0);
+							expect(y).toBeGreaterThan(height);
+							break;
+						case "left":
+							expect(y).toBeCloseTo(height / 2, 0);
+							expect(x).toBeLessThan(0);
+							break;
+						case "right":
+							expect(y).toBeCloseTo(height / 2, 0);
+							expect(x).toBeGreaterThan(width);
+							break;
+					}
+					section.dispose();
 				}
-				const [x, y] = endpoints[0] ?? [0, 0];
-				const width = window.visualViewport?.width ?? window.innerWidth;
-				const height = window.visualViewport?.height ?? window.innerHeight;
-				switch (completedTrick.winnerPosition) {
-					case "top":
-						expect(x).toBeCloseTo(width / 2, 0);
-						expect(y).toBeLessThan(0);
-						break;
-					case "bottom":
-						expect(x).toBeCloseTo(width / 2, 0);
-						expect(y).toBeGreaterThan(height);
-						break;
-					case "left":
-						expect(y).toBeCloseTo(height / 2, 0);
-						expect(x).toBeLessThan(0);
-						break;
-					case "right":
-						expect(y).toBeCloseTo(height / 2, 0);
-						expect(x).toBeGreaterThan(width);
-						break;
-				}
-				section.dispose();
-			}
-	});
+		},
+	);
 
 	it("respects the setting that disables collection motion", () => {
 		const { section, root } = renderView(
@@ -1072,6 +1087,50 @@ describe("finished trick", () => {
 		vi.advanceTimersByTime(1);
 		expect(section.collecting()).toBe(false);
 	});
+
+	it.each([0, 1000, 5000])(
+		"waits %i ms after highlighting before sweeping",
+		(pause) => {
+			vi.useFakeTimers();
+			const { root, section } = renderView(
+				playView(),
+				"desktop",
+				undefined,
+				undefined,
+				{ trickWinnerPauseMs: () => pause },
+			);
+			section.render(finishedView());
+			const winner = document.querySelector<HTMLElement>(
+				".trick-collection-overlay .trick-winner",
+			);
+			if (!winner) throw new Error("missing winner highlight");
+			const animation = winner
+				.getAnimations()
+				.find(
+					(item) =>
+						item.effect instanceof KeyframeEffect &&
+						item.effect
+							.getKeyframes()
+							.some((frame) =>
+								String(frame.transform ?? "").includes("translate("),
+							),
+				);
+			expect(animation?.effect?.getTiming().delay).toBe(pause);
+			const announcement = root.querySelector<HTMLElement>(
+				".trick-announcement",
+			);
+			if (!announcement) throw new Error("missing accessible announcement");
+			expect(announcement.getAttribute("role")).toBe("status");
+			expect(announcement.textContent).toBe("North · Anna won the trick");
+			expect(getComputedStyle(announcement).clip).toBe(
+				"rect(0px, 0px, 0px, 0px)",
+			);
+			vi.advanceTimersByTime(pause + 999);
+			expect(section.collecting()).toBe(true);
+			vi.advanceTimersByTime(1);
+			expect(section.collecting()).toBe(false);
+		},
+	);
 
 	it("keeps the finished trick visible for the configured time even with animation off", () => {
 		vi.useFakeTimers();
@@ -1141,15 +1200,20 @@ describe("finished trick", () => {
 		},
 	);
 
-	it("clears the overlay when the viewport changes", () => {
-		vi.useFakeTimers();
-		const { section } = renderView(playView(), "desktop");
-		section.render(finishedView());
-		expect(section.collecting()).toBe(true);
-		window.dispatchEvent(new Event("resize"));
-		expect(section.collecting()).toBe(false);
-		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
-	});
+	it.each(["resize", "scroll"] as const)(
+		"clears the overlay when the board moves after %s",
+		(event) => {
+			vi.useFakeTimers();
+			const { section } = renderView(playView(), "desktop");
+			section.render(finishedView());
+			expect(section.collecting()).toBe(true);
+			(event === "resize" ? window : document.body).dispatchEvent(
+				new Event(event),
+			);
+			expect(section.collecting()).toBe(false);
+			expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+		},
+	);
 
 	it("keeps the next trick out of the collection and rejects clicks until it finishes", () => {
 		vi.useFakeTimers();

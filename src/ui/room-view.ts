@@ -887,6 +887,7 @@ export function showRoom(
 			marks: () => readSettings(deps.browser),
 			trickAnimation: () => readSettings(deps.browser).trickAnimation,
 			trickDisplayMs: () => readSettings(deps.browser).trickDisplayMs,
+			trickWinnerPauseMs: () => readSettings(deps.browser).trickWinnerPauseMs,
 			presentationDone: () => {
 				shownTable = undefined;
 				render();

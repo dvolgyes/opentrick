@@ -95,6 +95,8 @@ export interface Settings extends BotTiming {
 	readonly trickAnimation: boolean;
 	/** How long completed cards remain on screen before collection. */
 	readonly trickDisplayMs: number;
+	/** Time the winning card remains highlighted before collection starts. */
+	readonly trickWinnerPauseMs: number;
 	/** Advance solo practice after its result countdown. */
 	readonly soloAutoAdvance: boolean;
 	/** Show the next-board action on solo results. */
@@ -136,6 +138,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	bidConfirmation: true,
 	trickAnimation: true,
 	trickDisplayMs: 2000,
+	trickWinnerPauseMs: 1000,
 	soloAutoAdvance: false,
 	soloNextBoard: true,
 	hideBidBoxWhenWaiting: true,
@@ -206,6 +209,10 @@ export function readSettings(storage: MaybeStorage): Settings {
 	const storedTrickDisplay = trickDisplayText?.trim()
 		? Number(trickDisplayText)
 		: NaN;
+	const trickWinnerPauseText = read("trick-winner-pause-ms");
+	const storedTrickWinnerPause = trickWinnerPauseText?.trim()
+		? Number(trickWinnerPauseText)
+		: NaN;
 	const timing = Object.fromEntries(
 		Object.entries(TIMING_KEYS).map(([field, name]) => {
 			const fallback = DEFAULT_BOT_TIMING[field as keyof BotTiming];
@@ -229,6 +236,12 @@ export function readSettings(storage: MaybeStorage): Settings {
 		trickDisplayMs: isBotTimingMs(storedTrickDisplay)
 			? wholeSeconds(storedTrickDisplay, 0)
 			: DEFAULT_SETTINGS.trickDisplayMs,
+		trickWinnerPauseMs:
+			isBotTimingMs(storedTrickWinnerPause) &&
+			storedTrickWinnerPause <= 5000 &&
+			storedTrickWinnerPause % 100 === 0
+				? storedTrickWinnerPause
+				: DEFAULT_SETTINGS.trickWinnerPauseMs,
 		pointSystem: readChoice(
 			storedPoints,
 			POINT_SYSTEMS,
@@ -288,6 +301,14 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		settings.trickDisplayMs % 1000 !== 0
 	)
 		throw new Error("trick display time must be whole seconds from 0 to 60");
+	if (
+		!isBotTimingMs(settings.trickWinnerPauseMs) ||
+		settings.trickWinnerPauseMs > 5000 ||
+		settings.trickWinnerPauseMs % 100 !== 0
+	)
+		throw new Error(
+			"winner highlight time must be from 0 to 5 seconds in tenths",
+		);
 	if (budget < 1000 || budget % 1000 !== 0)
 		throw new Error("play time must be whole seconds from 1 to 60");
 	for (const value of Object.values(timing))
@@ -308,6 +329,10 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
 	storage.setItem(`${PREFIX}trick-display-ms`, String(settings.trickDisplayMs));
+	storage.setItem(
+		`${PREFIX}trick-winner-pause-ms`,
+		String(settings.trickWinnerPauseMs),
+	);
 	for (const [field, name] of Object.entries(TIMING_KEYS))
 		storage.setItem(PREFIX + name, String(timing[field as keyof BotTiming]));
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);

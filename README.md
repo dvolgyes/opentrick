@@ -131,7 +131,8 @@ After the opening lead, declarer's partner becomes the dummy: their hand is show
 In a human–robot partnership, the human selects cards from both hands, even when the human is dummy, unless autoplay is enabled.
 The defenders play together to stop the contract, while declarer tries to make it.
 The table records tricks and duplicate scores as the hand finishes.
-The winning card is highlighted and the completed trick is collected toward its winner.
+The winning card is highlighted and the completed trick is collected toward its winner at the edge of the game board.
+The winner remains highlighted for one second before collection by default, and you can change this pause in Settings.
 You can turn off the collection animation in Settings.
 The completed trick stays on screen for two seconds before collection by default, and you can change this time in Settings.
 In solo practice, the result stays visible until you select **Next board**.

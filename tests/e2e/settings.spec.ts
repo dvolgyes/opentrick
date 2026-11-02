@@ -131,6 +131,15 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		dialog.getByLabel("Show completed trick for (seconds)"),
 	).toHaveValue("2");
 	await expect(
+		dialog.getByLabel("Winner highlight pause (seconds)"),
+	).toHaveValue("1");
+	await expect(
+		dialog.getByLabel("Winner highlight pause (seconds)"),
+	).toHaveAttribute("min", "0");
+	await expect(
+		dialog.getByLabel("Winner highlight pause (seconds)"),
+	).toHaveAttribute("max", "5");
+	await expect(
 		dialog.getByLabel("Show Next board button in solo play"),
 	).toBeChecked();
 	await expect(
@@ -211,6 +220,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByLabel("Animate the bot during its turn").uncheck();
 	await dialog.getByLabel("Animate trick collection").uncheck();
 	await dialog.getByLabel("Show completed trick for (seconds)").fill("4");
+	await dialog.getByLabel("Winner highlight pause (seconds)").fill("1.5");
 	await dialog.getByLabel("Automatically start the next board").check();
 	await dialog.getByLabel("Show Next board button in solo play").uncheck();
 	await dialog
@@ -276,6 +286,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.theme-style",
 		"opentrick.settings.trick-animation",
 		"opentrick.settings.trick-display-ms",
+		"opentrick.settings.trick-winner-pause-ms",
 		"opentrick.settings.voicebox",
 	]);
 	expect(
@@ -311,6 +322,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(
 		dialog.getByLabel("Show completed trick for (seconds)"),
 	).toHaveValue("4");
+	await expect(
+		dialog.getByLabel("Winner highlight pause (seconds)"),
+	).toHaveValue("1.5");
 	await expect(
 		dialog.getByLabel("Show Next board button in solo play"),
 	).not.toBeChecked();

@@ -244,6 +244,17 @@ const rows: readonly Row[] = [
 		"Voltooide slag tonen (seconden)",
 	],
 	[
+		"Winner highlight pause (seconds)",
+		"Pause nach Markierung des Gewinners (Sekunden)",
+		"A nyertes lap kiemelésének ideje (másodperc)",
+		"Pause etter markering av vinneren (sekunder)",
+		"Pausa al destacar la carta ganadora (segundos)",
+		"Pausa ao destacar a carta vencedora (segundos)",
+		"Pause après mise en évidence de la carte gagnante (secondes)",
+		"Pausa dopo l'evidenziazione della carta vincente (secondi)",
+		"Pauze na markering van de winnende kaart (seconden)",
+	],
+	[
 		"Show Next board button in solo play",
 		"Schaltfläche für das nächste Board im Solospiel anzeigen",
 		"Következő leosztás gomb megjelenítése egyedül játszva",

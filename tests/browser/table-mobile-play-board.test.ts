@@ -14,6 +14,121 @@ import {
 afterEach(() => document.body.replaceChildren());
 
 describe("board depth and frame colours", () => {
+	it.each(["desktop", "sideways", "compact"] as const)(
+		"keeps played cards in place as the hands empty on %s",
+		(layout) => {
+			const initial = playView();
+			const first = initial.trick?.cards[0];
+			if (!first) throw new Error("missing initial played card");
+			const base = {
+				...initial,
+				trick: {
+					finished: false,
+					cards: [
+						first,
+						{
+							...first,
+							seat: "S" as const,
+							position: "top" as const,
+							card: "S2" as const,
+							rank: "2",
+							text: "♠2",
+						},
+						{
+							...first,
+							seat: "N" as const,
+							position: "bottom" as const,
+							card: "S3" as const,
+							rank: "3",
+							text: "♠3",
+						},
+					],
+				},
+				seats: initial.seats.map((seat) =>
+					seat.position !== "bottom"
+						? { ...seat, hand: { visible: false as const, count: 13 } }
+						: seat,
+				),
+			};
+			const { root, section } = renderView(base, layout);
+			const board = root.querySelector<HTMLElement>(
+				layout === "compact" ? ".mobile-auction-board" : ".felt",
+			);
+			if (!board) throw new Error("missing game board");
+			if (layout !== "compact") board.style.height = "700px";
+			const location = () => {
+				const played = [
+					...root.querySelectorAll<HTMLElement>(".trick .played"),
+				];
+				if (played.length !== 3) throw new Error("missing played cards");
+				const bounds = board.getBoundingClientRect();
+				return played.map((node) => {
+					const card = node.getBoundingClientRect();
+					return { x: card.left - bounds.left, y: card.top - bounds.top };
+				});
+			};
+			const before = location();
+			for (const count of [12, 6, 1, 0]) {
+				section.render({
+					...base,
+					seats: base.seats.map((seat) =>
+						seat.position === "bottom"
+							? {
+									...seat,
+									turn: false,
+									...(count === 0
+										? { hand: { visible: true as const, suits: [] } }
+										: {}),
+								}
+							: {
+									...seat,
+									turn: seat.position === "left",
+									hand: { visible: false as const, count },
+								},
+					),
+				});
+				const after = location();
+				for (const [index, card] of after.entries()) {
+					expect(card.x).toBeCloseTo(before[index]?.x ?? NaN, 0);
+					expect(card.y).toBeCloseTo(before[index]?.y ?? NaN, 0);
+				}
+			}
+		},
+	);
+	it("keeps the phone's trick in place with long side-player names", () => {
+		const initial = playView();
+		const base = {
+			...initial,
+			seats: initial.seats.map((seat) =>
+				seat.position === "left" || seat.position === "right"
+					? {
+							...seat,
+							label: `${seat.seat} - A particularly long player name`,
+							hand: { visible: false as const, count: 13 },
+						}
+					: seat,
+			),
+		};
+		const { root, section } = renderView(base, "compact");
+		const card = () => {
+			const node = root.querySelector<HTMLElement>(".trick .played");
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			if (!node || !board) throw new Error("missing board or played card");
+			return (
+				node.getBoundingClientRect().top - board.getBoundingClientRect().top
+			);
+		};
+		const before = card();
+		section.render({
+			...base,
+			seats: base.seats.map((seat) =>
+				seat.position === "left" || seat.position === "right"
+					? { ...seat, hand: { visible: false as const, count: 0 } }
+					: seat,
+			),
+		});
+		expect(card()).toBeCloseTo(before, 0);
+	});
 	it.each(["desktop", "compact"] as const)(
 		"disables and dims the room call when no human can join (%s)",
 		(layout) => {

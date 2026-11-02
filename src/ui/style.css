@@ -2478,6 +2478,23 @@ dialog {
 	display: none;
 }
 
+/* Preserve the trick's original height and the center gap, even when the played cards are positioned on the felt. */
+.room[data-form="desktop"] .bridge-table[data-phase="play"] .center {
+	min-height: calc(var(--card-h) * 2 + var(--card-w) + 1.2rem);
+}
+
+.room[data-layout="sideways"] .bridge-table[data-phase="play"] .center {
+	min-height: calc(3.9rem * 2 + 2.8rem + 1.2rem);
+}
+
+/* Played cards stay fixed on the felt as the hands above and below them shrink. */
+.room[data-form="desktop"] .bridge-table[data-phase="play"] .trick {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
 .bridge-table.trick-collection-overlay {
 	position: fixed;
 	z-index: 10000;
@@ -2520,22 +2537,6 @@ dialog {
 	justify-content: center;
 	gap: 0.5rem;
 }
-
-.trick-announcement {
-	position: absolute;
-	left: 50%;
-	bottom: 0.5rem;
-	transform: translateX(-50%);
-	z-index: 10;
-	margin: 0;
-	padding: 0.2rem 0.5rem;
-	border-radius: 0.3rem;
-	background: var(--sheet-bg);
-	color: var(--fg);
-	white-space: nowrap;
-}
-
-.trick-announcement:empty { display: none; }
 
 /* A played card is drawn as a full card of the hand size: the rank above the suit symbol, all portrait. */
 .played {
@@ -4499,6 +4500,15 @@ main:has(> .room[data-form="compact"]) {
 	background-image: var(--felt-texture);
 	background-size: var(--felt-texture-size) var(--felt-texture-size);
 	color: var(--felt-fg);
+}
+
+/* Reserve the space of a full side hand so completing tricks does not move the center. */
+.bridge-table[data-phase="play"] .mobile-auction-board {
+	grid-template-rows: auto minmax(calc(var(--phone-hand-card-h) * 5 + var(--mobile-side-name-height, 0.9rem) + 0.3rem), 1fr) auto;
+}
+
+.bridge-table[data-phase="play"] .mobile-board-top .hand-row {
+	min-height: max(3.2rem, calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.7rem + 4px));
 }
 
 /* The bidding overlay already determines the space it needs. Before the first board, nothing grows in the middle. */

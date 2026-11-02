@@ -133,6 +133,7 @@ export interface TableSection {
 export interface TableOptions {
 	readonly trickAnimation?: () => boolean;
 	readonly trickDisplayMs?: () => number;
+	readonly trickWinnerPauseMs?: () => number;
 	readonly presentationDone?: () => void;
 	/** The scale of the points pill and the bidding guide; the table reads it at each render. */
 	readonly pointSystem?: () => PointSystem;
@@ -173,7 +174,6 @@ export type PlayedCardStyle =
 // Change this one value to switch the played-card design.
 const PLAYED_CARD_STYLE: PlayedCardStyle = "corners-oriented";
 
-const TRICK_HIGHLIGHT_MS = 200;
 const TRICK_SWEEP_MS = 1000;
 
 /**
@@ -585,7 +585,7 @@ export function tableSection(
 		attrs: { "data-testid": "trick" },
 	});
 	const trickAnnouncement = el("p", {
-		className: "trick-announcement",
+		className: "trick-announcement visually-hidden",
 		attrs: { role: "status", "aria-live": "polite" },
 	});
 	const scoringCountdown = el("p", {
@@ -1049,6 +1049,23 @@ export function tableSection(
 	);
 	let compact = false;
 	let sideways = false;
+	const mobileSideNameObserver = new ResizeObserver(updateMobileSideNameHeight);
+	function updateMobileSideNameHeight(): void {
+		if (!compact) return;
+		const height = Math.max(
+			mobileOpponentLeft.querySelector<HTMLElement>(".mobile-board-name")
+				?.offsetHeight ?? 0,
+			mobileOpponentRight.querySelector<HTMLElement>(".mobile-board-name")
+				?.offsetHeight ?? 0,
+		);
+		const value = `${height}px`;
+		if (
+			height > 0 &&
+			mobileBoard.style.getPropertyValue("--mobile-side-name-height") !== value
+		) {
+			mobileBoard.style.setProperty("--mobile-side-name-height", value);
+		}
+	}
 	const sidewaysControls = el("div", { className: "sideways-controls" });
 	let approvalWasVisible = false;
 	let mobileBidsPhase: TableView["phase"] | undefined;
@@ -2478,6 +2495,7 @@ export function tableSection(
 		collectionOverlay = undefined;
 		const win = element.ownerDocument.defaultView;
 		win?.removeEventListener("resize", cancelCollection);
+		win?.removeEventListener("scroll", cancelCollection, true);
 		win?.visualViewport?.removeEventListener("resize", cancelCollection);
 		win?.visualViewport?.removeEventListener("scroll", cancelCollection);
 		element.ownerDocument.removeEventListener(
@@ -2513,10 +2531,13 @@ export function tableSection(
 			return;
 		}
 		const viewport = win.visualViewport;
-		const offsetX = viewport?.offsetLeft ?? 0;
-		const offsetY = viewport?.offsetTop ?? 0;
-		const width = viewport?.width ?? win.innerWidth;
-		const height = viewport?.height ?? win.innerHeight;
+		const board = compact ? mobileBoard : felt;
+		const boardRect = board.getBoundingClientRect();
+		const { width, height } = boardRect;
+		if (width === 0 || height === 0) {
+			finishCollection();
+			return;
+		}
 		const rects = nodes.map((node) => node.getBoundingClientRect());
 		const margin =
 			Math.max(...rects.map((rect) => Math.hypot(rect.width, rect.height))) + 8;
@@ -2534,14 +2555,15 @@ export function tableSection(
 			},
 		});
 		Object.assign(overlay.style, {
-			left: `${offsetX}px`,
-			top: `${offsetY}px`,
+			left: `${boardRect.left}px`,
+			top: `${boardRect.top}px`,
 			width: `${width}px`,
 			height: `${height}px`,
 		});
 		collectionOverlay = overlay;
 		doc.body.append(overlay);
 		win.addEventListener("resize", cancelCollection);
+		win.addEventListener("scroll", cancelCollection, true);
 		viewport?.addEventListener("resize", cancelCollection);
 		viewport?.addEventListener("scroll", cancelCollection);
 		doc.addEventListener("visibilitychange", onCollectionVisibility);
@@ -2549,6 +2571,8 @@ export function tableSection(
 			win.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 		const displayMs =
 			options.trickDisplayMs?.() ?? DEFAULT_SETTINGS.trickDisplayMs;
+		const winnerPauseMs =
+			options.trickWinnerPauseMs?.() ?? DEFAULT_SETTINGS.trickWinnerPauseMs;
 		const animate =
 			options.trickAnimation?.() ?? DEFAULT_SETTINGS.trickAnimation;
 		const winnerCards: HTMLElement[] = [];
@@ -2569,8 +2593,8 @@ export function tableSection(
 				"--board-card-shadow",
 			])
 				clone.style.setProperty(name, computed.getPropertyValue(name));
-			const x = rect.left - offsetX;
-			const y = rect.top - offsetY;
+			const x = rect.left - boardRect.left;
+			const y = rect.top - boardRect.top;
 			Object.assign(clone.style, {
 				position: "absolute",
 				left: `${x}px`,
@@ -2611,7 +2635,7 @@ export function tableSection(
 								},
 							],
 					{
-						delay: displayMs + TRICK_HIGHLIGHT_MS,
+						delay: displayMs + winnerPauseMs,
 						duration: reduced ? 150 : TRICK_SWEEP_MS,
 						easing: "ease-in",
 						fill: "forwards",
@@ -2633,7 +2657,7 @@ export function tableSection(
 		collectionTimer = setTimeout(
 			() => finishCollection(),
 			displayMs +
-				(animate ? TRICK_HIGHLIGHT_MS + (reduced ? 150 : TRICK_SWEEP_MS) : 0),
+				(animate ? winnerPauseMs + (reduced ? 150 : TRICK_SWEEP_MS) : 0),
 		);
 	}
 
@@ -3330,6 +3354,7 @@ export function tableSection(
 						name.textContent = player.label;
 				}
 				placeChildren(target, ...(name ? [name] : []), ...(hand ? [hand] : []));
+				if (name && position !== "top") mobileSideNameObserver.observe(name);
 				target.setAttribute(
 					"aria-hidden",
 					String(
@@ -3339,7 +3364,9 @@ export function tableSection(
 					),
 				);
 			}
+			updateMobileSideNameHeight();
 		} else {
+			mobileSideNameObserver.disconnect();
 			mobileHand.replaceChildren();
 			mobileOpponentTop.replaceChildren();
 			mobileOpponentLeft.replaceChildren();
@@ -3637,7 +3664,10 @@ export function tableSection(
 		sidebarEnd,
 		render,
 		collecting: () => collectingTrick !== undefined,
-		dispose: () => finishCollection(false),
+		dispose: () => {
+			mobileSideNameObserver.disconnect();
+			finishCollection(false);
+		},
 		renderCall,
 		setBotControls,
 		setPlayerAutoplay,
