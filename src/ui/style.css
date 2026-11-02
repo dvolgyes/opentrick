@@ -470,16 +470,13 @@ body:has(.create-screen) {
 	background: var(--opening-white);
 }
 .opening-card-friends { background: var(--opening-sage); }
+.opening-card-description { display: contents; }
 .opening-card h3 { font: 400 1.5rem / 1.2 "Libre Caslon Display", Georgia, serif; margin: 0.8rem 0 0; }
 .opening-card p { flex: 1; }
 .opening-card .button, .opening-card button { white-space: normal; min-height: 2.75rem; display: inline-flex; align-items: center; }
 .mode-symbol { color: var(--opening-forest); font-size: 1.6rem; }
 .opening-card-friends .mode-symbol { color: var(--opening-red); }
-.invitation-form { display: flex; align-items: end; gap: 0.75rem; flex-wrap: wrap; margin-top: 2rem; }
-.invitation-form label { width: 100%; margin: 0; font-weight: 600; }
-.invitation-form input { flex: 1 1 18rem; min-width: 0; min-height: 2.75rem; }
-.invitation-form button { min-height: 2.75rem; }
-.invitation-form .errors { width: 100%; margin: 0; }
+.invitation-guidance { margin-top: 1.5rem; }
 .setup-mode { border-top: 1px solid var(--opening-line); padding-top: 2rem; }
 .setup-mode .seat-grid { max-width: 60rem; }
 .setup-mode .seat-presets { flex-direction: row; flex-wrap: wrap; }
@@ -493,10 +490,11 @@ body:has(.create-screen) {
 	.opening-hero { display: block; min-height: 0; padding: 2rem 1.5rem; }
 	.opening-illustration { display: none; }
 	.opening-modes { grid-template-columns: 1fr; }
-	.opening-card { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.25rem 0.75rem; padding: 1rem; }
-	.opening-card .mode-symbol { grid-row: 1 / span 2; align-self: start; }
-	.opening-card h3, .opening-card p { margin: 0; }
-	.opening-card .button, .opening-card button { grid-column: 2; justify-self: start; margin-top: 0.5rem; }
+	.opening-card { padding: 1rem; }
+	.opening-card-description { display: flex; align-items: flex-start; gap: 0.75rem; }
+	.opening-card-description h3 { display: none; }
+	.opening-card-description p { margin: 0; }
+	.opening-card .button, .opening-card button { margin-top: 0.5rem; }
 	.create-solo-row { font-size: 1rem; }
 	.create-solo-row .button { padding: 0.6rem 0.8rem; }
 	.setup-mode .seat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "top top" "left right" "bottom bottom"; }

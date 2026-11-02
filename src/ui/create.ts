@@ -18,7 +18,6 @@ import type { Bookmark } from "./bookmark";
 import type { AppDeps, Dispose } from "./deps";
 import { discoveryCount } from "./discovery-count";
 import { button, el } from "./dom";
-import { invitationUrl } from "./invitation-url";
 import { languageControl } from "./language-control";
 import {
 	BIDDER_NAMES,
@@ -364,39 +363,51 @@ export function showCreate(
 					"section",
 					{ className: "opening-card" },
 					el(
-						"span",
-						{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
-						"♠",
+						"div",
+						{ className: "opening-card-description" },
+						el(
+							"span",
+							{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
+							"♠",
+						),
+						el("h3", {}, deps.t("Play with bots")),
+						el("p", {}, deps.t("Start a game with three bots.")),
 					),
-					el("h3", {}, deps.t("Play with bots")),
-					el("p", {}, deps.t("Start a game with three bots.")),
 					solo.submit,
-				),
-				el(
-					"section",
-					{ className: "opening-card" },
-					el(
-						"span",
-						{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
-						"♣",
-					),
-					el("h3", {}, deps.t("Find online players")),
-					el("p", {}, deps.t("Find a table with other players.")),
-					online,
 				),
 				el(
 					"section",
 					{ className: "opening-card opening-card-friends" },
 					el(
-						"span",
-						{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
-						"♥",
+						"div",
+						{ className: "opening-card-description" },
+						el(
+							"span",
+							{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
+							"♥",
+						),
+						el("h3", {}, deps.t("Invite friends")),
+						el("p", {}, deps.t("Set up a table and share an invitation.")),
 					),
-					el("h3", {}, deps.t("Invite friends")),
-					el("p", {}, deps.t("Set up a table and share an invitation.")),
 					button(deps.t("Invite friends"), () => setupHeading.focus(), {
 						attrs: { "data-testid": "invite-friends" },
 					}),
+				),
+				el(
+					"section",
+					{ className: "opening-card" },
+					el(
+						"div",
+						{ className: "opening-card-description" },
+						el(
+							"span",
+							{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
+							"♣",
+						),
+						el("h3", {}, deps.t("Find online players")),
+						el("p", {}, deps.t("Find a table with other players.")),
+					),
+					online,
 				),
 			),
 		),
@@ -418,41 +429,6 @@ export function showCreate(
 		multiplayer.errors,
 		multiplayer.submit,
 	);
-	const invitation = el("input", {
-		attrs: {
-			type: "text",
-			id: "invitation-link",
-			autocomplete: "off",
-			spellcheck: "false",
-		},
-	});
-	const invitationError = el("p", {
-		className: "errors",
-		attrs: { role: "alert" },
-	});
-	const invitationForm = el(
-		"form",
-		{ className: "invitation-form" },
-		el(
-			"label",
-			{ attrs: { for: "invitation-link" } },
-			deps.t("Have an invitation link?"),
-		),
-		invitation,
-		el("button", { attrs: { type: "submit" } }, deps.t("Open invitation")),
-		invitationError,
-	);
-	invitationForm.addEventListener("submit", (event) => {
-		event.preventDefault();
-		const url = invitationUrl(invitation.value, deps.pageUrl());
-		if (url === undefined) {
-			invitationError.textContent = deps.t(
-				"Enter a complete invitation link from this site.",
-			);
-			return;
-		}
-		location.assign(url);
-	});
 	const showErrors = (
 		target: CreateTarget,
 		messages: readonly string[],
@@ -717,7 +693,11 @@ export function showCreate(
 				soloForm,
 			),
 			discovery.element,
-			invitationForm,
+			el(
+				"p",
+				{ className: "invitation-guidance" },
+				deps.t("Have an invitation? Open the link you received."),
+			),
 			el(
 				"section",
 				{ className: "create-mode setup-mode" },

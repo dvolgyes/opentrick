@@ -164,6 +164,11 @@ for (const locale of [
 		await expect(row.getByTestId("join-online")).toHaveText(
 			translator(locale)("Find online players"),
 		);
+		await expect(
+			page.getByText(
+				translator(locale)("Have an invitation? Open the link you received."),
+			),
+		).toBeVisible();
 		for (const width of [320, 390, 1280]) {
 			await page.setViewportSize({ width, height: 844 });
 			expect(
