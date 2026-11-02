@@ -2034,14 +2034,6 @@ main:has(> .room) {
 	gap: 0.4rem;
 }
 
-.player-autoplay-status {
-	font-size: 0.75rem;
-}
-
-.player-autoplay-status:empty {
-	display: none;
-}
-
 /* The debug and bot status lines take no room while they are empty. */
 .debug-status:empty,
 .bot-alert:empty,

@@ -414,12 +414,21 @@ export function showRoom(
 	botStatus.hidden = true;
 	const botAlert = el("p", {
 		className: "bot-alert",
-		attrs: { role: "status", "data-testid": "bot-alert" },
+		attrs: {
+			id: "bot-alert-message",
+			role: "alert",
+			"data-testid": "bot-alert",
+		},
 	});
+	function showRoomError(text: string): void {
+		if (disposed) return;
+		botAlert.textContent = text;
+		if (!roomErrorDialog.open) roomErrorDialog.show();
+	}
 	function setBotStatus(text: string, kind: "info" | "error" = "info"): void {
 		botStatus.dataset.kind = kind;
 		botStatus.textContent = text;
-		botAlert.textContent = kind === "error" ? text : "";
+		if (kind === "error") showRoomError(text);
 	}
 	const settings = settingsDialog(deps, handlers.reload, applySettings, () => ({
 		bidder: (
@@ -820,8 +829,10 @@ export function showRoom(
 						playerAutoplayStatus = deps.t(
 							"Autoplay is unavailable on this host.",
 						);
+						showRoomError(playerAutoplayStatus);
 					} else {
 						playerAutoplayStatus = deps.t("Autoplay request failed.");
+						showRoomError(playerAutoplayStatus);
 					}
 					render();
 				});
@@ -1115,6 +1126,7 @@ export function showRoom(
 	const retryBots = button(
 		deps.t("Retry"),
 		() => {
+			roomErrorDialog.close();
 			setBotsPaused(false);
 			if (!botRunner) {
 				void startHostBots().then(() => render());
@@ -1127,6 +1139,26 @@ export function showRoom(
 		{ attrs: { "data-testid": "retry-bots" } },
 	);
 	retryBots.hidden = true;
+	const retryBotsShortcut = button(deps.t("Retry"), () => retryBots.click(), {
+		attrs: { "data-testid": "retry-bots-shortcut" },
+	});
+	retryBotsShortcut.hidden = true;
+	const roomErrorDialog = el(
+		"dialog",
+		{
+			className: "approval room-error-dialog",
+			attrs: { "aria-labelledby": "bot-alert-message" },
+		},
+		botAlert,
+		el(
+			"div",
+			{ className: "approval-actions" },
+			retryBots,
+			button(deps.t("Close"), () => roomErrorDialog.close(), {
+				className: "approval-accept",
+			}),
+		),
+	);
 	const botControls = el(
 		"div",
 		{ className: "room-control-row room-bot-controls" },
@@ -1151,8 +1183,7 @@ export function showRoom(
 		),
 		botControls,
 		table.autoplayStatus,
-		botAlert,
-		retryBots,
+		retryBotsShortcut,
 	);
 	const resetStatus = el("p", { className: "note", attrs: { role: "status" } });
 	const resetApprove = button(deps.t("Approve reset"), () => {
@@ -1286,7 +1317,13 @@ export function showRoom(
 		},
 	);
 	root.replaceChildren(room);
-	root.append(settings.element, hostControls, players.element, exitDialog);
+	root.append(
+		settings.element,
+		hostControls,
+		players.element,
+		exitDialog,
+		roomErrorDialog,
+	);
 	if (camera) root.append(camera.element);
 	// At the first play, the player chooses the settings before anything else; until a save, each table asks again.
 	if (!settingsSaved(deps.browser)) settings.open();
@@ -1602,6 +1639,7 @@ export function showRoom(
 			activeBots.length > 0 &&
 			(botsPaused || (botAutoAttempted && !botStarting && !botRunner));
 		retryBots.hidden = !botsStopped;
+		retryBotsShortcut.hidden = !botsStopped;
 		if (
 			!botAutoAttempted &&
 			!botRestorePending &&

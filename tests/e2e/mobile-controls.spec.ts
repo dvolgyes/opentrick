@@ -76,6 +76,9 @@ test("mobile keeps settings at the top and the remaining actions fill their row"
 			);
 		await expect(page.getByTestId("bot-status")).toContainText("Running");
 		await expect(page.getByTestId("bot-status")).toBeHidden();
+		await expect(
+			page.getByTestId("room-controls").getByTestId("bot-alert"),
+		).toHaveCount(0);
 		const row = page.locator(".room-bot-controls");
 		const host = row.getByRole("button", {
 			name: "Host controls",
@@ -260,10 +263,17 @@ test("a phone can retry bots left paused by an earlier version", async ({
 		await expect(retry).toBeVisible();
 		await expect(page.getByTestId("bot-alert")).toHaveText("Bots paused.");
 		await expect(page.getByTestId("bot-alert")).toBeVisible();
+		await page
+			.locator(".room-error-dialog")
+			.getByRole("button", { name: "Close" })
+			.click();
+		await expect(page.getByTestId("bot-alert")).toBeHidden();
+		const retryShortcut = page.getByTestId("retry-bots-shortcut");
+		await expect(retryShortcut).toBeVisible();
 		const before = Number(
 			await page.getByTestId("table").getAttribute("data-at"),
 		);
-		await retry.click();
+		await retryShortcut.click();
 		await expect(retry).toBeHidden();
 		await expect(page.getByTestId("bot-status")).toBeHidden();
 		await expect

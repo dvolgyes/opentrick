@@ -668,6 +668,7 @@ describe("played card styles", () => {
 		"confirms guest autoplay locally and stops it without confirmation (%s)",
 		(layout) => {
 			const { root, section, handlers } = renderView(playView(), layout);
+			root.append(section.autoplayStatus);
 			section.setPlayerAutoplay(true, false, false, "");
 			const toggle =
 				section.autoplayControl.querySelector<HTMLButtonElement>("button");
@@ -675,6 +676,7 @@ describe("played card styles", () => {
 			expect(toggle.textContent).toBe("Autoplay my seat");
 			section.setPlayerAutoplay(true, false, true, "Sending autoplay request…");
 			expect(toggle.disabled).toBe(true);
+			expect(toggle.textContent).toBe("Sending autoplay request…");
 			expect(section.autoplayStatus.textContent).not.toContain("Autoplay on");
 			section.setPlayerAutoplay(true, false, false, "");
 			expect(
@@ -695,6 +697,9 @@ describe("played card styles", () => {
 			section.setPlayerAutoplay(true, true, false, "");
 			expect(toggle.textContent).toBe("Take back control");
 			expect(section.autoplayStatus.textContent).toContain("Autoplay on");
+			expect(
+				section.autoplayStatus.getBoundingClientRect().width,
+			).toBeLessThanOrEqual(1);
 			toggle.click();
 			expect(dialog?.open).toBe(false);
 			expect(handlers.requestAutoplay).toHaveBeenLastCalledWith(false);
@@ -711,6 +716,7 @@ describe("played card styles", () => {
 				),
 			};
 			const { root, section, handlers } = renderView(view, layout);
+			root.append(section.autoplayStatus);
 			section.setBotControls(true, [], false);
 			section.render(view);
 			const toggle =
@@ -719,6 +725,7 @@ describe("played card styles", () => {
 			expect(toggle.textContent).toBe("Autoplay my seat");
 			section.setBotControls(true, [], false, true);
 			expect(toggle.disabled).toBe(true);
+			expect(toggle.textContent).toBe("Sending autoplay request…");
 			expect(section.autoplayStatus.textContent).not.toContain("Autoplay on");
 			section.setBotControls(true, [], false);
 			expect(
@@ -743,6 +750,10 @@ describe("played card styles", () => {
 			expect(handlers.setBotSeat).toHaveBeenCalledExactlyOnceWith("N", true);
 			section.setBotControls(true, ["N"], false);
 			expect(toggle.textContent).toBe("Take back control");
+			expect(section.autoplayStatus.textContent).toContain("Autoplay on");
+			expect(
+				section.autoplayStatus.getBoundingClientRect().width,
+			).toBeLessThanOrEqual(1);
 			toggle.click();
 			expect(dialog?.open).toBe(false);
 			expect(handlers.setBotSeat).toHaveBeenLastCalledWith("N", false);

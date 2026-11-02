@@ -1190,7 +1190,7 @@ export function tableSection(
 		{},
 	);
 	const autoplayStatus = el("span", {
-		className: "player-autoplay-status",
+		className: "player-autoplay-status visually-hidden",
 		attrs: { role: "status" },
 	});
 	const autoplayControl = el(
@@ -1208,14 +1208,19 @@ export function tableSection(
 				: playerAutoplayEnabled;
 		autoplayControl.hidden =
 			!(botControlHost && own) && !playerAutoplayAvailable;
-		autoplayButton.disabled = botControlHost
+		const pending = botControlHost
 			? hostAutoplayPending
 			: playerAutoplayPending;
+		autoplayButton.disabled = pending;
 		autoplayButton.dataset.testid = botControlHost
 			? "host-autoplay-toggle"
 			: "player-autoplay-toggle";
 		autoplayButton.textContent = t(
-			enabled ? "Take back control" : "Autoplay my seat",
+			pending
+				? "Sending autoplay request…"
+				: enabled
+					? "Take back control"
+					: "Autoplay my seat",
 		);
 		autoplayStatus.textContent = [
 			enabled ? t("Autoplay on") : "",
