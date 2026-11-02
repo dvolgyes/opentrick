@@ -389,9 +389,14 @@ export function showCreate(
 						el("h3", {}, deps.t("Invite friends")),
 						el("p", {}, deps.t("Set up a table and share an invitation.")),
 					),
-					button(deps.t("Invite friends"), () => setupHeading.focus(), {
-						attrs: { "data-testid": "invite-friends" },
-					}),
+					button(
+						deps.t("Invite friends"),
+						() => {
+							setupHeading.focus({ preventScroll: true });
+							setupHeading.parentElement?.scrollIntoView({ block: "start" });
+						},
+						{ attrs: { "data-testid": "invite-friends" } },
+					),
 				),
 				el(
 					"section",

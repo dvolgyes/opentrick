@@ -482,7 +482,7 @@ body:has(.create-screen) {
 .mode-symbol { color: var(--opening-forest); font-size: 1.6rem; }
 .opening-card-friends .mode-symbol { color: var(--opening-red); }
 .invitation-guidance { margin-top: 1.5rem; }
-.setup-mode { border-top: 1px solid var(--opening-line); padding-top: 2rem; }
+.setup-mode { min-height: 100dvh; border-top: 1px solid var(--opening-line); padding-top: 2rem; }
 .setup-mode .seat-grid { max-width: 60rem; }
 .setup-mode .seat-presets { flex-direction: row; flex-wrap: wrap; }
 .setup-mode .seat-presets button { width: auto; min-height: 2.75rem; }

@@ -1,5 +1,28 @@
 import { expect, test } from "@playwright/test";
 
+for (const [width, height] of [
+	[320, 568],
+	[390, 844],
+	[1440, 900],
+	[1440, 1200],
+] as const) {
+	test(`invite friends aligns the setup section at ${width}×${height}`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height });
+		await page.goto("/");
+		await page.evaluate(() => document.fonts.ready);
+		await page.getByTestId("invite-friends").click();
+		const setup = page.locator(".setup-mode");
+		const box = await setup.boundingBox();
+		expect(Math.abs(box?.y ?? Infinity)).toBeLessThanOrEqual(2);
+		await expect(
+			setup.getByRole("heading", { name: "Invite friends" }),
+		).toBeFocused();
+		await expect(page).toHaveURL(/\/$/);
+	});
+}
+
 test("the opening header fits on one mobile row without the build date", async ({
 	page,
 }) => {
