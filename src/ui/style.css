@@ -2576,6 +2576,12 @@ dialog {
 	font-size: 0.8rem;
 }
 
+.call-toggle .icon,
+.call-join .icon,
+.call-mirror .icon {
+	pointer-events: none;
+}
+
 .icon-slash {
 	stroke-width: 2.2;
 }
@@ -2699,6 +2705,13 @@ button.call-join[data-in-call="true"] {
 
 .history-panel > .bid-undo {
 	margin-top: auto;
+}
+
+/* Keep the bid controls in place when an undo status appears or changes. */
+.bid-undo-status {
+	height: 2.5em;
+	line-height: 1.25;
+	overflow-y: auto;
 }
 
 .undo-message {

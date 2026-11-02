@@ -622,6 +622,23 @@ export function tableSection(
 		attrs: { "data-testid": "bid-box", "aria-label": t("Your call") },
 	});
 	let latestView: TableView | undefined;
+	const bidUndo = button(
+		t("Undo"),
+		() => {
+			if (latestView) confirmUndo(latestView);
+		},
+		{ className: "undo-call", attrs: { "data-testid": "auction-undo" } },
+	);
+	const bidUndoCancel = button(t("Cancel undo"), () => {
+		const requestId = latestView?.undo.requestId;
+		if (requestId !== undefined) handlers.undoCancel(requestId);
+	});
+	const bidUndoStatus = el("span", { className: "undo-message" });
+	bidUndoControls.append(
+		el("div", { className: "bid-undo-status" }, bidUndoStatus),
+		bidUndo,
+		bidUndoCancel,
+	);
 	/** The finished trick on the table, as board and position, and whether it has left the table. */
 	let finishedTrick: string | undefined;
 	let finishedTrickHidden = false;
@@ -1042,6 +1059,10 @@ export function tableSection(
 	const dock = el("div", { className: "dock" }, call.alert, call.row);
 	let callDisplay: CallDisplay | undefined;
 	const callSpots = new Map<Seat, CallSpot>();
+	const seatNodes = new Map<
+		Position,
+		{ key: string; handKey: string; node: HTMLElement }
+	>();
 	let botControlHost = false;
 	let botControlSeats: readonly Seat[] = [];
 	let botControlPaused = false;
@@ -1174,10 +1195,16 @@ export function tableSection(
 		prompt.hidden = hideDetails;
 		if (beside) {
 			const controls = sidebar.querySelector(".room-controls");
-			if (controls) controls.after(status);
-			else sidebar.prepend(status);
+			if (controls) {
+				if (controls.nextElementSibling !== status) controls.after(status);
+			} else if (
+				sidebar.firstElementChild !== status &&
+				!(sideways && sidewaysControls.nextElementSibling === status)
+			) {
+				sidebar.prepend(status);
+			}
 		} else {
-			element.prepend(status);
+			if (element.firstElementChild !== status) element.prepend(status);
 		}
 	}
 
@@ -1682,9 +1709,59 @@ export function tableSection(
 	/** Each opponent is one column: the video tile above the hand, both on the same centre line. */
 	function renderPlace(seat: SeatView, lobby: boolean, back: string): void {
 		const place = places[seat.position];
+		const { roundTrip: _roundTrip, ...drawnSeat } = seat;
+		const key = JSON.stringify([
+			drawnSeat,
+			lobby,
+			back,
+			shownPointSystem,
+			shownCardPoints,
+			shownMarks.bidTurnFrame,
+			shownMarks.playTurnFrame,
+			shownMarks.bidTurnText,
+			shownMarks.playTurnText,
+			phase,
+			compact,
+		]);
+		const handKey = JSON.stringify([
+			seat.seat,
+			seat.hand,
+			seat.position,
+			lobby && seat.presence === "free",
+			back,
+			compact,
+		]);
+		let cached = seatNodes.get(seat.position);
+		const unchanged = cached?.key === key;
+		if (!unchanged) {
+			const state =
+				seat.position === "bottom" ? undefined : callSpot(seat.seat).state;
+			if (cached?.handKey === handKey) {
+				// Update the seat's labels and turn marks without detaching an unchanged, playable hand.
+				const fresh = seatElement(seat, undefined, lobby, back);
+				const oldHand =
+					cached.node.querySelector<HTMLElement>(":scope > .hand");
+				const oldState = cached.node.querySelector<HTMLElement>(".call-state");
+				fresh.querySelector(":scope > .hand")?.remove();
+				if (oldState) fresh.querySelector(".seat-label")?.append(oldState);
+				for (const attr of fresh.attributes)
+					cached.node.setAttribute(attr.name, attr.value);
+				for (const child of [...cached.node.children])
+					if (child !== oldHand) child.remove();
+				for (const child of [...fresh.children])
+					cached.node.insertBefore(child, oldHand);
+				cached = { key, handKey, node: cached.node };
+			} else {
+				cached = { key, handKey, node: seatElement(seat, state, lobby, back) };
+			}
+			seatNodes.set(seat.position, cached);
+		}
+		if (!cached) throw new Error("Missing seat node");
 		// The claim controls sit in the sidebar, and only while the viewer is about to play a card.
 		if (seat.position === "bottom") {
-			place.replaceChildren(seatElement(seat, undefined, lobby, back));
+			if (cached.node.parentElement !== mobileHand)
+				placeChildren(place, cached.node);
+			else if (!unchanged) placeChildren(mobileHand, cached.node);
 			return;
 		}
 		const spot = callSpot(seat.seat);
@@ -1692,8 +1769,8 @@ export function tableSection(
 		spot.tile.dataset.bot = String(seat.bot);
 		spot.turn = seat.turn;
 		showBotPicture(spot, botControlSeats.includes(seat.seat));
-		videoSlots[seat.position].replaceChildren(spot.tile);
-		place.replaceChildren(seatElement(seat, spot.state, lobby, back));
+		placeChildren(videoSlots[seat.position], spot.tile);
+		placeChildren(place, cached.node);
 	}
 
 	/**
@@ -1999,6 +2076,25 @@ export function tableSection(
 		return node;
 	}
 
+	function updateBotCall(view: TableView): void {
+		const node = bidBox.querySelector<HTMLButtonElement>(".bot-bid");
+		if (!node) return;
+		const suggestion =
+			botBid !== undefined && view.bids.some((bid) => bid.call === botBid)
+				? botBid
+				: undefined;
+		const value = suggestion ?? "";
+		if (node.dataset.call === value) return;
+		node.dataset.call = value;
+		node.replaceChildren(
+			`${t("Bot")}: `,
+			...(suggestion === undefined
+				? ["…"]
+				: auctionCell(callText(suggestion), t)),
+		);
+		node.disabled = suggestion === undefined;
+	}
+
 	function renderBidBox(view: TableView): void {
 		// A selection belongs to one call position; a new board or a new call clears it.
 		if (
@@ -2008,20 +2104,27 @@ export function tableSection(
 		)
 			pick = {};
 		shown = view;
+		bidUndo.disabled =
+			view.undo.requestId !== undefined || !view.undo.canRequest;
+		bidUndoCancel.hidden = !view.undo.canCancel || compact;
+		// The approval dialog asks the question.
+		bidUndoStatus.textContent = view.undo.message;
+		bidUndoStatus.hidden = view.undo.message === "" || view.undo.canVote;
 		// A rebuild between the press and the release of a button loses the click, so draw only what changed.
 		const key = JSON.stringify([
 			view.board,
 			view.bids,
-			view.undo,
 			pick,
 			compact,
 			shownPointSystem,
 			guideBlocked,
 			shownMarks.guideButton,
 			shownMarks.botBidHint,
-			botBid,
 		]);
-		if (key === drawnBidBox) return;
+		if (key === drawnBidBox) {
+			updateBotCall(view);
+			return;
+		}
 		drawnBidBox = key;
 		const legal = new Set<string>(view.bids.map((bid) => bid.call));
 		const bidCall =
@@ -2115,20 +2218,6 @@ export function tableSection(
 				),
 			);
 		confirm.disabled = chosen === undefined || !legal.has(chosen);
-		const undo = button(t("Undo"), () => confirmUndo(view), {
-			className: "undo-call",
-			attrs: { "data-testid": "auction-undo" },
-		});
-		undo.disabled = view.undo.requestId !== undefined || !view.undo.canRequest;
-		const requestId = view.undo.requestId;
-		const cancel = button(t("Cancel undo"), () => {
-			if (requestId !== undefined) handlers.undoCancel(requestId);
-		});
-		cancel.hidden = !view.undo.canCancel || compact;
-		// The approval dialog asks the question.
-		const status = el("span", { className: "undo-message" }, view.undo.message);
-		status.hidden = view.undo.message === "" || view.undo.canVote;
-		bidUndoControls.replaceChildren(undo, cancel, status);
 		const guideOpen = button(t("Guide"), () => guide.open(shownPointSystem), {
 			className: "guide-open",
 			attrs: { "aria-haspopup": "dialog" },
@@ -2138,11 +2227,14 @@ export function tableSection(
 		if (shownMarks.guideButton) guideRow.append(guideOpen);
 		if (shownMarks.botBidHint) {
 			// The bot's call only selects; Confirm still sends it.
-			const suggestion =
-				botBid !== undefined && legal.has(botBid) ? botBid : undefined;
 			const botCall = button(
 				"",
 				() => {
+					const suggestion =
+						botBid !== undefined &&
+						shown?.bids.some((bid) => bid.call === botBid)
+							? botBid
+							: undefined;
 					if (suggestion === undefined) return;
 					pick = /^[1-7]/.test(suggestion)
 						? { level: suggestion.slice(0, 1), strain: suggestion.slice(1) }
@@ -2157,13 +2249,6 @@ export function tableSection(
 					},
 				},
 			);
-			botCall.replaceChildren(
-				`${t("Bot")}: `,
-				...(suggestion === undefined
-					? ["…"]
-					: auctionCell(callText(suggestion), t)),
-			);
-			botCall.disabled = suggestion === undefined;
 			guideRow.append(botCall);
 		}
 		const ownCards = view.seats.find(
@@ -2196,8 +2281,10 @@ export function tableSection(
 			el("div", { className: "bid-actions" }, confirm),
 			...(explanation ? [explanation] : []),
 		);
+		updateBotCall(view);
 	}
 
+	let drawnClaimCounts = "";
 	function renderClaimPanel(view: TableView): void {
 		if (!view.claim.canRequest) claimMode = null;
 		const choosing = claimMode === "choose" && view.claim.canRequest;
@@ -2205,24 +2292,27 @@ export function tableSection(
 		if (choosing) {
 			if (claimCount !== null && claimCount > view.claim.maxTricks)
 				claimCount = null;
+			const key = `${view.claim.maxTricks}:${claimCount}`;
 			// A button for each count from none to every remaining trick.
-			claimCounts.replaceChildren(
-				...Array.from({ length: view.claim.maxTricks + 1 }, (_, count) =>
-					button(
-						String(count),
-						() => {
-							claimCount = count;
-							if (latestView) renderClaimPanel(latestView);
-						},
-						{
-							attrs: {
-								"aria-pressed": String(count === claimCount),
-								"data-testid": `claim-count-${count}`,
+			if (key !== drawnClaimCounts)
+				claimCounts.replaceChildren(
+					...Array.from({ length: view.claim.maxTricks + 1 }, (_, count) =>
+						button(
+							String(count),
+							() => {
+								claimCount = count;
+								if (latestView) renderClaimPanel(latestView);
 							},
-						},
+							{
+								attrs: {
+									"aria-pressed": String(count === claimCount),
+									"data-testid": `claim-count-${count}`,
+								},
+							},
+						),
 					),
-				),
-			);
+				);
+			drawnClaimCounts = key;
 		}
 		claimMessage.textContent = choosing
 			? t("How many of the remaining {count} tricks will you take?", {
@@ -2656,6 +2746,11 @@ export function tableSection(
 		auctionScroll.scrollTop = auctionScroll.scrollHeight;
 	}
 
+	// Each switch keeps its node when another seat changes.
+	const mobileBotNodes = new Map<
+		Seat,
+		{ row: HTMLElement; name: HTMLElement; toggle: HTMLButtonElement }
+	>();
 	function renderMobilePlayers(view: TableView): void {
 		const own = view.seats.find((player) => player.position === "bottom")?.seat;
 		// On an upright phone the host finds these in the Host controls, so the board has the room; a guest keeps the
@@ -2677,33 +2772,46 @@ export function tableSection(
 		connectedPlayers.textContent = t("Connected: {players}", {
 			players: connected.length > 0 ? connected.join("  ") : t("None"),
 		});
-		mobileBotControls.replaceChildren(
-			...view.seats
-				.filter((player) => player.seat !== own)
-				.map((player) => {
-					const isBot = botControlSeats.includes(player.seat);
-					const toggle = button(
-						isBot ? `👱 ${t("Switch to player")}` : `🤖 ${t("Switch to bot")}`,
-						() => {
-							handlers.setBotSeat?.(player.seat, !isBot);
-						},
+		const rows = view.seats
+			.filter((player) => player.seat !== own)
+			.map((player) => {
+				let item = mobileBotNodes.get(player.seat);
+				if (!item) {
+					const name = el("span");
+					const toggle = button("", () =>
+						handlers.setBotSeat?.(
+							player.seat,
+							!botControlSeats.includes(player.seat),
+						),
 					);
-					toggle.hidden = !botControlHost;
-					return el(
+					const row = el(
 						"div",
 						{
 							className: "mobile-player-control",
 							attrs: { "data-seat": player.seat },
 						},
-						el(
-							"span",
-							{},
-							`${player.name || player.label}${player.bot ? " 🤖" : ""} (${t(player.seat)})`,
-						),
+						name,
 						toggle,
 					);
-				}),
-		);
+					item = { row, name, toggle };
+					mobileBotNodes.set(player.seat, item);
+				}
+				const label = `${player.name || player.label}${player.bot ? " 🤖" : ""} (${t(player.seat)})`;
+				const text = botControlSeats.includes(player.seat)
+					? `👱 ${t("Switch to player")}`
+					: `🤖 ${t("Switch to bot")}`;
+				if (item.name.textContent !== label) item.name.textContent = label;
+				if (item.toggle.textContent !== text) item.toggle.textContent = text;
+				item.toggle.hidden = !botControlHost;
+				return item.row;
+			});
+		for (const child of [...mobileBotControls.children]) {
+			if (!rows.includes(child as HTMLElement)) child.remove();
+		}
+		for (const [index, row] of rows.entries()) {
+			const current = mobileBotControls.children[index];
+			if (current !== row) mobileBotControls.insertBefore(row, current ?? null);
+		}
 	}
 
 	function renderMobileRoundStatus(view: TableView): void {
@@ -2859,13 +2967,18 @@ export function tableSection(
 		details.textContent = t(view.details);
 		prompt.textContent = view.prompt;
 		felt.hidden = view.seats.length === 0;
-		for (const place of Object.values(places)) place.replaceChildren();
-		for (const slot of Object.values(videoSlots)) slot.replaceChildren();
 		phase = view.phase;
 		placeStatus();
 		const lobby = view.phase === "waiting";
 		const back = cardBackFor(view.board);
 		for (const seat of view.seats) renderPlace(seat, lobby, back);
+		for (const position of ["top", "left", "right", "bottom"] as const) {
+			if (!view.seats.some((seat) => seat.position === position)) {
+				places[position].replaceChildren();
+				seatNodes.delete(position);
+				if (position !== "bottom") videoSlots[position].replaceChildren();
+			}
+		}
 		const mobileGameActive =
 			compact && (view.phase === "auction" || view.phase === "play");
 		// Before the first board, a phone shows the same board with the backs of the joined seats, and nothing else of
@@ -2897,33 +3010,34 @@ export function tableSection(
 		} else if (scoring.parentElement !== felt) waitingOverlay.before(scoring);
 		if (auctionEnd.parentElement === null) waitingOverlay.before(auctionEnd);
 		if (mobileBoardActive) {
-			const ownSeat = places.bottom.firstElementChild;
-			if (ownSeat) mobileHand.replaceChildren(ownSeat);
+			const ownSeat = seatNodes.get("bottom")?.node;
+			if (ownSeat) placeChildren(mobileHand, ownSeat);
+			else mobileHand.replaceChildren();
 			for (const [position, target] of [
 				["top", mobileOpponentTop],
 				["left", mobileOpponentLeft],
 				["right", mobileOpponentRight],
 			] as const) {
-				const hand = opponentHand(position);
 				const player = view.seats.find((seat) => seat.position === position);
+				const hand =
+					player === undefined
+						? undefined
+						: (opponentHand(position) ??
+							target.querySelector<HTMLElement>(".hand") ??
+							undefined);
 				// The hand moves here without its seat label, so the player's name is shown above it.
 				const name =
 					player === undefined
-						? []
-						: [
-								el(
-									"span",
-									{
-										className: "mobile-board-name",
-										attrs: {
-											"data-turn": String(player.turn),
-											"data-turn-frame": String(turnFramed(player)),
-										},
-									},
-									player.label,
-								),
-							];
-				target.replaceChildren(...name, ...(hand ? [hand] : []));
+						? undefined
+						: (target.querySelector<HTMLElement>(".mobile-board-name") ??
+							el("span", { className: "mobile-board-name" }));
+				if (name && player) {
+					name.dataset.turn = String(player.turn);
+					name.dataset.turnFrame = String(turnFramed(player));
+					if (name.textContent !== player.label)
+						name.textContent = player.label;
+				}
+				placeChildren(target, ...(name ? [name] : []), ...(hand ? [hand] : []));
 				target.setAttribute(
 					"aria-hidden",
 					String(
@@ -2946,7 +3060,8 @@ export function tableSection(
 				target.setAttribute("aria-hidden", "true");
 		}
 		if (mobileGameActive) {
-			mobileTopbar.prepend(audioGroup);
+			if (mobileTopbar.firstElementChild !== audioGroup)
+				mobileTopbar.prepend(audioGroup);
 			placeChildren(mobileBidsFold, mobileBidsTitle, bidHistory);
 			if (bidUndoControls.nextElementSibling !== mobileBoard)
 				mobileBoard.before(bidUndoControls);
@@ -2975,7 +3090,8 @@ export function tableSection(
 			renderMobileTricks(view);
 			renderMobileRoundStatus(view);
 		} else {
-			call.row.prepend(audioGroup);
+			if (!sideways && call.row.firstElementChild !== audioGroup)
+				call.row.prepend(audioGroup);
 			mobileBidOverlay.hidden = true;
 			if (bidUndoControls.parentElement !== bidHistory)
 				bidHistory.append(bidUndoControls);
@@ -3089,7 +3205,7 @@ export function tableSection(
 		historyTitle.hidden = view.phase === "auction" && !mobileGameActive;
 		renderContractHead(view.header);
 		renderTricks(view);
-		sidebar.append(
+		const sidebarChildren = [
 			contractPanel,
 			...(mobileGameActive || view.phase === "auction" ? [] : [bidHistory]),
 			tricksPanel,
@@ -3097,7 +3213,17 @@ export function tableSection(
 			...(mobileGameActive ? [] : [claimPanel, playControls]),
 			scores,
 			sidebarEnd,
-		);
+		];
+		if (
+			!sidebarChildren.every(
+				(child, index) =>
+					child ===
+					sidebar.children[
+						sidebar.children.length - sidebarChildren.length + index
+					],
+			)
+		)
+			sidebar.append(...sidebarChildren);
 		placeSideGuide(view);
 	}
 

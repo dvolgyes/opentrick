@@ -97,6 +97,9 @@ interface ToggleNode {
 
 /** The icon is the first child; replacing it keeps the focus on the button. */
 function setIcon(node: HTMLElement, name: IconName, off: boolean): void {
+	const key = `${name}:${off}`;
+	if (node.dataset.icon === key) return;
+	node.dataset.icon = key;
 	const next = icon(name, off);
 	const current = node.firstElementChild;
 	if (current === null) node.prepend(next);
