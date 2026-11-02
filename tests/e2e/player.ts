@@ -242,7 +242,7 @@ export class Player {
 			await context.addInitScript(() => {
 				const key = "opentrick.settings.play-time-ms";
 				if (localStorage.getItem(key) === null)
-					localStorage.setItem(key, "150");
+					localStorage.setItem(key, "1000");
 			});
 		for (const script of this.#initScripts) await context.addInitScript(script);
 		if (this.#grants.length > 0) await context.grantPermissions(this.#grants);

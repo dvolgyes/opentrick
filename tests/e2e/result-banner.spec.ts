@@ -7,7 +7,7 @@ const SUBPIXEL = 0.5;
 /** Starts a solo board that the bots play to its end, and returns the result banner. */
 async function playToResult(page: Page) {
 	await page.addInitScript(() =>
-		localStorage.setItem("opentrick.settings.play-time-ms", "150"),
+		localStorage.setItem("opentrick.settings.play-time-ms", "1000"),
 	);
 	await mockBotBidding(page, (position) =>
 		position.calls.length === 0 ? "4H" : "P",

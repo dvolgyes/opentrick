@@ -20,7 +20,7 @@ export default defineConfig({
 				{
 					origin: `http://localhost:${PORT}`,
 					localStorage: [
-						{ name: "opentrick.settings.play-time-ms", value: "150" },
+						{ name: "opentrick.settings.play-time-ms", value: "1000" },
 						{ name: "opentrick.settings.bidder", value: "sl" },
 					],
 				},

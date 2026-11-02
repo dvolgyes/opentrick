@@ -408,7 +408,7 @@ main:has(> :is(.create-screen, .community-screen)) {
 	--fg: var(--opening-ink);
 	--panel: var(--opening-white);
 	--line: var(--opening-line);
-	--accent: var(--opening-forest);
+	--accent: var(--opening-button);
 	--accent-fg: var(--opening-paper);
 	--muted: var(--opening-muted);
 	--error: var(--opening-red);

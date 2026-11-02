@@ -93,6 +93,77 @@ test("a solo bookmark starts a game and reload keeps that game", async ({
 	expect(page.url()).toBe(game);
 });
 
+test("entry action buttons match the median table green", async ({ page }) => {
+	await page.goto("/");
+	const median = await page
+		.locator(".opening-hero")
+		.evaluate(async (banner) => {
+			const url =
+				getComputedStyle(banner).backgroundImage.match(/^url\("(.*)"\)$/)?.[1];
+			if (!url) throw new Error("table texture is missing");
+			const image = new Image();
+			image.src = url;
+			await image.decode();
+			const canvas = document.createElement("canvas");
+			canvas.width = image.naturalWidth;
+			canvas.height = image.naturalHeight;
+			const context = canvas.getContext("2d");
+			if (!context) throw new Error("canvas is unavailable");
+			context.drawImage(image, 0, 0);
+			const pixels = context.getImageData(
+				0,
+				0,
+				canvas.width,
+				canvas.height,
+			).data;
+			return [0, 1, 2].map((channel) => {
+				const histogram = new Uint32Array(256);
+				for (let i = channel; i < pixels.length; i += 4) {
+					const value = pixels[i];
+					if (value !== undefined)
+						histogram[value] = (histogram[value] ?? 0) + 1;
+				}
+				let count = 0;
+				for (let value = 0; value < histogram.length; value++) {
+					count += histogram[value] ?? 0;
+					if (count >= pixels.length / 8) return value;
+				}
+				throw new Error("empty texture");
+			});
+		});
+	const check = async (locator: ReturnType<typeof page.getByTestId>) => {
+		const color = await locator.evaluate(
+			(element) => getComputedStyle(element).backgroundColor,
+		);
+		const channels = color.match(/\d+/g)?.slice(0, 3).map(Number);
+		if (channels?.length !== 3)
+			throw new Error(`unexpected button color: ${color}`);
+		for (let index = 0; index < 3; index++)
+			expect(
+				Math.abs((channels[index] ?? 0) - (median[index] ?? 0)),
+			).toBeLessThanOrEqual(12);
+	};
+	for (const width of [390, 1280]) {
+		await page.setViewportSize({ width, height: 844 });
+		for (const id of [
+			"create-solo",
+			"invite-friends",
+			"join-online",
+			"preset-bots",
+			"create",
+		])
+			await check(page.getByTestId(id));
+	}
+	await page.goto("/join");
+	await expect(page.getByTestId("community")).toBeVisible();
+	await check(page.getByRole("link", { name: "Play with bots" }));
+	const backColor = await page
+		.getByRole("button", { name: "Back to home" })
+		.evaluate((element) => getComputedStyle(element).backgroundColor);
+	const [red, green] = backColor.match(/\d+/g)?.map(Number) ?? [];
+	expect(red ?? 0).toBeGreaterThan(green ?? 255);
+});
+
 test("static project-site bookmarks load every entry directly with the correct assets", async ({
 	page,
 }) => {

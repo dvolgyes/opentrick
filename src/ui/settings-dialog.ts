@@ -1,4 +1,3 @@
-import { DEFAULT_BOT_TIMING } from "../bot/timing";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import { LOCAL_BIDDERS, type LocalBidder } from "../protocol";
 import type { AppDeps } from "./deps";
@@ -160,9 +159,9 @@ export function settingsDialog(
 			attrs: {
 				type: "number",
 				name,
-				min: String(minimum / 1000),
+				min: String(minimum),
 				max: "60",
-				step: "0.001",
+				step: "1",
 				required: "",
 			},
 		});
@@ -175,17 +174,17 @@ export function settingsDialog(
 		botCardDelayMs: timeInput(
 			t("Minimum card time (seconds)"),
 			"bot-card-delay",
-			DEFAULT_BOT_TIMING.botCardDelayMs,
+			0,
 		),
 		botBidDelayMs: timeInput(
 			t("Minimum bid time (seconds)"),
 			"bot-bid-delay",
-			DEFAULT_BOT_TIMING.botBidDelayMs,
+			0,
 		),
 		auctionPauseMs: timeInput(
 			t("Pause after auction (seconds)"),
 			"auction-pause",
-			DEFAULT_BOT_TIMING.auctionPauseMs,
+			0,
 		),
 		playTimeMs: timeInput(t("Card thinking budget (seconds)"), "play-time", 1),
 	};
@@ -504,7 +503,7 @@ export function settingsDialog(
 		const times = Object.fromEntries(
 			Object.entries(timing).map(([field, control]) => [
 				field,
-				Math.round(control.input.valueAsNumber * 1000),
+				control.input.valueAsNumber * 1000,
 			]),
 		) as Pick<Settings, keyof typeof timing>;
 		const editable = bidding?.().editable ?? true;

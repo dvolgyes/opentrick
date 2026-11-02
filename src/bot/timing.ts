@@ -10,18 +10,15 @@ export interface BotTiming {
 export const DEFAULT_BOT_TIMING: BotTiming = {
 	botCardDelayMs: 1000,
 	botBidDelayMs: 3000,
-	auctionPauseMs: 3000,
+	auctionPauseMs: 5000,
 };
 
-/** The readability floors also apply to stored values and callers outside the settings dialog. */
-export function isBotTimingMs(
-	value: unknown,
-	minimum: number,
-): value is number {
+/** Bounds delays for stored values and callers outside the settings dialog. */
+export function isBotTimingMs(value: unknown): value is number {
 	return (
 		typeof value === "number" &&
 		Number.isInteger(value) &&
-		value >= minimum &&
+		value >= 0 &&
 		value <= 60_000
 	);
 }
@@ -35,10 +32,8 @@ export function botTiming(settings: Partial<BotTiming> = {}): BotTiming {
 			settings.auctionPauseMs ?? DEFAULT_BOT_TIMING.auctionPauseMs,
 	};
 	for (const key of Object.keys(DEFAULT_BOT_TIMING) as (keyof BotTiming)[]) {
-		if (!isBotTimingMs(timing[key], DEFAULT_BOT_TIMING[key]))
-			throw new Error(
-				`${key} must be an integer from ${DEFAULT_BOT_TIMING[key]} to 60000 milliseconds`,
-			);
+		if (!isBotTimingMs(timing[key]))
+			throw new Error(`${key} must be an integer from 0 to 60000 milliseconds`);
 	}
 	return timing;
 }

@@ -168,6 +168,11 @@ function readFlag(
 	return value === "1" ? true : value === "0" ? false : fallback;
 }
 
+/** Existing preferences may contain fractions of a second; show and use the nearest allowed second. */
+function wholeSeconds(milliseconds: number, minimum: number): number {
+	return Math.max(minimum, Math.round(milliseconds / 1000) * 1000);
+}
+
 /** Stored text is untrusted: each value that is not a valid choice reads as its default. */
 export function readSettings(storage: MaybeStorage): Settings {
 	const read = (name: string): string | null | undefined =>
@@ -176,12 +181,14 @@ export function readSettings(storage: MaybeStorage): Settings {
 	const storedPoints = read("points");
 	const storedBaize = read("baize-strength");
 	const storedPaper = read("paper-strength");
-	const storedPlayTime = Number(read("play-time-ms"));
+	const playTimeText = read("play-time-ms");
+	const storedPlayTime = playTimeText?.trim() ? Number(playTimeText) : NaN;
 	const timing = Object.fromEntries(
 		Object.entries(TIMING_KEYS).map(([field, name]) => {
-			const minimum = DEFAULT_BOT_TIMING[field as keyof BotTiming];
-			const value = Number(read(name));
-			return [field, isBotTimingMs(value, minimum) ? value : minimum];
+			const fallback = DEFAULT_BOT_TIMING[field as keyof BotTiming];
+			const text = read(name);
+			const value = text?.trim() ? Number(text) : NaN;
+			return [field, isBotTimingMs(value) ? wholeSeconds(value, 0) : fallback];
 		}),
 	) as unknown as BotTiming;
 	const flags = Object.fromEntries(
@@ -194,7 +201,7 @@ export function readSettings(storage: MaybeStorage): Settings {
 		...timing,
 		bidder: readChoice(read("bidder"), LOCAL_BIDDERS, DEFAULT_SETTINGS.bidder),
 		playTimeMs: isPlayTimeMs(storedPlayTime)
-			? storedPlayTime
+			? wholeSeconds(storedPlayTime, 1000)
 			: DEFAULT_PLAY_TIME_MS,
 		pointSystem: readChoice(
 			storedPoints,
@@ -250,6 +257,11 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
 	const budget = playTimeMs(settings.playTimeMs);
 	const timing = botTiming(settings);
+	if (budget < 1000 || budget % 1000 !== 0)
+		throw new Error("play time must be whole seconds from 1 to 60");
+	for (const value of Object.values(timing))
+		if (value % 1000 !== 0)
+			throw new Error("bot delays must be whole seconds from 0 to 60");
 	if (!LOCAL_BIDDERS.includes(settings.bidder))
 		throw new Error("unknown bidding engine");
 	if (!SUIT_FONT_SIZES.includes(settings.suitFontSize))

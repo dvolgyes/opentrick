@@ -41,8 +41,8 @@ Claims, undo requests, seat changes, and stale results still pass through the ex
 The default budget is 5,000 ms per non-forced card decision, checked between native calls.
 There is no default sample-count cap, so faster positions use the remaining time for more hidden-hand samples.
 Explicit sample limits remain available for controlled evaluations.
-The host preference `opentrick.settings.play-time-ms` accepts integer milliseconds from 1 to 60,000 and defaults to 5,000 when absent or invalid.
-Saving display settings preserves it; its visible Settings control is deferred.
+The host preference `opentrick.settings.play-time-ms` stores whole seconds as milliseconds, from 1,000 to 60,000, and defaults to 5,000 when absent or invalid.
+The Settings control selects whole seconds, and an older fractional preference is rounded to the nearest allowed second when read.
 `BrowserPlayEngine` also accepts a constructor budget and a per-request override.
 Completed evaluations are sent progressively.
 At the configured target, the browser returns the latest completed evaluation and terminates an overrunning native call.

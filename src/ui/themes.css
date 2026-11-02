@@ -12,6 +12,7 @@
 :root {
 	/* Clubroom opening surfaces are independent of the table's selected theme. */
 	--opening-forest: #153e33;
+	--opening-button: #185b40;
 	--opening-paper: #f7f5ee;
 	--opening-ink: #183d33;
 	--opening-sage: #e9eee3;

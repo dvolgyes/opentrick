@@ -213,6 +213,11 @@ The appearance can also follow your system's light or dark preference.
 Suit and rank font sizes are S (75%), M (the original size), L (125%), XL (150%), XXL (175%), and XXXL (200%).
 The size applies to cards, bids, contracts, and notation in hints and guides.
 Turn display, card points, the mobile view for portrait windows, and bot play time are also set here.
+Bot timing uses whole seconds.
+The default minimum card time is one second, the minimum bid time is three seconds, and the pause after the auction is five seconds.
+Each of these delays can be set to zero.
+The card thinking budget defaults to five seconds and can be set from one to sixty seconds.
+Older fractional timing choices are rounded to the nearest allowed second.
 Settings are kept in this browser and are never sent to the table.
 
 ## Development

@@ -491,11 +491,39 @@ describe("bot pacing", () => {
 	it("holds the opening lead for the auction pause", async () => {
 		const host = cardHost(0);
 		await host.runner.start();
-		await vi.advanceTimersByTimeAsync(2999);
+		await vi.advanceTimersByTimeAsync(4999);
 		expect(host.state()?.board?.cards).toHaveLength(0);
 		await vi.advanceTimersByTimeAsync(1);
 		expect(host.state()?.board?.cards).toHaveLength(1);
 		host.runner.stop();
+	});
+
+	it("allows zero bid, card, and auction delays", async () => {
+		const timing = {
+			...SETTINGS,
+			botCardDelayMs: 0,
+			botBidDelayMs: 0,
+			auctionPauseMs: 0,
+		};
+		const card = cardHost(0);
+		card.runner.updateSettings(timing);
+		await card.runner.start();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(card.state()?.board?.cards).toHaveLength(1);
+		card.runner.stop();
+		const bid = liveHost(
+			tableState([act(call("1C"))]),
+			{ choose: vi.fn(), stop: () => {} },
+			{
+				choose: async () => ({ call: "P", policy: "sl", candidates: [] }),
+				stop: () => {},
+			},
+		);
+		bid.runner.updateSettings(timing);
+		await bid.runner.start();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(bid.state()?.board?.calls).toEqual(["1C", "P"]);
+		bid.runner.stop();
 	});
 
 	it("holds a quick bid for three seconds", async () => {

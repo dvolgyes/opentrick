@@ -32,7 +32,7 @@ describe("player settings", () => {
 		expect(readSettings(undefined)).toMatchObject({
 			botCardDelayMs: 1000,
 			botBidDelayMs: 3000,
-			auctionPauseMs: 3000,
+			auctionPauseMs: 5000,
 			playTimeMs: 5000,
 		});
 	});
@@ -42,7 +42,7 @@ describe("player settings", () => {
 			playTimeMs: 5000,
 			botCardDelayMs: 1000,
 			botBidDelayMs: 3000,
-			auctionPauseMs: 3000,
+			auctionPauseMs: 5000,
 			pointSystem: "hcp",
 			cardPoints: true,
 			theme: "selenized",
@@ -71,6 +71,12 @@ describe("player settings", () => {
 		expect(readSettings(undefined)).toEqual(DEFAULT_SETTINGS);
 	});
 
+	it("keeps a previously saved three-second auction pause", () => {
+		const storage = memoryStorage();
+		storage.setItem("opentrick.settings.auction-pause-ms", "3000");
+		expect(readSettings(storage).auctionPauseMs).toBe(3000);
+	});
+
 	it("keeps saved choices while using defaults for other settings", () => {
 		const storage = memoryStorage();
 		storage.setItem("opentrick.settings.suit-font-size", "S");
@@ -92,7 +98,7 @@ describe("player settings", () => {
 		const storage = memoryStorage();
 		const settings = {
 			bidder: "sl",
-			playTimeMs: 150,
+			playTimeMs: 1000,
 			botCardDelayMs: 2000,
 			botBidDelayMs: 4000,
 			auctionPauseMs: 5000,
@@ -268,24 +274,33 @@ describe("player settings", () => {
 			"local storage is not available",
 		);
 	});
-	it("validates each persisted timing floor and rejects invalid writes before changing storage", () => {
+	it("accepts zero delays, normalizes older fractional seconds, and rejects invalid writes", () => {
 		const storage = memoryStorage();
-		for (const [field, key, floor] of [
+		for (const [field, key, fallback] of [
 			["botCardDelayMs", "bot-card-delay-ms", 1000],
 			["botBidDelayMs", "bot-bid-delay-ms", 3000],
-			["auctionPauseMs", "auction-pause-ms", 3000],
+			["auctionPauseMs", "auction-pause-ms", 5000],
 		] as const) {
-			for (const value of ["0", String(floor - 1), "60001", "NaN", "1000.5"]) {
+			for (const value of ["", "-1", "60001", "NaN", "Infinity", "1000.5"]) {
 				storage.setItem(`opentrick.settings.${key}`, value);
-				expect(readSettings(storage)[field]).toBe(floor);
+				expect(readSettings(storage)[field]).toBe(fallback);
 			}
+			storage.setItem(`opentrick.settings.${key}`, "0");
+			expect(readSettings(storage)[field]).toBe(0);
+			storage.setItem(`opentrick.settings.${key}`, "1500");
+			expect(readSettings(storage)[field]).toBe(2000);
 			storage.setItem(`opentrick.settings.${key}`, "60000");
 			expect(readSettings(storage)[field]).toBe(60000);
 			storage.clear();
-			expect(() =>
-				writeSettings(storage, { ...DEFAULT_SETTINGS, [field]: floor - 1 }),
-			).toThrow(/milliseconds/);
-			expect(storage.length).toBe(0);
+			for (const value of [-1, 1500, 60001]) {
+				expect(() =>
+					writeSettings(storage, { ...DEFAULT_SETTINGS, [field]: value }),
+				).toThrow();
+				expect(storage.length).toBe(0);
+			}
+			writeSettings(storage, { ...DEFAULT_SETTINGS, [field]: 0 });
+			expect(readSettings(storage)[field]).toBe(0);
+			storage.clear();
 		}
 	});
 	it("validates persisted search budgets and rejects an invalid budget before saving", () => {
@@ -302,15 +317,22 @@ describe("player settings", () => {
 			storage.setItem("opentrick.settings.play-time-ms", value);
 			expect(readSettings(storage).playTimeMs).toBe(5000);
 		}
-		for (const value of ["150", "5000", "60000"]) {
+		for (const [value, expected] of [
+			["150", 1000],
+			["1500", 2000],
+			["5000", 5000],
+			["60000", 60000],
+		] as const) {
 			storage.setItem("opentrick.settings.play-time-ms", value);
-			expect(readSettings(storage).playTimeMs).toBe(Number(value));
+			expect(readSettings(storage).playTimeMs).toBe(expected);
 		}
 		storage.clear();
-		expect(() =>
-			writeSettings(storage, { ...DEFAULT_SETTINGS, playTimeMs: 0 }),
-		).toThrow(/play time/);
-		expect(storage.length).toBe(0);
+		for (const value of [0, 999, 1500, 60001]) {
+			expect(() =>
+				writeSettings(storage, { ...DEFAULT_SETTINGS, playTimeMs: value }),
+			).toThrow();
+			expect(storage.length).toBe(0);
+		}
 	});
 });
 
@@ -338,7 +360,7 @@ describe("local bot migration", () => {
 		expect(readSettings(storage)).toMatchObject({
 			theme: "solarized",
 			scheme: "dark",
-			playTimeMs: 250,
+			playTimeMs: 1000,
 		});
 		expect(DEFAULT_BOT_SETUP).toEqual({ seats: [], bidder: "sl" });
 	});

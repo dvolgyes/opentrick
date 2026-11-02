@@ -256,7 +256,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		await page.evaluate(() =>
 			localStorage.getItem("opentrick.settings.play-time-ms"),
 		),
-	).toBe("150");
+	).toBe("1000");
 
 	await page.reload();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
