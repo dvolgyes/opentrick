@@ -2104,6 +2104,22 @@ const rows: readonly TranslationRow[] = [
 		"De biedbox verbergen als je niet aan de beurt bent",
 	],
 	[
+		"Require confirmation before sending a bid",
+		"Pedir confirmación antes de enviar una declaración",
+		"Pedir confirmação antes de enviar uma declaração",
+		"Demander une confirmation avant d'envoyer une annonce",
+		"Richiedi conferma prima di inviare una dichiarazione",
+		"Om bevestiging vragen voordat een bod wordt verstuurd",
+	],
+	[
+		"Make the bot's suggested call.",
+		"Envía la declaración sugerida por el bot.",
+		"Envia a declaração sugerida pelo bot.",
+		"Envoie l'annonce suggérée par le robot.",
+		"Invia la dichiarazione suggerita dal bot.",
+		"Verstuur het door de bot voorgestelde bod.",
+	],
+	[
 		"Select the bot's call. Confirm sends it.",
 		"Selecciona la voz del bot. Confirmar la envía.",
 		"Seleciona a voz do bot. Confirmar envia-a.",

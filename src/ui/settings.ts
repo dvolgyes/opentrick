@@ -89,6 +89,8 @@ export interface Settings extends BotTiming {
 	readonly guideButton: boolean;
 	/** The bid box shows the call that the bot would make for the viewer, beside Guide (src/ui/bot-bid-hint.ts). */
 	readonly botBidHint: boolean;
+	/** Require a separate confirmation before sending a call. */
+	readonly bidConfirmation: boolean;
 	/** Hide the bid box when the viewer has no available call. */
 	readonly hideBidBoxWhenWaiting: boolean;
 	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
@@ -106,7 +108,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	pointSystem: "hcp",
 	cardPoints: true,
 	theme: "selenized",
-	scheme: "auto",
+	scheme: "light",
 	suitFontSize: "XXL",
 	suitColors: "green-orange",
 	baizeStrength: "medium",
@@ -123,6 +125,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	guidePanel: true,
 	guideButton: false,
 	botBidHint: true,
+	bidConfirmation: true,
 	hideBidBoxWhenWaiting: true,
 	relayChecks: false,
 	landscapeDesktop: false,
@@ -146,6 +149,7 @@ const FLAGS = {
 	guidePanel: "guide-panel",
 	guideButton: "guide-button",
 	botBidHint: "bot-bid-hint",
+	bidConfirmation: "bid-confirmation",
 	hideBidBoxWhenWaiting: "hide-bid-box-when-waiting",
 	relayChecks: "relay-checks",
 	landscapeDesktop: "landscape-desktop",

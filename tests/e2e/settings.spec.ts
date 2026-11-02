@@ -56,6 +56,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		"Animate the bot during its turn",
 		"Show the bidding guide button in the bid box",
 		"Show the bot's suggested call in the bid box",
+		"Require confirmation before sending a bid",
 		"Hide the bid box when it is not your turn",
 	])
 		await expect(turn.getByLabel(label)).toHaveCount(1);
@@ -123,7 +124,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expectSettingsOrder(dialog);
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
 	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
-	await expect(dialog.getByLabel("Automatic", { exact: true })).toBeChecked();
+	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Selenized", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("XXL", { exact: true })).toBeChecked();
 	await expect(
@@ -151,8 +152,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 			return getComputedStyle(document.body).color === ink;
 		});
 	await expect.poll(showsInk).toBe(true);
-	// Automatic follows the system preference at once, without a reload.
+	// The default remains light when the system preference changes.
 	await page.emulateMedia({ colorScheme: "dark" });
+	await expect(page.locator("html")).toHaveAttribute("data-scheme", "light");
 	await expect.poll(showsInk).toBe(true);
 	await page.emulateMedia({ colorScheme: "light" });
 	await expect.poll(showsInk).toBe(true);
@@ -167,6 +169,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"Animate the bot during its turn",
 		"In the desktop view, show the bidding guide in the side panel during the auction",
 		"Show the bot's suggested call in the bid box",
+		"Require confirmation before sending a bid",
 		"Hide the bid box when it is not your turn",
 		"On a computer with a portrait window, show the mobile view",
 	])
@@ -209,6 +212,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog
 		.getByLabel("Hide the bid box when it is not your turn")
 		.uncheck();
+	await dialog
+		.getByLabel("Require confirmation before sending a bid")
+		.uncheck();
 	await relayChecks.check();
 
 	await dialog.getByRole("button", { name: "Save settings" }).click();
@@ -224,6 +230,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).toEqual([
 		"opentrick.settings.auction-pause-ms",
 		"opentrick.settings.baize-strength",
+		"opentrick.settings.bid-confirmation",
 		"opentrick.settings.bid-turn-frame",
 		"opentrick.settings.bid-turn-text",
 		"opentrick.settings.bidder",
@@ -294,6 +301,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).toBeChecked();
 	await expect(
 		dialog.getByLabel("Hide the bid box when it is not your turn"),
+	).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Require confirmation before sending a bid"),
 	).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Check the connection more often"),
@@ -760,7 +770,7 @@ test("the page starts in the saved theme before its script runs, as the app show
 	await page.goto("/");
 	const cases = [
 		[{}, "light", "selenized", "light"],
-		[{}, "dark", "selenized", "dark"],
+		[{}, "dark", "selenized", "light"],
 		[
 			{ "theme-style": "solarized", scheme: "auto" },
 			"dark",
@@ -774,7 +784,12 @@ test("the page starts in the saved theme before its script runs, as the app show
 			"light",
 		],
 		[{ "theme-style": "normal", scheme: "dark" }, "light", "normal", "dark"],
-		[{ "theme-style": "<b>x</b>", scheme: "dim" }, "dark", "selenized", "dark"],
+		[
+			{ "theme-style": "<b>x</b>", scheme: "dim" },
+			"dark",
+			"selenized",
+			"light",
+		],
 	] as const;
 	for (const [stored, system, theme, scheme] of cases) {
 		await page.emulateMedia({ colorScheme: system });

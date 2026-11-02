@@ -39,6 +39,123 @@ describe.each(["desktop", "compact"] as const)(
 			],
 		};
 
+		it("requires confirmation for a call by default", () => {
+			const { root, handlers } = renderView(auction, form);
+			root.querySelector<HTMLButtonElement>(".bid-box .pass")?.click();
+			expect(handlers.act).not.toHaveBeenCalled();
+			root.querySelector<HTMLButtonElement>(".bid-box .confirm")?.click();
+			expect(handlers.act).toHaveBeenCalledWith({ type: "call", call: "P" });
+		});
+
+		it("sends a complete legal call without confirmation when the setting is off", () => {
+			const { root, handlers } = renderView(
+				auction,
+				form,
+				undefined,
+				undefined,
+				{
+					marks: () => ({ ...DEFAULT_SETTINGS, bidConfirmation: false }),
+				},
+			);
+			const box = root.querySelector<HTMLElement>(".bid-box");
+			if (!box) throw new Error("Missing bid box");
+			box.querySelector<HTMLButtonElement>('[aria-label="Level 1"]')?.click();
+			expect(handlers.act).not.toHaveBeenCalled();
+			box.querySelector<HTMLButtonElement>('[aria-label="Clubs"]')?.click();
+			expect(handlers.act).toHaveBeenCalledExactlyOnceWith({
+				type: "call",
+				call: "1C",
+			});
+			expect(box.querySelector(".confirm")).toBeNull();
+		});
+
+		it("sends a special call or the bot suggestion immediately when confirmation is off", () => {
+			const options = {
+				marks: () => ({ ...DEFAULT_SETTINGS, bidConfirmation: false }),
+			};
+			const first = renderView(auction, form, undefined, undefined, options);
+			first.root.querySelector<HTMLButtonElement>(".bid-box .pass")?.click();
+			expect(first.handlers.act).toHaveBeenCalledExactlyOnceWith({
+				type: "call",
+				call: "P",
+			});
+			const second = renderView(auction, form, undefined, undefined, options);
+			second.section.showBotBid("1C");
+			second.root.querySelector<HTMLButtonElement>(".bot-bid")?.click();
+			expect(second.handlers.act).toHaveBeenCalledExactlyOnceWith({
+				type: "call",
+				call: "1C",
+			});
+		});
+
+		it.each([
+			["Double", "X"],
+			["Redouble", "XX"],
+		] as const)("sends %s immediately when it is legal", (label, call) => {
+			const view = {
+				...auction,
+				bids: [...auction.bids, { call, text: label }],
+			};
+			const { root, handlers } = renderView(view, form, undefined, undefined, {
+				marks: () => ({ ...DEFAULT_SETTINGS, bidConfirmation: false }),
+			});
+			root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)?.click();
+			expect(handlers.act).toHaveBeenCalledExactlyOnceWith({
+				type: "call",
+				call,
+			});
+		});
+
+		it("accepts either selection order and does not send an unavailable call", () => {
+			const { root, handlers } = renderView(
+				auction,
+				form,
+				undefined,
+				undefined,
+				{
+					marks: () => ({ ...DEFAULT_SETTINGS, bidConfirmation: false }),
+				},
+			);
+			const box = root.querySelector<HTMLElement>(".bid-box");
+			if (!box) throw new Error("Missing bid box");
+			const diamonds = box.querySelector<HTMLButtonElement>(
+				'[aria-label="Diamonds"]',
+			);
+			expect(diamonds?.disabled).toBe(true);
+			diamonds?.click();
+			expect(handlers.act).not.toHaveBeenCalled();
+			box.querySelector<HTMLButtonElement>('[aria-label="Clubs"]')?.click();
+			expect(handlers.act).not.toHaveBeenCalled();
+			box.querySelector<HTMLButtonElement>('[aria-label="Level 1"]')?.click();
+			expect(handlers.act).toHaveBeenCalledExactlyOnceWith({
+				type: "call",
+				call: "1C",
+			});
+		});
+
+		it("applies a changed setting without sending the current selection", () => {
+			let settings = { ...DEFAULT_SETTINGS };
+			const { root, section, handlers } = renderView(
+				auction,
+				form,
+				undefined,
+				undefined,
+				{
+					marks: () => settings,
+				},
+			);
+			root.querySelector<HTMLButtonElement>(".bid-box .pass")?.click();
+			settings = { ...settings, bidConfirmation: false };
+			section.render(auction);
+			expect(handlers.act).not.toHaveBeenCalled();
+			expect(root.querySelector(".bid-box .confirm")).toBeNull();
+			root.querySelector<HTMLButtonElement>(".bid-box .pass")?.click();
+			expect(handlers.act).toHaveBeenCalledExactlyOnceWith({
+				type: "call",
+				call: "P",
+			});
+		});
+
 		it("shows each optional button only when enabled", () => {
 			let settings = {
 				...DEFAULT_SETTINGS,

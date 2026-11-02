@@ -80,6 +80,7 @@ const BIDDING_HELP_LABELS = {
 		"In the desktop view, show the bidding guide in the side panel during the auction",
 	guideButton: "Show the bidding guide button in the bid box",
 	botBidHint: "Show the bot's suggested call in the bid box",
+	bidConfirmation: "Require confirmation before sending a bid",
 	hideBidBoxWhenWaiting: "Hide the bid box when it is not your turn",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
@@ -408,14 +409,20 @@ export function settingsDialog(
 					` ${t(label)}`,
 				),
 			),
-			...(["guideButton", "botBidHint", "hideBidBoxWhenWaiting"] as const).map(
-				(field) =>
-					el(
-						"label",
-						{},
-						biddingHelp[field],
-						` ${t(BIDDING_HELP_LABELS[field])}`,
-					),
+			...(
+				[
+					"guideButton",
+					"botBidHint",
+					"bidConfirmation",
+					"hideBidBoxWhenWaiting",
+				] as const
+			).map((field) =>
+				el(
+					"label",
+					{},
+					biddingHelp[field],
+					` ${t(BIDDING_HELP_LABELS[field])}`,
+				),
 			),
 		),
 		scheme.element,
@@ -535,6 +542,7 @@ export function settingsDialog(
 			guidePanel: biddingHelp.guidePanel.checked,
 			guideButton: biddingHelp.guideButton.checked,
 			botBidHint: biddingHelp.botBidHint.checked,
+			bidConfirmation: biddingHelp.bidConfirmation.checked,
 			hideBidBoxWhenWaiting: biddingHelp.hideBidBoxWhenWaiting.checked,
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,

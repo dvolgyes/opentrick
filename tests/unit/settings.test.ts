@@ -46,7 +46,7 @@ describe("player settings", () => {
 			pointSystem: "hcp",
 			cardPoints: true,
 			theme: "selenized",
-			scheme: "auto",
+			scheme: "light",
 			suitFontSize: "XXL",
 			suitColors: "green-orange",
 			baizeStrength: "medium",
@@ -63,6 +63,7 @@ describe("player settings", () => {
 			guidePanel: true,
 			guideButton: false,
 			botBidHint: true,
+			bidConfirmation: true,
 			hideBidBoxWhenWaiting: true,
 			relayChecks: false,
 			landscapeDesktop: false,
@@ -87,7 +88,7 @@ describe("player settings", () => {
 			suitColors: "standard",
 			hideBidBoxWhenWaiting: false,
 			theme: "selenized",
-			scheme: "auto",
+			scheme: "light",
 			baizeStrength: "medium",
 			paperStrength: "medium",
 			shadowStrength: "4",
@@ -122,6 +123,7 @@ describe("player settings", () => {
 			guidePanel: false,
 			guideButton: true,
 			botBidHint: false,
+			bidConfirmation: false,
 			hideBidBoxWhenWaiting: false,
 			relayChecks: true,
 			landscapeDesktop: false,
@@ -159,6 +161,7 @@ describe("player settings", () => {
 		storage.setItem("opentrick.settings.bid-turn-frame", "yes");
 		storage.setItem("opentrick.settings.guide-button", "<script>");
 		storage.setItem("opentrick.settings.hide-bid-box-when-waiting", "yes");
+		storage.setItem("opentrick.settings.bid-confirmation", "yes");
 		expect(readSettings(storage)).toEqual(DEFAULT_SETTINGS);
 	});
 
@@ -249,13 +252,13 @@ describe("player settings", () => {
 			storage.setItem("opentrick.settings.theme", earlier);
 			expect(readSettings(storage)).toMatchObject({
 				theme: "selenized",
-				scheme: "auto",
+				scheme: "light",
 			});
 		}
 		writeSettings(storage, DEFAULT_SETTINGS);
 		expect(storage.getItem("opentrick.settings.theme")).toBeNull();
 		expect(storage.getItem("opentrick.settings.theme-style")).toBe("selenized");
-		expect(storage.getItem("opentrick.settings.scheme")).toBe("auto");
+		expect(storage.getItem("opentrick.settings.scheme")).toBe("light");
 	});
 
 	it("reads the earlier choice of no points as the default bidding system without card points", () => {

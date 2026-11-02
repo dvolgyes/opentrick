@@ -152,6 +152,7 @@ export type TableMarks = Pick<
 	| "guidePanel"
 	| "guideButton"
 	| "botBidHint"
+	| "bidConfirmation"
 	| "hideBidBoxWhenWaiting"
 >;
 
@@ -2129,6 +2130,7 @@ export function tableSection(
 			guideBlocked,
 			shownMarks.guideButton,
 			shownMarks.botBidHint,
+			shownMarks.bidConfirmation,
 		]);
 		if (key === drawnBidBox) {
 			updateBotCall(view);
@@ -2148,6 +2150,23 @@ export function tableSection(
 		const redraw = (): void => {
 			if (shown !== undefined) renderBidBox(shown);
 		};
+		const select = (selection: typeof pick): void => {
+			pick = selection;
+			const selected =
+				selection.call ??
+				(selection.level !== undefined && selection.strain !== undefined
+					? `${selection.level}${selection.strain}`
+					: undefined);
+			if (
+				!shownMarks.bidConfirmation &&
+				selected !== undefined &&
+				legal.has(selected)
+			) {
+				handlers.act({ type: "call", call: selected as Call });
+				return;
+			}
+			redraw();
+		};
 		const levels = el(
 			"div",
 			{ className: "bid-levels" },
@@ -2159,8 +2178,7 @@ export function tableSection(
 					view.bids.some((bid) => bid.call.startsWith(text)),
 					pick.level === text,
 					() => {
-						pick = { level: text, strain: pick.strain };
-						redraw();
+						select({ level: text, strain: pick.strain });
 					},
 					"level",
 				);
@@ -2178,8 +2196,7 @@ export function tableSection(
 						: legal.has(`${pick.level}${strain}`),
 					pick.strain === strain,
 					() => {
-						pick = { level: pick.level, strain };
-						redraw();
+						select({ level: pick.level, strain });
 					},
 					`strain strain-${strain}`,
 				),
@@ -2191,8 +2208,7 @@ export function tableSection(
 					legal.has(call),
 					pick.call === call,
 					() => {
-						pick = { call };
-						redraw();
+						select({ call });
 					},
 					call === "P" ? "pass" : call === "X" ? "double" : "redouble",
 				),
@@ -2235,7 +2251,6 @@ export function tableSection(
 		const guideRow = el("div", { className: "bid-guide" });
 		if (shownMarks.guideButton) guideRow.append(guideOpen);
 		if (shownMarks.botBidHint) {
-			// The bot's call only selects; Confirm still sends it.
 			const botCall = button(
 				"",
 				() => {
@@ -2245,16 +2260,21 @@ export function tableSection(
 							? botBid
 							: undefined;
 					if (suggestion === undefined) return;
-					pick = /^[1-7]/.test(suggestion)
-						? { level: suggestion.slice(0, 1), strain: suggestion.slice(1) }
-						: { call: suggestion };
-					redraw();
+					select(
+						/^[1-7]/.test(suggestion)
+							? { level: suggestion.slice(0, 1), strain: suggestion.slice(1) }
+							: { call: suggestion },
+					);
 				},
 				{
 					className: "bot-bid",
 					attrs: {
 						"data-testid": "bot-bid",
-						title: t("Select the bot's call. Confirm sends it."),
+						title: t(
+							shownMarks.bidConfirmation
+								? "Select the bot's call. Confirm sends it."
+								: "Make the bot's suggested call.",
+						),
 					},
 				},
 			);
@@ -2287,7 +2307,9 @@ export function tableSection(
 			...(guideRow.childElementCount > 0 ? [guideRow] : []),
 			levels,
 			calls,
-			el("div", { className: "bid-actions" }, confirm),
+			...(shownMarks.bidConfirmation
+				? [el("div", { className: "bid-actions" }, confirm)]
+				: []),
 			...(explanation ? [explanation] : []),
 		);
 		updateBotCall(view);

@@ -350,6 +350,10 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Die Schaltfläche für den Reizleitfaden in der Bidding-Box zeigen",
 		"Hide the bid box when it is not your turn":
 			"Die Bidding-Box ausblenden, wenn du nicht an der Reihe bist",
+		"Require confirmation before sending a bid":
+			"Vor dem Senden eines Gebots eine Bestätigung verlangen",
+		"Make the bot's suggested call.":
+			"Das vorgeschlagene Gebot des Bots abgeben.",
 		"Select the bot's call. Confirm sends it.":
 			"Wählt das Gebot des Bots. Bestätigen sendet es.",
 		"Screen orientation": "Bildschirmausrichtung",
@@ -1129,6 +1133,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"A licitálási útmutató gombjának mutatása a licitdobozban",
 		"Hide the bid box when it is not your turn":
 			"A licitdoboz elrejtése, amikor nem te következel",
+		"Require confirmation before sending a bid":
+			"Licit elküldése előtt megerősítés kérése",
+		"Make the bot's suggested call.": "A bot által javasolt licit elküldése.",
 		"Select the bot's call. Confirm sends it.":
 			"Kiválasztja a bot licitjét. A Megerősítés küldi el.",
 		"Screen orientation": "Képernyő tájolása",
@@ -1844,6 +1851,9 @@ const baseCatalogs: Readonly<Record<Exclude<Locale, "en">, Catalog>> = {
 			"Vis knappen for meldeveiledningen i meldeboksen",
 		"Hide the bid box when it is not your turn":
 			"Skjul meldeboksen når det ikke er din tur",
+		"Require confirmation before sending a bid":
+			"Krev bekreftelse før en melding sendes",
+		"Make the bot's suggested call.": "Send meldingen boten foreslår.",
 		"Select the bot's call. Confirm sends it.":
 			"Velger botens melding. Bekreft sender den.",
 		"Screen orientation": "Skjermretning",
