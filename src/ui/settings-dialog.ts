@@ -451,12 +451,7 @@ export function settingsDialog(
 			"fieldset",
 			{},
 			el("legend", {}, t("Gameplay")),
-			el(
-				"label",
-				{},
-				cardPlayAnimation,
-				` ${t("Animate played cards on desktop")}`,
-			),
+			el("label", {}, cardPlayAnimation, ` ${t("Animate played cards")}`),
 			cardPlayDuration.element,
 			cardPlayRotation.element,
 			cardPlayCenter.element,

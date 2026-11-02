@@ -127,9 +127,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).toBeChecked();
-	await expect(
-		dialog.getByLabel("Animate played cards on desktop"),
-	).toBeChecked();
+	await expect(dialog.getByLabel("Animate played cards")).toBeChecked();
 	await expect(
 		dialog.getByLabel("Played-card animation duration (seconds)"),
 	).toHaveValue("2");
@@ -231,7 +229,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.uncheck();
 	await dialog.getByLabel("Animate the bot during its turn").uncheck();
 	await dialog.getByLabel("Animate trick collection").uncheck();
-	await dialog.getByLabel("Animate played cards on desktop").uncheck();
+	await dialog.getByLabel("Animate played cards").uncheck();
 	await dialog
 		.getByLabel("Played-card animation duration (seconds)")
 		.fill("3.5");
@@ -343,9 +341,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		dialog.getByLabel("Animate the bot during its turn"),
 	).not.toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).not.toBeChecked();
-	await expect(
-		dialog.getByLabel("Animate played cards on desktop"),
-	).not.toBeChecked();
+	await expect(dialog.getByLabel("Animate played cards")).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Played-card animation duration (seconds)"),
 	).toHaveValue("3.5");

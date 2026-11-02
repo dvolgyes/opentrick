@@ -32,6 +32,25 @@ test("the phone result keeps the game board and controls in place", async ({
 		await expect(page.locator(".mobile-auction-board .hand .card")).toHaveCount(
 			52,
 		);
+		for (const position of ["top", "left", "right"]) {
+			const name = page.locator(`.mobile-board-${position} .mobile-board-name`);
+			expect(
+				await name.evaluate((node) => getComputedStyle(node).backgroundColor),
+			).toBe("rgba(0, 0, 0, 0)");
+			const label = await name.locator(".mobile-board-name-text").boundingBox();
+			const pill = await name.locator(".hcp-pill").boundingBox();
+			if (!label || !pill) throw new Error("missing name or points badge");
+			expect(pill.x).toBeGreaterThan(label.x + label.width);
+		}
+		const bottomName = await page
+			.locator(".mobile-auction-hand .seat-label")
+			.boundingBox();
+		const bottomPoints = await page
+			.locator(".mobile-auction-hand .hcp-pill")
+			.boundingBox();
+		if (!bottomName || !bottomPoints)
+			throw new Error("missing own name or points badge");
+		expect(bottomPoints.x).toBeGreaterThan(bottomName.x + bottomName.width);
 		await page.locator(".mobile-board-right .hcp-pill").click();
 		await expect(page.getByTestId("points-dialog")).toBeVisible();
 		await page

@@ -93,7 +93,7 @@ export interface Settings extends BotTiming {
 	readonly bidConfirmation: boolean;
 	/** Animate the collection of each completed trick. */
 	readonly trickAnimation: boolean;
-	/** Animate played cards on desktop, with a locally chosen landing layout. */
+	/** Animate played cards with a locally chosen landing layout. */
 	readonly cardPlayAnimation: boolean;
 	readonly cardPlayDurationMs: number;
 	readonly cardPlayRotationDegrees: number;

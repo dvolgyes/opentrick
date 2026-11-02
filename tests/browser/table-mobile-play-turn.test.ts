@@ -22,6 +22,8 @@ import {
 
 afterEach(() => document.body.replaceChildren());
 
+const FLIGHT_LAYOUTS: Layout[] = ["desktop", "compact", "sideways"];
+
 describe("auction summary visibility", () => {
 	it.each<Layout>(["desktop", "compact", "sideways"])(
 		"keeps an empty summary hidden on a mid-game load (%s)",
@@ -434,7 +436,7 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it("restores the original static card layout when played-card animation is disabled", () => {
+	it.each(FLIGHT_LAYOUTS)("shows static cards when disabled (%s)", (layout) => {
 		vi.useFakeTimers();
 		const base = { ...playView(), trick: undefined };
 		const played = {
@@ -450,18 +452,14 @@ describe("card flight", () => {
 			at: base.at + 1,
 			trick: { finished: false, cards: [played] },
 		};
-		const initial = renderView(next, "desktop");
+		const initial = renderView(next, layout);
 		const before = initial.root
 			.querySelector<HTMLElement>(".trick .played")
 			?.getBoundingClientRect();
 		initial.section.dispose();
-		const { root, section } = renderView(
-			base,
-			"desktop",
-			undefined,
-			undefined,
-			{ cardPlayAnimation: () => false },
-		);
+		const { root, section } = renderView(base, layout, undefined, undefined, {
+			cardPlayAnimation: () => false,
+		});
 		section.render(next);
 		const target = root.querySelector<HTMLElement>(".trick .played");
 		const after = target?.getBoundingClientRect();
@@ -472,17 +470,13 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it("stops an active flight and restores the card layout when the setting is turned off", () => {
+	it.each(FLIGHT_LAYOUTS)("stops a flight when disabled (%s)", (layout) => {
 		vi.useFakeTimers();
 		let enabled = true;
 		const base = { ...playView(), trick: undefined };
-		const { root, section } = renderView(
-			base,
-			"desktop",
-			undefined,
-			undefined,
-			{ cardPlayAnimation: () => enabled },
-		);
+		const { root, section } = renderView(base, layout, undefined, undefined, {
+			cardPlayAnimation: () => enabled,
+		});
 		const next = {
 			...base,
 			at: base.at + 1,
@@ -677,10 +671,10 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it("allows the human to play as soon as a bot's flight begins", () => {
+	it.each(FLIGHT_LAYOUTS)("human plays during flight (%s)", (layout) => {
 		vi.useFakeTimers();
 		const base = { ...playView(), trick: undefined };
-		const { root, section, handlers } = renderView(base, "desktop");
+		const { root, section, handlers } = renderView(base, layout);
 		section.render({
 			...base,
 			at: base.at + 1,
@@ -776,54 +770,104 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it.each<Layout>(["desktop", "compact", "sideways"])(
-		"animates a newly played visible card only on desktop (%s)",
-		(layout) => {
+	it.each(FLIGHT_LAYOUTS)("animates played cards (%s)", (layout) => {
+		vi.useFakeTimers();
+		const base = { ...playView(), trick: undefined };
+		const { root, section } = renderView(base, layout);
+		const played = {
+			seat: "N" as const,
+			position: "bottom" as const,
+			card: "SA" as const,
+			text: "♠A",
+			rank: "A",
+			symbol: "♠",
+		};
+		const next = {
+			...base,
+			at: base.at + 1,
+			trick: { cards: [played], finished: false },
+		};
+		section.render(next);
+		const flight = document.querySelector<HTMLElement>(".card-flight");
+		expect(flight).not.toBeNull();
+		expect(flight?.getAnimations()[0]?.effect?.getTiming().duration).toBe(2000);
+		const motion = flight?.getAnimations()[0]?.effect;
+		if (!(motion instanceof KeyframeEffect))
+			throw new Error("missing flight animation");
+		const frames = motion.getKeyframes();
+		const rotation = /rotate\(([-\d.]+)deg\)/.exec(
+			String(frames.at(-1)?.transform),
+		);
+		expect(Number(rotation?.[1])).toBeGreaterThanOrEqual(350);
+		expect(Number(rotation?.[1])).toBeLessThanOrEqual(370);
+		expect(
+			root.querySelector<HTMLElement>(".trick .played")?.style.visibility,
+		).toBe("hidden");
+		section.render(next);
+		expect(document.querySelectorAll(".card-flight")).toHaveLength(1);
+		vi.advanceTimersByTime(2000);
+		expect(document.querySelector(".card-flight")).toBeNull();
+		expect(
+			root.querySelector<HTMLElement>(".trick .played")?.style.visibility,
+		).not.toBe("hidden");
+	});
+
+	it.each([
+		["N", "bottom", false],
+		["S", "top", false],
+		["E", "left", true],
+		["W", "right", true],
+	] as const)(
+		"flies a phone card from the %s hand",
+		(seat, position, hidden) => {
 			vi.useFakeTimers();
 			const base = { ...playView(), trick: undefined };
-			const { root, section } = renderView(base, layout);
-			const played = {
-				seat: "N" as const,
-				position: "bottom" as const,
-				card: "SA" as const,
-				text: "♠A",
-				rank: "A",
-				symbol: "♠",
-			};
-			const next = {
+			const { root, section } = renderView(base, "compact");
+			const container =
+				position === "bottom"
+					? ".mobile-auction-hand"
+					: `.mobile-board-${position}`;
+			const source = root.querySelector<HTMLElement>(
+				`${container} ${hidden ? ".back:last-child .face" : '.card[data-card="SA"] .face'}`,
+			);
+			if (!source) throw new Error("missing source card");
+			const sourceRect = source.getBoundingClientRect();
+			section.render({
 				...base,
 				at: base.at + 1,
-				trick: { cards: [played], finished: false },
-			};
-			section.render(next);
+				trick: {
+					finished: false,
+					cards: [
+						{ seat, position, card: "SA", text: "♠A", rank: "A", symbol: "♠" },
+					],
+				},
+			});
 			const flight = document.querySelector<HTMLElement>(".card-flight");
-			if (layout !== "desktop") {
-				expect(flight).toBeNull();
-				return;
-			}
-			expect(flight).not.toBeNull();
-			expect(flight?.getAnimations()[0]?.effect?.getTiming().duration).toBe(
-				2000,
+			if (!flight) throw new Error("missing card flight");
+			expect(section.playPresentationActive()).toBe(true);
+			expect(Boolean(flight.querySelector(".card-flight-back"))).toBe(hidden);
+			const animation = flight.getAnimations()[0]?.effect;
+			if (!(animation instanceof KeyframeEffect))
+				throw new Error("missing card motion");
+			const start = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(
+				String(animation.getKeyframes()[0]?.transform),
 			);
-			const motion = flight?.getAnimations()[0]?.effect;
-			if (!(motion instanceof KeyframeEffect))
-				throw new Error("missing flight animation");
-			const frames = motion.getKeyframes();
-			const rotation = /rotate\(([-\d.]+)deg\)/.exec(
-				String(frames.at(-1)?.transform),
+			expect(Number(start?.[1])).toBeCloseTo(
+				sourceRect.left +
+					sourceRect.width / 2 -
+					parseFloat(flight.style.left) -
+					parseFloat(flight.style.width) / 2,
 			);
-			expect(Number(rotation?.[1])).toBeGreaterThanOrEqual(350);
-			expect(Number(rotation?.[1])).toBeLessThanOrEqual(370);
-			expect(
-				root.querySelector<HTMLElement>(".trick .played")?.style.visibility,
-			).toBe("hidden");
-			section.render(next);
-			expect(document.querySelectorAll(".card-flight")).toHaveLength(1);
+			expect(Number(start?.[2])).toBeCloseTo(
+				sourceRect.top +
+					sourceRect.height / 2 -
+					parseFloat(flight.style.top) -
+					parseFloat(flight.style.height) / 2,
+			);
 			vi.advanceTimersByTime(2000);
+			expect(section.playPresentationActive()).toBe(false);
 			expect(document.querySelector(".card-flight")).toBeNull();
-			expect(
-				root.querySelector<HTMLElement>(".trick .played")?.style.visibility,
-			).not.toBe("hidden");
+			section.dispose();
 		},
 	);
 
@@ -1091,7 +1135,7 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it("skips flight for reduced motion and does not replay a loaded trick", () => {
+	it.each(FLIGHT_LAYOUTS)("reduced motion and reload (%s)", (layout) => {
 		const nativeMatch = window.matchMedia.bind(window);
 		const media = vi
 			.spyOn(window, "matchMedia")
@@ -1102,7 +1146,7 @@ describe("card flight", () => {
 			);
 		try {
 			const base = { ...playView(), trick: undefined };
-			const { section } = renderView(base, "desktop");
+			const { section } = renderView(base, layout);
 			const next = {
 				...base,
 				at: base.at + 1,
@@ -1131,10 +1175,10 @@ describe("card flight", () => {
 		}
 	});
 
-	it("clears in-flight cards on a new board", () => {
+	it.each(FLIGHT_LAYOUTS)("clears flights on a new board (%s)", (layout) => {
 		vi.useFakeTimers();
 		const base = { ...playView(), trick: undefined };
-		const { section } = renderView(base, "desktop");
+		const { section } = renderView(base, layout);
 		section.render({
 			...base,
 			at: base.at + 1,
@@ -1158,10 +1202,10 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it("starts the next card only when the previous card has landed", () => {
+	it.each(FLIGHT_LAYOUTS)("sequences card flights (%s)", (layout) => {
 		vi.useFakeTimers();
 		const base = { ...playView(), trick: undefined };
-		const { root, section } = renderView(base, "desktop");
+		const { root, section } = renderView(base, layout);
 		const first = {
 			seat: "N" as const,
 			position: "bottom" as const,
@@ -1219,7 +1263,7 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it("finishes all four flights in play order before the winner highlight", () => {
+	it.each(FLIGHT_LAYOUTS)("flights before collection (%s)", (layout) => {
 		vi.useFakeTimers();
 		const base = {
 			...playView(),
@@ -1273,7 +1317,7 @@ describe("card flight", () => {
 				symbol: "♠",
 			},
 		];
-		const { section } = renderView(base, "desktop");
+		const { section } = renderView(base, layout);
 		for (let count = 1; count < 4; count++)
 			section.render({
 				...base,

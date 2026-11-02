@@ -2569,9 +2569,6 @@ export function tableSection(
 		if (
 			!previous ||
 			!win ||
-			!desktop ||
-			sideways ||
-			compact ||
 			!(options.cardPlayAnimation?.() ?? DEFAULT_SETTINGS.cardPlayAnimation) ||
 			view.board !== previous.board ||
 			view.at <= presentationAt ||
@@ -2605,9 +2602,16 @@ export function tableSection(
 		)
 			return;
 		const seat = previous.seats.find((entry) => entry.seat === played.seat);
-		const hand = seatNodes
-			.get(played.position)
-			?.node.querySelector<HTMLElement>(".hand");
+		const hand = compact
+			? {
+					bottom: mobileHand,
+					top: mobileOpponentTop,
+					left: mobileOpponentLeft,
+					right: mobileOpponentRight,
+				}[played.position].querySelector<HTMLElement>(".hand")
+			: seatNodes
+					.get(played.position)
+					?.node.querySelector<HTMLElement>(".hand");
 		if (!seat || !hand) return;
 		const source = seat.hand.visible
 			? [...hand.querySelectorAll<HTMLElement>(".card")]
@@ -2681,8 +2685,10 @@ export function tableSection(
 		}
 		const destination = target.getBoundingClientRect();
 		if (!destination.width || !destination.height) return;
-		const boardRect = felt.getBoundingClientRect();
-		const scale = felt.offsetWidth > 0 ? boardRect.width / felt.offsetWidth : 1;
+		const board = compact ? mobileBoard : felt;
+		const boardRect = board.getBoundingClientRect();
+		const scale =
+			board.offsetWidth > 0 ? boardRect.width / board.offsetWidth : 1;
 		const width = target.offsetWidth * scale;
 		const height = target.offsetHeight * scale;
 		if (!width || !height) return;
@@ -4168,12 +4174,14 @@ export function tableSection(
 		mobileTricks.replaceChildren(...trickProgress(view, need));
 	}
 
+	let currentLayout: Layout | undefined;
 	function setForm(layout: Layout): void {
-		if (layout !== "desktop") {
+		if (layout !== currentLayout) {
 			clearFlights();
 			deferredFlights.length = 0;
 			landingOffsets.clear();
 		}
+		currentLayout = layout;
 		desktop = layout !== "compact";
 		compact = layout === "compact";
 		sideways = layout === "sideways";

@@ -4633,9 +4633,6 @@ main:has(> .room[data-form="compact"]) {
 	gap: 0.25rem;
 	max-width: 100%;
 	margin-bottom: 0.15rem;
-	padding: 0 0.3rem;
-	border-radius: 0.3rem;
-	background: var(--felt-fg);
 	color: var(--felt);
 	font-size: 0.7rem;
 	font-weight: 600;
@@ -4645,6 +4642,9 @@ main:has(> .room[data-form="compact"]) {
 
 .mobile-board-name-text {
 	min-width: 0;
+	padding: 0 0.3rem;
+	border-radius: 0.3rem;
+	background: var(--felt-fg);
 }
 
 .mobile-board-name .hcp-pill {
@@ -5009,45 +5009,28 @@ main:has(> .room[data-form="compact"]) {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
+	justify-content: center;
 	column-gap: 0.25rem;
 }
 
 .mobile-auction-hand .seat > * {
 	flex-basis: 100%;
-	order: 1;
+	order: 2;
 }
 
 .mobile-auction-hand .seat > .seat-label {
 	flex: 0 1 auto;
 	order: 0;
 	min-width: 0;
-	margin-inline: auto;
+	margin-inline: 0;
 	justify-content: center;
 }
 
 .mobile-auction-hand .hcp-pill {
 	position: static;
 	flex: none;
-	order: 0;
-	margin-bottom: 0.15rem;
-	margin-left: auto;
-}
-
-.bridge-table[data-phase="complete"] .mobile-auction-hand .seat {
-	justify-content: center;
-}
-
-.bridge-table[data-phase="complete"] .mobile-auction-hand .seat > * {
-	order: 2;
-}
-
-.bridge-table[data-phase="complete"] .mobile-auction-hand .seat > .seat-label {
-	order: 0;
-	margin-inline: 0;
-}
-
-.bridge-table[data-phase="complete"] .mobile-auction-hand .hcp-pill {
 	order: 1;
+	margin-bottom: 0.15rem;
 	margin-left: 0;
 }
 
