@@ -63,8 +63,10 @@ export interface AppDeps {
 }
 
 export interface Navigation {
-	/** Loads the create screen at the site root from the server. Never reuses the current table or its setup query. */
+	/** Loads a fresh create screen. Never reuses the current table or its setup query. */
 	createNew(): void;
+	/** Loads the opening screen at the deployment root after leaving the current table. */
+	home(): void;
 	/**
 	 * Loads this page again from the server, so a new version of the site takes effect. It takes no argument, so a
 	 * button can call it with its click event.

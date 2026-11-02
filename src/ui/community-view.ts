@@ -407,9 +407,6 @@ export function showCommunity(
 						el(
 							"div",
 							{ className: "community-actions" },
-							button(deps.t("Go back"), navigation.createNew, {
-								className: "community-back",
-							}),
 							el(
 								"a",
 								{
@@ -418,6 +415,9 @@ export function showCommunity(
 								},
 								deps.t("Play with bots"),
 							),
+							button(deps.t("Back to home"), navigation.home, {
+								className: "community-back",
+							}),
 						),
 					),
 				),

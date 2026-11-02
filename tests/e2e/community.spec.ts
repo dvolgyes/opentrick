@@ -127,7 +127,10 @@ test("mobile community screen is compact and returns home", async ({
 				),
 			).toBe(true);
 		}
-		const back = page.getByRole("button", { name: "Go back", exact: true });
+		const back = page.getByRole("button", {
+			name: "Back to home",
+			exact: true,
+		});
 		await expect(back).toBeVisible();
 		const color = await back.evaluate(
 			(node) => getComputedStyle(node).backgroundColor,
@@ -138,7 +141,7 @@ test("mobile community screen is compact and returns home", async ({
 		expect(red).toBeGreaterThan(green * 1.3);
 		expect(red).toBeGreaterThan(blue * 1.3);
 		await back.click();
-		await expect(page).toHaveURL(/\/create\/?$/);
+		await expect(page).toHaveURL(new URL("/", baseURL).href, { timeout: 1500 });
 		await expect(page.getByTestId("create")).toBeVisible();
 	} finally {
 		await Promise.all(contexts.map((context) => context.close()));
@@ -197,8 +200,8 @@ test("redesigned community waiting screen preserves search and actions", async (
 			page.getByTestId("community-members").locator("img"),
 		).toHaveCount(0);
 		await expect(
-			page.getByRole("button", { name: "Go back", exact: true }),
-		).toBeVisible();
+			page.getByRole("button", { name: "Back to home", exact: true }),
+		).toBeVisible({ timeout: 1500 });
 		await expect(
 			page.getByRole("link", { name: "Play with bots" }),
 		).toHaveAttribute("href", "/solo");
@@ -210,6 +213,20 @@ test("redesigned community waiting screen preserves search and actions", async (
 				),
 			).toBe(true);
 			await expect(page.getByTestId("community-status")).toBeVisible();
+			const actions = page.locator(".community-actions");
+			const actionBox = await actions.boundingBox();
+			const botsBox = await actions
+				.getByRole("link", { name: "Play with bots" })
+				.boundingBox();
+			const backBox = await actions
+				.getByRole("button", { name: "Back to home" })
+				.boundingBox();
+			if (!actionBox || !botsBox || !backBox)
+				throw new Error("community actions missing");
+			expect(Math.abs(botsBox.x - actionBox.x)).toBeLessThan(2);
+			expect(
+				Math.abs(backBox.x + backBox.width - actionBox.x - actionBox.width),
+			).toBeLessThan(2);
 		}
 		await page.reload();
 		await expect(page.getByTestId("community-status")).toHaveText(
@@ -353,7 +370,7 @@ test("solo online entry starts searching without a separate community setup form
 		page.getByRole("button", { name: "Reload", exact: true }),
 	).toHaveCount(0);
 	await expect(
-		page.getByRole("button", { name: "Go back", exact: true }),
+		page.getByRole("button", { name: "Back to home", exact: true }),
 	).toBeVisible();
 	await expect(
 		page.getByRole("link", { name: "Play with bots" }),
@@ -380,10 +397,36 @@ test("a join bookmark can return home or start bots after reload", async ({
 		);
 		expect(page.url()).toBe(reservation);
 		await expect(page.getByTestId("community").getByRole("button")).toHaveText([
-			"Go back",
+			"Back to home",
 		]);
-		await page.getByRole("button", { name: "Go back", exact: true }).click();
-		await expect(page).toHaveURL(/\/create\/?$/);
+		await page
+			.getByRole("button", { name: "Back to home", exact: true })
+			.click();
+		await expect(page).toHaveURL(new URL("/", baseURL).href, { timeout: 1500 });
+		await expect(page.getByTestId("create")).toBeVisible();
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
+test("a community group created from setup returns to the site root", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages } = await players(browser, baseURL, 1);
+	try {
+		const page = pages[0];
+		if (!page) throw new Error("page missing");
+		await enter(page, "Alice", "1", "/create/", "online");
+		await expect(page.getByTestId("community-status")).toHaveText(
+			"Waiting for invited players…",
+		);
+		expect(new URL(page.url()).pathname).toBe("/create/");
+		await page
+			.getByRole("button", { name: "Back to home", exact: true })
+			.click();
+		await expect(page).toHaveURL(new URL("/", baseURL).href);
 		await expect(page.getByTestId("create")).toBeVisible();
 	} finally {
 		await Promise.all(contexts.map((context) => context.close()));

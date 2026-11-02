@@ -463,6 +463,9 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 	padding: clamp(2rem, 5vw, 4rem);
 	border-radius: 1rem;
 	background: var(--opening-forest);
+	/* Use the default table texture even when a player chooses another table setting. */
+	background-image: url("./assets/bridge-baize.webp");
+	background-size: var(--felt-texture-size) var(--felt-texture-size);
 	color: var(--opening-paper);
 	overflow: hidden;
 }
@@ -558,7 +561,7 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 .community-panel summary { cursor: pointer; font-weight: 600; }
 .community-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
 .community-actions .button, .community-actions button { min-height: 2.75rem; }
-.community-back { border-color: var(--opening-back); background: var(--opening-back); color: var(--opening-paper); }
+.community-back { margin-left: auto; border-color: var(--opening-back); background: var(--opening-back); color: var(--opening-paper); }
 .community-join { margin-top: 1rem; }
 @media (min-width: 601px) {
 	:is(.create-screen, .community-screen) { font-size: 0.9375rem; line-height: 1.55; }

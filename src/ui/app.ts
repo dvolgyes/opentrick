@@ -40,14 +40,17 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 	document.addEventListener("visibilitychange", () => wakeLock.pageShown());
 	const corner = languageControl(deps);
 	let dispose: Dispose | undefined;
+	const leave = (page: "create" | "home"): void => {
+		// Stop the table before opening a fresh page without its query or invitation key.
+		dispose?.();
+		dispose = undefined;
+		void discovery?.stop();
+		const path = sitePath(location.pathname, page);
+		location.assign(page === "create" ? `${path}/` : path);
+	};
 	const navigation: Navigation = {
-		createNew: () => {
-			// Stop the table before opening a fresh setup page without its query or invitation key.
-			dispose?.();
-			dispose = undefined;
-			void discovery?.stop();
-			location.assign(`${sitePath(location.pathname, "create")}/`);
-		},
+		createNew: () => leave("create"),
+		home: () => leave("home"),
 		reload: () => location.reload(),
 		update: (targetDate) => {
 			const url = updateUrl(location.href, deps.build.date, targetDate);

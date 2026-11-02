@@ -131,10 +131,10 @@ test("static project-site bookmarks load every entry directly with the correct a
 		"Searching for compatible players…",
 	);
 	await expect(page.getByTestId("community").getByRole("button")).toHaveText([
-		"Go back",
+		"Back to home",
 	]);
-	await page.getByRole("button", { name: "Go back", exact: true }).click();
-	await expect(page).toHaveURL(`${site}create/`);
+	await page.getByRole("button", { name: "Back to home", exact: true }).click();
+	await expect(page).toHaveURL(site, { timeout: 1500 });
 	await expect(page.getByTestId("create")).toBeVisible();
 	expect(errors).toEqual([]);
 });
@@ -220,10 +220,24 @@ for (const locale of [
 			).toBeVisible();
 			await expect(
 				page.getByRole("button", {
-					name: translator(locale)("Go back"),
+					name: translator(locale)("Back to home"),
 					exact: true,
 				}),
 			).toBeVisible();
+			const actions = page.locator(".community-actions");
+			const actionsBox = await actions.boundingBox();
+			const botsBox = await actions
+				.getByRole("link", { name: translator(locale)("Play with bots") })
+				.boundingBox();
+			const backBox = await actions
+				.getByRole("button", { name: translator(locale)("Back to home") })
+				.boundingBox();
+			if (!actionsBox || !botsBox || !backBox)
+				throw new Error("community actions missing");
+			expect(Math.abs(botsBox.x - actionsBox.x)).toBeLessThan(2);
+			expect(
+				Math.abs(backBox.x + backBox.width - actionsBox.x - actionsBox.width),
+			).toBeLessThan(2);
 			const art = await page.locator(".community-art").boundingBox();
 			const heading = await page
 				.getByRole("heading", { name: translator(locale)("Community game") })

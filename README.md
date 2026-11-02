@@ -52,7 +52,7 @@ Do not post it publicly.
 ### Find community players
 
 On the opening page, enter an optional display name and select **Find online players** to enter public matchmaking.
-The waiting screen shows the search status and the seats, and offers **Go back** and **Play with bots**.
+The waiting screen shows the search status and the seats, and offers **Play with bots** and **Back to home**.
 Select **Help** for the play options, invitation privacy, calls, and recovery.
 The creation and community waiting pages show the number of other browsers directly connected to this browser in the discovery room.
 This local count can differ between browsers and does not count everyone who is online.

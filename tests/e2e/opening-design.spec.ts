@@ -1,4 +1,100 @@
 import { expect, test } from "@playwright/test";
+import { mockBotBidding } from "./bot-mock";
+
+test("the opening banner text remains readable against the felt", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const contrast = await page
+		.locator(".opening-hero")
+		.evaluate(async (banner) => {
+			const imageCss = getComputedStyle(banner).backgroundImage;
+			const imageUrl = imageCss.match(/^url\("(.*)"\)$/)?.[1];
+			const label = banner.querySelector(".opening-eyebrow");
+			if (!imageUrl || !label)
+				throw new Error("Opening texture or label is missing");
+			const channels = getComputedStyle(label)
+				.color.match(/\d+/g)
+				?.slice(0, 3)
+				.map(Number);
+			if (channels?.length !== 3)
+				throw new Error("Opening label color is invalid");
+			const image = new Image();
+			image.src = imageUrl;
+			await image.decode();
+			const canvas = document.createElement("canvas");
+			canvas.width = image.naturalWidth;
+			canvas.height = image.naturalHeight;
+			const context = canvas.getContext("2d");
+			if (!context) throw new Error("Canvas is unavailable");
+			context.drawImage(image, 0, 0);
+			const pixels = context.getImageData(
+				0,
+				0,
+				canvas.width,
+				canvas.height,
+			).data;
+			const linear = Array.from({ length: 256 }, (_, value) => {
+				const channel = value / 255;
+				return channel <= 0.04045
+					? channel / 12.92
+					: ((channel + 0.055) / 1.055) ** 2.4;
+			});
+			const luminance = (r: number, g: number, b: number): number =>
+				(linear[r] ?? 0) * 0.2126 +
+				(linear[g] ?? 0) * 0.7152 +
+				(linear[b] ?? 0) * 0.0722;
+			const foreground = luminance(
+				channels[0] ?? 0,
+				channels[1] ?? 0,
+				channels[2] ?? 0,
+			);
+			let minimum = Infinity;
+			for (let i = 0; i < pixels.length; i += 4) {
+				const background = luminance(
+					pixels[i] ?? 0,
+					pixels[i + 1] ?? 0,
+					pixels[i + 2] ?? 0,
+				);
+				minimum = Math.min(
+					minimum,
+					(Math.max(foreground, background) + 0.05) /
+						(Math.min(foreground, background) + 0.05),
+				);
+			}
+			return minimum;
+		});
+	expect(contrast).toBeGreaterThanOrEqual(4.5);
+});
+
+test("the opening banner uses the default game table texture", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const banner = page.locator(".opening-hero");
+	const opening = await banner.evaluate((element) => {
+		const style = getComputedStyle(element);
+		return { image: style.backgroundImage, size: style.backgroundSize };
+	});
+	expect(opening.image).not.toBe("none");
+	await mockBotBidding(page, () => "P");
+	await page.goto("/solo");
+	await expect(page.locator(".felt")).toBeVisible();
+	const felt = await page.locator(".felt").evaluate((element) => {
+		const style = getComputedStyle(element);
+		return { image: style.backgroundImage, size: style.backgroundSize };
+	});
+	expect(opening).toEqual(felt);
+	await page.evaluate(() =>
+		localStorage.setItem("opentrick.settings.baize-strength", "off"),
+	);
+	await page.goto("/");
+	const withTextureDisabled = await banner.evaluate((element) => {
+		const style = getComputedStyle(element);
+		return { image: style.backgroundImage, size: style.backgroundSize };
+	});
+	expect(withTextureDisabled).toEqual(opening);
+});
 
 test("the opening page uses the reference logo and four-card artwork", async ({
 	page,
