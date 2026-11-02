@@ -61,8 +61,8 @@ describe("card flight", () => {
 			const rotation = /rotate\(([-\d.]+)deg\)/.exec(
 				String(frames.at(-1)?.transform),
 			);
-			expect(Number(rotation?.[1])).toBeGreaterThanOrEqual(170);
-			expect(Number(rotation?.[1])).toBeLessThanOrEqual(190);
+			expect(Number(rotation?.[1])).toBeGreaterThanOrEqual(350);
+			expect(Number(rotation?.[1])).toBeLessThanOrEqual(370);
 			expect(
 				root.querySelector<HTMLElement>(".trick .played")?.style.visibility,
 			).toBe("hidden");
@@ -73,6 +73,83 @@ describe("card flight", () => {
 			expect(
 				root.querySelector<HTMLElement>(".trick .played")?.style.visibility,
 			).not.toBe("hidden");
+		},
+	);
+
+	it("animates the opening lead from the auction view", () => {
+		vi.useFakeTimers();
+		const base = { ...playView(), phase: "auction" as const, trick: undefined };
+		const { section } = renderView(base, "desktop");
+		section.render({
+			...base,
+			phase: "play",
+			at: base.at + 1,
+			trick: {
+				finished: false,
+				cards: [
+					{
+						seat: "N",
+						position: "bottom",
+						card: "SA",
+						text: "♠A",
+						rank: "A",
+						symbol: "♠",
+					},
+				],
+			},
+		});
+		expect(document.querySelector(".card-flight")).not.toBeNull();
+		section.dispose();
+	});
+
+	it.each([
+		["N", "bottom", 0, -1],
+		["S", "top", 0, 1],
+		["E", "left", 1, 0],
+		["W", "right", -1, 0],
+	] as const)(
+		"moves the %s card a quarter card height toward the center",
+		(seat, position, dx, dy) => {
+			vi.useFakeTimers();
+			const random = vi.spyOn(Math, "random").mockReturnValue(0);
+			try {
+				const base = { ...playView(), trick: undefined };
+				const played = {
+					seat,
+					position,
+					card: "SA" as const,
+					text: "♠A",
+					rank: "A",
+					symbol: "♠",
+				};
+				const next = {
+					...base,
+					at: base.at + 1,
+					trick: { finished: false, cards: [played] },
+				};
+				const initial = renderView(next, "desktop");
+				const before = initial.root
+					.querySelector<HTMLElement>(".trick .played")
+					?.getBoundingClientRect();
+				initial.section.dispose();
+				const current = renderView(base, "desktop");
+				current.section.render(next);
+				const target =
+					current.root.querySelector<HTMLElement>(".trick .played");
+				const after = target?.getBoundingClientRect();
+				if (!before || !after || !target)
+					throw new Error("missing played card");
+				const shift = target.offsetHeight / 4;
+				expect(
+					after.left + after.width / 2 - before.left - before.width / 2,
+				).toBeCloseTo(dx * shift, 0);
+				expect(
+					after.top + after.height / 2 - before.top - before.height / 2,
+				).toBeCloseTo(dy * shift, 0);
+				current.section.dispose();
+			} finally {
+				random.mockRestore();
+			}
 		},
 	);
 
@@ -113,6 +190,14 @@ describe("card flight", () => {
 			const flight = document.querySelector<HTMLElement>(".card-flight");
 			expect(flight).not.toBeNull();
 			expect(flight?.querySelector(".card-flight-back")).toBeNull();
+			const motion = flight?.getAnimations()[0]?.effect;
+			if (!(motion instanceof KeyframeEffect))
+				throw new Error("missing dummy flight");
+			const rotation = /rotate\(([-\d.]+)deg\)/.exec(
+				String(motion.getKeyframes().at(-1)?.transform),
+			);
+			expect(Number(rotation?.[1])).toBeGreaterThanOrEqual(350);
+			expect(Number(rotation?.[1])).toBeLessThanOrEqual(370);
 			section.dispose();
 		},
 	);
@@ -173,6 +258,86 @@ describe("card flight", () => {
 		);
 		section.render(base);
 		expect(document.querySelector(".card-flight")).toBeNull();
+	});
+
+	it("does not show the hidden card's rank or suit through the back during the flip", async () => {
+		vi.useFakeTimers();
+		const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+		try {
+			const capture = async (value: "SA" | "H2", at: number) => {
+				const base = { ...playView(), trick: undefined };
+				const { section } = renderView(base, "desktop");
+				section.render({
+					...base,
+					at: base.at + 1,
+					trick: {
+						finished: false,
+						cards: [
+							{
+								seat: "E",
+								position: "left",
+								card: value,
+								text: value,
+								rank: value[1] ?? "",
+								symbol: value === "SA" ? "♠" : "♥",
+							},
+						],
+					},
+				});
+				const flight = document.querySelector<HTMLElement>(".card-flight");
+				if (!flight) throw new Error("missing hidden-card flight");
+				for (const animation of flight.getAnimations({ subtree: true })) {
+					animation.pause();
+					animation.currentTime = at;
+				}
+				const image = await page.screenshot({ element: flight, save: false });
+				section.dispose();
+				return image;
+			};
+			for (const time of [0, 300, 500, 575])
+				expect(await capture("SA", time)).toBe(await capture("H2", time));
+			expect(await capture("SA", 1400)).not.toBe(await capture("H2", 1400));
+		} finally {
+			random.mockRestore();
+		}
+	});
+
+	it("keeps the face fully hidden until a concealed card turns edge-on", () => {
+		vi.useFakeTimers();
+		const base = { ...playView(), trick: undefined };
+		const { section } = renderView(base, "desktop");
+		section.render({
+			...base,
+			at: base.at + 1,
+			trick: {
+				finished: false,
+				cards: [
+					{
+						seat: "E",
+						position: "left",
+						card: "SA",
+						text: "♠A",
+						rank: "A",
+						symbol: "♠",
+					},
+				],
+			},
+		});
+		const flight = document.querySelector<HTMLElement>(".card-flight");
+		const face = flight?.querySelector<HTMLElement>(".played");
+		const back = flight?.querySelector<HTMLElement>(".card-flight-back");
+		if (!flight || !face || !back) throw new Error("missing card sides");
+		const animations = flight.getAnimations({ subtree: true });
+		for (const animation of animations) {
+			animation.pause();
+			animation.currentTime = 500;
+		}
+		expect(getComputedStyle(face).opacity).toBe("0");
+		expect(getComputedStyle(back).opacity).toBe("1");
+		for (const animation of animations) animation.currentTime = 700;
+		expect(getComputedStyle(face).opacity).toBe("1");
+		expect(getComputedStyle(back).opacity).toBe("0");
+		section.dispose();
 	});
 
 	it("skips flight for reduced motion and does not replay a loaded trick", () => {
@@ -242,7 +407,7 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
-	it("keeps fast consecutive plays separate until each has landed", () => {
+	it("starts the next card only when the previous card has landed", () => {
 		vi.useFakeTimers();
 		const base = { ...playView(), trick: undefined };
 		const { root, section } = renderView(base, "desktop");
@@ -273,9 +438,21 @@ describe("card flight", () => {
 			at: base.at + 2,
 			trick: { finished: false, cards: [first, second] },
 		});
-		expect(document.querySelectorAll(".card-flight")).toHaveLength(2);
+		expect(document.querySelectorAll(".card-flight")).toHaveLength(1);
+		expect(
+			document.querySelector(".card-flight .played")?.getAttribute("data-seat"),
+		).toBe("N");
+		const displayed = [...root.querySelectorAll<HTMLElement>(".trick .played")];
+		expect(
+			Number(getComputedStyle(displayed[0] as HTMLElement).zIndex),
+		).toBeLessThan(
+			Number(getComputedStyle(displayed[1] as HTMLElement).zIndex),
+		);
 		vi.advanceTimersByTime(1500);
 		expect(document.querySelectorAll(".card-flight")).toHaveLength(1);
+		expect(
+			document.querySelector(".card-flight .played")?.getAttribute("data-seat"),
+		).toBe("E");
 		expect(
 			root.querySelector<HTMLElement>('.trick .played[data-seat="N"]')?.style
 				.visibility,
@@ -284,8 +461,208 @@ describe("card flight", () => {
 			root.querySelector<HTMLElement>('.trick .played[data-seat="E"]')?.style
 				.visibility,
 		).toBe("hidden");
-		vi.advanceTimersByTime(500);
+		vi.advanceTimersByTime(1999);
+		expect(document.querySelectorAll(".card-flight")).toHaveLength(1);
+		vi.advanceTimersByTime(1);
 		expect(document.querySelector(".card-flight")).toBeNull();
+		section.dispose();
+	});
+
+	it("finishes all four flights in play order before the winner highlight", () => {
+		vi.useFakeTimers();
+		const base = {
+			...playView(),
+			trick: undefined,
+			seats: playView().seats.map((seat) =>
+				seat.seat === "S"
+					? {
+							...seat,
+							hand: {
+								...visibleHand,
+								suits: visibleHand.suits.map((suit) => ({
+									...suit,
+									cards: [card("S3")],
+								})),
+							},
+						}
+					: seat,
+			),
+		};
+		const cards = [
+			{
+				seat: "N" as const,
+				position: "bottom" as const,
+				card: "SA" as const,
+				text: "♠A",
+				rank: "A",
+				symbol: "♠",
+			},
+			{
+				seat: "E" as const,
+				position: "left" as const,
+				card: "S2" as const,
+				text: "♠2",
+				rank: "2",
+				symbol: "♠",
+			},
+			{
+				seat: "S" as const,
+				position: "top" as const,
+				card: "S3" as const,
+				text: "♠3",
+				rank: "3",
+				symbol: "♠",
+			},
+			{
+				seat: "W" as const,
+				position: "right" as const,
+				card: "S4" as const,
+				text: "♠4",
+				rank: "4",
+				symbol: "♠",
+			},
+		];
+		const { section } = renderView(base, "desktop");
+		for (let count = 1; count < 4; count++)
+			section.render({
+				...base,
+				at: base.at + count,
+				trick: { finished: false, cards: cards.slice(0, count) },
+			});
+		const completed = {
+			cards,
+			finished: true,
+			index: 1,
+			winner: "N" as const,
+			winnerPosition: "bottom" as const,
+			winnerName: "",
+		};
+		section.render({
+			...base,
+			at: base.at + 4,
+			trick: completed,
+			completedTrick: completed,
+		});
+		for (const played of cards) {
+			expect(document.querySelectorAll(".card-flight")).toHaveLength(1);
+			expect(
+				document
+					.querySelector(".card-flight .played")
+					?.getAttribute("data-seat"),
+			).toBe(played.seat);
+			expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+			vi.advanceTimersByTime(2000);
+		}
+		expect(document.querySelector(".card-flight")).toBeNull();
+		expect(
+			document.querySelector(".trick-collection-overlay .trick-winner"),
+		).not.toBeNull();
+		section.dispose();
+	});
+
+	it("sequences the next trick's cards after an ongoing collection", () => {
+		vi.useFakeTimers();
+		const base = playView();
+		const first = base.trick?.cards[0];
+		if (!first) throw new Error("missing played card");
+		const cards = [
+			first,
+			{
+				...first,
+				seat: "S" as const,
+				position: "top" as const,
+				card: "S2" as const,
+			},
+			{
+				...first,
+				seat: "W" as const,
+				position: "right" as const,
+				card: "S3" as const,
+			},
+			{
+				...first,
+				seat: "N" as const,
+				position: "bottom" as const,
+				card: "S4" as const,
+			},
+		];
+		const completed = {
+			cards,
+			finished: true,
+			index: 1,
+			winner: "N" as const,
+			winnerPosition: "bottom" as const,
+			winnerName: "",
+		};
+		const { root, section } = renderView(base, "desktop");
+		section.render({
+			...base,
+			at: base.at + 1,
+			trick: completed,
+			completedTrick: completed,
+		});
+		expect(section.collecting()).toBe(true);
+		const source = root
+			.querySelector<HTMLElement>(
+				'[data-testid="hand-N"] .card[data-card="SA"] .face',
+			)
+			?.getBoundingClientRect();
+		const lead = {
+			seat: "N" as const,
+			position: "bottom" as const,
+			card: "SA" as const,
+			text: "♠A",
+			rank: "A",
+			symbol: "♠",
+		};
+		section.render({
+			...base,
+			at: base.at + 2,
+			seats: base.seats.map((seat) =>
+				seat.seat === "N"
+					? { ...seat, hand: { ...visibleHand, suits: [] } }
+					: seat,
+			),
+			trick: { finished: false, cards: [lead] },
+			completedTrick: completed,
+		});
+		const second = {
+			seat: "E" as const,
+			position: "left" as const,
+			card: "S2" as const,
+			text: "♠2",
+			rank: "2",
+			symbol: "♠",
+		};
+		section.render({
+			...base,
+			at: base.at + 3,
+			trick: { finished: false, cards: [lead, second] },
+			completedTrick: completed,
+		});
+		expect(document.querySelector(".card-flight")).toBeNull();
+		vi.advanceTimersByTime(1200);
+		const flight = document.querySelector<HTMLElement>(".card-flight");
+		expect(flight).not.toBeNull();
+		const motion = flight?.getAnimations()[0]?.effect;
+		if (!(motion instanceof KeyframeEffect) || !source || !flight)
+			throw new Error("missing captured lead");
+		const start = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(
+			String(motion.getKeyframes()[0]?.transform),
+		);
+		expect(Number(start?.[1])).toBeCloseTo(
+			source.left +
+				source.width / 2 -
+				parseFloat(flight.style.left) -
+				parseFloat(flight.style.width) / 2,
+		);
+		expect(flight.querySelector(".played")?.getAttribute("data-seat")).toBe(
+			"N",
+		);
+		vi.advanceTimersByTime(2000);
+		expect(
+			document.querySelector(".card-flight .played")?.getAttribute("data-seat"),
+		).toBe("E");
 		section.dispose();
 	});
 
@@ -1286,6 +1663,84 @@ describe("finished trick", () => {
 	}
 
 	afterEach(() => vi.useRealTimers());
+
+	it("keeps play order during the winner pause and collection", () => {
+		vi.useFakeTimers();
+		const { section } = renderView(playView(), "desktop");
+		const completed = finishedView();
+		const winnerFirst = completed.completedTrick;
+		if (!winnerFirst) throw new Error("missing completed trick");
+		const updated = {
+			...completed,
+			completedTrick: {
+				...winnerFirst,
+				winner: "E" as const,
+				winnerPosition: "left" as const,
+			},
+		};
+		section.render(updated);
+		const cards = [
+			...document.querySelectorAll<HTMLElement>(
+				".trick-collection-overlay .played",
+			),
+		];
+		expect(cards.map((card) => Number(card.style.zIndex))).toEqual([
+			1, 2, 3, 4,
+		]);
+		vi.advanceTimersByTime(200);
+		expect(cards.map((card) => Number(card.style.zIndex))).toEqual([
+			1, 2, 3, 4,
+		]);
+		section.dispose();
+	});
+
+	it("does not replay deferred cards after a skipped state update", () => {
+		vi.useFakeTimers();
+		const base = playView();
+		const { root, section } = renderView(base, "desktop");
+		const completed = finishedView();
+		section.render(completed);
+		const lead = {
+			seat: "N" as const,
+			position: "bottom" as const,
+			card: "SA" as const,
+			text: "♠A",
+			rank: "A",
+			symbol: "♠",
+		};
+		const second = {
+			seat: "E" as const,
+			position: "left" as const,
+			card: "S2" as const,
+			text: "♠2",
+			rank: "2",
+			symbol: "♠",
+		};
+		const third = {
+			seat: "W" as const,
+			position: "right" as const,
+			card: "S3" as const,
+			text: "♠3",
+			rank: "3",
+			symbol: "♠",
+		};
+		section.render({
+			...base,
+			at: completed.at + 1,
+			completedTrick: completed.completedTrick,
+			trick: { finished: false, cards: [lead] },
+		});
+		section.render({
+			...base,
+			at: completed.at + 3,
+			completedTrick: completed.completedTrick,
+			trick: { finished: false, cards: [lead, second, third] },
+		});
+		vi.advanceTimersByTime(1200);
+		expect(document.querySelector(".card-flight")).toBeNull();
+		expect(root.querySelectorAll(".trick .played")).toHaveLength(3);
+		section.dispose();
+	});
 
 	it.each<Form>(["desktop", "compact"])(
 		"collects a newly finished trick once on %s",

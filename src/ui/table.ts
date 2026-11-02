@@ -678,15 +678,19 @@ export function tableSection(
 		{ node: HTMLElement; timer: ReturnType<typeof setTimeout> }
 	>();
 	const finalFlightSources = new Set<HTMLElement>();
-	let pendingFlight:
+	type FlightSnapshot =
 		| {
 				seat: Seat;
 				card: string;
 				source: DOMRect;
 				back: HTMLImageElement | undefined;
 				startRotation: number;
+				landing: { x: number; y: number; rotation: number };
 		  }
 		| undefined;
+	let pendingFlight: FlightSnapshot;
+	const deferredFlights: NonNullable<FlightSnapshot>[] = [];
+	const queuedFlights: NonNullable<FlightSnapshot>[] = [];
 	let claimMode: "choose" | "all" | null = null;
 	/** The count that the declarer tapped; "Confirm claim" stays disabled until there is one. */
 	let claimCount: number | null = null;
@@ -2501,6 +2505,7 @@ export function tableSection(
 			flight.node.remove();
 		}
 		flights.clear();
+		queuedFlights.length = 0;
 		pendingFlight = undefined;
 		const win = element.ownerDocument.defaultView;
 		win?.removeEventListener("resize", cancelFlights);
@@ -2515,6 +2520,7 @@ export function tableSection(
 
 	function cancelFlights(): void {
 		clearFlights();
+		deferredFlights.length = 0;
 		if (collectingTrick && element.ownerDocument.hidden) finishCollection();
 		else if (collectingTrick && !collectionOverlay)
 			startCollection(collectingTrick);
@@ -2528,7 +2534,7 @@ export function tableSection(
 
 	/** Capture the old hand before its played card is removed by the next render. */
 	function prepareFlight(view: TableView): void {
-		const previous = lastPlayView;
+		const previous = latestView;
 		const win = element.ownerDocument.defaultView;
 		if (
 			!previous ||
@@ -2536,10 +2542,10 @@ export function tableSection(
 			!desktop ||
 			sideways ||
 			compact ||
-			collectingTrick ||
 			view.board !== previous.board ||
 			view.at <= presentationAt ||
-			previous.phase !== "play" ||
+			(previous.phase !== "play" &&
+				!(previous.phase === "auction" && view.phase === "play")) ||
 			element.ownerDocument.hidden ||
 			win.matchMedia?.("(prefers-reduced-motion: reduce)").matches
 		)
@@ -2561,7 +2567,12 @@ export function tableSection(
 			return;
 		const played = after.at(-1);
 		if (!played) return;
-		if (before.length === 0) landingOffsets.clear();
+		if (
+			collectingTrick &&
+			(view.trick?.finished !== false ||
+				before.length !== deferredFlights.length)
+		)
+			return;
 		const seat = previous.seats.find((entry) => entry.seat === played.seat);
 		const hand = seatNodes
 			.get(played.position)
@@ -2580,7 +2591,9 @@ export function tableSection(
 			(played.position === "left" || played.position === "right")
 				? 90
 				: 0;
-		pendingFlight = {
+		const angle = Math.random() * Math.PI * 2;
+		const radius = Math.sqrt(Math.random()) * 0.18;
+		const flight = {
 			seat: played.seat,
 			card: played.card,
 			source: rect,
@@ -2590,14 +2603,25 @@ export function tableSection(
 				: (source.querySelector<HTMLImageElement>("img")?.cloneNode(true) as
 						| HTMLImageElement
 						| undefined),
+			landing: {
+				x: Math.cos(angle) * radius,
+				y: Math.sin(angle) * radius,
+				rotation:
+					startRotation +
+					(played.position === "top" ||
+					played.position === "bottom" ||
+					seat.tags.includes("Dummy")
+						? 350
+						: 170) +
+					Math.random() * 20,
+			},
 		};
-		const angle = Math.random() * Math.PI * 2;
-		const radius = Math.sqrt(Math.random()) * 0.18;
-		landingOffsets.set(played.seat, {
-			x: Math.cos(angle) * radius,
-			y: Math.sin(angle) * radius,
-			rotation: startRotation + 170 + Math.random() * 20,
-		});
+		if (collectingTrick) deferredFlights.push(flight);
+		else {
+			if (before.length === 0) landingOffsets.clear();
+			pendingFlight = flight;
+			landingOffsets.set(played.seat, flight.landing);
+		}
 	}
 
 	function startFlight(): void {
@@ -2611,6 +2635,11 @@ export function tableSection(
 		);
 		const win = element.ownerDocument.defaultView;
 		if (!target || !win) return;
+		if (flights.size > 0) {
+			queuedFlights.push(pending);
+			target.style.visibility = "hidden";
+			return;
+		}
 		const destination = target.getBoundingClientRect();
 		if (!destination.width || !destination.height) return;
 		const boardRect = felt.getBoundingClientRect();
@@ -2630,6 +2659,7 @@ export function tableSection(
 			top: `${destination.top + destination.height / 2 - height / 2}px`,
 			width: `${width}px`,
 			height: `${height}px`,
+			zIndex: String(9999 + Number(target.style.zIndex || 0)),
 		});
 		const computed = win.getComputedStyle(target);
 		for (const name of [
@@ -2727,7 +2757,7 @@ export function tableSection(
 			],
 			timing,
 		);
-		if (pending.back)
+		if (pending.back) {
 			rotor.animate(
 				[
 					{ transform: "perspective(800px) rotateY(180deg)" },
@@ -2735,6 +2765,24 @@ export function tableSection(
 				],
 				timing,
 			);
+			// Switch the sides at the edge-on point even if the browser paints both backfaces.
+			face.animate(
+				[
+					{ opacity: 0, offset: 0, easing: "steps(1, end)" },
+					{ opacity: 1, offset: 0.5 },
+					{ opacity: 1, offset: 1 },
+				],
+				timing,
+			);
+			pending.back.animate(
+				[
+					{ opacity: 1, offset: 0, easing: "steps(1, end)" },
+					{ opacity: 0, offset: 0.5 },
+					{ opacity: 0, offset: 1 },
+				],
+				timing,
+			);
+		}
 		const timer = setTimeout(() => {
 			moving.remove();
 			flights.delete(pending.seat);
@@ -2744,6 +2792,10 @@ export function tableSection(
 					node.dataset.card === pending.card,
 			);
 			if (landed) landed.style.visibility = "";
+			while (flights.size === 0 && queuedFlights.length > 0) {
+				pendingFlight = queuedFlights.shift();
+				startFlight();
+			}
 			if (flights.size === 0) {
 				clearFlights();
 				if (collectingTrick && !collectionOverlay)
@@ -2788,16 +2840,35 @@ export function tableSection(
 		collectingTrick = undefined;
 		if (wasCollecting) landingOffsets.clear();
 		if (redraw && wasCollecting && incomingView) {
+			const lead = incomingView.trick;
+			if (
+				lead &&
+				!lead.finished &&
+				deferredFlights.length > 0 &&
+				lead.cards.length === deferredFlights.length &&
+				deferredFlights.every(
+					(flight, index) =>
+						lead.cards[index]?.seat === flight.seat &&
+						lead.cards[index]?.card === flight.card,
+				)
+			) {
+				for (const flight of deferredFlights)
+					landingOffsets.set(flight.seat, flight.landing);
+				pendingFlight = deferredFlights[0];
+				queuedFlights.push(...deferredFlights.slice(1));
+			}
+			deferredFlights.length = 0;
 			render(incomingView);
 			options.presentationDone?.();
-		}
+		} else if (wasCollecting) deferredFlights.length = 0;
 	}
 
 	function cancelCollection(): void {
+		deferredFlights.length = 0;
 		finishCollection();
 	}
 	function onCollectionVisibility(): void {
-		if (element.ownerDocument.hidden) finishCollection();
+		if (element.ownerDocument.hidden) cancelCollection();
 	}
 
 	function startCollection(completed: CompletedTrickView): void {
@@ -2909,7 +2980,7 @@ export function tableSection(
 			});
 			const winner = node.dataset.seat === completed.winner;
 			if (winner && animate) clone.classList.add("trick-winner");
-			clone.style.zIndex = winner ? "2" : "1";
+			clone.style.zIndex = String(index + 1);
 			overlay.append(clone);
 			const dx = (endpoint[0] ?? 0) - (x + cardWidth / 2);
 			const dy = (endpoint[1] ?? 0) - (y + cardHeight / 2);
@@ -2989,15 +3060,34 @@ export function tableSection(
 				),
 			),
 		);
-		for (const node of trick.querySelectorAll<HTMLElement>(".played")) {
+		for (const [index, node] of [
+			...trick.querySelectorAll<HTMLElement>(".played"),
+		].entries()) {
+			node.style.zIndex = String(index + 1);
 			const seat = node.dataset.seat as Seat;
 			const offset = landingOffsets.get(seat);
 			if (offset) {
-				node.style.left = `calc(var(--card-w) * ${offset.x})`;
-				node.style.top = `calc(var(--card-h) * ${offset.y})`;
+				const horizontal = node.classList.contains("pos-left")
+					? 0.25
+					: node.classList.contains("pos-right")
+						? -0.25
+						: 0;
+				const vertical = node.classList.contains("pos-top")
+					? 0.25
+					: node.classList.contains("pos-bottom")
+						? -0.25
+						: 0;
+				node.style.left = `calc(var(--card-w) * ${offset.x} + var(--card-h) * ${horizontal})`;
+				node.style.top = `calc(var(--card-h) * ${offset.y + vertical})`;
 				node.style.transform = `rotate(${offset.rotation}deg)`;
 			}
-			if (flights.has(seat)) node.style.visibility = "hidden";
+			if (
+				flights.has(seat) ||
+				queuedFlights.some(
+					(flight) => flight.seat === seat && flight.card === node.dataset.card,
+				)
+			)
+				node.style.visibility = "hidden";
 		}
 	}
 
@@ -3511,6 +3601,7 @@ export function tableSection(
 			: "";
 		if (view.board !== presentationBoard) {
 			clearFlights();
+			deferredFlights.length = 0;
 			landingOffsets.clear();
 			finishCollection(false);
 			presentationBoard = view.board;
@@ -3526,6 +3617,7 @@ export function tableSection(
 				(view.phase !== "play" && !completed)
 			) {
 				clearFlights();
+				deferredFlights.length = 0;
 				landingOffsets.clear();
 			}
 			if (
@@ -3535,8 +3627,11 @@ export function tableSection(
 					index > collectingTrick.index ||
 					(index === collectingTrick.index &&
 						signature !== presentationSignature))
-			)
+			) {
+				clearFlights();
+				deferredFlights.length = 0;
 				finishCollection(false);
+			}
 			if (
 				completed &&
 				!rolledBack &&
@@ -3951,6 +4046,7 @@ export function tableSection(
 	function setForm(layout: Layout): void {
 		if (layout !== "desktop") {
 			clearFlights();
+			deferredFlights.length = 0;
 			landingOffsets.clear();
 		}
 		desktop = layout !== "compact";
@@ -3974,6 +4070,7 @@ export function tableSection(
 		dispose: () => {
 			mobileSideNameObserver.disconnect();
 			clearFlights();
+			deferredFlights.length = 0;
 			finishCollection(false);
 		},
 		renderCall,
