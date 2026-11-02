@@ -490,14 +490,17 @@ export function tableSection(
 		),
 		el(
 			"div",
-			{ className: "autoplay-dialog-actions" },
+			{ className: "approval-actions" },
 			button(
 				t("Cancel"),
 				() => {
 					autoplayAction = undefined;
 					autoplayDialog.close();
 				},
-				{ attrs: { "data-testid": "autoplay-cancel" } },
+				{
+					className: "approval-accept",
+					attrs: { "data-testid": "autoplay-cancel" },
+				},
 			),
 			button(
 				t("Autoplay my seat"),
@@ -507,7 +510,10 @@ export function tableSection(
 					autoplayDialog.close();
 					action?.();
 				},
-				{ attrs: { "data-testid": "autoplay-confirm-enable" } },
+				{
+					className: "approval-reject",
+					attrs: { "data-testid": "autoplay-confirm-enable" },
+				},
 			),
 		),
 	);
@@ -3774,7 +3780,10 @@ export function tableSection(
 			}
 		}
 		const mobileGameActive =
-			compact && (view.phase === "auction" || view.phase === "play");
+			compact &&
+			(view.phase === "auction" ||
+				view.phase === "play" ||
+				view.phase === "complete");
 		const announcementHome = mobileGameActive ? mobileBoard : felt;
 		if (trickAnnouncement.parentElement !== announcementHome)
 			announcementHome.append(trickAnnouncement);
@@ -3785,7 +3794,11 @@ export function tableSection(
 		mobileAuction.hidden = !mobileBoardActive;
 		// The middle of the phone board is the current trick, except while it shows the auction summary.
 		const summaryInMiddle = mobileGameActive && view.auctionEnd !== undefined;
-		if (summaryInMiddle) {
+		const resultInMiddle =
+			mobileGameActive &&
+			view.phase === "complete" &&
+			view.scoring !== undefined;
+		if (summaryInMiddle || resultInMiddle) {
 			mobileBoardCenter.removeAttribute("role");
 			mobileBoardCenter.removeAttribute("aria-label");
 		} else {
@@ -3794,6 +3807,8 @@ export function tableSection(
 		}
 		if (summaryInMiddle) {
 			placeChildren(mobileBoardCenter, auctionEnd);
+		} else if (resultInMiddle) {
+			placeChildren(mobileBoardCenter, scoring);
 		} else if (mobileGameActive && view.phase === "play") {
 			placeChildren(mobileBoardCenter, trick);
 		} else {
@@ -3802,9 +3817,10 @@ export function tableSection(
 		}
 		// A phone's result lies between the four hands, so it covers none of them; elsewhere the summaries lie on the
 		// middle of the felt.
-		if (compact) {
+		if (compact && !resultInMiddle) {
 			if (scoring.parentElement !== center) center.append(scoring);
-		} else if (scoring.parentElement !== felt) waitingOverlay.before(scoring);
+		} else if (!compact && scoring.parentElement !== felt)
+			waitingOverlay.before(scoring);
 		if (auctionEnd.parentElement === null) waitingOverlay.before(auctionEnd);
 		if (mobileBoardActive) {
 			const ownSeat = seatNodes.get("bottom")?.node;
@@ -3831,15 +3847,39 @@ export function tableSection(
 				if (name && player) {
 					name.dataset.turn = String(player.turn);
 					name.dataset.turnFrame = String(turnFramed(player));
-					if (name.textContent !== player.label)
-						name.textContent = player.label;
+					const key = JSON.stringify([
+						player.label,
+						player.pointCards,
+						shownPointSystem,
+						shownCardPoints,
+					]);
+					if (name.dataset.contentKey !== key) {
+						name.dataset.contentKey = key;
+						name.replaceChildren(
+							el("span", { className: "mobile-board-name-text" }, player.label),
+							...pointsPill(player.pointCards),
+						);
+					}
 				}
-				placeChildren(target, ...(name ? [name] : []), ...(hand ? [hand] : []));
+				const topTrump =
+					position === "top" &&
+					view.phase === "complete" &&
+					player?.hand.visible &&
+					player.hand.suits.some((row) => row.trump && row.cards.length > 0)
+						? (target.querySelector<HTMLElement>(":scope > .trump-label") ??
+							el("span", { className: "trump-label" }, t("Trump suit")))
+						: undefined;
+				placeChildren(
+					target,
+					...(name ? [name] : []),
+					...(topTrump ? [topTrump] : []),
+					...(hand ? [hand] : []),
+				);
 				if (name && position !== "top") mobileSideNameObserver.observe(name);
 				target.setAttribute(
 					"aria-hidden",
 					String(
-						view.phase !== "play" ||
+						(view.phase !== "play" && view.phase !== "complete") ||
 							hand === undefined ||
 							hand.classList.contains("backs"),
 					),
@@ -3867,7 +3907,8 @@ export function tableSection(
 				mobileBoard.before(bidUndoControls);
 			// The history opens for each auction and folds when the auction summary or play starts; between those, the
 			// player's choice stays.
-			const bidsPhase = view.auctionEnd ? "play" : view.phase;
+			const bidsPhase =
+				view.auctionEnd || view.phase === "complete" ? "play" : view.phase;
 			if (bidsPhase !== mobileBidsPhase) {
 				mobileBidsPhase = bidsPhase;
 				mobileBidsFold.open = bidsPhase !== "play";
@@ -3982,7 +4023,7 @@ export function tableSection(
 		renderClaimPanel(view);
 		if (mobileGameActive)
 			mobileBidControls.hidden =
-				view.phase === "auction" ||
+				view.phase !== "play" ||
 				(!Array.from(playControls.children).some(
 					(control) => !control.hasAttribute("hidden"),
 				) &&

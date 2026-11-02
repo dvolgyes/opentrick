@@ -1756,7 +1756,9 @@ describe("turn pill", () => {
 		"shows the game result on the middle of the %s green board",
 		(layout) => {
 			const result = renderResult(layout);
-			const board = document.querySelector<HTMLElement>(".felt");
+			const board = document.querySelector<HTMLElement>(
+				layout === "compact" ? ".mobile-auction-board" : ".felt",
+			);
 			if (!board) throw new Error("no board");
 			expect(result.checkVisibility()).toBe(true);
 			expectSameMiddle(result, board);

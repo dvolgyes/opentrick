@@ -452,12 +452,16 @@ describe("played card styles", () => {
 					countdown: 1,
 				},
 			});
-			const board = root.querySelector<HTMLElement>(".felt");
-			const hand = root.querySelector<HTMLElement>(".place-bottom .hand");
-			const label = root.querySelector<HTMLElement>(
-				".place-bottom .seat-label",
+			const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+			const hand = root.querySelector<HTMLElement>(
+				".mobile-auction-hand .hand",
 			);
-			const points = root.querySelector<HTMLElement>(".place-bottom .hcp-pill");
+			const label = root.querySelector<HTMLElement>(
+				".mobile-auction-hand .seat-label",
+			);
+			const points = root.querySelector<HTMLElement>(
+				".mobile-auction-hand .hcp-pill",
+			);
 			const first = hand?.querySelector<HTMLElement>(".card");
 			const cards = hand?.querySelectorAll<HTMLElement>(".card");
 			const last = cards?.[cards.length - 1];
@@ -472,15 +476,21 @@ describe("played card styles", () => {
 					last.getBoundingClientRect().right) /
 					2,
 			).toBeCloseTo(centre(board), 0);
-			expect(centre(label)).toBeCloseTo(centre(board), 0);
-			expect(centre(points)).toBeCloseTo(centre(board), 0);
+			const nameBox = label.getBoundingClientRect();
+			const pointsBox = points.getBoundingClientRect();
+			expect((nameBox.left + pointsBox.right) / 2).toBeCloseTo(
+				centre(board),
+				0,
+			);
+			expect(Math.min(nameBox.bottom, pointsBox.bottom)).toBeGreaterThan(
+				Math.max(nameBox.top, pointsBox.top),
+			);
 			const result = root.querySelector<HTMLElement>(".scoring");
-			const parent = result?.parentElement;
-			if (!result || !parent) throw new Error("missing scoring panel");
-			expect(
-				result.getBoundingClientRect().width /
-					parent.getBoundingClientRect().width,
-			).toBeCloseTo(0.8, 2);
+			if (!result) throw new Error("missing scoring panel");
+			expect(centre(result)).toBeCloseTo(centre(board), 0);
+			expect(result.getBoundingClientRect().width).toBeLessThan(
+				board.getBoundingClientRect().width / 2,
+			);
 		} finally {
 			await page.viewport(414, 896);
 		}

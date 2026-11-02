@@ -271,12 +271,14 @@ describe("approval of an undo or a claim", () => {
 		expect(handlers.undoCancel).toHaveBeenCalledWith("undo-1");
 	});
 
-	it("asks about an undo below the felt on a phone after the play", async () => {
+	it("asks about an undo below the board on a phone after the play", async () => {
 		await resizeTo(400, 860);
 		const { root } = renderMobile({ ...auctionUndo(), phase: "complete" });
 		const panel = approval(root);
 		expect(panel.checkVisibility()).toBe(true);
-		expect(root.querySelector(".felt")?.nextElementSibling).toBe(panel);
+		expect(
+			root.querySelector(".mobile-auction-board")?.nextElementSibling,
+		).toBe(panel);
 		expect(getComputedStyle(panel).position).not.toBe("fixed");
 		expect(root.querySelector(".approval-backdrop")?.checkVisibility()).toBe(
 			false,

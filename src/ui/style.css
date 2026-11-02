@@ -2065,13 +2065,6 @@ dialog {
 	width: min(26rem, calc(100vw - 2rem));
 }
 
-.autoplay-dialog-actions {
-	display: flex;
-	justify-content: flex-end;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-}
-
 /* The settings scroll inside the screen; Save and Cancel stay below them, so they are always in reach on a phone. */
 .settings-dialog {
 	box-sizing: border-box;
@@ -4399,7 +4392,8 @@ main:has(> .room[data-form="compact"]) {
 	.bridge-table:is(
 		[data-phase="waiting"],
 		[data-phase="auction"],
-		[data-phase="play"]
+		[data-phase="play"],
+		[data-phase="complete"]
 	)
 	.mobile-auction {
 	display: flex;
@@ -4550,11 +4544,15 @@ main:has(> .room[data-form="compact"]) {
 }
 
 /* Reserve the space of a full side hand so completing tricks does not move the center. */
-.bridge-table[data-phase="play"] .mobile-auction-board {
+.bridge-table:is([data-phase="play"], [data-phase="complete"]) .mobile-auction-board {
 	grid-template-rows: auto minmax(calc(var(--phone-hand-card-h) * 5 + var(--mobile-side-name-height, 0.9rem) + 0.3rem), 1fr) auto;
 }
 
-.bridge-table[data-phase="play"] .mobile-board-top .hand-row {
+.bridge-table[data-phase="complete"] .mobile-auction-board {
+	--mobile-board-growth: 1;
+}
+
+.bridge-table:is([data-phase="play"], [data-phase="complete"]) .mobile-board-top .hand-row {
 	min-height: max(3.2rem, calc(var(--rank-size) * var(--suit-font-scale) * 2.2 + 0.7rem + 4px));
 }
 
@@ -4630,7 +4628,9 @@ main:has(> .room[data-form="compact"]) {
 
 /* An opponent's name above their hand, in the look of the seat names. */
 .mobile-board-name {
-	display: block;
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
 	max-width: 100%;
 	margin-bottom: 0.15rem;
 	padding: 0 0.3rem;
@@ -4641,6 +4641,16 @@ main:has(> .room[data-form="compact"]) {
 	font-weight: 600;
 	line-height: 1.3;
 	overflow-wrap: anywhere;
+}
+
+.mobile-board-name-text {
+	min-width: 0;
+}
+
+.mobile-board-name .hcp-pill {
+	position: static;
+	flex: none;
+	transform: none;
 }
 
 .mobile-board-top .mobile-board-name {
@@ -4695,6 +4705,24 @@ main:has(> .room[data-form="compact"]) {
 
 .mobile-board-center {
 	grid-area: center;
+}
+
+.mobile-board-center > .scoring {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: 11;
+	width: min(34%, 13rem);
+	transform: translate(-50%, -50%);
+}
+
+.mobile-board-center .scoring-actions {
+	flex-wrap: wrap;
+}
+
+.mobile-board-center .scoring-actions button {
+	max-width: 100%;
+	overflow-wrap: anywhere;
 }
 
 /* The trick's tracks are narrower than the middle column; they stay on the middle line of the board. */
@@ -5005,6 +5033,33 @@ main:has(> .room[data-form="compact"]) {
 	margin-left: auto;
 }
 
+.bridge-table[data-phase="complete"] .mobile-auction-hand .seat {
+	justify-content: center;
+}
+
+.bridge-table[data-phase="complete"] .mobile-auction-hand .seat > * {
+	order: 2;
+}
+
+.bridge-table[data-phase="complete"] .mobile-auction-hand .seat > .seat-label {
+	order: 0;
+	margin-inline: 0;
+}
+
+.bridge-table[data-phase="complete"] .mobile-auction-hand .hcp-pill {
+	order: 1;
+	margin-left: 0;
+}
+
+.bridge-table[data-phase="complete"] .mobile-auction-hand .seat-tags:has(.trump-label) {
+	display: flex;
+	justify-content: center;
+}
+
+.bridge-table[data-phase="complete"] .mobile-auction-hand .trump-label {
+	display: block;
+}
+
 .mobile-auction-hand .hand-row {
 	--card-h: 3.1rem;
 	--card-w: 2.1rem;
@@ -5196,7 +5251,7 @@ main:has(> .room[data-form="compact"]) {
 }
 
 .room[data-form="compact"]:has(
-		.bridge-table:is([data-phase="auction"], [data-phase="play"])
+		.bridge-table:is([data-phase="auction"], [data-phase="play"], [data-phase="complete"])
 	)
 	.table-sidebar
 	> :not(.room-controls, .sidebar-end) {
@@ -5560,7 +5615,7 @@ main[data-screen="table"][data-layout="sideways"] .auction-scroll .auction {
 }
 
 [data-form="compact"]
-	.bridge-table:is([data-phase="auction"], [data-phase="play"])
+	.bridge-table:is([data-phase="auction"], [data-phase="play"], [data-phase="complete"])
 	:is(.table-status, .felt, .dock) {
 	display: none;
 }
@@ -5576,7 +5631,8 @@ main[data-screen="table"][data-layout="sideways"] .auction-scroll .auction {
 	.bridge-table:is(
 		[data-phase="waiting"],
 		[data-phase="auction"],
-		[data-phase="play"]
+		[data-phase="play"],
+		[data-phase="complete"]
 	)
 	.mobile-auction-hand
 	.seat
@@ -5590,7 +5646,8 @@ html:has(
 		.bridge-table:is(
 			[data-phase="waiting"],
 			[data-phase="auction"],
-			[data-phase="play"]
+			[data-phase="play"],
+			[data-phase="complete"]
 		)
 ) {
 	font-size: min(var(--compact-width-font-size, 4.444444vw), 2dvh, 3.2vw);
@@ -5601,7 +5658,8 @@ body:has(
 		.bridge-table:is(
 			[data-phase="waiting"],
 			[data-phase="auction"],
-			[data-phase="play"]
+			[data-phase="play"],
+			[data-phase="complete"]
 		)
 ) {
 	font-size: 1rem;
