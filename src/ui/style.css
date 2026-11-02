@@ -3684,7 +3684,7 @@ button.call-join[data-in-call="true"] {
 /* The labels in the first row; the contract and the numbers below them in the second row, on one baseline. */
 .tricks-counts {
 	display: grid;
-	grid-template-columns: auto repeat(3, minmax(0, 1fr));
+	grid-template-columns: auto minmax(0, 1fr) fit-content(50%);
 	align-items: last baseline;
 	column-gap: 0.5rem;
 	text-align: center;
