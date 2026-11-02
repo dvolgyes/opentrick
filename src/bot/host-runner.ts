@@ -55,6 +55,7 @@ export class HostBotRunner {
 	#rerun = false;
 	#stopped = false;
 	#paused = false;
+	#playBlocked = false;
 	readonly #seatOverrides = new Map<Seat, boolean>();
 
 	constructor(
@@ -136,6 +137,16 @@ export class HostBotRunner {
 			this.#requestAbort = new AbortController();
 		}
 		this.#schedule();
+	}
+
+	/** Hold bot card plays while the local table presents a preceding card or trick. */
+	setPlayBlocked(blocked: boolean): void {
+		if (blocked === this.#playBlocked) return;
+		this.#playBlocked = blocked;
+		if (blocked) {
+			this.#requestAbort.abort();
+			this.#requestAbort = new AbortController();
+		} else this.#schedule();
 	}
 
 	#activeSeats(seats: readonly Seat[]): Seat[] {
@@ -249,11 +260,11 @@ export class HostBotRunner {
 				view.roster?.autoplaySeats,
 			);
 			if (actions.length === 0) continue;
+			const kind = actions[0]?.type;
+			if (!kind || (kind === "play" && this.#playBlocked)) return;
 			const key = `${state.board.number}:${actionPositionKey(state.board)}:${seat}`;
 			if (this.#processed.has(key)) continue;
 			this.#processed.add(key);
-			const kind = actions[0]?.type;
-			if (!kind) return;
 			const startedAt = performance.now();
 			const signal = this.#requestAbort.signal;
 			let decision: Action;

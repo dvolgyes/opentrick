@@ -94,6 +94,8 @@ export interface TableSection {
 	readonly sidebarEnd: HTMLElement;
 	render(view: TableView): void;
 	collecting(): boolean;
+	/** Whether bot card play must wait for a card flight or trick collection. */
+	playPresentationActive(): boolean;
 	dispose(): void;
 	setCountdown(seconds: number | undefined): void;
 	/**
@@ -131,6 +133,11 @@ export interface TableSection {
 }
 
 export interface TableOptions {
+	readonly cardPlayAnimation?: () => boolean;
+	readonly cardPlayDurationMs?: () => number;
+	readonly cardPlayRotationDegrees?: () => number;
+	readonly cardPlayCenterPercent?: () => number;
+	readonly playPresentationChanged?: () => void;
 	readonly trickAnimation?: () => boolean;
 	readonly trickDisplayMs?: () => number;
 	readonly trickWinnerPauseMs?: () => number;
@@ -175,7 +182,6 @@ export type PlayedCardStyle =
 const PLAYED_CARD_STYLE: PlayedCardStyle = "corners-oriented";
 
 const TRICK_SWEEP_MS = 1000;
-const CARD_FLIGHT_MS = 2000;
 
 /**
  * The call nodes of one remote seat. They outlive the table's re-rendering and only move with their place, so
@@ -671,7 +677,7 @@ export function tableSection(
 	let collectionTimer: ReturnType<typeof setTimeout> | undefined;
 	const landingOffsets = new Map<
 		Seat,
-		{ x: number; y: number; rotation: number }
+		{ x: number; y: number; rotation: number; centerPercent: number }
 	>();
 	const flights = new Map<
 		Seat,
@@ -685,7 +691,13 @@ export function tableSection(
 				source: DOMRect;
 				back: HTMLImageElement | undefined;
 				startRotation: number;
-				landing: { x: number; y: number; rotation: number };
+				durationMs: number;
+				landing: {
+					x: number;
+					y: number;
+					rotation: number;
+					centerPercent: number;
+				};
 		  }
 		| undefined;
 	let pendingFlight: FlightSnapshot;
@@ -1325,7 +1337,21 @@ export function tableSection(
 		const node = button(
 			"",
 			() => {
-				if (!collectingTrick) handlers.act({ type: "play", card: card.card });
+				const last = collectingTrick?.cards.at(-1);
+				const owner = incomingView?.seats.find(
+					(seat) => seat.seat === last?.seat,
+				);
+				const actor = owner?.tags.includes("Dummy")
+					? incomingView?.seats.find((seat) => seat.tags.includes("Declarer"))
+					: owner;
+				const canLead =
+					incomingView?.phase === "play" &&
+					incomingView.yourTurn &&
+					actor?.bot &&
+					last !== undefined &&
+					(flights.has(last.seat) || collectionOverlay !== undefined);
+				if (!collectingTrick || canLead)
+					handlers.act({ type: "play", card: card.card });
 			},
 			{
 				className: suitStart ? "card suit-start" : "card",
@@ -2524,8 +2550,7 @@ export function tableSection(
 		if (collectingTrick && element.ownerDocument.hidden) finishCollection();
 		else if (collectingTrick && !collectionOverlay)
 			startCollection(collectingTrick);
-		else if (latestView)
-			renderTrick(latestView.trick?.finished ? undefined : latestView.trick);
+		else if (incomingView) render(incomingView);
 	}
 
 	function onFlightVisibility(): void {
@@ -2542,6 +2567,7 @@ export function tableSection(
 			!desktop ||
 			sideways ||
 			compact ||
+			!(options.cardPlayAnimation?.() ?? DEFAULT_SETTINGS.cardPlayAnimation) ||
 			view.board !== previous.board ||
 			view.at <= presentationAt ||
 			(previous.phase !== "play" &&
@@ -2593,11 +2619,16 @@ export function tableSection(
 				: 0;
 		const angle = Math.random() * Math.PI * 2;
 		const radius = Math.sqrt(Math.random()) * 0.18;
+		const deviation =
+			options.cardPlayRotationDegrees?.() ??
+			DEFAULT_SETTINGS.cardPlayRotationDegrees;
 		const flight = {
 			seat: played.seat,
 			card: played.card,
 			source: rect,
 			startRotation,
+			durationMs:
+				options.cardPlayDurationMs?.() ?? DEFAULT_SETTINGS.cardPlayDurationMs,
 			back: seat.hand.visible
 				? undefined
 				: (source.querySelector<HTMLImageElement>("img")?.cloneNode(true) as
@@ -2611,9 +2642,12 @@ export function tableSection(
 					(played.position === "top" ||
 					played.position === "bottom" ||
 					seat.tags.includes("Dummy")
-						? 350
-						: 170) +
-					Math.random() * 20,
+						? 360
+						: 180) +
+					(Math.random() * 2 - 1) * deviation,
+				centerPercent:
+					options.cardPlayCenterPercent?.() ??
+					DEFAULT_SETTINGS.cardPlayCenterPercent,
 			},
 		};
 		if (collectingTrick) deferredFlights.push(flight);
@@ -2744,7 +2778,7 @@ export function tableSection(
 			? pending.source.width
 			: pending.source.height;
 		const timing = {
-			duration: CARD_FLIGHT_MS,
+			duration: pending.durationMs,
 			easing: "cubic-bezier(0.333333, 0.666667, 0.666667, 1)",
 			fill: "forwards" as const,
 		};
@@ -2801,7 +2835,8 @@ export function tableSection(
 				if (collectingTrick && !collectionOverlay)
 					startCollection(collectingTrick);
 			}
-		}, CARD_FLIGHT_MS);
+			if (incomingView) render(incomingView);
+		}, pending.durationMs);
 		flights.set(pending.seat, { node: moving, timer });
 	}
 
@@ -3067,15 +3102,16 @@ export function tableSection(
 			const seat = node.dataset.seat as Seat;
 			const offset = landingOffsets.get(seat);
 			if (offset) {
+				const centerShift = offset.centerPercent / 100;
 				const horizontal = node.classList.contains("pos-left")
-					? 0.25
+					? centerShift
 					: node.classList.contains("pos-right")
-						? -0.25
+						? -centerShift
 						: 0;
 				const vertical = node.classList.contains("pos-top")
-					? 0.25
+					? centerShift
 					: node.classList.contains("pos-bottom")
-						? -0.25
+						? -centerShift
 						: 0;
 				node.style.left = `calc(var(--card-w) * ${offset.x} + var(--card-h) * ${horizontal})`;
 				node.style.top = `calc(var(--card-h) * ${offset.y + vertical})`;
@@ -3589,6 +3625,13 @@ export function tableSection(
 
 	function render(view: TableView): void {
 		incomingView = view;
+		if (
+			!(options.cardPlayAnimation?.() ?? DEFAULT_SETTINGS.cardPlayAnimation)
+		) {
+			if (flights.size > 0 || queuedFlights.length > 0) clearFlights();
+			deferredFlights.length = 0;
+			landingOffsets.clear();
+		}
 		prepareFlight(view);
 		const completed = view.completedTrick;
 		const index = completed?.index ?? 0;
@@ -3654,6 +3697,24 @@ export function tableSection(
 			view = { ...lastPlayView, trick: collectingTrick };
 		else if (view.phase === "play") lastPlayView = view;
 		latestView = view;
+		const flyingSeat = flights.keys().next().value ?? pendingFlight?.seat;
+		const nextSeat = view.seats.find((seat) => seat.turn);
+		const nextActor = nextSeat?.tags.includes("Dummy")
+			? view.seats.find((seat) => seat.tags.includes("Declarer"))
+			: nextSeat;
+		if (flyingSeat && nextActor?.bot && !view.yourTurn) {
+			view = {
+				...view,
+				seats: view.seats.map((seat) => ({
+					...seat,
+					turn: seat.seat === flyingSeat,
+					turnPill:
+						seat.seat === flyingSeat
+							? { action: "play" as const, yours: false }
+							: undefined,
+				})),
+			};
+		}
 		updateAutoplayControl();
 		shownPointSystem = pointSystem();
 		guideBlocked = view.waiting !== "";
@@ -3934,6 +3995,7 @@ export function tableSection(
 		)
 			sidebar.append(...sidebarChildren);
 		placeSideGuide(view);
+		options.playPresentationChanged?.();
 	}
 
 	/** The sidebar header: "1♣ by North · Anna", with the suit in the selected colour. */
@@ -4067,6 +4129,10 @@ export function tableSection(
 		sidebarEnd,
 		render,
 		collecting: () => collectingTrick !== undefined,
+		playPresentationActive: () =>
+			flights.size > 0 ||
+			queuedFlights.length > 0 ||
+			collectingTrick !== undefined,
 		dispose: () => {
 			mobileSideNameObserver.disconnect();
 			clearFlights();

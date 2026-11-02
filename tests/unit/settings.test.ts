@@ -43,6 +43,47 @@ describe("player settings", () => {
 			soloNextBoard: true,
 		});
 	});
+	it("defaults and remembers the played-card animation preferences", () => {
+		const storage = memoryStorage();
+		expect(readSettings(storage)).toMatchObject({
+			cardPlayAnimation: true,
+			cardPlayDurationMs: 2000,
+			cardPlayRotationDegrees: 10,
+			cardPlayCenterPercent: 25,
+		});
+		const settings = {
+			...DEFAULT_SETTINGS,
+			cardPlayAnimation: false,
+			cardPlayDurationMs: 3500,
+			cardPlayRotationDegrees: 20,
+			cardPlayCenterPercent: 40,
+		};
+		writeSettings(storage, settings);
+		expect(readSettings(storage)).toMatchObject(settings);
+	});
+
+	it("rejects invalid played-card animation values and ignores malformed stored values", () => {
+		const storage = memoryStorage();
+		for (const [key, value] of [
+			["card-play-duration-ms", "-100"],
+			["card-play-rotation-degrees", "181"],
+			["card-play-center-percent", "101"],
+		] as const)
+			storage.setItem(`opentrick.settings.${key}`, value);
+		expect(readSettings(storage)).toMatchObject({
+			cardPlayDurationMs: 2000,
+			cardPlayRotationDegrees: 10,
+			cardPlayCenterPercent: 25,
+		});
+		for (const change of [
+			{ cardPlayDurationMs: 150 },
+			{ cardPlayRotationDegrees: -1 },
+			{ cardPlayCenterPercent: 101 },
+		])
+			expect(() =>
+				writeSettings(storage, { ...DEFAULT_SETTINGS, ...change }),
+			).toThrow();
+	});
 	it("uses the default settings when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
 			bidder: "sl",
@@ -71,6 +112,10 @@ describe("player settings", () => {
 			guideButton: false,
 			botBidHint: true,
 			bidConfirmation: true,
+			cardPlayAnimation: true,
+			cardPlayDurationMs: 2000,
+			cardPlayRotationDegrees: 10,
+			cardPlayCenterPercent: 25,
 			trickAnimation: true,
 			trickDisplayMs: 2000,
 			trickWinnerPauseMs: 1000,
@@ -136,6 +181,10 @@ describe("player settings", () => {
 			guideButton: true,
 			botBidHint: false,
 			bidConfirmation: false,
+			cardPlayAnimation: false,
+			cardPlayDurationMs: 3500,
+			cardPlayRotationDegrees: 20,
+			cardPlayCenterPercent: 40,
 			trickAnimation: false,
 			trickDisplayMs: 4000,
 			trickWinnerPauseMs: 1500,

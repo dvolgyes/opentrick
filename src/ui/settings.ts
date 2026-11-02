@@ -93,6 +93,11 @@ export interface Settings extends BotTiming {
 	readonly bidConfirmation: boolean;
 	/** Animate the collection of each completed trick. */
 	readonly trickAnimation: boolean;
+	/** Animate played cards on desktop, with a locally chosen landing layout. */
+	readonly cardPlayAnimation: boolean;
+	readonly cardPlayDurationMs: number;
+	readonly cardPlayRotationDegrees: number;
+	readonly cardPlayCenterPercent: number;
 	/** How long completed cards remain on screen when collection animation is off. */
 	readonly trickDisplayMs: number;
 	/** Time the winning card remains highlighted before collection starts. */
@@ -137,6 +142,10 @@ export const DEFAULT_SETTINGS: Settings = {
 	botBidHint: true,
 	bidConfirmation: true,
 	trickAnimation: true,
+	cardPlayAnimation: true,
+	cardPlayDurationMs: 2000,
+	cardPlayRotationDegrees: 10,
+	cardPlayCenterPercent: 25,
 	trickDisplayMs: 2000,
 	trickWinnerPauseMs: 1000,
 	soloAutoAdvance: false,
@@ -166,6 +175,7 @@ const FLAGS = {
 	botBidHint: "bot-bid-hint",
 	bidConfirmation: "bid-confirmation",
 	trickAnimation: "trick-animation",
+	cardPlayAnimation: "card-play-animation",
 	soloAutoAdvance: "solo-auto-advance",
 	soloNextBoard: "solo-next-board",
 	hideBidBoxWhenWaiting: "hide-bid-box-when-waiting",
@@ -188,6 +198,21 @@ function readFlag(
 	fallback: boolean,
 ): boolean {
 	return value === "1" ? true : value === "0" ? false : fallback;
+}
+
+function readInteger(
+	value: string | null | undefined,
+	fallback: number,
+	max: number,
+	step = 1,
+): number {
+	const parsed = value?.trim() ? Number(value) : NaN;
+	return Number.isInteger(parsed) &&
+		parsed >= 0 &&
+		parsed <= max &&
+		parsed % step === 0
+		? parsed
+		: fallback;
 }
 
 /** Existing preferences may contain fractions of a second; show and use the nearest allowed second. */
@@ -233,6 +258,22 @@ export function readSettings(storage: MaybeStorage): Settings {
 		playTimeMs: isPlayTimeMs(storedPlayTime)
 			? wholeSeconds(storedPlayTime, 1000)
 			: DEFAULT_PLAY_TIME_MS,
+		cardPlayDurationMs: readInteger(
+			read("card-play-duration-ms"),
+			DEFAULT_SETTINGS.cardPlayDurationMs,
+			60000,
+			100,
+		),
+		cardPlayRotationDegrees: readInteger(
+			read("card-play-rotation-degrees"),
+			DEFAULT_SETTINGS.cardPlayRotationDegrees,
+			180,
+		),
+		cardPlayCenterPercent: readInteger(
+			read("card-play-center-percent"),
+			DEFAULT_SETTINGS.cardPlayCenterPercent,
+			100,
+		),
 		trickDisplayMs: isBotTimingMs(storedTrickDisplay)
 			? wholeSeconds(storedTrickDisplay, 0)
 			: DEFAULT_SETTINGS.trickDisplayMs,
@@ -297,6 +338,31 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	const budget = playTimeMs(settings.playTimeMs);
 	const timing = botTiming(settings);
 	if (
+		!Number.isInteger(settings.cardPlayDurationMs) ||
+		settings.cardPlayDurationMs < 0 ||
+		settings.cardPlayDurationMs > 60000 ||
+		settings.cardPlayDurationMs % 100 !== 0
+	)
+		throw new Error(
+			"card animation duration must be from 0 to 60 seconds in tenths",
+		);
+	if (
+		!Number.isInteger(settings.cardPlayRotationDegrees) ||
+		settings.cardPlayRotationDegrees < 0 ||
+		settings.cardPlayRotationDegrees > 180
+	)
+		throw new Error(
+			"card animation rotation deviation must be from 0 to 180 degrees",
+		);
+	if (
+		!Number.isInteger(settings.cardPlayCenterPercent) ||
+		settings.cardPlayCenterPercent < 0 ||
+		settings.cardPlayCenterPercent > 100
+	)
+		throw new Error(
+			"card animation center shift must be from 0 to 100 percent",
+		);
+	if (
 		!isBotTimingMs(settings.trickDisplayMs) ||
 		settings.trickDisplayMs % 1000 !== 0
 	)
@@ -328,6 +394,18 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		throw new Error("unknown shadow strength");
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
+	storage.setItem(
+		`${PREFIX}card-play-duration-ms`,
+		String(settings.cardPlayDurationMs),
+	);
+	storage.setItem(
+		`${PREFIX}card-play-rotation-degrees`,
+		String(settings.cardPlayRotationDegrees),
+	);
+	storage.setItem(
+		`${PREFIX}card-play-center-percent`,
+		String(settings.cardPlayCenterPercent),
+	);
 	storage.setItem(`${PREFIX}trick-display-ms`, String(settings.trickDisplayMs));
 	storage.setItem(
 		`${PREFIX}trick-winner-pause-ms`,

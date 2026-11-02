@@ -885,6 +885,14 @@ export function showRoom(
 			cardPoints: () => readSettings(deps.browser).cardPoints,
 			locale: deps.locale,
 			marks: () => readSettings(deps.browser),
+			cardPlayAnimation: () => readSettings(deps.browser).cardPlayAnimation,
+			cardPlayDurationMs: () => readSettings(deps.browser).cardPlayDurationMs,
+			cardPlayRotationDegrees: () =>
+				readSettings(deps.browser).cardPlayRotationDegrees,
+			cardPlayCenterPercent: () =>
+				readSettings(deps.browser).cardPlayCenterPercent,
+			playPresentationChanged: () =>
+				botRunner?.setPlayBlocked(table.playPresentationActive()),
 			trickAnimation: () => readSettings(deps.browser).trickAnimation,
 			trickDisplayMs: () => readSettings(deps.browser).trickDisplayMs,
 			trickWinnerPauseMs: () => readSettings(deps.browser).trickWinnerPauseMs,
@@ -1302,6 +1310,7 @@ export function showRoom(
 			setBotStatus(deps.t("The local bot failed."), "error");
 			render();
 		});
+		runner.setPlayBlocked(table.playPresentationActive());
 		// A reload after a pause starts the runner paused, so it restores the bot seats without playing.
 		if (botsPaused) runner.pause();
 		if (
@@ -1318,6 +1327,7 @@ export function showRoom(
 		}
 		botStarting = false;
 		botRunner = runner;
+		runner.setPlayBlocked(table.playPresentationActive());
 		// A retry can run while the runner starts.
 		if (!botsPaused) runner.resume();
 		setBotStatus(

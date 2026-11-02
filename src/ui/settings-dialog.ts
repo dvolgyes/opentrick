@@ -208,6 +208,26 @@ export function settingsDialog(
 		playTimeMs: timeInput(t("Card thinking budget (seconds)"), "play-time", 1),
 	};
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
+	const cardPlayAnimation = el("input", { attrs: { type: "checkbox" } });
+	const cardPlayDuration = timeInput(
+		t("Played-card animation duration (seconds)"),
+		"card-play-duration",
+		0,
+		60,
+		"0.1",
+	);
+	const cardPlayRotation = timeInput(
+		t("Rotation deviation (degrees)"),
+		"card-play-rotation",
+		0,
+		180,
+	);
+	const cardPlayCenter = timeInput(
+		t("Move played cards toward the center (%)"),
+		"card-play-center",
+		0,
+		100,
+	);
 	const trickAnimation = el("input", { attrs: { type: "checkbox" } });
 	const soloAutoAdvance = el("input", { attrs: { type: "checkbox" } });
 	const soloNextBoard = el("input", { attrs: { type: "checkbox" } });
@@ -431,6 +451,15 @@ export function settingsDialog(
 			"fieldset",
 			{},
 			el("legend", {}, t("Gameplay")),
+			el(
+				"label",
+				{},
+				cardPlayAnimation,
+				` ${t("Animate played cards on desktop")}`,
+			),
+			cardPlayDuration.element,
+			cardPlayRotation.element,
+			cardPlayCenter.element,
 			el("label", {}, trickAnimation, ` ${t("Animate trick collection")}`),
 			timing.trickDisplayMs.element,
 			timing.trickWinnerPauseMs.element,
@@ -569,6 +598,12 @@ export function settingsDialog(
 	function saveSettings(): void {
 		for (const { input } of Object.values(timing))
 			if (!input.reportValidity()) return;
+		for (const { input } of [
+			cardPlayDuration,
+			cardPlayRotation,
+			cardPlayCenter,
+		])
+			if (!input.reportValidity()) return;
 		if (!soloNextBoard.checked && !soloAutoAdvance.checked) {
 			status.textContent = t(
 				"Turn on automatic advance to hide the Next board button.",
@@ -612,6 +647,12 @@ export function settingsDialog(
 			guideButton: biddingHelp.guideButton.checked,
 			botBidHint: biddingHelp.botBidHint.checked,
 			bidConfirmation: biddingHelp.bidConfirmation.checked,
+			cardPlayAnimation: cardPlayAnimation.checked,
+			cardPlayDurationMs: Math.round(
+				cardPlayDuration.input.valueAsNumber * 1000,
+			),
+			cardPlayRotationDegrees: cardPlayRotation.input.valueAsNumber,
+			cardPlayCenterPercent: cardPlayCenter.input.valueAsNumber,
 			trickAnimation: trickAnimation.checked,
 			soloAutoAdvance: soloAutoAdvance.checked,
 			soloNextBoard: soloNextBoard.checked,
@@ -667,6 +708,10 @@ export function settingsDialog(
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
 			cardPoints.checked = settings.cardPoints;
+			cardPlayAnimation.checked = settings.cardPlayAnimation;
+			cardPlayDuration.input.value = String(settings.cardPlayDurationMs / 1000);
+			cardPlayRotation.input.value = String(settings.cardPlayRotationDegrees);
+			cardPlayCenter.input.value = String(settings.cardPlayCenterPercent);
 			trickAnimation.checked = settings.trickAnimation;
 			soloAutoAdvance.checked = settings.soloAutoAdvance;
 			soloNextBoard.checked = settings.soloNextBoard;

@@ -51,6 +51,348 @@ describe("auction summary visibility", () => {
 describe("card flight", () => {
 	afterEach(() => vi.useRealTimers());
 
+	it("restores the original static card layout when played-card animation is disabled", () => {
+		vi.useFakeTimers();
+		const base = { ...playView(), trick: undefined };
+		const played = {
+			seat: "N" as const,
+			position: "bottom" as const,
+			card: "SA" as const,
+			text: "♠A",
+			rank: "A",
+			symbol: "♠",
+		};
+		const next = {
+			...base,
+			at: base.at + 1,
+			trick: { finished: false, cards: [played] },
+		};
+		const initial = renderView(next, "desktop");
+		const before = initial.root
+			.querySelector<HTMLElement>(".trick .played")
+			?.getBoundingClientRect();
+		initial.section.dispose();
+		const { root, section } = renderView(
+			base,
+			"desktop",
+			undefined,
+			undefined,
+			{ cardPlayAnimation: () => false },
+		);
+		section.render(next);
+		const target = root.querySelector<HTMLElement>(".trick .played");
+		const after = target?.getBoundingClientRect();
+		expect(document.querySelector(".card-flight")).toBeNull();
+		expect(target?.style.transform).toBe("");
+		expect(after?.left).toBeCloseTo(before?.left ?? 0, 1);
+		expect(after?.top).toBeCloseTo(before?.top ?? 0, 1);
+		section.dispose();
+	});
+
+	it("stops an active flight and restores the card layout when the setting is turned off", () => {
+		vi.useFakeTimers();
+		let enabled = true;
+		const base = { ...playView(), trick: undefined };
+		const { root, section } = renderView(
+			base,
+			"desktop",
+			undefined,
+			undefined,
+			{ cardPlayAnimation: () => enabled },
+		);
+		const next = {
+			...base,
+			at: base.at + 1,
+			trick: {
+				finished: false,
+				cards: [
+					{
+						seat: "N" as const,
+						position: "bottom" as const,
+						card: "SA" as const,
+						text: "♠A",
+						rank: "A",
+						symbol: "♠",
+					},
+				],
+			},
+		};
+		section.render(next);
+		expect(document.querySelector(".card-flight")).not.toBeNull();
+		enabled = false;
+		section.render(next);
+		const target = root.querySelector<HTMLElement>(".trick .played");
+		expect(document.querySelector(".card-flight")).toBeNull();
+		expect(target?.style.transform).toBe("");
+		expect(target?.style.visibility).not.toBe("hidden");
+		section.dispose();
+	});
+
+	it("reports when the card presentation starts and stops", () => {
+		vi.useFakeTimers();
+		const base = { ...playView(), trick: undefined };
+		const changed = vi.fn();
+		const { section } = renderView(base, "desktop", undefined, undefined, {
+			playPresentationChanged: changed,
+		});
+		section.render({
+			...base,
+			at: base.at + 1,
+			trick: {
+				finished: false,
+				cards: [
+					{
+						seat: "N",
+						position: "bottom",
+						card: "SA",
+						text: "♠A",
+						rank: "A",
+						symbol: "♠",
+					},
+				],
+			},
+		});
+		expect(changed).toHaveBeenCalled();
+		expect(section.playPresentationActive()).toBe(true);
+		changed.mockClear();
+		vi.advanceTimersByTime(2000);
+		expect(changed).toHaveBeenCalled();
+		expect(section.playPresentationActive()).toBe(false);
+		section.dispose();
+	});
+
+	it("releases the presentation gate when a resize cancels a flight", () => {
+		vi.useFakeTimers();
+		const base = { ...playView(), trick: undefined };
+		const changed = vi.fn();
+		const { section } = renderView(base, "desktop", undefined, undefined, {
+			playPresentationChanged: changed,
+		});
+		section.render({
+			...base,
+			at: base.at + 1,
+			trick: {
+				finished: false,
+				cards: [
+					{
+						seat: "N",
+						position: "bottom",
+						card: "SA",
+						text: "♠A",
+						rank: "A",
+						symbol: "♠",
+					},
+				],
+			},
+		});
+		expect(section.playPresentationActive()).toBe(true);
+		changed.mockClear();
+		window.dispatchEvent(new Event("resize"));
+		expect(section.playPresentationActive()).toBe(false);
+		expect(changed).toHaveBeenCalled();
+		section.dispose();
+	});
+
+	it("uses the configured flight duration, rotation deviation and center shift", () => {
+		vi.useFakeTimers();
+		const random = vi.spyOn(Math, "random").mockReturnValue(0);
+		try {
+			const base = { ...playView(), trick: undefined };
+			const played = {
+				seat: "N" as const,
+				position: "bottom" as const,
+				card: "SA" as const,
+				text: "♠A",
+				rank: "A",
+				symbol: "♠",
+			};
+			const next = {
+				...base,
+				at: base.at + 1,
+				trick: { finished: false, cards: [played] },
+			};
+			const initial = renderView(next, "desktop");
+			const before = initial.root
+				.querySelector<HTMLElement>(".trick .played")
+				?.getBoundingClientRect();
+			initial.section.dispose();
+			const { root, section } = renderView(
+				base,
+				"desktop",
+				undefined,
+				undefined,
+				{
+					cardPlayDurationMs: () => 3500,
+					cardPlayRotationDegrees: () => 0,
+					cardPlayCenterPercent: () => 40,
+				},
+			);
+			section.render(next);
+			const target = root.querySelector<HTMLElement>(".trick .played");
+			const after = target?.getBoundingClientRect();
+			const flight = document.querySelector<HTMLElement>(".card-flight");
+			const motion = flight?.getAnimations()[0]?.effect;
+			if (!(motion instanceof KeyframeEffect) || !target || !after || !before)
+				throw new Error("missing card flight");
+			expect(motion.getTiming().duration).toBe(3500);
+			expect(motion.getKeyframes().at(-1)?.transform).toContain(
+				"rotate(360deg)",
+			);
+			expect(
+				after.top + after.height / 2 - before.top - before.height / 2,
+			).toBeCloseTo(-target.offsetHeight * 0.4, 0);
+			vi.advanceTimersByTime(3499);
+			expect(document.querySelector(".card-flight")).not.toBeNull();
+			vi.advanceTimersByTime(1);
+			expect(document.querySelector(".card-flight")).toBeNull();
+			section.dispose();
+		} finally {
+			random.mockRestore();
+		}
+	});
+
+	it("keeps the current seat marked until its flight ends when the next actor is a bot", () => {
+		vi.useFakeTimers();
+		const base = { ...playView(), trick: undefined };
+		const { root, section } = renderView(base, "desktop");
+		section.render({
+			...base,
+			at: base.at + 1,
+			yourTurn: false,
+			seats: base.seats.map((seat) => ({
+				...seat,
+				bot: seat.seat === "E",
+				turn: seat.seat === "E",
+			})),
+			trick: {
+				finished: false,
+				cards: [
+					{
+						seat: "N",
+						position: "bottom",
+						card: "SA",
+						text: "♠A",
+						rank: "A",
+						symbol: "♠",
+					},
+				],
+			},
+		});
+		expect(
+			root.querySelector('[data-testid="hand-N"]')?.getAttribute("data-turn"),
+		).toBe("true");
+		expect(
+			root.querySelector('[data-testid="hand-E"]')?.getAttribute("data-turn"),
+		).toBe("false");
+		vi.advanceTimersByTime(2000);
+		expect(
+			root.querySelector('[data-testid="hand-N"]')?.getAttribute("data-turn"),
+		).toBe("false");
+		expect(
+			root.querySelector('[data-testid="hand-E"]')?.getAttribute("data-turn"),
+		).toBe("true");
+		section.dispose();
+	});
+
+	it("allows the human to play as soon as a bot's flight begins", () => {
+		vi.useFakeTimers();
+		const base = { ...playView(), trick: undefined };
+		const { root, section, handlers } = renderView(base, "desktop");
+		section.render({
+			...base,
+			at: base.at + 1,
+			yourTurn: true,
+			seats: base.seats.map((seat) => ({
+				...seat,
+				bot: seat.seat === "E",
+				turn: seat.seat === "N",
+			})),
+			trick: {
+				finished: false,
+				cards: [
+					{
+						seat: "E",
+						position: "left",
+						card: "S2",
+						text: "♠2",
+						rank: "2",
+						symbol: "♠",
+					},
+				],
+			},
+		});
+		expect(document.querySelector(".card-flight")).not.toBeNull();
+		root
+			.querySelector<HTMLButtonElement>(
+				'[data-testid="hand-N"] .card[data-card="SA"]',
+			)
+			?.click();
+		expect(handlers.act).toHaveBeenCalledWith({ type: "play", card: "SA" });
+		section.dispose();
+	});
+
+	it("allows a human to lead the next trick while the bot's fourth card is flying", () => {
+		vi.useFakeTimers();
+		const base = playView();
+		const first = base.trick?.cards[0];
+		if (!first) throw new Error("missing card");
+		const cards = [
+			first,
+			{
+				...first,
+				seat: "S" as const,
+				position: "top" as const,
+				card: "S2" as const,
+			},
+			{
+				...first,
+				seat: "N" as const,
+				position: "bottom" as const,
+				card: "S3" as const,
+			},
+			{
+				...first,
+				seat: "W" as const,
+				position: "right" as const,
+				card: "S4" as const,
+			},
+		];
+		const before = {
+			...base,
+			trick: { finished: false, cards: cards.slice(0, 3) },
+			seats: base.seats.map((seat) =>
+				seat.seat === "W" ? { ...seat, bot: true } : seat,
+			),
+		};
+		const { root, section, handlers } = renderView(before, "desktop");
+		const completed = {
+			cards,
+			finished: true,
+			index: 1,
+			winner: "N" as const,
+			winnerPosition: "bottom" as const,
+			winnerName: "",
+		};
+		section.render({
+			...before,
+			at: before.at + 1,
+			yourTurn: true,
+			trick: completed,
+			completedTrick: completed,
+		});
+		expect(section.collecting()).toBe(true);
+		expect(
+			document.querySelector(".card-flight .played")?.getAttribute("data-seat"),
+		).toBe("W");
+		root
+			.querySelector<HTMLButtonElement>(
+				'[data-testid="hand-N"] .card[data-card="SA"]',
+			)
+			?.click();
+		expect(handlers.act).toHaveBeenCalledWith({ type: "play", card: "SA" });
+		section.dispose();
+	});
+
 	it.each<Layout>(["desktop", "compact", "sideways"])(
 		"animates a newly played visible card only on desktop (%s)",
 		(layout) => {

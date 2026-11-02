@@ -128,6 +128,18 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).toBeChecked();
 	await expect(
+		dialog.getByLabel("Animate played cards on desktop"),
+	).toBeChecked();
+	await expect(
+		dialog.getByLabel("Played-card animation duration (seconds)"),
+	).toHaveValue("2");
+	await expect(dialog.getByLabel("Rotation deviation (degrees)")).toHaveValue(
+		"10",
+	);
+	await expect(
+		dialog.getByLabel("Move played cards toward the center (%)"),
+	).toHaveValue("25");
+	await expect(
 		dialog.getByLabel("Show completed trick without animation (seconds)"),
 	).toHaveValue("2");
 	await expect(
@@ -219,6 +231,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.uncheck();
 	await dialog.getByLabel("Animate the bot during its turn").uncheck();
 	await dialog.getByLabel("Animate trick collection").uncheck();
+	await dialog.getByLabel("Animate played cards on desktop").uncheck();
+	await dialog
+		.getByLabel("Played-card animation duration (seconds)")
+		.fill("3.5");
+	await dialog.getByLabel("Rotation deviation (degrees)").fill("20");
+	await dialog.getByLabel("Move played cards toward the center (%)").fill("40");
 	await dialog
 		.getByLabel("Show completed trick without animation (seconds)")
 		.fill("4");
@@ -265,6 +283,10 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.bot-bid-delay-ms",
 		"opentrick.settings.bot-bid-hint",
 		"opentrick.settings.bot-card-delay-ms",
+		"opentrick.settings.card-play-animation",
+		"opentrick.settings.card-play-center-percent",
+		"opentrick.settings.card-play-duration-ms",
+		"opentrick.settings.card-play-rotation-degrees",
 		"opentrick.settings.card-points",
 		"opentrick.settings.guide-button",
 		"opentrick.settings.guide-panel",
@@ -321,6 +343,18 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		dialog.getByLabel("Animate the bot during its turn"),
 	).not.toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Animate played cards on desktop"),
+	).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Played-card animation duration (seconds)"),
+	).toHaveValue("3.5");
+	await expect(dialog.getByLabel("Rotation deviation (degrees)")).toHaveValue(
+		"20",
+	);
+	await expect(
+		dialog.getByLabel("Move played cards toward the center (%)"),
+	).toHaveValue("40");
 	await expect(
 		dialog.getByLabel("Show completed trick without animation (seconds)"),
 	).toHaveValue("4");

@@ -476,6 +476,38 @@ describe("bot pacing", () => {
 		return { ...liveHost(state, { choose, stop: () => {} }), choose };
 	}
 
+	it("waits for the card presentation before starting the next bot play", async () => {
+		const host = cardHost();
+		host.runner.setPlayBlocked(true);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(host.choose).not.toHaveBeenCalled();
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		host.runner.setPlayBlocked(false);
+		await vi.advanceTimersByTimeAsync(999);
+		expect(host.choose).toHaveBeenCalledTimes(1);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(host.state()?.board?.cards).toHaveLength(3);
+		host.runner.stop();
+	});
+
+	it("cancels an in-progress bot choice when card presentation becomes blocked", async () => {
+		const host = cardHost(2, 2000);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(500);
+		expect(host.choose).toHaveBeenCalledTimes(1);
+		host.runner.setPlayBlocked(true);
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		host.runner.setPlayBlocked(false);
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(host.choose).toHaveBeenCalledTimes(2);
+		expect(host.state()?.board?.cards).toHaveLength(3);
+		expect(host.onError).not.toHaveBeenCalled();
+		host.runner.stop();
+	});
+
 	it("holds a fast card for one second, and does not add another second to a slow decision", async () => {
 		for (const calculationMs of [0, 2000]) {
 			const host = cardHost(2, calculationMs);
