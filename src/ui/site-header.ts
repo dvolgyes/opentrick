@@ -4,14 +4,12 @@ import { helpDialog } from "./help-dialog";
 import { languageControl } from "./language-control";
 import { sitePath } from "./site-path";
 
-/** Shared opening and community navigation; the community screen keeps the build date. */
-export function siteHeader(deps: AppDeps, community = false): HTMLElement {
+/** Shared opening and community navigation. */
+export function siteHeader(deps: AppDeps): HTMLElement {
 	const help = helpDialog(deps.t);
 	return el(
 		"div",
-		{
-			className: community ? "create-header community-header" : "create-header",
-		},
+		{ className: "create-header" },
 		el(
 			"a",
 			{

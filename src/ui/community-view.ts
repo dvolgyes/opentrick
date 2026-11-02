@@ -40,7 +40,7 @@ export function showCommunity(
 	const screen = el(
 		"section",
 		{ className: "community-screen" },
-		siteHeader(deps, true),
+		siteHeader(deps),
 		content,
 	);
 	const intro = (): HTMLElement =>
@@ -52,11 +52,6 @@ export function showCommunity(
 				{ className: "community-art", attrs: { "aria-hidden": "true" } },
 				el("span", {}, "♠"),
 				el("span", {}, "♥"),
-			),
-			el(
-				"p",
-				{ className: "community-eyebrow" },
-				deps.t("Free to play · No account needed"),
 			),
 			el("h1", {}, deps.t("Community game")),
 			el(

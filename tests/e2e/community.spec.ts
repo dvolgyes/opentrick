@@ -171,8 +171,22 @@ test("redesigned community waiting screen preserves search and actions", async (
 			page.getByRole("heading", { name: "Community game" }),
 		).toBeVisible();
 		await expect(
-			page.locator(".community-header").getByTestId("build-version"),
-		).toBeVisible();
+			page.getByText("Free to play · No account needed"),
+		).toHaveCount(0);
+		const art = await page.locator(".community-art").boundingBox();
+		const title = await page
+			.getByRole("heading", { name: "Community game" })
+			.boundingBox();
+		if (!art || !title) throw new Error("community heading missing");
+		expect(title.x).toBeGreaterThanOrEqual(art.x + art.width);
+		expect(
+			Math.abs(title.y + title.height / 2 - art.y - art.height / 2),
+		).toBeLessThan(5);
+		await expect(
+			page
+				.locator(".community-screen .create-header")
+				.getByTestId("build-version"),
+		).toBeHidden();
 		await expect(
 			page.getByTestId("community-members").locator(".seat-card"),
 		).toHaveCount(4);
@@ -205,8 +219,10 @@ test("redesigned community waiting screen preserves search and actions", async (
 			page.getByRole("button", { name: "Help", exact: true }),
 		).toHaveCount(1);
 		await expect(
-			page.locator(".community-header").getByTestId("build-version"),
-		).toBeVisible();
+			page
+				.locator(".community-screen .create-header")
+				.getByTestId("build-version"),
+		).toBeHidden();
 	} finally {
 		await Promise.all(contexts.map((context) => context.close()));
 	}

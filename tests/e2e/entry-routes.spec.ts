@@ -205,7 +205,7 @@ for (const locale of [
 		await expect(
 			page.getByRole("heading", { name: translator(locale)("Community game") }),
 		).toBeVisible();
-		for (const width of [320, 390]) {
+		for (const width of [320, 390, 601, 1280]) {
 			await page.setViewportSize({ width, height: 844 });
 			expect(
 				await page.evaluate(

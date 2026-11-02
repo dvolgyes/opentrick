@@ -346,7 +346,7 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 	margin-left: auto;
 }
 
-.create-header:not(.community-header) .build-version {
+.create-header .build-version {
 	display: none;
 }
 
@@ -539,11 +539,10 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 .create-options { display: block; margin-top: 1.5rem; }
 :is(.create-screen, .community-screen) :focus-visible { outline: 3px solid var(--opening-red); outline-offset: 3px; }
 .community-content { width: min(100%, 56rem); margin: 3rem auto 0; }
-.community-intro { margin-bottom: 1.5rem; }
-.community-intro h1 { margin: 0.35rem 0; font: 400 clamp(2.5rem, 5vw, 3.5rem) / 1.05 "Libre Caslon Display", Georgia, serif; }
-.community-intro p { margin: 0.5rem 0; }
-.community-eyebrow { color: var(--opening-muted); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; }
-.community-art { display: flex; align-items: center; justify-content: center; width: 5rem; height: 5rem; margin-bottom: 1.25rem; border: 1px solid var(--opening-line); border-radius: 50%; background: var(--opening-sage); }
+.community-intro { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 0.5rem 1rem; align-items: center; margin-bottom: 1.5rem; }
+.community-intro h1 { margin: 0; font: 400 clamp(2.5rem, 5vw, 3.5rem) / 1.05 "Libre Caslon Display", Georgia, serif; }
+.community-intro p { grid-column: 1 / -1; margin: 0; }
+.community-art { display: flex; align-items: center; justify-content: center; width: 5rem; height: 5rem; border: 1px solid var(--opening-line); border-radius: 50%; background: var(--opening-sage); }
 .community-art span { display: grid; place-items: center; width: 1.8rem; height: 2.6rem; border: 1px solid var(--opening-card-line); border-radius: 0.2rem; background: var(--opening-card-paper); font: 1.5rem Georgia, serif; transform: rotate(-12deg); }
 .community-art span + span { margin-left: -0.35rem; color: var(--opening-red); transform: rotate(12deg); }
 .community-panel, .community-join { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--opening-line); border-radius: 0.8rem; background: var(--opening-white); }
@@ -577,14 +576,12 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 	.create-header .language-control { width: 100%; min-width: 0; margin: 0; justify-content: flex-end; }
 	.create-header .language-control label { min-width: 0; max-width: 100%; margin: 0; }
 	.create-header .language-control select { width: 100%; min-width: 0; }
-	.community-header .build-version { display: none; }
 	.help-sections { grid-template-columns: 1fr; }
 	.community-content { margin-top: 0.75rem; }
-	.community-intro { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: 0.5rem 1rem; align-items: center; margin-bottom: 1rem; }
-	.community-intro .community-art { width: 4rem; height: 4rem; margin: 0; }
-	.community-intro .community-eyebrow, .community-players-heading { display: none; }
+	.community-intro { grid-template-columns: 4rem minmax(0, 1fr); margin-bottom: 1rem; }
+	.community-intro .community-art { width: 4rem; height: 4rem; }
+	.community-players-heading { display: none; }
 	.community-intro h1 { margin: 0; font-size: clamp(1.8rem, 7vw, 2.5rem); }
-	.community-intro p:last-child { grid-column: 1 / -1; margin: 0; }
 	.community-table .seat-grid:not(.with-center) .seat-card:is([data-position="top"], [data-position="bottom"]) { width: calc(50% - 0.35rem); }
 	.opening-hero { display: block; min-height: 0; padding: 1.5rem; }
 	.opening-illustration { display: none; }
