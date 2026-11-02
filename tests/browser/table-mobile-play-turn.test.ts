@@ -1029,9 +1029,16 @@ describe("card flight", () => {
 		},
 	);
 
-	it.each(["top", "left", "right"] as const)(
-		"uses the visible dummy card from the %s hand",
-		(position) => {
+	it.each([
+		["desktop", "top"],
+		["desktop", "left"],
+		["desktop", "right"],
+		["compact", "top"],
+		["compact", "left"],
+		["compact", "right"],
+	] as const)(
+		"uses the visible dummy card from the %s %s hand",
+		(layout, position) => {
 			vi.useFakeTimers();
 			const base = playView();
 			const current = {
@@ -1045,7 +1052,7 @@ describe("card flight", () => {
 			};
 			const seat = current.seats.find((entry) => entry.position === position);
 			if (!seat) throw new Error("missing dummy");
-			const { section } = renderView(current, "desktop");
+			const { section } = renderView(current, layout);
 			section.render({
 				...current,
 				at: current.at + 1,
@@ -1074,6 +1081,47 @@ describe("card flight", () => {
 			);
 			expect(Number(rotation?.[1])).toBeGreaterThanOrEqual(350);
 			expect(Number(rotation?.[1])).toBeLessThanOrEqual(370);
+			section.dispose();
+		},
+	);
+
+	it.each([
+		["desktop", "E", "left"],
+		["desktop", "W", "right"],
+		["compact", "E", "left"],
+		["compact", "W", "right"],
+	] as const)(
+		"lands the concealed %s %s card upright (%s)",
+		(layout, seat, position) => {
+			vi.useFakeTimers();
+			const base = { ...playView(), trick: undefined };
+			const { root, section } = renderView(base, layout, undefined, undefined, {
+				cardPlayRotationDegrees: () => 0,
+			});
+			section.render({
+				...base,
+				at: base.at + 1,
+				trick: {
+					finished: false,
+					cards: [
+						{ seat, position, card: "SQ", text: "♠Q", rank: "Q", symbol: "♠" },
+					],
+				},
+			});
+			const flight = document.querySelector<HTMLElement>(".card-flight");
+			expect(flight?.querySelector(".card-flight-back")).not.toBeNull();
+			const motion = flight?.getAnimations()[0]?.effect;
+			if (!(motion instanceof KeyframeEffect))
+				throw new Error("missing concealed card flight");
+			expect(motion.getKeyframes()[0]?.transform).toContain("rotate(90deg)");
+			expect(motion.getKeyframes().at(-1)?.transform).toContain(
+				"rotate(360deg)",
+			);
+			vi.advanceTimersByTime(2000);
+			const landed = root.querySelector<HTMLElement>(
+				`.trick .played.pos-${position}`,
+			);
+			expect(landed?.style.transform).toBe("rotate(360deg)");
 			section.dispose();
 		},
 	);

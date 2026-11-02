@@ -2655,11 +2655,13 @@ export function tableSection(
 				y: Math.sin(angle) * radius,
 				rotation:
 					startRotation +
-					(played.position === "top" ||
-					played.position === "bottom" ||
-					seat.tags.includes("Dummy")
-						? 360
-						: 180) +
+					(startRotation
+						? 270 // Side backs start a quarter-turn sideways; land the revealed face upright.
+						: played.position === "top" ||
+								played.position === "bottom" ||
+								seat.tags.includes("Dummy")
+							? 360
+							: 180) +
 					(Math.random() * 2 - 1) * deviation,
 				centerPercent:
 					options.cardPlayCenterPercent?.() ??
