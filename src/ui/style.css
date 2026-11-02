@@ -2,6 +2,21 @@
 @import "./suit-colors.css";
 @import "./bridge-rain.css";
 
+@font-face {
+	font-family: "DM Sans";
+	src: url("./assets/dm-sans.ttf") format("truetype");
+	font-style: normal;
+	font-weight: 100 1000;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Libre Caslon Display";
+	src: url("./assets/libre-caslon-display.ttf") format("truetype");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
 /* One scale for suit and rank notation; M preserves each display's original font size. */
 :root {
 	--suit-font-scale: 1;
@@ -377,6 +392,115 @@ body:has(> .language-control) main:not([data-screen="table"]) {
 
 .seat-roles input {
 	margin-left: 0;
+}
+
+/* The opening page uses its own surfaces; table themes remain independent. */
+main:has(> .create-screen) {
+	max-width: 78rem;
+	padding: 1rem clamp(1rem, 4vw, 3rem) 4rem;
+}
+.create-screen {
+	--fg: var(--opening-ink);
+	--panel: var(--opening-white);
+	--line: var(--opening-line);
+	--accent: var(--opening-forest);
+	--accent-fg: var(--opening-paper);
+	--muted: var(--opening-muted);
+	--error: var(--opening-red);
+	color: var(--opening-ink);
+	font-family: "DM Sans", system-ui, sans-serif;
+}
+body:has(.create-screen) {
+	background: var(--opening-paper);
+}
+.create-header {
+	min-height: 4rem;
+	gap: 1rem;
+}
+.opening-brand {
+	font: 600 1.6rem / 1.2 "Libre Caslon Display", Georgia, serif;
+	text-decoration: none;
+}
+.opening-help { margin-left: auto; }
+.opening-help summary { cursor: pointer; }
+.opening-help p { max-width: 22rem; margin: 0.5rem 0; }
+.opening-hero {
+	display: grid;
+	grid-template-columns: 1fr minmax(12rem, 25%);
+	align-items: center;
+	min-height: 15rem;
+	padding: clamp(2rem, 5vw, 4rem);
+	border-radius: 1rem;
+	background: var(--opening-forest);
+	color: var(--opening-paper);
+	overflow: hidden;
+}
+.opening-hero h1 {
+	margin: 0.4rem 0;
+	font: 400 clamp(2.5rem, 5vw, 4.5rem) / 1.05 "Libre Caslon Display", Georgia, serif;
+}
+.opening-hero p { margin: 0.5rem 0; }
+.opening-eyebrow { color: var(--opening-gold); font-size: 0.85rem; letter-spacing: 0.06em; }
+.opening-illustration { display: flex; justify-content: center; transform: rotate(-8deg); }
+.opening-illustration span {
+	display: block;
+	width: 6rem;
+	height: 8rem;
+	padding: 0.7rem;
+	border: 2px solid var(--opening-gold);
+	border-radius: 0.5rem;
+	background: var(--opening-paper);
+	color: var(--opening-ink);
+	font: 2rem Georgia, serif;
+}
+.opening-illustration span + span { margin: 1rem 0 0 -1rem; color: var(--opening-red); transform: rotate(16deg); }
+.create-mode { margin-top: 2.5rem; }
+.create-mode > h2 { font: 400 2rem / 1.2 "Libre Caslon Display", Georgia, serif; margin: 0; }
+.create-solo-row { display: block; }
+.create-solo-row label { white-space: normal; font-weight: 600; }
+.create-solo-row input[type="text"] { width: min(100%, 20rem); min-height: 2.75rem; }
+.opening-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+.opening-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 1.5rem;
+	border: 1px solid var(--opening-line);
+	border-radius: 0.8rem;
+	background: var(--opening-white);
+}
+.opening-card-friends { background: var(--opening-sage); }
+.opening-card h3 { font: 400 1.5rem / 1.2 "Libre Caslon Display", Georgia, serif; margin: 0.8rem 0 0; }
+.opening-card p { flex: 1; }
+.opening-card .button, .opening-card button { white-space: normal; min-height: 2.75rem; display: inline-flex; align-items: center; }
+.mode-symbol { color: var(--opening-forest); font-size: 1.6rem; }
+.opening-card-friends .mode-symbol { color: var(--opening-red); }
+.invitation-form { display: flex; align-items: end; gap: 0.75rem; flex-wrap: wrap; margin-top: 2rem; }
+.invitation-form label { width: 100%; margin: 0; font-weight: 600; }
+.invitation-form input { flex: 1 1 18rem; min-width: 0; min-height: 2.75rem; }
+.invitation-form button { min-height: 2.75rem; }
+.invitation-form .errors { width: 100%; margin: 0; }
+.setup-mode { border-top: 1px solid var(--opening-line); padding-top: 2rem; }
+.setup-mode .seat-grid { max-width: 60rem; }
+.setup-mode .seat-presets { flex-direction: row; flex-wrap: wrap; }
+.setup-mode .seat-presets button { width: auto; min-height: 2.75rem; }
+.setup-mode .seat-card { background: var(--opening-white); }
+.setup-mode .seat-card select { width: 100%; font-size: 0.875rem; }
+.seat-partnership { font-size: 0.8rem; margin: 0 0 0.5rem; }
+.create-options { display: block; margin-top: 1.5rem; }
+.create-screen :focus-visible { outline: 3px solid var(--opening-red); outline-offset: 3px; }
+@media (max-width: 600px) {
+	.opening-hero { display: block; min-height: 0; padding: 2rem 1.5rem; }
+	.opening-illustration { display: none; }
+	.opening-modes { grid-template-columns: 1fr; }
+	.opening-card { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.25rem 0.75rem; padding: 1rem; }
+	.opening-card .mode-symbol { grid-row: 1 / span 2; align-self: start; }
+	.opening-card h3, .opening-card p { margin: 0; }
+	.opening-card .button, .opening-card button { grid-column: 2; justify-self: start; margin-top: 0.5rem; }
+	.create-solo-row { font-size: 1rem; }
+	.create-solo-row .button { padding: 0.6rem 0.8rem; }
+	.setup-mode .seat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "top top" "left right" "bottom bottom"; }
+	.setup-mode .seat-grid:not(.with-center) .seat-card:is([data-position="top"], [data-position="bottom"]) { width: 100%; }
 }
 
 /*

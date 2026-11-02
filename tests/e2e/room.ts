@@ -64,7 +64,7 @@ export async function namePlayers(
 		await page.locator(`input[name="name-${seat}"]`).fill(name);
 	for (const seat of bots) {
 		await page.locator(`input[name="name-${seat}"]`).fill("");
-		await page.locator(`input[name="bot-${seat}"]`).check();
+		await page.locator(`select[name="type-${seat}"]`).selectOption("bot");
 	}
 }
 

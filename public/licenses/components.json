@@ -75,6 +75,34 @@
 			"modifications": "Combined signaling strategy, configured endpoints, reconnection, and message validation; details in each file's header."
 		},
 		{
+			"id": "dm-sans",
+			"name": "DM Sans",
+			"revision": "7ff85c87f93ea6cca5f41c69f2e4edcb90240f26",
+			"kind": "font",
+			"authors": ["The DM Sans Project Authors"],
+			"copyright": "Copyright 2014 The DM Sans Project Authors",
+			"license": "OFL-1.1",
+			"homepage": "https://github.com/googlefonts/dm-fonts",
+			"source": "https://github.com/google/fonts/tree/7ff85c87f93ea6cca5f41c69f2e4edcb90240f26/ofl/dmsans",
+			"licenseFile": "DM-Sans-OFL.txt",
+			"usedBy": ["src/ui/assets/dm-sans.ttf", "src/ui/style.css"],
+			"modifications": "None."
+		},
+		{
+			"id": "libre-caslon-display",
+			"name": "Libre Caslon Display",
+			"revision": "7ff85c87f93ea6cca5f41c69f2e4edcb90240f26",
+			"kind": "font",
+			"authors": ["The Libre Caslon Display Authors"],
+			"copyright": "Copyright 2012 The Libre Caslon Display Authors",
+			"license": "OFL-1.1",
+			"homepage": "https://github.com/impallari/Libre-Caslon-Display",
+			"source": "https://github.com/google/fonts/tree/7ff85c87f93ea6cca5f41c69f2e4edcb90240f26/ofl/librecaslondisplay",
+			"licenseFile": "Libre-Caslon-Display-OFL.txt",
+			"usedBy": ["src/ui/assets/libre-caslon-display.ttf", "src/ui/style.css"],
+			"modifications": "None."
+		},
+		{
 			"id": "noto-sans-symbols-2",
 			"name": "Noto Sans Symbols 2 Regular (subset)",
 			"kind": "font subset",

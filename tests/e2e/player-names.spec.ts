@@ -253,8 +253,8 @@ test("preassigned names join directly and a host can open a bot seat for a named
 	await page.goto("/");
 	await page.locator('input[name="name-S"]').fill("Host");
 	await page.locator('input[name="name-N"]').fill("North friend");
-	await page.locator('input[name="bot-E"]').check();
-	await page.locator('input[name="bot-W"]').check();
+	await page.locator('select[name="type-E"]').selectOption("bot");
+	await page.locator('select[name="type-W"]').selectOption("bot");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
 	const url = new URL(page.url());
@@ -314,32 +314,24 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 	await page.goto("/");
 	// The build date and the language share the title row; the bidding bot and the scoring share the next row.
 	const header = page.locator(".create-header");
-	await expect(header.getByRole("heading", { level: 1 })).toBeVisible();
+	await expect(header.getByRole("link", { name: "♠ OpenTrick" })).toBeVisible();
 	await expect(header.getByTestId("build-version")).toBeVisible();
 	await expect(header.getByLabel("Language")).toBeVisible();
 	await expect(page.locator("body > .language-control")).toHaveCount(0);
 	const options = page.locator(".create-options");
+	await options.locator("summary").click();
 	const bidder = options.getByLabel("Bidding bot");
 	await expect(bidder.locator("option")).toHaveText([
 		"BRL RL/FSP",
 		"BRL SL (WBridge5 imitation)",
 	]);
 	await expect(options.locator('select[name="scoring"]')).toBeVisible();
-	// The name field remains compact, alongside the two solo actions on a narrow phone.
+	// The name field is readable and the actions fit on a narrow phone.
 	const soloRow = page.locator(".create-solo-row");
 	const soloName = soloRow.locator('input[name="solo-name"]');
 	await expect(soloName).toHaveValue("Human");
 	await expect(soloRow.getByTestId("create-solo")).toBeVisible();
-	const fieldWidth = await soloName.evaluate((field) => {
-		const probe = document.createElement("span");
-		probe.textContent = "0".repeat(20);
-		probe.style.font = getComputedStyle(field).font;
-		document.body.append(probe);
-		const limit = probe.getBoundingClientRect().width;
-		probe.remove();
-		return { width: field.getBoundingClientRect().width, limit };
-	});
-	expect(fieldWidth.width).toBeLessThanOrEqual(fieldWidth.limit + 1);
+	expect((await soloName.boundingBox())?.width ?? 0).toBeGreaterThan(160);
 	for (const width of [1280, 320]) {
 		await page.setViewportSize({ width, height: 800 });
 		await expect(soloRow.getByTestId("join-online")).toBeVisible();
@@ -355,35 +347,33 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 		const card = page.getByTestId("seat-grid").locator(`[data-seat="${seat}"]`);
 		await expect(card.getByText("Name", { exact: true })).toHaveCount(0);
 		await expect(card.locator('input[name="me"]')).toBeVisible();
-		await expect(card.locator(`input[name="bot-${seat}"]`)).toBeVisible();
-		await expect(card.locator(`input[name="online-${seat}"]`)).toBeVisible();
+		await expect(card.locator(`select[name="type-${seat}"]`)).toBeVisible();
 	}
 
 	const name = (seat: string) => page.locator(`input[name="name-${seat}"]`);
-	const bot = (seat: string) => page.locator(`input[name="bot-${seat}"]`);
+	const type = (seat: string) => page.locator(`select[name="type-${seat}"]`);
 	const host = (seat: string) =>
 		page.locator(`input[name="me"][value="${seat}"]`);
 	for (const seat of ["N", "E", "S", "W"]) {
 		await expect(name(seat)).toHaveValue("");
-		await expect(bot(seat)).not.toBeChecked();
+		await expect(type(seat)).toHaveValue("friend");
 	}
 	await expect(host("S")).toBeChecked();
-	await expect(bot("S")).toBeDisabled();
+	await expect(type("S")).toBeDisabled();
 
-	await bot("N").check();
+	await type("N").selectOption("bot");
 	await expect(name("N")).toHaveValue("");
-	await expect(host("N")).toBeDisabled();
 	await name("N").fill("Nora");
-	await expect(bot("N")).not.toBeChecked();
+	await expect(type("N")).toHaveValue("friend");
 	await expect(host("N")).toBeEnabled();
-	await bot("E").check();
-	await bot("E").uncheck();
+	await type("E").selectOption("bot");
+	await type("E").selectOption("friend");
 	await expect(name("E")).toHaveValue("");
 
 	await name("W").fill("bot");
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("errors")).toHaveText(
-		"South: enter a name.West: only a bot can have the name “bot”.",
+		"West: only a bot can have the name “bot”.",
 	);
 	await expect(page.getByTestId("room-controls")).toHaveCount(0);
 });

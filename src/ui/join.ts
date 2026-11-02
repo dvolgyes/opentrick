@@ -376,19 +376,31 @@ export function showTable(
 		const problem =
 			notice ??
 			(view.seatError === null ? undefined : seatText(view.seatError, deps.t));
+		const config = view.lobby?.config ?? bootstrap?.config;
+		const hostSeat =
+			view.lobby?.seats.find((row) => row.host)?.seat ??
+			view.hostSeat ??
+			bootstrap?.host;
+		const hostName = config && hostSeat ? config.names[hostSeat] : undefined;
 		const signature = JSON.stringify([
 			screen.kind === "lobby" ? { ...screen, status: undefined } : screen,
 			problem,
+			hostName,
+			config?.scoring,
 		]);
 		if (root.querySelector('[data-testid="name-entry"]')) return;
 		if (signature === shown) return;
 		shown = signature;
-		root.replaceChildren(lobbyElement(screen, problem));
+		root.replaceChildren(
+			lobbyElement(screen, problem, hostName, config?.scoring),
+		);
 	}
 
 	function lobbyElement(
 		screen: LobbyScreen,
 		problem: string | undefined,
+		hostName: string | undefined,
+		scoring: string | undefined,
 	): HTMLElement {
 		switch (screen.kind) {
 			case "expired":
@@ -409,6 +421,11 @@ export function showTable(
 				const parts: (Node | string)[] = [];
 				if (screen.choices !== undefined)
 					parts.push(el("h1", {}, deps.t("Choose your seat")));
+				if (hostName) parts.push(el("p", {}, `${deps.t("Host")}: ${hostName}`));
+				if (scoring === "duplicate")
+					parts.push(
+						el("p", {}, `${deps.t("Scoring")}: ${deps.t("Duplicate")}`),
+					);
 				parts.push(status, summary);
 				if (deps.storageProblem !== undefined)
 					parts.push(
@@ -424,6 +441,13 @@ export function showTable(
 					);
 				if (screen.choices !== undefined) {
 					parts.push(
+						el(
+							"p",
+							{},
+							deps.t("North–South partnership"),
+							" · ",
+							deps.t("East–West partnership"),
+						),
 						seatGrid(
 							screen.choices.map((choice) => {
 								const pick = button(
@@ -439,7 +463,10 @@ export function showTable(
 						),
 					);
 					if (!screen.choices.some((choice) => choice.free))
-						parts.push(el("p", {}, deps.t("All seats are taken.")));
+						parts.push(
+							el("p", {}, deps.t("All seats are taken.")),
+							button(deps.t("Create new game"), navigation.createNew),
+						);
 				}
 				parts.push(network.element);
 				return message(...parts);

@@ -156,7 +156,7 @@ for (const form of FORMS) {
 			await page.locator('input[name="me"][value="W"]').check();
 			for (const seat of ["N", "E", "S"]) {
 				await page.locator(`input[name="name-${seat}"]`).fill("");
-				await page.locator(`input[name="bot-${seat}"]`).check();
+				await page.locator(`select[name="type-${seat}"]`).selectOption("bot");
 			}
 
 			await page.getByTestId("create").click();

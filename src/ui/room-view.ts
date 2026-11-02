@@ -853,7 +853,14 @@ export function showRoom(
 				"Send this link to the three other players. Each one opens it and takes a seat.",
 			),
 		),
-		button(deps.t("Copy table link"), async () => {
+		el(
+			"p",
+			{},
+			deps.t(
+				"Anyone with this invitation can enter the table. Share it only with your group.",
+			),
+		),
+		button(deps.t("Copy invitation link"), async () => {
 			try {
 				await navigator.clipboard.writeText(
 					roomShareLink(deps.pageUrl(), key, controller.view().table?.players),

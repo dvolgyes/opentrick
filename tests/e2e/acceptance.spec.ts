@@ -157,6 +157,9 @@ test("5a: a held seat is not offered to another browser", async () => {
 	await expect(page.getByText("All seats are taken.")).toBeVisible({
 		timeout: CONNECT_MS,
 	});
+	await expect(
+		page.getByRole("button", { name: "Create new game" }),
+	).toBeVisible();
 	await expect(picks(page)).toHaveCount(0);
 	await page.close();
 });

@@ -10,6 +10,16 @@
  * those surfaces.
  */
 :root {
+	/* Clubroom opening surfaces are independent of the table's selected theme. */
+	--opening-forest: #153e33;
+	--opening-paper: #f7f5ee;
+	--opening-ink: #183d33;
+	--opening-sage: #e9eee3;
+	--opening-gold: #d9b977;
+	--opening-red: #ad4b3c;
+	--opening-white: #ffffff;
+	--opening-line: #c9d1c7;
+	--opening-muted: #50685b;
 	/* Suit palette inks shared by every theme and suit-colour scheme. */
 	--suit-ink-black: #1d1d1b;
 	--suit-ink-red: #c0262d;

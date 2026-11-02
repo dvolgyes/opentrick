@@ -20,6 +20,7 @@ import { button, copyToClipboard, el } from "./dom";
 import { showTable } from "./join";
 import { readPersonalName, savePersonalName } from "./personal-name";
 import { seatGrid } from "./seat-grid";
+import { sitePath } from "./site-path";
 
 export function showCommunity(
 	root: HTMLElement,
@@ -354,6 +355,13 @@ export function showCommunity(
 									},
 									{ attrs: { "data-testid": "community-invite" } },
 								),
+								el(
+									"p",
+									{},
+									deps.t(
+										"Anyone with this invitation can enter the table. Share it only with your group.",
+									),
+								),
 							]
 						: []),
 					el(
@@ -363,7 +371,16 @@ export function showCommunity(
 							"Community games have no audio or video calls. A bot covers an absent player until the board ends.",
 						),
 					),
-					button(deps.t("Create new game"), navigation.createNew),
+					button(deps.t("Cancel"), navigation.createNew),
+					" ",
+					el(
+						"a",
+						{
+							className: "button",
+							attrs: { href: sitePath(location.pathname, "solo") },
+						},
+						deps.t("Play with bots"),
+					),
 				),
 			);
 			await session.start();

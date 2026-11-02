@@ -21,11 +21,12 @@ for (const policy of ["sl", "rl-fsp"] as const)
 			await route.abort();
 		});
 		await page.goto("/");
+		await page.locator(".create-options summary").click();
 		await page.locator('select[name="bot-bidder"]').selectOption(policy);
 		await page.locator('input[name="name-W"]').fill("You");
 		await page.locator('input[name="me"][value="W"]').check();
 		for (const seat of ["N", "E", "S"] as const)
-			await page.locator(`input[name="bot-${seat}"]`).check();
+			await page.locator(`select[name="type-${seat}"]`).selectOption("bot");
 		await page.getByTestId("create").click();
 		await expect(page.getByTestId("room-controls")).toBeVisible();
 		expect(new URL(page.url()).searchParams.get("r") ?? "sl").toBe(policy);

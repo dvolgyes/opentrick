@@ -18,6 +18,7 @@ import type { Bookmark } from "./bookmark";
 import type { AppDeps, Dispose } from "./deps";
 import { discoveryCount } from "./discovery-count";
 import { button, el } from "./dom";
+import { invitationUrl } from "./invitation-url";
 import { languageControl } from "./language-control";
 import {
 	BIDDER_NAMES,
@@ -74,8 +75,7 @@ export function showCreate(
 	const pathname = new URL(deps.pageUrl()).pathname;
 	const nameFields = {} as Record<Seat, HTMLInputElement>;
 	const meChoices = {} as Record<Seat, HTMLInputElement>;
-	const botChoices = {} as Record<Seat, HTMLInputElement>;
-	const onlineChoices = {} as Record<Seat, HTMLInputElement>;
+	const typeChoices = {} as Record<Seat, HTMLSelectElement>;
 	const host = prefill.host ?? DEFAULT_CREATE_FIELDS.seat;
 	// A bookmark from before the host rule can name the creator's seat a bot; the creator stays human.
 	const prefillBots = (prefill.botSetup ?? DEFAULT_BOT_SETUP).seats.filter(
@@ -101,17 +101,29 @@ export function showCreate(
 		const me = el("input", {
 			attrs: { type: "radio", name: "me", value: seat },
 		});
-		const bot = el("input", {
-			attrs: { type: "checkbox", name: `bot-${seat}`, value: seat },
-		});
-		const online = el("input", {
-			attrs: { type: "checkbox", name: `online-${seat}`, value: seat },
-		});
+		const type = el(
+			"select",
+			{
+				attrs: {
+					name: `type-${seat}`,
+					"aria-label": `${deps.t(SEAT_NAMES[seat])}: ${deps.t("Seat type")}`,
+				},
+			},
+			...(
+				[
+					["friend", "Invited friend"],
+					["bot", "Bot"],
+					["online", "Online player"],
+					["both", "Online, then bot"],
+				] as const
+			).map(([value, label]) =>
+				el("option", { attrs: { value } }, deps.t(label)),
+			),
+		);
 		me.checked = seat === host;
-		bot.checked = prefillBots.includes(seat);
+		type.value = prefillBots.includes(seat) ? "bot" : "friend";
 		meChoices[seat] = me;
-		botChoices[seat] = bot;
-		onlineChoices[seat] = online;
+		typeChoices[seat] = type;
 		me.setAttribute(
 			"aria-label",
 			`${deps.t(SEAT_NAMES[seat])} ${deps.t("Host")}`,
@@ -122,44 +134,46 @@ export function showCreate(
 				"section",
 				{},
 				el("h2", {}, deps.t(SEAT_NAMES[seat])),
+				el(
+					"p",
+					{ className: "seat-partnership" },
+					deps.t(
+						seat === "N" || seat === "S"
+							? "North–South partnership"
+							: "East–West partnership",
+					),
+				),
 				name,
 				el(
 					"div",
 					{ className: "seat-roles" },
 					el("label", {}, me, ` ${deps.t("Host")}`),
-					el("label", {}, bot, ` ${deps.t("Bot")}`),
-					el("label", {}, online, ` ${deps.t("Online player")}`),
+					type,
 				),
 			),
 		};
 	});
 
-	// The host seat cannot be a bot, and a bot seat cannot host.
+	// A named seat is reserved for a friend, and the host is always human.
 	const syncChoices = (): void => {
 		for (const seat of SEATS) {
 			const named =
 				nameFields[seat].value.trim().length > 0 &&
 				!isBotName(nameFields[seat].value);
 			if (named || meChoices[seat].checked) {
-				botChoices[seat].checked = false;
-				onlineChoices[seat].checked = false;
+				typeChoices[seat].value = "friend";
 			}
-			botChoices[seat].disabled = onlineChoices[seat].disabled =
-				named || meChoices[seat].checked;
-			meChoices[seat].disabled =
-				botChoices[seat].checked || onlineChoices[seat].checked;
+			typeChoices[seat].disabled = meChoices[seat].checked;
 		}
 	};
 	for (const seat of SEATS) {
 		nameFields[seat].addEventListener("input", () => {
 			syncChoices();
 		});
-		botChoices[seat].addEventListener("change", () => {
-			const name = nameFields[seat];
-			if (isBotName(name.value)) name.value = "";
+		typeChoices[seat].addEventListener("change", () => {
+			if (typeChoices[seat].value !== "friend") nameFields[seat].value = "";
 			syncChoices();
 		});
-		onlineChoices[seat].addEventListener("change", syncChoices);
 		meChoices[seat].addEventListener("change", syncChoices);
 	}
 	syncChoices();
@@ -169,7 +183,7 @@ export function showCreate(
 			className: "seat-presets",
 			attrs: { "aria-label": deps.t("Fill unnamed seats") },
 		},
-		...(["Bots", "Online players", "Both"] as const).map((label) =>
+		...(["Bots", "Online players", "Online, then bot"] as const).map((label) =>
 			button(
 				deps.t(label),
 				() => {
@@ -181,14 +195,18 @@ export function showCreate(
 						)
 							continue;
 						nameFields[seat].value = "";
-						botChoices[seat].checked = label !== "Online players";
-						onlineChoices[seat].checked = label !== "Bots";
+						typeChoices[seat].value =
+							label === "Bots"
+								? "bot"
+								: label === "Online players"
+									? "online"
+									: "both";
 					}
 					syncChoices();
 				},
 				{
 					attrs: {
-						"data-testid": `preset-${label === "Bots" ? "bots" : label === "Both" ? "both" : "online"}`,
+						"data-testid": `preset-${label === "Bots" ? "bots" : label === "Online, then bot" ? "both" : "online"}`,
 					},
 				},
 			),
@@ -199,16 +217,6 @@ export function showCreate(
 		"select",
 		{ attrs: { name: "scoring" } },
 		el("option", { attrs: { value: "duplicate" } }, deps.t("Duplicate")),
-		el(
-			"option",
-			{ attrs: { value: "chicago", disabled: "" } },
-			deps.t("Chicago (later)"),
-		),
-		el(
-			"option",
-			{ attrs: { value: "rubber", disabled: "" } },
-			deps.t("Rubber (later)"),
-		),
 	);
 	const setup = prefill.botSetup ?? {
 		...DEFAULT_BOT_SETUP,
@@ -264,6 +272,17 @@ export function showCreate(
 		},
 	});
 	soloName.value = readPersonalName(deps.browser) || defaultSoloName;
+	let previousPersonalName = soloName.value;
+	soloName.addEventListener("input", () => {
+		const seat = SEATS.find((item) => meChoices[item].checked);
+		if (
+			seat &&
+			(!nameFields[seat].value ||
+				nameFields[seat].value === previousPersonalName)
+		)
+			nameFields[seat].value = soloName.value;
+		previousPersonalName = soloName.value;
+	});
 	const online = el(
 		"a",
 		{
@@ -273,7 +292,7 @@ export function showCreate(
 				"data-testid": "join-online",
 			},
 		},
-		deps.t("Play online"),
+		deps.t("Find online players"),
 	);
 	const follow = (link: HTMLAnchorElement, run: () => void): void => {
 		link.addEventListener("click", (event) => {
@@ -291,7 +310,7 @@ export function showCreate(
 		});
 	};
 	follow(online, () => {
-		const name = soloName.value.trim().normalize("NFC");
+		const name = (soloName.value.trim() || defaultSoloName).normalize("NFC");
 		const check = checkCreateFields(
 			{
 				names: { N: "player", E: "player", S: name, W: "player" },
@@ -321,34 +340,119 @@ export function showCreate(
 			"join",
 		);
 	});
+	const setupHeading = el(
+		"h2",
+		{ attrs: { tabindex: "-1" } },
+		deps.t("Invite friends"),
+	);
 	const soloForm = el(
 		"form",
 		{ className: "create" },
 		el(
 			"div",
 			{ className: "create-solo-row" },
-			el("label", { attrs: { for: "solo-name" } }, `${deps.t("Name")}:`),
+			el(
+				"label",
+				{ attrs: { for: "solo-name" } },
+				deps.t("Your display name (optional)"),
+			),
 			soloName,
-			solo.submit,
-			online,
+			el(
+				"div",
+				{ className: "opening-modes" },
+				el(
+					"section",
+					{ className: "opening-card" },
+					el(
+						"span",
+						{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
+						"♠",
+					),
+					el("h3", {}, deps.t("Play with bots")),
+					el("p", {}, deps.t("Start a game with three bots.")),
+					solo.submit,
+				),
+				el(
+					"section",
+					{ className: "opening-card" },
+					el(
+						"span",
+						{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
+						"♣",
+					),
+					el("h3", {}, deps.t("Find online players")),
+					el("p", {}, deps.t("Find a table with other players.")),
+					online,
+				),
+				el(
+					"section",
+					{ className: "opening-card opening-card-friends" },
+					el(
+						"span",
+						{ className: "mode-symbol", attrs: { "aria-hidden": "true" } },
+						"♥",
+					),
+					el("h3", {}, deps.t("Invite friends")),
+					el("p", {}, deps.t("Set up a table and share an invitation.")),
+					button(deps.t("Invite friends"), () => setupHeading.focus(), {
+						attrs: { "data-testid": "invite-friends" },
+					}),
+				),
+			),
 		),
 		solo.errors,
 	);
 	const form = el(
 		"form",
 		{ className: "create" },
-		seatGrid(rows, { center: presets }),
+		el("p", { className: "note" }, deps.t("Fill unnamed seats")),
+		presets,
+		seatGrid(rows),
 		el(
 			"p",
 			{ className: "note" },
 			deps.t(
-				"Named seats are reserved for friends. Choose Bot, Online player, or both for unnamed seats.",
+				"Named seats are reserved for friends. Friends join first, then we find the rest.",
 			),
 		),
 		multiplayer.errors,
 		multiplayer.submit,
 	);
-
+	const invitation = el("input", {
+		attrs: {
+			type: "text",
+			id: "invitation-link",
+			autocomplete: "off",
+			spellcheck: "false",
+		},
+	});
+	const invitationError = el("p", {
+		className: "errors",
+		attrs: { role: "alert" },
+	});
+	const invitationForm = el(
+		"form",
+		{ className: "invitation-form" },
+		el(
+			"label",
+			{ attrs: { for: "invitation-link" } },
+			deps.t("Have an invitation link?"),
+		),
+		invitation,
+		el("button", { attrs: { type: "submit" } }, deps.t("Open invitation")),
+		invitationError,
+	);
+	invitationForm.addEventListener("submit", (event) => {
+		event.preventDefault();
+		const url = invitationUrl(invitation.value, deps.pageUrl());
+		if (url === undefined) {
+			invitationError.textContent = deps.t(
+				"Enter a complete invitation link from this site.",
+			);
+			return;
+		}
+		location.assign(url);
+	});
 	const showErrors = (
 		target: CreateTarget,
 		messages: readonly string[],
@@ -424,7 +528,10 @@ export function showCreate(
 		event.preventDefault();
 		const names = {} as Record<Seat, string>;
 		for (const seat of SEATS)
-			names[seat] = seat === SOLO_HOST ? soloName.value : BOT_NAME;
+			names[seat] =
+				seat === SOLO_HOST
+					? soloName.value.trim() || defaultSoloName
+					: BOT_NAME;
 		start(
 			solo,
 			{
@@ -441,13 +548,25 @@ export function showCreate(
 		event.preventDefault();
 		const names = {} as Record<Seat, string>;
 		for (const seat of SEATS)
-			names[seat] = botChoices[seat].checked
-				? BOT_NAME
-				: nameFields[seat].value;
+			names[seat] =
+				typeChoices[seat].value === "bot" ? BOT_NAME : nameFields[seat].value;
 		const seat = SEATS.find((choice) => meChoices[choice].checked);
-		if (seat && SEATS.some((seat) => onlineChoices[seat].checked)) {
+		if (seat && !names[seat].trim())
+			names[seat] = soloName.value.trim() || defaultSoloName;
+		if (
+			seat &&
+			SEATS.some(
+				(seat) =>
+					typeChoices[seat].value === "online" ||
+					typeChoices[seat].value === "both",
+			)
+		) {
 			const check = checkCreateFields(
-				{ names, seat, bots: SEATS.filter((seat) => botChoices[seat].checked) },
+				{
+					names,
+					seat,
+					bots: SEATS.filter((seat) => typeChoices[seat].value === "bot"),
+				},
 				deps.t,
 			);
 			if (!check.ok) {
@@ -457,12 +576,15 @@ export function showCreate(
 			const open: Partial<Record<Seat, "bot" | "online" | "both">> = {};
 			const reserved: Partial<Record<Seat, string>> = {};
 			for (const item of SEATS) {
-				const bot = botChoices[item].checked;
-				const online = onlineChoices[item].checked;
+				const bot =
+					typeChoices[item].value === "bot" ||
+					typeChoices[item].value === "both";
+				const online =
+					typeChoices[item].value === "online" ||
+					typeChoices[item].value === "both";
 				if (bot || online)
 					open[item] = bot && online ? "both" : bot ? "bot" : "online";
-				else if (nameFields[item].value.trim())
-					reserved[item] = check.config.names[item];
+				else if (names[item].trim()) reserved[item] = check.config.names[item];
 			}
 			savePersonalName(deps.browser, check.config.names[seat]);
 			const botSetup = parseBotSetup({ seats: [], bidder: bidder.value });
@@ -484,7 +606,7 @@ export function showCreate(
 			{
 				names,
 				seat: SEATS.find((choice) => meChoices[choice].checked) ?? "",
-				bots: SEATS.filter((item) => botChoices[item].checked),
+				bots: SEATS.filter((item) => typeChoices[item].value === "bot"),
 			},
 			true,
 		);
@@ -539,43 +661,82 @@ export function showCreate(
 			el(
 				"div",
 				{ className: "create-header" },
-				el("a", { attrs: { href: sitePath(pathname, "home") } }, "OpenTrick"),
 				el(
-					"h1",
-					{},
+					"a",
+					{
+						className: "opening-brand",
+						attrs: { href: sitePath(pathname, "home") },
+					},
+					"♠ OpenTrick",
+				),
+				el(
+					"details",
+					{ className: "opening-help" },
+					el("summary", {}, deps.t("Help")),
 					el(
-						"a",
-						{ attrs: { href: sitePath(pathname, "create") } },
-						deps.t("Create game"),
+						"p",
+						{},
+						deps.t("Use the same browser and the full table link to return."),
 					),
 				),
 				languageControl(deps),
 			),
 			el(
-				"div",
-				{ className: "create-options" },
-				el("label", {}, `${deps.t("Bidding bot")}: `, bidder),
-				el("label", {}, `${deps.t("Scoring")}: `, scoring),
+				"section",
+				{ className: "opening-hero" },
+				el(
+					"div",
+					{},
+					el(
+						"p",
+						{ className: "opening-eyebrow" },
+						deps.t("Free to play · No account needed"),
+					),
+					el("h1", {}, deps.t("Welcome to the table")),
+					el("p", {}, deps.t("A place to play bridge, your way.")),
+				),
+				el(
+					"div",
+					{
+						className: "opening-illustration",
+						attrs: { "aria-hidden": "true" },
+					},
+					el("span", {}, "A♠"),
+					el("span", {}, "A♥"),
+				),
 			),
 			el(
 				"section",
 				{ className: "create-mode" },
-				el("h2", {}, deps.t("Single player")),
+				el("h2", {}, deps.t("Choose how to play")),
+				el(
+					"p",
+					{ className: "note" },
+					deps.t("Your name is remembered on this browser."),
+				),
 				soloForm,
 			),
 			discovery.element,
+			invitationForm,
 			el(
 				"section",
-				{ className: "create-mode" },
-				el("h2", {}, deps.t("Multiplayer game")),
+				{ className: "create-mode setup-mode" },
+				setupHeading,
 				el(
 					"p",
 					{},
 					deps.t(
-						"Enter the players. Choose your seat. Start the game. Share the link.",
+						"Choose your seat, create the table, and share the invitation link.",
 					),
 				),
 				form,
+				el(
+					"details",
+					{ className: "create-options" },
+					el("summary", {}, deps.t("Game options")),
+					el("label", {}, `${deps.t("Bidding bot")}: `, bidder),
+					el("label", {}, `${deps.t("Scoring")}: `, scoring),
+				),
 			),
 		),
 	);

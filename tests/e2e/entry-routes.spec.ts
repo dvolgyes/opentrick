@@ -131,11 +131,9 @@ test("static project-site bookmarks load every entry directly with the correct a
 		"Searching for compatible players…",
 	);
 	await expect(page.getByTestId("community").getByRole("button")).toHaveText([
-		"Create new game",
+		"Cancel",
 	]);
-	await page
-		.getByRole("button", { name: "Create new game", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page).toHaveURL(`${site}create/`);
 	await expect(page.getByTestId("create")).toBeVisible();
 	expect(errors).toEqual([]);
@@ -152,46 +150,33 @@ for (const locale of [
 	"it",
 	"nl",
 ] as const) {
-	test(`solo controls stay on one row in ${locale}`, async ({ page }) => {
+	test(`entry choices fit the screen in ${locale}`, async ({ page }) => {
 		await page.addInitScript(
 			(locale) => localStorage.setItem("opentrick.locale", locale),
 			locale,
 		);
 		await page.goto("/create/");
+		await page.evaluate(() => document.fonts.ready);
 		const row = page.locator(".create-solo-row");
 		await expect(row.getByTestId("create-solo")).toHaveText(
 			translator(locale)("Play with bots"),
 		);
 		await expect(row.getByTestId("join-online")).toHaveText(
-			translator(locale)("Play online"),
+			translator(locale)("Find online players"),
 		);
 		for (const width of [320, 390, 1280]) {
 			await page.setViewportSize({ width, height: 844 });
-			const boxes = await row.locator("input, a").evaluateAll((elements) =>
-				elements.map((element) => {
-					const rect = element.getBoundingClientRect();
-					return {
-						middle: rect.top + rect.height / 2,
-						left: rect.left,
-						right: rect.right,
-					};
-				}),
-			);
 			expect(
-				Math.max(...boxes.map((box) => box.middle)) -
-					Math.min(...boxes.map((box) => box.middle)),
-			).toBeLessThan(2);
-			expect(Math.max(...boxes.map((box) => box.right))).toBeLessThanOrEqual(
-				width,
-			);
-			expect(boxes[0]?.right).toBeLessThanOrEqual(boxes[1]?.left ?? 0);
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= innerWidth,
+				),
+			).toBe(true);
+			await expect(row.getByTestId("invite-friends")).toBeVisible();
 		}
 	});
 }
 
-test("the compact solo row exposes bookmarkable actions without wrapping", async ({
-	page,
-}) => {
+test("the opening page exposes bookmarkable actions", async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto("/create");
 	const row = page.locator(".create-solo-row");
@@ -199,31 +184,16 @@ test("the compact solo row exposes bookmarkable actions without wrapping", async
 		row.getByRole("link", { name: "Play with bots", exact: true }),
 	).toHaveAttribute("href", "/solo");
 	await expect(
-		row.getByRole("link", { name: "Play online", exact: true }),
+		row.getByRole("link", { name: "Find online players", exact: true }),
 	).toHaveAttribute("href", "/join");
-	const heading = page.getByRole("heading", {
-		name: "Single player",
-		exact: true,
-	});
-	const headingBox = await heading.boundingBox();
-	const scoringBox = await page.locator('select[name="scoring"]').boundingBox();
-	const nameBox = await row.locator("#solo-name").boundingBox();
-	expect(headingBox?.y ?? 0).toBeGreaterThan(
-		(scoringBox?.y ?? 0) + (scoringBox?.height ?? 0),
-	);
-	expect((headingBox?.y ?? 0) + (headingBox?.height ?? 0)).toBeLessThanOrEqual(
-		nameBox?.y ?? 0,
-	);
-	const boxes = await row.locator("input, a").evaluateAll((elements) =>
-		elements.map((element) => {
-			const rect = element.getBoundingClientRect();
-			return { middle: rect.top + rect.height / 2, right: rect.right };
-		}),
-	);
-	expect(boxes).toHaveLength(3);
-	expect(
-		Math.max(...boxes.map((box) => box.middle)) -
-			Math.min(...boxes.map((box) => box.middle)),
-	).toBeLessThan(2);
-	expect(Math.max(...boxes.map((box) => box.right))).toBeLessThanOrEqual(390);
+	await expect(
+		page.getByRole("heading", { name: "Choose how to play" }),
+	).toBeVisible();
+	const boxes = await row
+		.locator(".opening-card")
+		.evaluateAll((elements) =>
+			elements.map((element) => element.getBoundingClientRect().top),
+		);
+	expect(boxes[0]).toBeLessThan(boxes[1] ?? 0);
+	expect(boxes[1]).toBeLessThan(boxes[2] ?? 0);
 });

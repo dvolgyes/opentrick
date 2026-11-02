@@ -38,10 +38,12 @@ test("the create screen is prefilled from the bookmark, with the host seat chose
 	await expect(page.getByLabel("North name")).toHaveValue("");
 	await expect(page.locator('input[name="me"][value="E"]')).toBeChecked();
 	for (const seat of ["N", "E", "S", "W"]) {
-		await expect(page.locator(`input[name="bot-${seat}"]`)).not.toBeChecked();
+		await expect(page.locator(`select[name="type-${seat}"]`)).toHaveValue(
+			"friend",
+		);
 	}
 	await page.getByLabel("North name").fill("robot");
-	await expect(page.locator('input[name="bot-N"]')).not.toBeChecked();
+	await expect(page.locator('select[name="type-N"]')).toHaveValue("friend");
 	await page.getByLabel("North name").fill("player1");
 });
 
@@ -70,6 +72,10 @@ test("the other players see the names and can choose a seat from the shared URL"
 	await expect(visitor.getByTestId("pick-W")).toContainText("dvolgyes", {
 		timeout: CONNECT_MS,
 	});
+	await expect(visitor.getByText("Host: zsdh", { exact: true })).toBeVisible();
+	await expect(
+		visitor.getByText("Scoring: Duplicate", { exact: true }),
+	).toBeVisible();
 	await visitor.getByTestId("pick-W").click();
 	await expect(visitor).toHaveTitle(/dvolgyes \(W\)$/);
 });

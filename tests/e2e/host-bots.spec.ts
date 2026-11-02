@@ -57,7 +57,7 @@ test("host bots play two consecutive boards from auction through the final trick
 	await page.locator('input[name="me"][value="W"]').check();
 	await page.locator('input[name="name-W"]').fill("host west");
 	for (const seat of ["N", "E", "S"])
-		await page.locator(`input[name="bot-${seat}"]`).check();
+		await page.locator(`select[name="type-${seat}"]`).selectOption("bot");
 
 	await page.getByTestId("create").click();
 	await expect(page.getByTestId("room-controls")).toBeVisible();
@@ -137,7 +137,7 @@ test("a bot bids and plays when the site is served below a path, as on GitHub Pa
 	await page.locator('input[name="me"][value="W"]').check();
 	await page.locator('input[name="name-W"]').fill("host west");
 	for (const seat of ["N", "E", "S"])
-		await page.locator(`input[name="bot-${seat}"]`).check();
+		await page.locator(`select[name="type-${seat}"]`).selectOption("bot");
 
 	await page.getByTestId("create").click();
 	await page.getByTestId("host-autoplay-toggle").click();
@@ -379,7 +379,7 @@ async function westDeclaresAgainstBots(page: Page): Promise<Locator> {
 	await page.locator('input[name="me"][value="W"]').check();
 	for (const seat of ["N", "E", "S"]) {
 		await page.locator(`input[name="name-${seat}"]`).fill("");
-		await page.locator(`input[name="bot-${seat}"]`).check();
+		await page.locator(`select[name="type-${seat}"]`).selectOption("bot");
 	}
 
 	await page.getByTestId("create").click();

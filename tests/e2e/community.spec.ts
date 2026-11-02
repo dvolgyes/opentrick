@@ -72,6 +72,7 @@ async function enter(
 			.locator('input[name="name-S"]')
 			.fill(name === "Alice" ? "Bob" : "Dan");
 	await page.getByTestId(`preset-${mode}`).click();
+	await page.locator(".create-options summary").click();
 	await page.locator('select[name="bot-bidder"]').selectOption(bidder);
 	await page.getByTestId("create").click();
 }
@@ -145,49 +146,39 @@ test("starting a solo game leaves the discovery room", async ({
 	}
 });
 
-test("centre presets preserve named friends, configure both checkboxes, and fit a phone", async ({
+test("presets preserve named friends, configure seat types, and fit a phone", async ({
 	page,
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto("/");
 	await page.locator('input[name="name-S"]').fill("Alice");
 	await page.locator('input[name="name-N"]').fill("Bob");
-	for (const [preset, bot, online] of [
-		["bots", true, false],
-		["online", false, true],
-		["both", true, true],
+	for (const [preset, type] of [
+		["bots", "bot"],
+		["online", "online"],
+		["both", "both"],
 	] as const) {
 		await page.getByTestId(`preset-${preset}`).click();
 		for (const seat of ["E", "W"]) {
-			await expect(page.locator(`input[name="bot-${seat}"]`)).toBeChecked({
-				checked: bot,
-			});
-			await expect(page.locator(`input[name="online-${seat}"]`)).toBeChecked({
-				checked: online,
-			});
-			await expect(
-				page.locator(`input[name="me"][value="${seat}"]`),
-			).toBeDisabled();
+			await expect(page.locator(`select[name="type-${seat}"]`)).toHaveValue(
+				type,
+			);
 		}
 		for (const seat of ["N", "S"]) {
-			await expect(page.locator(`input[name="bot-${seat}"]`)).not.toBeChecked();
-			await expect(
-				page.locator(`input[name="online-${seat}"]`),
-			).not.toBeChecked();
+			await expect(page.locator(`select[name="type-${seat}"]`)).toHaveValue(
+				"friend",
+			);
 		}
 	}
 	await page.locator('input[name="name-E"]').fill("Carol");
-	await expect(page.locator('input[name="bot-E"]')).not.toBeChecked();
-	await expect(page.locator('input[name="online-E"]')).not.toBeChecked();
+	await expect(page.locator('select[name="type-E"]')).toHaveValue("friend");
 	await expect(page.locator('input[name="me"][value="E"]')).toBeEnabled();
 	const grid = page.getByTestId("seat-grid");
 	const east = await grid.locator('[data-seat="E"]').boundingBox();
 	const west = await grid.locator('[data-seat="W"]').boundingBox();
-	const center = await page.getByTestId("preset-both").boundingBox();
-	if (!east || !west || !center) throw new Error("seat grid missing");
-	// Creation has no seated user yet, so South is at the bottom: West left of the presets, East right of them.
-	expect(west.x + west.width).toBeLessThanOrEqual(center.x);
-	expect(center.x + center.width).toBeLessThanOrEqual(east.x);
+	if (!east || !west) throw new Error("seat grid missing");
+	// Creation has no seated user yet, so South is at the bottom and West is left of East.
+	expect(west.x + west.width).toBeLessThanOrEqual(east.x);
 	for (const seat of ["N", "S"]) {
 		const box = await grid.locator(`[data-seat="${seat}"]`).boundingBox();
 		expect(Math.abs((box?.width ?? 0) - east.width)).toBeLessThan(1);
@@ -223,11 +214,14 @@ test("solo online entry starts searching without a separate community setup form
 		page.getByRole("button", { name: "Reload", exact: true }),
 	).toHaveCount(0);
 	await expect(
-		page.getByRole("button", { name: "Create new game", exact: true }),
+		page.getByRole("button", { name: "Cancel", exact: true }),
 	).toBeVisible();
+	await expect(
+		page.getByRole("link", { name: "Play with bots" }),
+	).toHaveAttribute("href", "/solo");
 });
 
-test("a join bookmark starts searching with only the new-game action, including after reload", async ({
+test("a join bookmark can cancel or start bots after reload", async ({
 	browser,
 	baseURL,
 }) => {
@@ -247,11 +241,9 @@ test("a join bookmark starts searching with only the new-game action, including 
 		);
 		expect(page.url()).toBe(reservation);
 		await expect(page.getByTestId("community").getByRole("button")).toHaveText([
-			"Create new game",
+			"Cancel",
 		]);
-		await page
-			.getByRole("button", { name: "Create new game", exact: true })
-			.click();
+		await page.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(page).toHaveURL(/\/create\/?$/);
 		await expect(page.getByTestId("create")).toBeVisible();
 	} finally {
