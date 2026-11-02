@@ -1275,8 +1275,8 @@ main:has(> .room) {
 	border-radius: 0.4rem;
 }
 
-/* Off the desktop table, that hand sits on a light green sheet, so the cards it can play stand out. */
-.room:not([data-layout="desktop"]) .seat[data-turn="true"] .hand:not(.backs) {
+/* Off the desktop table, visible opponent hands use a sheet; the bottom hand stays on the felt. */
+.room:not([data-layout="desktop"]) .seat:not(.pos-bottom)[data-turn="true"] .hand:not(.backs) {
 	background: var(--turn-hand-bg);
 }
 

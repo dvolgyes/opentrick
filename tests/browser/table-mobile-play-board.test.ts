@@ -14,6 +14,23 @@ import {
 afterEach(() => document.body.replaceChildren());
 
 describe("board depth and frame colours", () => {
+	it.each(["compact", "sideways"] as const)(
+		"keeps the active bottom hand transparent and framed in %s",
+		(layout) => {
+			const { root, section } = renderView(playView(), layout);
+			const seat = root.querySelector<HTMLElement>('[data-testid="hand-N"]');
+			const hand = seat?.querySelector<HTMLElement>(".hand");
+			if (!seat || !hand) throw new Error("missing bottom hand");
+			expect(getComputedStyle(hand).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+			expect(
+				getComputedStyle(layout === "compact" ? hand : seat).outlineStyle,
+			).toBe("solid");
+			expect(hand.querySelector<HTMLElement>(".card")?.checkVisibility()).toBe(
+				true,
+			);
+			section.dispose();
+		},
+	);
 	it("keeps both card backs available when the asset server is unreachable", async () => {
 		const session = cdp();
 		await session.send("Network.enable");
