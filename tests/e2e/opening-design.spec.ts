@@ -1,5 +1,104 @@
 import { expect, test } from "@playwright/test";
 
+test("the opening page uses the reference logo and four-card artwork", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/");
+	const brand = page.locator(".opening-brand");
+	await expect(brand).toHaveAccessibleName("OpenTrick", { timeout: 1000 });
+	await expect(brand.locator(".opening-brand-mark")).toBeVisible();
+	const art = page.locator(".opening-illustration");
+	await expect(art).toHaveAttribute("aria-hidden", "true");
+	await expect(art).toBeVisible();
+	expect(
+		await art
+			.locator("[data-suit]")
+			.evaluateAll((cards) =>
+				cards.map((card) => card.getAttribute("data-suit")),
+			),
+	).toEqual(["♦", "♣", "♥", "♠"]);
+	await page.evaluate(() => document.fonts.ready);
+	for (const width of [601, 900, 901, 1440]) {
+		await page.setViewportSize({ width, height: 900 });
+		const bounds = await page.evaluate(() => {
+			const hero = document
+				.querySelector(".opening-hero")
+				?.getBoundingClientRect();
+			const copy = document
+				.querySelector(".opening-hero > div:first-child")
+				?.getBoundingClientRect();
+			const cards = [...document.querySelectorAll(".opening-playing-card")].map(
+				(card) => card.getBoundingClientRect(),
+			);
+			if (!hero || !copy || cards.length !== 4)
+				throw new Error("Opening artwork is missing");
+			return {
+				copyRight: copy.right,
+				heroRight: hero.right,
+				cardsLeft: Math.min(...cards.map((card) => card.left)),
+				cardsRight: Math.max(...cards.map((card) => card.right)),
+			};
+		});
+		expect(bounds.cardsLeft).toBeGreaterThanOrEqual(bounds.copyRight);
+		expect(bounds.cardsRight).toBeLessThanOrEqual(bounds.heroRight);
+	}
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(art).toBeHidden();
+});
+
+test("desktop setup can return home without losing entered names", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/create/?n=Reserved");
+	const setupUrl = page.url();
+	await page.getByTestId("invite-friends").click();
+	await page.locator('input[name="name-N"]').fill("Partner");
+	const back = page.getByRole("button", { name: "Back to home" });
+	await expect(back).toBeVisible({ timeout: 1000 });
+	const setupBox = await page.locator(".setup-mode").boundingBox();
+	const backBox = await back.boundingBox();
+	expect(
+		Math.abs(
+			(setupBox?.x ?? 0) +
+				(setupBox?.width ?? 0) -
+				((backBox?.x ?? 0) + (backBox?.width ?? 0)),
+		),
+	).toBeLessThan(2);
+	const colors = await back.evaluate((element) => {
+		const style = getComputedStyle(element);
+		return { background: style.backgroundColor, text: style.color };
+	});
+	const channels = colors.background.match(/\d+/g)?.map(Number) ?? [];
+	expect(channels[0] ?? 255).toBeLessThan(150);
+	expect(channels[0] ?? 0).toBeGreaterThan(channels[1] ?? 255);
+	expect(channels[0] ?? 0).toBeGreaterThan(channels[2] ?? 255);
+	const luminance = (color: string): number => {
+		const channels = color.match(/\d+/g)?.slice(0, 3).map(Number) ?? [];
+		if (channels.length !== 3) throw new Error(`Unexpected color: ${color}`);
+		return channels.reduce((sum, channel, index) => {
+			const value = channel / 255;
+			const linear =
+				value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+			return sum + linear * ([0.2126, 0.7152, 0.0722][index] ?? 0);
+		}, 0);
+	};
+	const background = luminance(colors.background);
+	const foreground = luminance(colors.text);
+	expect(
+		(Math.max(background, foreground) + 0.05) /
+			(Math.min(background, foreground) + 0.05),
+	).toBeGreaterThanOrEqual(4.5);
+	await back.click();
+	expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
+	await expect(page.locator(".opening-brand")).toBeFocused();
+	await expect(page.locator('input[name="name-N"]')).toHaveValue("Partner");
+	await expect(page).toHaveURL(setupUrl);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(back).toBeHidden();
+});
+
 for (const [width, height] of [
 	[320, 568],
 	[390, 844],

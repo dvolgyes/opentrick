@@ -432,7 +432,21 @@ export function showCreate(
 			),
 		),
 		multiplayer.errors,
-		multiplayer.submit,
+		el(
+			"div",
+			{ className: "setup-actions" },
+			multiplayer.submit,
+			button(
+				deps.t("Back to home"),
+				() => {
+					window.scrollTo({ top: 0 });
+					root.querySelector<HTMLAnchorElement>(".opening-brand")?.focus({
+						preventScroll: true,
+					});
+				},
+				{ className: "setup-back" },
+			),
+		),
 	);
 	const showErrors = (
 		target: CreateTarget,
@@ -648,7 +662,15 @@ export function showCreate(
 						className: "opening-brand",
 						attrs: { href: sitePath(pathname, "home") },
 					},
-					"♠ OpenTrick",
+					el(
+						"span",
+						{
+							className: "opening-brand-mark",
+							attrs: { "aria-hidden": "true" },
+						},
+						"♠",
+					),
+					el("span", {}, "OpenTrick"),
 				),
 				languageControl(deps),
 				el(
@@ -682,8 +704,37 @@ export function showCreate(
 						className: "opening-illustration",
 						attrs: { "aria-hidden": "true" },
 					},
-					el("span", {}, "A♠"),
-					el("span", {}, "A♥"),
+					el(
+						"div",
+						{ className: "opening-orbit" },
+						...(
+							[
+								["n", "N"],
+								["e", "E"],
+								["s", "S"],
+								["w", "W"],
+							] as const
+						).map(([position, label]) =>
+							el("span", { className: `opening-compass ${position}` }, label),
+						),
+					),
+					...(
+						[
+							["♦", "diamond"],
+							["♣", "club"],
+							["♥", "heart"],
+							["♠", "spade"],
+						] as const
+					).map(([suit, name]) =>
+						el(
+							"div",
+							{
+								className: `opening-playing-card ${name}`,
+								attrs: { "data-suit": suit, "data-corner": `A\n${suit}` },
+							},
+							suit,
+						),
+					),
 				),
 			),
 			el(

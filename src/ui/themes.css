@@ -20,6 +20,14 @@
 	--opening-white: #ffffff;
 	--opening-line: #c9d1c7;
 	--opening-muted: #50685b;
+	--opening-logo-shadow: #c9b681;
+	--opening-card-paper: #fffdf3;
+	--opening-card-line: #e4dcc4;
+	--opening-art-shadow: rgb(7 29 50 / 25%);
+	--opening-orbit-line: rgb(216 200 158 / 30%);
+	--opening-orbit-inner: rgb(216 200 158 / 20%);
+	--opening-compass: #d7c69d;
+	--opening-back: #7e312b;
 	/* Suit palette inks shared by every theme and suit-colour scheme. */
 	--suit-ink-black: #1d1d1b;
 	--suit-ink-red: #c0262d;

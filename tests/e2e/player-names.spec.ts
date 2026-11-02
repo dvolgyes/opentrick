@@ -314,7 +314,7 @@ test("the create screen keeps bots out of the host seat, names each bot bot, and
 	await page.goto("/");
 	// The opening header keeps the language control without displaying the build date.
 	const header = page.locator(".create-header");
-	await expect(header.getByRole("link", { name: "♠ OpenTrick" })).toBeVisible();
+	await expect(header.getByRole("link", { name: "OpenTrick" })).toBeVisible();
 	await expect(header.getByTestId("build-version")).toBeHidden();
 	await expect(header.getByLabel("Language")).toBeVisible();
 	await expect(page.locator("body > .language-control")).toHaveCount(0);

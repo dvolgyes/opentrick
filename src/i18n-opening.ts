@@ -246,6 +246,17 @@ const rows: readonly (readonly [
 	],
 	["Help", "Hilfe", "Súgó", "Hjelp", "Ayuda", "Ajuda", "Aide", "Aiuto", "Hulp"],
 	[
+		"Back to home",
+		"Zur Startseite",
+		"Vissza a kezdőlapra",
+		"Tilbake til startsiden",
+		"Volver al inicio",
+		"Voltar ao início",
+		"Retour à l’accueil",
+		"Torna alla pagina iniziale",
+		"Terug naar start",
+	],
+	[
 		"Use the same browser and the full table link to return.",
 		"Verwende denselben Browser und den vollständigen Tischlink, um zurückzukehren.",
 		"A visszatéréshez használd ugyanazt a böngészőt és a teljes asztalhivatkozást.",
