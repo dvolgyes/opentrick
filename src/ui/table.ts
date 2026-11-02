@@ -668,7 +668,6 @@ export function tableSection(
 	let collectingTrick: CompletedTrickView | undefined;
 	let collectionOverlay: HTMLElement | undefined;
 	let collectionTimer: ReturnType<typeof setTimeout> | undefined;
-	let collectionHighlightTimer: ReturnType<typeof setTimeout> | undefined;
 	let claimMode: "choose" | "all" | null = null;
 	/** The count that the declarer tapped; "Confirm claim" stays disabled until there is one. */
 	let claimCount: number | null = null;
@@ -2488,9 +2487,7 @@ export function tableSection(
 
 	function finishCollection(redraw = true): void {
 		clearTimeout(collectionTimer);
-		clearTimeout(collectionHighlightTimer);
 		collectionTimer = undefined;
-		collectionHighlightTimer = undefined;
 		collectionOverlay?.remove();
 		collectionOverlay = undefined;
 		const win = element.ownerDocument.defaultView;
@@ -2575,7 +2572,6 @@ export function tableSection(
 			options.trickWinnerPauseMs?.() ?? DEFAULT_SETTINGS.trickWinnerPauseMs;
 		const animate =
 			options.trickAnimation?.() ?? DEFAULT_SETTINGS.trickAnimation;
-		const winnerCards: HTMLElement[] = [];
 		for (const [index, node] of nodes.entries()) {
 			const rect = rects[index];
 			if (!rect) continue;
@@ -2618,7 +2614,7 @@ export function tableSection(
 					copy.style.fontSize = `${parseFloat(win.getComputedStyle(part).fontSize) * scale}px`;
 			});
 			const winner = node.dataset.seat === completed.winner;
-			if (winner) winnerCards.push(clone);
+			if (winner && animate) clone.classList.add("trick-winner");
 			clone.style.zIndex = winner ? "2" : "1";
 			overlay.append(clone);
 			const dx = (endpoint[0] ?? 0) - (x + rect.width / 2);
@@ -2635,7 +2631,7 @@ export function tableSection(
 								},
 							],
 					{
-						delay: displayMs + winnerPauseMs,
+						delay: winnerPauseMs,
 						duration: reduced ? 150 : TRICK_SWEEP_MS,
 						easing: "ease-in",
 						fill: "forwards",
@@ -2643,21 +2639,13 @@ export function tableSection(
 				);
 		}
 		trick.replaceChildren();
-		if (animate) {
-			const highlight = () => {
-				for (const card of winnerCards) card.classList.add("trick-winner");
-			};
-			if (displayMs === 0) highlight();
-			else collectionHighlightTimer = setTimeout(highlight, displayMs);
-		}
 		if (!animate && displayMs === 0) {
 			finishCollection();
 			return;
 		}
 		collectionTimer = setTimeout(
 			() => finishCollection(),
-			displayMs +
-				(animate ? winnerPauseMs + (reduced ? 150 : TRICK_SWEEP_MS) : 0),
+			animate ? winnerPauseMs + (reduced ? 150 : TRICK_SWEEP_MS) : displayMs,
 		);
 	}
 

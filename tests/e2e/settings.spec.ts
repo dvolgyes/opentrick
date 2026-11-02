@@ -128,7 +128,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).toBeChecked();
 	await expect(
-		dialog.getByLabel("Show completed trick for (seconds)"),
+		dialog.getByLabel("Show completed trick without animation (seconds)"),
 	).toHaveValue("2");
 	await expect(
 		dialog.getByLabel("Winner highlight pause (seconds)"),
@@ -219,7 +219,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.uncheck();
 	await dialog.getByLabel("Animate the bot during its turn").uncheck();
 	await dialog.getByLabel("Animate trick collection").uncheck();
-	await dialog.getByLabel("Show completed trick for (seconds)").fill("4");
+	await dialog
+		.getByLabel("Show completed trick without animation (seconds)")
+		.fill("4");
 	await dialog.getByLabel("Winner highlight pause (seconds)").fill("1.5");
 	await dialog.getByLabel("Automatically start the next board").check();
 	await dialog.getByLabel("Show Next board button in solo play").uncheck();
@@ -320,7 +322,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).not.toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).not.toBeChecked();
 	await expect(
-		dialog.getByLabel("Show completed trick for (seconds)"),
+		dialog.getByLabel("Show completed trick without animation (seconds)"),
 	).toHaveValue("4");
 	await expect(
 		dialog.getByLabel("Winner highlight pause (seconds)"),

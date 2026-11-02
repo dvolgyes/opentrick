@@ -93,7 +93,7 @@ export interface Settings extends BotTiming {
 	readonly bidConfirmation: boolean;
 	/** Animate the collection of each completed trick. */
 	readonly trickAnimation: boolean;
-	/** How long completed cards remain on screen before collection. */
+	/** How long completed cards remain on screen when collection animation is off. */
 	readonly trickDisplayMs: number;
 	/** Time the winning card remains highlighted before collection starts. */
 	readonly trickWinnerPauseMs: number;

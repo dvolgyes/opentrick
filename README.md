@@ -134,7 +134,7 @@ The table records tricks and duplicate scores as the hand finishes.
 The winning card is highlighted and the completed trick is collected toward its winner at the edge of the game board.
 The winner remains highlighted for one second before collection by default, and you can change this pause in Settings.
 You can turn off the collection animation in Settings.
-The completed trick stays on screen for two seconds before collection by default, and you can change this time in Settings.
+Without animation, the completed trick stays on screen for two seconds by default, and you can change this time in Settings.
 In solo practice, the result stays visible until you select **Next board**.
 You can enable automatic advance in Settings and use **Review** to hold the result during its countdown.
 When automatic advance is enabled, you can hide the **Next board** button until you select **Review**.

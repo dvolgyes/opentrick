@@ -1062,31 +1062,40 @@ describe("finished trick", () => {
 		);
 	});
 
-	it("shows the completed cards for the chosen time before highlighting and sweeping", () => {
-		vi.useFakeTimers();
-		const { section } = renderView(
-			playView(),
-			"desktop",
-			undefined,
-			undefined,
-			{ trickDisplayMs: () => 2000 },
-		);
-		section.render(finishedView());
-		expect(
-			document.querySelectorAll(".trick-collection-overlay .played"),
-		).toHaveLength(4);
-		expect(document.querySelector(".trick-winner")).toBeNull();
-		vi.advanceTimersByTime(1999);
-		expect(document.querySelector(".trick-winner")).toBeNull();
-		vi.advanceTimersByTime(1);
-		expect(
-			document.querySelector(".trick-winner")?.getAttribute("data-seat"),
-		).toBe("N");
-		vi.advanceTimersByTime(1199);
-		expect(section.collecting()).toBe(true);
-		vi.advanceTimersByTime(1);
-		expect(section.collecting()).toBe(false);
-	});
+	it.each<Form>(["desktop", "compact"])(
+		"highlights the winner immediately on %s, without adding the static display delay",
+		(form) => {
+			vi.useFakeTimers();
+			const { section } = renderView(playView(), form, undefined, undefined, {
+				trickDisplayMs: () => 2000,
+				trickWinnerPauseMs: () => 1000,
+			});
+			section.render(finishedView());
+			expect(
+				document.querySelectorAll(".trick-collection-overlay .played"),
+			).toHaveLength(4);
+			expect(
+				document.querySelector(".trick-winner")?.getAttribute("data-seat"),
+			).toBe("N");
+			const winner = document.querySelector<HTMLElement>(".trick-winner");
+			const animation = winner
+				?.getAnimations()
+				.find(
+					(item) =>
+						item.effect instanceof KeyframeEffect &&
+						item.effect
+							.getKeyframes()
+							.some((frame) =>
+								String(frame.transform ?? "").includes("translate("),
+							),
+				);
+			expect(animation?.effect?.getTiming().delay).toBe(1000);
+			vi.advanceTimersByTime(1999);
+			expect(section.collecting()).toBe(true);
+			vi.advanceTimersByTime(1);
+			expect(section.collecting()).toBe(false);
+		},
+	);
 
 	it.each([0, 1000, 5000])(
 		"waits %i ms after highlighting before sweeping",
@@ -1146,7 +1155,10 @@ describe("finished trick", () => {
 		expect(
 			document.querySelectorAll(".trick-collection-overlay .played"),
 		).toHaveLength(4);
-		vi.advanceTimersByTime(2000);
+		expect(document.querySelector(".trick-winner")).toBeNull();
+		vi.advanceTimersByTime(1999);
+		expect(section.collecting()).toBe(true);
+		vi.advanceTimersByTime(1);
 		expect(section.collecting()).toBe(false);
 	});
 

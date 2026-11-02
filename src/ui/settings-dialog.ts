@@ -179,7 +179,7 @@ export function settingsDialog(
 	};
 	const timing = {
 		trickDisplayMs: timeInput(
-			t("Show completed trick for (seconds)"),
+			t("Show completed trick without animation (seconds)"),
 			"trick-display",
 			0,
 		),
