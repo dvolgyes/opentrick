@@ -683,7 +683,6 @@ export function tableSection(
 		Seat,
 		{ node: HTMLElement; timer: ReturnType<typeof setTimeout> }
 	>();
-	const finalFlightSources = new Set<HTMLElement>();
 	type FlightSnapshot =
 		| {
 				seat: Seat;
@@ -2746,20 +2745,6 @@ export function tableSection(
 			);
 		}
 		target.style.visibility = "hidden";
-		// The final result keeps the preceding play view during collection, including its last card in hand.
-		if (incomingView?.phase === "complete" && !pending.back) {
-			const position = latestView?.seats.find(
-				(seat) => seat.seat === pending.seat,
-			)?.position;
-			const hand = position ? seatNodes.get(position)?.node : undefined;
-			const card = [
-				...(hand?.querySelectorAll<HTMLElement>(".card") ?? []),
-			].find((node) => node.dataset.card === pending.card);
-			if (card) {
-				card.style.visibility = "hidden";
-				finalFlightSources.add(card);
-			}
-		}
 		const x =
 			pending.source.left +
 			pending.source.width / 2 -
@@ -2856,8 +2841,6 @@ export function tableSection(
 	}
 
 	function finishCollection(redraw = true): void {
-		for (const card of finalFlightSources) card.style.visibility = "";
-		finalFlightSources.clear();
 		clearTimeout(collectionTimer);
 		collectionTimer = undefined;
 		collectionOverlay?.remove();
@@ -3623,6 +3606,45 @@ export function tableSection(
 		);
 	}
 
+	/** Keep pre-result visibility while removing cards committed since the last play view. */
+	function finalTrickView(
+		previous: TableView,
+		completed: CompletedTrickView,
+	): TableView {
+		const alreadyShown = previous.trick?.finished
+			? []
+			: (previous.trick?.cards ?? []);
+		const newlyPlayed = completed.cards.filter(
+			(card) =>
+				!alreadyShown.some(
+					(shown) => shown.seat === card.seat && shown.card === card.card,
+				),
+		);
+		return {
+			...previous,
+			trick: completed,
+			seats: previous.seats.map((seat) => {
+				const cards = newlyPlayed.filter((played) => played.seat === seat.seat);
+				if (cards.length === 0) return seat;
+				const hand = seat.hand.visible
+					? {
+							...seat.hand,
+							suits: seat.hand.suits.map((suit) => ({
+								...suit,
+								cards: suit.cards.filter(
+									(card) => !cards.some((played) => played.card === card.card),
+								),
+							})),
+						}
+					: {
+							...seat.hand,
+							count: Math.max(0, seat.hand.count - cards.length),
+						};
+				return { ...seat, hand };
+			}),
+		};
+	}
+
 	function render(view: TableView): void {
 		incomingView = view;
 		if (
@@ -3694,7 +3716,7 @@ export function tableSection(
 			presentationSignature = signature;
 		}
 		if (collectingTrick && view.phase === "complete" && lastPlayView)
-			view = { ...lastPlayView, trick: collectingTrick };
+			view = finalTrickView(lastPlayView, collectingTrick);
 		else if (view.phase === "play") lastPlayView = view;
 		latestView = view;
 		const flyingSeat = flights.keys().next().value ?? pendingFlight?.seat;

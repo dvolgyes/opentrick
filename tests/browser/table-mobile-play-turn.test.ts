@@ -51,6 +51,389 @@ describe("auction summary visibility", () => {
 describe("card flight", () => {
 	afterEach(() => vi.useRealTimers());
 
+	it.each([
+		["N", "bottom", true],
+		["S", "top", true],
+		["E", "left", false],
+		["W", "right", false],
+		["S", "top", false],
+		["E", "left", true],
+		["W", "right", true],
+	] as const)(
+		"keeps a card-sized turn frame when %s plays their last card",
+		(seatName, position, visible) => {
+			vi.useFakeTimers();
+			const base = playView();
+			const one = visible
+				? {
+						...visibleHand,
+						suits: visibleHand.suits.map((suit) => ({ ...suit, trump: false })),
+					}
+				: { visible: false as const, count: 1 };
+			const empty = visible
+				? { ...visibleHand, suits: [] }
+				: { visible: false as const, count: 0 };
+			const nextSeat = base.seats.find((seat) => seat.seat !== seatName);
+			if (!nextSeat) throw new Error("missing next seat");
+			const before = {
+				...base,
+				trick: undefined,
+				seats: base.seats.map((seat) => ({
+					...seat,
+					turn: seat.seat === seatName,
+					hand: seat.seat === seatName ? one : seat.hand,
+				})),
+			};
+			const { root, section } = renderView(before, "desktop");
+			const oldFace = root.querySelector<HTMLElement>(
+				`[data-testid="hand-${seatName}"] .hand .face`,
+			);
+			if (!oldFace) throw new Error("missing last card");
+			const { height, width } = oldFace.getBoundingClientRect();
+			section.render({
+				...before,
+				at: before.at + 1,
+				yourTurn: false,
+				seats: before.seats.map((seat) => ({
+					...seat,
+					bot: seat.seat === nextSeat.seat,
+					turn: seat.seat === nextSeat.seat,
+					hand: seat.seat === seatName ? empty : seat.hand,
+				})),
+				trick: {
+					finished: false,
+					cards: [
+						{
+							seat: seatName,
+							position,
+							card: "SA",
+							text: "♠A",
+							rank: "A",
+							symbol: "♠",
+						},
+					],
+				},
+			});
+			const seat = root.querySelector<HTMLElement>(
+				`[data-testid="hand-${seatName}"]`,
+			);
+			const hand = seat?.querySelector<HTMLElement>(".hand");
+			expect(seat?.dataset.turnFrame).toBe("true");
+			expect(hand?.querySelectorAll(".back, .card")).toHaveLength(0);
+			expect(hand?.getBoundingClientRect().height).toBeGreaterThanOrEqual(
+				height - 1,
+			);
+			expect(hand?.getBoundingClientRect().width).toBeGreaterThanOrEqual(
+				width - 1,
+			);
+			section.dispose();
+		},
+	);
+
+	it("keeps an empty turn frame large enough for the largest card lettering", () => {
+		vi.useFakeTimers();
+		const original = document.documentElement.getAttribute(
+			"data-suit-font-size",
+		);
+		document.documentElement.dataset.suitFontSize = "XXXL";
+		try {
+			const base = playView();
+			const before = {
+				...base,
+				trick: undefined,
+				seats: base.seats.map((seat) =>
+					seat.seat === "N"
+						? {
+								...seat,
+								turn: true,
+								hand: {
+									...visibleHand,
+									suits: visibleHand.suits.map((suit) => ({
+										...suit,
+										trump: false,
+									})),
+								},
+							}
+						: { ...seat, turn: false },
+				),
+			};
+			const { root, section } = renderView(before, "desktop");
+			const face = root.querySelector<HTMLElement>(
+				'[data-testid="hand-N"] .face',
+			);
+			if (!face) throw new Error("missing card face");
+			const size = face.getBoundingClientRect();
+			section.render({
+				...before,
+				at: before.at + 1,
+				yourTurn: false,
+				seats: before.seats.map((seat) =>
+					seat.seat === "N"
+						? { ...seat, turn: false, hand: { ...visibleHand, suits: [] } }
+						: { ...seat, turn: seat.seat === "E", bot: seat.seat === "E" },
+				),
+				trick: {
+					finished: false,
+					cards: [
+						{
+							seat: "N",
+							position: "bottom",
+							card: "SA",
+							text: "♠A",
+							rank: "A",
+							symbol: "♠",
+						},
+					],
+				},
+			});
+			const hand = root
+				.querySelector<HTMLElement>('[data-testid="hand-N"] .hand')
+				?.getBoundingClientRect();
+			expect(hand?.height).toBeGreaterThanOrEqual(size.height - 1);
+			expect(hand?.width).toBeGreaterThanOrEqual(size.width - 1);
+			section.dispose();
+		} finally {
+			if (original === null)
+				document.documentElement.removeAttribute("data-suit-font-size");
+			else
+				document.documentElement.setAttribute("data-suit-font-size", original);
+		}
+	});
+
+	it.each([
+		["N", "bottom", true],
+		["S", "top", true],
+		["S", "top", false],
+		["E", "left", false],
+		["W", "right", false],
+		["E", "left", true],
+		["W", "right", true],
+	] as const)(
+		"keeps a card-sized empty frame for %s in compact view",
+		(seatName, position, visible) => {
+			const base = playView();
+			const one = visible
+				? {
+						...visibleHand,
+						suits: visibleHand.suits.map((suit) => ({ ...suit, trump: false })),
+					}
+				: { visible: false as const, count: 1 };
+			const empty = visible
+				? { ...visibleHand, suits: [] }
+				: { visible: false as const, count: 0 };
+			const before = {
+				...base,
+				seats: base.seats.map((seat) => ({
+					...seat,
+					turn: seat.seat === seatName,
+					hand: seat.seat === seatName ? one : seat.hand,
+				})),
+			};
+			const { root, section } = renderView(before, "compact");
+			const selector =
+				position === "bottom"
+					? `[data-testid="hand-${seatName}"] .hand`
+					: `.mobile-board-${position} .hand`;
+			const oldFace = root.querySelector<HTMLElement>(`${selector} .face`);
+			if (!oldFace) throw new Error("missing compact card");
+			const { height, width } = oldFace.getBoundingClientRect();
+			section.render({
+				...before,
+				at: before.at + 1,
+				seats: before.seats.map((seat) =>
+					seat.seat === seatName ? { ...seat, hand: empty } : seat,
+				),
+			});
+			const hand = root.querySelector<HTMLElement>(selector);
+			expect(hand?.querySelectorAll(".back, .card")).toHaveLength(0);
+			expect(hand?.getBoundingClientRect().height).toBeGreaterThanOrEqual(
+				height - 1,
+			);
+			expect(hand?.getBoundingClientRect().width).toBeGreaterThanOrEqual(
+				width - 1,
+			);
+			section.dispose();
+		},
+	);
+
+	it.each([
+		["N", "bottom", true],
+		["S", "top", true],
+		["E", "left", false],
+		["W", "right", false],
+		["S", "top", false],
+		["E", "left", true],
+		["W", "right", true],
+	] as const)(
+		"removes %s's last card from the retained final-trick hand",
+		(seatName, position, visible) => {
+			vi.useFakeTimers();
+			const base = playView();
+			const beforeSeats = base.seats.map((seat) => ({
+				...seat,
+				turn: seat.seat === seatName,
+				hand:
+					seat.seat === seatName
+						? visible
+							? {
+									...visibleHand,
+									suits: visibleHand.suits.map((suit) => ({
+										...suit,
+										trump: false,
+									})),
+								}
+							: { visible: false as const, count: 1 }
+						: seat.hand.visible
+							? { ...visibleHand, suits: [] }
+							: { visible: false as const, count: 0 },
+			}));
+			const others = beforeSeats
+				.filter((seat) => seat.seat !== seatName)
+				.map((seat, index) => ({
+					seat: seat.seat,
+					position: seat.position,
+					card: (["S2", "S3", "S4"] as const)[index] ?? "S2",
+					text: "♠2",
+					rank: "2",
+					symbol: "♠",
+				}));
+			const prior = {
+				cards: [
+					...others,
+					{
+						seat: seatName,
+						position,
+						card: "SA" as const,
+						text: "♠A",
+						rank: "A",
+						symbol: "♠",
+					},
+				],
+				finished: true,
+				index: 12,
+				winner: seatName,
+				winnerPosition: position,
+				winnerName: "",
+			};
+			const before = {
+				...base,
+				seats: beforeSeats,
+				trick: { finished: false, cards: others },
+				completedTrick: prior,
+			};
+			const { root, section } = renderView(before, "desktop");
+			const completed = { ...prior, index: 13 };
+			section.render({
+				...before,
+				at: before.at + 1,
+				phase: "complete",
+				trick: undefined,
+				completedTrick: completed,
+			});
+			expect(document.querySelector(".card-flight")).not.toBeNull();
+			for (const seat of beforeSeats)
+				expect(
+					root.querySelectorAll(
+						`[data-testid="hand-${seat.seat}"] .hand .back, [data-testid="hand-${seat.seat}"] .hand .card`,
+					),
+				).toHaveLength(0);
+			vi.advanceTimersByTime(2000);
+			for (const seat of beforeSeats)
+				expect(
+					root.querySelectorAll(
+						`[data-testid="hand-${seat.seat}"] .hand .back, [data-testid="hand-${seat.seat}"] .hand .card`,
+					),
+				).toHaveLength(0);
+			section.dispose();
+		},
+	);
+
+	it("removes every newly committed final-trick card when intermediate snapshots were skipped", () => {
+		vi.useFakeTimers();
+		const base = playView();
+		const cards = [
+			{
+				seat: "E" as const,
+				position: "left" as const,
+				card: "S2" as const,
+				text: "♠2",
+				rank: "2",
+				symbol: "♠",
+			},
+			{
+				seat: "N" as const,
+				position: "bottom" as const,
+				card: "SA" as const,
+				text: "♠A",
+				rank: "A",
+				symbol: "♠",
+			},
+			{
+				seat: "S" as const,
+				position: "top" as const,
+				card: "S3" as const,
+				text: "♠3",
+				rank: "3",
+				symbol: "♠",
+			},
+			{
+				seat: "W" as const,
+				position: "right" as const,
+				card: "S4" as const,
+				text: "♠4",
+				rank: "4",
+				symbol: "♠",
+			},
+		];
+		const prior = {
+			cards,
+			finished: true,
+			index: 12,
+			winner: "N" as const,
+			winnerPosition: "bottom" as const,
+			winnerName: "",
+		};
+		const before = {
+			...base,
+			seats: base.seats.map((seat) =>
+				seat.seat === "E"
+					? { ...seat, hand: { visible: false as const, count: 0 } }
+					: seat.seat === "W"
+						? { ...seat, hand: { visible: false as const, count: 1 } }
+						: seat.seat === "S"
+							? {
+									...seat,
+									hand: {
+										...visibleHand,
+										suits: visibleHand.suits.map((suit) => ({
+											...suit,
+											cards: [card("S3")],
+										})),
+									},
+								}
+							: seat,
+			),
+			trick: { finished: false, cards: cards.slice(0, 1) },
+			completedTrick: prior,
+		};
+		const { root, section } = renderView(before, "desktop");
+		section.render({
+			...before,
+			at: before.at + 3,
+			phase: "complete",
+			trick: undefined,
+			completedTrick: { ...prior, index: 13 },
+		});
+		expect(section.collecting()).toBe(true);
+		expect(root.querySelectorAll(".hand .back, .hand .card")).toHaveLength(0);
+		expect(
+			root
+				.querySelector('[data-testid="hand-W"]')
+				?.getAttribute("data-visible"),
+		).toBe("false");
+		section.dispose();
+	});
+
 	it("restores the original static card layout when played-card animation is disabled", () => {
 		vi.useFakeTimers();
 		const base = { ...playView(), trick: undefined };
@@ -1139,14 +1522,14 @@ describe("card flight", () => {
 			trick: undefined,
 			completedTrick: completed,
 		});
-		const cardInHand = root.querySelector<HTMLElement>(
-			'[data-testid="hand-N"] .card[data-card="SA"]',
-		);
-		expect(cardInHand?.style.visibility).toBe("hidden");
+		expect(
+			root.querySelector('[data-testid="hand-N"] .card[data-card="SA"]'),
+		).toBeNull();
 		vi.advanceTimersByTime(2000);
-		expect(cardInHand?.style.visibility).toBe("hidden");
+		expect(
+			root.querySelector('[data-testid="hand-N"] .card[data-card="SA"]'),
+		).toBeNull();
 		section.dispose();
-		expect(cardInHand?.style.visibility).toBe("");
 	});
 });
 
