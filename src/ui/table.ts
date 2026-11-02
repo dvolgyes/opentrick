@@ -175,6 +175,7 @@ export type PlayedCardStyle =
 const PLAYED_CARD_STYLE: PlayedCardStyle = "corners-oriented";
 
 const TRICK_SWEEP_MS = 1000;
+const CARD_FLIGHT_MS = 2000;
 
 /**
  * The call nodes of one remote seat. They outlive the table's re-rendering and only move with their place, so
@@ -668,6 +669,24 @@ export function tableSection(
 	let collectingTrick: CompletedTrickView | undefined;
 	let collectionOverlay: HTMLElement | undefined;
 	let collectionTimer: ReturnType<typeof setTimeout> | undefined;
+	const landingOffsets = new Map<
+		Seat,
+		{ x: number; y: number; rotation: number }
+	>();
+	const flights = new Map<
+		Seat,
+		{ node: HTMLElement; timer: ReturnType<typeof setTimeout> }
+	>();
+	const finalFlightSources = new Set<HTMLElement>();
+	let pendingFlight:
+		| {
+				seat: Seat;
+				card: string;
+				source: DOMRect;
+				back: HTMLImageElement | undefined;
+				startRotation: number;
+		  }
+		| undefined;
 	let claimMode: "choose" | "all" | null = null;
 	/** The count that the declarer tapped; "Confirm claim" stays disabled until there is one. */
 	let claimCount: number | null = null;
@@ -2476,16 +2495,282 @@ export function tableSection(
 		waitingText.textContent = visible ? view.waiting : "";
 	}
 
+	function clearFlights(): void {
+		for (const flight of flights.values()) {
+			clearTimeout(flight.timer);
+			flight.node.remove();
+		}
+		flights.clear();
+		pendingFlight = undefined;
+		const win = element.ownerDocument.defaultView;
+		win?.removeEventListener("resize", cancelFlights);
+		win?.removeEventListener("scroll", cancelFlights, true);
+		win?.visualViewport?.removeEventListener("resize", cancelFlights);
+		win?.visualViewport?.removeEventListener("scroll", cancelFlights);
+		element.ownerDocument.removeEventListener(
+			"visibilitychange",
+			onFlightVisibility,
+		);
+	}
+
+	function cancelFlights(): void {
+		clearFlights();
+		if (collectingTrick && element.ownerDocument.hidden) finishCollection();
+		else if (collectingTrick && !collectionOverlay)
+			startCollection(collectingTrick);
+		else if (latestView)
+			renderTrick(latestView.trick?.finished ? undefined : latestView.trick);
+	}
+
+	function onFlightVisibility(): void {
+		if (element.ownerDocument.hidden) cancelFlights();
+	}
+
+	/** Capture the old hand before its played card is removed by the next render. */
+	function prepareFlight(view: TableView): void {
+		const previous = lastPlayView;
+		const win = element.ownerDocument.defaultView;
+		if (
+			!previous ||
+			!win ||
+			!desktop ||
+			sideways ||
+			compact ||
+			collectingTrick ||
+			view.board !== previous.board ||
+			view.at <= presentationAt ||
+			previous.phase !== "play" ||
+			element.ownerDocument.hidden ||
+			win.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+		)
+			return;
+		const before = previous.trick?.finished
+			? []
+			: (previous.trick?.cards ?? []);
+		const after =
+			view.completedTrick && view.completedTrick.index > presentationIndex
+				? view.completedTrick.cards
+				: (view.trick?.cards ?? []);
+		if (
+			after.length !== before.length + 1 ||
+			before.some(
+				(card, i) =>
+					card.seat !== after[i]?.seat || card.card !== after[i]?.card,
+			)
+		)
+			return;
+		const played = after.at(-1);
+		if (!played) return;
+		if (before.length === 0) landingOffsets.clear();
+		const seat = previous.seats.find((entry) => entry.seat === played.seat);
+		const hand = seatNodes
+			.get(played.position)
+			?.node.querySelector<HTMLElement>(".hand");
+		if (!seat || !hand) return;
+		const source = seat.hand.visible
+			? [...hand.querySelectorAll<HTMLElement>(".card")]
+					.find((card) => card.dataset.card === played.card)
+					?.querySelector<HTMLElement>(".face")
+			: hand.querySelector<HTMLElement>(".back:last-child .face");
+		if (!source) return;
+		const rect = source.getBoundingClientRect();
+		if (!rect.width || !rect.height) return;
+		const startRotation =
+			!seat.hand.visible &&
+			(played.position === "left" || played.position === "right")
+				? 90
+				: 0;
+		pendingFlight = {
+			seat: played.seat,
+			card: played.card,
+			source: rect,
+			startRotation,
+			back: seat.hand.visible
+				? undefined
+				: (source.querySelector<HTMLImageElement>("img")?.cloneNode(true) as
+						| HTMLImageElement
+						| undefined),
+		};
+		const angle = Math.random() * Math.PI * 2;
+		const radius = Math.sqrt(Math.random()) * 0.18;
+		landingOffsets.set(played.seat, {
+			x: Math.cos(angle) * radius,
+			y: Math.sin(angle) * radius,
+			rotation: startRotation + 170 + Math.random() * 20,
+		});
+	}
+
+	function startFlight(): void {
+		const pending = pendingFlight;
+		pendingFlight = undefined;
+		if (!pending) return;
+		const target = [...trick.querySelectorAll<HTMLElement>(".played")].find(
+			(node) =>
+				node.dataset.seat === pending.seat &&
+				node.dataset.card === pending.card,
+		);
+		const win = element.ownerDocument.defaultView;
+		if (!target || !win) return;
+		const destination = target.getBoundingClientRect();
+		if (!destination.width || !destination.height) return;
+		const boardRect = felt.getBoundingClientRect();
+		const scale = felt.offsetWidth > 0 ? boardRect.width / felt.offsetWidth : 1;
+		const width = target.offsetWidth * scale;
+		const height = target.offsetHeight * scale;
+		if (!width || !height) return;
+		const moving = el("div", {
+			className: "bridge-table card-flight",
+			attrs: {
+				"aria-hidden": "true",
+				"data-played-card-style": playedCardStyle,
+			},
+		});
+		Object.assign(moving.style, {
+			left: `${destination.left + destination.width / 2 - width / 2}px`,
+			top: `${destination.top + destination.height / 2 - height / 2}px`,
+			width: `${width}px`,
+			height: `${height}px`,
+		});
+		const computed = win.getComputedStyle(target);
+		for (const name of [
+			"--card-w",
+			"--card-h",
+			"--rank-size",
+			"--suit-font-scale",
+			"--card-bg",
+			"--card-fg",
+			"--line",
+			"--board-card-shadow",
+		])
+			moving.style.setProperty(name, computed.getPropertyValue(name));
+		const face = target.cloneNode(true) as HTMLElement;
+		Object.assign(face.style, {
+			left: "0",
+			top: "0",
+			transform: "",
+			visibility: "",
+			width: "100%",
+			height: "100%",
+			fontSize: `${parseFloat(computed.fontSize) * scale}px`,
+		});
+		const originalText = target.querySelectorAll<HTMLElement>(
+			".rank-corner, .played-center-suit",
+		);
+		const copiedText = face.querySelectorAll<HTMLElement>(
+			".rank-corner, .played-center-suit",
+		);
+		originalText.forEach((part, index) => {
+			const copy = copiedText[index];
+			if (copy)
+				copy.style.fontSize = `${parseFloat(win.getComputedStyle(part).fontSize) * scale}px`;
+		});
+		const rotor = el("div", { className: "card-flight-rotor" }, face);
+		if (pending.back) {
+			pending.back.className = "card-flight-back";
+			rotor.append(pending.back);
+		}
+		moving.append(rotor);
+		element.ownerDocument.body.append(moving);
+		if (flights.size === 0) {
+			win.addEventListener("resize", cancelFlights);
+			win.addEventListener("scroll", cancelFlights, true);
+			win.visualViewport?.addEventListener("resize", cancelFlights);
+			win.visualViewport?.addEventListener("scroll", cancelFlights);
+			element.ownerDocument.addEventListener(
+				"visibilitychange",
+				onFlightVisibility,
+			);
+		}
+		target.style.visibility = "hidden";
+		// The final result keeps the preceding play view during collection, including its last card in hand.
+		if (incomingView?.phase === "complete" && !pending.back) {
+			const position = latestView?.seats.find(
+				(seat) => seat.seat === pending.seat,
+			)?.position;
+			const hand = position ? seatNodes.get(position)?.node : undefined;
+			const card = [
+				...(hand?.querySelectorAll<HTMLElement>(".card") ?? []),
+			].find((node) => node.dataset.card === pending.card);
+			if (card) {
+				card.style.visibility = "hidden";
+				finalFlightSources.add(card);
+			}
+		}
+		const x =
+			pending.source.left +
+			pending.source.width / 2 -
+			destination.left -
+			destination.width / 2;
+		const y =
+			pending.source.top +
+			pending.source.height / 2 -
+			destination.top -
+			destination.height / 2;
+		const rotation = landingOffsets.get(pending.seat)?.rotation ?? 180;
+		const sourceWidth = pending.startRotation
+			? pending.source.height
+			: pending.source.width;
+		const sourceHeight = pending.startRotation
+			? pending.source.width
+			: pending.source.height;
+		const timing = {
+			duration: CARD_FLIGHT_MS,
+			easing: "cubic-bezier(0.333333, 0.666667, 0.666667, 1)",
+			fill: "forwards" as const,
+		};
+		moving.animate(
+			[
+				{
+					transform: `translate(${x}px, ${y}px) rotate(${pending.startRotation}deg) scale(${sourceWidth / width}, ${sourceHeight / height})`,
+				},
+				{ transform: `translate(0px, 0px) rotate(${rotation}deg) scale(1, 1)` },
+			],
+			timing,
+		);
+		if (pending.back)
+			rotor.animate(
+				[
+					{ transform: "perspective(800px) rotateY(180deg)" },
+					{ transform: "perspective(800px) rotateY(0deg)" },
+				],
+				timing,
+			);
+		const timer = setTimeout(() => {
+			moving.remove();
+			flights.delete(pending.seat);
+			const landed = [...trick.querySelectorAll<HTMLElement>(".played")].find(
+				(node) =>
+					node.dataset.seat === pending.seat &&
+					node.dataset.card === pending.card,
+			);
+			if (landed) landed.style.visibility = "";
+			if (flights.size === 0) {
+				clearFlights();
+				if (collectingTrick && !collectionOverlay)
+					startCollection(collectingTrick);
+			}
+		}, CARD_FLIGHT_MS);
+		flights.set(pending.seat, { node: moving, timer });
+	}
+
 	/** Show current cards separately from the fixed snapshot used for collection. */
 	function showTrick(view: TableView): void {
 		if (collectingTrick) {
-			if (!collectionOverlay) startCollection(collectingTrick);
+			if (pendingFlight) {
+				renderTrick(collectingTrick);
+				startFlight();
+			}
+			if (!collectionOverlay && flights.size === 0)
+				startCollection(collectingTrick);
 			return;
 		}
 		renderTrick(view.trick?.finished ? undefined : view.trick);
+		startFlight();
 	}
 
 	function finishCollection(redraw = true): void {
+		for (const card of finalFlightSources) card.style.visibility = "";
+		finalFlightSources.clear();
 		clearTimeout(collectionTimer);
 		collectionTimer = undefined;
 		collectionOverlay?.remove();
@@ -2501,6 +2786,7 @@ export function tableSection(
 		);
 		const wasCollecting = collectingTrick !== undefined;
 		collectingTrick = undefined;
+		if (wasCollecting) landingOffsets.clear();
 		if (redraw && wasCollecting && incomingView) {
 			render(incomingView);
 			options.presentationDone?.();
@@ -2577,7 +2863,15 @@ export function tableSection(
 			if (!rect) continue;
 			const clone = node.cloneNode(true) as HTMLElement;
 			const computed = win.getComputedStyle(node);
-			const scale = node.offsetWidth > 0 ? rect.width / node.offsetWidth : 1;
+			const rotated = landingOffsets.has(node.dataset.seat as Seat);
+			const scale =
+				rotated && board.offsetWidth > 0
+					? boardRect.width / board.offsetWidth
+					: node.offsetWidth > 0
+						? rect.width / node.offsetWidth
+						: 1;
+			const cardWidth = rotated ? node.offsetWidth * scale : rect.width;
+			const cardHeight = rotated ? node.offsetHeight * scale : rect.height;
 			for (const name of [
 				"--card-w",
 				"--card-h",
@@ -2589,14 +2883,14 @@ export function tableSection(
 				"--board-card-shadow",
 			])
 				clone.style.setProperty(name, computed.getPropertyValue(name));
-			const x = rect.left - boardRect.left;
-			const y = rect.top - boardRect.top;
+			const x = rect.left + rect.width / 2 - cardWidth / 2 - boardRect.left;
+			const y = rect.top + rect.height / 2 - cardHeight / 2 - boardRect.top;
 			Object.assign(clone.style, {
 				position: "absolute",
 				left: `${x}px`,
 				top: `${y}px`,
-				width: `${rect.width}px`,
-				height: `${rect.height}px`,
+				width: `${cardWidth}px`,
+				height: `${cardHeight}px`,
 				minWidth: "0",
 				minHeight: "0",
 				fontSize: `${parseFloat(computed.fontSize) * scale}px`,
@@ -2617,8 +2911,8 @@ export function tableSection(
 			if (winner && animate) clone.classList.add("trick-winner");
 			clone.style.zIndex = winner ? "2" : "1";
 			overlay.append(clone);
-			const dx = (endpoint[0] ?? 0) - (x + rect.width / 2);
-			const dy = (endpoint[1] ?? 0) - (y + rect.height / 2);
+			const dx = (endpoint[0] ?? 0) - (x + cardWidth / 2);
+			const dy = (endpoint[1] ?? 0) - (y + cardHeight / 2);
 			const base = clone.style.transform || "none";
 			if (animate)
 				clone.animate(
@@ -2695,6 +2989,16 @@ export function tableSection(
 				),
 			),
 		);
+		for (const node of trick.querySelectorAll<HTMLElement>(".played")) {
+			const seat = node.dataset.seat as Seat;
+			const offset = landingOffsets.get(seat);
+			if (offset) {
+				node.style.left = `calc(var(--card-w) * ${offset.x})`;
+				node.style.top = `calc(var(--card-h) * ${offset.y})`;
+				node.style.transform = `rotate(${offset.rotation}deg)`;
+			}
+			if (flights.has(seat)) node.style.visibility = "hidden";
+		}
 	}
 
 	function setCountdown(seconds: number | undefined): void {
@@ -3195,6 +3499,7 @@ export function tableSection(
 
 	function render(view: TableView): void {
 		incomingView = view;
+		prepareFlight(view);
 		const completed = view.completedTrick;
 		const index = completed?.index ?? 0;
 		const signature = completed
@@ -3205,6 +3510,8 @@ export function tableSection(
 				])
 			: "";
 		if (view.board !== presentationBoard) {
+			clearFlights();
+			landingOffsets.clear();
 			finishCollection(false);
 			presentationBoard = view.board;
 			presentationIndex = index;
@@ -3213,6 +3520,14 @@ export function tableSection(
 			lastPlayView = undefined;
 		} else {
 			const rolledBack = view.at < presentationAt;
+			if (
+				rolledBack ||
+				index > presentationIndex + 1 ||
+				(view.phase !== "play" && !completed)
+			) {
+				clearFlights();
+				landingOffsets.clear();
+			}
 			if (
 				collectingTrick &&
 				(rolledBack ||
@@ -3634,6 +3949,10 @@ export function tableSection(
 	}
 
 	function setForm(layout: Layout): void {
+		if (layout !== "desktop") {
+			clearFlights();
+			landingOffsets.clear();
+		}
 		desktop = layout !== "compact";
 		compact = layout === "compact";
 		sideways = layout === "sideways";
@@ -3654,6 +3973,7 @@ export function tableSection(
 		collecting: () => collectingTrick !== undefined,
 		dispose: () => {
 			mobileSideNameObserver.disconnect();
+			clearFlights();
 			finishCollection(false);
 		},
 		renderCall,

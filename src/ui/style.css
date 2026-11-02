@@ -2506,6 +2506,37 @@ dialog {
 	overflow: hidden;
 }
 
+.bridge-table.card-flight {
+	position: fixed;
+	z-index: 9999;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	pointer-events: none;
+}
+
+.card-flight-rotor {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	transform-style: preserve-3d;
+}
+
+.card-flight-rotor > .played,
+.card-flight-back {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	backface-visibility: hidden;
+}
+
+.card-flight-back {
+	border-radius: 0.3rem;
+	transform: rotateY(180deg);
+}
+
 .trick-collection-overlay .trick-winner {
 	outline: 4px solid var(--trick-winner-frame);
 	outline-offset: 2px;
