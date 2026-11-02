@@ -36,6 +36,12 @@ describe("player settings", () => {
 			playTimeMs: 5000,
 		});
 	});
+	it("defaults the completed trick display to two seconds and the solo next-board button to visible", () => {
+		expect(readSettings(memoryStorage())).toMatchObject({
+			trickDisplayMs: 2000,
+			soloNextBoard: true,
+		});
+	});
 	it("uses the default settings when nothing is stored", () => {
 		expect(readSettings(memoryStorage())).toEqual({
 			bidder: "sl",
@@ -65,7 +71,9 @@ describe("player settings", () => {
 			botBidHint: true,
 			bidConfirmation: true,
 			trickAnimation: true,
+			trickDisplayMs: 2000,
 			soloAutoAdvance: false,
+			soloNextBoard: true,
 			hideBidBoxWhenWaiting: true,
 			relayChecks: false,
 			landscapeDesktop: false,
@@ -127,7 +135,9 @@ describe("player settings", () => {
 			botBidHint: false,
 			bidConfirmation: false,
 			trickAnimation: false,
+			trickDisplayMs: 4000,
 			soloAutoAdvance: true,
+			soloNextBoard: false,
 			hideBidBoxWhenWaiting: false,
 			relayChecks: true,
 			landscapeDesktop: false,
@@ -137,6 +147,19 @@ describe("player settings", () => {
 		expect(readSettings(storage)).toEqual(settings);
 		for (let index = 0; index < storage.length; index++)
 			expect(storage.key(index)).toMatch(/^opentrick\.settings\./);
+	});
+
+	it("validates and restores the completed-trick display time", () => {
+		const storage = memoryStorage();
+		for (const value of ["-1", "60001", "not a number"]) {
+			storage.setItem("opentrick.settings.trick-display-ms", value);
+			expect(readSettings(storage).trickDisplayMs).toBe(2000);
+		}
+		storage.setItem("opentrick.settings.trick-display-ms", "0");
+		expect(readSettings(storage).trickDisplayMs).toBe(0);
+		expect(() =>
+			writeSettings(storage, { ...DEFAULT_SETTINGS, trickDisplayMs: 1500 }),
+		).toThrow();
 	});
 
 	it("knows the first run: no save yet, while a single stored value or no storage does not count", () => {

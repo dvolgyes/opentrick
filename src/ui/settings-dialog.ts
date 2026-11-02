@@ -172,6 +172,11 @@ export function settingsDialog(
 		};
 	};
 	const timing = {
+		trickDisplayMs: timeInput(
+			t("Show completed trick for (seconds)"),
+			"trick-display",
+			0,
+		),
 		botCardDelayMs: timeInput(
 			t("Minimum card time (seconds)"),
 			"bot-card-delay",
@@ -192,6 +197,7 @@ export function settingsDialog(
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
 	const trickAnimation = el("input", { attrs: { type: "checkbox" } });
 	const soloAutoAdvance = el("input", { attrs: { type: "checkbox" } });
+	const soloNextBoard = el("input", { attrs: { type: "checkbox" } });
 	const biddingHelp = Object.fromEntries(
 		Object.keys(BIDDING_HELP_LABELS).map((field) => [
 			field,
@@ -413,11 +419,25 @@ export function settingsDialog(
 			{},
 			el("legend", {}, t("Gameplay")),
 			el("label", {}, trickAnimation, ` ${t("Animate trick collection")}`),
+			timing.trickDisplayMs.element,
 			el(
 				"label",
 				{},
 				soloAutoAdvance,
 				` ${t("Automatically start the next board")}`,
+			),
+			el(
+				"label",
+				{},
+				soloNextBoard,
+				` ${t("Show Next board button in solo play")}`,
+			),
+			el(
+				"p",
+				{ className: "settings-hint" },
+				t(
+					"Automatic advance is required when the Next board button is hidden. Review brings the button back.",
+				),
 			),
 		),
 		el(
@@ -498,7 +518,9 @@ export function settingsDialog(
 			"fieldset",
 			{},
 			el("legend", {}, t("Bot timing")),
-			...Object.values(timing).map((control) => control.element),
+			...Object.entries(timing)
+				.filter(([field]) => field !== "trickDisplayMs")
+				.map(([, control]) => control.element),
 			el(
 				"p",
 				{ className: "settings-hint" },
@@ -530,6 +552,13 @@ export function settingsDialog(
 	function saveSettings(): void {
 		for (const { input } of Object.values(timing))
 			if (!input.reportValidity()) return;
+		if (!soloNextBoard.checked && !soloAutoAdvance.checked) {
+			status.textContent = t(
+				"Turn on automatic advance to hide the Next board button.",
+			);
+			soloAutoAdvance.focus();
+			return;
+		}
 		const times = Object.fromEntries(
 			Object.entries(timing).map(([field, control]) => [
 				field,
@@ -568,6 +597,7 @@ export function settingsDialog(
 			bidConfirmation: biddingHelp.bidConfirmation.checked,
 			trickAnimation: trickAnimation.checked,
 			soloAutoAdvance: soloAutoAdvance.checked,
+			soloNextBoard: soloNextBoard.checked,
 			hideBidBoxWhenWaiting: biddingHelp.hideBidBoxWhenWaiting.checked,
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,
@@ -622,6 +652,7 @@ export function settingsDialog(
 			cardPoints.checked = settings.cardPoints;
 			trickAnimation.checked = settings.trickAnimation;
 			soloAutoAdvance.checked = settings.soloAutoAdvance;
+			soloNextBoard.checked = settings.soloNextBoard;
 			for (const field of Object.keys(
 				BIDDING_HELP_LABELS,
 			) as (keyof typeof BIDDING_HELP_LABELS)[])

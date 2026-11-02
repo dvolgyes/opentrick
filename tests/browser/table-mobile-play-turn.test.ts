@@ -1047,6 +1047,50 @@ describe("finished trick", () => {
 		);
 	});
 
+	it("shows the completed cards for the chosen time before highlighting and sweeping", () => {
+		vi.useFakeTimers();
+		const { section } = renderView(
+			playView(),
+			"desktop",
+			undefined,
+			undefined,
+			{ trickDisplayMs: () => 2000 },
+		);
+		section.render(finishedView());
+		expect(
+			document.querySelectorAll(".trick-collection-overlay .played"),
+		).toHaveLength(4);
+		expect(document.querySelector(".trick-winner")).toBeNull();
+		vi.advanceTimersByTime(1999);
+		expect(document.querySelector(".trick-winner")).toBeNull();
+		vi.advanceTimersByTime(1);
+		expect(
+			document.querySelector(".trick-winner")?.getAttribute("data-seat"),
+		).toBe("N");
+		vi.advanceTimersByTime(1199);
+		expect(section.collecting()).toBe(true);
+		vi.advanceTimersByTime(1);
+		expect(section.collecting()).toBe(false);
+	});
+
+	it("keeps the finished trick visible for the configured time even with animation off", () => {
+		vi.useFakeTimers();
+		const { section } = renderView(
+			playView(),
+			"desktop",
+			undefined,
+			undefined,
+			{ trickDisplayMs: () => 2000, trickAnimation: () => false },
+		);
+		section.render(finishedView());
+		expect(section.collecting()).toBe(true);
+		expect(
+			document.querySelectorAll(".trick-collection-overlay .played"),
+		).toHaveLength(4);
+		vi.advanceTimersByTime(2000);
+		expect(section.collecting()).toBe(false);
+	});
+
 	it("keeps card text proportional when the desktop table is scaled", () => {
 		vi.useFakeTimers();
 		const { root, section } = renderView(playView(), "desktop");

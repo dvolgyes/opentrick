@@ -132,6 +132,7 @@ export interface TableSection {
 
 export interface TableOptions {
 	readonly trickAnimation?: () => boolean;
+	readonly trickDisplayMs?: () => number;
 	readonly presentationDone?: () => void;
 	/** The scale of the points pill and the bidding guide; the table reads it at each render. */
 	readonly pointSystem?: () => PointSystem;
@@ -667,6 +668,7 @@ export function tableSection(
 	let collectingTrick: CompletedTrickView | undefined;
 	let collectionOverlay: HTMLElement | undefined;
 	let collectionTimer: ReturnType<typeof setTimeout> | undefined;
+	let collectionHighlightTimer: ReturnType<typeof setTimeout> | undefined;
 	let claimMode: "choose" | "all" | null = null;
 	/** The count that the declarer tapped; "Confirm claim" stays disabled until there is one. */
 	let claimCount: number | null = null;
@@ -2469,7 +2471,9 @@ export function tableSection(
 
 	function finishCollection(redraw = true): void {
 		clearTimeout(collectionTimer);
+		clearTimeout(collectionHighlightTimer);
 		collectionTimer = undefined;
+		collectionHighlightTimer = undefined;
 		collectionOverlay?.remove();
 		collectionOverlay = undefined;
 		const win = element.ownerDocument.defaultView;
@@ -2543,6 +2547,11 @@ export function tableSection(
 		doc.addEventListener("visibilitychange", onCollectionVisibility);
 		const reduced =
 			win.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+		const displayMs =
+			options.trickDisplayMs?.() ?? DEFAULT_SETTINGS.trickDisplayMs;
+		const animate =
+			options.trickAnimation?.() ?? DEFAULT_SETTINGS.trickAnimation;
+		const winnerCards: HTMLElement[] = [];
 		for (const [index, node] of nodes.entries()) {
 			const rect = rects[index];
 			if (!rect) continue;
@@ -2585,33 +2594,46 @@ export function tableSection(
 					copy.style.fontSize = `${parseFloat(win.getComputedStyle(part).fontSize) * scale}px`;
 			});
 			const winner = node.dataset.seat === completed.winner;
-			if (winner) clone.classList.add("trick-winner");
+			if (winner) winnerCards.push(clone);
 			clone.style.zIndex = winner ? "2" : "1";
 			overlay.append(clone);
 			const dx = (endpoint[0] ?? 0) - (x + rect.width / 2);
 			const dy = (endpoint[1] ?? 0) - (y + rect.height / 2);
 			const base = clone.style.transform || "none";
-			clone.animate(
-				reduced
-					? [{ opacity: 1 }, { opacity: 0 }]
-					: [
-							{ transform: base },
-							{
-								transform: `translate(${dx}px, ${dy}px) ${base === "none" ? "" : base}`,
-							},
-						],
-				{
-					delay: TRICK_HIGHLIGHT_MS,
-					duration: reduced ? 150 : TRICK_SWEEP_MS,
-					easing: "ease-in",
-					fill: "forwards",
-				},
-			);
+			if (animate)
+				clone.animate(
+					reduced
+						? [{ opacity: 1 }, { opacity: 0 }]
+						: [
+								{ transform: base },
+								{
+									transform: `translate(${dx}px, ${dy}px) ${base === "none" ? "" : base}`,
+								},
+							],
+					{
+						delay: displayMs + TRICK_HIGHLIGHT_MS,
+						duration: reduced ? 150 : TRICK_SWEEP_MS,
+						easing: "ease-in",
+						fill: "forwards",
+					},
+				);
 		}
 		trick.replaceChildren();
+		if (animate) {
+			const highlight = () => {
+				for (const card of winnerCards) card.classList.add("trick-winner");
+			};
+			if (displayMs === 0) highlight();
+			else collectionHighlightTimer = setTimeout(highlight, displayMs);
+		}
+		if (!animate && displayMs === 0) {
+			finishCollection();
+			return;
+		}
 		collectionTimer = setTimeout(
 			() => finishCollection(),
-			TRICK_HIGHLIGHT_MS + (reduced ? 150 : TRICK_SWEEP_MS),
+			displayMs +
+				(animate ? TRICK_HIGHLIGHT_MS + (reduced ? 150 : TRICK_SWEEP_MS) : 0),
 		);
 	}
 
@@ -2725,9 +2747,13 @@ export function tableSection(
 						...(view.solo.reviewing
 							? []
 							: [button(t("Review"), () => handlers.reviewResult?.())]),
-						button(t("Next board"), () => handlers.nextBoard?.(), {
-							attrs: { "data-testid": "next-board" },
-						}),
+						...(view.solo.showNext === false
+							? []
+							: [
+									button(t("Next board"), () => handlers.nextBoard?.(), {
+										attrs: { "data-testid": "next-board" },
+									}),
+								]),
 					),
 				]
 			: [];
@@ -3196,7 +3222,7 @@ export function tableSection(
 					? `${direction} · ${completed.winnerName}`
 					: direction;
 				trickAnnouncement.textContent = t("{player} won the trick", { player });
-				if (options.trickAnimation?.() ?? true) collectingTrick = completed;
+				collectingTrick = completed;
 			}
 			presentationIndex = index;
 			presentationAt = view.at;

@@ -352,7 +352,11 @@ export interface ScoringView {
 	readonly compactOutcome: "WON" | "LOST" | "PASSED OUT";
 	readonly compactDetail: string;
 	readonly countdown: number;
-	readonly solo?: { readonly ready: boolean; readonly reviewing: boolean };
+	readonly solo?: {
+		readonly ready: boolean;
+		readonly reviewing: boolean;
+		readonly showNext?: boolean;
+	};
 }
 
 /** The end of the auction, shown in the middle of the board until play starts: the contract, its declarer and vulnerability. */

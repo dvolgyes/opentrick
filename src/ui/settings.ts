@@ -93,8 +93,12 @@ export interface Settings extends BotTiming {
 	readonly bidConfirmation: boolean;
 	/** Animate the collection of each completed trick. */
 	readonly trickAnimation: boolean;
+	/** How long completed cards remain on screen before collection. */
+	readonly trickDisplayMs: number;
 	/** Advance solo practice after its result countdown. */
 	readonly soloAutoAdvance: boolean;
+	/** Show the next-board action on solo results. */
+	readonly soloNextBoard: boolean;
 	/** Hide the bid box when the viewer has no available call. */
 	readonly hideBidBoxWhenWaiting: boolean;
 	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
@@ -131,7 +135,9 @@ export const DEFAULT_SETTINGS: Settings = {
 	botBidHint: true,
 	bidConfirmation: true,
 	trickAnimation: true,
+	trickDisplayMs: 2000,
 	soloAutoAdvance: false,
+	soloNextBoard: true,
 	hideBidBoxWhenWaiting: true,
 	relayChecks: false,
 	landscapeDesktop: false,
@@ -158,6 +164,7 @@ const FLAGS = {
 	bidConfirmation: "bid-confirmation",
 	trickAnimation: "trick-animation",
 	soloAutoAdvance: "solo-auto-advance",
+	soloNextBoard: "solo-next-board",
 	hideBidBoxWhenWaiting: "hide-bid-box-when-waiting",
 	relayChecks: "relay-checks",
 	landscapeDesktop: "landscape-desktop",
@@ -195,6 +202,10 @@ export function readSettings(storage: MaybeStorage): Settings {
 	const storedPaper = read("paper-strength");
 	const playTimeText = read("play-time-ms");
 	const storedPlayTime = playTimeText?.trim() ? Number(playTimeText) : NaN;
+	const trickDisplayText = read("trick-display-ms");
+	const storedTrickDisplay = trickDisplayText?.trim()
+		? Number(trickDisplayText)
+		: NaN;
 	const timing = Object.fromEntries(
 		Object.entries(TIMING_KEYS).map(([field, name]) => {
 			const fallback = DEFAULT_BOT_TIMING[field as keyof BotTiming];
@@ -215,6 +226,9 @@ export function readSettings(storage: MaybeStorage): Settings {
 		playTimeMs: isPlayTimeMs(storedPlayTime)
 			? wholeSeconds(storedPlayTime, 1000)
 			: DEFAULT_PLAY_TIME_MS,
+		trickDisplayMs: isBotTimingMs(storedTrickDisplay)
+			? wholeSeconds(storedTrickDisplay, 0)
+			: DEFAULT_SETTINGS.trickDisplayMs,
 		pointSystem: readChoice(
 			storedPoints,
 			POINT_SYSTEMS,
@@ -269,6 +283,11 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
 	const budget = playTimeMs(settings.playTimeMs);
 	const timing = botTiming(settings);
+	if (
+		!isBotTimingMs(settings.trickDisplayMs) ||
+		settings.trickDisplayMs % 1000 !== 0
+	)
+		throw new Error("trick display time must be whole seconds from 0 to 60");
 	if (budget < 1000 || budget % 1000 !== 0)
 		throw new Error("play time must be whole seconds from 1 to 60");
 	for (const value of Object.values(timing))
@@ -288,6 +307,7 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		throw new Error("unknown shadow strength");
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
+	storage.setItem(`${PREFIX}trick-display-ms`, String(settings.trickDisplayMs));
 	for (const [field, name] of Object.entries(TIMING_KEYS))
 		storage.setItem(PREFIX + name, String(timing[field as keyof BotTiming]));
 	storage.setItem(`${PREFIX}points`, settings.pointSystem);

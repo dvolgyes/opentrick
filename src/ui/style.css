@@ -523,11 +523,11 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 	background: var(--opening-white);
 }
 .opening-card-friends { background: var(--opening-sage); }
-.opening-card-description { display: contents; }
-.opening-card h3 { font: 400 1.5rem / 1.2 "Libre Caslon Display", Georgia, serif; margin: 0.8rem 0 0; }
-.opening-card p { flex: 1; }
+.opening-card-description { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: start; column-gap: 0.65rem; width: 100%; flex: 1; }
+.opening-card h3 { font: 400 1.5rem / 1.2 "Libre Caslon Display", Georgia, serif; margin: 0; }
+.opening-card p { grid-column: 1 / -1; }
 .opening-card .button, .opening-card button { white-space: normal; min-height: 2.75rem; display: inline-flex; align-items: center; }
-.mode-symbol { color: var(--opening-forest); font-size: 1.6rem; }
+.mode-symbol { color: var(--opening-forest); font-size: 1.5rem; line-height: 1.2; }
 .opening-card-friends .mode-symbol { color: var(--opening-red); }
 .invitation-guidance { margin-top: 1.5rem; }
 .setup-mode { min-height: 100dvh; border-top: 1px solid var(--opening-line); padding-top: 2rem; }
@@ -568,6 +568,7 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 	.opening-hero h1 { font-size: clamp(2.5rem, 4.45vw, 4rem); line-height: 0.99; letter-spacing: -0.017em; }
 	.create-mode > h2 { font-size: 1.875rem; line-height: 1.1; }
 	.opening-card h3 { font-size: 1.75rem; line-height: 1.15; }
+	.mode-symbol { font-size: 1.75rem; line-height: 1.15; }
 }
 @media (min-width: 601px) and (max-width: 900px) {
 	.opening-illustration { transform: scale(0.65); }
@@ -593,6 +594,7 @@ body:has(.community-screen) main:not([data-screen="table"]) { padding-top: 1rem;
 	.opening-card-description { display: flex; align-items: flex-start; gap: 0.75rem; }
 	.opening-card-description h3 { display: none; }
 	.opening-card-description p { margin: 0; }
+	.mode-symbol { font-size: 1rem; line-height: inherit; }
 	.opening-card .button, .opening-card button { margin-top: 0.5rem; }
 	.setup-back { display: none; }
 	.create-solo-row { font-size: 1rem; }

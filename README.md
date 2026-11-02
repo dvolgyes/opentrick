@@ -133,8 +133,10 @@ The defenders play together to stop the contract, while declarer tries to make i
 The table records tricks and duplicate scores as the hand finishes.
 The winning card is highlighted and the completed trick is collected toward its winner.
 You can turn off the collection animation in Settings.
+The completed trick stays on screen for two seconds before collection by default, and you can change this time in Settings.
 In solo practice, the result stays visible until you select **Next board**.
 You can enable automatic advance in Settings and use **Review** to hold the result during its countdown.
+When automatic advance is enabled, you can hide the **Next board** button until you select **Review**.
 Vulnerable partnerships and their player names in the bidding history are red.
 
 ![A bot-played auction in progress, with the bidding history and a player's hand visible.](docs/images/gameplay-auction.png)

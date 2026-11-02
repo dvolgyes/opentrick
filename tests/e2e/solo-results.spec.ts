@@ -56,3 +56,25 @@ test("solo automatic advance deals one board when the countdown ends", async ({
 	await page.waitForTimeout(1500);
 	await expect(table).toHaveAttribute("data-board", "2");
 });
+
+test("a hidden Next board button reappears when the solo result is held for review", async ({
+	page,
+}) => {
+	await page.addInitScript(() => {
+		localStorage.setItem("opentrick.settings.solo-auto-advance", "1");
+		localStorage.setItem("opentrick.settings.solo-next-board", "0");
+	});
+	await mockBotBidding(page, () => "P");
+	await page.goto("/");
+	await page.getByTestId("create-solo").click();
+	const table = page.getByTestId("table");
+	await expect(table).toHaveAttribute("data-at", "2");
+	await makeCall(page, "P");
+	await expect(table).toHaveAttribute("data-phase", "complete");
+	const scoring = page.getByTestId("scoring");
+	await expect(scoring.getByTestId("next-board")).toHaveCount(0);
+	await scoring.getByRole("button", { name: "Review" }).click();
+	await expect(scoring.getByTestId("next-board")).toBeVisible();
+	await scoring.getByTestId("next-board").click();
+	await expect(table).toHaveAttribute("data-board", "2");
+});

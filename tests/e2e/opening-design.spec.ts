@@ -261,6 +261,33 @@ test("the opening header fits on one mobile row without the build date", async (
 	}
 });
 
+test("a wrapped mode description keeps its icon aligned with the first line", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 320, height: 844 });
+	await page.goto("/");
+	const alignment = await page
+		.locator(".opening-card")
+		.first()
+		.evaluate((card) => {
+			const description = card.querySelector("p");
+			const icon = card.querySelector(".mode-symbol");
+			if (!description || !icon) throw new Error("Missing description or icon");
+			description.textContent =
+				"Start a game with three computer players and a longer translated description.";
+			const range = document.createRange();
+			range.selectNodeContents(description);
+			const lines = range.getClientRects();
+			const iconBox = icon.getBoundingClientRect();
+			return {
+				count: lines.length,
+				difference: Math.abs(iconBox.top - (lines[0]?.top ?? 0)),
+			};
+		});
+	expect(alignment.count).toBeGreaterThan(1);
+	expect(alignment.difference).toBeLessThan(5);
+});
+
 test("the welcome area and the space below it are compact", async ({
 	page,
 }) => {
@@ -390,6 +417,27 @@ test("mode cards keep the requested order and compact mobile layout", async ({
 					(description?.y ?? 0) + (description?.height ?? 0) - 1,
 				);
 			}
+		}
+		for (const card of await cards.all()) {
+			const alignment = await card.evaluate((node, mobile) => {
+				const icon = node.querySelector<HTMLElement>(".mode-symbol");
+				const text = node.querySelector<HTMLElement>(mobile ? "p" : "h3");
+				if (!icon || !text) throw new Error("Missing mode title or icon");
+				const a = icon.getBoundingClientRect();
+				const b = text.getBoundingClientRect();
+				return {
+					iconX: a.x,
+					textX: b.x,
+					middleDifference: Math.abs(
+						(a.top + a.bottom) / 2 - (b.top + b.bottom) / 2,
+					),
+					iconSize: getComputedStyle(icon).fontSize,
+					textSize: getComputedStyle(text).fontSize,
+				};
+			}, width === 390);
+			expect(alignment.iconX).toBeLessThan(alignment.textX);
+			expect(alignment.middleDifference).toBeLessThan(4);
+			expect(alignment.iconSize).toBe(alignment.textSize);
 		}
 	}
 });

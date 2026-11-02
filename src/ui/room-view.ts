@@ -886,6 +886,7 @@ export function showRoom(
 			locale: deps.locale,
 			marks: () => readSettings(deps.browser),
 			trickAnimation: () => readSettings(deps.browser).trickAnimation,
+			trickDisplayMs: () => readSettings(deps.browser).trickDisplayMs,
 			presentationDone: () => {
 				shownTable = undefined;
 				render();
@@ -1795,7 +1796,8 @@ export function showRoom(
 			t: deps.t,
 		});
 		if (solo && tableModel.scoring) {
-			const automatic = readSettings(deps.browser).soloAutoAdvance && !soloHeld;
+			const settings = readSettings(deps.browser);
+			const automatic = settings.soloAutoAdvance && !soloHeld;
 			tableModel = {
 				...tableModel,
 				scoring: {
@@ -1803,6 +1805,7 @@ export function showRoom(
 					solo: {
 						ready: tableModel.nextBoard?.ready ?? false,
 						reviewing: !automatic,
+						showNext: settings.soloNextBoard || !automatic,
 					},
 				},
 			};

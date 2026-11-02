@@ -128,6 +128,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).toBeChecked();
 	await expect(
+		dialog.getByLabel("Show completed trick for (seconds)"),
+	).toHaveValue("2");
+	await expect(
+		dialog.getByLabel("Show Next board button in solo play"),
+	).toBeChecked();
+	await expect(
 		dialog.getByLabel("Automatically start the next board"),
 	).not.toBeChecked();
 	await expect(dialog.getByLabel("Selenized", { exact: true })).toBeChecked();
@@ -204,7 +210,9 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.uncheck();
 	await dialog.getByLabel("Animate the bot during its turn").uncheck();
 	await dialog.getByLabel("Animate trick collection").uncheck();
+	await dialog.getByLabel("Show completed trick for (seconds)").fill("4");
 	await dialog.getByLabel("Automatically start the next board").check();
+	await dialog.getByLabel("Show Next board button in solo play").uncheck();
 	await dialog
 		.getByLabel(
 			"In the desktop view, show the bidding guide in the side panel during the auction",
@@ -262,10 +270,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.scheme",
 		"opentrick.settings.shadow-strength",
 		"opentrick.settings.solo-auto-advance",
+		"opentrick.settings.solo-next-board",
 		"opentrick.settings.suit-colors",
 		"opentrick.settings.suit-font-size",
 		"opentrick.settings.theme-style",
 		"opentrick.settings.trick-animation",
+		"opentrick.settings.trick-display-ms",
 		"opentrick.settings.voicebox",
 	]);
 	expect(
@@ -299,6 +309,12 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).not.toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).not.toBeChecked();
 	await expect(
+		dialog.getByLabel("Show completed trick for (seconds)"),
+	).toHaveValue("4");
+	await expect(
+		dialog.getByLabel("Show Next board button in solo play"),
+	).not.toBeChecked();
+	await expect(
 		dialog.getByLabel("Automatically start the next board"),
 	).toBeChecked();
 	await expect(
@@ -327,6 +343,22 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByRole("button", { name: "Cancel" }).click();
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
+});
+
+test("hiding the solo next-board button requires automatic advance", async ({
+	page,
+}) => {
+	await openTable(page);
+	const dialog = await openSettings(page);
+	await dialog.getByLabel("Show Next board button in solo play").uncheck();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeVisible();
+	await expect(dialog.locator('p[role="status"]')).toContainText(
+		"Turn on automatic advance",
+	);
+	await dialog.getByLabel("Automatically start the next board").check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
 });
 
 for (const [layout, viewport] of [
