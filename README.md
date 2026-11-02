@@ -131,6 +131,10 @@ After the opening lead, declarer's partner becomes the dummy: their hand is show
 In a human–robot partnership, the human selects cards from both hands, even when the human is dummy, unless autoplay is enabled.
 The defenders play together to stop the contract, while declarer tries to make it.
 The table records tricks and duplicate scores as the hand finishes.
+The winning card is highlighted and the completed trick is collected toward its winner.
+You can turn off the collection animation in Settings.
+In solo practice, the result stays visible until you select **Next board**.
+You can enable automatic advance in Settings and use **Review** to hold the result during its countdown.
 Vulnerable partnerships and their player names in the bidding history are red.
 
 ![A bot-played auction in progress, with the bidding history and a player's hand visible.](docs/images/gameplay-auction.png)
@@ -153,6 +157,7 @@ Bots can fill seats for a game, or the host can turn on autoplay for a player wh
 For a permanent bot seat, select **Bot** for that seat while creating the table.
 For a temporary substitute, the host can enable the bot for the player's seat from the table controls, then turn it off when the player returns.
 The player keeps their seat and stays in the room call while the bot handles bridge actions.
+Use **Autoplay my seat** to request autoplay and **Take back control** to resume playing.
 
 Bots bid with a local bidding engine and play cards with a local DDS engine.
 Choose **Bidding bot** when creating a table.
@@ -204,10 +209,11 @@ Use **Copy link** in the table if you need to share the invitation again.
 
 Open **Settings** to change these options.
 
-![The settings dialog lists the language, bidding system, bidding bot, appearance, colour theme, and turn display options.](docs/images/settings.png)
+![The settings dialog lists the language, hand point count, bot engine, appearance, colour theme, and turn display options.](docs/images/settings.png)
 
 The page language can be one of English, German, Spanish, French, Hungarian, Italian, Norwegian, Dutch, or Portuguese.
-The bidding system sets the point count and the bidding guide.
+The hand point count sets the displayed hand valuation and selects the bidding reference guide.
+The bot engine is a separate choice; the guide does not explain every call made by a learned bot.
 By default, each call needs confirmation; you can turn this off.
 The colour theme can be Selenized, Normal, Solarized, or Gruvbox, each with a light and a dark palette.
 The appearance is light by default and can be set to light, dark, or your system's preference.

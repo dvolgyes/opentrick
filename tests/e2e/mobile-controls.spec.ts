@@ -82,7 +82,7 @@ test("mobile keeps settings at the top and the remaining actions fill their row"
 			exact: true,
 		});
 		const autoplay = row.getByRole("button", {
-			name: "Enable autoplay",
+			name: "Autoplay my seat",
 			exact: true,
 		});
 		for (const width of [320, 360, 390]) {
@@ -476,7 +476,7 @@ test("on a phone the host finds each top-bar button once and changes display set
 		await expectBotControlsInOneRow(page);
 		await page.setViewportSize({ width: 360, height: 800 });
 		const ownBot = page.getByTestId("host-autoplay-toggle");
-		await expect(ownBot).toHaveText("Enable autoplay");
+		await expect(ownBot).toHaveText("Autoplay my seat");
 		await expect(ownBot).toHaveAttribute(
 			"title",
 			"Temporarily replace player with a bot",

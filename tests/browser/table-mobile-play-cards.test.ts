@@ -234,7 +234,7 @@ describe("played card styles", () => {
 						const bid = row.querySelector<HTMLElement>(".bid");
 						const numbers = [...row.querySelectorAll<HTMLElement>("strong")];
 						if (!bid) throw new Error("the trick guide has no contract");
-						expect(numbers).toHaveLength(3);
+						expect(numbers).toHaveLength(2);
 						for (const number of numbers)
 							expect(getComputedStyle(bid).fontSize, size).toBe(
 								getComputedStyle(number).fontSize,

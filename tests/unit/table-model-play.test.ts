@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { createBoard, legalActions } from "../../src/bridge/engine";
+import {
+	boardStatus,
+	createBoard,
+	legalActions,
+} from "../../src/bridge/engine";
 import { actionPayload } from "../../src/game/bridge";
 import { translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
-import { commandText, type TableView } from "../../src/ui/table-model";
+import {
+	commandText,
+	positionOf,
+	type TableView,
+} from "../../src/ui/table-model";
 import { bidding, call, DEAL, playing } from "./bridge-fixtures";
 import {
 	ALL,
+	afterTricks,
 	BOARD,
 	CONFIG,
 	LED,
@@ -21,6 +30,24 @@ import {
 } from "./table-model-fixtures";
 
 describe("play", () => {
+	it("carries the engine winner and four played cards through every viewer orientation, including the final trick", () => {
+		for (const count of [1, 13]) {
+			const board = afterTricks(NORTH_DECLARER_BOARD, count);
+			const finished = boardStatus(board).tricks.at(-1);
+			if (!finished) throw new Error("missing finished trick");
+			for (const viewer of ["N", "E", "S", "W"] as const) {
+				const completed = view(viewer, board).completedTrick;
+				expect(completed?.index).toBe(count);
+				expect(completed?.winner).toBe(finished.winner);
+				expect(completed?.winnerPosition).toBe(
+					positionOf(viewer, finished.winner),
+				);
+				expect(completed?.cards.map((card) => card.card)).toEqual(
+					finished.cards,
+				);
+			}
+		}
+	});
 	it("keeps the West declarer's thirteen cards through the opponents' opening lead", () => {
 		const board = playing(bidding(createBoard(3, DEAL), "P 2S P P P"), "SA S7");
 		const table = view("W", board);

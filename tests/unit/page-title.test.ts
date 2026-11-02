@@ -80,11 +80,11 @@ describe("page title", () => {
 		},
 	);
 
-	it("names a seat that a bot plays bot, also for the host and on its turn", () => {
+	it("keeps the player's name during autoplay", () => {
 		const t = translator("en");
 		expect(
 			pageTitle(t, { name: "Anna", seat: "S", turn: true, bot: true }),
-		).toBe("TURN - Bridge: bot (S)");
+		).toBe("TURN - Bridge: Anna (S)");
 		expect(
 			pageTitle(t, {
 				name: "Anna",
@@ -93,6 +93,6 @@ describe("page title", () => {
 				host: true,
 				bot: true,
 			}),
-		).toBe("Bridge: bot (S, host)");
+		).toBe("Bridge: Anna (S, host)");
 	});
 });

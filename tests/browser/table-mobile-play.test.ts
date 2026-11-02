@@ -662,8 +662,11 @@ describe("played card styles", () => {
 			const toggle =
 				section.autoplayControl.querySelector<HTMLButtonElement>("button");
 			if (!toggle) throw new Error("missing autoplay toggle");
-			expect(toggle.textContent).toBe("Enable autoplay");
-			expect(toggle.title).toBe("Temporarily replace player with a bot");
+			expect(toggle.textContent).toBe("Autoplay my seat");
+			section.setPlayerAutoplay(true, false, true, "Sending autoplay request…");
+			expect(toggle.disabled).toBe(true);
+			expect(section.autoplayStatus.textContent).not.toContain("Autoplay on");
+			section.setPlayerAutoplay(true, false, false, "");
 			expect(
 				root.querySelector(".seat-label button.player-autoplay-toggle"),
 			).toBeNull();
@@ -680,7 +683,8 @@ describe("played card styles", () => {
 				?.click();
 			expect(handlers.requestAutoplay).toHaveBeenCalledExactlyOnceWith(true);
 			section.setPlayerAutoplay(true, true, false, "");
-			expect(toggle.textContent).toBe("Disable autoplay");
+			expect(toggle.textContent).toBe("Take back control");
+			expect(section.autoplayStatus.textContent).toContain("Autoplay on");
 			toggle.click();
 			expect(dialog?.open).toBe(false);
 			expect(handlers.requestAutoplay).toHaveBeenLastCalledWith(false);
@@ -702,7 +706,11 @@ describe("played card styles", () => {
 			const toggle =
 				section.autoplayControl.querySelector<HTMLButtonElement>("button");
 			if (!toggle) throw new Error("missing host autoplay toggle");
-			expect(toggle.textContent).toBe("Enable autoplay");
+			expect(toggle.textContent).toBe("Autoplay my seat");
+			section.setBotControls(true, [], false, true);
+			expect(toggle.disabled).toBe(true);
+			expect(section.autoplayStatus.textContent).not.toContain("Autoplay on");
+			section.setBotControls(true, [], false);
 			expect(
 				root.querySelector(".seat-label button.host-autoplay-toggle"),
 			).toBeNull();
@@ -724,7 +732,7 @@ describe("played card styles", () => {
 				?.click();
 			expect(handlers.setBotSeat).toHaveBeenCalledExactlyOnceWith("N", true);
 			section.setBotControls(true, ["N"], false);
-			expect(toggle.textContent).toBe("Disable autoplay");
+			expect(toggle.textContent).toBe("Take back control");
 			toggle.click();
 			expect(dialog?.open).toBe(false);
 			expect(handlers.setBotSeat).toHaveBeenLastCalledWith("N", false);

@@ -145,13 +145,13 @@ export function settingsDialog(
 	};
 	const points = radios(
 		"settings-points",
-		"Bidding system",
+		"Hand point count",
 		POINT_SYSTEMS,
 		POINT_SYSTEM_LABELS,
 	);
 	const engine = radios(
 		"settings-bidder",
-		"Bidding bot",
+		"Bot engine",
 		LOCAL_BIDDERS,
 		BIDDER_NAMES,
 	);
@@ -190,6 +190,8 @@ export function settingsDialog(
 		playTimeMs: timeInput(t("Card thinking budget (seconds)"), "play-time", 1),
 	};
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
+	const trickAnimation = el("input", { attrs: { type: "checkbox" } });
+	const soloAutoAdvance = el("input", { attrs: { type: "checkbox" } });
 	const biddingHelp = Object.fromEntries(
 		Object.keys(BIDDING_HELP_LABELS).map((field) => [
 			field,
@@ -197,7 +199,16 @@ export function settingsDialog(
 		]),
 	) as Record<keyof typeof BIDDING_HELP_LABELS, HTMLInputElement>;
 	points.element.append(
+		el("p", {}, t("This method determines the points shown for a hand.")),
 		el("label", {}, cardPoints, ` ${t("Show the points next to the cards")}`),
+		el("h3", {}, t("Bidding reference")),
+		el(
+			"p",
+			{},
+			t(
+				"The guide follows the selected hand point count. It is a reference, not an explanation of the bot's calls.",
+			),
+		),
 		el(
 			"label",
 			{},
@@ -400,6 +411,18 @@ export function settingsDialog(
 		el(
 			"fieldset",
 			{},
+			el("legend", {}, t("Gameplay")),
+			el("label", {}, trickAnimation, ` ${t("Animate trick collection")}`),
+			el(
+				"label",
+				{},
+				soloAutoAdvance,
+				` ${t("Automatically start the next board")}`,
+			),
+		),
+		el(
+			"fieldset",
+			{},
 			el("legend", {}, t("Turn display")),
 			...Object.entries(TURN_LABELS).map(([field, label]) =>
 				el(
@@ -543,6 +566,8 @@ export function settingsDialog(
 			guideButton: biddingHelp.guideButton.checked,
 			botBidHint: biddingHelp.botBidHint.checked,
 			bidConfirmation: biddingHelp.bidConfirmation.checked,
+			trickAnimation: trickAnimation.checked,
+			soloAutoAdvance: soloAutoAdvance.checked,
 			hideBidBoxWhenWaiting: biddingHelp.hideBidBoxWhenWaiting.checked,
 			relayChecks: relayChecks.checked,
 			landscapeDesktop: orientation.landscapeDesktop.checked,
@@ -595,6 +620,8 @@ export function settingsDialog(
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
 			cardPoints.checked = settings.cardPoints;
+			trickAnimation.checked = settings.trickAnimation;
+			soloAutoAdvance.checked = settings.soloAutoAdvance;
 			for (const field of Object.keys(
 				BIDDING_HELP_LABELS,
 			) as (keyof typeof BIDDING_HELP_LABELS)[])

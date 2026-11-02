@@ -42,9 +42,42 @@ describe("playSuitOrder", () => {
 });
 
 describe("trickNeed", () => {
+	it("keeps declaring and defensive goals separate for doubled and redoubled contracts", () => {
+		for (const doubling of ["X", "XX"] as const) {
+			const heartContract = { ...contract(3, "H", "N"), doubling };
+			expect(trickNeed("N", heartContract, 1, 0)).toMatchObject({
+				declaring: true,
+				ours: 1,
+				target: 9,
+				needed: 8,
+				remaining: 12,
+			});
+			expect(trickNeed("E", heartContract, 1, 0)).toMatchObject({
+				declaring: false,
+				ours: 0,
+				target: 5,
+				needed: 5,
+				remaining: 12,
+			});
+			expect(trickNeed("E", heartContract, 9, 0)).toMatchObject({
+				status: "secured",
+				needed: 5,
+			});
+			expect(trickNeed("N", heartContract, 0, 5)).toMatchObject({
+				status: "defeated",
+				needed: 9,
+			});
+		}
+		expect(trickNeed("N", contract(2, "C", "N"), 1, 0)).toMatchObject({
+			target: 8,
+			needed: 7,
+			remaining: 12,
+		});
+	});
 	it("gives the declaring side seven tricks to make a 1♣ contract", () => {
 		const need = trickNeed("N", contract(1, "C", "N"), 0, 1);
 		expect(need).toEqual({
+			declaring: true,
 			ours: 0,
 			target: 7,
 			opponents: 1,

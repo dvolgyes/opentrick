@@ -91,6 +91,10 @@ export interface Settings extends BotTiming {
 	readonly botBidHint: boolean;
 	/** Require a separate confirmation before sending a call. */
 	readonly bidConfirmation: boolean;
+	/** Animate the collection of each completed trick. */
+	readonly trickAnimation: boolean;
+	/** Advance solo practice after its result countdown. */
+	readonly soloAutoAdvance: boolean;
 	/** Hide the bid box when the viewer has no available call. */
 	readonly hideBidBoxWhenWaiting: boolean;
 	/** Frequent checks of the Nostr relays, for an unstable network (src/p2p/relay-check.ts). */
@@ -126,6 +130,8 @@ export const DEFAULT_SETTINGS: Settings = {
 	guideButton: false,
 	botBidHint: true,
 	bidConfirmation: true,
+	trickAnimation: true,
+	soloAutoAdvance: false,
 	hideBidBoxWhenWaiting: true,
 	relayChecks: false,
 	landscapeDesktop: false,
@@ -150,6 +156,8 @@ const FLAGS = {
 	guideButton: "guide-button",
 	botBidHint: "bot-bid-hint",
 	bidConfirmation: "bid-confirmation",
+	trickAnimation: "trick-animation",
+	soloAutoAdvance: "solo-auto-advance",
 	hideBidBoxWhenWaiting: "hide-bid-box-when-waiting",
 	relayChecks: "relay-checks",
 	landscapeDesktop: "landscape-desktop",

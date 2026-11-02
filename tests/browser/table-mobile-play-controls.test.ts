@@ -630,7 +630,7 @@ describe("compact play controls", () => {
 		}
 	});
 
-	it("matches desktop trick counts without the contract-needs line", () => {
+	it("shows the partnership goal and remaining tricks on mobile", () => {
 		const view = playView();
 		const { root } = renderMobile(view);
 		const row = root.querySelector<HTMLElement>(
@@ -638,9 +638,9 @@ describe("compact play controls", () => {
 		);
 		if (!row) throw new Error("mobile trick count is missing");
 		expect(row?.hidden).toBe(false);
-		expect(row.textContent).toBe("2♣Our tricks2Target8Opponents'3");
-		expectTwoRows(row);
-		expect(row.querySelector(".tricks-needed")).toBeNull();
+		expect(row.textContent).toContain("2♣Our tricks2 / 8Opponents'3");
+		expect(row.textContent).toContain("8 tricks to make 2♣");
+		expect(row.textContent).toContain("6 more needed · 8 tricks remaining");
 		const board = root.querySelector(".mobile-auction-board");
 		const controls = root.querySelector(".mobile-auction-controls");
 		if (!board || !controls)
@@ -660,6 +660,7 @@ describe("compact play controls", () => {
 				seat("W", "right"),
 			],
 			need: {
+				declaring: false,
 				ours: 4,
 				target: 6,
 				opponents: 3,
@@ -671,7 +672,7 @@ describe("compact play controls", () => {
 		const defender = renderMobile(defenderView).root.querySelector(
 			'[data-testid="mobile-tricks"]',
 		);
-		expect(defender?.textContent).toBe("2♣Our tricks4Target6Opponents'3");
+		expect(defender?.textContent).toContain("6 defensive tricks to defeat 2♣");
 	});
 
 	it("puts the contract and the trick counts in one row on the desktop", () => {
@@ -692,7 +693,7 @@ describe("compact play controls", () => {
 			'[data-testid="tricks-panel"] .tricks-counts',
 		);
 		if (!row) throw new Error("desktop trick count is missing");
-		expect(row.textContent).toBe("2NTXXOur tricks2Target8Opponents'3");
+		expect(row.textContent).toBe("2NTXXOur tricks2 / 8Opponents'3");
 		expectTwoRows(row);
 	});
 

@@ -267,6 +267,13 @@ export interface TrickView {
 	readonly finished: boolean;
 }
 
+export interface CompletedTrickView extends TrickView {
+	readonly index: number;
+	readonly winner: Seat;
+	readonly winnerPosition: Position;
+	readonly winnerName: string;
+}
+
 export interface AuctionView {
 	readonly seats: readonly Seat[];
 	/**
@@ -345,6 +352,7 @@ export interface ScoringView {
 	readonly compactOutcome: "WON" | "LOST" | "PASSED OUT";
 	readonly compactDetail: string;
 	readonly countdown: number;
+	readonly solo?: { readonly ready: boolean; readonly reviewing: boolean };
 }
 
 /** The end of the auction, shown in the middle of the board until play starts: the contract, its declarer and vulnerability. */
@@ -355,6 +363,7 @@ export interface AuctionEndView {
 	/** "E-W vulnerable" or "E-W not vulnerable". */
 	readonly vulnerability: string;
 	readonly vulnerable: boolean;
+	readonly bothHands?: string;
 }
 
 export interface UndoPanelView {
@@ -436,6 +445,8 @@ export interface TableView {
 	readonly header: ContractHeader | undefined;
 	readonly tricks: string;
 	readonly trick: TrickView | undefined;
+	/** The last four actually played cards, including on a completed board. */
+	readonly completedTrick?: CompletedTrickView;
 	/** The viewer's partnership counts and target during play; undefined before play. */
 	readonly need: TrickNeed | undefined;
 	/** "Contract secured" or "Contract defeated" once decided; empty while open. */
@@ -729,9 +740,17 @@ function contractHeader(
 	};
 }
 
-function trickStatusText(status: TrickNeed["status"], t: Translate): string {
-	if (status === "open") return "";
-	return t(status === "secured" ? "Contract secured" : "Contract defeated");
+function trickStatusText(need: TrickNeed, t: Translate): string {
+	if (need.status === "open") return "";
+	if (need.status === "secured")
+		return t(
+			need.declaring
+				? "Contract made by our side"
+				: "Contract made by opponents",
+		);
+	return t(
+		need.declaring ? "Our contract defeated" : "Opponents' contract defeated",
+	);
 }
 
 function scoreRows(results: readonly BoardResult[]): ScoreRow[] {
@@ -1513,6 +1532,26 @@ export function tableView(input: TableViewInput): TableView {
 	});
 
 	const lastTrick = view.tricks.at(-1);
+	const completedTrick: CompletedTrickView | undefined = lastTrick
+		? {
+				index: view.tricks.length,
+				winner: lastTrick.winner,
+				winnerPosition: positionOf(seat, lastTrick.winner),
+				winnerName: config.names[lastTrick.winner],
+				finished: true,
+				cards: lastTrick.cards.map((card, index) => {
+					const player = seatAfter(lastTrick.leader, index);
+					return {
+						seat: player,
+						position: positionOf(seat, player),
+						card,
+						text: cardText(card),
+						rank: rankText(card),
+						symbol: SUIT_SYMBOLS[suitOf(card)],
+					};
+				}),
+			}
+		: undefined;
 	const showLast =
 		view.current === undefined || view.current.cards.length === 0;
 	const trickSource =
@@ -1568,8 +1607,9 @@ export function tableView(input: TableViewInput): TableView {
 				})
 			: "",
 		trick,
+		completedTrick,
 		need,
-		trickStatus: need ? trickStatusText(need.status, t) : "",
+		trickStatus: need ? trickStatusText(need, t) : "",
 		actions,
 		undo,
 		claim,
@@ -1588,6 +1628,20 @@ export function tableView(input: TableViewInput): TableView {
 		const vulnerability = common.vulnerability.find(
 			(line) => line.side === side,
 		);
+		const bothHands =
+			contract &&
+			dummy &&
+			!input.bots?.has(seat) &&
+			!input.autoplaySeats?.has(seat) &&
+			(seat === contract.declarer ||
+				(seat === dummy &&
+					input.bots?.has(contract.declarer) &&
+					!input.autoplaySeats?.has(contract.declarer)))
+				? t("You will play both hands: {declarer} and {dummy}.", {
+						declarer: t(SEAT_NAMES[contract.declarer]),
+						dummy: t(SEAT_NAMES[dummy]),
+					})
+				: undefined;
 		return {
 			...common,
 			phase: "auction",
@@ -1605,6 +1659,7 @@ export function tableView(input: TableViewInput): TableView {
 							declarer: `${t("by")} ${t(SEAT_NAMES[contract.declarer])}`,
 							vulnerability: vulnerability.text,
 							vulnerable: vulnerability.vulnerable,
+							bothHands,
 						}
 					: undefined,
 		};

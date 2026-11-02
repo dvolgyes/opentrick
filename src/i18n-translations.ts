@@ -1,4 +1,5 @@
 import { communityCatalogs } from "./i18n-community";
+import { gameplayCatalogs } from "./i18n-gameplay";
 import { openingCatalogs } from "./i18n-opening";
 import { playerCatalogs } from "./i18n-players";
 
@@ -3916,6 +3917,7 @@ export const additionalCatalogs: Readonly<
 			...playerCatalogs[locale as NewLocale],
 			...communityCatalogs[locale as NewLocale],
 			...openingCatalogs[locale as NewLocale],
+			...gameplayCatalogs[locale as NewLocale],
 		},
 	]),
 ) as Readonly<Record<NewLocale, Readonly<Record<string, string>>>>;

@@ -9,7 +9,7 @@ async function openTable(page: Page): Promise<void> {
 	await page.locator('input[name="name-W"]').fill("host west");
 	await page.locator('input[name="me"][value="W"]').check();
 	await page.getByTestId("create").click();
-	await expect(page.getByTestId("room-controls")).toBeVisible();
+	await expect(page.getByTestId("table")).toBeVisible();
 }
 
 async function openSettings(page: Page): Promise<Locator> {
@@ -32,7 +32,8 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 	);
 	expect(order).toEqual([
 		"Language",
-		"Bidding system",
+		"Hand point count",
+		"Gameplay",
 		"Turn display",
 		"Appearance",
 		"Theme",
@@ -44,7 +45,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		"Suit colours",
 		"Screen orientation",
 		"Network",
-		"Bidding bot",
+		"Bot engine",
 		"Bot timing",
 	]);
 	const turn = dialog.getByRole("group", { name: "Turn display" });
@@ -69,7 +70,7 @@ async function expectSettingsOrder(dialog: Locator): Promise<void> {
 		await expect(network.getByLabel(label)).toHaveCount(1);
 	await expect(
 		dialog
-			.getByRole("group", { name: "Bidding system" })
+			.getByRole("group", { name: "Hand point count" })
 			.getByLabel(
 				"In the desktop view, show the bidding guide in the side panel during the auction",
 			),
@@ -103,12 +104,12 @@ for (const [form, options] of [
 			await dialog.getByRole("button", { name: "Cancel" }).click();
 			await expect(dialog).toBeHidden();
 			await page.reload();
-			await expect(page.getByTestId("room-controls")).toBeVisible();
+			await expect(page.getByTestId("table")).toBeVisible();
 			await expect(dialog).toBeVisible();
 			await dialog.getByRole("button", { name: "Save settings" }).click();
 			await expect(dialog).toBeHidden();
 			await page.reload();
-			await expect(page.getByTestId("room-controls")).toBeVisible();
+			await expect(page.getByTestId("table")).toBeVisible();
 			await expect(page.getByTestId("table")).toBeVisible();
 			await expect(dialog).toBeHidden();
 		} finally {
@@ -125,6 +126,10 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
 	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
 	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
+	await expect(dialog.getByLabel("Animate trick collection")).toBeChecked();
+	await expect(
+		dialog.getByLabel("Automatically start the next board"),
+	).not.toBeChecked();
 	await expect(dialog.getByLabel("Selenized", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("XXL", { exact: true })).toBeChecked();
 	await expect(
@@ -198,6 +203,8 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.getByLabel("Show the voice box for a player without video")
 		.uncheck();
 	await dialog.getByLabel("Animate the bot during its turn").uncheck();
+	await dialog.getByLabel("Animate trick collection").uncheck();
+	await dialog.getByLabel("Automatically start the next board").check();
 	await dialog
 		.getByLabel(
 			"In the desktop view, show the bidding guide in the side panel during the auction",
@@ -254,9 +261,11 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.relay-checks",
 		"opentrick.settings.scheme",
 		"opentrick.settings.shadow-strength",
+		"opentrick.settings.solo-auto-advance",
 		"opentrick.settings.suit-colors",
 		"opentrick.settings.suit-font-size",
 		"opentrick.settings.theme-style",
+		"opentrick.settings.trick-animation",
 		"opentrick.settings.voicebox",
 	]);
 	expect(
@@ -266,7 +275,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	).toBe("1000");
 
 	await page.reload();
-	await expect(page.getByTestId("room-controls")).toBeVisible();
+	await expect(page.getByTestId("table")).toBeVisible();
 	await expect(page.locator("body")).toHaveCSS("color", "rgb(238, 232, 213)");
 	dialog = await openSettings(page);
 	await expect(dialog.getByLabel("Vienna (7-5-3-1)")).toBeChecked();
@@ -288,6 +297,10 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(
 		dialog.getByLabel("Animate the bot during its turn"),
 	).not.toBeChecked();
+	await expect(dialog.getByLabel("Animate trick collection")).not.toBeChecked();
+	await expect(
+		dialog.getByLabel("Automatically start the next board"),
+	).toBeChecked();
 	await expect(
 		dialog.getByLabel(
 			"In the desktop view, show the bidding guide in the side panel during the auction",
@@ -540,7 +553,7 @@ test("the desktop right panel has the paper texture in the light appearance unti
 	await expect.poll(() => panelGrain(page)).toBeLessThan(0.5);
 
 	await page.reload();
-	await expect(page.getByTestId("room-controls")).toBeVisible();
+	await expect(page.getByTestId("table")).toBeVisible();
 	dialog = await openSettings(page);
 	await expect(texture).toBeChecked();
 	await dialog.getByLabel("Light", { exact: true }).check();
@@ -676,7 +689,7 @@ test("a new language in Settings reloads the page in that language", async ({
 	).toBe("de");
 });
 
-test("on a phone, Settings is below the board and its dialog fits the screen", async ({
+test("on a phone, Settings is above the board and its dialog fits the screen", async ({
 	browser,
 	baseURL,
 }) => {
@@ -697,10 +710,10 @@ test("on a phone, Settings is below the board and its dialog fits the screen", a
 		});
 		await settings.scrollIntoViewIfNeeded();
 		await expect(settings).toBeVisible();
-		const board = await page.getByTestId("table").boundingBox();
+		const board = await page.locator(".mobile-auction-board").boundingBox();
 		const button = await settings.boundingBox();
 		if (!board || !button) throw new Error("the board or Settings has no box");
-		expect(button.y).toBeGreaterThanOrEqual(board.y + board.height);
+		expect(button.y + button.height).toBeLessThanOrEqual(board.y);
 		await settings.click();
 		const dialog = page.getByTestId("settings-dialog");
 		await expect(dialog).toBeVisible();

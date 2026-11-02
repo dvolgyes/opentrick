@@ -7,6 +7,7 @@ import type { Seat } from "../../src/protocol";
 import { pageReport } from "../../src/ui/page-report";
 import { DEFAULT_SETTINGS } from "../../src/ui/settings";
 import type { TableView } from "../../src/ui/table-model";
+import { positionOf } from "../../src/ui/table-model";
 import {
 	card,
 	expectSameMiddle,
@@ -49,6 +50,33 @@ describe("turn pill", () => {
 			expect(own.querySelector(".turn-pill")).toBeNull();
 			const row = own.querySelector<HTMLElement>(".seat-tags");
 			if (row) expect(getComputedStyle(row).display).toBe("none");
+		},
+	);
+
+	it.each<Layout>(["desktop", "compact"])(
+		"keeps the auction remark attached across rerenders on %s",
+		(layout) => {
+			const base = {
+				...playView(),
+				phase: "auction" as const,
+				auctionEnd: {
+					contract: {
+						level: 1 as const,
+						strain: "C" as const,
+						doubling: "" as const,
+					},
+					declarer: "by North",
+					vulnerability: "N-S not vulnerable",
+					vulnerable: false,
+					bothHands: "You will play both hands: North and South.",
+				},
+			};
+			const { root, section } = renderView(base, layout);
+			const summary = root.querySelector('[data-testid="auction-end"]');
+			const remark = summary?.querySelector(".auction-end-both-hands");
+			expect(remark?.textContent).toBe(base.auctionEnd.bothHands);
+			section.render({ ...base, prompt: "Play starts in 2 seconds." });
+			expect(summary?.querySelector(".auction-end-both-hands")).toBe(remark);
 		},
 	);
 	it.each<[Locale, string, string]>([
@@ -842,17 +870,25 @@ describe("finished trick", () => {
 		const base = playView();
 		const played = base.trick?.cards[0];
 		if (!played) throw new Error("the trick fixture has no card");
+		const trick = {
+			cards: [
+				{ ...played, seat: "E", position: "left" },
+				{ ...played, seat: "S", position: "top", card: "S2", text: "♠2" },
+				{ ...played, seat: "W", position: "right", card: "S3", text: "♠3" },
+				{ ...played, seat: "N", position: "bottom", card: "S4", text: "♠4" },
+			],
+			finished: true,
+		} as const;
 		return {
 			...base,
 			at,
-			trick: {
-				cards: [
-					{ ...played, seat: "E", position: "left" },
-					{ ...played, seat: "S", position: "top", card: "S2", text: "♠2" },
-					{ ...played, seat: "W", position: "right", card: "S3", text: "♠3" },
-					{ ...played, seat: "N", position: "bottom", card: "S4", text: "♠4" },
-				],
-				finished: true,
+			trick,
+			completedTrick: {
+				...trick,
+				index: 1,
+				winner: "N",
+				winnerPosition: "bottom",
+				winnerName: "Anna",
 			},
 		};
 	}
@@ -869,33 +905,290 @@ describe("finished trick", () => {
 	afterEach(() => vi.useRealTimers());
 
 	it.each<Form>(["desktop", "compact"])(
-		"hides a finished trick after two seconds on %s",
+		"collects a newly finished trick once on %s",
 		(form) => {
 			vi.useFakeTimers();
-			const { root } = renderView(finishedView(), form);
-			expect(trickShown(root)).toBe(true);
-			vi.advanceTimersByTime(1900);
-			expect(trickShown(root)).toBe(true);
-			vi.advanceTimersByTime(100);
+			const { root, section } = renderView(playView(), form);
+			section.render(finishedView());
+			const overlay = document.querySelector(".trick-collection-overlay");
+			expect(overlay?.querySelectorAll(".played")).toHaveLength(4);
+			expect(
+				overlay?.querySelector(".trick-winner")?.getAttribute("data-seat"),
+			).toBe("N");
+			expect(root.querySelector(".trick-announcement")?.textContent).toBe(
+				"North · Anna won the trick",
+			);
+			document.body.click();
+			section.render(finishedView());
+			expect(document.querySelector(".trick-collection-overlay")).toBe(overlay);
+			vi.advanceTimersByTime(1199);
+			expect(document.querySelector(".trick-collection-overlay")).toBe(overlay);
+			vi.advanceTimersByTime(1);
+			expect(document.querySelector(".trick-collection-overlay")).toBeNull();
 			expect(trickShown(root)).toBe(false);
 		},
 	);
 
-	it("hides a finished trick when the player clicks a place with no control", () => {
+	it("does not replay a completed trick when loading it", () => {
 		vi.useFakeTimers();
 		const { root } = renderView(finishedView(), "desktop");
-		document.body.click();
 		expect(trickShown(root)).toBe(false);
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
 	});
 
-	it("keeps a hidden trick hidden when the same view comes again, and shows the next finished trick", () => {
+	it("cancels the collection on rollback and permits a later recompletion", () => {
 		vi.useFakeTimers();
-		const { root, section } = renderView(finishedView(), "desktop");
-		document.body.click();
+		const { section } = renderView(playView(), "desktop");
 		section.render(finishedView());
-		expect(trickShown(root)).toBe(false);
-		section.render(finishedView(12));
-		expect(trickShown(root)).toBe(true);
+		expect(section.collecting()).toBe(true);
+		section.render(playView());
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+		section.render(finishedView());
+		expect(section.collecting()).toBe(true);
+		section.dispose();
+	});
+
+	it("uses the viewer-relative edge midpoint for every winner and viewer", () => {
+		vi.useFakeTimers();
+		const seats = ["N", "E", "S", "W"] as const;
+		for (const viewer of seats)
+			for (const winner of seats) {
+				const { section } = renderView(playView(), "desktop");
+				const original = finishedView();
+				if (!original.completedTrick)
+					throw new Error("missing completed trick");
+				const completedTrick = {
+					...original.completedTrick,
+					winner,
+					winnerPosition: positionOf(viewer, winner),
+					cards: original.completedTrick.cards.map((card) => ({
+						...card,
+						position: positionOf(viewer, card.seat),
+					})),
+				};
+				section.render({ ...original, completedTrick });
+				const overlay = document.querySelector<HTMLElement>(
+					".trick-collection-overlay",
+				);
+				const cards = [
+					...(overlay?.querySelectorAll<HTMLElement>(".played") ?? []),
+				];
+				expect(cards).toHaveLength(4);
+				const endpoints = cards.map((card) => {
+					const animation = card
+						.getAnimations()
+						.find(
+							(item) =>
+								item.effect instanceof KeyframeEffect &&
+								item.effect
+									.getKeyframes()
+									.some((frame) =>
+										String(frame.transform ?? "").includes("translate("),
+									),
+						);
+					const frame = (animation?.effect as KeyframeEffect | undefined)
+						?.getKeyframes()
+						.at(-1);
+					const match = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(
+						String(frame?.transform ?? ""),
+					);
+					if (!match) throw new Error("missing collection transform");
+					return [
+						parseFloat(card.style.left) +
+							card.offsetWidth / 2 +
+							Number(match[1]),
+						parseFloat(card.style.top) +
+							card.offsetHeight / 2 +
+							Number(match[2]),
+					];
+				});
+				for (const point of endpoints) {
+					expect(point[0]).toBeCloseTo(endpoints[0]?.[0] ?? 0, 0);
+					expect(point[1]).toBeCloseTo(endpoints[0]?.[1] ?? 0, 0);
+				}
+				const [x, y] = endpoints[0] ?? [0, 0];
+				const width = window.visualViewport?.width ?? window.innerWidth;
+				const height = window.visualViewport?.height ?? window.innerHeight;
+				switch (completedTrick.winnerPosition) {
+					case "top":
+						expect(x).toBeCloseTo(width / 2, 0);
+						expect(y).toBeLessThan(0);
+						break;
+					case "bottom":
+						expect(x).toBeCloseTo(width / 2, 0);
+						expect(y).toBeGreaterThan(height);
+						break;
+					case "left":
+						expect(y).toBeCloseTo(height / 2, 0);
+						expect(x).toBeLessThan(0);
+						break;
+					case "right":
+						expect(y).toBeCloseTo(height / 2, 0);
+						expect(x).toBeGreaterThan(width);
+						break;
+				}
+				section.dispose();
+			}
+	});
+
+	it("respects the setting that disables collection motion", () => {
+		const { section, root } = renderView(
+			playView(),
+			"desktop",
+			undefined,
+			undefined,
+			{ trickAnimation: () => false },
+		);
+		section.render(finishedView());
+		expect(section.collecting()).toBe(false);
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+		expect(root.querySelector(".trick-announcement")?.textContent).toBe(
+			"North · Anna won the trick",
+		);
+	});
+
+	it("keeps card text proportional when the desktop table is scaled", () => {
+		vi.useFakeTimers();
+		const { root, section } = renderView(playView(), "desktop");
+		const stage = root.parentElement;
+		if (!stage) throw new Error("missing stage");
+		stage.style.transformOrigin = "top left";
+		stage.style.transform = "scale(0.5)";
+		const original = root.querySelector<HTMLElement>(".played .rank-corner");
+		if (!original) throw new Error("missing card rank");
+		const expected = parseFloat(getComputedStyle(original).fontSize) / 2;
+		section.render(finishedView());
+		const animated = document.querySelector<HTMLElement>(
+			".trick-collection-overlay .rank-corner",
+		);
+		if (!animated) throw new Error("missing animated rank");
+		expect(parseFloat(getComputedStyle(animated).fontSize)).toBeCloseTo(
+			expected,
+			0,
+		);
+		section.dispose();
+	});
+
+	it.each<Form>(["desktop", "compact"])(
+		"keeps the final result and new plays behind collection on %s",
+		(form) => {
+			vi.useFakeTimers();
+			const { root, section, handlers } = renderView(playView(), form);
+			const complete = finishedView();
+			section.render({
+				...complete,
+				phase: "complete",
+				scoring: {
+					contract: { level: 2, strain: "C", doubling: "" },
+					compactOutcome: "WON",
+					compactDetail: "Made: 2♣",
+					countdown: 10,
+				},
+			});
+			expect(section.collecting()).toBe(true);
+			expect(root.dataset.phase).toBe("play");
+			root.querySelector<HTMLButtonElement>('[data-card="SA"]')?.click();
+			expect(handlers.act).not.toHaveBeenCalled();
+			vi.advanceTimersByTime(1200);
+			expect(root.dataset.phase).toBe("complete");
+			expect(
+				root.querySelector<HTMLElement>('[data-testid="scoring"]')?.hidden,
+			).toBe(false);
+		},
+	);
+
+	it("clears the overlay when the viewport changes", () => {
+		vi.useFakeTimers();
+		const { section } = renderView(playView(), "desktop");
+		section.render(finishedView());
+		expect(section.collecting()).toBe(true);
+		window.dispatchEvent(new Event("resize"));
+		expect(section.collecting()).toBe(false);
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+	});
+
+	it("keeps the next trick out of the collection and rejects clicks until it finishes", () => {
+		vi.useFakeTimers();
+		const { root, section, handlers } = renderView(playView(), "desktop");
+		const finished = finishedView();
+		section.render(finished);
+		const next = playView();
+		section.render({ ...next, at: 9, completedTrick: finished.completedTrick });
+		expect(
+			document.querySelectorAll(".trick-collection-overlay .played"),
+		).toHaveLength(4);
+		expect(root.querySelectorAll(".trick .played")).toHaveLength(0);
+		root.querySelector<HTMLButtonElement>('.card[data-card="SA"]')?.click();
+		expect(handlers.act).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(1200);
+		expect(root.querySelectorAll(".trick .played")).toHaveLength(1);
+	});
+
+	it("shows a static winner frame then fades with reduced motion", () => {
+		vi.useFakeTimers();
+		const nativeMatch = window.matchMedia.bind(window);
+		const media = vi
+			.spyOn(window, "matchMedia")
+			.mockImplementation((query) =>
+				query === "(prefers-reduced-motion: reduce)"
+					? ({ matches: true } as MediaQueryList)
+					: nativeMatch(query),
+			);
+		try {
+			const { root, section } = renderView(playView(), "desktop");
+			section.render(finishedView());
+			const winner = document.querySelector<HTMLElement>(
+				".trick-collection-overlay .trick-winner",
+			);
+			expect(winner).not.toBeNull();
+			const frames = (
+				winner?.getAnimations()[0]?.effect as KeyframeEffect | undefined
+			)?.getKeyframes();
+			expect(frames?.at(-1)?.opacity).toBe("0");
+			expect(frames?.at(-1)?.transform).toBeUndefined();
+			expect(root.querySelector(".trick-announcement")?.textContent).toContain(
+				"won the trick",
+			);
+			vi.advanceTimersByTime(350);
+			expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+		} finally {
+			media.mockRestore();
+		}
+	});
+
+	it("clears obsolete motion on a new board and on disposal", () => {
+		vi.useFakeTimers();
+		const { section } = renderView(playView(), "desktop");
+		section.render(finishedView());
+		expect(section.collecting()).toBe(true);
+		section.render({ ...playView(), board: 2 });
+		expect(section.collecting()).toBe(false);
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+		section.render({ ...finishedView(), board: 2 });
+		expect(section.collecting()).toBe(true);
+		section.dispose();
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+	});
+
+	it("clears motion in a background tab without replaying it on return", () => {
+		vi.useFakeTimers();
+		const { section } = renderView(playView(), "desktop");
+		section.render(finishedView());
+		expect(section.collecting()).toBe(true);
+		Object.defineProperty(document, "hidden", {
+			configurable: true,
+			value: true,
+		});
+		try {
+			document.dispatchEvent(new Event("visibilitychange"));
+			expect(section.collecting()).toBe(false);
+			section.render(finishedView());
+			expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+		} finally {
+			Reflect.deleteProperty(document, "hidden");
+		}
+		section.render(finishedView());
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
 	});
 
 	it("keeps a trick that is not finished on the table", () => {

@@ -41,6 +41,7 @@ export type TargetStatus = "open" | "secured" | "defeated";
 
 /** What the viewer's partnership still needs (spec §11.2). */
 export interface TrickNeed {
+	readonly declaring: boolean;
 	/** Completed tricks won by the viewer's partnership. */
 	readonly ours: number;
 	/** The viewer's partnership target: the contract for the declaring side, otherwise the defeat count. */
@@ -79,6 +80,7 @@ export function trickNeed(
 				? "defeated"
 				: "open";
 	return {
+		declaring,
 		ours,
 		target,
 		opponents,

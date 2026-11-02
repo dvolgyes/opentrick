@@ -73,6 +73,34 @@ it("names the contract, its declarer and the declaring side's vulnerability whil
 	).toBeUndefined();
 });
 
+it("tells only the human who controls both declaring hands during the auction pause", () => {
+	const held = { auctionPauseSeconds: 3 };
+	expect(view("N", NORTH_DECLARER_BOARD, held).auctionEnd?.bothHands).toBe(
+		"You will play both hands: North and South.",
+	);
+	expect(
+		seatView(view("N", NORTH_DECLARER_BOARD, held), "S").hand.visible,
+	).toBe(false);
+	expect(
+		view("S", NORTH_DECLARER_BOARD, { ...held, bots: new Set(["N"]) })
+			.auctionEnd?.bothHands,
+	).toBe("You will play both hands: North and South.");
+	expect(
+		view("E", NORTH_DECLARER_BOARD, held).auctionEnd?.bothHands,
+	).toBeUndefined();
+	expect(
+		view("S", NORTH_DECLARER_BOARD, held).auctionEnd?.bothHands,
+	).toBeUndefined();
+	expect(
+		view("N", NORTH_DECLARER_BOARD, {
+			...held,
+			bots: new Set(["N"]),
+			autoplaySeats: new Set(["N"]),
+		}).auctionEnd?.bothHands,
+	).toBeUndefined();
+	expect(view("N", bidding(BOARD, "P P P P"), held).auctionEnd).toBeUndefined();
+});
+
 describe("text", () => {
 	it("writes cards, calls and commands as players read them", () => {
 		expect(cardText("ST")).toBe("♠10");

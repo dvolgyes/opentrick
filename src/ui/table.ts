@@ -31,6 +31,7 @@ import { DEFAULT_SETTINGS, type Settings } from "./settings";
 import type {
 	AuctionEndView,
 	CardView,
+	CompletedTrickView,
 	ContractHeader,
 	HandDisplay,
 	Position,
@@ -64,6 +65,8 @@ export interface TableHandlers {
 	undoCancel(requestId: string): void;
 	claimRequest(board: number, tricks: number): void;
 	claimVote(requestId: string, approve: boolean): void;
+	nextBoard?(): void;
+	reviewResult?(): void;
 	setBotSeat?(seat: Seat, enabled: boolean): void;
 	requestAutoplay?(enabled: boolean): void;
 	/** Opens the host's player name editor. */
@@ -90,6 +93,8 @@ export interface TableSection {
 	/** The last part of the sidebar. The room page puts the host's debug controls and the bot status here, so their messages push nothing down. */
 	readonly sidebarEnd: HTMLElement;
 	render(view: TableView): void;
+	collecting(): boolean;
+	dispose(): void;
 	setCountdown(seconds: number | undefined): void;
 	/**
 	 * The call changed: updates only the call controls and the call status of each remote seat. `hostInCall`: this
@@ -105,6 +110,7 @@ export interface TableSection {
 		hosting: boolean,
 		bots: readonly Seat[],
 		paused: boolean,
+		pending?: boolean,
 	): void;
 	setPlayerAutoplay(
 		available: boolean,
@@ -125,6 +131,8 @@ export interface TableSection {
 }
 
 export interface TableOptions {
+	readonly trickAnimation?: () => boolean;
+	readonly presentationDone?: () => void;
 	/** The scale of the points pill and the bidding guide; the table reads it at each render. */
 	readonly pointSystem?: () => PointSystem;
 	/** The points pill shows only while this is true; the table reads it at each render. */
@@ -164,8 +172,8 @@ export type PlayedCardStyle =
 // Change this one value to switch the played-card design.
 const PLAYED_CARD_STYLE: PlayedCardStyle = "corners-oriented";
 
-/** A finished trick leaves the table after this time, after a click anywhere, or when the next card is led. */
-const FINISHED_TRICK_MS = 2000;
+const TRICK_HIGHLIGHT_MS = 200;
+const TRICK_SWEEP_MS = 1000;
 
 /**
  * The call nodes of one remote seat. They outlive the table's re-rendering and only move with their place, so
@@ -470,7 +478,7 @@ export function tableSection(
 		el(
 			"h3",
 			{ attrs: { id: "autoplay-confirm-title" } },
-			`${t("Enable autoplay (bot)")}?`,
+			t("Autoplay my seat?"),
 		),
 		el(
 			"div",
@@ -484,7 +492,7 @@ export function tableSection(
 				{ attrs: { "data-testid": "autoplay-cancel" } },
 			),
 			button(
-				t("Enable autoplay (bot)"),
+				t("Autoplay my seat"),
 				() => {
 					const action = autoplayAction;
 					autoplayAction = undefined;
@@ -575,6 +583,10 @@ export function tableSection(
 		className: "trick",
 		attrs: { "data-testid": "trick" },
 	});
+	const trickAnnouncement = el("p", {
+		className: "trick-announcement",
+		attrs: { role: "status", "aria-live": "polite" },
+	});
 	const scoringCountdown = el("p", {
 		className: "scoring-countdown",
 		attrs: { "data-testid": "scoring-countdown", "aria-live": "off" },
@@ -646,10 +658,15 @@ export function tableSection(
 		bidUndo,
 		bidUndoCancel,
 	);
-	/** The finished trick on the table, as board and position, and whether it has left the table. */
-	let finishedTrick: string | undefined;
-	let finishedTrickHidden = false;
-	let finishedTrickTimer: ReturnType<typeof setTimeout> | undefined;
+	let presentationBoard = 0;
+	let presentationIndex = 0;
+	let presentationAt = 0;
+	let presentationSignature = "";
+	let lastPlayView: TableView | undefined;
+	let incomingView: TableView | undefined;
+	let collectingTrick: CompletedTrickView | undefined;
+	let collectionOverlay: HTMLElement | undefined;
+	let collectionTimer: ReturnType<typeof setTimeout> | undefined;
 	let claimMode: "choose" | "all" | null = null;
 	/** The count that the declarer tapped; "Confirm claim" stays disabled until there is one. */
 	let claimCount: number | null = null;
@@ -1062,6 +1079,7 @@ export function tableSection(
 		// The summaries of the auction and of the game lie on the middle of the green board.
 		scoring,
 		auctionEnd,
+		trickAnnouncement,
 		waitingOverlay,
 		approvalBackdrop,
 	);
@@ -1078,6 +1096,7 @@ export function tableSection(
 	let playerAutoplayAvailable = false;
 	let playerAutoplayEnabled = false;
 	let playerAutoplayPending = false;
+	let hostAutoplayPending = false;
 	let playerAutoplayStatus = "";
 	let remoteCallPresence: Readonly<Partial<Record<Seat, RemoteCallPresence>>> =
 		{};
@@ -1108,7 +1127,7 @@ export function tableSection(
 					});
 			}
 		},
-		{ attrs: { title: t("Temporarily replace player with a bot") } },
+		{},
 	);
 	const autoplayStatus = el("span", {
 		className: "player-autoplay-status",
@@ -1129,14 +1148,25 @@ export function tableSection(
 				: playerAutoplayEnabled;
 		autoplayControl.hidden =
 			!(botControlHost && own) && !playerAutoplayAvailable;
-		autoplayButton.disabled = !botControlHost && playerAutoplayPending;
+		autoplayButton.disabled = botControlHost
+			? hostAutoplayPending
+			: playerAutoplayPending;
 		autoplayButton.dataset.testid = botControlHost
 			? "host-autoplay-toggle"
 			: "player-autoplay-toggle";
 		autoplayButton.textContent = t(
-			enabled ? "Disable autoplay" : "Enable autoplay",
+			enabled ? "Take back control" : "Autoplay my seat",
 		);
-		autoplayStatus.textContent = botControlHost ? "" : playerAutoplayStatus;
+		autoplayStatus.textContent = [
+			enabled ? t("Autoplay on") : "",
+			botControlHost
+				? hostAutoplayPending
+					? t("Sending autoplay request…")
+					: ""
+				: playerAutoplayStatus,
+		]
+			.filter(Boolean)
+			.join(" · ");
 	}
 	/** The tag and player name of each seat, as the last table view gave them ("E - David"). */
 	let seatLabels = new Map<Seat, string>();
@@ -1253,7 +1283,9 @@ export function tableSection(
 	function cardButton(card: CardView, suitStart: boolean): HTMLButtonElement {
 		const node = button(
 			"",
-			() => handlers.act({ type: "play", card: card.card }),
+			() => {
+				if (!collectingTrick) handlers.act({ type: "play", card: card.card });
+			},
 			{
 				className: suitStart ? "card suit-start" : "card",
 				attrs: {
@@ -1952,8 +1984,10 @@ export function tableSection(
 		hosting: boolean,
 		bots: readonly Seat[],
 		paused: boolean,
+		pending = false,
 	): void {
 		botControlHost = hosting;
+		hostAutoplayPending = pending;
 		botControlSeats = bots;
 		botControlPaused = paused;
 		updateAutoplayControl();
@@ -2424,39 +2458,161 @@ export function tableSection(
 		waitingText.textContent = visible ? view.waiting : "";
 	}
 
-	/** Shows the trick. A finished trick stays until its timer or a click anywhere takes it off; the grid keeps its place. */
+	/** Show current cards separately from the fixed snapshot used for collection. */
 	function showTrick(view: TableView): void {
-		const finished = view.trick?.finished
-			? `${view.board}:${view.at}`
-			: undefined;
-		if (finished !== finishedTrick) {
-			stopFinishedTrick();
-			finishedTrick = finished;
-			finishedTrickHidden = false;
-			if (finished !== undefined) {
-				finishedTrickTimer = setTimeout(hideFinishedTrick, FINISHED_TRICK_MS);
-				// Capture, so a click that a control stops still counts.
-				element.ownerDocument.addEventListener(
-					"click",
-					hideFinishedTrick,
-					true,
-				);
-			}
+		if (collectingTrick) {
+			if (!collectionOverlay) startCollection(collectingTrick);
+			return;
 		}
-		renderTrick(view.trick);
-		if (finishedTrickHidden) trick.replaceChildren();
+		renderTrick(view.trick?.finished ? undefined : view.trick);
 	}
 
-	function hideFinishedTrick(): void {
-		stopFinishedTrick();
-		finishedTrickHidden = true;
+	function finishCollection(redraw = true): void {
+		clearTimeout(collectionTimer);
+		collectionTimer = undefined;
+		collectionOverlay?.remove();
+		collectionOverlay = undefined;
+		const win = element.ownerDocument.defaultView;
+		win?.removeEventListener("resize", cancelCollection);
+		win?.visualViewport?.removeEventListener("resize", cancelCollection);
+		win?.visualViewport?.removeEventListener("scroll", cancelCollection);
+		element.ownerDocument.removeEventListener(
+			"visibilitychange",
+			onCollectionVisibility,
+		);
+		const wasCollecting = collectingTrick !== undefined;
+		collectingTrick = undefined;
+		if (redraw && wasCollecting && incomingView) {
+			render(incomingView);
+			options.presentationDone?.();
+		}
+	}
+
+	function cancelCollection(): void {
+		finishCollection();
+	}
+	function onCollectionVisibility(): void {
+		if (element.ownerDocument.hidden) finishCollection();
+	}
+
+	function startCollection(completed: CompletedTrickView): void {
+		renderTrick(completed);
+		const nodes = [...trick.querySelectorAll<HTMLElement>(".played")];
+		if (nodes.length !== 4 || !trick.isConnected) {
+			finishCollection();
+			return;
+		}
+		const doc = element.ownerDocument;
+		const win = doc.defaultView;
+		if (!win) {
+			finishCollection();
+			return;
+		}
+		const viewport = win.visualViewport;
+		const offsetX = viewport?.offsetLeft ?? 0;
+		const offsetY = viewport?.offsetTop ?? 0;
+		const width = viewport?.width ?? win.innerWidth;
+		const height = viewport?.height ?? win.innerHeight;
+		const rects = nodes.map((node) => node.getBoundingClientRect());
+		const margin =
+			Math.max(...rects.map((rect) => Math.hypot(rect.width, rect.height))) + 8;
+		const endpoint = {
+			top: [width / 2, -margin],
+			right: [width + margin, height / 2],
+			bottom: [width / 2, height + margin],
+			left: [-margin, height / 2],
+		}[completed.winnerPosition];
+		const overlay = el("div", {
+			className: "bridge-table trick-collection-overlay",
+			attrs: {
+				"aria-hidden": "true",
+				"data-played-card-style": playedCardStyle,
+			},
+		});
+		Object.assign(overlay.style, {
+			left: `${offsetX}px`,
+			top: `${offsetY}px`,
+			width: `${width}px`,
+			height: `${height}px`,
+		});
+		collectionOverlay = overlay;
+		doc.body.append(overlay);
+		win.addEventListener("resize", cancelCollection);
+		viewport?.addEventListener("resize", cancelCollection);
+		viewport?.addEventListener("scroll", cancelCollection);
+		doc.addEventListener("visibilitychange", onCollectionVisibility);
+		const reduced =
+			win.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+		for (const [index, node] of nodes.entries()) {
+			const rect = rects[index];
+			if (!rect) continue;
+			const clone = node.cloneNode(true) as HTMLElement;
+			const computed = win.getComputedStyle(node);
+			const scale = node.offsetWidth > 0 ? rect.width / node.offsetWidth : 1;
+			for (const name of [
+				"--card-w",
+				"--card-h",
+				"--rank-size",
+				"--suit-font-scale",
+				"--card-bg",
+				"--card-fg",
+				"--line",
+				"--board-card-shadow",
+			])
+				clone.style.setProperty(name, computed.getPropertyValue(name));
+			const x = rect.left - offsetX;
+			const y = rect.top - offsetY;
+			Object.assign(clone.style, {
+				position: "absolute",
+				left: `${x}px`,
+				top: `${y}px`,
+				width: `${rect.width}px`,
+				height: `${rect.height}px`,
+				minWidth: "0",
+				minHeight: "0",
+				fontSize: `${parseFloat(computed.fontSize) * scale}px`,
+				transform: computed.transform === "none" ? "" : computed.transform,
+			});
+			const originalText = node.querySelectorAll<HTMLElement>(
+				".rank-corner, .played-center-suit",
+			);
+			const copiedText = clone.querySelectorAll<HTMLElement>(
+				".rank-corner, .played-center-suit",
+			);
+			originalText.forEach((part, textIndex) => {
+				const copy = copiedText[textIndex];
+				if (copy)
+					copy.style.fontSize = `${parseFloat(win.getComputedStyle(part).fontSize) * scale}px`;
+			});
+			const winner = node.dataset.seat === completed.winner;
+			if (winner) clone.classList.add("trick-winner");
+			clone.style.zIndex = winner ? "2" : "1";
+			overlay.append(clone);
+			const dx = (endpoint[0] ?? 0) - (x + rect.width / 2);
+			const dy = (endpoint[1] ?? 0) - (y + rect.height / 2);
+			const base = clone.style.transform || "none";
+			clone.animate(
+				reduced
+					? [{ opacity: 1 }, { opacity: 0 }]
+					: [
+							{ transform: base },
+							{
+								transform: `translate(${dx}px, ${dy}px) ${base === "none" ? "" : base}`,
+							},
+						],
+				{
+					delay: TRICK_HIGHLIGHT_MS,
+					duration: reduced ? 150 : TRICK_SWEEP_MS,
+					easing: "ease-in",
+					fill: "forwards",
+				},
+			);
+		}
 		trick.replaceChildren();
-	}
-
-	function stopFinishedTrick(): void {
-		clearTimeout(finishedTrickTimer);
-		finishedTrickTimer = undefined;
-		element.ownerDocument.removeEventListener("click", hideFinishedTrick, true);
+		collectionTimer = setTimeout(
+			() => finishCollection(),
+			TRICK_HIGHLIGHT_MS + (reduced ? 150 : TRICK_SWEEP_MS),
+		);
 	}
 
 	/** The cards played to the current trick, each drawn with its long edge towards the player who played it. */
@@ -2561,6 +2717,24 @@ export function tableSection(
 						),
 						view.compactDetail.slice(position + notation.length),
 					];
+		const soloControls = view.solo
+			? [
+					el(
+						"div",
+						{ className: "scoring-actions" },
+						...(view.solo.reviewing
+							? []
+							: [button(t("Review"), () => handlers.reviewResult?.())]),
+						button(t("Next board"), () => handlers.nextBoard?.(), {
+							attrs: { "data-testid": "next-board" },
+						}),
+					),
+				]
+			: [];
+		const nextButton = soloControls[0]?.querySelector<HTMLButtonElement>(
+			'[data-testid="next-board"]',
+		);
+		if (nextButton && view.solo) nextButton.disabled = !view.solo.ready;
 		if (compact) {
 			scoring.replaceChildren(
 				el(
@@ -2575,6 +2749,7 @@ export function tableSection(
 					? []
 					: [el("p", { className: "mobile-scoring-detail" }, ...detail)]),
 				scoringCountdown,
+				...soloControls,
 			);
 			setCountdown(view.countdown);
 			return;
@@ -2600,6 +2775,7 @@ export function tableSection(
 				...(view.compactDetail === "" ? [] : [" ", ...detail]),
 			),
 			scoringCountdown,
+			...soloControls,
 		);
 		setCountdown(view.countdown);
 	}
@@ -2618,7 +2794,11 @@ export function tableSection(
 		);
 	}
 
+	let shownAuctionEnd = "";
 	function renderAuctionEnd(view: TableView["auctionEnd"]): void {
+		const key = JSON.stringify(view) ?? "";
+		if (key === shownAuctionEnd) return;
+		shownAuctionEnd = key;
 		auctionEnd.hidden = view === undefined;
 		if (!view) {
 			auctionEnd.replaceChildren();
@@ -2640,6 +2820,9 @@ export function tableSection(
 				},
 				view.vulnerability,
 			),
+			...(view.bothHands
+				? [el("p", { className: "auction-end-both-hands" }, view.bothHands)]
+				: []),
 		);
 	}
 
@@ -2973,6 +3156,55 @@ export function tableSection(
 	}
 
 	function render(view: TableView): void {
+		incomingView = view;
+		const completed = view.completedTrick;
+		const index = completed?.index ?? 0;
+		const signature = completed
+			? JSON.stringify([
+					completed.index,
+					completed.winner,
+					completed.cards.map((card) => card.card),
+				])
+			: "";
+		if (view.board !== presentationBoard) {
+			finishCollection(false);
+			presentationBoard = view.board;
+			presentationIndex = index;
+			presentationAt = view.at;
+			presentationSignature = signature;
+			lastPlayView = undefined;
+		} else {
+			const rolledBack = view.at < presentationAt;
+			if (
+				collectingTrick &&
+				(rolledBack ||
+					index < collectingTrick.index ||
+					index > collectingTrick.index ||
+					(index === collectingTrick.index &&
+						signature !== presentationSignature))
+			)
+				finishCollection(false);
+			if (
+				completed &&
+				!rolledBack &&
+				!element.ownerDocument.hidden &&
+				index === presentationIndex + 1 &&
+				lastPlayView?.phase === "play"
+			) {
+				const direction = t(SEAT_NAMES[completed.winner]);
+				const player = completed.winnerName
+					? `${direction} · ${completed.winnerName}`
+					: direction;
+				trickAnnouncement.textContent = t("{player} won the trick", { player });
+				if (options.trickAnimation?.() ?? true) collectingTrick = completed;
+			}
+			presentationIndex = index;
+			presentationAt = view.at;
+			presentationSignature = signature;
+		}
+		if (collectingTrick && view.phase === "complete" && lastPlayView)
+			view = { ...lastPlayView, trick: collectingTrick };
+		else if (view.phase === "play") lastPlayView = view;
 		latestView = view;
 		updateAutoplayControl();
 		shownPointSystem = pointSystem();
@@ -3012,6 +3244,9 @@ export function tableSection(
 		}
 		const mobileGameActive =
 			compact && (view.phase === "auction" || view.phase === "play");
+		const announcementHome = mobileGameActive ? mobileBoard : felt;
+		if (trickAnnouncement.parentElement !== announcementHome)
+			announcementHome.append(trickAnnouncement);
 		// Before the first board, a phone shows the same board with the backs of the joined seats, and nothing else of
 		// the game.
 		const mobileBoardActive =
@@ -3027,9 +3262,9 @@ export function tableSection(
 			mobileBoardCenter.setAttribute("aria-label", t("Current trick"));
 		}
 		if (summaryInMiddle) {
-			mobileBoardCenter.replaceChildren(auctionEnd);
+			placeChildren(mobileBoardCenter, auctionEnd);
 		} else if (mobileGameActive && view.phase === "play") {
-			mobileBoardCenter.replaceChildren(trick);
+			placeChildren(mobileBoardCenter, trick);
 		} else {
 			mobileBoardCenter.replaceChildren();
 			center.prepend(trick);
@@ -3273,7 +3508,7 @@ export function tableSection(
 		header: ContractHeader | undefined,
 		need: NonNullable<TableView["need"]>,
 	): HTMLElement {
-		const count = (label: string, value: number): HTMLElement =>
+		const count = (label: string, value: string | number): HTMLElement =>
 			el(
 				"div",
 				{ className: "count" },
@@ -3284,8 +3519,7 @@ export function tableSection(
 			"div",
 			{ className: "tricks-counts" },
 			...(header ? [contractBid(header)] : []),
-			count(t("Our tricks"), need.ours),
-			count(t("Target"), need.target),
+			count(t("Our tricks"), `${need.ours} / ${need.target}`),
 			count(t("Opponents'"), need.opponents),
 		);
 	}
@@ -3298,8 +3532,29 @@ export function tableSection(
 			tricksPanel.replaceChildren();
 			return;
 		}
-		tricksPanel.replaceChildren(
-			tricksCounts(view.header, need),
+		tricksPanel.replaceChildren(...trickProgress(view, need));
+	}
+
+	function trickProgress(
+		view: TableView,
+		need: NonNullable<TableView["need"]>,
+	): HTMLElement[] {
+		const header = view.header;
+		const contract = header
+			? `${header.level}${header.symbol}${header.doubling}`
+			: "";
+		return [
+			tricksCounts(header, need),
+			el(
+				"p",
+				{ className: "tricks-goal" },
+				t(
+					need.declaring
+						? "{target} tricks to make {contract}"
+						: "{target} defensive tricks to defeat {contract}",
+					{ target: need.target, contract },
+				),
+			),
 			el(
 				"p",
 				{
@@ -3311,15 +3566,20 @@ export function tableSection(
 								: need.status,
 					},
 				},
-				t("Contract needs {needed} / {remaining}", {
-					needed: need.needed,
-					remaining: need.remaining,
-				}),
+				t(
+					need.status === "open"
+						? "{needed} more needed · {remaining} tricks remaining"
+						: "{remaining} tricks remaining",
+					{
+						needed: need.needed,
+						remaining: need.remaining,
+					},
+				),
 			),
 			...(view.trickStatus
 				? [el("p", { className: "tricks-status" }, view.trickStatus)]
 				: []),
-		);
+		];
 	}
 
 	function renderMobileTricks(view: TableView): void {
@@ -3329,7 +3589,7 @@ export function tableSection(
 			mobileTricks.replaceChildren();
 			return;
 		}
-		mobileTricks.replaceChildren(tricksCounts(view.header, need));
+		mobileTricks.replaceChildren(...trickProgress(view, need));
 	}
 
 	function setForm(layout: Layout): void {
@@ -3350,6 +3610,8 @@ export function tableSection(
 		sidebar,
 		sidebarEnd,
 		render,
+		collecting: () => collectingTrick !== undefined,
+		dispose: () => finishCollection(false),
 		renderCall,
 		setBotControls,
 		setPlayerAutoplay,

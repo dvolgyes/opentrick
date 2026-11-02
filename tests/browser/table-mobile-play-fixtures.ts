@@ -137,6 +137,7 @@ export function playView(): TableView {
 			finished: false,
 		},
 		need: {
+			declaring: true,
 			ours: 2,
 			target: 8,
 			opponents: 3,
@@ -268,8 +269,8 @@ export function expectTwoRows(row: HTMLElement): void {
 	const numbers = boxes(".count strong");
 	const [bid] = boxes(".bid");
 	if (!bid) throw new Error("the contract is missing");
-	expect(labels).toHaveLength(3);
-	expect(numbers).toHaveLength(3);
+	expect(labels).toHaveLength(2);
+	expect(numbers).toHaveLength(2);
 	const values = [bid, ...numbers];
 	expect(Math.max(...values.map((box) => box.top))).toBeLessThan(
 		Math.min(...values.map((box) => box.bottom)),

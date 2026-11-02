@@ -99,7 +99,7 @@ import { qualityMatrix } from "./quality-matrix";
 import { remoteAudio } from "./remote-audio";
 import { readSettings, type Settings, settingsSaved } from "./settings";
 import { settingsDialog } from "./settings-dialog";
-import { sitePath } from "./site-path";
+import { siteLocation, sitePath } from "./site-path";
 import { tableSection } from "./table";
 import { autoDealBoard, tableView } from "./table-model";
 import type { TurnSound } from "./turn-sound";
@@ -247,6 +247,7 @@ export function showRoom(
 		render();
 	});
 	let botStarting = false;
+	let hostAutoplayPending = false;
 	let botAutoAttempted = false;
 	let botRestoreStarted = false;
 	let botRestorePending = false;
@@ -544,6 +545,7 @@ export function showRoom(
 	let scoringStartedAt: number | undefined;
 	let scoringTimer: number | undefined;
 	let autoDealtBoard: number | undefined;
+	let soloHeld = false;
 	let resetRequestId: string | undefined;
 	let replacementChannel: CommunityChannel | undefined;
 	let replacementBroadcastAt = -Infinity;
@@ -576,9 +578,16 @@ export function showRoom(
 	let sentSystem: PointSystem | undefined;
 
 	function manageBotSeat(targetSeat: Seat, enabled: boolean): void {
+		if (targetSeat === seat) {
+			if (hostAutoplayPending) return;
+			hostAutoplayPending = true;
+			render();
+		}
 		void controller.setBotSeat(targetSeat, enabled).then((ok) => {
+			if (targetSeat === seat) hostAutoplayPending = false;
 			if (!ok) {
 				setBotStatus(deps.t("The host could not change that seat."), "error");
+				render();
 				return;
 			}
 			botSeatOverrides.set(targetSeat, enabled);
@@ -756,6 +765,21 @@ export function showRoom(
 				});
 				render();
 			},
+			nextBoard() {
+				const next = shownModel?.nextBoard;
+				if (!next?.ready || autoDealtBoard === next.board || table.collecting())
+					return;
+				autoDealtBoard = next.board;
+				dealBoard(next.board, () => {
+					autoDealtBoard = undefined;
+				});
+			},
+			reviewResult() {
+				soloHeld = true;
+				scoringStartedAt = undefined;
+				shownTable = undefined;
+				render();
+			},
 			setBotSeat(targetSeat, enabled) {
 				manageBotSeat(targetSeat, enabled);
 			},
@@ -861,6 +885,11 @@ export function showRoom(
 			cardPoints: () => readSettings(deps.browser).cardPoints,
 			locale: deps.locale,
 			marks: () => readSettings(deps.browser),
+			trickAnimation: () => readSettings(deps.browser).trickAnimation,
+			presentationDone: () => {
+				shownTable = undefined;
+				render();
+			},
 			voiceMeters: voices,
 		},
 	);
@@ -1625,6 +1654,11 @@ export function showRoom(
 			sendNote.textContent = sendError ?? "";
 			return;
 		}
+		const solo =
+			siteLocation(location.pathname).page === "solo" &&
+			!config.community &&
+			config.botSetup?.seats.length === 3 &&
+			!config.botSetup.seats.includes(seat);
 		const present = presentSeats(view.hostSeat, view.roster);
 		copyRoomLink.hidden = false;
 		const model = roomView({
@@ -1711,10 +1745,13 @@ export function showRoom(
 		if (completedBoard !== scoringBoard) {
 			if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
 			scoringBoard = completedBoard;
+			soloHeld = false;
 			scoringStartedAt =
 				completedBoard === undefined
 					? undefined
-					: (view.table?.lastActivityAt ?? Date.now());
+					: solo
+						? undefined
+						: (view.table?.lastActivityAt ?? Date.now());
 			autoDealtBoard = undefined;
 			scoringTimer =
 				completedBoard === undefined
@@ -1757,6 +1794,19 @@ export function showRoom(
 			),
 			t: deps.t,
 		});
+		if (solo && tableModel.scoring) {
+			const automatic = readSettings(deps.browser).soloAutoAdvance && !soloHeld;
+			tableModel = {
+				...tableModel,
+				scoring: {
+					...tableModel.scoring,
+					solo: {
+						ready: tableModel.nextBoard?.ready ?? false,
+						reviewing: !automatic,
+					},
+				},
+			};
+		}
 		if (config.community && tableModel.nextBoard) {
 			const onlineCommunitySeats = new Set<Seat>(
 				view.roster?.peers.map((peer) => peer.seat) ?? [],
@@ -1799,6 +1849,7 @@ export function showRoom(
 			view.hosting && !botRestorePending && !community,
 			activeBots,
 			botsStopped,
+			hostAutoplayPending,
 		);
 		if (!view.hosting) delegatedBotSeats.clear();
 		const rosterHost = JSON.stringify(view.roster?.auth ?? null);
@@ -1866,7 +1917,23 @@ export function showRoom(
 				dealBoard(1);
 			}
 		}
-		table.setCountdown(tableModel.scoring?.countdown);
+		if (
+			solo &&
+			completedBoard !== undefined &&
+			readSettings(deps.browser).soloAutoAdvance &&
+			!soloHeld &&
+			!table.collecting() &&
+			scoringStartedAt === undefined
+		)
+			scoringStartedAt = Date.now();
+		table.setCountdown(
+			solo &&
+				(soloHeld ||
+					!readSettings(deps.browser).soloAutoAdvance ||
+					table.collecting())
+				? undefined
+				: tableModel.scoring?.countdown,
+		);
 		// Only a viewer who calls for themselves gets the hint; the model downloads at the first request.
 		botHint.update(
 			readSettings(deps.browser).botBidHint && !activeBots.includes(seat)
@@ -1880,7 +1947,11 @@ export function showRoom(
 		// Restore a returned human before a completed board can advance.
 		void updateCommunityCover();
 		const boardToDeal = autoDealBoard(
-			view.hosting,
+			view.hosting &&
+				(!solo ||
+					(!soloHeld &&
+						readSettings(deps.browser).soloAutoAdvance &&
+						!table.collecting())),
 			tableModel.board,
 			tableModel.scoring?.countdown,
 			tableModel.nextBoard,
@@ -2076,6 +2147,7 @@ export function showRoom(
 		botRunner?.stop();
 		botHint.stop();
 		if (scoringTimer !== undefined) window.clearInterval(scoringTimer);
+		table.dispose();
 		deviceWatch.stop();
 		biddingViewport.dispose();
 		window.removeEventListener("resize", updateRoomCanvasScale);

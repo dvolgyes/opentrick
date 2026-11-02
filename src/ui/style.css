@@ -2476,6 +2476,65 @@ dialog {
 	display: none;
 }
 
+.bridge-table.trick-collection-overlay {
+	position: fixed;
+	z-index: 10000;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.trick-collection-overlay .trick-winner {
+	outline: 4px solid var(--trick-winner-frame);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 6px var(--trick-winner-edge), 0 0 14px 7px var(--trick-winner-frame);
+}
+
+.trick-collection-overlay .trick-winner::after {
+	content: "";
+	position: absolute;
+	inset: -6px;
+	border: 4px solid var(--trick-winner-frame);
+	border-radius: inherit;
+	pointer-events: none;
+	animation: trick-winner-pulse 200ms ease-out 1;
+	opacity: 0;
+}
+
+@keyframes trick-winner-pulse {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.trick-collection-overlay .trick-winner::after { animation: none; }
+}
+
+.scoring-actions {
+	display: flex;
+	justify-content: center;
+	gap: 0.5rem;
+}
+
+.trick-announcement {
+	position: absolute;
+	left: 50%;
+	bottom: 0.5rem;
+	transform: translateX(-50%);
+	z-index: 10;
+	margin: 0;
+	padding: 0.2rem 0.5rem;
+	border-radius: 0.3rem;
+	background: var(--sheet-bg);
+	color: var(--fg);
+	white-space: nowrap;
+}
+
+.trick-announcement:empty { display: none; }
+
 /* A played card is drawn as a full card of the hand size: the rank above the suit symbol, all portrait. */
 .played {
 	position: relative;
