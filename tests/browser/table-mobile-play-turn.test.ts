@@ -22,6 +22,32 @@ import {
 
 afterEach(() => document.body.replaceChildren());
 
+describe("auction summary visibility", () => {
+	it.each<Layout>(["desktop", "compact", "sideways"])(
+		"keeps an empty summary hidden on a mid-game load (%s)",
+		(layout) => {
+			const view = playView();
+			const { root, section } = renderView(view, layout);
+			const summary = root.querySelector<HTMLElement>(".auction-end");
+			if (!summary) throw new Error("missing auction summary");
+			expect(getComputedStyle(summary).display).toBe("none");
+			section.render({
+				...view,
+				auctionEnd: {
+					contract: { level: 1, strain: "C", doubling: "" },
+					declarer: "by North",
+					vulnerability: "N-S not vulnerable",
+					vulnerable: false,
+				},
+			});
+			expect(getComputedStyle(summary).display).not.toBe("none");
+			section.render(view);
+			expect(getComputedStyle(summary).display).toBe("none");
+			section.dispose();
+		},
+	);
+});
+
 describe("card flight", () => {
 	afterEach(() => vi.useRealTimers());
 

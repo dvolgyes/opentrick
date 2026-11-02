@@ -3226,7 +3226,7 @@ export function tableSection(
 		);
 	}
 
-	let shownAuctionEnd = "";
+	let shownAuctionEnd: string | undefined;
 	function renderAuctionEnd(view: TableView["auctionEnd"]): void {
 		const key = JSON.stringify(view) ?? "";
 		if (key === shownAuctionEnd) return;
