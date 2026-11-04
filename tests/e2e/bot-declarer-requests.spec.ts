@@ -46,6 +46,29 @@ for (const form of ["desktop", "mobile"] as const) {
 			await expect(table).toHaveAttribute("data-phase", "play", {
 				timeout: CONNECT_MS,
 			});
+			if (form === "mobile") {
+				const controls = page.locator(".mobile-auction-controls");
+				const board = page.locator(".mobile-auction-board");
+				const [actionsBox, boardBox] = await Promise.all([
+					controls.boundingBox(),
+					board.boundingBox(),
+				]);
+				if (!actionsBox || !boardBox)
+					throw new Error("mobile board or actions are missing");
+				expect(actionsBox.y + actionsBox.height).toBeLessThanOrEqual(
+					boardBox.y,
+				);
+				const summary = page.locator(".mobile-tricks .tricks-needed");
+				await expect(summary).toContainText("needed");
+				expect(
+					await summary.evaluate(
+						(node) => node.scrollWidth <= node.clientWidth,
+					),
+				).toBe(true);
+				await expect(page.locator(".mobile-tricks .tricks-goal")).toHaveCount(
+					0,
+				);
+			}
 			const own = page.getByTestId("hand-W");
 			const card = own.locator("button.card:enabled").first();
 			await expect(card).toBeVisible({ timeout: CONNECT_MS });

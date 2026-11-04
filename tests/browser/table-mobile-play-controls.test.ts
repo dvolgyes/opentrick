@@ -3,6 +3,7 @@ import { cdp, page } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
 import type { Form } from "../../src/call/device-class";
+import { translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
 import { DEFAULT_SETTINGS } from "../../src/ui/settings";
 import type { TableMarks, TableOptions } from "../../src/ui/table";
@@ -630,7 +631,7 @@ describe("compact play controls", () => {
 		}
 	});
 
-	it("shows the partnership goal and remaining tricks on mobile", () => {
+	it("shows a concise trick summary and the actions above the mobile board", () => {
 		const view = playView();
 		const { root } = renderMobile(view);
 		const row = root.querySelector<HTMLElement>(
@@ -639,8 +640,8 @@ describe("compact play controls", () => {
 		if (!row) throw new Error("mobile trick count is missing");
 		expect(row?.hidden).toBe(false);
 		expect(row.textContent).toContain("2♣Our tricks2 / 8Opponents'3");
-		expect(row.textContent).toContain("8 tricks to make 2♣");
-		expect(row.textContent).toContain("6 more needed · 8 tricks remaining");
+		expect(row.textContent).not.toContain("8 tricks to make 2♣");
+		expect(row.textContent).toContain("6 needed · 8 left");
 		const board = root.querySelector(".mobile-auction-board");
 		const controls = root.querySelector(".mobile-auction-controls");
 		if (!board || !controls)
@@ -648,7 +649,7 @@ describe("compact play controls", () => {
 		expect(board.compareDocumentPosition(row)).toBe(
 			Node.DOCUMENT_POSITION_FOLLOWING,
 		);
-		expect(row.compareDocumentPosition(controls)).toBe(
+		expect(controls.compareDocumentPosition(board)).toBe(
 			Node.DOCUMENT_POSITION_FOLLOWING,
 		);
 		const defenderView = {
@@ -672,8 +673,98 @@ describe("compact play controls", () => {
 		const defender = renderMobile(defenderView).root.querySelector(
 			'[data-testid="mobile-tricks"]',
 		);
-		expect(defender?.textContent).toContain("6 defensive tricks to defeat 2♣");
+		expect(defender?.textContent).not.toContain(
+			"6 defensive tricks to defeat 2♣",
+		);
+		expect(defender?.textContent).toContain("2 needed · 6 left");
 	});
+
+	it("fits the translated mobile trick summary on one line at a narrow phone width", async () => {
+		await page.viewport(320, 720);
+		try {
+			for (const locale of [
+				"en",
+				"de",
+				"hu",
+				"no",
+				"es",
+				"pt",
+				"fr",
+				"it",
+				"nl",
+			] as const) {
+				const base = playView();
+				if (!base.need) throw new Error("missing trick count");
+				const { root, section } = renderView(
+					{
+						...base,
+						need: {
+							...base.need,
+							target: 13,
+							ours: 0,
+							needed: 13,
+							remaining: 13,
+						},
+						claim: { ...base.claim, choosable: true, maxTricks: 5 },
+					},
+					"compact",
+					undefined,
+					translator(locale),
+				);
+				const summary = root.querySelector<HTMLElement>(
+					".mobile-tricks .tricks-needed",
+				);
+				if (!summary) throw new Error(`missing summary for ${locale}`);
+				const text = document.createRange();
+				text.selectNodeContents(summary);
+				expect(text.getClientRects().length, locale).toBe(1);
+				expect(summary.scrollWidth, locale).toBeLessThanOrEqual(
+					summary.clientWidth,
+				);
+				const actions = [
+					...root.querySelectorAll<HTMLButtonElement>(
+						".mobile-auction-controls .play-controls button:not([hidden])",
+					),
+				];
+				expect(actions, locale).toHaveLength(3);
+				const boxes = actions.map((button) => button.getBoundingClientRect());
+				for (const box of boxes) {
+					expect(box.top, locale).toBeCloseTo(boxes[0]?.top ?? 0, 0);
+					expect(box.left, locale).toBeGreaterThanOrEqual(0);
+					expect(box.right, locale).toBeLessThanOrEqual(window.innerWidth);
+				}
+				section.dispose();
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
+	it.each(["secured", "defeated"] as const)(
+		"keeps the %s result visible with a concise remaining count",
+		(status) => {
+			const base = playView();
+			if (!base.need) throw new Error("missing trick count");
+			const { root } = renderMobile({
+				...base,
+				need: { ...base.need, status, remaining: 5 },
+				trickStatus:
+					status === "secured"
+						? "Contract made by our side"
+						: "Our contract defeated",
+			});
+			const summary = root.querySelector<HTMLElement>(".mobile-tricks");
+			expect(summary?.querySelector(".tricks-needed")?.textContent).toBe(
+				"5 left",
+			);
+			expect(summary?.querySelector(".tricks-status")?.textContent).toBe(
+				status === "secured"
+					? "Contract made by our side"
+					: "Our contract defeated",
+			);
+			expect(summary?.querySelector(".tricks-goal")).toBeNull();
+		},
+	);
 
 	it("puts the contract and the trick counts in one row on the desktop", () => {
 		const view = playView();
@@ -695,6 +786,12 @@ describe("compact play controls", () => {
 		if (!row) throw new Error("desktop trick count is missing");
 		expect(row.textContent).toBe("2NTXXOur tricks2 / 8Opponents'3");
 		expectTwoRows(row);
+		expect(section.sidebar.querySelector(".tricks-goal")?.textContent).toBe(
+			"8 tricks to make 2NTXX",
+		);
+		expect(section.sidebar.querySelector(".tricks-needed")?.textContent).toBe(
+			"6 more needed · 8 tricks remaining",
+		);
 	});
 
 	it("lists connected mobile players without a disconnected row", () => {
@@ -714,7 +811,7 @@ describe("compact play controls", () => {
 		expect(players?.textContent).not.toContain("playerE");
 	});
 
-	it("keeps the history and current trick with the board and places the actions below it", () => {
+	it("keeps the history and current trick with the board and places the actions above it", () => {
 		const { root } = renderMobile(playView());
 		const mobile = root.querySelector<HTMLElement>(".mobile-auction");
 		const board = root.querySelector(".mobile-auction-board");
@@ -735,6 +832,37 @@ describe("compact play controls", () => {
 		expect(controls?.textContent).toContain("Claim …");
 		expect(controls?.textContent).toContain("Claim all");
 		expect(controls?.textContent).toContain("Undo");
+		expect(controls?.nextElementSibling).toBe(board);
+	});
+
+	it("keeps the same action buttons when switching between mobile and desktop", () => {
+		const { root, section } = renderMobile(playView());
+		const controls = root.querySelector<HTMLElement>(".play-controls");
+		const mobile = root.querySelector<HTMLElement>(".mobile-auction-controls");
+		const board = root.querySelector<HTMLElement>(".mobile-auction-board");
+		if (!controls || !mobile || !board)
+			throw new Error("mobile controls are missing");
+		expect(controls.parentElement).toBe(mobile);
+		expect(mobile.nextElementSibling).toBe(board);
+		section.setForm("desktop");
+		section.render(playView());
+		expect(controls.parentElement).toBe(section.sidebar);
+		section.setForm("compact");
+		section.render(playView());
+		expect(controls.parentElement).toBe(mobile);
+		expect(mobile.nextElementSibling).toBe(board);
+	});
+
+	it("hides mobile play controls when a game returns to waiting for players", () => {
+		const base = playView();
+		const { root, section } = renderMobile(base);
+		const controls = root.querySelector<HTMLElement>(
+			".mobile-auction-controls",
+		);
+		if (!controls) throw new Error("mobile controls are missing");
+		expect(controls.hidden).toBe(false);
+		section.render({ ...base, phase: "waiting" });
+		expect(controls.hidden).toBe(true);
 	});
 
 	it("marks trump in the declarer's hand and keeps the dummy's marker visible", () => {

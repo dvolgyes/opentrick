@@ -1083,9 +1083,9 @@ export function tableSection(
 		mobileActions,
 		mobileRoundStatus,
 		mobileBids,
+		mobileBidControls,
 		mobileBoard,
 		mobileTricks,
-		mobileBidControls,
 		mobilePlayers,
 	);
 	let compact = false;
@@ -3917,8 +3917,13 @@ export function tableSection(
 			mobileTopbar.prepend(audioGroup);
 		if (mobileGameActive) {
 			placeChildren(mobileBidsFold, mobileBidsTitle, bidHistory);
-			if (bidUndoControls.nextElementSibling !== mobileBoard)
-				mobileBoard.before(bidUndoControls);
+			const first = view.phase === "play" ? bidUndoControls : mobileBidControls;
+			const last = view.phase === "play" ? mobileBidControls : bidUndoControls;
+			if (
+				first.nextElementSibling !== last ||
+				last.nextElementSibling !== mobileBoard
+			)
+				mobileBoard.before(first, last);
 			// The history opens for each auction and folds when the auction summary or play starts; between those, the
 			// player's choice stays.
 			const bidsPhase =
@@ -4042,6 +4047,7 @@ export function tableSection(
 					(control) => !control.hasAttribute("hidden"),
 				) &&
 					claimPanel.hidden);
+		else mobileBidControls.hidden = true;
 		// The Undo button of the play controls asks for an undo; the panel shows only an open request or its outcome.
 		undoPanel.hidden =
 			compact ||
@@ -4128,6 +4134,7 @@ export function tableSection(
 	function trickProgress(
 		view: TableView,
 		need: NonNullable<TableView["need"]>,
+		concise = false,
 	): HTMLElement[] {
 		const header = view.header;
 		const contract = header
@@ -4135,16 +4142,20 @@ export function tableSection(
 			: "";
 		return [
 			tricksCounts(header, need),
-			el(
-				"p",
-				{ className: "tricks-goal" },
-				t(
-					need.declaring
-						? "{target} tricks to make {contract}"
-						: "{target} defensive tricks to defeat {contract}",
-					{ target: need.target, contract },
-				),
-			),
+			...(concise
+				? []
+				: [
+						el(
+							"p",
+							{ className: "tricks-goal" },
+							t(
+								need.declaring
+									? "{target} tricks to make {contract}"
+									: "{target} defensive tricks to defeat {contract}",
+								{ target: need.target, contract },
+							),
+						),
+					]),
 			el(
 				"p",
 				{
@@ -4158,8 +4169,12 @@ export function tableSection(
 				},
 				t(
 					need.status === "open"
-						? "{needed} more needed · {remaining} tricks remaining"
-						: "{remaining} tricks remaining",
+						? concise
+							? "{needed} needed · {remaining} left"
+							: "{needed} more needed · {remaining} tricks remaining"
+						: concise
+							? "{remaining} left"
+							: "{remaining} tricks remaining",
 					{
 						needed: need.needed,
 						remaining: need.remaining,
@@ -4179,7 +4194,7 @@ export function tableSection(
 			mobileTricks.replaceChildren();
 			return;
 		}
-		mobileTricks.replaceChildren(...trickProgress(view, need));
+		mobileTricks.replaceChildren(...trickProgress(view, need, true));
 	}
 
 	let currentLayout: Layout | undefined;
