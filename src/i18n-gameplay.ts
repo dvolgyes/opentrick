@@ -13,6 +13,17 @@ type Row = readonly [
 // English keys followed by German, Hungarian, Norwegian, Spanish, Portuguese, French, Italian and Dutch.
 const rows: readonly Row[] = [
 	[
+		"Claim all {count} remaining tricks?",
+		"Alle {count} verbleibenden Stiche beanspruchen?",
+		"Mind a(z) {count} hátralévő ütést kéred?",
+		"Kreve alle de {count} gjenværende stikkene?",
+		"¿Reclamar las {count} bazas restantes?",
+		"Reivindicar todas as {count} vazas restantes?",
+		"Revendiquer les {count} plis restants ?",
+		"Reclamare tutte le {count} prese rimanenti?",
+		"Alle {count} resterende slagen claimen?",
+	],
+	[
 		"You will play both hands: {declarer} and {dummy}.",
 		"Du spielst beide Hände: {declarer} und {dummy}.",
 		"Mindkét kezet te játszod: {declarer} és {dummy}.",

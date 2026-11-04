@@ -740,6 +740,59 @@ describe("compact play controls", () => {
 		}
 	});
 
+	it("fits both translated claim dialogs on a narrow phone", async () => {
+		await page.viewport(320, 720);
+		try {
+			for (const locale of [
+				"en",
+				"de",
+				"hu",
+				"no",
+				"es",
+				"pt",
+				"fr",
+				"it",
+				"nl",
+			] as const) {
+				const base = playView();
+				const { root, section } = renderView(
+					{ ...base, claim: { ...base.claim, choosable: true, maxTricks: 5 } },
+					"compact",
+					undefined,
+					translator(locale),
+				);
+				const actions = root.querySelectorAll<HTMLButtonElement>(
+					".mobile-auction-controls .play-controls button",
+				);
+				for (const action of [actions[0], actions[1]]) {
+					if (!action) throw new Error(`missing claim action for ${locale}`);
+					action.click();
+					const dialog = root.querySelector<HTMLDialogElement>(
+						'[data-testid="claim-confirm-dialog"]',
+					);
+					if (!dialog) throw new Error(`missing claim dialog for ${locale}`);
+					expect(dialog.open, locale).toBe(true);
+					expect(dialog.scrollWidth, locale).toBeLessThanOrEqual(
+						dialog.clientWidth,
+					);
+					for (const button of dialog.querySelectorAll<HTMLButtonElement>(
+						".approval-actions button",
+					)) {
+						expect(button.scrollWidth, locale).toBeLessThanOrEqual(
+							button.clientWidth,
+						);
+					}
+					dialog
+						.querySelector<HTMLButtonElement>('[data-testid="claim-cancel"]')
+						?.click();
+				}
+				section.dispose();
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
 	it.each(["secured", "defeated"] as const)(
 		"keeps the %s result visible with a concise remaining count",
 		(status) => {
@@ -1234,15 +1287,16 @@ describe("compact play controls", () => {
 		);
 		expect(claim?.hidden).toBe(false);
 		claim?.click();
-		const confirm = controls.querySelector<HTMLButtonElement>(
+		const confirm = root.querySelector<HTMLButtonElement>(
 			'[data-testid="claim-confirm"]',
 		);
-		const counts = controls.querySelector<HTMLElement>(
+		const counts = root.querySelector<HTMLElement>(
 			'[data-testid="claim-count"]',
 		);
 		if (!confirm || !counts) throw new Error("claim confirmation is missing");
 		expect(
-			controls.querySelector('[data-testid="claim-message"]')?.textContent,
+			root.querySelector('[data-testid="claim-confirm-dialog"] h2')
+				?.textContent,
 		).toBe("How many of the remaining 3 tricks will you take?");
 		const choices = [...counts.querySelectorAll("button")];
 		expect(choices.map((button) => button.textContent)).toEqual([
@@ -1278,7 +1332,7 @@ describe("compact play controls", () => {
 			".mobile-auction-controls",
 		);
 		if (!controls) throw new Error("mobile controls are missing");
-		const confirm = controls.querySelector<HTMLButtonElement>(
+		const confirm = root.querySelector<HTMLButtonElement>(
 			'[data-testid="claim-confirm"]',
 		);
 		if (!confirm) throw new Error("claim confirmation is missing");

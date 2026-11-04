@@ -462,7 +462,7 @@ test("the bots accept the host's claim, so the board ends at once", async ({
 	await playUntil(claim);
 	await expect(claim).toBeEnabled({ timeout: 30_000 });
 	await claim.click();
-	await expect(page.getByTestId("claim-panel")).toContainText(
+	await expect(page.getByTestId("claim-confirm-dialog")).toContainText(
 		"How many of the remaining 5 tricks will you take?",
 	);
 	await expect(page.getByTestId("claim-count").getByRole("button")).toHaveText([

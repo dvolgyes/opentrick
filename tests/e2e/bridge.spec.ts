@@ -308,15 +308,13 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	await expectAt(1, 5);
 	await expect(approval).toBeHidden();
 	const controls = tab.N.locator(".play-controls");
-	const claims = tab.N.getByTestId("claim-panel");
+	const claims = tab.N.getByTestId("claim-confirm-dialog");
 	// "Claim …" waits until five tricks or fewer remain (src/ui/table-model.ts); "Claim all" is always there.
 	await expect(controls.getByRole("button", { name: "Claim …" })).toBeHidden();
 	await controls.getByRole("button", { name: "Claim all" }).click();
 	await expect(tab.N.getByTestId("claim-confirm")).toBeVisible();
-	await expect(claims).toContainText(
-		"Confirm that you claim all 13 remaining tricks.",
-	);
-	await claims.getByRole("button", { name: "Go back" }).click();
+	await expect(claims).toContainText("Claim all 13 remaining tricks?");
+	await claims.getByRole("button", { name: "Cancel" }).click();
 	await expect(tab.N.getByTestId("claim-confirm")).toBeHidden();
 	await expect(playable(tab.S)).toHaveCount(0);
 	await expect(playable(hand(tab.N, "N"))).toHaveCount(0);
@@ -342,9 +340,7 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	await expect(prompt(tab.N)).toHaveText("Waiting for West to play.");
 	await expect(tab.N.getByTestId("undo-request")).toBeEnabled();
 	await controls.getByRole("button", { name: "Claim all" }).click();
-	await expect(claims).toContainText(
-		"Confirm that you claim all 13 remaining tricks.",
-	);
+	await expect(claims).toContainText("Claim all 13 remaining tricks?");
 	await tab.N.getByTestId("claim-confirm").click();
 	const decision = tab.E.getByRole("dialog", { name: "Claim tricks" });
 	await expect(decision).toBeVisible();

@@ -100,6 +100,126 @@ const display = {
 };
 
 describe("controls during room refresh", () => {
+	it.each(["desktop", "compact"] as const)(
+		"asks to confirm Claim all in an Undo-style dialog (%s)",
+		async (form) => {
+			await viewport(form);
+			const view = playView();
+			const { handlers, section } = renderView(view, form);
+			playButton("Claim all").click();
+			const dialog = required(
+				"[data-testid='claim-confirm-dialog']",
+			) as HTMLDialogElement;
+			const cancel = required("[data-testid='claim-cancel']");
+			const confirm = required("[data-testid='claim-confirm']");
+			expect(dialog.open).toBe(true);
+			expect(dialog.textContent).toContain(
+				`Claim all ${view.claim.maxTricks} remaining tricks?`,
+			);
+			expect(cancel.classList.contains("approval-accept")).toBe(true);
+			expect(confirm.classList.contains("approval-reject")).toBe(true);
+			expect(getComputedStyle(cancel).backgroundColor).toBe(
+				getComputedStyle(required("[data-testid='undo-confirm-cancel']"))
+					.backgroundColor,
+			);
+			expect(getComputedStyle(confirm).backgroundColor).toBe(
+				getComputedStyle(required("[data-testid='undo-confirm-send']"))
+					.backgroundColor,
+			);
+			expect(required("[data-testid='claim-count']").checkVisibility()).toBe(
+				false,
+			);
+			cancel.click();
+			expect(dialog.open).toBe(false);
+			expect(handlers.claimRequest).not.toHaveBeenCalled();
+			playButton("Claim all").click();
+			section.render({ ...view, prompt: "Updated" });
+			expect(dialog.open).toBe(true);
+			confirm.click();
+			expect(handlers.claimRequest).toHaveBeenCalledOnce();
+			expect(handlers.claimRequest).toHaveBeenCalledWith(
+				view.board,
+				view.claim.maxTricks,
+			);
+		},
+	);
+
+	it("closes the Claim all confirmation when the remaining tricks change", () => {
+		const view = playView();
+		const { handlers, section } = renderView(view, "desktop");
+		playButton("Claim all").click();
+		const dialog = required(
+			"[data-testid='claim-confirm-dialog']",
+		) as HTMLDialogElement;
+		section.render({
+			...view,
+			claim: { ...view.claim, maxTricks: view.claim.maxTricks - 1 },
+		});
+		expect(dialog.open).toBe(false);
+		required("[data-testid='claim-confirm']").click();
+		expect(handlers.claimRequest).not.toHaveBeenCalled();
+	});
+
+	it.each(["new board", "claim unavailable"] as const)(
+		"closes a chosen-count claim when %s makes it stale",
+		(change) => {
+			const base = playView();
+			const view = {
+				...base,
+				claim: { ...base.claim, choosable: true, maxTricks: 3 },
+			};
+			const { handlers, section } = renderView(view, "desktop");
+			playButton("Claim …").click();
+			required("[data-testid='claim-count-2']").click();
+			const dialog = required(
+				"[data-testid='claim-confirm-dialog']",
+			) as HTMLDialogElement;
+			section.render(
+				change === "new board"
+					? { ...view, board: view.board + 1 }
+					: { ...view, claim: { ...view.claim, canRequest: false } },
+			);
+			expect(dialog.open).toBe(false);
+			required("[data-testid='claim-confirm']").click();
+			expect(handlers.claimRequest).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["desktop", "compact"] as const)(
+		"selects a claim count in the same confirmation dialog (%s)",
+		async (form) => {
+			await viewport(form);
+			const base = playView();
+			const view = {
+				...base,
+				claim: { ...base.claim, choosable: true, maxTricks: 3 },
+			};
+			const { handlers, section } = renderView(view, form);
+			playButton("Claim …").click();
+			const dialog = required(
+				"[data-testid='claim-confirm-dialog']",
+			) as HTMLDialogElement;
+			const confirm = required(
+				"[data-testid='claim-confirm']",
+			) as HTMLButtonElement;
+			expect(dialog.open).toBe(true);
+			expect(dialog.textContent).toContain(
+				"How many of the remaining 3 tricks will you take?",
+			);
+			expect(confirm.disabled).toBe(true);
+			required("[data-testid='claim-count-2']").click();
+			required("[data-testid='claim-cancel']").click();
+			expect(handlers.claimRequest).not.toHaveBeenCalled();
+			playButton("Claim …").click();
+			expect(confirm.disabled).toBe(true);
+			required("[data-testid='claim-count-2']").click();
+			section.render({ ...view, prompt: "Updated" });
+			expect(confirm.disabled).toBe(false);
+			confirm.click();
+			expect(handlers.claimRequest).toHaveBeenCalledWith(view.board, 2);
+		},
+	);
+
 	it("keeps a playable phone card under the finger on touch devices", async () => {
 		await viewport("compact");
 		await cdp().send("Emulation.setTouchEmulationEnabled", {

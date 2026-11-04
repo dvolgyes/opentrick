@@ -711,16 +711,15 @@ export function tableSection(
 	const deferredFlights: NonNullable<FlightSnapshot>[] = [];
 	const queuedFlights: NonNullable<FlightSnapshot>[] = [];
 	let claimMode: "choose" | "all" | null = null;
+	let claimBoard: number | undefined;
+	let claimRemaining: number | undefined;
 	/** The count that the declarer tapped; "Confirm claim" stays disabled until there is one. */
 	let claimCount: number | null = null;
 	const claim = button(t("Claim …"), () => {
-		claimMode = "choose";
-		claimCount = null;
-		if (latestView) renderClaimPanel(latestView);
+		if (latestView) openClaimDialog(latestView, "choose");
 	});
 	const claimAll = button(t("Claim all"), () => {
-		claimMode = "all";
-		if (latestView) renderClaimPanel(latestView);
+		if (latestView) openClaimDialog(latestView, "all");
 	});
 	let undoRequestId: string | undefined;
 	let claimRequestId: string | undefined;
@@ -844,18 +843,62 @@ export function tableSection(
 		t("Confirm claim"),
 		() => {
 			const view = latestView;
-			if (!view?.claim.canRequest) return;
+			if (
+				!claimDialog.open ||
+				!view?.claim.canRequest ||
+				view.board !== claimBoard ||
+				view.claim.maxTricks !== claimRemaining
+			)
+				return;
 			const tricks = claimMode === "all" ? view.claim.maxTricks : claimCount;
 			if (tricks === null) return;
 			claimMode = null;
+			claimDialog.close();
 			handlers.claimRequest(view.board, tricks);
 		},
-		{ attrs: { "data-testid": "claim-confirm" } },
+		{ className: "approval-reject", attrs: { "data-testid": "claim-confirm" } },
 	);
-	const cancelClaimChoice = button(t("Go back"), () => {
+	const claimQuestion = el("h2", { attrs: { id: "claim-confirm-title" } });
+	const claimDialog: HTMLDialogElement = el(
+		"dialog",
+		{
+			className: "approval claim-confirm-dialog",
+			attrs: {
+				"aria-labelledby": "claim-confirm-title",
+				"data-testid": "claim-confirm-dialog",
+			},
+		},
+		claimQuestion,
+		claimCounts,
+		el(
+			"div",
+			{ className: "approval-actions" },
+			button(
+				t("Cancel"),
+				() => {
+					claimMode = null;
+					claimDialog.close();
+				},
+				{
+					className: "approval-accept",
+					attrs: { "data-testid": "claim-cancel", autofocus: "" },
+				},
+			),
+			confirmClaim,
+		),
+	);
+	claimDialog.addEventListener("cancel", () => {
 		claimMode = null;
-		if (latestView) renderClaimPanel(latestView);
 	});
+	function openClaimDialog(view: TableView, mode: "choose" | "all"): void {
+		if (claimDialog.open || !view.claim.canRequest) return;
+		claimMode = mode;
+		claimCount = null;
+		claimBoard = view.board;
+		claimRemaining = view.claim.maxTricks;
+		renderClaimPanel(view);
+		claimDialog.showModal();
+	}
 	const claimPanel = el(
 		"section",
 		{
@@ -864,9 +907,6 @@ export function tableSection(
 		},
 		el("h3", { className: "panel-title" }, t("Claim tricks")),
 		claimMessage,
-		claimCounts,
-		confirmClaim,
-		cancelClaimChoice,
 	);
 	const compactUndo = button(
 		"",
@@ -887,9 +927,7 @@ export function tableSection(
 	const compactClaim = button(
 		"",
 		() => {
-			claimMode = "choose";
-			claimCount = null;
-			if (latestView) renderClaimPanel(latestView);
+			if (latestView) openClaimDialog(latestView, "choose");
 		},
 		{
 			className: "icon-button",
@@ -905,8 +943,7 @@ export function tableSection(
 	const compactClaimAll = button(
 		"",
 		() => {
-			claimMode = "all";
-			if (latestView) renderClaimPanel(latestView);
+			if (latestView) openClaimDialog(latestView, "all");
 		},
 		{
 			className: "icon-button",
@@ -1284,6 +1321,7 @@ export function tableSection(
 		pointsDialog,
 		autoplayDialog,
 		undoConfirmDialog,
+		claimDialog,
 		call.invite,
 		guide.element,
 	);
@@ -2427,7 +2465,15 @@ export function tableSection(
 
 	let drawnClaimCounts = "";
 	function renderClaimPanel(view: TableView): void {
-		if (!view.claim.canRequest) claimMode = null;
+		if (
+			claimDialog.open &&
+			(!view.claim.canRequest ||
+				view.board !== claimBoard ||
+				view.claim.maxTricks !== claimRemaining)
+		) {
+			claimMode = null;
+			claimDialog.close();
+		}
 		const choosing = claimMode === "choose" && view.claim.canRequest;
 		const confirmingAll = claimMode === "all" && view.claim.canRequest;
 		if (choosing) {
@@ -2455,23 +2501,20 @@ export function tableSection(
 				);
 			drawnClaimCounts = key;
 		}
-		claimMessage.textContent = choosing
+		claimQuestion.textContent = choosing
 			? t("How many of the remaining {count} tricks will you take?", {
 					count: view.claim.maxTricks,
 				})
 			: confirmingAll
-				? t("Confirm that you claim all {count} remaining tricks.", {
+				? t("Claim all {count} remaining tricks?", {
 						count: view.claim.maxTricks,
 					})
-				: view.claim.message;
+				: "";
+		claimMessage.textContent = view.claim.message;
 		claimCounts.hidden = !choosing;
-		confirmClaim.hidden = !choosing && !confirmingAll;
 		confirmClaim.disabled = choosing && claimCount === null;
-		cancelClaimChoice.hidden = !choosing && !confirmingAll;
 		// The approval panel asks the players who decide the claim.
-		claimPanel.hidden =
-			view.claim.canVote ||
-			(claimMessage.textContent === "" && !choosing && !confirmingAll);
+		claimPanel.hidden = view.claim.canVote || claimMessage.textContent === "";
 	}
 
 	/**
