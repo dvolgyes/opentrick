@@ -147,6 +147,15 @@ describe("table layout", () => {
 		).toBe(true);
 	});
 
+	it("offers to undo the last bid after play starts when the player has not played a card", () => {
+		const board = playing(NORTH_DECLARER_BOARD, "S7");
+		expect(view("W", board).undo).toMatchObject({
+			canRequest: true,
+			question: "Ask to undo your last bid?",
+		});
+		expect(view("S", board).undo.canRequest).toBe(false);
+	});
+
 	it("lets a defender undo their card when the declarer is a bot", () => {
 		const defender = view("E", LED, { bots: new Set<Seat>(["N"]) });
 		expect(defender.undo.canRequest).toBe(true);

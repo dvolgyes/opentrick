@@ -30,6 +30,31 @@ import {
 } from "./table-model-fixtures";
 
 describe("play", () => {
+	it("offers undo and claims to human dummy controlling a bot declarer", () => {
+		const board = playing(bidding(createBoard(1, DEAL), "1S P P P"), "S7 S2");
+		const human = view("S", board, { bots: new Set(["N", "E", "W"]) });
+		expect(human.undo.canRequest).toBe(true);
+		expect(human.claim.canRequest).toBe(true);
+		const late = view("S", afterTricks(board, 8), {
+			bots: new Set(["N", "E", "W"]),
+		});
+		expect(late.claim).toMatchObject({
+			canRequest: true,
+			choosable: true,
+			maxTricks: 5,
+		});
+		for (const bots of [new Set<Seat>(), new Set<Seat>(["N", "S"])]) {
+			const other = view("S", board, { bots });
+			expect(other.undo.canRequest).toBe(false);
+			expect(other.claim.canRequest).toBe(false);
+		}
+		const autoplay = view("S", board, {
+			bots: new Set(["N"]),
+			autoplaySeats: new Set(["N"]),
+		});
+		expect(autoplay.undo.canRequest).toBe(false);
+		expect(autoplay.claim.canRequest).toBe(false);
+	});
 	it("carries the engine winner and four played cards through every viewer orientation, including the final trick", () => {
 		for (const count of [1, 13]) {
 			const board = afterTricks(NORTH_DECLARER_BOARD, count);

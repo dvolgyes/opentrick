@@ -6,7 +6,7 @@ import { base64url, platformRandomBytes, type RandomBytes } from "../ids";
  * The link carries no protocol version: a client and its peers check `LINK_VERSION` in the `hello` message.
  */
 
-export const LINK_VERSION = "p2p-v2";
+export const LINK_VERSION = "p2p-v3";
 const KEY_BYTES = 16;
 /** The text length of a key; checked before decoding, because other lengths are not valid base64. */
 const KEY_TEXT_LENGTH = 22;

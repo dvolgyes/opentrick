@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { randomBelowFrom } from "../../src/bridge/deal";
 import {
+	applyAction,
 	type Board,
 	boardStatus,
 	createBoard,
@@ -8,10 +9,14 @@ import {
 } from "../../src/bridge/engine";
 import {
 	actionPayload,
+	claimRequestPayload,
+	claimVotePayload,
 	createBridgeModule,
 	dealPayload,
 	parseBridgeState,
 	resetRequestPayload,
+	undoRequestPayload,
+	undoVotePayload,
 } from "../../src/game/bridge";
 import { chatPayload } from "../../src/game/chat";
 import type { ApplyContext, ApplyResult } from "../../src/game/module";
@@ -49,7 +54,7 @@ function send(
 			config: CONFIG,
 			seat,
 			holder: `holder-${seat}`,
-			commandId: "cmd-1",
+			commandId: "00000000-0000-4000-8000-000000000001",
 			seq: 1,
 			present,
 			...control,
@@ -101,6 +106,171 @@ function finished(board: Board): JsonObject {
 }
 
 describe("the presence rule for game actions", () => {
+	it("allows repeated undo of a declarer's autoplay actions after control returns", () => {
+		let board = playing(contract(), "S7 S2 C2");
+		const action = legalActions(board, "N")[0];
+		if (!action) throw new Error("no legal autoplay action");
+		const played = applyAction(board, "N", action);
+		if (!played.ok) throw new Error(played.reason);
+		board = played.board;
+		let state = stateWith(board);
+		// The human has taken back North; the bots still control the other three seats.
+		const control = { bots: ["E", "S", "W"] as Seat[] };
+		for (const length of [3, 1, 0]) {
+			const requested = send(
+				state,
+				"N",
+				undoRequestPayload(ROOM_ID, board.number),
+				SEATS,
+				control,
+			);
+			if (!requested.ok) throw new Error(requested.reason);
+			const pending = parseBridgeState(requested.state, ROOM_ID)?.undo;
+			if (!pending) throw new Error("undo was not stored");
+			state = requested.state;
+			for (const voter of ["E", "W"] as const) {
+				const vote = send(
+					state,
+					voter,
+					undoVotePayload(ROOM_ID, pending.id, true),
+					SEATS,
+					control,
+				);
+				if (!vote.ok) throw new Error(vote.reason);
+				state = vote.state;
+			}
+			expect(parseBridgeState(state, ROOM_ID)?.board?.cards).toHaveLength(
+				length,
+			);
+		}
+		const rewound = parseBridgeState(state, ROOM_ID)?.board;
+		if (!rewound) throw new Error("no rewound board");
+		expect(boardStatus(rewound).phase).toBe("auction");
+		expect(
+			send(
+				state,
+				"N",
+				undoRequestPayload(ROOM_ID, board.number),
+				SEATS,
+				control,
+			),
+		).toMatchObject({
+			ok: false,
+			reason: "you have no bid or card to take back",
+		});
+	});
+
+	it("takes back a defender's final pass after play starts, with both opposing players voting", () => {
+		const board = playing(contract(), "S7");
+		const requested = send(
+			stateWith(board),
+			"W",
+			undoRequestPayload(ROOM_ID, board.number),
+			SEATS,
+		);
+		expect(requested.ok).toBe(true);
+		if (!requested.ok) return;
+		const pending = parseBridgeState(requested.state, ROOM_ID)?.undo;
+		expect(pending).toMatchObject({
+			requester: "W",
+			calls: 3,
+			cards: 0,
+			required: ["N", "S"],
+		});
+		if (!pending) throw new Error("undo was not stored");
+		let state = requested.state;
+		for (const voter of ["N", "S"] as const) {
+			const vote = send(
+				state,
+				voter,
+				undoVotePayload(ROOM_ID, pending.id, true),
+				SEATS,
+			);
+			if (!vote.ok) throw new Error(vote.reason);
+			state = vote.state;
+		}
+		const rewound = parseBridgeState(state, ROOM_ID)?.board;
+		expect(rewound?.calls).toEqual(["1H", "P", "P"]);
+		expect(rewound?.cards).toEqual([]);
+		expect(parseBridgeState(state, ROOM_ID)?.bidHistory).toHaveLength(3);
+		if (!rewound) throw new Error("no rewound board");
+		expect(boardStatus(rewound).phase).toBe("auction");
+	});
+	it.each(["undo", "claim-all", "claim-two", "claim-none"] as const)(
+		"lets human dummy request %s when controlling the bot declarer",
+		(operation) => {
+			const board = playing(contract(), "S7 S2");
+			const control = { bots: ["N", "E", "W"] as Seat[] };
+			const payload =
+				operation === "undo"
+					? undoRequestPayload(ROOM_ID, board.number)
+					: claimRequestPayload(
+							ROOM_ID,
+							board.number,
+							operation === "claim-all"
+								? 13
+								: operation === "claim-two"
+									? 2
+									: 0,
+						);
+			const requested = send(stateWith(board), "S", payload, SEATS, control);
+			expect(requested.ok).toBe(true);
+			if (!requested.ok) return;
+			const parsed = parseBridgeState(requested.state, ROOM_ID);
+			const pending = operation === "undo" ? parsed?.undo : parsed?.claim;
+			expect(pending).toMatchObject({ requester: "S", required: ["E", "W"] });
+			if (!pending) throw new Error("request was not stored");
+			let state = requested.state;
+			for (const seat of ["E", "W"] as const) {
+				const vote =
+					operation === "undo"
+						? undoVotePayload(ROOM_ID, pending.id, true)
+						: claimVotePayload(ROOM_ID, pending.id, true);
+				// An accepted request remains valid if the bot roster changes before the last vote.
+				const result = send(
+					state,
+					seat,
+					vote,
+					SEATS,
+					seat === "E" ? control : {},
+				);
+				expect(result.ok).toBe(true);
+				if (!result.ok) return;
+				state = result.state;
+			}
+			const final = parseBridgeState(state, ROOM_ID);
+			if (operation === "undo") expect(final?.board?.cards).toHaveLength(1);
+			else
+				expect(final?.claimResult).toMatchObject({
+					requester: "S",
+					tricks:
+						operation === "claim-all" ? 13 : operation === "claim-two" ? 2 : 0,
+					result: {
+						declarerTricks:
+							operation === "claim-all"
+								? 13
+								: operation === "claim-two"
+									? 2
+									: 0,
+					},
+				});
+			for (const denied of [
+				{},
+				{ bots: ["N", "S"] as Seat[] },
+				{ bots: ["N"] as Seat[], autoplaySeats: ["N"] as Seat[] },
+			]) {
+				expect(
+					send(
+						stateWith(board),
+						"S",
+						{ ...payload, bots: ["N"] },
+						SEATS,
+						denied,
+					).ok,
+				).toBe(false);
+			}
+		},
+	);
 	it.each(["S", "N"] as const)(
 		"lets human dummy select a card from %s when declarer is a robot",
 		(hand) => {

@@ -207,28 +207,31 @@ export function boardStatus(board: Board): BoardStatus {
 	};
 }
 
-/** The position just before this seat's latest action in the current phase. */
+/** The position just before the latest card, or the latest bid if this player has no card left to undo. */
 export function undoPosition(
 	board: Board,
 	seat: Seat,
+	bidSeat: Seat = seat,
 ): UndoPosition | undefined {
 	const status = boardStatus(board);
-	if (
-		status.phase === "auction" ||
-		(status.phase === "complete" && status.contract === null)
-	) {
+	const previousBid = (): UndoPosition | undefined => {
 		for (let index = board.calls.length - 1; index >= 0; index--) {
-			if (seatAfter(board.dealer, index) === seat)
+			if (seatAfter(board.dealer, index) === bidSeat)
 				return { calls: index, cards: 0 };
 		}
 		return undefined;
-	}
+	};
+	if (
+		status.phase === "auction" ||
+		(status.phase === "complete" && status.contract === null)
+	)
+		return previousBid();
 	if (
 		status.contract === null ||
 		status.dummy === seat ||
 		status.contract === undefined
 	)
-		return undefined;
+		return previousBid();
 	let replay: Board = { ...board, cards: [] };
 	let target: number | undefined;
 	for (const [index, card] of board.cards.entries()) {
@@ -240,7 +243,7 @@ export function undoPosition(
 		replay = applied.board;
 	}
 	return target === undefined
-		? undefined
+		? previousBid()
 		: { calls: board.calls.length, cards: target };
 }
 

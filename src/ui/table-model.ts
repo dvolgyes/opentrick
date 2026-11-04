@@ -25,6 +25,7 @@ import type { PointSystem } from "../bridge/hand-points";
 import type { Call, Contract, Strain, Vulnerability } from "../bridge/rules";
 import {
 	type BridgeState,
+	declarerController,
 	isTableCommand,
 	seatSystems,
 	tableActor,
@@ -1144,6 +1145,8 @@ function busy(lines: readonly TableActionLine[]): boolean {
 function undoPanelView(
 	state: BridgeState,
 	seat: Seat,
+	actionSeat: Seat,
+	mayRequest: boolean,
 	config: RoomConfig,
 	terminal: boolean,
 	outbox: readonly OutboxItem[],
@@ -1153,9 +1156,11 @@ function undoPanelView(
 	const board = state.board;
 	if (!pending) {
 		const sending = outbox.some((item) => item.payload.type === "undo-request");
-		const position = board === null ? undefined : undoPosition(board, seat);
+		const position =
+			board === null ? undefined : undoPosition(board, actionSeat, seat);
 		const canRequest =
 			!terminal &&
+			mayRequest &&
 			!sending &&
 			state.claim === null &&
 			state.claimResult === null &&
@@ -1167,9 +1172,9 @@ function undoPanelView(
 				canRequest && board !== null
 					? t("Ask to undo your {action}?", {
 							action: t(
-								position.cards < board.cards.length
-									? "last played card"
-									: "last bid",
+								position.calls < board.calls.length
+									? "last bid"
+									: "last played card",
 							),
 						})
 					: "",
@@ -1192,9 +1197,9 @@ function undoPanelView(
 				});
 	const requester = config.names[pending.requester];
 	const action = t(
-		pending.cards < (board?.cards.length ?? 0)
-			? "last played card"
-			: "last bid",
+		pending.calls < (board?.calls.length ?? 0)
+			? "last bid"
+			: "last played card",
 	);
 	const voted = pending.approved.includes(seat);
 	const voteSending = outbox.some(
@@ -1254,7 +1259,7 @@ function claimPanelView(
 	seat: Seat,
 	config: RoomConfig,
 	terminal: boolean,
-	declarerIsBot: boolean,
+	controller: Seat | undefined,
 	outbox: readonly OutboxItem[],
 	t: Translate,
 ): ClaimPanelView {
@@ -1270,12 +1275,11 @@ function claimPanelView(
 		return {
 			canRequest:
 				!terminal &&
-				!declarerIsBot &&
 				!sending &&
 				state.undo === null &&
 				state.claimResult === null &&
 				status?.phase === "play" &&
-				status.contract.declarer === seat,
+				controller === seat,
 			maxTricks: remaining,
 			choosable,
 			requestId: undefined,
@@ -1375,15 +1379,19 @@ export function tableView(input: TableViewInput): TableView {
 		state.claim === null;
 	const canAct =
 		localActionAllowed && canStartAction && state.claimResult === null;
-	const currentStatus = board ? boardStatus(board) : undefined;
-	const declarerIsBot =
-		currentStatus !== undefined &&
-		currentStatus.contract !== undefined &&
-		currentStatus.contract !== null &&
-		(input.bots?.has(currentStatus.contract.declarer) ?? false);
+	const controller = board
+		? declarerController(board, input.bots, input.autoplaySeats)
+		: undefined;
+	const status = board ? boardStatus(board) : undefined;
+	const actionSeat =
+		status?.dummy === seat && controller === seat && status.contract
+			? status.contract.declarer
+			: seat;
 	const undo = undoPanelView(
 		state,
 		seat,
+		actionSeat,
+		status?.dummy !== seat || controller === seat,
 		config,
 		!localActionAllowed,
 		input.outbox,
@@ -1394,7 +1402,7 @@ export function tableView(input: TableViewInput): TableView {
 		seat,
 		config,
 		!localActionAllowed,
-		declarerIsBot,
+		controller,
 		input.outbox,
 		t,
 	);

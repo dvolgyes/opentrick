@@ -106,19 +106,22 @@ describe("shared bot engine authority", () => {
 		rig.host.stop();
 	});
 
-	it("rejects a previous-version client without changing the stored game", async () => {
-		const rig = await new Rig(
-			createBridgeModule(randomBelowFrom(() => 0)),
-		).create();
-		const before = rig.log.table?.state;
-		rig.host.join(EAST);
-		await rig.from(EAST, { k: "hello", b: "p2p-v1", client: CLIENT_E });
-		expect(rig.to(EAST)).toContainEqual(
-			expect.objectContaining({ k: "welcome", status: "incompatible" }),
-		);
-		expect(rig.log.table?.state).toEqual(before);
-		rig.host.stop();
-	});
+	it.each(["p2p-v1", "p2p-v2"])(
+		"rejects a %s client without changing the stored game",
+		async (version) => {
+			const rig = await new Rig(
+				createBridgeModule(randomBelowFrom(() => 0)),
+			).create();
+			const before = rig.log.table?.state;
+			rig.host.join(EAST);
+			await rig.from(EAST, { k: "hello", b: version, client: CLIENT_E });
+			expect(rig.to(EAST)).toContainEqual(
+				expect.objectContaining({ k: "welcome", status: "incompatible" }),
+			);
+			expect(rig.log.table?.state).toEqual(before);
+			rig.host.stop();
+		},
+	);
 
 	it("upgrades an older saved game without changing its board or inventing bid origins", async () => {
 		const module = createBridgeModule(randomBelowFrom(() => 0));

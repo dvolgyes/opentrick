@@ -41,6 +41,21 @@ import { checkMessageText } from "./chat";
 import type { ApplyContext, ApplyResult, GameModule } from "./module";
 
 /** The human partner controls a robot declarer's two hands unless autoplay controls that pair. */
+export function declarerController(
+	board: Board,
+	bots: Iterable<Seat> = [],
+	autoplaySeats: Iterable<Seat> = [],
+): Seat | undefined {
+	const status = boardStatus(board);
+	if (!status.contract || !status.dummy) return undefined;
+	const automated = new Set(bots);
+	return automated.has(status.contract.declarer) &&
+		!automated.has(status.dummy) &&
+		!new Set(autoplaySeats).has(status.contract.declarer)
+		? status.dummy
+		: status.contract.declarer;
+}
+
 export function tableActor(
 	board: Board,
 	bots: Iterable<Seat> = [],
@@ -49,12 +64,7 @@ export function tableActor(
 	const status = boardStatus(board);
 	if (status.phase !== "play" || status.actor !== status.contract.declarer)
 		return status.actor;
-	const automated = new Set(bots);
-	return automated.has(status.contract.declarer) &&
-		!automated.has(status.dummy) &&
-		!new Set(autoplaySeats).has(status.contract.declarer)
-		? status.dummy
-		: status.actor;
+	return declarerController(board, bots, autoplaySeats);
 }
 
 /** Legal bridge actions assigned to the table's current human or robot controller. */
@@ -367,6 +377,22 @@ function samePartnership(a: Seat, b: Seat): boolean {
 	return (a === "N" || a === "S") === (b === "N" || b === "S");
 }
 
+/** Requests store the sender's seat; dummy's actions belong to the declarer. */
+function requestActor(board: Board, requester: Seat): Seat {
+	const status = boardStatus(board);
+	return status.dummy === requester && status.contract
+		? status.contract.declarer
+		: requester;
+}
+
+function canRequestForActor(board: Board, context: ApplyContext): boolean {
+	return (
+		requestActor(board, context.seat) === context.seat ||
+		declarerController(board, context.bots, context.autoplaySeats) ===
+			context.seat
+	);
+}
+
 function claimApprovers(board: Board, requester: Seat): Seat[] | undefined {
 	const status = boardStatus(board);
 	if (status.phase !== "play" || status.contract.declarer !== requester)
@@ -413,7 +439,7 @@ function parseClaimRequest(
 		new Set(approved).size !== approved.length
 	)
 		return undefined;
-	const approvers = claimApprovers(board, requester);
+	const approvers = claimApprovers(board, requestActor(board, requester));
 	if (
 		!approvers ||
 		!claimedResult(board, requester, tricks) ||
@@ -452,8 +478,12 @@ function parseAcceptedClaim(
 	return { id, board: number, requester, tricks, result };
 }
 
-function undoApprovers(board: Board, requester: Seat): Seat[] | undefined {
-	if (auctionOpen(board))
+function undoApprovers(
+	board: Board,
+	requester: Seat,
+	position: UndoPosition,
+): Seat[] | undefined {
+	if (auctionOpen(board) || position.calls < board.calls.length)
 		return SEATS.filter((seat) => !samePartnership(seat, requester));
 	const status = boardStatus(board);
 	if (status.contract === null || status.contract === undefined)
@@ -493,8 +523,9 @@ function parseUndoRequest(
 		new Set(approved).size !== approved.length
 	)
 		return undefined;
-	const position = undoPosition(board, requester);
-	const approvers = undoApprovers(board, requester);
+	const actor = requestActor(board, requester);
+	const position = undoPosition(board, actor, requester);
+	const approvers = position && undoApprovers(board, actor, position);
 	if (
 		!position ||
 		!approvers ||
@@ -843,8 +874,11 @@ function applyUndoRequest(
 		return reject("another game request is already waiting for answers");
 	if (state.claimResult)
 		return reject("the board ended with an accepted claim");
-	const position = undoPosition(board, context.seat);
-	const required = undoApprovers(board, context.seat);
+	const actor = requestActor(board, context.seat);
+	const position = canRequestForActor(board, context)
+		? undoPosition(board, actor, context.seat)
+		: undefined;
+	const required = position && undoApprovers(board, actor, position);
 	if (!position || !required)
 		return reject("you have no bid or card to take back");
 	const waiting = absence(required, context.present);
@@ -998,7 +1032,9 @@ function applyClaimRequest(
 		return reject("the board ended with an accepted claim");
 	if (typeof payload.tricks !== "number")
 		return reject("claim has no trick count");
-	const required = claimApprovers(board, context.seat);
+	const required = canRequestForActor(board, context)
+		? claimApprovers(board, requestActor(board, context.seat))
+		: undefined;
 	if (!required) return reject("only the declarer can claim");
 	const result = claimedResult(board, context.seat, payload.tricks);
 	if (!result) return reject("you cannot claim that many tricks now");
@@ -1132,7 +1168,11 @@ function applyUndoVote(
 		const board = state.board;
 		if (!board || board.number !== pending.board)
 			return reject("the board changed while undo was waiting");
-		const position = undoPosition(board, pending.requester);
+		const position = undoPosition(
+			board,
+			requestActor(board, pending.requester),
+			pending.requester,
+		);
 		if (
 			!position ||
 			position.calls !== pending.calls ||

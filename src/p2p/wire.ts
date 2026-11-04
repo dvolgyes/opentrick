@@ -49,7 +49,7 @@ import {
  * carries no state, because the last page of every sync reply carries it.
  */
 
-export const WIRE_VERSION = 2;
+export const WIRE_VERSION = 3;
 
 export type Rejection = "malformed" | "incompatible" | "foreign";
 

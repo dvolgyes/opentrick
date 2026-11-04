@@ -368,6 +368,10 @@ describe.each(CHANNELS)("%s messages", (_channel, parse, samples) => {
 				ok: false,
 				reason: "incompatible",
 			});
+			expect(parse({ ...frame(TABLE, sample), v: 2 }, TABLE)).toEqual({
+				ok: false,
+				reason: "incompatible",
+			});
 			const { v: _v, ...noVersion } = frame(TABLE, sample);
 			expect(parse(noVersion, TABLE)).toEqual({
 				ok: false,
