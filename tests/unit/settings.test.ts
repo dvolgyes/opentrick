@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { BOT_SYSTEM } from "../../src/game/bridge";
 import { DEFAULT_BOT_SETUP } from "../../src/protocol";
 import { discardLegacyBotSettings } from "../../src/ui/legacy-bot-settings";
 import {
@@ -130,9 +129,9 @@ describe("player settings", () => {
 		expect(readSettings(undefined)).toEqual(DEFAULT_SETTINGS);
 	});
 
-	it("defaults the player to the bot's corrected HCP system, and preserves a saved choice", () => {
+	it("defaults the player's guide to corrected HCP, and preserves a saved choice", () => {
 		const storage = memoryStorage();
-		expect(readSettings(storage).pointSystem).toBe(BOT_SYSTEM);
+		expect(readSettings(storage).pointSystem).toBe("hcp-corrected");
 		storage.setItem("opentrick.settings.points", "hcp");
 		expect(readSettings(storage).pointSystem).toBe("hcp");
 	});

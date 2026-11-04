@@ -24,6 +24,26 @@ function random(seed: number): () => number {
 }
 
 describe("single-dummy play engine", () => {
+	it("uses the system recorded for each bid, and ignores bot or unknown bid origins", () => {
+		const board = bidding(createBoard(1, DEAL), "1NT P P P");
+		const position = playPosition(
+			board,
+			"E",
+			{ N: "hcp-corrected", E: "hcp", S: "hcp", W: "hcp" },
+			[
+				{ controller: "seat", system: "hcp" },
+				{ controller: "bot" },
+				null,
+				{ controller: "seat" },
+			],
+		);
+		expect(position.hints).toHaveLength(1);
+		expect(position.hints[0]).toMatchObject({
+			seat: "N",
+			system: "hcp",
+			meaning: { range: { min: 15, max: 17 } },
+		});
+	});
 	it("uses the time budget beyond 96 samples and spends it on more worlds when solves are faster", () => {
 		const position = playPosition(
 			bidding(createBoard(1, DEAL), "1NT P P P"),

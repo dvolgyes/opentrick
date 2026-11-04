@@ -9,6 +9,7 @@ import {
 } from "../bridge/engine";
 import type { PointSystem } from "../bridge/hand-points";
 import type { Contract, Vulnerability } from "../bridge/rules";
+import type { BidOrigin } from "../game/bridge";
 import { type Seat, seatAfter } from "../protocol";
 
 /** The complete search input, deliberately without the board or any hidden hand. */
@@ -27,10 +28,12 @@ export interface PlayPosition {
 	}[];
 }
 
+/** Known bid origins take precedence over current seat settings; unknown origins give no inference. */
 export function playPosition(
 	board: Board,
 	seat: Seat,
 	systems: Partial<Record<Seat, PointSystem>> = {},
+	history?: readonly (BidOrigin | null)[],
 ): PlayPosition {
 	const status = boardStatus(board);
 	if (status.phase !== "play" || status.actor !== seat)
@@ -40,7 +43,13 @@ export function playPosition(
 	const hints: PlayPosition["hints"][number][] = [];
 	for (let index = 0; index < board.calls.length; index++) {
 		const caller = seatAfter(board.dealer, index);
-		const system = systems[caller];
+		const origin = history?.[index];
+		const system =
+			history === undefined
+				? systems[caller]
+				: origin?.controller === "seat"
+					? origin.system
+					: undefined;
 		const meaning =
 			system === undefined
 				? undefined

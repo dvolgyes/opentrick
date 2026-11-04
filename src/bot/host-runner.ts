@@ -50,6 +50,7 @@ export class HostBotRunner {
 	#requestAbort = new AbortController();
 	readonly #processed = new Set<string>();
 	#position: string | undefined;
+	#bidder: LocalBidder | undefined;
 	#unsubscribe: (() => void) | undefined;
 	#running = false;
 	#rerun = false;
@@ -166,6 +167,13 @@ export class HostBotRunner {
 		if (this.#stopped) return;
 		const state = this.#currentState();
 		const board = state?.board;
+		const bidder = state?.botBidder ?? this.#settings.bidder;
+		if (this.#bidder !== undefined && this.#bidder !== bidder) {
+			this.#requestAbort.abort();
+			this.#requestAbort = new AbortController();
+			this.#preparedPlay = undefined;
+		}
+		this.#bidder = bidder;
 		const position = board ? actionPositionKey(board) : undefined;
 		if (position !== this.#position) {
 			// Undo and reset can revisit an earlier position. Deduplicate only until the board moves.
@@ -191,7 +199,7 @@ export class HostBotRunner {
 				!view.hosting ||
 				!view.ready ||
 				!board ||
-				Boolean(state?.claimResult) ||
+				state?.claimResult ||
 				requestWaiting(state) ||
 				!seats.includes(prepared.seat) ||
 				!tableLegalActions(
@@ -252,6 +260,7 @@ export class HostBotRunner {
 		const state = parseBridgeState(view.table.state, this.#controller.tableId);
 		if (!state) return;
 		const systems = seatSystems(state.systems, bots, "other");
+		const bidder = state.botBidder ?? this.#settings.bidder;
 		for (const seat of seats) {
 			const voteKey =
 				state.claim?.required.includes(seat) &&
@@ -318,7 +327,7 @@ export class HostBotRunner {
 					await Promise.resolve();
 				} else if (kind === "play") {
 					const analysis = await this.#playEngine.choose(
-						playPosition(state.board, seat, systems),
+						playPosition(state.board, seat, systems, state.bidHistory),
 						signal,
 						this.#settings.playTimeMs,
 					);
@@ -326,7 +335,7 @@ export class HostBotRunner {
 				} else {
 					const analysis = await this.#bidEngine.choose(
 						bidPosition(state.board, seat),
-						this.#settings.bidder,
+						bidder,
 						signal,
 					);
 					decision = { type: "call", call: analysis.call };
@@ -361,9 +370,12 @@ export class HostBotRunner {
 			if (
 				!currentState?.board ||
 				currentState.claimResult ||
+				(kind === "call" &&
+					(currentState.botBidder ?? this.#settings.bidder) !== bidder) ||
 				actionPositionKey(currentState.board) !== actionPositionKey(state.board)
 			) {
 				this.#processed.delete(key);
+				this.#rerun = true;
 				return;
 			}
 			if (

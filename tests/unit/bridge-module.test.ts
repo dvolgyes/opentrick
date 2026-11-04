@@ -30,6 +30,8 @@ import {
 	seatSystems,
 	systemPayload,
 	totals,
+	undoRequestPayload,
+	undoVotePayload,
 } from "../../src/game/bridge";
 import { chatModule, chatPayload } from "../../src/game/chat";
 import type { ApplyResult } from "../../src/game/module";
@@ -201,6 +203,9 @@ describe("bridge table state", () => {
 			reset: null,
 			media: {},
 			systems: {},
+			systemHolders: {},
+			botBidder: "sl",
+			bidHistory: [],
 		});
 	});
 
@@ -503,6 +508,7 @@ describe("calls and plays", () => {
 			kind: "call",
 			board: 1,
 			call: "1S",
+			origin: { controller: "seat" },
 		});
 		expect(table.board().calls).toEqual(["1S"]);
 	});
@@ -807,6 +813,122 @@ describe("call status at the table", () => {
 });
 
 describe("bidding systems at the table", () => {
+	it("records each bid's system and controller at the time of the bid", () => {
+		const table = fixtureTable();
+		table.send("N", systemPayload(ROOM_ID, "hcp"));
+		table.act(call("1C"));
+		table.send("N", systemPayload(ROOM_ID, "vienna"));
+		const board = table.board();
+		const bot = table.module.apply(
+			table.state,
+			{ ...context("E", 99), isBot: true },
+			actionPayload(ROOM_ID, board, call("P")),
+		);
+		if (!bot.ok) throw new Error(bot.reason);
+		expect(bot.event).toMatchObject({
+			kind: "call",
+			origin: { controller: "bot" },
+		});
+		expect(table.events.at(-2)).toMatchObject({
+			kind: "call",
+			origin: { controller: "seat", system: "hcp" },
+		});
+		table.state = bot.state;
+		expect(parseBridgeState(table.state, ROOM_ID)).toMatchObject({
+			bidHistory: [
+				{ controller: "seat", system: "hcp" },
+				{ controller: "bot" },
+			],
+		});
+	});
+
+	it("does not attribute a former seat holder's system to a replacement player", () => {
+		const table = fixtureTable();
+		table.send("N", systemPayload(ROOM_ID, "hcp"));
+		const replacement = table.module.apply(
+			table.state,
+			{ ...context("N", 98), holder: "replacement" },
+			actionPayload(ROOM_ID, table.board(), call("1C")),
+		);
+		if (!replacement.ok) throw new Error(replacement.reason);
+		expect(parseBridgeState(replacement.state, ROOM_ID)?.bidHistory).toEqual([
+			{ controller: "seat" },
+		]);
+	});
+
+	it("restores old bids with unknown provenance and retains the configured engine", () => {
+		const table = fixtureTable();
+		table.act(call("1C"));
+		const { bidHistory: _history, botBidder: _bidder, ...old } = table.state;
+		expect(parseBridgeState(old, ROOM_ID)).toMatchObject({
+			bidHistory: [null],
+		});
+		const configured = {
+			...CONFIG,
+			botSetup: { seats: [] as Seat[], bidder: "rl-fsp" as const },
+		};
+		expect(
+			parseBridgeState(table.module.initialState(ROOM_ID, configured), ROOM_ID),
+		).toMatchObject({ botBidder: "rl-fsp" });
+	});
+
+	it("accepts only supported bot engines in a shared change", () => {
+		const table = new Table();
+		const change = {
+			v: PROTOCOL_VERSION,
+			roomId: ROOM_ID,
+			type: "bot-bidder",
+			bidder: "rl-fsp",
+		};
+		expect(table.send("N", change)).toMatchObject({ ok: true });
+		expect(parseBridgeState(table.state, ROOM_ID)).toMatchObject({
+			botBidder: "rl-fsp",
+		});
+		expect(table.send("N", { ...change, bidder: "unknown" })).toMatchObject({
+			ok: false,
+		});
+	});
+
+	it("rewinds recorded bid origins together with an approved undo", () => {
+		const table = fixtureTable();
+		table.send("N", systemPayload(ROOM_ID, "hcp"));
+		table.calls("1C P");
+		expect(table.send("N", undoRequestPayload(ROOM_ID, 1))).toMatchObject({
+			ok: true,
+		});
+		const undo = parseBridgeState(table.state, ROOM_ID)?.undo;
+		if (!undo) throw new Error("missing undo request");
+		for (const seat of undo.required)
+			expect(
+				table.send(seat, undoVotePayload(ROOM_ID, undo.id, true)),
+			).toMatchObject({ ok: true });
+		expect(parseBridgeState(table.state, ROOM_ID)).toMatchObject({
+			board: { calls: [] },
+			bidHistory: [],
+		});
+		table.send("N", systemPayload(ROOM_ID, "vienna"));
+		table.act(call("1D"));
+		expect(parseBridgeState(table.state, ROOM_ID)?.bidHistory).toEqual([
+			{ controller: "seat", system: "vienna" },
+		]);
+	});
+
+	it("rejects malformed stored engine choices and bid origins", () => {
+		const table = fixtureTable();
+		table.act(call("1C"));
+		for (const bidHistory of [
+			[],
+			[null, null],
+			[{ controller: "bot", system: "hcp" }],
+			[{ controller: "seat", system: "invalid" }],
+		])
+			expect(
+				parseBridgeState({ ...table.state, bidHistory }, ROOM_ID),
+			).toBeUndefined();
+		expect(
+			parseBridgeState({ ...table.state, botBidder: "invalid" }, ROOM_ID),
+		).toBeUndefined();
+	});
 	it("keeps the system of the sender's seat, never a seat from the payload, and needs nobody present", () => {
 		const table = new Table();
 		const alone = { ...context("S"), present: [] };
@@ -829,13 +951,13 @@ describe("bidding systems at the table", () => {
 		});
 	});
 
-	it("assumes corrected HCP for bot seats and preserves each human's system", () => {
+	it("does not assign a guide system to bot seats and preserves each human's system", () => {
 		const systems = { N: "vienna", E: "other", W: "reith" } as const;
 		expect(seatSystems(systems, ["W", "S"])).toEqual({
 			N: "vienna",
 			E: "other",
-			S: "hcp-corrected",
-			W: "hcp-corrected",
+			S: "other",
+			W: "other",
 		});
 		expect(seatSystems(systems, [])).toEqual(systems);
 	});

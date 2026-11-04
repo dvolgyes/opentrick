@@ -8,6 +8,7 @@ import {
 	parseCtl,
 	parseLog,
 	parseMesh,
+	WIRE_VERSION,
 	withinDepth,
 } from "../../src/p2p/wire";
 
@@ -363,7 +364,7 @@ describe.each(CHANNELS)("%s messages", (_channel, parse, samples) => {
 			expect(
 				parse({ ...frame(TABLE, sample), t: "x".repeat(22) }, TABLE),
 			).toEqual({ ok: false, reason: "foreign" });
-			expect(parse({ ...frame(TABLE, sample), v: 2 }, TABLE)).toEqual({
+			expect(parse({ ...frame(TABLE, sample), v: 1 }, TABLE)).toEqual({
 				ok: false,
 				reason: "incompatible",
 			});
@@ -382,7 +383,7 @@ describe.each(CHANNELS)("%s messages", (_channel, parse, samples) => {
 		["a prototype key", "constructor"],
 		["a prototype key", "__proto__"],
 	])("reports %s as incompatible", (_label, kind) => {
-		expect(parse({ v: 1, t: TABLE, k: kind }, TABLE)).toEqual({
+		expect(parse({ v: WIRE_VERSION, t: TABLE, k: kind }, TABLE)).toEqual({
 			ok: false,
 			reason: "incompatible",
 		});
@@ -393,7 +394,7 @@ describe.each(CHANNELS)("%s messages", (_channel, parse, samples) => {
 		["an array", [1, 2]],
 		["a string", "hello"],
 		["bytes", new Uint8Array([1, 2, 3])],
-		["a missing kind", { v: 1, t: TABLE }],
+		["a missing kind", { v: WIRE_VERSION, t: TABLE }],
 	])("rejects %s", (_label, value) => {
 		expect(parse(value, TABLE)).toEqual({ ok: false, reason: "malformed" });
 	});
@@ -468,7 +469,7 @@ describe("size and depth caps", () => {
 		let value: unknown = 1;
 		for (let level = 0; level < 200_000; level++) value = [value];
 		expect(
-			parseCtl({ v: 1, t: TABLE, k: "cmd", payload: value }, TABLE),
+			parseCtl({ v: WIRE_VERSION, t: TABLE, k: "cmd", payload: value }, TABLE),
 		).toEqual({ ok: false, reason: "malformed" });
 	});
 

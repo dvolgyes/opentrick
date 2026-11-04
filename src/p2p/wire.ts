@@ -42,14 +42,14 @@ import {
 } from "./limits";
 
 /**
- * Peer-to-peer messages (plan §5). Every message is `{v: 1, t: tableId, k: kind, ...}`. A message from a peer is
+ * Peer-to-peer messages (plan §5). Every message carries the wire version, table ID and kind. A message from a peer is
  * untrusted until a parser here accepts it: each parser rebuilds the value from the known fields, so unknown
  * fields never pass through. The parsers check structure and size only; who may send what is the receiver's
  * check. Deviation from the plan table: sync replies carry the request number `req`, and the replace snapshot
  * carries no state, because the last page of every sync reply carries it.
  */
 
-export const WIRE_VERSION = 1;
+export const WIRE_VERSION = 2;
 
 export type Rejection = "malformed" | "incompatible" | "foreign";
 

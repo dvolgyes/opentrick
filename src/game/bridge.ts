@@ -25,10 +25,13 @@ import {
 import { isCommandId } from "../ids";
 import {
 	APPLICATION_FEATURES,
+	DEFAULT_BOT_SETUP,
 	isNonNegativeInteger,
 	isObject,
 	isSeat,
 	type JsonObject,
+	LOCAL_BIDDERS,
+	type LocalBidder,
 	PROTOCOL_VERSION,
 	SEAT_NAMES,
 	SEATS,
@@ -79,10 +82,12 @@ export function tableLegalActions(
  * - `{type: "media", version, prefs, form}`: the sender's call status (src/call/record.ts); the stored record
  *   also gets the holder of the sender's seat (`ApplyContext.holder`).
  * - `{type: "system", system}`: the bidding system of the sender's seat, one of POINT_SYSTEMS.
+ * - `{type: "bot-bidder", bidder}`: the host-selected bot bidding engine.
  * Events: `{fromName, text}` for chat, `{kind: "deal", board}` with the full new board,
- * `{kind: "call", board, call}` and `{kind: "play", board, hand, card}`, where `hand` is the seat that
+ * `{kind: "call", board, call, origin}` and `{kind: "play", board, hand, card}`, where `hand` is the seat that
  * held the card (dummy when declarer plays from dummy), `{kind: "media", seat, version}` and
  * `{kind: "system", seat, system}`.
+ * The host enforces who may send the bot-engine command before it reaches this module.
  *
  * Each deal needs all four seats present (`ApplyContext.present`): a player or a robot at each, so the bidding never
  * starts at a table with an empty seat. A reset while a seat is away keeps no board, and the first deal waits. A call
@@ -110,7 +115,17 @@ export type BridgeState = {
 	readonly media: CallRecords;
 	/** The bidding system that each seat's player chose; a seat without one has sent none. */
 	readonly systems: Partial<Record<Seat, PointSystem>>;
+	/** The seat holder that declared each system; absent in older game records. */
+	readonly systemHolders?: Partial<Record<Seat, string>>;
+	/** The host-selected bidding engine; absent in games saved before this field existed. */
+	readonly botBidder?: LocalBidder;
+	/** The controller and declared system at each call; null means the origin is unknown. */
+	readonly bidHistory?: readonly (BidOrigin | null)[];
 };
+
+export type BidOrigin =
+	| { readonly controller: "bot" }
+	| { readonly controller: "seat"; readonly system?: PointSystem };
 
 export interface UndoRequest extends UndoPosition {
 	readonly id: string;
@@ -202,6 +217,19 @@ export function parseBridgeState(
 	if (media === undefined) return undefined;
 	const systems = parseSystems(state.systems);
 	if (systems === undefined) return undefined;
+	const systemHolders = parseSystemHolders(state.systemHolders);
+	if (systemHolders === undefined) return undefined;
+	const botBidder = state.botBidder;
+	if (
+		botBidder !== undefined &&
+		!LOCAL_BIDDERS.includes(botBidder as LocalBidder)
+	)
+		return undefined;
+	const bidHistory = parseBidHistory(
+		state.bidHistory,
+		board?.calls.length ?? 0,
+	);
+	if (bidHistory === undefined) return undefined;
 	return {
 		v: PROTOCOL_VERSION,
 		roomId,
@@ -215,14 +243,64 @@ export function parseBridgeState(
 		reset,
 		media,
 		systems,
+		systemHolders,
+		...(botBidder === undefined ? {} : { botBidder: botBidder as LocalBidder }),
+		bidHistory,
 	};
 }
 
-/**
- * The system that the table assumes for every bot. A learned bot does not strictly follow it: the auction marks it
- * (src/ui/table.ts), and the bots' own play reads no guide meanings from the calls (src/bot/host-runner.ts).
- */
-export const BOT_SYSTEM: PointSystem = "hcp-corrected";
+function parseSystemHolders(
+	value: unknown,
+): Partial<Record<Seat, string>> | undefined {
+	if (value === undefined) return {};
+	if (!isObject(value)) return undefined;
+	const holders: Partial<Record<Seat, string>> = {};
+	for (const [seat, holder] of Object.entries(value)) {
+		if (
+			!isSeat(seat) ||
+			typeof holder !== "string" ||
+			holder.length === 0 ||
+			holder.length > 64
+		)
+			return undefined;
+		holders[seat] = holder;
+	}
+	return holders;
+}
+
+function parseBidHistory(
+	value: unknown,
+	count: number,
+): (BidOrigin | null)[] | undefined {
+	if (value === undefined) return Array.from({ length: count }, () => null);
+	if (!Array.isArray(value) || value.length !== count) return undefined;
+	const result: (BidOrigin | null)[] = [];
+	for (const item of value) {
+		if (item === null) result.push(null);
+		else if (
+			isObject(item) &&
+			item.controller === "bot" &&
+			item.system === undefined
+		)
+			result.push({ controller: "bot" });
+		else if (
+			isObject(item) &&
+			item.controller === "seat" &&
+			(item.system === undefined || isPointSystem(item.system))
+		)
+			result.push({
+				controller: "seat",
+				...(item.system === undefined
+					? {}
+					: { system: item.system as PointSystem }),
+			});
+		else return undefined;
+	}
+	return result;
+}
+
+/** Learned bots do not declare a guide system. */
+export const BOT_SYSTEM: PointSystem = "other";
 
 /**
  * The system of each seat: bots use BOT_SYSTEM, whatever an earlier player of their seat sent, and a human seat uses
@@ -442,6 +520,13 @@ export function systemPayload(roomId: string, system: PointSystem): JsonObject {
 	return { v: PROTOCOL_VERSION, roomId, type: "system", system };
 }
 
+export function botBidderPayload(
+	roomId: string,
+	bidder: LocalBidder,
+): JsonObject {
+	return { v: PROTOCOL_VERSION, roomId, type: "bot-bidder", bidder };
+}
+
 export function dealPayload(roomId: string, board: number): JsonObject {
 	return { v: PROTOCOL_VERSION, roomId, type: "deal", board };
 }
@@ -631,7 +716,21 @@ function applySystem(
 	const { seat } = context;
 	return accept(
 		{ kind: "system", seat, system },
-		{ ...state, systems: { ...state.systems, [seat]: system } },
+		{
+			...state,
+			systems: { ...state.systems, [seat]: system },
+			systemHolders: { ...state.systemHolders, [seat]: context.holder },
+		},
+	);
+}
+
+function applyBotBidder(state: BridgeState, payload: JsonObject): ApplyResult {
+	if (!LOCAL_BIDDERS.includes(payload.bidder as LocalBidder))
+		return reject("not a known bot engine");
+	const bidder = payload.bidder as LocalBidder;
+	return accept(
+		{ kind: "bot-bidder", bidder },
+		{ ...state, botBidder: bidder },
 	);
 }
 
@@ -659,7 +758,7 @@ function applyDeal(
 	const board = createBoard(next, dealCards(randomBelow));
 	return accept(
 		{ kind: "deal", board },
-		{ ...state, board, claimResult: null },
+		{ ...state, board, claimResult: null, bidHistory: [] },
 	);
 }
 
@@ -700,13 +799,27 @@ function applyTableAction(
 	if (!applied.ok) return reject(applied.reason);
 	const next = applied.board;
 	const result = scoreBoard(next);
+	const origin: BidOrigin = context.isBot
+		? { controller: "bot" }
+		: {
+				controller: "seat",
+				...(state.systemHolders?.[context.seat] !== context.holder ||
+				state.systems[context.seat] === undefined
+					? {}
+					: { system: state.systems[context.seat] }),
+			};
 	const event =
 		action.type === "call"
-			? { kind: "call", board: board.number, call: action.call }
+			? { kind: "call", board: board.number, call: action.call, origin }
 			: { kind: "play", board: board.number, hand, card: action.card };
 	return accept(event, {
 		...state,
 		board: next,
+		...(action.type === "call"
+			? {
+					bidHistory: [...(state.bidHistory ?? []), origin],
+				}
+			: {}),
 		results: result ? [...state.results, result] : state.results,
 	});
 }
@@ -777,6 +890,7 @@ function resetGame(
 				? createBoard(1, dealCards(randomBelow))
 				: null,
 		results: [],
+		bidHistory: [],
 		undo: null,
 		claim: null,
 		claimResult: null,
@@ -1036,6 +1150,7 @@ function applyUndoVote(
 			{
 				...state,
 				board: rewound,
+				bidHistory: state.bidHistory?.slice(0, pending.calls),
 				results: state.results.filter((result) => result.number < board.number),
 				undo: null,
 			},
@@ -1066,7 +1181,7 @@ function applyUndoCancel(
 /** The table's rules. `randomBelow` shuffles each deal; it is the only source of randomness. */
 export function createBridgeModule(randomBelow: RandomBelow): GameModule {
 	return {
-		initialState(roomId) {
+		initialState(roomId, config) {
 			const state: BridgeState = {
 				v: PROTOCOL_VERSION,
 				roomId,
@@ -1080,6 +1195,7 @@ export function createBridgeModule(randomBelow: RandomBelow): GameModule {
 				reset: null,
 				media: {},
 				systems: {},
+				botBidder: config.botSetup?.bidder ?? DEFAULT_BOT_SETUP.bidder,
 			};
 			return state;
 		},
@@ -1134,6 +1250,8 @@ export function createBridgeModule(randomBelow: RandomBelow): GameModule {
 					return applyMedia(table, context, payload);
 				case "system":
 					return applySystem(table, context, payload);
+				case "bot-bidder":
+					return applyBotBidder(table, payload);
 				default:
 					return reject("unknown command type");
 			}

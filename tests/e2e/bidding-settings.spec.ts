@@ -71,7 +71,9 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	await settings.getByLabel("BRL RL/FSP", { exact: true }).check();
 	await settings.getByRole("button", { name: "Save settings" }).click();
 	await expect(settings).toBeHidden();
-	expect(new URL(page.url()).searchParams.get("r")).toBe("rl-fsp");
+	await expect
+		.poll(() => new URL(page.url()).searchParams.get("r"))
+		.toBe("rl-fsp");
 	await expect(page.getByTestId("bot-status")).toContainText(
 		"Local BRL · rl-fsp",
 	);

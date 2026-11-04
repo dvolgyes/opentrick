@@ -46,6 +46,7 @@ import {
 
 import { playSuitOrder, type TrickNeed, trickNeed } from "./hand-layout";
 import { ownCommands, type RosterRow } from "./model";
+import { DEFAULT_SETTINGS } from "./settings";
 
 /** Pure view model of the bridge table: the DOM layer only renders what these functions return. */
 
@@ -283,13 +284,13 @@ export interface AuctionView {
 	readonly rows: readonly (readonly string[])[];
 	/** The bidding system of each seat, in `seats` order; undefined when the seat's player has sent none. */
 	readonly systems: readonly (PointSystem | undefined)[];
-	/** The seats that bots hold: their system is assumed, and they do not strictly follow it. */
+	/** The seats that host-managed bots currently hold. */
 	readonly bots: readonly Seat[];
 	/** The calls so far, in order, for the bidding guide. */
 	readonly calls: readonly Call[];
 	/**
-	 * In `rows` order, what each call shows by its caller's system in the viewer's language, such as "15–17 HCP,
-	 * balanced"; undefined for a dash and for a call that the guide does not describe.
+	 * In `rows` order, the recorded caller's guide meaning, or a labeled viewer-guide reference for an unknown or bot
+	 * origin. Undefined for a dash and for a declared system without computable guide rules.
 	 */
 	readonly meanings: readonly (readonly (string | undefined)[])[];
 }
@@ -488,6 +489,10 @@ export interface TableViewInput {
 	/** Bot-controlled seats from the shared table roster. */
 	readonly bots?: ReadonlySet<Seat>;
 	readonly autoplaySeats?: ReadonlySet<Seat>;
+	/** The viewer's selected guide, used only as a labeled reference for calls of unknown origin. */
+	readonly referenceSystem?: PointSystem;
+	/** The current holders, so a previous player's system is not attributed to a replacement. */
+	readonly holders?: Readonly<Partial<Record<Seat, string>>>;
 	/** The host's seat, or null while the host is not known. */
 	readonly hostSeat: Seat | null;
 	/** Seconds until the next board is dealt after scoring. */
@@ -1069,18 +1074,41 @@ function auctionView(
 	calls: readonly Call[],
 	systems: BridgeState["systems"],
 	bots: ReadonlySet<Seat> | undefined,
+	history: BridgeState["bidHistory"],
+	referenceSystem: PointSystem,
 	t: Translate,
 ): AuctionView {
 	const before = SEATS.indexOf(dealer);
 	const bySeat = seatSystems(systems, bots ?? []);
 	// A call of a system with rules gets its meaning, or "not in the guide"; a call of the other systems gets none.
 	const meaning = (index: number): string | undefined => {
-		const system = bySeat[seatAfter(dealer, index)];
-		if (system === undefined || !hasRules(system)) return undefined;
+		const origin = history?.[index];
+		const reference =
+			origin === undefined ||
+			origin === null ||
+			origin.controller === "bot" ||
+			origin.system === undefined;
+		const system = reference
+			? referenceSystem === "other"
+				? "hcp"
+				: referenceSystem
+			: origin.system;
+		if (system === undefined) return undefined;
+		if (!hasRules(system))
+			return reference
+				? t("No guide reference is available for this call.")
+				: undefined;
 		const found = callMeaning(system, calls, index);
-		return found === undefined
-			? t("not in the guide")
-			: meaningText(found, system, t);
+		const text =
+			found === undefined
+				? t("not in the guide")
+				: meaningText(found, system, t);
+		return reference
+			? t(
+					"Guide reference ({system}): {meaning}. This may not describe the bid.",
+					{ system: t(SCALE_NAMES[system]), meaning: text },
+				)
+			: text;
 	};
 	const cells = [
 		...Array.from({ length: before }, () => "—"),
@@ -1596,7 +1624,25 @@ export function tableView(input: TableViewInput): TableView {
 		details: t("Dealer: {dealer}", { dealer: t(SEAT_NAMES[view.dealer]) }),
 		vulnerability: vulnerabilityLines(view.vulnerability, t),
 		seats,
-		auction: auctionView(view.dealer, view.calls, state.systems, input.bots, t),
+		auction: auctionView(
+			view.dealer,
+			view.calls,
+			input.holders === undefined
+				? state.systems
+				: Object.fromEntries(
+						SEATS.flatMap((owner) =>
+							state.systemHolders?.[owner] !== undefined &&
+							state.systemHolders[owner] === input.holders?.[owner] &&
+							state.systems[owner] !== undefined
+								? [[owner, state.systems[owner]]]
+								: [],
+						),
+					),
+			input.bots,
+			state.bidHistory,
+			input.referenceSystem ?? DEFAULT_SETTINGS.pointSystem,
+			t,
+		),
 		contract: contract
 			? t("{contract} by {declarer}", {
 					contract: contractText(contract),

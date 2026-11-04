@@ -432,6 +432,22 @@ describe("call meanings in the auction", () => {
 		expect(open()).toBe(false);
 	});
 
+	it.each(["desktop", "compact"] as const)(
+		"presents an uncertain bid as a labeled guide reference (%s)",
+		async (form) => {
+			const reference =
+				"Guide reference (corrected HCP): 15–17 corrected HCP, balanced. This may not describe the bid.";
+			const { root, section } = renderView(meaningView(reference), form);
+			const call = root.querySelector<HTMLButtonElement>(".auction-call");
+			if (!call) throw new Error("missing auction call");
+			expect(call.getAttribute("aria-description")).toBe(reference);
+			call.click();
+			expect(call.popoverTargetElement?.textContent).toBe(reference);
+			expect(call.popoverTargetElement?.matches(":popover-open")).toBe(true);
+			section.dispose();
+		},
+	);
+
 	it("keeps the meaning open while a render does not change the auction", async () => {
 		const { root, section } = renderView(meaningView(), "desktop");
 		await page

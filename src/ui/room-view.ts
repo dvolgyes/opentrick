@@ -26,6 +26,7 @@ import { communityNextBoardReady } from "../community/replacement";
 import { type CommunityChannel, DISCOVERY_ROOM } from "../community/transport";
 import {
 	actionPayload,
+	botBidderPayload,
 	claimRequestPayload,
 	claimVotePayload,
 	dealPayload,
@@ -260,16 +261,22 @@ export function showRoom(
 	let hostInCall = false;
 	const botSeatOverrides = new Map<Seat, boolean>();
 	let botSettings = initialBotSettings;
+	let announcedLegacyBidder = false;
+	/** The replicated choice takes precedence over the original room link and local preferences. */
+	function sharedBotBidder(): LocalBidder {
+		const view = controller.view();
+		const state = view.table
+			? parseBridgeState(view.table.state, tableId)
+			: undefined;
+		return (
+			state?.botBidder ??
+			fallbackConfig?.botSetup?.bidder ??
+			view.table?.config.botSetup?.bidder ??
+			DEFAULT_BOT_SETUP.bidder
+		);
+	}
 	const botAssets = new BrowserBotAssets();
-	botAssets.preload(
-		(
-			botSettings ??
-			settingsFor(
-				fallbackConfig ?? controller.view().table?.config,
-				readSettings(deps.browser),
-			)
-		).bidder,
-	);
+	botAssets.preload(sharedBotBidder());
 	let playerAutoplayPending = false;
 	let playerAutoplayStatus = "";
 	let playerAutoplayWasEnabled = false;
@@ -431,10 +438,7 @@ export function showRoom(
 		if (kind === "error") showRoomError(text);
 	}
 	const settings = settingsDialog(deps, handlers.reload, applySettings, () => ({
-		bidder: (
-			botSettings ??
-			settingsFor(fallbackConfig ?? controller.view().table?.config)
-		).bidder,
+		bidder: sharedBotBidder(),
 		editable: controller.view().hosting,
 	}));
 	const exitDialog: HTMLDialogElement = el(
@@ -477,16 +481,14 @@ export function showRoom(
 	};
 
 	function applySettings(bidder?: LocalBidder): void {
-		if (bidder !== undefined && controller.view().hosting) {
-			botSettings = {
-				...(botSettings ?? settingsFor(controller.view().table?.config)),
-				bidder,
-			};
-			history.replaceState(
-				null,
-				"",
-				`${location.pathname}?${bidderQuery(location.search, bidder)}${location.hash}`,
-			);
+		if (
+			bidder !== undefined &&
+			controller.view().hosting &&
+			bidder !== sharedBotBidder()
+		) {
+			submit(botBidderPayload(tableId, bidder), (reason) => {
+				actionError = deps.t("Not sent: {reason}", { reason });
+			});
 		}
 		if (botSettings) {
 			botAssets.preload(botSettings.bidder);
@@ -678,7 +680,7 @@ export function showRoom(
 			? deps.t("No bot seats are active.")
 			: deps.t("Running {count} bot seat(s) with {engine}.", {
 					count,
-					engine: `Local BRL · ${(botSettings ?? settingsFor(controller.view().table?.config)).bidder}`,
+					engine: `Local BRL · ${sharedBotBidder()}`,
 				});
 	}
 
@@ -1348,6 +1350,7 @@ export function showRoom(
 			fallbackConfig ?? config,
 			readSettings(deps.browser),
 		);
+		botSettings = { ...botSettings, bidder: sharedBotBidder() };
 		botStarting = true;
 		botAutoAttempted = true;
 		const runner = new HostBotRunner(
@@ -1384,6 +1387,8 @@ export function showRoom(
 		}
 		botStarting = false;
 		botRunner = runner;
+		botSettings = { ...botSettings, bidder: sharedBotBidder() };
+		runner.updateSettings(botSettings);
 		runner.setPlayBlocked(table.playPresentationActive());
 		// A retry can run while the runner starts.
 		if (!botsPaused) runner.resume();
@@ -1518,6 +1523,13 @@ export function showRoom(
 	function render(): void {
 		if (disposed) return;
 		const view = controller.view();
+		const liveBidder = sharedBotBidder();
+		if (view.hosting && botSettings && botSettings.bidder !== liveBidder) {
+			botSettings = { ...botSettings, bidder: liveBidder };
+			botAssets.preload(liveBidder);
+			botRunner?.updateSettings(botSettings);
+			if (botRunner && !botsPaused) setBotStatus(runningBotStatus());
+		}
 		const communityRows = view.table?.config.community
 			? view.table.seats.filter(
 					(row) =>
@@ -1589,6 +1601,7 @@ export function showRoom(
 		settings.refreshBidding();
 		const botConfig = view.table?.config ?? fallbackConfig;
 		if (!view.hosting) {
+			announcedLegacyBidder = false;
 			botSeatOverrides.clear();
 			botRestoreStarted = false;
 			botRestorePending = false;
@@ -1662,6 +1675,26 @@ export function showRoom(
 			view.table === null
 				? undefined
 				: (parseBridgeState(view.table.state, tableId) ?? null);
+		if (
+			view.hosting &&
+			state &&
+			state.botBidder === undefined &&
+			!announcedLegacyBidder
+		) {
+			announcedLegacyBidder = true;
+			submit(botBidderPayload(tableId, liveBidder), (reason) => {
+				actionError = deps.t("Not sent: {reason}", { reason });
+			});
+		}
+		if (view.hosting && state?.botBidder !== undefined) {
+			const query = bidderQuery(location.search, state.botBidder);
+			if (query !== location.search.replace(/^\?/, ""))
+				history.replaceState(
+					null,
+					"",
+					`${location.pathname}?${query}${location.hash}`,
+				);
+		}
 		const callRecords = recordedInCall(
 			state?.media ?? {},
 			view.roster,
@@ -1775,7 +1808,8 @@ export function showRoom(
 		if (
 			state &&
 			!terminal &&
-			state.systems[seat] !== ownSystem &&
+			(state.systems[seat] !== ownSystem ||
+				state.systemHolders?.[seat] !== controller.holder) &&
 			sentSystem !== ownSystem
 		) {
 			sentSystem = ownSystem;
@@ -1848,6 +1882,12 @@ export function showRoom(
 			roster: model.roster,
 			bots: new Set(activeBots),
 			autoplaySeats: new Set(view.roster?.autoplaySeats ?? []),
+			referenceSystem: readSettings(deps.browser).pointSystem,
+			holders: Object.fromEntries(
+				(view.table?.seats ?? []).flatMap((row) =>
+					row.holder === null ? [] : [[row.seat, row.holder]],
+				),
+			),
 			hostSeat: view.hostSeat,
 			scoringCountdown,
 			auctionPauseSeconds: auctionPause.remaining(
@@ -2011,10 +2051,7 @@ export function showRoom(
 			readSettings(deps.browser).botBidHint && !activeBots.includes(seat)
 				? viewerBidPosition(state?.board, seat)
 				: undefined,
-			(
-				botSettings ??
-				settingsFor(fallbackConfig ?? controller.view().table?.config)
-			).bidder,
+			sharedBotBidder(),
 		);
 		// Restore a returned human before a completed board can advance.
 		void updateCommunityCover();

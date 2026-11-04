@@ -16,6 +16,8 @@ export interface ApplyContext {
 	/** Robot seats and requested autoplay, from the host's current roster, never from the payload. */
 	readonly bots?: readonly Seat[];
 	readonly autoplaySeats?: readonly Seat[];
+	/** The host accepted this action through its local bot binding, not from the seat's player. */
+	readonly isBot?: boolean;
 	/** Features reported by each currently bound seat; used only to avoid incompatible shared workflows. */
 	readonly features?: ReadonlyMap<Seat, readonly string[]>;
 }

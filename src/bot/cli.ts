@@ -405,7 +405,9 @@ async function run(options: Options): Promise<void> {
 			[seat, ...(view.roster?.bots ?? [])],
 			"other",
 		);
-		const policy = (view.table?.config.botSetup ?? DEFAULT_BOT_SETUP).bidder;
+		const policy =
+			state.botBidder ??
+			(view.table?.config.botSetup ?? DEFAULT_BOT_SETUP).bidder;
 		const startedAt = performance.now();
 		try {
 			let decision: Action;
@@ -439,7 +441,7 @@ async function run(options: Options): Promise<void> {
 				decision = {
 					type: "play",
 					card: analyzePlay(
-						playPosition(state.board, seat, systems),
+						playPosition(state.board, seat, systems, state.bidHistory),
 						cardSolver,
 					).card,
 				};
@@ -449,8 +451,21 @@ async function run(options: Options): Promise<void> {
 				minimumActionMs(state.board, kind, DEFAULT_BOT_TIMING),
 				actionAbort.signal,
 			);
-			if (!stopped)
-				await sendAction(state, seat, actionKey, decision, controller.view());
+			if (!stopped) {
+				const current = controller.view();
+				const currentState = current.table
+					? parseBridgeState(current.table.state, identity.tableId)
+					: undefined;
+				const currentPolicy =
+					currentState?.botBidder ??
+					(current.table?.config.botSetup ?? DEFAULT_BOT_SETUP).bidder;
+				if (kind === "call" && !options.random && currentPolicy !== policy) {
+					strategyKey = undefined;
+					await drive();
+					return;
+				}
+				await sendAction(state, seat, actionKey, decision, current);
+			}
 		} catch (error) {
 			if (stopped) return;
 			await stop(new Error(describeFailure(error, [route.key])));

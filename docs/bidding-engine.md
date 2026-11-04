@@ -35,11 +35,13 @@ No rules or network weights were tuned after this comparison.
 **BRL RL/FSP** uses BRL's reinforcement-learning policy (`rl-fsp`).
 All host-managed bots at a table use the selected policy.
 The host can view and change the engine in **Settings**.
-The browser remembers the choice for new tables; an explicit engine in a saved link takes priority.
-The selection is retained in room links as `r`. Earlier links are no longer read.
+The accepted choice is shared with all players and follows the table across a host change.
+The browser remembers the choice for new tables; an explicit engine in a saved link takes priority when creating a table.
+The selection is retained in room links as `r`.
+Earlier links are no longer read.
 
 Recommendations use explicit convention rules, independently of the selected bot.
-New display settings default to ordinary HCP; saved point-scale preferences remain available.
+New display settings default to corrected HCP; saved point-scale preferences remain available.
 Jacoby transfers are part of SAYC: after an uncontested 1NT–2♦, opener accepts with 2♥ even with a doubleton.
 If an opponent doubles the transfer, opener passes with two hearts and bids 2♥ with at least three.
 Transfers remain on when the opponent doubles the 1NT opening instead.
@@ -47,7 +49,10 @@ The recommendation explains this distinction and gives no forced-transfer recomm
 
 Neither policy is advertised as a strict implementation of OpenTrick's standard bidding guide.
 The RL policy can use artificial or weak openings that need its learned partner's interpretation.
-For that reason, local bot seats use the **other** system designation: the table does not attach incorrect standard-guide meanings, and the card sampler does not impose those meanings on local bids.
+For that reason, the auction labels host-managed bots as learned bots and marks any guide interpretation of their calls as a reference that may not describe the bid.
+The card sampler does not impose guide meanings on local bot bids.
+Each new call records its controller and the seat holder's declared system, when known.
+Calls from older games have unknown origin and show only labeled guide references.
 Human partnership compatibility and expert strength remain unverified.
 Prefer a matched bot partnership when evaluating the learned system.
 The default is the WBridge5 imitation, because a human at the table cannot read RL/FSP's undisclosed agreements.
@@ -143,7 +148,7 @@ No cryptographic scheme or secret lifecycle changes.
 The user owns residual bidding-quality and third-party availability risks.
 Keep prepared assets with a deployment; if preparation fails, the build reports the error.
 An engine failure visibly stops affected bots so the host can retry or take manual control.
-To change bidding behavior, select the other local policy when creating a table.
+To change bidding behavior, select the other local policy when creating a table or in the host's settings.
 Saved credentials and remote-model preferences are discarded on startup.
-Older application versions must reload to use the new bot configuration.
+Older application versions must reload to join the updated table protocol.
 No stored-board migration is required.

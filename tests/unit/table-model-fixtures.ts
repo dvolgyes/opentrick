@@ -14,6 +14,7 @@ import {
 	type RoomConfig,
 	SEAT_NAMES,
 	type Seat,
+	seatAfter,
 } from "../../src/protocol";
 import type { RosterRow } from "../../src/ui/model";
 import {
@@ -70,10 +71,29 @@ export function view(
 	board: Board | null,
 	overrides: Partial<TableViewInput> = {},
 ): TableView {
+	// A constructed auction with declared systems represents calls made under those systems.
+	// Tests for legacy or changed systems supply their own recorded history.
+	const source = Object.hasOwn(overrides, "state")
+		? overrides.state
+		: tableState(board);
+	const sourceBoard = source?.board;
+	const historical =
+		source && sourceBoard && source.bidHistory === undefined
+			? {
+					...source,
+					bidHistory: sourceBoard.calls.map((_, index) => {
+						const caller = seatAfter(sourceBoard.dealer, index);
+						const system = source.systems[caller];
+						return {
+							controller: "seat" as const,
+							...(system === undefined ? {} : { system }),
+						};
+					}),
+				}
+			: source;
 	return tableView({
 		config: CONFIG,
 		seat,
-		state: tableState(board),
 		terminal: false,
 		present: ALL,
 		roster: ROSTER,
@@ -82,6 +102,7 @@ export function view(
 		failures: [],
 		undone: [],
 		...overrides,
+		state: historical,
 	});
 }
 

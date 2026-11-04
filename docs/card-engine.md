@@ -17,6 +17,7 @@ Before the opening lead it shuffles the three unknown hands uniformly.
 Once dummy is exposed, it assigns cards forced by voids and uniformly divides the other cards between the two hidden hands.
 This needs no rejection loop, including in constrained endings.
 Known bidding-system meanings add soft likelihood weights for points and shape.
+Each meaning uses the system recorded when its call was made; calls by bots and calls of unknown origin add no guide assumptions.
 They never exclude every layout when a player has misbid.
 
 `DdsSolver` wraps [bridge-dds 1.4.0](https://github.com/bookchris/bridge-dds-js), an Apache-2.0 WebAssembly build of DDS.

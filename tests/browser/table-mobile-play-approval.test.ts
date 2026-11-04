@@ -744,7 +744,7 @@ describe("bidding guide", () => {
 		await loaded(root).toBe("Reizleitfaden: Wiener Punkte (7-5-3-1)");
 	});
 
-	it("marks a bot's assumed system with a superscript asterisk, and still opens its guide", async () => {
+	it("labels a learned bot without assigning it a bidding system", async () => {
 		const view: TableView = {
 			...auction(),
 			auction: {
@@ -767,17 +767,10 @@ describe("bidding guide", () => {
 		];
 		expect(systems.map((system) => system.textContent)).toEqual([
 			"korr. HCP",
-			"korr. HCP*",
+			"Lernender Bot",
 		]);
-		const bot = systems[1];
-		if (!(bot instanceof HTMLButtonElement))
-			throw new Error("the bot's system is not a button");
-		expect(bot.querySelector("sup")?.textContent).toBe("*");
-		expect(systems[0]?.querySelector("sup")).toBeNull();
-		expect(bot.title).toContain(
-			"Ein Bot hält sich nicht streng an dieses System.",
-		);
-		bot.click();
+		expect(systems[1]).not.toBeInstanceOf(HTMLButtonElement);
+		systems[0]?.click();
 		await loaded(root).toBe("Reizleitfaden: korrigierte Milton HCP");
 	});
 

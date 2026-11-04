@@ -3297,13 +3297,14 @@ export function tableSection(
 	}
 
 	/**
-	 * The system below a player's name opens its guide in the viewer's language; the guides do not describe "other".
-	 * A bot's system is only assumed, so a superscript asterisk marks it.
+	 * A player's declared system opens its guide. A learned bot does not declare a guide system.
 	 */
 	function systemLabel(
 		system: PointSystem | undefined,
 		bot: boolean,
 	): HTMLElement[] {
+		if (bot)
+			return [el("span", { className: "auction-system" }, t("Learned bot"))];
 		if (system === undefined) return [];
 		const text = t(SYSTEM_LABELS[system]);
 		if (system === "other")
@@ -3311,12 +3312,9 @@ export function tableSection(
 		const open = button(text, () => guide.open(system), {
 			className: "auction-system",
 			attrs: {
-				title: bot
-					? `${t("Bidding guide")}. * ${t("A bot does not strictly follow this system.")}`
-					: t("Bidding guide"),
+				title: t("Bidding guide"),
 			},
 		});
-		if (bot) open.append(el("sup", {}, "*"));
 		open.disabled = guideBlocked;
 		return [open];
 	}

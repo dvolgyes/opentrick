@@ -14,6 +14,7 @@ import {
 } from "../../src/bridge/engine";
 import {
 	actionPayload,
+	botBidderPayload,
 	claimRequestPayload,
 	createBridgeModule,
 	parseBridgeState,
@@ -206,6 +207,36 @@ afterEach(() => {
 });
 
 describe("host bot play", () => {
+	it("discards an old bidding decision when the shared bot engine changes", async () => {
+		const start = tableState([act(call("1C"))]);
+		let finishOld: (() => void) | undefined;
+		const choose = vi.fn<BidChooser["choose"]>(async (_position, policy) => {
+			if (policy === "sl")
+				await new Promise<void>((resolve) => {
+					finishOld = resolve;
+				});
+			return { call: "P", policy, candidates: [] };
+		});
+		const host = liveHost(
+			start,
+			{ choose: vi.fn(), stop: () => {} },
+			{ choose, stop: () => {} },
+		);
+		await host.runner.start();
+		expect(choose.mock.calls[0]?.[1]).toBe("sl");
+		expect(
+			host.deliver("N", botBidderPayload(ROOM_ID, "rl-fsp")),
+		).toMatchObject({ ok: true });
+		finishOld?.();
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(choose.mock.calls.map((entry) => entry[1])).toEqual([
+			"sl",
+			"rl-fsp",
+		]);
+		expect(host.state()?.board?.calls).toEqual(["1C", "P"]);
+		expect(host.onError).not.toHaveBeenCalled();
+		host.runner.stop();
+	});
 	it("waits for human dummy, resumes on autoplay, and discards a late choice when autoplay stops", async () => {
 		const start = tableState([
 			...["P", "P", "1C", "P", "P", "P"].map((text) => act(call(text))),

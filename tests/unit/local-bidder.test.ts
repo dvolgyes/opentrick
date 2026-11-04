@@ -109,11 +109,11 @@ describe("local bidder integration", () => {
 			parseBotSetup({ ...DEFAULT_BOT_SETUP, bidder: "../../private" }),
 		).toBeUndefined();
 	});
-	it("gives a bot's own play no guide meanings, and the table assumes corrected HCP for a bot", () => {
+	it("gives a bot's play no invented guide meanings", () => {
 		expect(seatSystems({ E: "hcp" }, ["N"], "other")).toEqual({
 			N: "other",
 			E: "hcp",
 		});
-		expect(seatSystems({}, ["N"])).toEqual({ N: "hcp-corrected" });
+		expect(seatSystems({}, ["N"])).toEqual({ N: "other" });
 	});
 });

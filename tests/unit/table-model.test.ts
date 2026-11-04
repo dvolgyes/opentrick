@@ -349,6 +349,69 @@ describe("table layout", () => {
 });
 
 describe("auction", () => {
+	it("uses each bid's recorded origin instead of the seat's current system or bot status", () => {
+		const board = bidding(BOARD, "1NT P");
+		const state = {
+			...tableState(board),
+			systems: { N: "vienna", E: "hcp" },
+			bidHistory: [
+				{ controller: "seat", system: "hcp" },
+				{ controller: "bot" },
+			],
+		} as const;
+		const auction = view("S", null, {
+			state,
+			bots: new Set<Seat>(["N"]),
+		}).auction;
+		expect(auction?.meanings[0]?.[0]).toBe("15–17 HCP, balanced");
+		expect(auction?.meanings[0]?.[1]).toContain("Guide reference");
+	});
+
+	it("marks older calls with unknown origin as guide references", () => {
+		const state = {
+			...tableState(bidding(BOARD, "1NT")),
+			systems: { N: "hcp" },
+			bidHistory: [null],
+		} as const;
+		const auction = view("S", null, { state }).auction;
+		expect(auction?.meanings[0]?.[0]).toContain("Guide reference");
+	});
+
+	it("uses the viewer's selected guide for bot bid references", () => {
+		const state = {
+			...tableState(bidding(BOARD, "1NT")),
+			bidHistory: [{ controller: "bot" }],
+		} as const;
+		const corrected = view("S", null, {
+			state,
+			referenceSystem: "hcp-corrected",
+		}).auction?.meanings[0]?.[0];
+		const hcp = view("S", null, { state, referenceSystem: "hcp" }).auction
+			?.meanings[0]?.[0];
+		expect(corrected).toBe(
+			"Guide reference (corrected HCP): 15–17 corrected HCP, balanced. This may not describe the bid.",
+		);
+		expect(hcp).toBe(
+			"Guide reference (HCP): 15–17 HCP, balanced. This may not describe the bid.",
+		);
+	});
+
+	it("does not show a previous holder's system under a replacement player's name", () => {
+		const state = {
+			...tableState(bidding(BOARD, "1NT")),
+			systems: { N: "hcp" },
+			systemHolders: { N: "previous" },
+			bidHistory: [{ controller: "seat", system: "hcp" }],
+		} as const;
+		const changed = view("S", null, {
+			state,
+			holders: { N: "replacement" },
+		}).auction;
+		const same = view("S", null, { state, holders: { N: "previous" } }).auction;
+		expect(changed?.systems[0]).toBeUndefined();
+		expect(same?.systems[0]).toBe("hcp");
+		expect(changed?.meanings[0]?.[0]).toBe("15–17 HCP, balanced");
+	});
 	it("offers the legal calls only to the seat whose turn it is", () => {
 		const north = view("N", bidding(BOARD, ""));
 		expect(north.prompt).toBe("North to bid");
@@ -384,7 +447,14 @@ describe("auction", () => {
 			systems: [undefined, undefined, undefined, undefined],
 			bots: [],
 			calls: ["1C", "X", "P"],
-			meanings: [[undefined, undefined, undefined, undefined]],
+			meanings: [
+				[
+					undefined,
+					"Guide reference (corrected HCP): 12–21 corrected HCP, 3+ ♣. This may not describe the bid.",
+					"Guide reference (corrected HCP): 12+ corrected HCP, takeout, short in ♣, or 17+ corrected HCP. This may not describe the bid.",
+					"Guide reference (corrected HCP): no other guide call fits. This may not describe the bid.",
+				],
+			],
 		});
 	});
 
@@ -396,7 +466,7 @@ describe("auction", () => {
 		]);
 	});
 
-	it("names each seat's bidding system and assumes corrected HCP for a bot seat", () => {
+	it("names each seat's bidding system without assigning a guide system to a bot", () => {
 		const state = {
 			...tableState(bidding(BOARD, "1C")),
 			systems: { N: "vienna", E: "other", W: "reith" },
@@ -405,12 +475,7 @@ describe("auction", () => {
 			state,
 			bots: new Set<Seat>(["W"]),
 		}).auction;
-		expect(auction?.systems).toEqual([
-			"vienna",
-			"other",
-			undefined,
-			"hcp-corrected",
-		]);
+		expect(auction?.systems).toEqual(["vienna", "other", undefined, "other"]);
 		expect(auction?.bots).toEqual(["W"]);
 	});
 
@@ -427,16 +492,18 @@ describe("auction", () => {
 			[
 				undefined,
 				"15–17 HCP, balanced",
-				undefined,
+				"Guide reference (corrected HCP): not in the guide. This may not describe the bid.",
 				"Stayman: a 4-card major with 8+ corrected HCP, or 4-4 in the majors and at most 1 ♣ with 0–7 corrected HCP",
 			],
-			[undefined],
+			[
+				"Guide reference (corrected HCP): not in the guide. This may not describe the bid.",
+			],
 		]);
-		// A bot's call reads by corrected HCP, whatever system an earlier player of its seat sent.
+		// A later bot takeover does not rewrite the system recorded when East made this call.
 		expect(
 			view("N", null, { state, bots: new Set<Seat>(["E"]) }).auction
 				?.meanings[0]?.[1],
-		).toBe("15–17 corrected HCP, balanced");
+		).toBe("15–17 HCP, balanced");
 	});
 
 	it("explains an overcall, marks a call that the guide does not describe, and gives no meaning to a scale with only a guide", () => {

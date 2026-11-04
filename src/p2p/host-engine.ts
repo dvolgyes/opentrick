@@ -1131,6 +1131,16 @@ export class HostEngine {
 				: this.#result(peer, id, "invalid");
 		}
 		if (table.rev >= MAX_LOG_ENTRIES) return this.#result(peer, id, "full");
+		if (
+			command.payload.type === "bot-bidder" &&
+			(peer !== this.#deps.self || fromLocalBot)
+		)
+			return this.#result(
+				peer,
+				id,
+				"rejected",
+				"only the host can change the bot engine",
+			);
 		if (command.payload.type === "deal" && bound.seat !== this.#deps.log.seat)
 			return this.#result(
 				peer,
@@ -1152,6 +1162,7 @@ export class HostEngine {
 				commandId: id,
 				seq,
 				bots: [...this.#localBots],
+				isBot: fromLocalBot,
 				autoplaySeats: this.roster()?.autoplaySeats ?? [],
 				present: SEATS.filter(
 					(seat) => seat === this.#deps.log.seat || this.#online(table, seat),

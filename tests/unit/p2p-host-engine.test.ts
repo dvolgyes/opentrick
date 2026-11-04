@@ -10,6 +10,7 @@ import { chatPayload } from "../../src/game/chat";
 import { deriveHolder } from "../../src/p2p/keys";
 import { HOST_LOST_MS, SEAT_GRACE_MS } from "../../src/p2p/limits";
 import type { AutoplayStatus } from "../../src/p2p/wire";
+import { PROTOCOL_VERSION } from "../../src/protocol";
 import { bidding, DEAL, playing } from "./bridge-fixtures";
 import { settle, syncDigest } from "./fake-mesh";
 import { CONFIG, commandId, TABLE } from "./p2p-fixtures";
@@ -29,6 +30,132 @@ beforeEach(() => {
 	restoreDigest = syncDigest();
 });
 afterEach(() => restoreDigest());
+
+describe("shared bot engine authority", () => {
+	it("records the host bot binding as the source of an accepted bid", async () => {
+		const module = createBridgeModule(randomBelowFrom(() => 0));
+		const state = {
+			...module.initialState(TABLE, CONFIG),
+			board: createBoard(1, DEAL),
+		};
+		const rig = await new Rig(module).create(CONFIG, state);
+		expect(await rig.host.activateBots(["E"])).toBe(true);
+		const first = parseBridgeState(rig.log.table?.state ?? {}, TABLE)?.board;
+		if (!first) throw new Error("missing board");
+		await rig.from(HOST, {
+			k: "cmd",
+			id: commandId(808),
+			gen: rig.row("N")?.gen ?? 0,
+			payload: actionPayload(TABLE, first, { type: "call", call: "1C" }),
+		});
+		expect(rig.to(HOST)).toContainEqual(
+			expect.objectContaining({ id: commandId(808), status: "accepted" }),
+		);
+		const second = parseBridgeState(rig.log.table?.state ?? {}, TABLE)?.board;
+		if (!second) throw new Error("missing board");
+		expect(
+			await rig.host.localCommand(
+				"E",
+				commandId(809),
+				actionPayload(TABLE, second, { type: "call", call: "P" }),
+			),
+		).toMatchObject({ ok: true });
+		expect(
+			parseBridgeState(rig.log.table?.state ?? {}, TABLE)?.bidHistory,
+		).toEqual([{ controller: "seat" }, { controller: "bot" }]);
+		rig.host.stop();
+	});
+
+	it("accepts the host's change and rejects a guest's change", async () => {
+		const rig = await new Rig(
+			createBridgeModule(randomBelowFrom(() => 0)),
+		).create();
+		const gen = await rig.seat(EAST, CLIENT_E, "E");
+		const payload = {
+			v: PROTOCOL_VERSION,
+			roomId: TABLE,
+			type: "bot-bidder",
+			bidder: "rl-fsp",
+		};
+		await rig.from(EAST, { k: "cmd", id: commandId(811), gen, payload });
+		expect(rig.to(EAST)).toContainEqual(
+			expect.objectContaining({ id: commandId(811), status: "rejected" }),
+		);
+		await rig.from(HOST, {
+			k: "cmd",
+			id: commandId(812),
+			gen: rig.row("N")?.gen ?? 0,
+			payload,
+		});
+		expect(rig.to(HOST)).toContainEqual(
+			expect.objectContaining({ id: commandId(812), status: "accepted" }),
+		);
+		expect(parseBridgeState(rig.log.table?.state ?? {}, TABLE)).toMatchObject({
+			botBidder: "rl-fsp",
+		});
+		expect(await rig.host.setBotSeat("N", true)).toBe(true);
+		expect(
+			await rig.host.localCommand("N", commandId(813), {
+				...payload,
+				bidder: "sl",
+			}),
+		).toMatchObject({ ok: false });
+		expect(parseBridgeState(rig.log.table?.state ?? {}, TABLE)?.botBidder).toBe(
+			"rl-fsp",
+		);
+		rig.host.stop();
+	});
+
+	it("rejects a previous-version client without changing the stored game", async () => {
+		const rig = await new Rig(
+			createBridgeModule(randomBelowFrom(() => 0)),
+		).create();
+		const before = rig.log.table?.state;
+		rig.host.join(EAST);
+		await rig.from(EAST, { k: "hello", b: "p2p-v1", client: CLIENT_E });
+		expect(rig.to(EAST)).toContainEqual(
+			expect.objectContaining({ k: "welcome", status: "incompatible" }),
+		);
+		expect(rig.log.table?.state).toEqual(before);
+		rig.host.stop();
+	});
+
+	it("upgrades an older saved game without changing its board or inventing bid origins", async () => {
+		const module = createBridgeModule(randomBelowFrom(() => 0));
+		const initial = module.initialState(TABLE, CONFIG);
+		const { botBidder: _bidder, ...old } = initial;
+		const board = bidding(createBoard(1, DEAL), "1C P");
+		const rig = await new Rig(module).create(CONFIG, { ...old, board });
+		const payload = {
+			v: PROTOCOL_VERSION,
+			roomId: TABLE,
+			type: "bot-bidder",
+			bidder: "sl",
+		};
+		await rig.from(HOST, {
+			k: "cmd",
+			id: commandId(814),
+			gen: rig.row("N")?.gen ?? 0,
+			payload,
+		});
+		expect(rig.to(HOST)).toContainEqual(
+			expect.objectContaining({ id: commandId(814), status: "accepted" }),
+		);
+		expect(parseBridgeState(rig.log.table?.state ?? {}, TABLE)).toMatchObject({
+			board,
+			botBidder: "sl",
+			bidHistory: [null, null],
+		});
+		rig.host.stop();
+		rig.start();
+		expect(parseBridgeState(rig.log.table?.state ?? {}, TABLE)).toMatchObject({
+			board,
+			botBidder: "sl",
+			bidHistory: [null, null],
+		});
+		rig.host.stop();
+	});
+});
 
 describe("community admission", () => {
 	it("admits a replacement only for the one host-opened vacancy and lets a returning holder win the race", async () => {
