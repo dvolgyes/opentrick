@@ -557,6 +557,39 @@ describe("convention hint", () => {
 		confirm(root)?.querySelector(".convention-hint")?.textContent;
 
 	it.each(["desktop", "compact"] as const)(
+		"uses corrected HCP for both hand points and the bidding guide by default (%s)",
+		(form) => {
+			// This 4-3-3-3 hand is 15 HCP, but 14 corrected HCP: the guide opens 1♣ instead of 1NT.
+			const cards: readonly Card[] = [
+				"SA",
+				"SQ",
+				"S4",
+				"HK",
+				"HJ",
+				"H5",
+				"DQ",
+				"D8",
+				"D6",
+				"CK",
+				"C7",
+				"C3",
+				"C2",
+			];
+			const view = bidView([], cards);
+			const { root, section } = renderView(
+				{ ...view, bids: [...view.bids, { call: "1NT", text: "1NT" }] },
+				form,
+			);
+			expect(root.querySelector(".hcp-pill")?.textContent).toBe(
+				"corrected HCP: 14 (15 -1)",
+			);
+			pickBid(root, "1", "NT");
+			expect(hint(root)).toBe("(Convention: 1♣)");
+			section.dispose();
+		},
+	);
+
+	it.each(["desktop", "compact"] as const)(
 		"explains a doubleton transfer acceptance and the doubled-transfer exception (%s)",
 		(form) => {
 			const cards: readonly Card[] = [

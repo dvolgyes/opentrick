@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BOT_SYSTEM } from "../../src/game/bridge";
 import { DEFAULT_BOT_SETUP } from "../../src/protocol";
 import { discardLegacyBotSettings } from "../../src/ui/legacy-bot-settings";
 import {
@@ -91,7 +92,7 @@ describe("player settings", () => {
 			botCardDelayMs: 1000,
 			botBidDelayMs: 3000,
 			auctionPauseMs: 5000,
-			pointSystem: "hcp",
+			pointSystem: "hcp-corrected",
 			cardPoints: true,
 			theme: "selenized",
 			scheme: "light",
@@ -127,6 +128,13 @@ describe("player settings", () => {
 			portraitMobile: true,
 		});
 		expect(readSettings(undefined)).toEqual(DEFAULT_SETTINGS);
+	});
+
+	it("defaults the player to the bot's corrected HCP system, and preserves a saved choice", () => {
+		const storage = memoryStorage();
+		expect(readSettings(storage).pointSystem).toBe(BOT_SYSTEM);
+		storage.setItem("opentrick.settings.points", "hcp");
+		expect(readSettings(storage).pointSystem).toBe("hcp");
 	});
 
 	it("keeps a previously saved three-second auction pause", () => {
@@ -362,7 +370,7 @@ describe("player settings", () => {
 		const storage = memoryStorage();
 		storage.setItem("opentrick.settings.points", "none");
 		expect(readSettings(storage)).toMatchObject({
-			pointSystem: "hcp",
+			pointSystem: "hcp-corrected",
 			cardPoints: false,
 		});
 		storage.setItem("opentrick.settings.card-points", "1");

@@ -120,7 +120,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	...DEFAULT_BOT_TIMING,
 	bidder: DEFAULT_BOT_SETUP.bidder,
 	playTimeMs: DEFAULT_PLAY_TIME_MS,
-	pointSystem: "hcp",
+	pointSystem: "hcp-corrected",
 	cardPoints: true,
 	theme: "selenized",
 	scheme: "light",
