@@ -31,6 +31,12 @@ export type Shape =
 	| { readonly kind: "artificial" }
 	/** `min` or more cards in `suit`. */
 	| { readonly kind: "cards"; readonly suit: Suit; readonly min: number }
+	/** Stayman 2S: four or more spades and fewer than four hearts. */
+	| {
+			readonly kind: "spades-no-hearts";
+			readonly suit: "S";
+			readonly min: number;
+	  }
 	/** `min` or more cards in partner's `suit`. */
 	| { readonly kind: "support"; readonly suit: Suit; readonly min: number }
 	/** A pass over a doubled transfer denies three-card support in the requested major. */
@@ -1279,7 +1285,11 @@ function staymanAnswerMeaning(call: Call): CallMeaning | undefined {
 	// "Opener answers [2D] without a four-card major, otherwise [2H] or [2S]."
 	if (call === "2D")
 		return { shape: { kind: "no-major", min: SHAPES.stayman } };
-	if (call === "2H" || call === "2S")
+	if (call === "2S")
+		return {
+			shape: { kind: "spades-no-hearts", suit: "S", min: SHAPES.stayman },
+		};
+	if (call === "2H")
 		return {
 			shape: { kind: "cards", suit: call[1] as Suit, min: SHAPES.stayman },
 		};
@@ -1677,6 +1687,8 @@ function fitsShape(hand: Hand, shape: Shape): boolean {
 				: lengths[shape.suit] > lengths[shape.other];
 		case "short-suit":
 			return lengths[shape.suit] <= shape.max;
+		case "spades-no-hearts":
+			return lengths.S >= shape.min && lengths.H < SHAPES.stayman;
 		case "cards":
 		case "support":
 		case "transfer":

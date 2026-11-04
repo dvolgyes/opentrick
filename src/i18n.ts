@@ -1,3 +1,4 @@
+import { biddingCatalogs } from "./i18n-bidding";
 import { communityCatalogs } from "./i18n-community";
 import { gameplayCatalogs } from "./i18n-gameplay";
 import { openingCatalogs } from "./i18n-opening";
@@ -2271,6 +2272,7 @@ const catalogs = Object.fromEntries(
 			...communityCatalogs[locale as Exclude<Locale, "en">],
 			...openingCatalogs[locale as Exclude<Locale, "en">],
 			...gameplayCatalogs[locale as Exclude<Locale, "en">],
+			...biddingCatalogs[locale as Exclude<Locale, "en">],
 		},
 	]),
 ) as Readonly<Record<Exclude<Locale, "en">, Catalog>>;

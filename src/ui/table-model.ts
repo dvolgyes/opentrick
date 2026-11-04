@@ -1,4 +1,8 @@
 import {
+	type AuctionReference,
+	auctionReference,
+} from "../bridge/auction-reference";
+import {
 	type Card,
 	rankOf,
 	SUIT_SYMBOLS,
@@ -816,6 +820,8 @@ function shapeText(shape: Shape, system: PointSystem, t: Translate): string {
 			return t("artificial and forcing");
 		case "cards":
 			return `${shape.min}+ ${SUIT_SYMBOLS[shape.suit]}`;
+		case "spades-no-hearts":
+			return t("{min}+ ♠, fewer than {min} ♥", { min: shape.min });
 		case "support":
 			return t("{min}+ {suit} support", {
 				min: shape.min,
@@ -1049,6 +1055,128 @@ export function meaningText(
 		.join(", ");
 }
 
+/** A common treatment, distinguished from a rule in the player's declared guide. */
+function referenceText(reference: AuctionReference, t: Translate): string {
+	switch (reference.kind) {
+		case "second-suit":
+			return reference.reverse
+				? t(
+						"Reverse: extra strength, usually 5+ cards in the first suit and 4+ {suit}; forcing.",
+						{ suit: SUIT_SYMBOLS[reference.suit] },
+					)
+				: t("A natural second suit, usually 4+ {suit}.", {
+						suit: SUIT_SYMBOLS[reference.suit],
+					});
+		case "game-raise":
+			return t(
+				"Raises partner's {suit} to game, showing support and strength.",
+				{ suit: SUIT_SYMBOLS[reference.suit] },
+			);
+		case "opener-notrump":
+			return t(
+				"A natural notrump rebid, usually balanced; strength depends on the agreement.",
+			);
+		case "opener-repeat":
+			return t(
+				"Rebids {suit}, often with six cards; five are possible after a two-level response.",
+				{ suit: SUIT_SYMBOLS[reference.suit] },
+			);
+		case "opener-support":
+			return t(
+				"Raises {suit}, commonly with at least three-card support; strength depends on the agreement.",
+				{ suit: SUIT_SYMBOLS[reference.suit] },
+			);
+		case "preference":
+			return t("Preference for opener's {suit}; this need not promise a fit.", {
+				suit: SUIT_SYMBOLS[reference.suit],
+			});
+		case "fourth-suit":
+			return t(
+				"Fourth suit: often artificial and forcing, without promising {suit} length.",
+				{ suit: SUIT_SYMBOLS[reference.suit] },
+			);
+		case "major-preference":
+			return t(
+				"Usually 5+ {other} and 4+ {suit}; asks partner to choose a major.",
+				{
+					suit: SUIT_SYMBOLS[reference.suit],
+					other: SUIT_SYMBOLS[reference.other],
+				},
+			);
+		case "game-try":
+			return t("Game try in {suit}; asks partner for help in that suit.", {
+				suit: SUIT_SYMBOLS[reference.suit],
+			});
+		case "two-over-one-invite":
+			return t("An invitational {suit} rebid after a two-level response.", {
+				suit: SUIT_SYMBOLS[reference.suit],
+			});
+		case "forcing-raise":
+			return t(
+				"A game-forcing raise of opener's {suit} after a two-level response.",
+				{ suit: SUIT_SYMBOLS[reference.suit] },
+			);
+		case "fourth-answer": {
+			const values = { suit: SUIT_SYMBOLS[reference.suit] };
+			switch (reference.action) {
+				case "first":
+					return t(
+						"Rebids the first suit {suit} after fourth-suit forcing, suggesting extra length.",
+						values,
+					);
+				case "second":
+					return t(
+						"Rebids the second suit {suit} after fourth-suit forcing.",
+						values,
+					);
+				case "support":
+					return t(
+						"Supports responder's {suit}, usually with at least three cards.",
+						values,
+					);
+				case "notrump":
+					return t(
+						"A notrump response, usually showing a stopper in {suit}.",
+						values,
+					);
+				case "fourth":
+					return t(
+						"Raises the fourth suit {suit}, usually showing at least four cards.",
+						values,
+					);
+			}
+			const exhaustive: never = reference.action;
+			return exhaustive;
+		}
+		case "notrump":
+			return reference.strength === "minimum"
+				? t("A natural minimum notrump rebid.")
+				: reference.strength === "invite"
+					? t("A natural notrump invitation to game.")
+					: t("A natural notrump bid to game.");
+		case "rebid":
+		case "raise": {
+			const strength =
+				reference.strength === "minimum"
+					? t("minimum")
+					: reference.strength === "invite"
+						? t("invitational")
+						: t("game-going");
+			return reference.kind === "rebid"
+				? t("{strength}; usually {min}+ cards in {suit}.", {
+						strength,
+						min: reference.min,
+						suit: SUIT_SYMBOLS[reference.suit],
+					})
+				: t("{strength}; usually {min}+ cards in partner's {suit}.", {
+						strength,
+						min: reference.min,
+						suit: SUIT_SYMBOLS[reference.suit],
+					});
+		}
+	}
+}
+
 /**
  * The Confirm hint of the [4NT] ask, two lines: the slam targets, and the answers. For example "Blackwood: 33+/37+
  * HCP" and "Aces: 5♣:0/4 5♦:1 5♥:2 5♠:3".
@@ -1100,6 +1228,22 @@ function auctionView(
 				? t("No guide reference is available for this call.")
 				: undefined;
 		const found = callMeaning(system, calls, index);
+		const common = auctionReference(calls, index);
+		if (
+			common &&
+			(found === undefined ||
+				common.kind === "opener-repeat" ||
+				common.kind === "opener-support")
+		) {
+			const explanation = referenceText(common, t);
+			return reference
+				? t("Common reference: {meaning} It may not describe this bid.", {
+						meaning: explanation,
+					})
+				: t("Common treatment: {meaning} Agreements can vary.", {
+						meaning: explanation,
+					});
+		}
 		const text =
 			found === undefined
 				? t("not in the guide")

@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Card } from "../../src/bridge/cards";
+import { createBoard } from "../../src/bridge/engine";
 import type { PointSystem } from "../../src/bridge/hand-points";
 import type { Call } from "../../src/bridge/rules";
 import type { Layout } from "../../src/call/device-class";
 import { translator } from "../../src/i18n";
 import { parseGuide, renderGuide } from "../../src/ui/bidding-guide";
 import type { TableView } from "../../src/ui/table-model";
+import { bidding, DEAL } from "../unit/bridge-fixtures";
+import { tableState, view } from "../unit/table-model-fixtures";
 import {
 	card,
 	playView,
@@ -444,6 +447,27 @@ describe("call meanings in the auction", () => {
 			call.click();
 			expect(call.popoverTargetElement?.textContent).toBe(reference);
 			expect(call.popoverTargetElement?.matches(":popover-open")).toBe(true);
+			section.dispose();
+		},
+	);
+
+	it.each(["desktop", "compact"] as const)(
+		"opens a common fourth-suit explanation from a real auction (%s)",
+		(form) => {
+			const board = bidding(createBoard(1, DEAL), "1C P 1H P 1S P 2D");
+			const state = {
+				...tableState(board),
+				systems: { N: "hcp", S: "hcp" },
+			} as const;
+			const model = view("N", null, { state });
+			const { root, section } = renderView(model, form);
+			const { call, meaning, open } = parts(root, 6);
+			const expected =
+				"Common treatment: Fourth suit: often artificial and forcing, without promising ♦ length. Agreements can vary.";
+			expect(call.getAttribute("aria-description")).toBe(expected);
+			call.click();
+			expect(open()).toBe(true);
+			expect(meaning.textContent).toBe(expected);
 			section.dispose();
 		},
 	);

@@ -465,7 +465,11 @@ describe("guide meaning of a call", () => {
 			},
 		],
 		["hcp", "1NT P 2C P 2D", { shape: { kind: "no-major", min: 4 } }],
-		["hcp", "1NT P 2C P 2S", { shape: { kind: "cards", suit: "S", min: 4 } }],
+		[
+			"hcp",
+			"1NT P 2C P 2S",
+			{ shape: { kind: "spades-no-hearts", suit: "S", min: 4 } },
+		],
 		["hcp", "1NT P 2D P 2H", { shape: { kind: "accept", suit: "H" } }],
 		["hcp", "1NT P 2H P 2S", { shape: { kind: "accept", suit: "S" } }],
 		[

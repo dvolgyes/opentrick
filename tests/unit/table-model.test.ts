@@ -530,6 +530,48 @@ describe("auction", () => {
 		]);
 	});
 
+	it("labels common continuations separately from the declared guide and from bot agreements", () => {
+		const board = bidding(BOARD, "1C P 1H P 1S P 2D");
+		const state = {
+			...tableState(board),
+			systems: { N: "hcp", S: "hcp" },
+		} as const;
+		const common =
+			"Fourth suit: often artificial and forcing, without promising ♦ length.";
+		expect(view("N", null, { state }).auction?.meanings[1]?.[2]).toBe(
+			`Common treatment: ${common} Agreements can vary.`,
+		);
+		const unknown = { ...state, bidHistory: board.calls.map(() => null) };
+		expect(view("N", null, { state: unknown }).auction?.meanings[1]?.[2]).toBe(
+			`Common reference: ${common} It may not describe this bid.`,
+		);
+		const unmodeled = { ...state, systems: { N: "hcp", S: "other" } } as const;
+		expect(
+			view("N", null, { state: unmodeled }).auction?.meanings[1]?.[2],
+		).toBeUndefined();
+	});
+
+	it("does not present a narrow two-over-one rebid range as a known agreement", () => {
+		const board = bidding(BOARD, "1S P 2C P 3C");
+		const state = {
+			...tableState(board),
+			systems: { N: "hcp", S: "hcp" },
+		} as const;
+		expect(view("N", null, { state }).auction?.meanings[1]?.[0]).toBe(
+			"Common treatment: Raises ♣, commonly with at least three-card support; strength depends on the agreement. Agreements can vary.",
+		);
+		const repeated = bidding(BOARD, "1H P 2D P 2H");
+		const repeatedState = {
+			...tableState(repeated),
+			systems: { N: "hcp", S: "hcp" },
+		} as const;
+		expect(
+			view("N", null, { state: repeatedState }).auction?.meanings[1]?.[0],
+		).toBe(
+			"Common treatment: Rebids ♥, often with six cards; five are possible after a two-level response. Agreements can vary.",
+		);
+	});
+
 	it.each([
 		["1C 1H X", "6+ HCP, negative double, exactly 4 ♠"],
 		["1C 1D X", "6+ HCP, negative double, exactly 4 ♠ and ♥"],

@@ -41,6 +41,9 @@ The selection is retained in room links as `r`.
 Earlier links are no longer read.
 
 Recommendations use explicit convention rules, independently of the selected bot.
+The bidding history also offers labeled common treatments for some natural suit-auction continuations that the guide does not define.
+Those references do not change bidding recommendations or become constraints for the card sampler.
+See [Bidding history evidence](bidding-history.md) for the examples, agreements, and limits.
 New display settings default to corrected HCP; saved point-scale preferences remain available.
 Jacoby transfers are part of SAYC: after an uncontested 1NT–2♦, opener accepts with 2♥ even with a doubleton.
 If an opponent doubles the transfer, opener passes with two hearts and bids 2♥ with at least three.
