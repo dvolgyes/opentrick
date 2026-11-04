@@ -1656,20 +1656,28 @@ main:has(> .room) {
 	transform: translateY(-25%);
 }
 
-.hand-row .card:enabled:hover .face {
-	transform: translateY(-25%);
-}
-
 /* A side card shows only its strip, so it does not lift: the border marks it as playable. */
-.hand-stack .card:enabled:focus-visible .face,
-.hand-stack .card:enabled:hover .face {
+.hand-stack .card:enabled:focus-visible .face {
 	transform: none;
 }
 
 /* The dummy hand is at the top: its playable cards move down into the table instead. */
-.seat.pos-top .hand-row .card:focus-visible .face,
-.seat.pos-top .hand-row .card:enabled:hover .face {
+.seat.pos-top .hand-row .card:focus-visible .face {
 	transform: translateY(25%);
+}
+
+@media (hover: hover) {
+	.hand-row .card:enabled:hover .face {
+		transform: translateY(-25%);
+	}
+
+	.hand-stack .card:enabled:hover .face {
+		transform: none;
+	}
+
+	.seat.pos-top .hand-row .card:enabled:hover .face {
+		transform: translateY(25%);
+	}
 }
 
 /* Video tiles: reserved while video is off. */

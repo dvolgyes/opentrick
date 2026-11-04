@@ -1349,21 +1349,18 @@ export function tableSection(
 		const node = button(
 			"",
 			() => {
-				const last = collectingTrick?.cards.at(-1);
-				const owner = incomingView?.seats.find(
-					(seat) => seat.seat === last?.seat,
-				);
-				const actor = owner?.tags.includes("Dummy")
-					? incomingView?.seats.find((seat) => seat.tags.includes("Declarer"))
-					: owner;
-				const canLead =
-					incomingView?.phase === "play" &&
-					incomingView.yourTurn &&
-					actor?.bot &&
-					last !== undefined &&
-					(flights.has(last.seat) || collectionOverlay !== undefined);
-				if (!collectingTrick || canLead)
-					handlers.act({ type: "play", card: card.card });
+				if (
+					collectingTrick &&
+					(incomingView?.phase !== "play" || !incomingView.yourTurn)
+				)
+					return;
+				if (collectingTrick || flights.size > 0 || queuedFlights.length > 0) {
+					clearFlights();
+					deferredFlights.length = 0;
+					if (collectingTrick) finishCollection();
+					else if (incomingView) render(incomingView);
+				}
+				handlers.act({ type: "play", card: card.card });
 			},
 			{
 				className: suitStart ? "card suit-start" : "card",

@@ -1392,6 +1392,57 @@ describe("card flight", () => {
 		section.dispose();
 	});
 
+	it.each(FLIGHT_LAYOUTS)(
+		"lands an earlier flight when the player plays (%s)",
+		(layout) => {
+			vi.useFakeTimers();
+			const base = { ...playView(), trick: undefined };
+			const { root, section, handlers } = renderView(base, layout);
+			const first = {
+				seat: "E" as const,
+				position: "left" as const,
+				card: "S2" as const,
+				text: "♠2",
+				rank: "2",
+				symbol: "♠",
+			};
+			section.render({
+				...base,
+				at: base.at + 1,
+				trick: { finished: false, cards: [first] },
+			});
+			expect(document.querySelector(".card-flight")).not.toBeNull();
+			root
+				.querySelector<HTMLButtonElement>(
+					'[data-testid="hand-N"] [data-card="SA"]',
+				)
+				?.click();
+			expect(handlers.act).toHaveBeenCalledWith({ type: "play", card: "SA" });
+			expect(document.querySelector(".card-flight")).toBeNull();
+			expect(
+				root.querySelector<HTMLElement>('.trick .played[data-seat="E"]')?.style
+					.visibility,
+			).not.toBe("hidden");
+			const played = {
+				...first,
+				seat: "N" as const,
+				position: "bottom" as const,
+				card: "SA" as const,
+				text: "♠A",
+				rank: "A",
+			};
+			section.render({
+				...base,
+				at: base.at + 2,
+				trick: { finished: false, cards: [first, played] },
+			});
+			expect(
+				document.querySelector('.card-flight .played[data-seat="N"]'),
+			).not.toBeNull();
+			section.dispose();
+		},
+	);
+
 	it.each(FLIGHT_LAYOUTS)("flights before collection (%s)", (layout) => {
 		vi.useFakeTimers();
 		const base = {
@@ -2991,9 +3042,9 @@ describe("finished trick", () => {
 		},
 	);
 
-	it("keeps the next trick out of the collection and rejects clicks until it finishes", () => {
+	it.each(FLIGHT_LAYOUTS)("accepts a play during collection (%s)", (layout) => {
 		vi.useFakeTimers();
-		const { root, section, handlers } = renderView(playView(), "desktop");
+		const { root, section, handlers } = renderView(playView(), layout);
 		const finished = finishedView();
 		section.render(finished);
 		const next = playView();
@@ -3002,10 +3053,15 @@ describe("finished trick", () => {
 			document.querySelectorAll(".trick-collection-overlay .played"),
 		).toHaveLength(4);
 		expect(root.querySelectorAll(".trick .played")).toHaveLength(0);
-		root.querySelector<HTMLButtonElement>('.card[data-card="SA"]')?.click();
-		expect(handlers.act).not.toHaveBeenCalled();
-		vi.advanceTimersByTime(1200);
+		root
+			.querySelector<HTMLButtonElement>(
+				'[data-testid="hand-N"] .card[data-card="SA"]',
+			)
+			?.click();
+		expect(handlers.act).toHaveBeenCalledWith({ type: "play", card: "SA" });
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
 		expect(root.querySelectorAll(".trick .played")).toHaveLength(1);
+		section.dispose();
 	});
 
 	it("shows a static winner frame then fades with reduced motion", () => {

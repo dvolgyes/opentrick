@@ -100,6 +100,29 @@ const display = {
 };
 
 describe("controls during room refresh", () => {
+	it("keeps a playable phone card under the finger on touch devices", async () => {
+		await viewport("compact");
+		await cdp().send("Emulation.setTouchEmulationEnabled", {
+			enabled: true,
+			maxTouchPoints: 1,
+		});
+		try {
+			const { handlers } = renderView(playView(), "compact");
+			const target = required("[data-testid='hand-N'] [data-card='SA']");
+			await tapThroughUpdate(target, () => {});
+			expect(handlers.act).toHaveBeenCalledOnce();
+			expect(
+				getComputedStyle(
+					required("[data-testid='hand-N'] [data-card='SA'] .face"),
+				).transform,
+			).toBe("none");
+		} finally {
+			await cdp().send("Emulation.setTouchEmulationEnabled", {
+				enabled: false,
+			});
+		}
+	});
+
 	it("plays a card from a phone touch through a table update", async () => {
 		await viewport("compact");
 		const view = playView();
