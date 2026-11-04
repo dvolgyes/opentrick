@@ -56,6 +56,9 @@ export class HostBotRunner {
 	#stopped = false;
 	#paused = false;
 	#playBlocked = false;
+	#preparedPlay:
+		| { key: string; action: Extract<Action, { type: "play" }>; seat: Seat }
+		| undefined;
 	readonly #seatOverrides = new Map<Seat, boolean>();
 
 	constructor(
@@ -93,6 +96,7 @@ export class HostBotRunner {
 	stop(): void {
 		if (this.#stopped) return;
 		this.#stopped = true;
+		this.#preparedPlay = undefined;
 		this.#requestAbort.abort();
 		this.#playEngine.stop();
 		this.#bidEngine.stop();
@@ -101,6 +105,7 @@ export class HostBotRunner {
 
 	pause(): void {
 		this.#paused = true;
+		this.#preparedPlay = undefined;
 		this.#requestAbort.abort();
 	}
 
@@ -121,6 +126,7 @@ export class HostBotRunner {
 				(key) => timing[key] !== this.#settings[key],
 			)
 		) {
+			this.#preparedPlay = undefined;
 			this.#requestAbort.abort();
 			this.#requestAbort = new AbortController();
 		}
@@ -133,20 +139,18 @@ export class HostBotRunner {
 	setSeatEnabled(seat: Seat, enabled: boolean): void {
 		this.#seatOverrides.set(seat, enabled);
 		if (!enabled) {
+			this.#preparedPlay = undefined;
 			this.#requestAbort.abort();
 			this.#requestAbort = new AbortController();
 		}
 		this.#schedule();
 	}
 
-	/** Hold bot card plays while the local table presents a preceding card or trick. */
+	/** Hold delivery, but allow the bot to prepare a card while the table presents the previous play. */
 	setPlayBlocked(blocked: boolean): void {
 		if (blocked === this.#playBlocked) return;
 		this.#playBlocked = blocked;
-		if (blocked) {
-			this.#requestAbort.abort();
-			this.#requestAbort = new AbortController();
-		} else this.#schedule();
+		if (!blocked) this.#schedule();
 	}
 
 	#activeSeats(seats: readonly Seat[]): Seat[] {
@@ -160,14 +164,47 @@ export class HostBotRunner {
 
 	#schedule(): void {
 		if (this.#stopped) return;
-		const board = this.#currentState()?.board;
+		const state = this.#currentState();
+		const board = state?.board;
 		const position = board ? actionPositionKey(board) : undefined;
 		if (position !== this.#position) {
 			// Undo and reset can revisit an earlier position. Deduplicate only until the board moves.
 			this.#position = position;
 			this.#processed.clear();
+			this.#preparedPlay = undefined;
 			this.#requestAbort.abort();
 			this.#requestAbort = new AbortController();
+		}
+		if (requestWaiting(state) && this.#running) {
+			// A vote takes priority over a speculative card search at the same board position.
+			this.#requestAbort.abort();
+			this.#requestAbort = new AbortController();
+		}
+		const prepared = this.#preparedPlay;
+		if (prepared) {
+			const view = this.#controller.view();
+			const bots =
+				view.roster?.bots ??
+				(view.table ? configuredBotSeats(view.table.config) : []);
+			const seats = this.#activeSeats(bots);
+			if (
+				!view.hosting ||
+				!view.ready ||
+				!board ||
+				Boolean(state?.claimResult) ||
+				requestWaiting(state) ||
+				!seats.includes(prepared.seat) ||
+				!tableLegalActions(
+					board,
+					prepared.seat,
+					seats,
+					view.roster?.autoplaySeats,
+				).some(
+					(action) =>
+						action.type === "play" && action.card === prepared.action.card,
+				)
+			)
+				this.#preparedPlay = undefined;
 		}
 		if (this.#paused) return;
 		if (this.#running) {
@@ -261,15 +298,25 @@ export class HostBotRunner {
 			);
 			if (actions.length === 0) continue;
 			const kind = actions[0]?.type;
-			if (!kind || (kind === "play" && this.#playBlocked)) return;
+			if (!kind) return;
 			const key = `${state.board.number}:${actionPositionKey(state.board)}:${seat}`;
 			if (this.#processed.has(key)) continue;
+			const prepared =
+				kind === "play" && this.#preparedPlay?.key === key
+					? this.#preparedPlay
+					: undefined;
+			if (prepared && this.#playBlocked) return;
+			if (prepared) this.#preparedPlay = undefined;
 			this.#processed.add(key);
 			const startedAt = performance.now();
 			const signal = this.#requestAbort.signal;
 			let decision: Action;
 			try {
-				if (kind === "play") {
+				if (prepared) {
+					decision = prepared.action;
+					// The presentation gate can open during a table render; finish that render before sending.
+					await Promise.resolve();
+				} else if (kind === "play") {
 					const analysis = await this.#playEngine.choose(
 						playPosition(state.board, seat, systems),
 						signal,
@@ -284,11 +331,12 @@ export class HostBotRunner {
 					);
 					decision = { type: "call", call: analysis.call };
 				}
-				await waitForMinimum(
-					startedAt,
-					minimumActionMs(state.board, kind, this.#settings),
-					signal,
-				);
+				if (!prepared)
+					await waitForMinimum(
+						startedAt,
+						minimumActionMs(state.board, kind, this.#settings),
+						signal,
+					);
 			} catch (error) {
 				this.#processed.delete(key);
 				throw error;
@@ -312,9 +360,12 @@ export class HostBotRunner {
 				: undefined;
 			if (
 				!currentState?.board ||
+				currentState.claimResult ||
 				actionPositionKey(currentState.board) !== actionPositionKey(state.board)
-			)
+			) {
+				this.#processed.delete(key);
 				return;
+			}
 			if (
 				tableLegalActions(
 					currentState.board,
@@ -332,6 +383,15 @@ export class HostBotRunner {
 					: item.type === "play" && item.card === decision.card,
 			);
 			if (!action) return;
+			if (
+				action.type === "play" &&
+				this.#playBlocked &&
+				!requestWaiting(currentState)
+			) {
+				this.#preparedPlay = { key, action, seat };
+				this.#processed.delete(key);
+				return;
+			}
 			// A player can ask for an undo, a claim or a reset while the bot waits for its model, and the host then
 			// refuses the bot's action. The bot answers that request first and then chooses again at this position.
 			const held =

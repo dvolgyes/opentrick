@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BidChooser } from "../../src/bot/browser-bidder";
 import type { PlayChooser } from "../../src/bot/browser-play";
+import { BotRequestAbortedError } from "../../src/bot/errors";
 import { HostBotRunner } from "../../src/bot/host-runner";
 import type { PlayAnalysis } from "../../src/bot/play-engine";
 import type { Card } from "../../src/bridge/cards";
@@ -476,23 +477,22 @@ describe("bot pacing", () => {
 		return { ...liveHost(state, { choose, stop: () => {} }), choose };
 	}
 
-	it("waits for the card presentation before starting the next bot play", async () => {
+	it("prepares the next bot play during presentation and sends it when presentation ends", async () => {
 		const host = cardHost();
 		host.runner.setPlayBlocked(true);
 		await host.runner.start();
 		await vi.advanceTimersByTimeAsync(5000);
-		expect(host.choose).not.toHaveBeenCalled();
-		expect(host.state()?.board?.cards).toHaveLength(2);
-		host.runner.setPlayBlocked(false);
-		await vi.advanceTimersByTimeAsync(999);
 		expect(host.choose).toHaveBeenCalledTimes(1);
 		expect(host.state()?.board?.cards).toHaveLength(2);
-		await vi.advanceTimersByTimeAsync(1);
+		host.runner.setPlayBlocked(false);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(host.choose).toHaveBeenCalledTimes(1);
 		expect(host.state()?.board?.cards).toHaveLength(3);
 		host.runner.stop();
 	});
 
-	it("cancels an in-progress bot choice when card presentation becomes blocked", async () => {
+	it("continues an in-progress bot choice when presentation becomes blocked", async () => {
 		const host = cardHost(2, 2000);
 		await host.runner.start();
 		await vi.advanceTimersByTimeAsync(500);
@@ -502,9 +502,108 @@ describe("bot pacing", () => {
 		expect(host.state()?.board?.cards).toHaveLength(2);
 		host.runner.setPlayBlocked(false);
 		await vi.advanceTimersByTimeAsync(2000);
-		expect(host.choose).toHaveBeenCalledTimes(2);
+		expect(host.choose).toHaveBeenCalledTimes(1);
 		expect(host.state()?.board?.cards).toHaveLength(3);
 		expect(host.onError).not.toHaveBeenCalled();
+		host.runner.stop();
+	});
+
+	it("discards a prepared play when the bots are paused", async () => {
+		const host = cardHost();
+		host.runner.setPlayBlocked(true);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(host.choose).toHaveBeenCalledTimes(1);
+		host.runner.pause();
+		host.runner.setPlayBlocked(false);
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		host.runner.resume();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(host.choose).toHaveBeenCalledTimes(2);
+		expect(host.state()?.board?.cards).toHaveLength(3);
+		host.runner.stop();
+	});
+
+	it("answers a claim and discards a prepared card while presentation is blocked", async () => {
+		const host = cardHost(0);
+		host.runner.setPlayBlocked(true);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(host.choose).toHaveBeenCalledTimes(1);
+		expect(host.deliver("N", claimRequestPayload(ROOM_ID, 1, 13)).ok).toBe(
+			true,
+		);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(host.state()?.claimResult).toMatchObject({
+			requester: "N",
+			tricks: 13,
+		});
+		host.runner.setPlayBlocked(false);
+		await vi.advanceTimersByTimeAsync(6000);
+		expect(host.state()?.board?.cards).toHaveLength(0);
+		expect(host.onError).not.toHaveBeenCalled();
+		host.runner.stop();
+	});
+
+	it("answers a claim promptly while preparing a card during presentation", async () => {
+		const choose = vi.fn<PlayChooser["choose"]>(
+			(_position, signal) =>
+				new Promise((_resolve, reject) => {
+					signal.addEventListener(
+						"abort",
+						() => reject(new BotRequestAbortedError()),
+						{ once: true },
+					);
+				}),
+		);
+		const host = liveHost(tableState(OPENING), { choose, stop: () => {} });
+		host.runner.setPlayBlocked(true);
+		await host.runner.start();
+		expect(choose).toHaveBeenCalledOnce();
+		expect(host.deliver("N", claimRequestPayload(ROOM_ID, 1, 13)).ok).toBe(
+			true,
+		);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(host.state()?.claimResult).toMatchObject({
+			requester: "N",
+			tricks: 13,
+		});
+		expect(host.state()?.board?.cards).toHaveLength(0);
+		expect(host.onError).not.toHaveBeenCalled();
+		host.runner.stop();
+	});
+
+	it("prepares a new card after settings change during presentation", async () => {
+		const host = cardHost();
+		host.runner.setPlayBlocked(true);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(1000);
+		host.runner.updateSettings({ ...SETTINGS, playTimeMs: 7000 });
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(host.choose).toHaveBeenCalledTimes(2);
+		expect(host.choose.mock.calls[1]?.[2]).toBe(7000);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		host.runner.setPlayBlocked(false);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(host.state()?.board?.cards).toHaveLength(3);
+		host.runner.stop();
+	});
+
+	it("discards a prepared card when the bot loses control of its seat", async () => {
+		const host = cardHost();
+		host.runner.setPlayBlocked(true);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(host.choose).toHaveBeenCalledTimes(1);
+		host.setControl([]);
+		host.runner.setPlayBlocked(false);
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(host.state()?.board?.cards).toHaveLength(2);
+		host.setControl(["E", "W"]);
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(host.choose).toHaveBeenCalledTimes(2);
+		expect(host.state()?.board?.cards).toHaveLength(3);
 		host.runner.stop();
 	});
 

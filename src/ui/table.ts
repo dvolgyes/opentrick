@@ -3738,7 +3738,10 @@ export function tableSection(
 			view = finalTrickView(lastPlayView, collectingTrick);
 		else if (view.phase === "play") lastPlayView = view;
 		latestView = view;
-		const flyingSeat = flights.keys().next().value ?? pendingFlight?.seat;
+		const flyingSeat =
+			flights.keys().next().value ??
+			pendingFlight?.seat ??
+			collectingTrick?.cards.at(-1)?.seat;
 		const nextSeat = view.seats.find((seat) => seat.turn);
 		const nextActor = nextSeat?.tags.includes("Dummy")
 			? view.seats.find((seat) => seat.tags.includes("Declarer"))

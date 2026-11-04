@@ -2641,6 +2641,36 @@ describe("finished trick", () => {
 
 	afterEach(() => vi.useRealTimers());
 
+	it.each(FLIGHT_LAYOUTS)(
+		"keeps the previous seat marked during collection before a bot turn (%s)",
+		(layout) => {
+			vi.useFakeTimers();
+			const base = playView();
+			const seats = base.seats.map((seat) => ({
+				...seat,
+				bot: seat.seat === "E",
+				turn: seat.seat === "E",
+			}));
+			const { root, section } = renderView(
+				{ ...base, yourTurn: false, seats },
+				layout,
+			);
+			section.render({ ...finishedView(), yourTurn: false, seats });
+			expect(section.collecting()).toBe(true);
+			expect(
+				root.querySelector('[data-testid="hand-N"]')?.getAttribute("data-turn"),
+			).toBe("true");
+			const next = () =>
+				layout === "compact"
+					? root.querySelector(".mobile-board-left .mobile-board-name")
+					: root.querySelector('[data-testid="hand-E"]');
+			expect(next()?.getAttribute("data-turn")).toBe("false");
+			vi.advanceTimersByTime(1200);
+			expect(next()?.getAttribute("data-turn")).toBe("true");
+			section.dispose();
+		},
+	);
+
 	it("keeps play order during the winner pause and collection", () => {
 		vi.useFakeTimers();
 		const { section } = renderView(playView(), "desktop");
