@@ -51,6 +51,10 @@ Clearing site data removes locally saved recovery information.
 
 Each seated browser receives the full bridge state, so the game is not cheat-resistant.
 
+## Star history
+
+[![Star History Chart](https://api.star-history.com/svg?repos=dvolgyes/opentrick&type=Date)](https://star-history.com/#dvolgyes/opentrick&Date)
+
 ## License
 
 OpenTrick is all rights reserved, with free access to the hosted game.
