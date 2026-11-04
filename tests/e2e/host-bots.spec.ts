@@ -428,6 +428,9 @@ test("the bots accept the host's claim, so the board ends at once", async ({
 	const calls = 7;
 	const controls = page.locator(".play-controls");
 	const claim = controls.getByRole("button", { name: "Claim …" });
+	const claimReady = controls
+		.locator("button:enabled")
+		.filter({ hasText: "Claim …" });
 	const card = page
 		.locator('[data-testid="hand-W"], [data-testid="hand-E"]')
 		.locator("button.card:enabled")
@@ -458,8 +461,8 @@ test("the bots accept the host's claim, so the board ends at once", async ({
 		}
 	};
 
-	// North leads, and West plays until "Claim …" shows with five tricks left, and claims 2 of them.
-	await playUntil(claim);
+	// North leads, and West plays until "Claim …" is enabled with five tricks left, and claims 2 of them.
+	await playUntil(claimReady);
 	await expect(claim).toBeEnabled({ timeout: 30_000 });
 	await claim.click();
 	await expect(page.getByTestId("claim-confirm-dialog")).toContainText(

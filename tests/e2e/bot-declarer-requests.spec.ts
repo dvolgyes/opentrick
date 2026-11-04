@@ -153,17 +153,20 @@ for (const form of ["desktop", "mobile"] as const) {
 				timeout: CONNECT_MS,
 			});
 			const claim = page.getByRole("button", { name: "Claim …", exact: true });
+			const claimReady = page
+				.locator(".play-controls button:enabled")
+				.filter({ hasText: "Claim …" });
 			const card = page
 				.locator(
 					'[data-testid="hand-W"], [data-testid="hand-E"], .mobile-board-top',
 				)
 				.locator("button.card:enabled:visible")
 				.first();
-			while (!(await claim.isVisible())) {
-				await expect(card.or(claim).first()).toBeVisible({
+			while (!(await claimReady.isVisible())) {
+				await expect(card.or(claimReady).first()).toBeVisible({
 					timeout: CONNECT_MS,
 				});
-				if (await claim.isVisible()) break;
+				if (await claimReady.isVisible()) break;
 				const before = await table.getAttribute("data-at");
 				const clicked = await card.evaluateAll((buttons) => {
 					const button = buttons[0];
@@ -176,7 +179,7 @@ for (const form of ["desktop", "mobile"] as const) {
 					await expect
 						.poll(
 							async () =>
-								(await claim.isVisible()) ||
+								(await claimReady.isVisible()) ||
 								(await table.getAttribute("data-at")) !== before,
 						)
 						.toBe(true);

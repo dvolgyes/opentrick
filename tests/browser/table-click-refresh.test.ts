@@ -101,6 +101,24 @@ const display = {
 
 describe("controls during room refresh", () => {
 	it.each(["desktop", "compact"] as const)(
+		"keeps all gameplay actions visible when they cannot be used (%s)",
+		async (form) => {
+			await viewport(form);
+			const base = playView();
+			const view = {
+				...base,
+				claim: { ...base.claim, canRequest: false, choosable: false },
+				undo: { ...base.undo, canRequest: false },
+			};
+			renderView(view, form);
+			for (const label of ["Claim …", "Claim all", "Undo"]) {
+				const action = playButton(label) as HTMLButtonElement;
+				expect(action.checkVisibility(), label).toBe(true);
+				expect(action.disabled, label).toBe(true);
+			}
+		},
+	);
+	it.each(["desktop", "compact"] as const)(
 		"asks to confirm Claim all in an Undo-style dialog (%s)",
 		async (form) => {
 			await viewport(form);

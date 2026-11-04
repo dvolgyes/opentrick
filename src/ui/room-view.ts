@@ -989,8 +989,46 @@ export function showRoom(
 	// A phone or tablet opens its share sheet, where the person picks the app that sends the link; a computer copies it.
 	const nativeShare =
 		navigator.share !== undefined && isTouchDevice(readSignals(window));
+	const invitationCopied = el(
+		"div",
+		{
+			className: "invitation-copied",
+			attrs: { role: "status", "data-testid": "invitation-copied" },
+		},
+		deps.t("Invitation copied to clipboard. Share it with the other players."),
+	);
+	invitationCopied.hidden = true;
+	let invitationTimer: number | undefined;
+	let pendingAutoInvitation = false;
+	function showInvitationCopied(): void {
+		if (disposed) return;
+		if (invitationTimer !== undefined) window.clearTimeout(invitationTimer);
+		invitationCopied.hidden = false;
+		invitationTimer = window.setTimeout(() => {
+			invitationCopied.hidden = true;
+			invitationTimer = undefined;
+		}, 3_000);
+	}
+	function needsInvitation(): boolean {
+		if (disposed || room.dataset.layout !== "desktop") return false;
+		const view = controller.view();
+		const config = view.table?.config ?? view.lobby?.config ?? fallbackConfig;
+		if (!view.hosting || config === undefined) return false;
+		const held = heldSeats(view.table?.seats ?? view.roster?.seats ?? []);
+		return SEATS.some(
+			(other) =>
+				other !== seat &&
+				!held.has(other) &&
+				!(config.botSetup?.seats ?? []).includes(other),
+		);
+	}
+	settings.element.addEventListener("close", () => {
+		if (!pendingAutoInvitation) return;
+		pendingAutoInvitation = false;
+		if (needsInvitation()) showInvitationCopied();
+	});
 	const copyRoomLink = button(
-		deps.t("Send link to players"),
+		deps.t("Invitation URL"),
 		async () => {
 			const link = roomShareLink(
 				deps.pageUrl(),
@@ -1010,6 +1048,7 @@ export function showRoom(
 			try {
 				await navigator.clipboard.writeText(link);
 				turnAlert.beep();
+				if (room.dataset.layout === "desktop") showInvitationCopied();
 			} catch {
 				// Clipboard failure stays silent, and does not signal success.
 			}
@@ -1022,7 +1061,11 @@ export function showRoom(
 	if (autoCopy)
 		void autoCopy.then(
 			(message) => {
-				if (message === "Copied.") turnAlert.beep();
+				if (message !== "Copied." || disposed) return;
+				turnAlert.beep();
+				if (!needsInvitation()) return;
+				if (settings.element.open) pendingAutoInvitation = true;
+				else showInvitationCopied();
 			},
 			() => undefined,
 		);
@@ -1320,6 +1363,7 @@ export function showRoom(
 	);
 	root.replaceChildren(room);
 	root.append(
+		invitationCopied,
 		settings.element,
 		hostControls,
 		players.element,
@@ -2249,6 +2293,7 @@ export function showRoom(
 
 	return () => {
 		disposed = true;
+		if (invitationTimer !== undefined) window.clearTimeout(invitationTimer);
 		if (replacementChannel) void replacementChannel.leave();
 		replacementChannel = undefined;
 		if (coverTimer !== undefined) clearInterval(coverTimer);

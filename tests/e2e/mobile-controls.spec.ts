@@ -519,12 +519,12 @@ test("on a phone the host finds each top-bar button once and changes display set
 			0,
 		);
 		await expectBotControlsInOneRow(page);
-		// During the auction the top bar holds Settings, Exit and Send link to players.
+		// During the auction the top bar holds Settings, Exit and Invite.
 		for (const [name, count] of [
 			["Reload", 0],
 			["Settings", 1],
 			["Exit", 1],
-			["Send link to players", 1],
+			["Invite", 1],
 			["Set API key", 0],
 			["Model", 0],
 			["Debug", 0],

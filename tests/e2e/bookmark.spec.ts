@@ -58,7 +58,7 @@ test("create opens the game and selects the host seat in the page URL", async ()
 		0,
 	);
 	await expect(
-		page.getByRole("button", { name: "Send link to players" }),
+		page.getByRole("button", { name: "Invitation URL" }),
 	).toBeVisible();
 	await expect(page.locator(".copy-status")).toHaveCount(0);
 	link = await page.evaluate(() => navigator.clipboard.readText());

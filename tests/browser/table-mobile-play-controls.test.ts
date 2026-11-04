@@ -793,6 +793,53 @@ describe("compact play controls", () => {
 		}
 	});
 
+	it("fits the translated Invite button in the phone top bar", async () => {
+		await page.viewport(320, 720);
+		try {
+			for (const locale of [
+				"en",
+				"de",
+				"hu",
+				"no",
+				"es",
+				"pt",
+				"fr",
+				"it",
+				"nl",
+			] as const) {
+				const { root, section } = renderView(
+					playView(),
+					"compact",
+					undefined,
+					translator(locale),
+				);
+				const bar = root.querySelector<HTMLElement>(".mobile-auction-topbar");
+				const invite = root.querySelector<HTMLButtonElement>(
+					".mobile-auction-share",
+				);
+				if (!bar || !invite)
+					throw new Error(`missing invitation button for ${locale}`);
+				const bounds = bar.getBoundingClientRect();
+				for (const button of bar.querySelectorAll<HTMLButtonElement>(
+					"button",
+				)) {
+					if (!button.checkVisibility()) continue;
+					const box = button.getBoundingClientRect();
+					expect(box.left, locale).toBeGreaterThanOrEqual(bounds.left - 1);
+					expect(box.right, locale).toBeLessThanOrEqual(bounds.right + 1);
+					expect(button.scrollWidth, locale).toBeLessThanOrEqual(
+						button.clientWidth,
+					);
+				}
+				expect(invite.textContent, locale).toBe(translator(locale)("Invite"));
+				expect(invite.querySelector(".icon"), locale).not.toBeNull();
+				section.dispose();
+			}
+		} finally {
+			await page.viewport(414, 896);
+		}
+	});
+
 	it.each(["secured", "defeated"] as const)(
 		"keeps the %s result visible with a concise remaining count",
 		(status) => {
@@ -1256,19 +1303,21 @@ describe("compact play controls", () => {
 		},
 	);
 
-	it("hides Claim … while more than five tricks remain, and keeps Claim all", () => {
+	it("shows Claim … disabled while more than five tricks remain, and keeps Claim all enabled", () => {
 		const { root } = renderMobile(playView());
 		const buttons = [...root.querySelectorAll("button")];
 		const claim = buttons.find((button) => button.textContent === "Claim …");
 		const claimAll = buttons.find(
 			(button) => button.textContent === "Claim all",
 		);
-		expect(claim?.hidden).toBe(true);
+		expect(claim?.hidden).toBe(false);
+		expect(claim?.disabled).toBe(true);
 		expect(claimAll?.hidden).toBe(false);
+		expect(claimAll?.disabled).toBe(false);
 		expect(
 			root.querySelector<HTMLButtonElement>('[data-testid="claim-compact"]')
 				?.hidden,
-		).toBe(true);
+		).toBe(false);
 	});
 
 	it("asks how many of the remaining tricks the declarer takes, with a button for each count", () => {

@@ -309,8 +309,11 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	await expect(approval).toBeHidden();
 	const controls = tab.N.locator(".play-controls");
 	const claims = tab.N.getByTestId("claim-confirm-dialog");
-	// "Claim …" waits until five tricks or fewer remain (src/ui/table-model.ts); "Claim all" is always there.
-	await expect(controls.getByRole("button", { name: "Claim …" })).toBeHidden();
+	// The count picker is shown but disabled until five tricks or fewer remain.
+	await expect(controls.getByRole("button", { name: "Claim …" })).toBeVisible();
+	await expect(
+		controls.getByRole("button", { name: "Claim …" }),
+	).toBeDisabled();
 	await controls.getByRole("button", { name: "Claim all" }).click();
 	await expect(tab.N.getByTestId("claim-confirm")).toBeVisible();
 	await expect(claims).toContainText("Claim all 13 remaining tricks?");

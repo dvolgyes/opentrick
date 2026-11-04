@@ -973,7 +973,7 @@ export function tableSection(
 		if (!controls) throw new Error("room call controls are missing");
 		return controls;
 	})();
-	// Icons keep the top bar within a 360 px phone in every language; the names stay for assistive technology.
+	// The settings and exit icons keep the top bar compact; the invitation has a visible label.
 	const mobileSettings = button("", handlers.settings, {
 		className: "icon-button mobile-auction-settings",
 		attrs: { "aria-label": t("Settings"), title: t("Settings") },
@@ -989,7 +989,7 @@ export function tableSection(
 		attrs: { role: "status", "aria-live": "polite" },
 	});
 	const mobileShare = button(
-		"",
+		t("Invite"),
 		() => {
 			void handlers.shareUrl().then(
 				() => {
@@ -1005,8 +1005,8 @@ export function tableSection(
 		{
 			className: "icon-button mobile-auction-share",
 			attrs: {
-				"aria-label": t("Send link to players"),
-				title: t("Send link to players"),
+				"aria-label": t("Invite"),
+				title: t("Invite"),
 			},
 		},
 	);
@@ -4026,13 +4026,13 @@ export function tableSection(
 		const gameOver = view.phase === "complete";
 		const playing = view.phase === "play";
 		playControls.hidden = !playing && !gameOver;
-		// "Claim …" offers a button for each count, so it waits until few tricks remain; "Claim all" stays.
-		claim.hidden = view.phase !== "play" || !view.claim.choosable;
+		// The count picker becomes available when only a few tricks remain.
+		claim.hidden = view.phase !== "play";
 		claimAll.hidden = view.phase !== "play";
-		claim.disabled = !view.claim.canRequest;
+		claim.disabled = !view.claim.canRequest || !view.claim.choosable;
 		claimAll.disabled = !view.claim.canRequest;
-		compactClaim.hidden = view.phase !== "play" || !view.claim.choosable;
-		compactClaim.disabled = !view.claim.canRequest;
+		compactClaim.hidden = view.phase !== "play";
+		compactClaim.disabled = !view.claim.canRequest || !view.claim.choosable;
 		compactClaimAll.hidden = view.phase !== "play";
 		compactClaimAll.disabled = !view.claim.canRequest;
 		seatLabels = new Map(view.seats.map((seat) => [seat.seat, seat.label]));

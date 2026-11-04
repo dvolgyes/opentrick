@@ -75,14 +75,17 @@ test("a hosting declarer with three bots can play and reach the claim buttons", 
 		await expect(own.locator("button.card:enabled").first()).toBeVisible();
 		await expect(page.getByTestId("turn-pill")).toHaveCount(0);
 
-		// With 13 tricks to play only "Claim all" shows; "Claim …" waits until five tricks or fewer remain.
+		// With 13 tricks to play, "Claim …" is visible but disabled until five tricks or fewer remain.
 		await expectReachable(
 			page,
 			page.getByRole("button", { name: "Claim all", exact: true }),
 		);
 		await expect(
 			page.getByRole("button", { name: "Claim …", exact: true }),
-		).toBeHidden();
+		).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: "Claim …", exact: true }),
+		).toBeDisabled();
 		const undo = page.getByTestId("undo-request");
 		await expectReachable(page, undo);
 		await undo.click();
