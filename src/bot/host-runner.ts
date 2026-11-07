@@ -1,4 +1,4 @@
-import type { Action } from "../bridge/engine";
+import { type Action, boardStatus } from "../bridge/engine";
 import {
 	actionPayload,
 	type BridgeState,
@@ -34,6 +34,7 @@ import {
 export interface HostBotSettings extends Partial<BotTiming> {
 	readonly bidder: LocalBidder;
 	readonly playTimeMs?: number;
+	readonly cardPlayDurationMs?: number;
 }
 
 export function configuredBotSeats(config: RoomConfig): Seat[] {
@@ -74,6 +75,7 @@ export class HostBotRunner {
 			...settings,
 			...botTiming(settings),
 			playTimeMs: playTimeMs(settings.playTimeMs),
+			cardPlayDurationMs: settings.cardPlayDurationMs ?? 0,
 		};
 		this.#onError = onError;
 		this.#playEngine = playEngine;
@@ -123,6 +125,7 @@ export class HostBotRunner {
 		if (
 			settings.bidder !== this.#settings.bidder ||
 			budget !== this.#settings.playTimeMs ||
+			settings.cardPlayDurationMs !== this.#settings.cardPlayDurationMs ||
 			(Object.keys(timing) as (keyof BotTiming)[]).some(
 				(key) => timing[key] !== this.#settings[key],
 			)
@@ -133,7 +136,13 @@ export class HostBotRunner {
 		}
 		if (settings.bidder !== this.#settings.bidder) this.#bidEngine.stop();
 		if (budget !== this.#settings.playTimeMs) this.#playEngine.stop();
-		this.#settings = { ...settings, ...timing, playTimeMs: budget };
+		this.#settings = {
+			...settings,
+			...timing,
+			playTimeMs: budget,
+			cardPlayDurationMs:
+				settings.cardPlayDurationMs ?? this.#settings.cardPlayDurationMs,
+		};
 		this.#schedule();
 	}
 
@@ -326,12 +335,32 @@ export class HostBotRunner {
 					// The presentation gate can open during a table render; finish that render before sending.
 					await Promise.resolve();
 				} else if (kind === "play") {
-					const analysis = await this.#playEngine.choose(
-						playPosition(state.board, seat, systems, state.bidHistory),
-						signal,
-						this.#settings.playTimeMs,
+					const position = playPosition(
+						state.board,
+						seat,
+						systems,
+						state.bidHistory,
 					);
-					decision = { type: "play", card: analysis.card };
+					const status = boardStatus(state.board);
+					const cardsLeft = status.turn
+						? status.remaining[status.turn].length
+						: 0;
+					if (cardsLeft === 1 && actions[0]?.type === "play") {
+						decision = actions[0];
+					} else {
+						const lateHandBudget = Math.min(
+							this.#settings.playTimeMs,
+							Math.max(2000, this.#settings.cardPlayDurationMs),
+						);
+						const budget =
+							cardsLeft <= 3 ? lateHandBudget : this.#settings.playTimeMs;
+						const analysis = await this.#playEngine.choose(
+							position,
+							signal,
+							budget,
+						);
+						decision = { type: "play", card: analysis.card };
+					}
 				} else {
 					const analysis = await this.#bidEngine.choose(
 						bidPosition(state.board, seat),

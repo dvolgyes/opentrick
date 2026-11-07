@@ -510,6 +510,7 @@ export function showCreate(
 				? {
 						bidder: botSetup.bidder,
 						playTimeMs: readSettings(deps.browser).playTimeMs,
+						cardPlayDurationMs: readSettings(deps.browser).cardPlayDurationMs,
 						...botTiming(readSettings(deps.browser)),
 					}
 				: undefined;

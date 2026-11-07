@@ -489,9 +489,7 @@ function undoApprovers(
 	if (status.contract === null || status.contract === undefined)
 		return undefined;
 	if (status.dummy === requester) return undefined;
-	return SEATS.filter(
-		(seat) => !samePartnership(seat, requester) && seat !== status.dummy,
-	);
+	return SEATS.filter((seat) => !samePartnership(seat, requester));
 }
 
 function parseUndoRequest(

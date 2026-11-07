@@ -151,6 +151,7 @@ function settingsFor(
 	return {
 		bidder: (config?.botSetup ?? DEFAULT_BOT_SETUP).bidder,
 		playTimeMs: settings?.playTimeMs,
+		cardPlayDurationMs: settings?.cardPlayDurationMs,
 		...botTiming(settings),
 	};
 }
@@ -496,6 +497,7 @@ export function showRoom(
 			botSettings = {
 				...botSettings,
 				playTimeMs: settings.playTimeMs,
+				cardPlayDurationMs: settings.cardPlayDurationMs,
 				...botTiming(settings),
 			};
 			botRunner?.updateSettings(botSettings);

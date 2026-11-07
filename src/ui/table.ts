@@ -3707,6 +3707,28 @@ export function tableSection(
 
 	function render(view: TableView): void {
 		incomingView = view;
+		const previous = latestView;
+		const playedCards =
+			view.phase === "play"
+				? (view.trick?.cards ?? [])
+				: (view.completedTrick?.cards ?? []);
+		const previousCards = previous?.trick?.finished
+			? []
+			: (previous?.trick?.cards ?? []);
+		const newPlay =
+			playedCards.length === previousCards.length + 1 &&
+			previousCards.every(
+				(card, index) =>
+					card.seat === playedCards[index]?.seat &&
+					card.card === playedCards[index]?.card,
+			);
+		const playedSeat = newPlay ? playedCards.at(-1)?.seat : undefined;
+		if (
+			playedSeat &&
+			flights.size + queuedFlights.length > 0 &&
+			view.seats.find((seat) => seat.seat === playedSeat)?.bot !== true
+		)
+			clearFlights();
 		if (
 			!(options.cardPlayAnimation?.() ?? DEFAULT_SETTINGS.cardPlayAnimation)
 		) {

@@ -1333,7 +1333,11 @@ describe("card flight", () => {
 
 	it.each(FLIGHT_LAYOUTS)("sequences card flights (%s)", (layout) => {
 		vi.useFakeTimers();
-		const base = { ...playView(), trick: undefined };
+		const base = {
+			...playView(),
+			trick: undefined,
+			seats: playView().seats.map((seat) => ({ ...seat, bot: true })),
+		};
 		const { root, section } = renderView(base, layout);
 		const first = {
 			seat: "N" as const,
@@ -1391,6 +1395,49 @@ describe("card flight", () => {
 		expect(document.querySelector(".card-flight")).toBeNull();
 		section.dispose();
 	});
+
+	it.each(FLIGHT_LAYOUTS)(
+		"finishes an earlier flight when a human play arrives (%s)",
+		(layout) => {
+			vi.useFakeTimers();
+			const base = { ...playView(), trick: undefined };
+			const first = {
+				seat: "N" as const,
+				position: "bottom" as const,
+				card: "SA" as const,
+				text: "♠A",
+				rank: "A",
+				symbol: "♠",
+			};
+			const second = {
+				seat: "E" as const,
+				position: "left" as const,
+				card: "S2" as const,
+				text: "♠2",
+				rank: "2",
+				symbol: "♠",
+			};
+			const { section } = renderView(base, layout);
+			section.render({
+				...base,
+				at: base.at + 1,
+				trick: { finished: false, cards: [first] },
+			});
+			vi.advanceTimersByTime(500);
+			section.render({
+				...base,
+				at: base.at + 2,
+				trick: { finished: false, cards: [first, second] },
+			});
+			expect(document.querySelectorAll(".card-flight")).toHaveLength(1);
+			expect(
+				document
+					.querySelector(".card-flight .played")
+					?.getAttribute("data-seat"),
+			).toBe("E");
+			section.dispose();
+		},
+	);
 
 	it.each(FLIGHT_LAYOUTS)(
 		"lands an earlier flight when the player plays (%s)",
@@ -1452,6 +1499,7 @@ describe("card flight", () => {
 				seat.seat === "S"
 					? {
 							...seat,
+							bot: true,
 							hand: {
 								...visibleHand,
 								suits: visibleHand.suits.map((suit) => ({
@@ -1460,7 +1508,7 @@ describe("card flight", () => {
 								})),
 							},
 						}
-					: seat,
+					: { ...seat, bot: true },
 			),
 		};
 		const cards = [

@@ -196,6 +196,28 @@ describe("the presence rule for game actions", () => {
 		if (!rewound) throw new Error("no rewound board");
 		expect(boardStatus(rewound).phase).toBe("auction");
 	});
+
+	it("asks a human dummy to approve an opponent's undo when declarer is a bot", () => {
+		const afterThree = playing(contract(), "S7 S2 C2");
+		const fourth = legalActions(afterThree, "N")[0];
+		if (!fourth) throw new Error("North has no legal card");
+		const result = applyAction(afterThree, "N", fourth);
+		if (!result.ok) throw new Error(result.reason);
+		const board = result.board;
+		const requested = send(
+			stateWith(board),
+			"E",
+			undoRequestPayload(ROOM_ID, board.number),
+			SEATS,
+			{ bots: ["N"] },
+		);
+		expect(requested.ok).toBe(true);
+		if (!requested.ok) return;
+		expect(parseBridgeState(requested.state, ROOM_ID)?.undo?.required).toEqual([
+			"N",
+			"S",
+		]);
+	});
 	it.each(["undo", "claim-all", "claim-two", "claim-none"] as const)(
 		"lets human dummy request %s when controlling the bot declarer",
 		(operation) => {

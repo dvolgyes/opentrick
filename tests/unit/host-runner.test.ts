@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BidChooser } from "../../src/bot/browser-bidder";
 import type { PlayChooser } from "../../src/bot/browser-play";
 import { BotRequestAbortedError } from "../../src/bot/errors";
-import { HostBotRunner } from "../../src/bot/host-runner";
+import { HostBotRunner, type HostBotSettings } from "../../src/bot/host-runner";
 import type { PlayAnalysis } from "../../src/bot/play-engine";
 import type { Card } from "../../src/bridge/cards";
 import { randomBelowFrom } from "../../src/bridge/deal";
@@ -116,6 +116,7 @@ function liveHost(
 	playEngine: PlayChooser,
 	bidEngine?: BidChooser,
 	initialBots: readonly Seat[] = ["E", "W"],
+	settings: HostBotSettings = SETTINGS,
 ) {
 	let current = state;
 	let bots = initialBots;
@@ -162,7 +163,7 @@ function liveHost(
 	return {
 		runner: new HostBotRunner(
 			controller,
-			SETTINGS,
+			settings,
 			onError,
 			playEngine,
 			bidEngine,
@@ -491,7 +492,11 @@ describe("bot pacing", () => {
 		},
 	);
 
-	function cardHost(steps = 2, calculationMs = 0) {
+	function cardHost(
+		steps = 2,
+		calculationMs = 0,
+		settings: HostBotSettings = SETTINGS,
+	) {
 		const state = tableState([
 			...OPENING,
 			...Array.from({ length: steps }, () => act()),
@@ -505,8 +510,45 @@ describe("bot pacing", () => {
 				await new Promise((resolve) => setTimeout(resolve, calculationMs));
 			return playReply(action.card);
 		});
-		return { ...liveHost(state, { choose, stop: () => {} }), choose };
+		return {
+			...liveHost(
+				state,
+				{ choose, stop: () => {} },
+				undefined,
+				steps >= 40
+					? actor === "N" || actor === "S"
+						? ["N", "S"]
+						: ["E", "W"]
+					: ["E", "W"],
+				settings,
+			),
+			choose,
+		};
 	}
+
+	it("caps late-hand search to the longer of two seconds and the card animation", async () => {
+		const host = cardHost(40, 0, {
+			...SETTINGS,
+			playTimeMs: 7000,
+			cardPlayDurationMs: 2500,
+		});
+		await host.runner.start();
+		expect(host.choose.mock.calls[0]?.[2]).toBe(2500);
+		host.runner.stop();
+	});
+
+	it("plays the last card without starting a search", async () => {
+		const host = cardHost(48, 0, {
+			...SETTINGS,
+			playTimeMs: 7000,
+			cardPlayDurationMs: 4000,
+		});
+		await host.runner.start();
+		expect(host.choose).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(host.state()?.board?.cards).toHaveLength(49);
+		host.runner.stop();
+	});
 
 	it("prepares the next bot play during presentation and sends it when presentation ends", async () => {
 		const host = cardHost();
