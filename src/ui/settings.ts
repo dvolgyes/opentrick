@@ -392,12 +392,17 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		throw new Error("unknown card texture strength");
 	if (!SHADOW_STRENGTHS.includes(settings.shadowStrength))
 		throw new Error("unknown shadow strength");
+	const cardAnimationSettingsMismatch =
+		settings.cardPlayAnimation === (settings.cardPlayDurationMs === 0);
+	const cardPlayAnimation = cardAnimationSettingsMismatch
+		? true
+		: settings.cardPlayAnimation;
+	const cardPlayDurationMs = cardAnimationSettingsMismatch
+		? 1000
+		: settings.cardPlayDurationMs;
 	storage.setItem(`${PREFIX}bidder`, settings.bidder);
 	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
-	storage.setItem(
-		`${PREFIX}card-play-duration-ms`,
-		String(settings.cardPlayDurationMs),
-	);
+	storage.setItem(`${PREFIX}card-play-duration-ms`, String(cardPlayDurationMs));
 	storage.setItem(
 		`${PREFIX}card-play-rotation-degrees`,
 		String(settings.cardPlayRotationDegrees),
@@ -426,6 +431,12 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	for (const [field, name] of Object.entries(FLAGS))
 		storage.setItem(
 			PREFIX + name,
-			settings[field as keyof typeof FLAGS] ? "1" : "0",
+			(
+				field === "cardPlayAnimation"
+					? cardPlayAnimation
+					: settings[field as keyof typeof FLAGS]
+			)
+				? "1"
+				: "0",
 		);
 }

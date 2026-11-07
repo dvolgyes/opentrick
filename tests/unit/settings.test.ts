@@ -54,12 +54,30 @@ describe("player settings", () => {
 		const settings = {
 			...DEFAULT_SETTINGS,
 			cardPlayAnimation: false,
-			cardPlayDurationMs: 3500,
+			cardPlayDurationMs: 0,
 			cardPlayRotationDegrees: 20,
 			cardPlayCenterPercent: 40,
 		};
 		writeSettings(storage, settings);
 		expect(readSettings(storage)).toMatchObject(settings);
+	});
+
+	it("repairs mismatched card animation settings when saving", () => {
+		const storage = memoryStorage();
+		for (const [cardPlayAnimation, cardPlayDurationMs] of [
+			[false, 2000],
+			[true, 0],
+		] as const) {
+			writeSettings(storage, {
+				...DEFAULT_SETTINGS,
+				cardPlayAnimation,
+				cardPlayDurationMs,
+			});
+			expect(readSettings(storage)).toMatchObject({
+				cardPlayAnimation: true,
+				cardPlayDurationMs: 1000,
+			});
+		}
 	});
 
 	it("rejects invalid played-card animation values and ignores malformed stored values", () => {
@@ -188,7 +206,7 @@ describe("player settings", () => {
 			guideButton: true,
 			botBidHint: false,
 			bidConfirmation: false,
-			cardPlayAnimation: false,
+			cardPlayAnimation: true,
 			cardPlayDurationMs: 3500,
 			cardPlayRotationDegrees: 20,
 			cardPlayCenterPercent: 40,
