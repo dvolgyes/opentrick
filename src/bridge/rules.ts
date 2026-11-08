@@ -10,7 +10,7 @@ import {
 	Trick,
 	type Types,
 } from "@bridge-tools/core";
-import type { Seat } from "../protocol";
+import { SEATS, type Seat, seatAfter } from "../protocol";
 import { type Card, rankOf, type Suit, suitOf } from "./cards";
 
 export type Strain = Suit | "NT";
@@ -75,17 +75,22 @@ const LIBRARY_VULNERABILITY: Readonly<
 	both: "VV",
 };
 
-/** Dealer and vulnerability of a board in the standard 16-board cycle. */
-export function boardSetup(number: number): {
+/** Vulnerability follows the standard 16-board cycle; the dealer rotates from the game's starting seat. */
+export function boardSetup(
+	number: number,
+	startingDealer: Seat = "N",
+): {
 	dealer: Seat;
 	vulnerability: Vulnerability;
 } {
 	if (!Number.isSafeInteger(number) || number < 1)
 		throw new Error(`board number must be a positive integer: ${number}`);
+	if (!SEATS.includes(startingDealer))
+		throw new Error(`starting dealer is not a seat: ${startingDealer}`);
 	const ns = LibraryBoard.isPlayerVulnerableOnBoard(number, "N");
 	const ew = LibraryBoard.isPlayerVulnerableOnBoard(number, "E");
 	const vulnerability = ns ? (ew ? "both" : "NS") : ew ? "EW" : "none";
-	return { dealer: LibraryBoard.calculateDealer(number), vulnerability };
+	return { dealer: seatAfter(startingDealer, number - 1), vulnerability };
 }
 
 /** Four passes, or three passes after a bid. */

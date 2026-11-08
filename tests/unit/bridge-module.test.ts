@@ -456,6 +456,72 @@ describe("claim requests", () => {
 });
 
 describe("dealing", () => {
+	it("starts the dealer cycle at the sole human seat when the room has three bots", () => {
+		for (const human of SEATS) {
+			const config = {
+				...CONFIG,
+				botSetup: {
+					bidder: "sl" as const,
+					seats: SEATS.filter((seat) => seat !== human),
+				},
+			};
+			const module = createBridgeModule(seeded(7));
+			const initial = module.initialState(ROOM_ID, config);
+			const commandContext = (seat: Seat, seq: number) => ({
+				...context(seat, seq),
+				config,
+			});
+			const dealt = module.apply(
+				initial,
+				commandContext("N", 1),
+				dealPayload(ROOM_ID, 1),
+			);
+			expect(dealt.ok).toBe(true);
+			if (!dealt.ok) continue;
+			let state = dealt.state;
+			let board = parseBridgeState(state, ROOM_ID)?.board;
+			expect(board).toMatchObject({ number: 1, dealer: human });
+			if (!board) continue;
+			expect(boardStatus(board).turn).toBe(human);
+			let seq = 1;
+			while (boardStatus(board).phase === "auction") {
+				const actor = boardStatus(board).actor;
+				if (actor === undefined) throw new Error("auction has no dealer");
+				const pass = legalActions(board, actor).find(
+					(action) => action.type === "call" && action.call === "P",
+				);
+				if (!pass) throw new Error("auction has no legal pass");
+				seq++;
+				const called = module.apply(
+					state,
+					commandContext(actor, seq),
+					actionPayload(ROOM_ID, board, pass),
+				);
+				if (!called.ok) throw new Error(called.reason);
+				state = called.state;
+				board = parseBridgeState(state, ROOM_ID)?.board;
+				if (!board) throw new Error("auction board is missing");
+			}
+			const next = module.apply(
+				state,
+				commandContext(human, seq + 1),
+				dealPayload(ROOM_ID, 2),
+			);
+			expect(next.ok).toBe(true);
+			if (!next.ok) continue;
+			const nextBoard = parseBridgeState(next.state, ROOM_ID)?.board;
+			expect(nextBoard).toMatchObject({
+				number: 2,
+				dealer: SEATS[(SEATS.indexOf(human) + 1) % SEATS.length],
+				vulnerability: "NS",
+			});
+			if (nextBoard)
+				expect(boardStatus(nextBoard).turn).toBe(
+					SEATS[(SEATS.indexOf(human) + 1) % SEATS.length],
+				);
+		}
+	});
+
 	it("deals board 1 from the module's random source, into the event and the state", () => {
 		const table = new Table(7);
 		const result = table.send("E", dealPayload(ROOM_ID, 1));

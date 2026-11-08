@@ -111,6 +111,8 @@ export type BridgeState = {
 	readonly roomId: string;
 	readonly game: "bridge";
 	readonly messages: number;
+	/** First dealer for this game's clockwise dealer sequence; omitted for the standard North start. */
+	readonly startingDealer?: Seat;
 	readonly board: Board | null;
 	readonly results: readonly BoardResult[];
 	/** An undo request blocks new game actions until it is approved, rejected, or cancelled. */
@@ -185,7 +187,15 @@ export function parseBridgeState(
 		return undefined;
 	if (!isNonNegativeInteger(state.messages) || !Array.isArray(state.results))
 		return undefined;
-	const board = state.board === null ? null : parseBoard(state.board);
+	const startingDealer =
+		state.startingDealer === undefined
+			? "N"
+			: isSeat(state.startingDealer)
+				? state.startingDealer
+				: undefined;
+	if (!startingDealer) return undefined;
+	const board =
+		state.board === null ? null : parseBoard(state.board, startingDealer);
 	if (board === undefined) return undefined;
 	const results: BoardResult[] = [];
 	for (const item of state.results) {
@@ -245,6 +255,7 @@ export function parseBridgeState(
 		roomId,
 		game: "bridge",
 		messages: state.messages,
+		...(startingDealer === "N" ? {} : { startingDealer }),
 		board,
 		results,
 		undo,
@@ -784,7 +795,7 @@ function applyDeal(
 	if (requested !== next) return reject(`the next board is board ${next}`);
 	const waiting = absence(SEATS, present);
 	if (waiting) return waiting;
-	const board = createBoard(next, dealCards(randomBelow));
+	const board = createBoard(next, dealCards(randomBelow), state.startingDealer);
 	return accept(
 		{ kind: "deal", board },
 		{ ...state, board, claimResult: null, bidHistory: [] },
@@ -919,7 +930,7 @@ function resetGame(
 		...state,
 		board:
 			absence(SEATS, present) === undefined
-				? createBoard(1, dealCards(randomBelow))
+				? createBoard(1, dealCards(randomBelow), state.startingDealer)
 				: null,
 		results: [],
 		bidHistory: [],
@@ -1220,11 +1231,19 @@ function applyUndoCancel(
 export function createBridgeModule(randomBelow: RandomBelow): GameModule {
 	return {
 		initialState(roomId, config) {
+			const botSeats = config.botSetup?.seats ?? [];
+			const startingDealer =
+				botSeats.length === 3
+					? SEATS.find((seat) => !botSeats.includes(seat))
+					: "N";
 			const state: BridgeState = {
 				v: PROTOCOL_VERSION,
 				roomId,
 				game: "bridge",
 				messages: 0,
+				...(startingDealer === undefined || startingDealer === "N"
+					? {}
+					: { startingDealer }),
 				board: null,
 				results: [],
 				undo: null,

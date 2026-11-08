@@ -34,6 +34,8 @@ import {
 export interface Board {
 	readonly number: number;
 	readonly dealer: Seat;
+	/** Omitted for the standard North start, present when this game's dealer cycle starts elsewhere. */
+	readonly startingDealer?: Seat;
 	readonly vulnerability: Vulnerability;
 	readonly deal: Deal;
 	readonly calls: readonly Call[];
@@ -116,8 +118,12 @@ function isNorthSouth(seat: Seat): boolean {
 }
 
 /** Starts a board. Throws on an invalid board number or deal; hands are stored in display order. */
-export function createBoard(number: number, deal: Deal): Board {
-	const { dealer, vulnerability } = boardSetup(number);
+export function createBoard(
+	number: number,
+	deal: Deal,
+	startingDealer: Seat = "N",
+): Board {
+	const { dealer, vulnerability } = boardSetup(number, startingDealer);
 	if (!isDeal(deal))
 		throw new Error("a deal needs four hands of 13 different cards");
 	const sorted: Partial<Record<Seat, Card[]>> = {};
@@ -125,6 +131,7 @@ export function createBoard(number: number, deal: Deal): Board {
 	return {
 		number,
 		dealer,
+		...(startingDealer === "N" ? {} : { startingDealer }),
 		vulnerability,
 		deal: sorted as Record<Seat, Card[]>,
 		calls: [],
@@ -429,14 +436,27 @@ export function parseAction(value: unknown): Action | undefined {
  * Restores a board from stored JSON by replaying its calls and cards from the deal, so a stored board with an
  * illegal call or card, or with a dealer or vulnerability that does not match its number, is refused.
  */
-export function parseBoard(value: unknown): Board | undefined {
+export function parseBoard(
+	value: unknown,
+	startingDealer?: Seat,
+): Board | undefined {
 	if (!isObject(value)) return undefined;
 	const { number, dealer, vulnerability, deal, calls, cards } = value;
+	const recordedStartingDealer = value.startingDealer;
+	if (
+		recordedStartingDealer !== undefined &&
+		(!isSeat(recordedStartingDealer) ||
+			(startingDealer !== undefined &&
+				recordedStartingDealer !== startingDealer))
+	)
+		return undefined;
+	const firstDealer =
+		startingDealer ?? (recordedStartingDealer as Seat | undefined) ?? "N";
 	if (typeof number !== "number" || !Number.isSafeInteger(number) || number < 1)
 		return undefined;
 	if (!isDeal(deal) || !Array.isArray(calls) || !Array.isArray(cards))
 		return undefined;
-	let board = createBoard(number, deal);
+	let board = createBoard(number, deal, firstDealer);
 	if (board.dealer !== dealer || board.vulnerability !== vulnerability)
 		return undefined;
 	const actions: unknown[] = [
