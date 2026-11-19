@@ -22,12 +22,14 @@ Known bidding-system meanings add soft likelihood weights for points and shape.
 Each meaning uses the system recorded when its call was made; calls by bots and calls of unknown origin add no guide assumptions.
 They never exclude every layout when a player has misbid.
 When multiple calls describe the same hidden hand, search prepares the public play history once and evaluates each required point scale and suit shape once per layout.
+For [corrected high-card points](benchmarks/points-control.md), search computes the same corrections as the bidding guide without sorting cards or constructing explanation text.
 
 `DdsSolver` wraps [bridge-dds 1.4.0](https://github.com/bookchris/bridge-dds-js), an Apache-2.0 WebAssembly build of DDS.
 The package is pinned with its registry integrity hash and has no runtime dependencies.
 Its license and attribution are distributed with the static site under `public/licenses/`.
 The adapter validates card identities, uniqueness, hand sizes, partial tricks, trump, and leader before constructing the bounded PBN representation.
 It expands DDS equivalent-card masks and reports future tricks for the partnership on turn.
+The [sparse result decoder](benchmarks/adapter-exact.md) visits only ranks that DDS reports and preserves their original order.
 It builds the PBN holdings directly from suit masks instead of sorting each hand four times per layout.
 
 `analyzePlay` evaluates all legal candidates in the same sampled worlds.
@@ -100,6 +102,10 @@ The JSON Lines output includes the starting board, both legal play traces, both 
 The [self-play protocol and results](benchmarks/card-self-play.md) distinguish benchmark-only policies from changes accepted for live play.
 The [search comparisons](benchmarks/search-improvements.md) give the historical engine control, the exhaustive reference and the ongoing opening-lead experiment.
 The [defensive advice trials](benchmarks/defensive-priors.md) compare second-hand low, leads in partner's bid suit, fourth-best side-suit leads and singletons against the same search without advice.
+The [opening-lead optimizer](benchmarks/opening-optimizer.md) fits separate suit and no-trump rules from complete training games, then tests them against two controls on new deals.
+The [cumulative campaign](benchmarks/cumulative-leads.md) carries training results across batches, keeps test deals out of training, and never deploys a rule automatically.
+The [two-hand sampling](benchmarks/variance-results.md) and [auction-guided opening sampling](benchmarks/proposal-opening-results.md) trials report estimation error separately from paired game scores.
+The [expanded endgame search](benchmarks/expanded-frontier.md) and its [narrower follow-up](benchmarks/guarded-frontier.md) explain why the live cutoff remains 256 layouts.
 
 ```sh
 npm run benchmark:play
