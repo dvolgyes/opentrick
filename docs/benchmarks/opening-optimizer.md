@@ -42,13 +42,17 @@ The worker runs one match at a time; its epoch number is its replay cursor.
 
 ## Running and resuming
 
-Run a single epoch with `node --import tsx scripts/opening-optimizer.ts 0 1 --rows`.
-This writes one JSON record per training or holdout board, followed by the frozen rules and both comparisons.
+For board-level records, run one epoch per invocation: `node --import tsx scripts/opening-optimizer.ts 0 1 --rows`.
+Write stdout to a **new private file for each attempt**.
+Accept the file only if the process exits successfully and its final record is an `epoch` summary for the requested epoch.
+Each complete file has 64 training rows, 96 holdout rows and that summary.
+After interruption, keep the incomplete file separate and rerun the same epoch into a new file.
+Never append a replay to partial rows or count two files for the same epoch.
+
 Without `--rows`, the runner emits one summary per completed epoch.
-`nice -n 15 node --import tsx scripts/opening-optimizer.ts 2` continues from epoch 2 on a single worker.
-Save its standard output to a private JSONL file.
-After interruption, use `nextEpoch` from its last complete summary; if the file is empty, restart the same epoch.
-An interrupted epoch replays the same deals and contributes no second comparison.
+For example, `nice -n 15 node --import tsx scripts/opening-optimizer.ts 2` starts with epoch 2.
+After interruption, use `nextEpoch` from the last complete summary and capture the new invocation in a new private file.
+If there is no complete summary, restart the original invocation's first epoch.
 Resume with the same source revision, Node version and installed dependencies.
 Use a separate output file for a different engine revision.
 There is no automatic deployment or automatic source-code editing.

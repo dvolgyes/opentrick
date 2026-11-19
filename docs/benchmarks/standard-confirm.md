@@ -70,3 +70,26 @@ Do not delete data to resume.
 
 Summaries report elapsed count, sum and range for boards, roots, tables and timed decisions; actual root and timed sample counts; fixed DDS calls; and lead changes, identity ties and positive, negative and zero IMP results by fixture.
 An incomplete stage reports no gate result.
+
+## Screen result
+
+All 128 scheduled deals completed with distinct hand distributions.
+The candidate changed 73 opening leads; those deals produced 146 complete tables.
+The other 55 deals tied by identity and have no invented table scores.
+
+| Fixture (32 boards each) | Changed leads | Wins | Losses | Ties | Net IMPs |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Competitive notrump | 13 | 3 | 0 | 29 | +5 |
+| Competitive major | 21 | 6 | 2 | 24 | +15 |
+| Partscore, weaker leader | 17 | 1 | 4 | 27 | −9 |
+| Partscore, stronger leader | 22 | 6 | 2 | 24 | +5 |
+| **All deals** | **73** | **16** | **8** | **104** | **+16** |
+
+The matched defender-score difference was +340 raw points overall.
+After per-board IMP conversion the mean was +0.125 IMP per board, with a one-sided stratified 97.5% lower bound of −0.219.
+The 24 non-ties met the minimum count, but the one-sided sign probability of 0.0758 exceeded 0.025 and the lower bound did not exceed +0.05.
+Stage 1 failed, so Stage 2 did not start and the playing default did not change.
+This result does not establish that conventional leads are harmful or that they are equivalent to search.
+
+The [frozen protocol, 128 complete board records and worker events](standard-confirm-records.tar.gz) have SHA-256 `c7b58c3430372508796e56fc5e3f891b7ff33a79e3b98a98f2be2e44cd0edff8`.
+Independent reconstruction from the two raw scores on each changed lead reproduced every board difference and the worker's summary.

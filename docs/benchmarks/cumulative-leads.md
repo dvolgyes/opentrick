@@ -56,6 +56,9 @@ Keep the JSONL log outside the campaign directory to retain all epoch summaries.
 The worker commits one complete epoch at a time.
 It replays an uncommitted epoch after interruption without adding duplicate training totals.
 The worker checks the state checksum and a fingerprint of the source, selected installed dependencies, and Node version.
+The executable fingerprint includes the code that selects the deals, fits the rules, scores the tables and decides nominations; it does not include this report.
+Do not reinterpret an existing campaign under a revised protocol.
+For a protocol change, update the executable criteria and start a new campaign in a new directory.
 If the state is missing, corrupt, or from a different version, the worker stops.
 Do not use `init` to reset a failed campaign.
 Restore the complete state from a backup or keep the failed directory and start a separate campaign.
