@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarize } from "../../scripts/self-play/statistics";
+import { signP, summarize } from "../../scripts/self-play/statistics";
 
 describe("self-play statistics", () => {
 	it("summarizes empty, single, tied, and mixed paired-deal IMPs", () => {
@@ -58,6 +58,14 @@ describe("self-play statistics", () => {
 		expect(summarize(Array(1000).fill(1)).signP).toBe(2 ** -1000);
 		const nearEven = [...Array(551).fill(1), ...Array(550).fill(-1)];
 		expect(summarize(nearEven).signP).toBeCloseTo(0.5, 12);
+	});
+
+	it("uses the complementary binomial tail when almost every board is lost", () => {
+		for (const losses of [27, 41, 65]) {
+			const n = losses + 3;
+			const belowThree = (1 + n + (n * (n - 1)) / 2) / 2 ** n;
+			expect(signP(3, losses)).toBe(1 - belowThree);
+		}
 	});
 
 	it("rejects IMPs outside the bounded integer domain", () => {

@@ -5,17 +5,19 @@ export function signP(wins: number, losses: number): number {
 	if (wins === 0) return 1;
 	if (losses === 0) return 2 ** -wins;
 	const n = wins + losses;
+	const complement = wins <= losses;
+	const cutoff = complement ? wins - 1 : losses;
 	let mass = 1;
 	let total = 0;
 	let tail = 0;
 	for (let k = Math.floor(n / 2); mass > 0; --k) {
 		const mirror = n - k;
 		total += k === mirror ? mass : 2 * mass;
-		if (k >= wins) tail += mass;
-		if (mirror !== k && mirror >= wins) tail += mass;
+		if (k <= cutoff) tail += mass;
 		mass *= k / (n - k + 1);
 	}
-	return tail / total;
+	const probability = tail / total;
+	return complement ? 1 - probability : probability;
 }
 
 function bootstrapLower(imps: readonly number[]): number | null {
