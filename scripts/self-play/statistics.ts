@@ -1,7 +1,7 @@
 const RESAMPLES = 10_000;
 
 /** P(Binomial(wins + losses, 1/2) >= wins), conditional on non-ties. */
-function signP(wins: number, losses: number): number {
+export function signP(wins: number, losses: number): number {
 	if (wins === 0) return 1;
 	if (losses === 0) return 2 ** -wins;
 	const n = wins + losses;

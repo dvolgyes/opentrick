@@ -105,6 +105,7 @@ The JSON Lines output includes the starting board, both legal play traces, both 
 The [self-play protocol and results](benchmarks/card-self-play.md) distinguish benchmark-only policies from changes accepted for live play.
 The [search comparisons](benchmarks/search-improvements.md) give the historical engine control, the exhaustive reference and the ongoing opening-lead experiment.
 The [defensive advice trials](benchmarks/defensive-priors.md) compare second-hand low, leads in partner's bid suit, fourth-best side-suit leads and singletons against the same search without advice.
+The [3NT hold-up study](benchmarks/hold-up-ucb.md) compares plain and heuristic-biased information-set UCB with the incumbent and an always-take-the-ace control on fresh complete deals.
 The [opening-lead optimizer](benchmarks/opening-optimizer.md) fits separate suit and no-trump rules from complete training games, then tests them against two controls on new deals.
 The [cumulative campaign](benchmarks/cumulative-leads.md) carries training results across batches, keeps test deals out of training, and never deploys a rule automatically.
 The [two-hand sampling](benchmarks/variance-results.md) and [auction-guided opening sampling](benchmarks/proposal-opening-results.md) trials report estimation error separately from paired game scores.
