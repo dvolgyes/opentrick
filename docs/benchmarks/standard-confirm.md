@@ -93,3 +93,12 @@ This result does not establish that conventional leads are harmful or that they 
 
 The [frozen protocol, 128 complete board records and worker events](standard-confirm-records.tar.gz) have SHA-256 `c7b58c3430372508796e56fc5e3f891b7ff33a79e3b98a98f2be2e44cd0edff8`.
 Independent reconstruction from the two raw scores on each changed lead reproduced every board difference and the worker's summary.
+
+### Exploratory contract-defeat safeguard
+
+After the screen, we tested one stricter rule against its recorded counterfactual tables.
+Keep the conventional switch only when its root estimate of the probability of defeating the contract is at least the incumbent's estimate.
+The new rule retained 32 switches and vetoed 41; 20 vetoes changed the duplicate result.
+Across the same 128 boards it gained 12 IMPs against search (3 wins, 1 loss, 124 ties), but lost 4 against the original conventional rule (7 wins, 13 losses, 108 ties).
+Both contrasts use paired raw defender scores before IMP conversion.
+The safeguard did not beat both controls even on these exploratory data, so it did not advance to a fresh trial.
