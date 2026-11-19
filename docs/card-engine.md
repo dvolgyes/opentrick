@@ -99,6 +99,7 @@ To replay a specific hand, pass its unfinished OpenTrick board as `--board "$(ca
 The JSON Lines output includes the starting board, both legal play traces, both scores and the IMP difference.
 The [self-play protocol and results](benchmarks/card-self-play.md) distinguish benchmark-only policies from changes accepted for live play.
 The [search comparisons](benchmarks/search-improvements.md) give the historical engine control, the exhaustive reference and the ongoing opening-lead experiment.
+The [defensive advice trials](benchmarks/defensive-priors.md) compare second-hand low, leads in partner's bid suit, fourth-best side-suit leads and singletons against the same search without advice.
 
 ```sh
 npm run benchmark:play
