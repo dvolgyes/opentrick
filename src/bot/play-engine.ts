@@ -1,6 +1,7 @@
 import { type Card, RANKS, rankOf, SUITS, suitOf } from "../bridge/cards";
 import { countHandPoints } from "../bridge/hand-points";
 import { scoreContract } from "../bridge/rules";
+import { scoreDifferenceToImps } from "../bridge/scoring";
 import type { DoubleDummySolver } from "./dds-solver";
 import { playTimeMs } from "./play-budget";
 import type { PlayPosition } from "./play-position";
@@ -27,19 +28,6 @@ export interface PlayAnalysis {
 	readonly effectiveSamples: number;
 	readonly elapsedMs: number;
 	readonly evaluations: readonly CardEvaluation[];
-}
-
-const IMP_THRESHOLDS = [
-	20, 50, 90, 130, 170, 220, 270, 320, 370, 430, 500, 600, 750, 900, 1100, 1300,
-	1500, 1750, 2000, 2250, 2500, 3000, 3500, 4000,
-];
-
-function imps(difference: number): number {
-	return (
-		Math.sign(difference) *
-		IMP_THRESHOLDS.filter((threshold) => Math.abs(difference) >= threshold)
-			.length
-	);
 }
 
 /** Auction meanings are fallible evidence; they never make a legal layout impossible. */
@@ -113,6 +101,7 @@ export function analyzePlay(
 			evaluations: [],
 		};
 	const sampler = createHandSampler(position.view);
+	const sampleLimit = sampler.uniqueLayout ? 1 : samples;
 	const random = options.random ?? Math.random;
 	const declarerSide =
 		(position.turn === "N" || position.turn === "S") ===
@@ -157,11 +146,11 @@ export function analyzePlay(
 		};
 	};
 	while (
-		(samples === undefined || count < samples) &&
+		(sampleLimit === undefined || count < sampleLimit) &&
 		(count === 0 || performance.now() - start < timeMs)
 	) {
 		const hands = sampler(random);
-		const weight = layoutWeight(position, hands);
+		const weight = sampler.uniqueLayout ? 1 : layoutWeight(position, hands);
 		const scores = solver.solve(
 			hands,
 			position.contract.strain,
@@ -188,7 +177,7 @@ export function analyzePlay(
 				Number(
 					declarerSide ? declarerTricks >= target : declarerTricks < target,
 				);
-			total.utility += weight * imps(score - reference);
+			total.utility += weight * scoreDifferenceToImps(score - reference);
 		}
 		weightSum += weight;
 		weightSquares += weight * weight;

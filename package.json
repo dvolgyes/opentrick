@@ -16,6 +16,7 @@
 		"test": "npm run prepare:bidder && vitest run",
 		"bot": "node --env-file-if-exists=.env --import tsx src/bot/cli.ts",
 		"benchmark:play": "node --env-file-if-exists=.env --import tsx scripts/benchmark-play.ts",
+		"benchmark:selfplay": "node --import tsx scripts/benchmark-selfplay.ts",
 		"benchmark:3nt": "node --import tsx scripts/benchmark-notrump.ts",
 		"benchmark:bidding": "npm run prepare:bidder && node --import tsx scripts/benchmark-bidding.ts",
 		"benchmark:sayc": "npm run prepare:bidder && node --import tsx scripts/benchmark-sayc.ts",

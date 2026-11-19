@@ -156,6 +156,53 @@ describe("single-dummy play engine", () => {
 			result.evaluations.find((item) => item.card === "SA")?.successProbability,
 		).toBe(1);
 	});
+	it("solves a uniquely constrained hidden layout only once", () => {
+		const deal = {
+			N: DECK.filter((card) => card[0] === "S"),
+			E: DECK.filter((card) => card[0] === "D"),
+			S: DECK.filter((card) => card[0] === "H"),
+			W: DECK.filter((card) => card[0] === "C"),
+		};
+		const lead = playing(
+			bidding(createBoard(2, deal), "1NT P P 2NT P P P"),
+			"D2",
+		);
+		for (const known of [false, true]) {
+			const board = known ? playing(lead, "H2 C2 S2 D3") : lead;
+			const position = playPosition(board, "N", { E: "hcp" });
+			expect(position.hints).toHaveLength(1);
+			const rng = random(7);
+			const baseline = random(7);
+			let calls = 0;
+			const result = analyzePlay(
+				position,
+				{
+					solve: (hands) => {
+						calls++;
+						expect(hands).toEqual(sampleHands(position.view, baseline));
+						if (known) {
+							expect(new Set(hands.E)).toEqual(
+								new Set(deal.E.filter((c) => c !== "D2" && c !== "D3")),
+							);
+							expect(new Set(hands.W)).toEqual(
+								new Set(deal.W.filter((c) => c !== "C2")),
+							);
+						}
+						return new Map(position.legal.map((card) => [card, 8]));
+					},
+				},
+				{ samples: 20, timeMs: 1000, random: rng },
+			);
+			expect(result.card).toBe(known ? "H3" : "H2");
+			expect(calls).toBe(known ? 1 : 20);
+			expect(result.samples).toBe(calls);
+			if (known) {
+				expect(result.effectiveSamples).toBe(1);
+				expect(result.evaluations[0]?.expectedTricks).toBe(8);
+			}
+			expect(rng()).toBe(baseline());
+		}
+	});
 	it("sends no hidden cards or full deal to the search", () => {
 		const board = bidding(createBoard(1, DEAL), "1NT P P P");
 		const changed = {

@@ -21,6 +21,7 @@ import { bidPosition } from "./bid-position";
 import { type BidChooser, BrowserBidder } from "./browser-bidder";
 import { BrowserPlayEngine, type PlayChooser } from "./browser-play";
 import { BotRequestAbortedError } from "./errors";
+import { obviousPlay } from "./obvious-play";
 import { playTimeMs } from "./play-budget";
 import { playPosition } from "./play-position";
 import { actionPositionKey } from "./position";
@@ -341,13 +342,12 @@ export class HostBotRunner {
 						systems,
 						state.bidHistory,
 					);
-					const status = boardStatus(state.board);
-					const cardsLeft = status.turn
-						? status.remaining[status.turn].length
-						: 0;
-					if (cardsLeft === 1 && actions[0]?.type === "play") {
-						decision = actions[0];
+					const card = obviousPlay(position);
+					if (card !== undefined) {
+						decision = { type: "play", card };
 					} else {
+						const status = boardStatus(state.board);
+						const cardsLeft = status.remaining[position.turn].length;
 						const lateHandBudget = Math.min(
 							this.#settings.playTimeMs,
 							Math.max(2000, this.#settings.cardPlayDurationMs),

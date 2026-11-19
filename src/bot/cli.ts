@@ -26,6 +26,7 @@ import { parseRoomSetup } from "../ui/bookmark";
 import { BidNetwork } from "./bid-network";
 import { bidPosition } from "./bid-position";
 import { DdsSolver } from "./dds-solver";
+import { obviousPlay } from "./obvious-play";
 import { analyzePlay } from "./play-engine";
 import { playPosition } from "./play-position";
 import { actionPositionKey, matchesActionPosition } from "./position";
@@ -437,14 +438,18 @@ async function run(options: Options): Promise<void> {
 					call: biddingNetwork.choose(bidPosition(state.board, seat)).call,
 				};
 			} else {
-				cardSolver ??= await DdsSolver.create();
-				decision = {
-					type: "play",
-					card: analyzePlay(
-						playPosition(state.board, seat, systems, state.bidHistory),
-						cardSolver,
-					).card,
-				};
+				const position = playPosition(
+					state.board,
+					seat,
+					systems,
+					state.bidHistory,
+				);
+				let card = obviousPlay(position);
+				if (card === undefined) {
+					cardSolver ??= await DdsSolver.create();
+					card = analyzePlay(position, cardSolver).card;
+				}
+				decision = { type: "play", card };
 			}
 			await waitForMinimum(
 				startedAt,

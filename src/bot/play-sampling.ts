@@ -5,10 +5,11 @@ import { SEATS, type Seat } from "../protocol";
 
 export type RemainingHands = Record<Seat, readonly Card[]>;
 
-/** Uniform completions conditional on hand sizes and shown voids, without rejection loops. */
+/** Uniform completions given hand sizes, shown voids and any additional known exclusions. */
 export function createHandSampler(
 	view: VisiblePlay,
-): (random: () => number) => RemainingHands {
+	excluded?: ReadonlyMap<Card, Seat>,
+) {
 	const visible = [
 		...view.own,
 		...(view.dummyCards ?? []),
@@ -40,20 +41,30 @@ export function createHandSampler(
 		throw new Error(
 			"unsupported visibility: use the acting player's hand and exposed dummy",
 		);
+	if (excluded?.size && hidden.length !== 2)
+		throw new Error("card ownership exclusions require two hidden hands");
 	const forced = new Map<Seat, Card[]>(hidden.map((hand) => [hand.seat, []]));
 	const flexible: Card[] = [];
 	for (const card of unseen) {
-		const allowed = hidden.filter((hand) => hand.lengths[suitOf(card)].max > 0);
+		const ownerToExclude = excluded?.get(card);
+		const allowed = hidden.filter(
+			(hand) =>
+				hand.seat !== ownerToExclude && hand.lengths[suitOf(card)].max > 0,
+		);
 		if (allowed.length === 0)
-			throw new Error("a card has no possible hidden owner");
+			throw new Error(`${card} has no possible owner in the hidden hands`);
 		const owner = allowed[0];
 		if (allowed.length === 1 && owner) forced.get(owner.seat)?.push(card);
 		else flexible.push(card);
 	}
-	for (const hand of hidden)
-		if ((forced.get(hand.seat)?.length ?? 0) > hand.remaining)
+	let handsWithSpace = 0;
+	for (const hand of hidden) {
+		const fixed = forced.get(hand.seat)?.length ?? 0;
+		if (fixed > hand.remaining)
 			throw new Error("forced cards exceed hidden hand capacity");
-	return (random) => {
+		if (fixed < hand.remaining) handsWithSpace++;
+	}
+	const sample = (random: () => number): RemainingHands => {
 		const shuffled = shuffle(flexible, (bound) => {
 			const value = random();
 			if (!(value >= 0 && value < 1))
@@ -72,6 +83,8 @@ export function createHandSampler(
 		}
 		return hands;
 	};
+	sample.uniqueLayout = hidden.length === 2 && handsWithSpace <= 1;
+	return sample;
 }
 
 export function sampleHands(

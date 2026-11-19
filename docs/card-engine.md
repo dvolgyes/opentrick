@@ -31,6 +31,11 @@ It uses duplicate scoring, including vulnerability and doubling, and maximizes e
 This gives making or defeating a contract the correct scale relative to overtricks.
 It reports candidate scores, contract success probabilities, sample count, effective sample size, and elapsed time.
 A forced play needs no search.
+When hand sizes and shown voids leave exactly one layout, one DDS call gives the exact evaluation.
+The host and Node bot also skip search when all legal cards are equivalent ranks in one suit.
+If every intermediate rank is in the hand or a completed trick, exchanging the legal cards cannot change any trick comparison.
+Cards in the current trick are still live.
+The bot chooses the lowest equivalent rank, just as the full search does.
 
 `BrowserPlayEngine` owns one worker and its search lifecycle.
 It accepts only a card in the current authoritative legal list.
@@ -76,6 +81,16 @@ It verifies one full board, returns West to human control, and leaves three bots
 Close the browser to stop the demo server.
 
 ## Reproducible evaluation
+
+To play a generated deal twice with the partnerships swapped:
+
+```sh
+npm run --silent benchmark:selfplay -- --candidate cash --seed 42 --samples 6
+```
+
+To replay a specific hand, pass its unfinished OpenTrick board as `--board "$(cat board.json)"` instead of `--seed`.
+The JSON Lines output includes the starting board, both legal play traces, both scores and the IMP difference.
+The [self-play protocol and results](benchmarks/card-self-play.md) distinguish benchmark-only policies from changes accepted for live play.
 
 ```sh
 npm run benchmark:play

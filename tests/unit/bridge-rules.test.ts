@@ -7,6 +7,7 @@ import {
 	trickWinner,
 	type Vulnerability,
 } from "../../src/bridge/rules";
+import { scoreDifferenceToImps } from "../../src/bridge/scoring";
 import { DEAL } from "./bridge-fixtures";
 
 describe("board rotation", () => {
@@ -107,6 +108,21 @@ describe("duplicate scoring, from North-South's side", () => {
 		expect(() => scoreContract(contract("1C"), "none", tricks)).toThrow(
 			"tricks",
 		);
+	});
+});
+
+describe("duplicate IMP conversion", () => {
+	it.each([
+		[0, 0],
+		[-19, 0],
+		[20, 1],
+		[49, 1],
+		[-50, -2],
+		[3999, 23],
+		[4000, 24],
+		[-5000, -24],
+	])("converts a %i point difference to %i IMPs", (difference, imps) => {
+		expect(scoreDifferenceToImps(difference)).toBe(imps);
 	});
 });
 

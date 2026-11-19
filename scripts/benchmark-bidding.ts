@@ -10,6 +10,7 @@ import {
 	createBoard,
 } from "../src/bridge/engine";
 import { scoreContract } from "../src/bridge/rules";
+import { scoreDifferenceToImps } from "../src/bridge/scoring";
 
 // Frozen protocol: 16 deals, dealer/vulnerability cycle, two table orientations per deal.
 // This measures bidding with double-dummy scoring, separately from card-play strength.
@@ -31,10 +32,6 @@ const randomBelow = (bound: number) => {
 	state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
 	return Math.floor((state / 2 ** 32) * bound);
 };
-const thresholds = [
-	20, 50, 90, 130, 170, 220, 270, 320, 370, 430, 500, 600, 750, 900, 1100, 1300,
-	1500, 1750, 2000, 2250, 2500, 3000, 3500, 4000,
-];
 const imps: number[] = [];
 let calls = 0;
 let inferenceMs = 0;
@@ -107,9 +104,7 @@ for (let number = 1; number <= 16; number++) {
 		);
 	}
 	const difference = (scores[1] ?? 0) - (scores[0] ?? 0);
-	const imp =
-		Math.sign(difference) *
-		thresholds.filter((threshold) => Math.abs(difference) >= threshold).length;
+	const imp = scoreDifferenceToImps(difference);
 	imps.push(imp);
 	console.error(
 		`Deal ${number}: RL/FSP ${imp >= 0 ? "+" : ""}${imp} IMPs against SL`,

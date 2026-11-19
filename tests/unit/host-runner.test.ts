@@ -29,7 +29,7 @@ import {
 	SEATS,
 	type Seat,
 } from "../../src/protocol";
-import { call, DEAL } from "./bridge-fixtures";
+import { call, cards, DEAL, play } from "./bridge-fixtures";
 import { CONFIG, ROOM_ID } from "./fixtures";
 
 const SETTINGS = {
@@ -57,10 +57,11 @@ function contextFor(seat: Seat, seq: number) {
 /** Board 1, dealt by North, as the host's table state after `steps`; each step is a payload from a seat. */
 function tableState(
 	steps: readonly ((state: JsonObject) => [Seat, JsonObject])[],
+	deal = DEAL,
 ): JsonObject {
 	let state: JsonObject = {
 		...MODULE.initialState(ROOM_ID, CONFIG),
-		board: createBoard(1, DEAL),
+		board: createBoard(1, deal),
 	};
 	for (const [index, step] of steps.entries()) {
 		const [seat, payload] = step(state);
@@ -84,6 +85,10 @@ function act(action?: Action) {
 }
 
 const OPENING = [call("1C"), call("P"), call("P"), call("P")].map(act);
+const NORTH_DUMMY = [
+	...["P", "P", "1C", "P", "P", "P"].map((text) => act(call(text))),
+	act(play("H3")),
+];
 
 /** A host page at North whose bots sit East and West; sendBot records each bot's message. */
 function hostAt(state: JsonObject) {
@@ -239,10 +244,11 @@ describe("host bot play", () => {
 		host.runner.stop();
 	});
 	it("waits for human dummy, resumes on autoplay, and discards a late choice when autoplay stops", async () => {
-		const start = tableState([
-			...["P", "P", "1C", "P", "P", "P"].map((text) => act(call(text))),
-			act(),
-		]);
+		const start = tableState(NORTH_DUMMY, {
+			...DEAL,
+			N: cards("SA SK SQ SJ ST S9 S8 HA HQ HJ DA DK CA"),
+			E: cards("S7 S6 S5 HK HT H9 H8 H7 DQ DJ DT CK CQ"),
+		});
 		const board = parseBridgeState(start, ROOM_ID)?.board;
 		if (!board) throw new Error("no board");
 		expect(boardStatus(board)).toMatchObject({
@@ -276,6 +282,22 @@ describe("host bot play", () => {
 		answer?.();
 		await vi.advanceTimersByTimeAsync(6000);
 		expect(host.state()?.board?.cards).toEqual([...board.cards, action.card]);
+		host.runner.stop();
+	});
+
+	it("plays the lowest of dummy's equivalent hearts without searching", async () => {
+		const start = tableState(NORTH_DUMMY);
+		const board = parseBridgeState(start, ROOM_ID)?.board;
+		if (!board) throw new Error("no board");
+		expect(legalActions(board, "S")).toEqual(["HA", "HK", "HQ"].map(play));
+		const choose = vi.fn<PlayChooser["choose"]>();
+		const host = liveHost(start, { choose, stop: () => {} }, undefined, ["S"]);
+		host.setControl(["N", "S"], ["N"]);
+		await host.runner.start();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(choose).not.toHaveBeenCalled();
+		expect(host.state()?.board?.cards).toEqual(["H3", "HQ"]);
+		expect(host.onError).not.toHaveBeenCalled();
 		host.runner.stop();
 	});
 
@@ -527,13 +549,34 @@ describe("bot pacing", () => {
 	}
 
 	it("caps late-hand search to the longer of two seconds and the card animation", async () => {
-		const host = cardHost(40, 0, {
-			...SETTINGS,
-			playTimeMs: 7000,
-			cardPlayDurationMs: 2500,
-		});
+		const tricks = [
+			"S7 S4 C5 SA",
+			"H3 HA HJ H6",
+			"SK S6 S3 H2",
+			"SQ S5 S2 D5",
+			"SJ HT H5 D4",
+			"ST H9 H4 D3",
+			"S9 H8 D9 D2",
+			"S8 H7 CJ C8",
+			"D8 C7 DA DQ",
+			"C6 CA CK CT",
+		];
+		const state = tableState([
+			...OPENING,
+			...tricks.flatMap((trick) =>
+				cards(trick).map((card) => act({ type: "play", card })),
+			),
+		]);
+		const choose = vi.fn<PlayChooser["choose"]>(async () => playReply("HK"));
+		const host = liveHost(
+			state,
+			{ choose, stop: () => {} },
+			undefined,
+			["N", "S"],
+			{ ...SETTINGS, playTimeMs: 7000, cardPlayDurationMs: 2500 },
+		);
 		await host.runner.start();
-		expect(host.choose.mock.calls[0]?.[2]).toBe(2500);
+		expect(choose.mock.calls[0]?.[2]).toBe(2500);
 		host.runner.stop();
 	});
 
