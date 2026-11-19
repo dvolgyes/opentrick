@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { BrowserPlayEngine } from "../../src/bot/browser-play";
 import { playPosition } from "../../src/bot/play-position";
+import { createHandSampler } from "../../src/bot/play-sampling";
 import { dealCards } from "../../src/bridge/deal";
 import { applyAction, boardStatus, createBoard } from "../../src/bridge/engine";
 import { bidding, DEAL } from "../unit/bridge-fixtures";
@@ -63,13 +64,20 @@ describe("browser card engine", () => {
 			vi.unstubAllGlobals();
 		}
 	}, 15_000);
-	it("spends the default budget on more than 96 samples in an ending", async () => {
+	it("spends the default budget above the cutoff and stops at the last layout below it", async () => {
 		let board = bidding(createBoard(1, DEAL), "3NT P P P");
 		for (let ply = 0; ply < 52; ply++) {
 			const status = boardStatus(board);
 			if (status.phase !== "play") throw new Error("no test ending found");
 			const position = playPosition(board, status.actor);
-			if (ply >= 32 && position.legal.length > 1) {
+			if (ply === 30 || ply === 32) {
+				expect(position.legal.length).toBeGreaterThan(1);
+				const layouts = createHandSampler(position.view).enumerate(
+					256,
+					Math.random,
+				);
+				if (ply === 30) expect(layouts).toBeUndefined();
+				else expect(Array.from(layouts ?? [])).toHaveLength(252);
 				const engine = new BrowserPlayEngine();
 				try {
 					const start = performance.now();
@@ -78,9 +86,13 @@ describe("browser card engine", () => {
 						new AbortController().signal,
 					);
 					const elapsedMs = performance.now() - start;
-					expect(result.samples).toBeGreaterThan(96);
-					expect(elapsedMs).toBeGreaterThanOrEqual(4500);
-					expect(elapsedMs).toBeLessThan(8000);
+					if (ply === 30) {
+						expect(result.samples).toBeGreaterThan(96);
+						expect(elapsedMs).toBeGreaterThanOrEqual(4500);
+						expect(elapsedMs).toBeLessThan(8000);
+					} else {
+						expect(result.samples).toBe(252);
+					}
 					expect(position.legal).toContain(result.card);
 					console.info(
 						"default play budget",
@@ -90,7 +102,7 @@ describe("browser card engine", () => {
 							effectiveSamples: result.effectiveSamples,
 						}),
 					);
-					return;
+					if (ply === 32) return;
 				} finally {
 					engine.stop();
 				}

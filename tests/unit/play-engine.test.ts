@@ -3,7 +3,7 @@ import { DdsSolver } from "../../src/bot/dds-solver";
 import { analyzePlay } from "../../src/bot/play-engine";
 import { playPosition } from "../../src/bot/play-position";
 import { sampleHands } from "../../src/bot/play-sampling";
-import { DECK } from "../../src/bridge/cards";
+import { type Card, DECK } from "../../src/bridge/cards";
 import { dealCards } from "../../src/bridge/deal";
 import {
 	applyAction,
@@ -131,20 +131,25 @@ describe("single-dummy play engine", () => {
 		}
 	});
 	it("protects a certain contract instead of gambling for an overtrick", () => {
+		const deal = {
+			...DEAL,
+			N: DEAL.N.map((card) => (card === "SK" ? "S7" : card)),
+			E: DEAL.E.map((card) => (card === "S7" ? "SK" : card)),
+		};
 		const board = playing(
-			bidding(createBoard(1, DEAL), "3NT P P P"),
-			"S7 S2 H2",
+			bidding(createBoard(1, deal), "3NT P P P"),
+			"SK S2 H2",
 		);
 		const position = {
 			...playPosition(board, "N"),
-			legal: ["SA", "SK"] as const,
+			legal: ["SA", "SQ"] as const,
 		};
 		let count = 0;
 		const solver = {
 			solve: () =>
 				new Map([
 					["SA" as const, 9],
-					["SK" as const, count++ % 2 ? 8 : 10],
+					["SQ" as const, count++ % 2 ? 8 : 10],
 				]),
 		};
 		const result = analyzePlay(position, solver, {
@@ -313,5 +318,24 @@ describe("single-dummy play engine", () => {
 				cards: [],
 			}),
 		).toThrow(/duplicate/i);
+		expect(() =>
+			solver.solve(
+				{ N: ["SX" as Card], E: ["SK"], S: ["SQ"], W: ["SJ"] },
+				"NT",
+				{ leader: "N", cards: [] },
+			),
+		).toThrow(/invalid or duplicate/i);
+		expect(() =>
+			solver.solve({ N: ["SA"], E: ["SK"], S: ["SQ"], W: [] }, "NT", {
+				leader: "W",
+				cards: ["SA"],
+			}),
+		).toThrow(/duplicate/i);
+		expect(() =>
+			solver.solve({ N: [], E: ["SK"], S: ["SQ"], W: ["SJ"] }, "NT", {
+				leader: "W",
+				cards: ["SA"],
+			}),
+		).toThrow(/remaining hand sizes/i);
 	});
 });

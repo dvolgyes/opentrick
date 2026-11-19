@@ -16,15 +16,19 @@ The search receives no full deal, API key, or hidden original hand.
 Before the opening lead it shuffles the three unknown hands uniformly.
 Once dummy is exposed, it assigns cards forced by voids and uniformly divides the other cards between the two hidden hands.
 This needs no rejection loop, including in constrained endings.
+When there are at most 256 legal two-hand allocations, timed search visits them in shuffled order and stops when it exhausts the population.
+If the clock interrupts a traversal, the completed layouts form a random prefix rather than a fixed subset.
 Known bidding-system meanings add soft likelihood weights for points and shape.
 Each meaning uses the system recorded when its call was made; calls by bots and calls of unknown origin add no guide assumptions.
 They never exclude every layout when a player has misbid.
+When multiple calls describe the same hidden hand, search prepares the public play history once and evaluates each required point scale and suit shape once per layout.
 
 `DdsSolver` wraps [bridge-dds 1.4.0](https://github.com/bookchris/bridge-dds-js), an Apache-2.0 WebAssembly build of DDS.
 The package is pinned with its registry integrity hash and has no runtime dependencies.
 Its license and attribution are distributed with the static site under `public/licenses/`.
 The adapter validates card identities, uniqueness, hand sizes, partial tricks, trump, and leader before constructing the bounded PBN representation.
 It expands DDS equivalent-card masks and reports future tricks for the partnership on turn.
+It builds the PBN holdings directly from suit masks instead of sorting each hand four times per layout.
 
 `analyzePlay` evaluates all legal candidates in the same sampled worlds.
 It uses duplicate scoring, including vulnerability and doubling, and maximizes expected IMP difference from the contract just made.
@@ -36,6 +40,9 @@ The host and Node bot also skip search when all legal cards are equivalent ranks
 If every intermediate rank is in the hand or a completed trick, exchanging the legal cards cannot change any trick comparison.
 Cards in the current trick are still live.
 The bot chooses the lowest equivalent rank, just as the full search does.
+In mixed choices the engine accumulates one result per publicly equivalent rank class, and computes the score and IMP value once per distinct trick count.
+It still reports a separate evaluation for every legal card: a five and a six can carry different information to partner even when their trick values agree.
+This does not remove a branch from native DDS, which already recognizes equivalent cards.
 
 `BrowserPlayEngine` owns one worker and its search lifecycle.
 It accepts only a card in the current authoritative legal list.
@@ -48,8 +55,8 @@ The opposing players still decide those requests.
 Undo can continue from card play into the auction, with both opponents deciding an undo of a bid.
 
 The default budget is 5,000 ms per non-forced card decision, checked between native calls.
-There is no default sample-count cap, so faster positions use the remaining time for more hidden-hand samples.
-Explicit sample limits remain available for controlled evaluations.
+Above the exact cutoff, there is no default sample-count cap; faster positions spend the remaining time on more hidden-hand samples.
+Fixed sample budgets use sampling with replacement for reproducible comparisons unless the caller sets `exactLimit`.
 The host preference `opentrick.settings.play-time-ms` stores whole seconds as milliseconds, from 1,000 to 60,000, and defaults to 5,000 when absent or invalid.
 The Settings control selects whole seconds, and an older fractional preference is rounded to the nearest allowed second when read.
 `BrowserPlayEngine` also accepts a constructor budget and a per-request override.
@@ -91,6 +98,7 @@ npm run --silent benchmark:selfplay -- --candidate cash --seed 42 --samples 6
 To replay a specific hand, pass its unfinished OpenTrick board as `--board "$(cat board.json)"` instead of `--seed`.
 The JSON Lines output includes the starting board, both legal play traces, both scores and the IMP difference.
 The [self-play protocol and results](benchmarks/card-self-play.md) distinguish benchmark-only policies from changes accepted for live play.
+The [search comparisons](benchmarks/search-improvements.md) give the historical engine control, the exhaustive reference and the ongoing opening-lead experiment.
 
 ```sh
 npm run benchmark:play

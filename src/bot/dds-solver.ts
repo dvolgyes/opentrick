@@ -1,17 +1,16 @@
 import { Dds, loadDds } from "bridge-dds";
-import {
-	type Card,
-	isCard,
-	RANKS,
-	rankOf,
-	SUITS,
-	sortCards,
-	suitOf,
-} from "../bridge/cards";
+import { type Card, DECK, RANKS, SUITS } from "../bridge/cards";
 import type { CurrentTrick } from "../bridge/engine";
 import type { Strain } from "../bridge/rules";
-import { SEATS, seatAfter } from "../protocol";
+import { SEATS } from "../protocol";
 import type { RemainingHands } from "./play-sampling";
+
+const cardCodes = new Map<string, number>(
+	DECK.map((card, index) => [
+		card,
+		(Math.floor(index / RANKS.length) << 4) | (index % RANKS.length),
+	]),
+);
 
 export interface DoubleDummySolver {
 	/** Future tricks for the partnership whose card is next, including this partial trick. */
@@ -35,48 +34,72 @@ export class DdsSolver implements DoubleDummySolver {
 		trump: Strain,
 		current: CurrentTrick,
 	): ReadonlyMap<Card, number> {
-		const cards = [...SEATS.flatMap((seat) => hands[seat]), ...current.cards];
-		if (
-			cards.some((card) => !isCard(card)) ||
-			new Set(cards).size !== cards.length
-		)
-			throw new Error("DDS input contains invalid or duplicate cards");
-		if (
-			current.cards.length > 3 ||
-			cards.length === 0 ||
-			cards.length > 52 ||
-			cards.length % 4 !== 0
-		)
+		const played = current.cards.length;
+		let cardCount = played;
+		for (const seat of SEATS) cardCount += hands[seat].length;
+		if (played > 3 || cardCount === 0 || cardCount > 52 || cardCount % 4 !== 0)
 			throw new Error("DDS input has inconsistent trick or card counts");
 		const first = SEATS.indexOf(current.leader);
 		if (first < 0 || (trump !== "NT" && !SUITS.includes(trump)))
 			throw new Error("DDS input has invalid leader or trump");
-		for (let i = 0; i < 4; i++) {
-			const seat = seatAfter(current.leader, i);
-			if (
-				hands[seat].length !==
-				cards.length / 4 - (i < current.cards.length ? 1 : 0)
-			)
+		const tricks = cardCount / 4;
+		const seen = [0, 0, 0, 0];
+		const currentTrickSuit: number[] = [];
+		const currentTrickRank: number[] = [];
+		for (const card of current.cards) {
+			const code = cardCodes.get(card);
+			if (code === undefined)
+				throw new Error("DDS input contains invalid or duplicate cards");
+			const suit = code >> 4;
+			const rank = code & 15;
+			const bit = 1 << rank;
+			const prior = seen[suit] ?? 0;
+			if (prior & bit)
+				throw new Error("DDS input contains invalid or duplicate cards");
+			seen[suit] = prior | bit;
+			currentTrickSuit.push(suit);
+			currentTrickRank.push(14 - rank);
+		}
+
+		let remainCards = "N:";
+		const handRanks = [0, 0, 0, 0];
+		let seatIndex = 0;
+		for (const seat of SEATS) {
+			const hand = hands[seat];
+			const offset = (seatIndex - first + 4) % 4;
+			if (hand.length !== tricks - (offset < played ? 1 : 0))
 				throw new Error("DDS input has inconsistent remaining hand sizes");
+			for (const card of hand) {
+				const code = cardCodes.get(card);
+				if (code === undefined)
+					throw new Error("DDS input contains invalid or duplicate cards");
+				const suit = code >> 4;
+				const bit = 1 << (code & 15);
+				const prior = seen[suit] ?? 0;
+				if (prior & bit)
+					throw new Error("DDS input contains invalid or duplicate cards");
+				seen[suit] = prior | bit;
+				handRanks[suit] = (handRanks[suit] ?? 0) | bit;
+			}
+			if (seatIndex > 0) remainCards += " ";
+			for (let suit = 0; suit < 4; suit++) {
+				if (suit > 0) remainCards += ".";
+				let ranks = handRanks[suit] ?? 0;
+				while (ranks !== 0) {
+					remainCards += RANKS[31 - Math.clz32(ranks & -ranks)];
+					ranks &= ranks - 1;
+				}
+				handRanks[suit] = 0;
+			}
+			seatIndex++;
 		}
 		const result = this.dds.SolveBoardPBN(
 			{
 				trump: trump === "NT" ? 4 : SUITS.indexOf(trump),
 				first,
-				currentTrickSuit: current.cards.map((card) =>
-					SUITS.indexOf(suitOf(card)),
-				),
-				currentTrickRank: current.cards.map(
-					(card) => 14 - RANKS.indexOf(rankOf(card)),
-				),
-				remainCards: `N:${SEATS.map((seat) =>
-					SUITS.map((suit) =>
-						sortCards(hands[seat])
-							.filter((card) => suitOf(card) === suit)
-							.map(rankOf)
-							.join(""),
-					).join("."),
-				).join(" ")}`,
+				currentTrickSuit,
+				currentTrickRank,
+				remainCards,
 			},
 			-1,
 			3,
@@ -98,7 +121,7 @@ export class DdsSolver implements DoubleDummySolver {
 				score === undefined ||
 				!Number.isInteger(score) ||
 				score < 0 ||
-				score > cards.length / 4
+				score > tricks
 			)
 				throw new Error("DDS returned an invalid trick score");
 			for (let rank = 2; rank <= 14; rank++) {

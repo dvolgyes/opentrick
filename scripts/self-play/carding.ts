@@ -70,6 +70,7 @@ export function cardingPolicy(
 		const result = analyzePlay(position, wrapped, {
 			timeMs: 60_000,
 			...budget,
+			exactLimit: 0,
 			...(exact ? { samples: 1 } : {}),
 			random,
 		});

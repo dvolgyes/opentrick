@@ -5,6 +5,24 @@ import { SEATS, type Seat } from "../protocol";
 
 export type RemainingHands = Record<Seat, readonly Card[]>;
 
+export const MAX_ENUMERATED_LAYOUTS = 256;
+
+function binomialUpTo(n: number, k: number, limit: number): number {
+	k = Math.min(k, n - k);
+	let count = 1;
+	for (let i = 1; i <= k && count <= limit; i++) {
+		count = (count * (n - k + i)) / i;
+	}
+	return count;
+}
+
+function randomBelow(random: () => number, bound: number): number {
+	const value = random();
+	if (!(value >= 0 && value < 1))
+		throw new Error("random source must return a value in [0, 1)");
+	return Math.floor(value * bound);
+}
+
 /** Uniform completions given hand sizes, shown voids and any additional known exclusions. */
 export function createHandSampler(
 	view: VisiblePlay,
@@ -65,12 +83,7 @@ export function createHandSampler(
 		if (fixed < hand.remaining) handsWithSpace++;
 	}
 	const sample = (random: () => number): RemainingHands => {
-		const shuffled = shuffle(flexible, (bound) => {
-			const value = random();
-			if (!(value >= 0 && value < 1))
-				throw new Error("random source must return a value in [0, 1)");
-			return Math.floor(value * bound);
-		});
+		const shuffled = shuffle(flexible, (bound) => randomBelow(random, bound));
 		const hands: RemainingHands = { N: [], E: [], S: [], W: [] };
 		hands[view.seat] = view.own;
 		if (view.dummyCards) hands[view.dummy] = view.dummyCards;
@@ -84,6 +97,54 @@ export function createHandSampler(
 		return hands;
 	};
 	sample.uniqueLayout = hidden.length === 2 && handsWithSpace <= 1;
+	sample.enumerate = (
+		limit: number,
+		random: () => number,
+	): Iterable<RemainingHands> | undefined => {
+		const cap = Math.min(limit, MAX_ENUMERATED_LAYOUTS);
+		const [first, second] = hidden;
+		if (!(cap >= 1) || hidden.length !== 2 || !first || !second)
+			return undefined;
+		const fixedFirst = forced.get(first.seat) ?? [];
+		const fixedSecond = forced.get(second.seat) ?? [];
+		const capacity = first.remaining - fixedFirst.length;
+		const count = binomialUpTo(flexible.length, capacity, cap);
+		if (count > cap) return undefined;
+		const indices = shuffle(
+			Array.from({ length: count }, (_, index) => index),
+			(bound) => randomBelow(random, bound),
+		);
+		return {
+			*[Symbol.iterator]() {
+				for (let index of indices) {
+					const firstCards = [...fixedFirst];
+					const secondCards = [...fixedSecond];
+					let spaces = capacity;
+					let unassigned = flexible.length;
+					let completions = count;
+					for (const card of flexible) {
+						const including = (completions * spaces) / unassigned;
+						if (index < including) {
+							firstCards.push(card);
+							spaces--;
+							completions = including;
+						} else {
+							secondCards.push(card);
+							index -= including;
+							completions -= including;
+						}
+						unassigned--;
+					}
+					const hands: RemainingHands = { N: [], E: [], S: [], W: [] };
+					hands[view.seat] = view.own;
+					if (view.dummyCards) hands[view.dummy] = view.dummyCards;
+					hands[first.seat] = firstCards;
+					hands[second.seat] = secondCards;
+					yield hands;
+				}
+			},
+		};
+	};
 	return sample;
 }
 

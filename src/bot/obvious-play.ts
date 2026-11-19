@@ -1,5 +1,6 @@
 import { type Card, RANKS, rankOf, suitOf } from "../bridge/cards";
 import type { PlayPosition } from "./play-position";
+import { mapLegalRankClasses } from "./rank-classes";
 
 /** Skips search only when every legal card has the same double-dummy value. */
 export function obviousPlay(position: PlayPosition): Card | undefined {
@@ -23,16 +24,8 @@ export function obviousPlay(position: PlayPosition): Card | undefined {
 		present |= 1 << rank;
 	}
 
-	let missing = ((1 << (lowest + 1)) - (1 << highest)) & ~present;
-	const plays = position.view.plays;
-	for (
-		let i = plays.length - position.current.cards.length - 1;
-		missing !== 0 && i >= 0;
-		i--
-	) {
-		const play = plays[i];
-		if (play && suitOf(play.card) === suit)
-			missing &= ~(1 << RANKS.indexOf(rankOf(play.card)));
-	}
-	return missing === 0 ? lowestCard : undefined;
+	const missing = ((1 << (lowest + 1)) - (1 << highest)) & ~present;
+	if (missing === 0) return lowestCard;
+	const keys = mapLegalRankClasses(position, (_, key) => key);
+	return keys.every((key) => key === keys[0]) ? lowestCard : undefined;
 }
