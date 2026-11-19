@@ -124,14 +124,20 @@ export class DdsSolver implements DoubleDummySolver {
 				score > tricks
 			)
 				throw new Error("DDS returned an invalid trick score");
-			for (let rank = 2; rank <= 14; rank++) {
-				if (
-					rank === result.rank[i] ||
-					((result.equals[i] ?? 0) & (1 << rank)) !== 0
-				) {
-					const value = RANKS[14 - rank];
-					if (value) scores.set(`${suit}${value}`, score);
-				}
+			const rank = result.rank[i];
+			let ranks = (result.equals[i] ?? 0) & 0x7ffc;
+			if (
+				rank !== undefined &&
+				Number.isInteger(rank) &&
+				rank >= 2 &&
+				rank <= 14
+			)
+				ranks |= 1 << rank;
+			const suitOffset = (suitIndex ?? 0) * RANKS.length;
+			while (ranks !== 0) {
+				const card = DECK[suitOffset + Math.clz32(ranks & -ranks) - 17];
+				if (card) scores.set(card, score);
+				ranks &= ranks - 1;
 			}
 		}
 		return scores;

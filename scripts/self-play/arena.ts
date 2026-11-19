@@ -75,7 +75,8 @@ export function makeBoard(seed: number, number: number, ply: number): Board {
 	return board;
 }
 
-function playTable(
+/** Complete one table from a validated play position using the arena's per-position streams. */
+export function playTable(
 	board: Board,
 	ns: PlayPolicy,
 	ew: PlayPolicy,

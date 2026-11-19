@@ -264,8 +264,32 @@ describe("single-dummy play engine", () => {
 			"NT",
 			{ leader: "N", cards: [] },
 		);
-		expect(scores.get("SA")).toBe(2);
-		expect(scores.get("SK")).toBe(2);
+		expect([...scores]).toEqual([
+			["SK", 2],
+			["SA", 2],
+		]);
+	});
+	it("ignores out-of-range DDS ranks and equal-mask bits", () => {
+		const solver: DdsSolver = Reflect.construct(DdsSolver, [
+			{
+				SolveBoardPBN: () => ({
+					cards: 1,
+					suit: [0],
+					rank: [34],
+					equals: [0xc00b],
+					score: [2],
+				}),
+			},
+		]);
+		const scores = solver.solve(
+			{ N: ["SA", "S3"], E: ["SQ", "SJ"], S: ["S9", "S8"], W: ["S7", "S6"] },
+			"NT",
+			{ leader: "N", cards: [] },
+		);
+		expect([...scores]).toEqual([
+			["S3", 2],
+			["SA", 2],
+		]);
 	});
 	it("solves partial tricks, including a trump overruff", async () => {
 		const solver = await DdsSolver.create();
