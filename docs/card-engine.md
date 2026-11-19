@@ -37,8 +37,8 @@ It reports candidate scores, contract success probabilities, sample count, effec
 A forced play needs no search.
 When hand sizes and shown voids leave exactly one layout, one DDS call gives the exact evaluation.
 The host and Node bot also skip search when all legal cards are equivalent ranks in one suit.
-If every intermediate rank is in the hand or a completed trick, exchanging the legal cards cannot change any trick comparison.
-Cards in the current trick are still live.
+The engine can group two ranks when every rank between them is in the acting hand, a completed trick, or [already beaten on the table](benchmarks/beaten-ranks.md).
+The current winning card still separates ranks: with H6 winning, H7 can take the lead and H5 cannot.
 The bot chooses the lowest equivalent rank, just as the full search does.
 In mixed choices the engine accumulates one result per publicly equivalent rank class, and computes the score and IMP value once per distinct trick count.
 It still reports a separate evaluation for every legal card: a five and a six can carry different information to partner even when their trick values agree.

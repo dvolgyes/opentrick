@@ -17,7 +17,7 @@ const deal = {
 describe("public rank classes in play analysis", () => {
 	it.each([
 		["completed", "S3 S7 H2 S8 S9 S6", 2],
-		["current", "S6 S7 H2 S8 S9 S3", 3],
+		["beaten", "S6 S7 H2 S8 S9 S3", 2],
 		["outstanding", "S6 S7 H2 S8 S9 S5", 3],
 	] as const)(
 		"scores a gap in the %s state correctly",

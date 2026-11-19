@@ -1,5 +1,29 @@
 import { type Card, RANKS, rankOf, SUITS, suitOf } from "../bridge/cards";
+import type { Strain } from "../bridge/rules";
 import type { PlayPosition } from "./play-position";
+
+function currentWinner(
+	lead: Card,
+	cards: readonly Card[],
+	trump: Strain,
+): Card {
+	let winner = lead;
+	let winningSuit = suitOf(lead);
+	let winningRank = RANKS.indexOf(rankOf(lead));
+	for (let i = 1; i < cards.length; i++) {
+		const card = cards[i];
+		if (card === undefined) continue;
+		const suit = suitOf(card);
+		if (suit !== winningSuit && suit !== trump) continue;
+		const rank = RANKS.indexOf(rankOf(card));
+		if (suit !== winningSuit || rank < winningRank) {
+			winner = card;
+			winningSuit = suit;
+			winningRank = rank;
+		}
+	}
+	return winner;
+}
 
 /** Map legal cards in order, with a shared key for publicly equivalent ranks. */
 export function mapLegalRankClasses<T>(
@@ -31,6 +55,21 @@ export function mapLegalRankClasses<T>(
 			const play = view.plays[i];
 			if (play)
 				gaps[suitOf(play.card)] &= ~(1 << RANKS.indexOf(rankOf(play.card)));
+		}
+		const cards = position.current.cards;
+		const lead = cards[0];
+		if (lead !== undefined && cards.length > 1) {
+			let winner: Card | undefined;
+			for (let i = 0; i < cards.length; i++) {
+				if (!(gaps.S | gaps.H | gaps.D | gaps.C)) break;
+				const card = cards[i];
+				if (card === undefined) continue;
+				const suit = suitOf(card);
+				const bit = 1 << RANKS.indexOf(rankOf(card));
+				if (!(gaps[suit] & bit)) continue;
+				winner ??= currentWinner(lead, cards, position.contract.strain);
+				if (card !== winner) gaps[suit] &= ~bit;
+			}
 		}
 	}
 	return position.legal.map((card) => {
