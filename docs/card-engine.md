@@ -30,14 +30,17 @@ Its license and attribution are distributed with the static site under `public/l
 The adapter validates card identities, uniqueness, hand sizes, partial tricks, trump, and leader before constructing the bounded PBN representation.
 It expands DDS equivalent-card masks and reports future tricks for the partnership on turn.
 The [sparse result decoder](benchmarks/adapter-exact.md) visits only ranks that DDS reports and preserves their original order.
-It builds the PBN holdings directly from suit masks instead of sorting each hand four times per layout.
+The adapter builds the PBN holdings directly from suit masks instead of sorting each hand four times per layout.
+
+With two tricks left and two legal cards, the local bot uses [exact endgame search](benchmarks/two-trick-exact.md) on each sampled layout.
+It searches the penultimate trick and scores the forced last trick directly; it does not assume that the two legal cards are equivalent.
 
 `analyzePlay` evaluates all legal candidates in the same sampled worlds.
 It uses duplicate scoring, including vulnerability and doubling, and maximizes expected IMP difference from the contract just made.
 This gives making or defeating a contract the correct scale relative to overtricks.
 It reports candidate scores, contract success probabilities, sample count, effective sample size, and elapsed time.
 A forced play needs no search.
-When hand sizes and shown voids leave exactly one layout, one DDS call gives the exact evaluation.
+When hand sizes and shown voids leave exactly one layout, scoring that layout once gives the exact evaluation.
 The host and Node bot also skip search when all legal cards are equivalent ranks in one suit.
 The engine can group two ranks when every rank between them is in the acting hand, a completed trick, or [already beaten on the table](benchmarks/beaten-ranks.md).
 The current winning card still separates ranks: with H6 winning, H7 can take the lead and H5 cannot.

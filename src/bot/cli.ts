@@ -27,7 +27,7 @@ import { BidNetwork } from "./bid-network";
 import { bidPosition } from "./bid-position";
 import { DdsSolver } from "./dds-solver";
 import { obviousPlay } from "./obvious-play";
-import { analyzePlay } from "./play-engine";
+import { analyzeLocalPlay } from "./play-engine";
 import { playPosition } from "./play-position";
 import { actionPositionKey, matchesActionPosition } from "./position";
 import { DEFAULT_BOT_TIMING, minimumActionMs, waitForMinimum } from "./timing";
@@ -447,7 +447,7 @@ async function run(options: Options): Promise<void> {
 				let card = obviousPlay(position);
 				if (card === undefined) {
 					cardSolver ??= await DdsSolver.create();
-					card = analyzePlay(position, cardSolver).card;
+					card = analyzeLocalPlay(position, cardSolver).card;
 				}
 				decision = { type: "play", card };
 			}

@@ -3,7 +3,7 @@ import { countHandPoints, type PointSystem } from "../bridge/hand-points";
 import { scoreContract } from "../bridge/rules";
 import { scoreDifferenceToImps } from "../bridge/scoring";
 import type { Seat } from "../protocol";
-import type { DoubleDummySolver } from "./dds-solver";
+import type { DdsSolver, DoubleDummySolver } from "./dds-solver";
 import { playTimeMs } from "./play-budget";
 import type { PlayPosition } from "./play-position";
 import {
@@ -12,6 +12,7 @@ import {
 	type RemainingHands,
 } from "./play-sampling";
 import { mapLegalRankClasses } from "./rank-classes";
+import { twoTrickLookup } from "./two-trick-solver";
 
 export interface PlayOptions {
 	readonly samples?: number;
@@ -305,4 +306,12 @@ export function analyzePlay(
 		}
 	}
 	return snapshot();
+}
+
+export function analyzeLocalPlay(
+	position: PlayPosition,
+	solver: DdsSolver,
+	options?: PlayOptions,
+): PlayAnalysis {
+	return analyzePlay(position, twoTrickLookup(position, solver), options);
 }

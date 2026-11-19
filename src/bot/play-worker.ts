@@ -1,5 +1,5 @@
 import { DdsSolver } from "./dds-solver";
-import { analyzePlay } from "./play-engine";
+import { analyzeLocalPlay } from "./play-engine";
 import type { PlayPosition } from "./play-position";
 
 interface PlayRequest {
@@ -18,7 +18,7 @@ function start(scope: WorkerScope): void {
 	scope.onmessage = (event) => {
 		void solver
 			.then((dds) => {
-				const analysis = analyzePlay(event.data.position, dds, {
+				const analysis = analyzeLocalPlay(event.data.position, dds, {
 					timeMs: event.data.timeMs,
 					onProgress: (partial) =>
 						scope.postMessage({ ok: true, partial: true, analysis: partial }),
