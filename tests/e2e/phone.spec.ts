@@ -159,6 +159,130 @@ for (const viewport of PHONES) {
 	});
 }
 
+test("a phone keeps a bid tap while the auction viewport updates", async ({
+	browser,
+	baseURL,
+}) => {
+	const context = await browser.newContext({
+		baseURL,
+		viewport: { width: 390, height: 600 },
+		isMobile: true,
+		hasTouch: true,
+	});
+	try {
+		const page = await context.newPage();
+		await mockBots(page);
+		await page.goto("/");
+		await namePlayers(page, "W", ["N", "E", "S"]);
+		await page.getByTestId("create").tap();
+		await expect.poll(() => phoneTurn(page), { timeout: 30_000 }).toBe(true);
+		await expectCompactPage(page);
+
+		const bidBox = page.getByTestId("bid-box");
+		const board = page.locator(".mobile-auction-board");
+		const overflow = () =>
+			board.evaluate((node) => {
+				const viewport = window.visualViewport;
+				return (
+					node.getBoundingClientRect().bottom -
+					((viewport?.offsetTop ?? 0) +
+						(viewport?.height ?? window.innerHeight))
+				);
+			});
+		const level = bidBox.getByRole("button", { name: "Level 2", exact: true });
+		const point = await level.evaluate((button) => {
+			const board = button.closest(".mobile-auction-board");
+			if (!board) throw new Error("phone auction board is missing");
+			window.scrollBy(
+				0,
+				board.getBoundingClientRect().bottom - window.innerHeight - 64,
+			);
+			const rect = button.getBoundingClientRect();
+			return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+		});
+		expect(await overflow()).toBeGreaterThan(1);
+		expect(
+			await level.evaluate(
+				(button, { x, y }) => document.elementFromPoint(x, y) === button,
+				point,
+			),
+		).toBe(true);
+
+		const session = await context.newCDPSession(page);
+		await session.send("Input.dispatchTouchEvent", {
+			type: "touchStart",
+			touchPoints: [point],
+		});
+		await page.evaluate(async () => {
+			window.dispatchEvent(new Event("resize"));
+			for (let frame = 0; frame < 3; frame++)
+				await new Promise(requestAnimationFrame);
+		});
+		await session.send("Input.dispatchTouchEvent", {
+			type: "touchEnd",
+			touchPoints: [],
+		});
+		await expect(level).toHaveAttribute("aria-pressed", "true");
+		await expect.poll(overflow).toBeLessThanOrEqual(1);
+		await bidBox.getByRole("button", { name: "Clubs", exact: true }).tap();
+		await expect(bidBox.locator("button.confirm")).toHaveAttribute(
+			"data-call",
+			"2C",
+		);
+		await bidBox.locator("button.confirm").tap();
+		await expect.poll(() => phase(page), { timeout: 30_000 }).toBe("play");
+		await expect(
+			page.getByTestId("bid-history").getByText("2♣", { exact: true }),
+		).toHaveCount(1);
+	} finally {
+		await context.close();
+	}
+});
+
+test("a landscape tablet makes one call with three taps", async ({
+	browser,
+	baseURL,
+}) => {
+	const context = await browser.newContext({
+		baseURL,
+		viewport: { width: 1024, height: 768 },
+		isMobile: true,
+		hasTouch: true,
+	});
+	try {
+		const page = await context.newPage();
+		await mockBots(page);
+		await page.goto("/");
+		await namePlayers(page, "W", ["N", "E", "S"]);
+		await page.getByTestId("create").tap();
+		await expect(page.locator("main > .room")).toHaveAttribute(
+			"data-layout",
+			"sideways",
+		);
+		await expect.poll(() => phoneTurn(page), { timeout: 30_000 }).toBe(true);
+
+		const bidBox = page.getByTestId("bid-box");
+		const level = bidBox.getByRole("button", { name: "Level 2", exact: true });
+		const strain = bidBox.getByRole("button", { name: "Clubs", exact: true });
+		const confirm = bidBox.locator("button.confirm");
+		const recordedCall = page
+			.getByTestId("bid-history")
+			.getByText("2♣", { exact: true });
+		await level.tap();
+		await expect(level).toHaveAttribute("aria-pressed", "true");
+		await expect(confirm).toBeDisabled();
+		await strain.tap();
+		await expect(strain).toHaveAttribute("aria-pressed", "true");
+		await expect(confirm).toHaveAttribute("data-call", "2C");
+		await expect(recordedCall).toHaveCount(0);
+		await confirm.tap();
+		await expect.poll(() => phase(page), { timeout: 30_000 }).toBe("play");
+		await expect(recordedCall).toHaveCount(1);
+	} finally {
+		await context.close();
+	}
+});
+
 /**
  * A fake screen lock on `page` that counts the requests, and a visibility the test can change. `wake` reads the
  * requests and the held locks; `hideAndShow` releases the locks as the browser does for a hidden page, then shows the

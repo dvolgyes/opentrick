@@ -24,6 +24,8 @@ The full link contains the key to the table, so share it only with people you wa
 OpenTrick deals the cards, guides bidding and play, and keeps duplicate scores.
 It supports undo requests, claims, and autoplay for a player who needs a break.
 In solo games, select **Next board** when you are ready, or enable automatic advance in Settings.
+On a phone or tablet, tap each bidding control once.
+Select **Confirm** if your bidding settings require it.
 
 ![A bridge table on desktop during play, showing the hands, a played card, contract, and trick count.](docs/images/gameplay-desktop.jpg)
 

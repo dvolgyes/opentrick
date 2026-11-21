@@ -2647,6 +2647,55 @@ describe("bid box under a held press", () => {
 			expect(level?.getAttribute("aria-pressed")).toBe("true");
 		},
 	);
+
+	it.each(["compact", "sideways"] as const)(
+		"keeps each touch in the bid sequence through a table update (%s)",
+		async (layout) => {
+			const { handlers, root, section } = renderView(auctionView, layout);
+			const tap = async (selector: string): Promise<void> => {
+				const target = root.querySelector<HTMLButtonElement>(selector);
+				if (!target) throw new Error(`missing bid button ${selector}`);
+				target.scrollIntoView({ block: "center" });
+				const box = target.getBoundingClientRect();
+				const frame = window.frameElement?.getBoundingClientRect();
+				await cdp().send("Input.dispatchTouchEvent", {
+					type: "touchStart",
+					touchPoints: [
+						{
+							x: (frame?.left ?? 0) + box.left + box.width / 2,
+							y: (frame?.top ?? 0) + box.top + box.height / 2,
+						},
+					],
+				});
+				section.render({
+					...auctionView,
+					prompt: `North to bid (${selector})`,
+				});
+				await cdp().send("Input.dispatchTouchEvent", {
+					type: "touchEnd",
+					touchPoints: [],
+				});
+			};
+
+			const level = '.bid-levels button[aria-label="Level 2"]';
+			const strain = '.bid-calls button[aria-label="Clubs"]';
+			await tap(level);
+			expect(root.querySelector(level)?.getAttribute("aria-pressed")).toBe(
+				"true",
+			);
+			await tap(strain);
+			expect(root.querySelector(strain)?.getAttribute("aria-pressed")).toBe(
+				"true",
+			);
+			expect(handlers.act).not.toHaveBeenCalled();
+			await tap('.bid-actions button[data-call="2C"]');
+			expect(handlers.act).toHaveBeenCalledExactlyOnceWith({
+				type: "call",
+				call: "2C",
+			});
+			section.dispose();
+		},
+	);
 });
 
 describe("finished trick", () => {
