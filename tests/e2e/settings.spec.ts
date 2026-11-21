@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import { Player } from "./player";
+import { namePlayers } from "./room";
 
 /* Display preferences remain local and take effect after Save or reload. */
 
@@ -852,33 +853,83 @@ test("turning off played-card animation keeps its duration after reload", async 
 	).toHaveValue("2");
 });
 
-test("Gameplay shows the device motion preference and saves a local animation override", async ({
+test("Gameplay shows the live browser reduced motion request and keeps the saved choice", async ({
 	page,
 }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await openTable(page);
-	const label =
-		"Allow game animations when this device requests reduced motion";
-	const notice = "This device requests reduced motion.";
-	let dialog = await openSettings(page);
-	let gameplay = dialog.getByRole("group", { name: "Gameplay", exact: true });
-	await expect(gameplay.getByText(notice, { exact: true })).toBeVisible();
-	await expect(gameplay.getByLabel(label)).not.toBeChecked();
-	await gameplay.getByLabel(label).check();
-	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await page.goto("/");
+	await namePlayers(page, "N", ["E", "S", "W"]);
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("table")).toHaveAttribute(
+		"data-phase",
+		"auction",
+	);
+	const dialog = await openSettings(page);
+	const gameplay = dialog.getByRole("group", { name: "Gameplay", exact: true });
+	const motion = gameplay.getByRole("combobox", {
+		name: "Browser reduced motion request:",
+		exact: true,
+	});
+	const requested = gameplay.getByText("status: requested", { exact: true });
+	const notRequested = gameplay.getByText("status: not requested", {
+		exact: true,
+	});
+	await expect(motion.locator("option")).toHaveText(["respected", "override"]);
+	await expect(motion).toHaveValue("respected");
+	await expect(requested).toBeVisible();
+	await expect(notRequested).toBeHidden();
+	const selectBox = await motion.boundingBox();
+	const statusBox = await requested.boundingBox();
+	if (!selectBox || !statusBox) throw new Error("Motion control not visible");
+	expect(statusBox.x).toBeGreaterThanOrEqual(selectBox.x + selectBox.width);
+	expect(statusBox.y).toBeLessThan(selectBox.y + selectBox.height);
+	expect(statusBox.y + statusBox.height).toBeGreaterThan(selectBox.y);
+
+	const expectStatusColor = async (status: Locator, token: string) => {
+		const [actual, expected] = await status.evaluate((node, token) => {
+			const style = getComputedStyle(node);
+			const channels = style.color.match(/\d+/g) ?? [];
+			const hex = channels.map((channel) =>
+				Number(channel).toString(16).padStart(2, "0"),
+			);
+			return [`#${hex.join("")}`, style.getPropertyValue(token).trim()];
+		}, token);
+		expect(actual).toBe(expected);
+	};
+	const save = dialog.getByRole("button", { name: "Save settings" });
+	await motion.selectOption("override");
+	for (const theme of ["Normal", "Solarized", "Selenized", "Gruvbox"]) {
+		for (const scheme of ["Light", "Dark"]) {
+			await dialog.getByLabel(theme, { exact: true }).check();
+			await dialog.getByLabel(scheme, { exact: true }).check();
+			await save.click();
+			await expect(dialog).toBeHidden();
+			await openSettings(page);
+			await expect(motion).toHaveValue("override");
+
+			await page.emulateMedia({ reducedMotion: "reduce" });
+			await expect(requested).toBeVisible();
+			await expect(notRequested).toBeHidden();
+			await expectStatusColor(requested, "--error");
+
+			await page.emulateMedia({ reducedMotion: "no-preference" });
+			await expect(notRequested).toBeVisible();
+			await expect(requested).toBeHidden();
+			await expectStatusColor(notRequested, "--call-green");
+			await expect(motion).toHaveValue("override");
+		}
+	}
+
+	await motion.selectOption("respected");
+	await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(dialog).toBeHidden();
-
-	dialog = await openSettings(page);
-	gameplay = dialog.getByRole("group", { name: "Gameplay", exact: true });
-	await expect(gameplay.getByLabel(label)).toBeChecked();
+	await openSettings(page);
+	await expect(motion).toHaveValue("override");
+	await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
 	await page.reload();
-	dialog = await openSettings(page);
-	gameplay = dialog.getByRole("group", { name: "Gameplay", exact: true });
-	await expect(gameplay.getByLabel(label)).toBeChecked();
-	await expect(gameplay.getByText(notice, { exact: true })).toBeVisible();
-
-	await page.emulateMedia({ reducedMotion: "no-preference" });
-	await expect(gameplay.getByText(notice, { exact: true })).toBeHidden();
+	await openSettings(page);
+	await expect(motion).toHaveValue("override");
+	await expect(notRequested).toBeVisible();
 });
 
 test("on a phone, Settings is above the board and its dialog fits the screen", async ({

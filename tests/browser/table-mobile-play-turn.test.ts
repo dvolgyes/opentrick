@@ -3274,37 +3274,58 @@ describe("finished trick", () => {
 		}
 	});
 
-	it("shows a static winner frame then fades with reduced motion", () => {
-		vi.useFakeTimers();
-		const nativeMatch = window.matchMedia.bind(window);
-		const media = vi
-			.spyOn(window, "matchMedia")
-			.mockImplementation((query) =>
-				query === "(prefers-reduced-motion: reduce)"
-					? ({ matches: true } as MediaQueryList)
-					: nativeMatch(query),
+	it.each([
+		{ mode: "Respected", overrideReducedMotion: false, trickAnimation: true },
+		{ mode: "Override", overrideReducedMotion: true, trickAnimation: false },
+	])(
+		"holds the finished trick still without animation in $mode mode",
+		async ({ overrideReducedMotion, trickAnimation }) => {
+			await cdp().send("Emulation.setEmulatedMedia", {
+				features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+			});
+			vi.useFakeTimers();
+			const { root, section } = renderView(
+				playView(),
+				"desktop",
+				undefined,
+				undefined,
+				{
+					marks: () => ({ ...DEFAULT_SETTINGS, overrideReducedMotion }),
+					trickDisplayMs: () => 2000,
+					trickWinnerPauseMs: () => 200,
+					trickAnimation: () => trickAnimation,
+				},
 			);
-		try {
-			const { root, section } = renderView(playView(), "desktop");
-			section.render(finishedView());
-			const winner = document.querySelector<HTMLElement>(
-				".trick-collection-overlay .trick-winner",
-			);
-			expect(winner).not.toBeNull();
-			const frames = (
-				winner?.getAnimations()[0]?.effect as KeyframeEffect | undefined
-			)?.getKeyframes();
-			expect(frames?.at(-1)?.opacity).toBe("0");
-			expect(frames?.at(-1)?.transform).toBeUndefined();
-			expect(root.querySelector(".trick-announcement")?.textContent).toContain(
-				"won the trick",
-			);
-			vi.advanceTimersByTime(350);
-			expect(document.querySelector(".trick-collection-overlay")).toBeNull();
-		} finally {
-			media.mockRestore();
-		}
-	});
+			try {
+				section.render(finishedView());
+				const overlay = document.querySelector(".trick-collection-overlay");
+				if (!overlay) throw new Error("missing trick collection");
+				const cards = [...overlay.querySelectorAll(".played")];
+				expect(cards).toHaveLength(4);
+				const positions = cards.map((card) =>
+					card.getBoundingClientRect().toJSON(),
+				);
+				expect.soft(overlay.getAnimations({ subtree: true })).toHaveLength(0);
+				expect.soft(overlay.querySelector(".trick-winner")).toBeNull();
+				expect(
+					root.querySelector(".trick-announcement")?.textContent,
+				).toContain("won the trick");
+				vi.advanceTimersByTime(1999);
+				expect(section.collecting()).toBe(true);
+				expect(cards.every((card) => card.isConnected)).toBe(true);
+				expect(
+					cards.map((card) => card.getBoundingClientRect().toJSON()),
+				).toEqual(positions);
+				vi.advanceTimersByTime(1);
+				expect(section.collecting()).toBe(false);
+				expect(overlay.isConnected).toBe(false);
+			} finally {
+				section.dispose();
+				vi.useRealTimers();
+				await cdp().send("Emulation.setEmulatedMedia", { features: [] });
+			}
+		},
+	);
 
 	it("clears obsolete motion on a new board and on disposal", () => {
 		vi.useFakeTimers();

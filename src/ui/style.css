@@ -2157,8 +2157,28 @@ dialog {
 	color: var(--muted);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-	.settings-dialog .settings-reduced-motion {
+.settings-motion-control {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.settings-motion-requested {
+	display: none;
+	color: var(--error);
+}
+
+.settings-motion-not-requested {
+	color: var(--call-green);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.settings-motion-requested {
+		display: inline;
+	}
+
+	.settings-motion-not-requested {
 		display: none;
 	}
 }

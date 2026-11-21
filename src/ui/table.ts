@@ -3017,7 +3017,6 @@ export function tableSection(
 		viewport?.addEventListener("resize", cancelCollection);
 		viewport?.addEventListener("scroll", cancelCollection);
 		doc.addEventListener("visibilitychange", onCollectionVisibility);
-		const reduced = reducedMotion(win);
 		overlay.toggleAttribute(
 			"data-override-reduced-motion",
 			shownMarks.overrideReducedMotion,
@@ -3027,7 +3026,8 @@ export function tableSection(
 		const winnerPauseMs =
 			options.trickWinnerPauseMs?.() ?? DEFAULT_SETTINGS.trickWinnerPauseMs;
 		const animate =
-			options.trickAnimation?.() ?? DEFAULT_SETTINGS.trickAnimation;
+			(options.trickAnimation?.() ?? DEFAULT_SETTINGS.trickAnimation) &&
+			!reducedMotion(win);
 		for (const [index, node] of nodes.entries()) {
 			const rect = rects[index];
 			if (!rect) continue;
@@ -3081,26 +3081,24 @@ export function tableSection(
 			if (winner && animate) clone.classList.add("trick-winner");
 			clone.style.zIndex = String(index + 1);
 			overlay.append(clone);
+			if (!animate) continue;
 			const dx = (endpoint[0] ?? 0) - (x + cardWidth / 2);
 			const dy = (endpoint[1] ?? 0) - (y + cardHeight / 2);
 			const base = clone.style.transform || "none";
-			if (animate)
-				clone.animate(
-					reduced
-						? [{ opacity: 1 }, { opacity: 0 }]
-						: [
-								{ transform: base },
-								{
-									transform: `translate(${dx}px, ${dy}px) ${base === "none" ? "" : base}`,
-								},
-							],
+			clone.animate(
+				[
+					{ transform: base },
 					{
-						delay: winnerPauseMs,
-						duration: reduced ? 150 : TRICK_SWEEP_MS,
-						easing: "ease-in",
-						fill: "forwards",
+						transform: `translate(${dx}px, ${dy}px) ${base === "none" ? "" : base}`,
 					},
-				);
+				],
+				{
+					delay: winnerPauseMs,
+					duration: TRICK_SWEEP_MS,
+					easing: "ease-in",
+					fill: "forwards",
+				},
+			);
 		}
 		trick.replaceChildren();
 		if (!animate && displayMs === 0) {
@@ -3109,7 +3107,7 @@ export function tableSection(
 		}
 		collectionTimer = setTimeout(
 			() => finishCollection(),
-			animate ? winnerPauseMs + (reduced ? 150 : TRICK_SWEEP_MS) : displayMs,
+			animate ? winnerPauseMs + TRICK_SWEEP_MS : displayMs,
 		);
 	}
 

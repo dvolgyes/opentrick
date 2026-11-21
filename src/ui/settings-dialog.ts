@@ -209,7 +209,17 @@ export function settingsDialog(
 		playTimeMs: timeInput(t("Card thinking budget (seconds)"), "play-time", 1),
 	};
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
-	const overrideReducedMotion = el("input", { attrs: { type: "checkbox" } });
+	const motionMode = el(
+		"select",
+		{
+			attrs: {
+				id: "settings-motion-mode",
+				"aria-describedby": "settings-motion-status",
+			},
+		},
+		el("option", { attrs: { value: "respected" } }, t("respected")),
+		el("option", { attrs: { value: "override" } }, t("override")),
+	);
 	const cardPlayAnimation = el("input", { attrs: { type: "checkbox" } });
 	const cardPlayDuration = timeInput(
 		t("Played-card animation duration (seconds)"),
@@ -454,15 +464,34 @@ export function settingsDialog(
 			{},
 			el("legend", {}, t("Gameplay")),
 			el(
-				"p",
-				{ className: "settings-hint settings-reduced-motion" },
-				t("This device requests reduced motion."),
-			),
-			el(
-				"label",
-				{},
-				overrideReducedMotion,
-				` ${t("Allow game animations when this device requests reduced motion")}`,
+				"div",
+				{ className: "settings-row" },
+				el(
+					"label",
+					{ attrs: { for: "settings-motion-mode" } },
+					`${t("Browser reduced motion request")}:`,
+				),
+				el(
+					"span",
+					{ className: "settings-motion-control" },
+					motionMode,
+					el(
+						"span",
+						{ attrs: { id: "settings-motion-status" } },
+						"(",
+						el(
+							"span",
+							{ className: "settings-motion-requested" },
+							t("status: requested"),
+						),
+						el(
+							"span",
+							{ className: "settings-motion-not-requested" },
+							t("status: not requested"),
+						),
+						")",
+					),
+				),
 			),
 			el("label", {}, cardPlayAnimation, ` ${t("Animate played cards")}`),
 			cardPlayDuration.element,
@@ -658,7 +687,7 @@ export function settingsDialog(
 			guideButton: biddingHelp.guideButton.checked,
 			botBidHint: biddingHelp.botBidHint.checked,
 			bidConfirmation: biddingHelp.bidConfirmation.checked,
-			overrideReducedMotion: overrideReducedMotion.checked,
+			overrideReducedMotion: motionMode.value === "override",
 			cardPlayAnimation: cardPlayAnimation.checked,
 			cardPlayDurationMs: Math.round(
 				cardPlayDuration.input.valueAsNumber * 1000,
@@ -722,7 +751,9 @@ export function settingsDialog(
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
 			cardPoints.checked = settings.cardPoints;
-			overrideReducedMotion.checked = settings.overrideReducedMotion;
+			motionMode.value = settings.overrideReducedMotion
+				? "override"
+				: "respected";
 			cardPlayAnimation.checked = settings.cardPlayAnimation;
 			cardPlayDuration.input.value = String(settings.cardPlayDurationMs / 1000);
 			cardPlayRotation.input.value = String(settings.cardPlayRotationDegrees);
