@@ -13,6 +13,7 @@ import {
 	sharedQuery,
 } from "./bookmark";
 import { showCommunity } from "./community-view";
+import { readWaitMinutes } from "./community-wait";
 import { showCreate } from "./create";
 import type { AppDeps, Dispose, Navigation } from "./deps";
 import { copyToClipboard } from "./dom";
@@ -138,14 +139,9 @@ export function startApp(root: HTMLElement, deps: AppDeps): void {
 								(seat) => seat !== setup.seat && setup.open[seat] === undefined,
 							),
 						];
-						const minutes = Number(
-							deps.browser?.getItem("opentrick.community.wait-minutes") ?? "2",
-						);
 						const waitMs = !Object.values(setup.open).includes("both")
 							? 0
-							: Number.isFinite(minutes) && minutes >= 0 && minutes <= 60
-								? minutes * 60_000
-								: 120_000;
+							: readWaitMinutes(deps.browser) * 60_000;
 						const party = { open: setup.open, names: setup.names, waitMs };
 						history.replaceState(
 							null,

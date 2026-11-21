@@ -112,6 +112,7 @@ export function settingsDialog(
 		},
 	});
 	const language = languageSelect(deps);
+	let openedBidder = DEFAULT_SETTINGS.bidder;
 	const radios = <T extends string>(
 		name: string,
 		legend: string,
@@ -612,10 +613,13 @@ export function settingsDialog(
 				Math.round(control.input.valueAsNumber * 1000),
 			]),
 		) as Pick<Settings, keyof typeof timing>;
-		const editable = bidding?.().editable ?? true;
+		const bidder =
+			(bidding?.().editable ?? true) && engine.value() !== openedBidder
+				? engine.value()
+				: undefined;
 		const settings: Settings = {
 			...times,
-			bidder: editable ? engine.value() : readSettings(deps.browser).bidder,
+			bidder: bidder ?? readSettings(deps.browser).bidder,
 			pointSystem: points.value(),
 			cardPoints: cardPoints.checked,
 			theme: theme.value(),
@@ -656,8 +660,11 @@ export function settingsDialog(
 			landscapeDesktop: orientation.landscapeDesktop.checked,
 			portraitMobile: orientation.portraitMobile.checked,
 		};
+		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
 		try {
 			writeSettings(deps.browser, settings);
+			if (languageChanged && !saveLanguage(deps, language.value))
+				throw new Error("local storage did not save the language");
 		} catch {
 			status.textContent = t("This browser could not store the settings.");
 			return;
@@ -681,10 +688,8 @@ export function settingsDialog(
 			settings.shadowStrength;
 		element.ownerDocument.documentElement.dataset.panelTexture =
 			settings.panelTexture ? "on" : "off";
-		const languageChanged = language.value !== (deps.savedLocale ?? "auto");
-		if (languageChanged) saveLanguage(deps, language.value);
 		element.close();
-		saved(editable ? settings.bidder : undefined);
+		saved(bidder);
 		if (languageChanged) reload();
 	}
 
@@ -698,7 +703,8 @@ export function settingsDialog(
 			for (const field of Object.keys(timing) as (keyof typeof timing)[])
 				timing[field].input.value = String(settings[field] / 1000);
 			const bot = bidding?.() ?? { bidder: settings.bidder, editable: true };
-			engine.set(bot.bidder);
+			openedBidder = bot.bidder;
+			engine.set(openedBidder);
 			engine.element.disabled = !bot.editable;
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);

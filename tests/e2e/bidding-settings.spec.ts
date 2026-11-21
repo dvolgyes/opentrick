@@ -93,3 +93,25 @@ test("the host can see, cancel, save and reload the bidding engine in Settings",
 	await page.goto("/?r=rl-fsp");
 	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("rl-fsp");
 });
+
+test("saving appearance keeps the default engine when the table uses a different engine", async ({
+	page,
+}) => {
+	await mockBotBidding(page, () => "P");
+	await page.goto("/?r=rl-fsp");
+	await namePlayers(page, "W", ["N", "E", "S"]);
+	await page.getByTestId("create").click();
+	await page.getByRole("button", { name: "Settings", exact: true }).click();
+	const dialog = page.getByTestId("settings-dialog");
+	await expect(dialog.getByLabel("BRL RL/FSP", { exact: true })).toBeChecked();
+	await dialog.getByLabel("Dark", { exact: true }).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-scheme", "dark");
+	await expect(page.getByTestId("bot-status")).toContainText(
+		"Local BRL · rl-fsp",
+	);
+	await page.goto("/");
+	await expect(page.locator('select[name="bot-bidder"]')).toHaveValue("sl", {
+		timeout: 2_000,
+	});
+});

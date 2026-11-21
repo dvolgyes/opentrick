@@ -37,6 +37,11 @@ All participants must take a seat; there is no spectator mode.
 
 Use **Settings** to change the language, appearance, card sizes, bidding confirmation, animations, and bot timing.
 You can also choose the displayed hand point count and the bot bidding engine.
+Select **Save settings** to apply changes during a game and keep them for the next visit in the same browser.
+Select **Cancel** to discard edits before saving.
+If the browser cannot save a change, Settings stays open and shows an error.
+The bot engine shown at a table is shared.
+Only the host can change it from Settings.
 The bidding reference is a guide for players; it does not explain every call made by a learned bot.
 
 Bots run in the browser without an account or API key.

@@ -151,7 +151,9 @@ function settingsFor(
 	return {
 		bidder: (config?.botSetup ?? DEFAULT_BOT_SETUP).bidder,
 		playTimeMs: settings?.playTimeMs,
-		cardPlayDurationMs: settings?.cardPlayDurationMs,
+		cardPlayDurationMs: settings?.cardPlayAnimation
+			? settings.cardPlayDurationMs
+			: 0,
 		...botTiming(settings),
 	};
 }
@@ -497,7 +499,9 @@ export function showRoom(
 			botSettings = {
 				...botSettings,
 				playTimeMs: settings.playTimeMs,
-				cardPlayDurationMs: settings.cardPlayDurationMs,
+				cardPlayDurationMs: settings.cardPlayAnimation
+					? settings.cardPlayDurationMs
+					: 0,
 				...botTiming(settings),
 			};
 			botRunner?.updateSettings(botSettings);
@@ -914,7 +918,10 @@ export function showRoom(
 			cardPoints: () => readSettings(deps.browser).cardPoints,
 			locale: deps.locale,
 			marks: () => readSettings(deps.browser),
-			cardPlayAnimation: () => readSettings(deps.browser).cardPlayAnimation,
+			cardPlayAnimation: () => {
+				const settings = readSettings(deps.browser);
+				return settings.cardPlayAnimation && settings.cardPlayDurationMs > 0;
+			},
 			cardPlayDurationMs: () => readSettings(deps.browser).cardPlayDurationMs,
 			cardPlayRotationDegrees: () =>
 				readSettings(deps.browser).cardPlayRotationDegrees,

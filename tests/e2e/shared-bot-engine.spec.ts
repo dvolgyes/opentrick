@@ -125,8 +125,14 @@ test("the selected bot engine follows the table across guests, reload and host h
 			.check();
 		await guest
 			.getByTestId("settings-dialog")
+			.getByLabel("Dark", { exact: true })
+			.check();
+		await guest
+			.getByTestId("settings-dialog")
 			.getByRole("button", { name: "Save settings" })
 			.click();
+		await expect(guest.locator("html")).toHaveAttribute("data-scheme", "dark");
+		await expect(host.locator("html")).toHaveAttribute("data-scheme", "light");
 		await expect(
 			auction
 				.locator("th")
@@ -155,11 +161,22 @@ test("the selected bot engine follows the table across guests, reload and host h
 			"auction",
 			{ timeout: CONNECT_MS },
 		);
+		await expect(guest.locator("html")).toHaveAttribute("data-scheme", "dark");
 		await guest.getByRole("button", { name: "Settings", exact: true }).click();
 		await expect(
 			guest
 				.getByTestId("settings-dialog")
 				.getByLabel("BRL RL/FSP", { exact: true }),
+		).toBeChecked();
+		await expect(
+			guest
+				.getByTestId("settings-dialog")
+				.getByLabel("BRL RL/FSP", { exact: true }),
+		).toBeDisabled();
+		await expect(
+			guest
+				.getByTestId("settings-dialog")
+				.getByLabel("Milton/HCP (4-3-2-1)", { exact: true }),
 		).toBeChecked();
 		await guest
 			.getByTestId("settings-dialog")

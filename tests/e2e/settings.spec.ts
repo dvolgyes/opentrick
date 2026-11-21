@@ -124,7 +124,7 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	let dialog = await openSettings(page);
 	await expectSettingsOrder(dialog);
 	await expect(dialog.getByLabel("Language")).toHaveValue("auto");
-	await expect(dialog.getByLabel("Milton/HCP (4-3-2-1)")).toBeChecked();
+	await expect(dialog.getByLabel("Corrected Milton HCP")).toBeChecked();
 	await expect(dialog.getByLabel("Light", { exact: true })).toBeChecked();
 	await expect(dialog.getByLabel("Animate trick collection")).toBeChecked();
 	await expect(dialog.getByLabel("Animate played cards")).toBeChecked();
@@ -222,6 +222,11 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await dialog.getByLabel("Dark", { exact: true }).check();
 	await dialog.getByLabel("Solarized", { exact: true }).check();
 	await dialog.getByLabel("Frame the player whose turn it is to bid").uncheck();
+	await dialog
+		.getByLabel("Frame the player whose turn it is to play")
+		.uncheck();
+	await dialog.getByLabel("Show as text whose turn it is to bid").uncheck();
+	await dialog.getByLabel("Show as text whose turn it is to play").uncheck();
 	await dialog.getByLabel("Show the points next to the cards").uncheck();
 	await dialog.getByLabel("Show the network quality").uncheck();
 	await dialog
@@ -259,6 +264,20 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		.getByLabel("Require confirmation before sending a bid")
 		.uncheck();
 	await relayChecks.check();
+	await dialog
+		.getByLabel("On a phone or tablet in landscape, show the desktop view")
+		.check();
+	await dialog
+		.getByLabel("On a computer with a portrait window, show the mobile view")
+		.uncheck();
+	const times = [
+		["Minimum card time (seconds)", "3"],
+		["Minimum bid time (seconds)", "4"],
+		["Pause after auction (seconds)", "6"],
+		["Card thinking budget (seconds)", "2"],
+	] as const;
+	for (const [label, value] of times)
+		await dialog.getByLabel(label).fill(value);
 
 	await dialog.getByRole("button", { name: "Save settings" }).click();
 	await expect(dialog).toBeHidden();
@@ -311,11 +330,6 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 		"opentrick.settings.trick-winner-pause-ms",
 		"opentrick.settings.voicebox",
 	]);
-	expect(
-		await page.evaluate(() =>
-			localStorage.getItem("opentrick.settings.play-time-ms"),
-		),
-	).toBe("1000");
 
 	await page.reload();
 	await expect(page.getByTestId("table")).toBeVisible();
@@ -330,9 +344,20 @@ test("Settings shows the defaults, and Save keeps the choices in this browser af
 	await expect(
 		dialog.getByLabel("Frame the player whose turn it is to bid"),
 	).not.toBeChecked();
+	for (const label of [
+		"Frame the player whose turn it is to play",
+		"Show as text whose turn it is to bid",
+		"Show as text whose turn it is to play",
+		"On a computer with a portrait window, show the mobile view",
+	])
+		await expect(dialog.getByLabel(label)).not.toBeChecked();
 	await expect(
-		dialog.getByLabel("Frame the player whose turn it is to play"),
+		dialog.getByLabel(
+			"On a phone or tablet in landscape, show the desktop view",
+		),
 	).toBeChecked();
+	for (const [label, value] of times)
+		await expect(dialog.getByLabel(label)).toHaveValue(value);
 	await expect(dialog.getByLabel("Show the network quality")).not.toBeChecked();
 	await expect(
 		dialog.getByLabel("Show the voice box for a player without video"),
@@ -752,19 +777,79 @@ test("suit and rank size offers all six labels, applies on Save and survives rel
 	);
 });
 
-test("a new language in Settings reloads the page in that language", async ({
+test("Settings switches language and restores the browser language", async ({
 	page,
 }) => {
 	await openTable(page);
 	const dialog = await openSettings(page);
 	await dialog.getByLabel("Language").selectOption("de");
 	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(page.locator("html")).toHaveAttribute("lang", "de");
+	await page
+		.getByRole("button", { name: "Einstellungen", exact: true })
+		.click();
+	await dialog.getByRole("combobox").selectOption("auto");
+	await dialog.getByRole("button", { name: "Einstellungen speichern" }).click();
+	await expect(page.locator("html")).toHaveAttribute("lang", "en");
+	await expect((await openSettings(page)).getByLabel("Language")).toHaveValue(
+		"auto",
+	);
+});
+
+for (const [key, language] of [
+	["opentrick.settings.scheme", false],
+	["opentrick.locale", true],
+] as const)
+	test(`Settings keeps the edits open when the browser rejects ${key}`, async ({
+		page,
+	}) => {
+		await page.addInitScript((rejectedKey) => {
+			const setItem = Storage.prototype.setItem;
+			let rejected = false;
+			Storage.prototype.setItem = function (key, value) {
+				if (this === localStorage && key === rejectedKey && !rejected) {
+					rejected = true;
+					throw new DOMException("Storage is full", "QuotaExceededError");
+				}
+				setItem.call(this, key, value);
+			};
+		}, key);
+		await openTable(page);
+		const dialog = await openSettings(page);
+		await dialog.getByLabel("Dark", { exact: true }).check();
+		if (language) await dialog.getByLabel("Language").selectOption("de");
+		const save = dialog.getByRole("button", { name: "Save settings" });
+		await save.click();
+		await expect(
+			dialog.getByText("This browser could not store the settings.", {
+				exact: true,
+			}),
+		).toBeVisible({ timeout: 2_000 });
+		await expect(dialog.getByLabel("Dark", { exact: true })).toBeChecked();
+		await expect(page.locator("html")).toHaveAttribute("data-scheme", "light");
+		await save.click();
+		await expect(dialog).toBeHidden();
+		await expect(page.locator("html")).toHaveAttribute("data-scheme", "dark");
+		if (language)
+			await expect(page.locator("html")).toHaveAttribute("lang", "de");
+	});
+
+test("turning off played-card animation keeps its duration after reload", async ({
+	page,
+}) => {
+	await openTable(page);
+	let dialog = await openSettings(page);
+	await dialog.getByLabel("Animate played cards").uncheck();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+	await page.reload();
+	dialog = await openSettings(page);
+	await expect(dialog.getByLabel("Animate played cards")).not.toBeChecked({
+		timeout: 2_000,
+	});
 	await expect(
-		page.getByRole("button", { name: "Einstellungen", exact: true }),
-	).toBeVisible();
-	expect(
-		await page.evaluate(() => localStorage.getItem("opentrick.locale")),
-	).toBe("de");
+		dialog.getByLabel("Played-card animation duration (seconds)"),
+	).toHaveValue("2");
 });
 
 test("on a phone, Settings is above the board and its dialog fits the screen", async ({

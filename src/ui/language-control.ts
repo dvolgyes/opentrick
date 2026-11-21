@@ -34,17 +34,27 @@ export function languageSelect(deps: AppDeps): HTMLSelectElement {
 }
 
 /** Stores the value of a `languageSelect`; the page must reload for it to take effect. */
-export function saveLanguage(deps: AppDeps, value: string): void {
-	if (value === "auto") deps.browser?.removeItem(LOCALE_STORAGE_KEY);
-	else deps.browser?.setItem(LOCALE_STORAGE_KEY, value);
+export function saveLanguage(deps: AppDeps, value: string): boolean {
+	const { browser } = deps;
+	if (!browser) return false;
+	const locale = value === "auto" ? null : value;
+	if (browser.getItem(LOCALE_STORAGE_KEY) === locale) return true;
+	if (locale === null) browser.removeItem(LOCALE_STORAGE_KEY);
+	else browser.setItem(LOCALE_STORAGE_KEY, locale);
+	return browser.getItem(LOCALE_STORAGE_KEY) === locale;
 }
 
 /** The build date and the language picker; a change of language reloads the page. */
 export function languageControl(deps: AppDeps): HTMLElement {
 	const select = languageSelect(deps);
+	const status = el("span", { attrs: { role: "status" } });
 	select.addEventListener("change", () => {
-		saveLanguage(deps, select.value);
-		location.reload();
+		if (saveLanguage(deps, select.value)) {
+			location.reload();
+			return;
+		}
+		select.value = deps.savedLocale ?? "auto";
+		status.textContent = deps.t("This browser could not store the settings.");
 	});
 	const version = el(
 		"span",
@@ -59,5 +69,6 @@ export function languageControl(deps: AppDeps): HTMLElement {
 		{ className: "language-control" },
 		version,
 		el("label", {}, select),
+		status,
 	);
 }

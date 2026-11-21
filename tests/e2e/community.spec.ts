@@ -89,6 +89,56 @@ function gameKey(page: Page): string | null {
 	);
 }
 
+test("matchmaking Bot wait saves zero, restores a custom value, and clears to default", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("base URL missing");
+	const { contexts, pages } = await players(browser, baseURL, 1);
+	try {
+		const [page] = pages;
+		if (!page) throw new Error("page missing");
+		const wait = page.getByTestId("community-wait");
+		const openWait = () => page.getByText("Bot wait", { exact: true }).click();
+		const saveWait = async (minutes: string) => {
+			await wait.fill(minutes);
+			await wait.press("Tab");
+		};
+
+		await enter(page, "Alice");
+		await openWait();
+		await expect(wait).toHaveValue("2");
+
+		await saveWait("0");
+		expect(
+			await page.evaluate(() =>
+				localStorage.getItem("opentrick.community.wait-minutes"),
+			),
+		).toBe("0");
+
+		await saveWait("7.5");
+		await saveWait("61");
+		await enter(page, "Alice");
+		await openWait();
+		await expect(wait).toHaveValue("7.5");
+
+		await saveWait("");
+		await expect(wait).toHaveValue("2");
+		await enter(page, "Alice");
+		await openWait();
+		await expect(wait).toHaveValue("2");
+
+		await page.evaluate(() =>
+			localStorage.setItem("opentrick.community.wait-minutes", "0x10"),
+		);
+		await enter(page, "Alice");
+		await openWait();
+		await expect(wait).toHaveValue("2");
+	} finally {
+		await Promise.all(contexts.map((context) => context.close()));
+	}
+});
+
 test("mobile community screen is compact and returns home", async ({
 	browser,
 	baseURL,

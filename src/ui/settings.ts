@@ -392,51 +392,32 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		throw new Error("unknown card texture strength");
 	if (!SHADOW_STRENGTHS.includes(settings.shadowStrength))
 		throw new Error("unknown shadow strength");
-	const cardAnimationSettingsMismatch =
-		settings.cardPlayAnimation === (settings.cardPlayDurationMs === 0);
-	const cardPlayAnimation = cardAnimationSettingsMismatch
-		? true
-		: settings.cardPlayAnimation;
-	const cardPlayDurationMs = cardAnimationSettingsMismatch
-		? 1000
-		: settings.cardPlayDurationMs;
-	storage.setItem(`${PREFIX}bidder`, settings.bidder);
-	storage.setItem(`${PREFIX}play-time-ms`, String(budget));
-	storage.setItem(`${PREFIX}card-play-duration-ms`, String(cardPlayDurationMs));
-	storage.setItem(
-		`${PREFIX}card-play-rotation-degrees`,
-		String(settings.cardPlayRotationDegrees),
-	);
-	storage.setItem(
-		`${PREFIX}card-play-center-percent`,
-		String(settings.cardPlayCenterPercent),
-	);
-	storage.setItem(`${PREFIX}trick-display-ms`, String(settings.trickDisplayMs));
-	storage.setItem(
-		`${PREFIX}trick-winner-pause-ms`,
-		String(settings.trickWinnerPauseMs),
-	);
+	const write = (name: string, value: string): void => {
+		const key = PREFIX + name;
+		if (storage.getItem(key) === value) return;
+		storage.setItem(key, value);
+		if (storage.getItem(key) !== value)
+			throw new Error(`local storage did not save ${key}`);
+	};
+	write("play-time-ms", String(budget));
+	write("card-play-duration-ms", String(settings.cardPlayDurationMs));
+	write("card-play-rotation-degrees", String(settings.cardPlayRotationDegrees));
+	write("card-play-center-percent", String(settings.cardPlayCenterPercent));
+	write("trick-display-ms", String(settings.trickDisplayMs));
+	write("trick-winner-pause-ms", String(settings.trickWinnerPauseMs));
 	for (const [field, name] of Object.entries(TIMING_KEYS))
-		storage.setItem(PREFIX + name, String(timing[field as keyof BotTiming]));
-	storage.setItem(`${PREFIX}points`, settings.pointSystem);
-	storage.setItem(`${PREFIX}card-points`, settings.cardPoints ? "1" : "0");
-	storage.setItem(`${PREFIX}theme-style`, settings.theme);
-	storage.setItem(`${PREFIX}scheme`, settings.scheme);
-	storage.setItem(`${PREFIX}suit-font-size`, settings.suitFontSize);
-	storage.setItem(`${PREFIX}suit-colors`, settings.suitColors);
-	storage.setItem(`${PREFIX}baize-strength`, settings.baizeStrength);
-	storage.setItem(`${PREFIX}paper-strength`, settings.paperStrength);
-	storage.setItem(`${PREFIX}shadow-strength`, settings.shadowStrength);
+		write(name, String(timing[field as keyof BotTiming]));
+	write("points", settings.pointSystem);
+	write("card-points", settings.cardPoints ? "1" : "0");
+	write("theme-style", settings.theme);
+	write("scheme", settings.scheme);
+	write("suit-font-size", settings.suitFontSize);
+	write("suit-colors", settings.suitColors);
+	write("baize-strength", settings.baizeStrength);
+	write("paper-strength", settings.paperStrength);
+	write("shadow-strength", settings.shadowStrength);
 	storage.removeItem(`${PREFIX}theme`);
 	for (const [field, name] of Object.entries(FLAGS))
-		storage.setItem(
-			PREFIX + name,
-			(
-				field === "cardPlayAnimation"
-					? cardPlayAnimation
-					: settings[field as keyof typeof FLAGS]
-			)
-				? "1"
-				: "0",
-		);
+		write(name, settings[field as keyof typeof FLAGS] ? "1" : "0");
+	write("bidder", settings.bidder);
 }

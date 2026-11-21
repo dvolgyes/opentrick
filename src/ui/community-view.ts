@@ -14,6 +14,12 @@ import { bridgeModule } from "../game/bridge";
 import { newCommandId } from "../ids";
 import { createTable, tableIdentity } from "../p2p/table";
 import { isPlayerName, isSeat, SEAT_NAMES, SEATS } from "../protocol";
+import {
+	DEFAULT_WAIT_MINUTES,
+	parseWaitMinutes,
+	readWaitMinutes,
+	saveWaitMinutes,
+} from "./community-wait";
 import type { AppDeps, Dispose, Navigation } from "./deps";
 import { discoveryCount } from "./discovery-count";
 import { button, copyToClipboard, el } from "./dom";
@@ -80,7 +86,7 @@ export function showCommunity(
 			"data-testid": "community-wait",
 		},
 	});
-	wait.value = deps.browser?.getItem("opentrick.community.wait-minutes") ?? "2";
+	wait.value = String(readWaitMinutes(deps.browser));
 	const name = el("input", {
 		attrs: {
 			type: "text",
@@ -110,16 +116,25 @@ export function showCommunity(
 	seatChoice.addEventListener("change", fillReservedName);
 	fillReservedName();
 	const apply = (): void => {
-		const minutes = Number(wait.value);
-		if (!Number.isFinite(minutes) || minutes < 0 || minutes > 60) {
+		const minutes = parseWaitMinutes(wait.value);
+		if (
+			wait.validity.badInput ||
+			(wait.value !== "" && minutes === undefined)
+		) {
 			wait.setCustomValidity(deps.t("Choose a wait between 0 and 60 minutes."));
 			wait.reportValidity();
 			return;
 		}
 		wait.setCustomValidity("");
-		deps.browser?.setItem("opentrick.community.wait-minutes", wait.value);
+		saveWaitMinutes(deps.browser, minutes);
+		const effectiveMinutes = minutes ?? DEFAULT_WAIT_MINUTES;
+		wait.value = String(effectiveMinutes);
 		if (session)
-			session.setPreferences(true, session.saved.allowBots, minutes * 60_000);
+			session.setPreferences(
+				true,
+				session.saved.allowBots,
+				effectiveMinutes * 60_000,
+			);
 	};
 	wait.addEventListener("change", apply);
 	const preferences = el(
@@ -536,8 +551,8 @@ export function showCommunity(
 				return;
 			}
 			name.setCustomValidity("");
-			const minutes = Number(wait.value);
-			if (!Number.isFinite(minutes) || minutes < 0 || minutes > 60) return;
+			const minutes = parseWaitMinutes(wait.value);
+			if (minutes === undefined) return;
 			savePersonalName(deps.browser, player);
 			const self = newCommandId();
 			if (route.kind !== "party" || !isSeat(seatChoice.value)) return;

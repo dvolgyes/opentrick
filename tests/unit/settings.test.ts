@@ -62,7 +62,7 @@ describe("player settings", () => {
 		expect(readSettings(storage)).toMatchObject(settings);
 	});
 
-	it("repairs mismatched card animation settings when saving", () => {
+	it("keeps the animation switch and duration independent", () => {
 		const storage = memoryStorage();
 		for (const [cardPlayAnimation, cardPlayDurationMs] of [
 			[false, 2000],
@@ -74,8 +74,8 @@ describe("player settings", () => {
 				cardPlayDurationMs,
 			});
 			expect(readSettings(storage)).toMatchObject({
-				cardPlayAnimation: true,
-				cardPlayDurationMs: 1000,
+				cardPlayAnimation,
+				cardPlayDurationMs,
 			});
 		}
 	});

@@ -505,15 +505,17 @@ export function showCreate(
 		}
 		const config: RoomConfig = { ...check.config, botSetup };
 		if (rememberName) savePersonalName(deps.browser, config.names[check.seat]);
-		const hostBotSettings =
-			fields.bots.length > 0
-				? {
-						bidder: botSetup.bidder,
-						playTimeMs: readSettings(deps.browser).playTimeMs,
-						cardPlayDurationMs: readSettings(deps.browser).cardPlayDurationMs,
-						...botTiming(readSettings(deps.browser)),
-					}
-				: undefined;
+		const settings = fields.bots.length > 0 && readSettings(deps.browser);
+		const hostBotSettings = settings
+			? {
+					bidder: botSetup.bidder,
+					playTimeMs: settings.playTimeMs,
+					cardPlayDurationMs: settings.cardPlayAnimation
+						? settings.cardPlayDurationMs
+						: 0,
+					...botTiming(settings),
+				}
+			: undefined;
 		for (const other of targets) disable(other.submit, true);
 		disable(online, true);
 		target.submit.textContent = deps.t("Creating…");
