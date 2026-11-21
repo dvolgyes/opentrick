@@ -57,6 +57,9 @@ An abort terminates synchronous native work; resuming can create a fresh worker.
 Claims, undo requests, seat changes, and stale results still pass through the existing host checks.
 When a human partner controls a bot declarer's hands, that player can also request undo and claim on the declarer's behalf.
 The opposing players still decide those requests.
+When a defender requests a card undo, only the controller of the declaring side decides.
+This is the declarer, or the human dummy when they control the bot declarer.
+If a build upgrade restores an older two-voter card undo, the controller must confirm the pending request again.
 Undo can continue from card play into the auction, with both opponents deciding an undo of a bid.
 
 The default budget is 5,000 ms per non-forced card decision, checked between native calls.

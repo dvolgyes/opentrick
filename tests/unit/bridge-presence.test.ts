@@ -197,13 +197,151 @@ describe("the presence rule for game actions", () => {
 		expect(boardStatus(rewound).phase).toBe("auction");
 	});
 
-	it("asks a human dummy to approve an opponent's undo when declarer is a bot", () => {
-		const afterThree = playing(contract(), "S7 S2 C2");
-		const fourth = legalActions(afterThree, "N")[0];
-		if (!fourth) throw new Error("North has no legal card");
-		const result = applyAction(afterThree, "N", fourth);
-		if (!result.ok) throw new Error(result.reason);
-		const board = result.board;
+	it.each<{
+		label: string;
+		bots: Seat[];
+		autoplaySeats: Seat[];
+		voter: Seat;
+		excluded: Seat;
+	}>([
+		{
+			label: "human declarer",
+			bots: [],
+			autoplaySeats: [],
+			voter: "N",
+			excluded: "S",
+		},
+		{
+			label: "bot declarer controlled by human dummy",
+			bots: ["N"],
+			autoplaySeats: [],
+			voter: "S",
+			excluded: "N",
+		},
+		{
+			label: "declarer on autoplay",
+			bots: ["N"],
+			autoplaySeats: ["N"],
+			voter: "N",
+			excluded: "S",
+		},
+		{
+			label: "bot declarer and bot dummy",
+			bots: ["N", "S"],
+			autoplaySeats: [],
+			voter: "N",
+			excluded: "S",
+		},
+	])(
+		"asks only the declaring side's controller for a defender's card undo ($label)",
+		decideCardUndo,
+	);
+
+	function decideCardUndo({
+		bots,
+		autoplaySeats,
+		voter,
+		excluded,
+	}: {
+		bots: Seat[];
+		autoplaySeats: Seat[];
+		voter: Seat;
+		excluded: Seat;
+	}) {
+		const board = playing(contract(), "S7 S2 C2");
+		const control = { bots, autoplaySeats };
+		const requested = send(
+			stateWith(board),
+			"E",
+			undoRequestPayload(ROOM_ID, board.number),
+			SEATS,
+			control,
+		);
+		if (!requested.ok) throw new Error(requested.reason);
+		const pending = parseBridgeState(requested.state, ROOM_ID)?.undo;
+		if (!pending) throw new Error("undo was not stored");
+		for (const seat of [excluded, "E", "W"] as const) {
+			expect(
+				send(
+					requested.state,
+					seat,
+					undoVotePayload(ROOM_ID, pending.id, false),
+					SEATS,
+					control,
+				),
+			).toMatchObject({
+				ok: false,
+				reason: "your seat is not asked to approve this undo",
+			});
+		}
+		expect(pending.required).toEqual([voter]);
+		const approved = send(
+			requested.state,
+			voter,
+			undoVotePayload(ROOM_ID, pending.id, true),
+			SEATS,
+			control,
+		);
+		if (!approved.ok) throw new Error(approved.reason);
+		expect(parseBridgeState(approved.state, ROOM_ID)).toMatchObject({
+			board: { calls: board.calls, cards: [] },
+			undo: null,
+		});
+	}
+
+	it("does not wait for an absent dummy on a defender's card undo", () => {
+		const board = playing(contract(), "S7");
+		expect(
+			send(
+				stateWith(board),
+				"E",
+				undoRequestPayload(ROOM_ID, board.number),
+				without("S"),
+			),
+		).toMatchObject({ ok: true, state: { undo: { required: ["N"] } } });
+	});
+
+	it.each([
+		{ bots: [], voter: "N", excluded: "S" },
+		{ bots: ["N"], voter: "S", excluded: "N" },
+	] satisfies { bots: Seat[]; voter: Seat; excluded: Seat }[])(
+		"restores a legacy request and asks $voter for a fresh decision",
+		({ bots, voter, excluded }) => {
+			const board = playing(contract(), "S7");
+			const id = "00000000-0000-4000-8000-000000000001";
+			const legacy = {
+				...stateWith(board),
+				undo: {
+					id,
+					board: board.number,
+					requester: "E",
+					calls: board.calls.length,
+					cards: 0,
+					required: ["N", "S"],
+					approved: [voter],
+				},
+			};
+			expect(parseBridgeState(legacy, ROOM_ID)?.undo).toMatchObject(
+				legacy.undo,
+			);
+			expect(
+				send(legacy, excluded, undoVotePayload(ROOM_ID, id, false), SEATS, {
+					bots,
+				}),
+			).toMatchObject({
+				ok: false,
+				reason: "your seat is not asked to approve this undo",
+			});
+			expect(
+				send(legacy, voter, undoVotePayload(ROOM_ID, id, true), SEATS, {
+					bots,
+				}),
+			).toMatchObject({ ok: true, event: { kind: "undo-applied" } });
+		},
+	);
+
+	it("preserves a card undo voter across roster changes", () => {
+		const board = playing(contract(), "S7");
 		const requested = send(
 			stateWith(board),
 			"E",
@@ -211,13 +349,42 @@ describe("the presence rule for game actions", () => {
 			SEATS,
 			{ bots: ["N"] },
 		);
-		expect(requested.ok).toBe(true);
-		if (!requested.ok) return;
-		expect(parseBridgeState(requested.state, ROOM_ID)?.undo?.required).toEqual([
-			"N",
-			"S",
-		]);
+		if (!requested.ok) throw new Error(requested.reason);
+		const pending = parseBridgeState(requested.state, ROOM_ID)?.undo;
+		if (!pending) throw new Error("undo was not stored");
+		const payload = undoVotePayload(ROOM_ID, pending.id, true);
+		expect(send(requested.state, "N", payload, SEATS)).toMatchObject({
+			ok: false,
+			reason: "your seat is not asked to approve this undo",
+		});
+		expect(send(requested.state, "S", payload, SEATS)).toMatchObject({
+			ok: true,
+			event: { kind: "undo-applied" },
+		});
 	});
+
+	it("rejects a stored card undo with a wrong-side voter or an ineligible approval", () => {
+		const board = playing(contract(), "S7");
+		const undo = {
+			id: "00000000-0000-4000-8000-000000000001",
+			board: board.number,
+			requester: "E",
+			calls: board.calls.length,
+			cards: 0,
+			required: ["N"],
+			approved: [],
+		};
+		const state = stateWith(board);
+		for (const invalid of [
+			{ ...undo, required: ["W"] },
+			{ ...undo, approved: ["S"] },
+		]) {
+			expect(
+				parseBridgeState({ ...state, undo: invalid }, ROOM_ID),
+			).toBeUndefined();
+		}
+	});
+
 	it.each(["undo", "claim-all", "claim-two", "claim-none"] as const)(
 		"lets human dummy request %s when controlling the bot declarer",
 		(operation) => {

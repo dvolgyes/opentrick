@@ -4,6 +4,7 @@ import {
 	type BridgeState,
 	claimVotePayload,
 	parseBridgeState,
+	pendingUndo,
 	resetVotePayload,
 	seatSystems,
 	tableLegalActions,
@@ -269,6 +270,7 @@ export class HostBotRunner {
 		const seats = this.#activeSeats(bots);
 		const state = parseBridgeState(view.table.state, this.#controller.tableId);
 		if (!state) return;
+		const undo = pendingUndo(state, bots, view.roster?.autoplaySeats);
 		const systems = seatSystems(state.systems, bots, "other");
 		const bidder = state.botBidder ?? this.#settings.bidder;
 		for (const seat of seats) {
@@ -276,9 +278,8 @@ export class HostBotRunner {
 				state.claim?.required.includes(seat) &&
 				!state.claim.approved.includes(seat)
 					? `claim:${state.claim.id}:${seat}`
-					: state.undo?.required.includes(seat) &&
-							!state.undo.approved.includes(seat)
-						? `undo:${state.undo.id}:${seat}`
+					: undo?.required.includes(seat) && !undo.approved.includes(seat)
+						? `undo:${undo.id}:${seat}`
 						: state.reset?.required.includes(seat) &&
 								!state.reset.approved.includes(seat)
 							? `reset:${state.reset.id}:${seat}`
@@ -288,8 +289,8 @@ export class HostBotRunner {
 				// A bot accepts every claim, undo and reset, so that only the human players decide them.
 				const payload = state.claim
 					? claimVotePayload(this.#controller.tableId, state.claim.id, true)
-					: state.undo
-						? undoVotePayload(this.#controller.tableId, state.undo.id, true)
+					: undo
+						? undoVotePayload(this.#controller.tableId, undo.id, true)
 						: resetVotePayload(
 								this.#controller.tableId,
 								state.reset?.id ?? "",

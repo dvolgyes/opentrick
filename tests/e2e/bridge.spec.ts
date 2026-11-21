@@ -8,6 +8,7 @@ import {
 	expectContract,
 	expectSeat,
 	makeCall,
+	NAME,
 	pick,
 	readStatistics,
 	type SeatKey,
@@ -302,6 +303,12 @@ test("3: East leads; then dummy is shown to everyone and only declarer plays it,
 	const approval = tab.N.getByRole("dialog", { name: "Undo request" });
 	await expect(approval).toBeVisible();
 	await expect(approval).toContainText("Do you approve?");
+	await expect(tab.S.getByTestId("undo-message")).toContainText(
+		`Waiting for ${NAME.N} to approve.`,
+	);
+	await expect(
+		tab.S.getByRole("dialog", { name: "Undo request" }),
+	).toBeHidden();
 	await approval.getByTestId("approval-accept").click();
 	await expectAt(1, 4);
 	expect(await playFirst(4)).toBe("E");

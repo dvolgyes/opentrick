@@ -55,6 +55,38 @@ describe("play", () => {
 		expect(autoplay.undo.canRequest).toBe(false);
 		expect(autoplay.claim.canRequest).toBe(false);
 	});
+
+	it.each([
+		{ bots: new Set<Seat>(), voter: "N", excluded: "S", name: "player1" },
+		{ bots: new Set<Seat>(["N"]), voter: "S", excluded: "N", name: "player2" },
+	] satisfies {
+		bots: ReadonlySet<Seat>;
+		voter: Seat;
+		excluded: Seat;
+		name: string;
+	}[])(
+		"prompts only $voter on a restored defender card undo",
+		({ bots, voter, excluded, name }) => {
+			const state = {
+				...tableState(LED),
+				undo: {
+					id: "00000000-0000-4000-8000-000000000001",
+					board: LED.number,
+					requester: "E" as const,
+					calls: LED.calls.length,
+					cards: 0,
+					required: ["N", "S"] as const,
+					approved: [voter],
+				},
+			};
+			expect(view(voter, LED, { state, bots }).undo.canVote).toBe(true);
+			expect(view(excluded, LED, { state, bots }).undo.canVote).toBe(false);
+			expect(view("E", LED, { state, bots }).undo).toMatchObject({
+				canCancel: true,
+				message: expect.stringContaining(`Waiting for ${name} to approve.`),
+			});
+		},
+	);
 	it("carries the engine winner and four played cards through every viewer orientation, including the final trick", () => {
 		for (const count of [1, 13]) {
 			const board = afterTricks(NORTH_DECLARER_BOARD, count);

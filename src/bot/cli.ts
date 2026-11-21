@@ -6,6 +6,7 @@ import {
 	bridgeModule,
 	claimVotePayload,
 	parseBridgeState,
+	pendingUndo,
 	resetVotePayload,
 	seatSystems,
 	undoVotePayload,
@@ -353,14 +354,16 @@ async function run(options: Options): Promise<void> {
 			);
 			return;
 		}
-		if (
-			state.undo?.required.includes(seat) &&
-			!state.undo.approved.includes(seat)
-		) {
+		const undo = pendingUndo(
+			state,
+			view.roster?.bots,
+			view.roster?.autoplaySeats,
+		);
+		if (undo?.required.includes(seat) && !undo.approved.includes(seat)) {
 			strategyKey = undefined;
 			await submitVote(
-				`undo:${state.undo.id}`,
-				undoVotePayload(identity.tableId, state.undo.id, true),
+				`undo:${undo.id}`,
+				undoVotePayload(identity.tableId, undo.id, true),
 			);
 			return;
 		}

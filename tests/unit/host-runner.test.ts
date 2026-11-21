@@ -21,6 +21,7 @@ import {
 	resetRequestPayload,
 	resetVotePayload,
 	undoRequestPayload,
+	undoVotePayload,
 } from "../../src/game/bridge";
 import type { TableController } from "../../src/p2p/table";
 import {
@@ -421,6 +422,38 @@ describe("host bot votes", () => {
 				requestId: undo?.id,
 				approve: true,
 			});
+	});
+
+	it("asks only the controlling bot to reconfirm a legacy card undo", async () => {
+		const boardState = tableState([
+			...["P", "1C", "P", "P", "P"].map((text) => act(call(text))),
+			act(),
+		]);
+		const id = "00000000-0000-4000-8000-000000000007";
+		const { runner, sendBot } = hostAt({
+			...boardState,
+			undo: {
+				id,
+				board: 1,
+				requester: "S",
+				calls: 5,
+				cards: 0,
+				required: ["E", "W"],
+				approved: ["E"],
+			},
+		});
+		try {
+			expect(await runner.start()).toBe(true);
+			await vi.waitFor(() =>
+				expect(sendBot).toHaveBeenCalledWith(
+					"E",
+					undoVotePayload(ROOM_ID, id, true),
+				),
+			);
+			expect(sendBot).toHaveBeenCalledTimes(1);
+		} finally {
+			runner.stop();
+		}
 	});
 });
 

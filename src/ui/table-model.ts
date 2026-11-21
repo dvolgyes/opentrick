@@ -31,10 +31,12 @@ import {
 	type BridgeState,
 	declarerController,
 	isTableCommand,
+	pendingUndo,
 	seatSystems,
 	tableActor,
 	tableLegalActions,
 	totals,
+	type UndoRequest,
 } from "../game/bridge";
 import { englishTranslator as english, type Translate } from "../i18n";
 import type { OutboxItem } from "../p2p/outbox";
@@ -1288,6 +1290,7 @@ function busy(lines: readonly TableActionLine[]): boolean {
 
 function undoPanelView(
 	state: BridgeState,
+	pending: UndoRequest | null,
 	seat: Seat,
 	actionSeat: Seat,
 	mayRequest: boolean,
@@ -1296,7 +1299,6 @@ function undoPanelView(
 	outbox: readonly OutboxItem[],
 	t: Translate,
 ): UndoPanelView {
-	const pending = state.undo;
 	const board = state.board;
 	if (!pending) {
 		const sending = outbox.some((item) => item.payload.type === "undo-request");
@@ -1533,6 +1535,7 @@ export function tableView(input: TableViewInput): TableView {
 			: seat;
 	const undo = undoPanelView(
 		state,
+		pendingUndo(state, input.bots, input.autoplaySeats),
 		seat,
 		actionSeat,
 		status?.dummy !== seat || controller === seat,

@@ -503,6 +503,34 @@ function undoApprovers(
 	return SEATS.filter((seat) => !samePartnership(seat, requester));
 }
 
+function isDefenderCardUndo(
+	board: Board,
+	requester: Seat,
+	position: UndoPosition,
+): boolean {
+	if (position.calls !== board.calls.length) return false;
+	const { dummy } = boardStatus(board);
+	return dummy !== undefined && !samePartnership(dummy, requester);
+}
+
+/** Projects legacy card undos onto the current controller; new requests already store their voter. */
+export function pendingUndo(
+	state: BridgeState,
+	bots?: Iterable<Seat>,
+	autoplaySeats?: Iterable<Seat>,
+): UndoRequest | null {
+	const { board, undo } = state;
+	if (
+		!board ||
+		!undo ||
+		undo.required.length !== 2 ||
+		!isDefenderCardUndo(board, undo.requester, undo)
+	)
+		return undo;
+	const controller = declarerController(board, bots, autoplaySeats);
+	return controller ? { ...undo, required: [controller], approved: [] } : undo;
+}
+
 function parseUndoRequest(
 	value: unknown,
 	board: Board | null,
@@ -540,8 +568,13 @@ function parseUndoRequest(
 		!approvers ||
 		calls !== position.calls ||
 		cards !== position.cards ||
-		JSON.stringify(required) !== JSON.stringify(approvers) ||
-		approved.some((seat) => !approvers.includes(seat))
+		(JSON.stringify(required) !== JSON.stringify(approvers) &&
+			!(
+				required.length === 1 &&
+				required.every((seat) => approvers.includes(seat)) &&
+				isDefenderCardUndo(board, actor, position)
+			)) ||
+		approved.some((seat) => !required.includes(seat))
 	)
 		return undefined;
 	return {
@@ -887,9 +920,13 @@ function applyUndoRequest(
 	const position = canRequestForActor(board, context)
 		? undoPosition(board, actor, context.seat)
 		: undefined;
-	const required = position && undoApprovers(board, actor, position);
-	if (!position || !required)
+	const opponents = position && undoApprovers(board, actor, position);
+	if (!position || !opponents)
 		return reject("you have no bid or card to take back");
+	const controller = isDefenderCardUndo(board, actor, position)
+		? declarerController(board, context.bots, context.autoplaySeats)
+		: undefined;
+	const required = controller ? [controller] : opponents;
 	const waiting = absence(required, context.present);
 	if (waiting) return waiting;
 	if (!canUseUndo(context, [context.seat, ...required]))
@@ -1156,7 +1193,7 @@ function applyUndoVote(
 	context: ApplyContext,
 	payload: JsonObject,
 ): ApplyResult {
-	const pending = state.undo;
+	const pending = pendingUndo(state, context.bots, context.autoplaySeats);
 	if (!pending || payload.requestId !== pending.id)
 		return reject("there is no matching undo request");
 	if (!pending.required.includes(context.seat))
