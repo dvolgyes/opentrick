@@ -1906,11 +1906,11 @@ main:has(> .room) {
 	white-space: nowrap;
 }
 
-/* Five bars outside the tile's right edge, level with its bottom; the first bar is the lowest. */
 .network-bars {
 	position: absolute;
-	bottom: 0;
-	left: calc(100% + 0.2rem);
+	right: 0.3rem;
+	bottom: calc(var(--tile-caption-h, 1.05rem) + 0.3rem);
+	z-index: 3;
 	display: flex;
 	flex-direction: column-reverse;
 	gap: 0.15rem;
@@ -5420,7 +5420,6 @@ main:has(> .room[data-form="compact"]) {
 	left: 5px;
 }
 
-/* The right-hand windows stand near the felt's edge; their network bars are inside them, in the corner above the caption. */
 .room[data-form="desktop"] .video-top {
 	top: 5px;
 	right: 12px;
@@ -5429,13 +5428,6 @@ main:has(> .room[data-form="compact"]) {
 .room[data-form="desktop"] .video-right {
 	right: 12px;
 	bottom: 40px;
-}
-
-.room[data-form="desktop"] :is(.video-top, .video-right) .network-bars {
-	right: 0.3rem;
-	bottom: calc(var(--tile-caption-h) + 0.3rem);
-	left: auto;
-	z-index: 3;
 }
 
 /* The mirror place of the right window: its control row hangs into the same 40px gap. */

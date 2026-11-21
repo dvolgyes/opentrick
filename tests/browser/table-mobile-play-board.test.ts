@@ -773,6 +773,7 @@ describe("desktop top and bottom hands", () => {
 			return node.getBoundingClientRect();
 		};
 		return {
+			screen,
 			box,
 			played: box(".felt .played").width,
 			rows: (["top", "bottom"] as const).map((place) => {
@@ -830,39 +831,57 @@ describe("desktop top and bottom hands", () => {
 		}
 	});
 
-	it("keeps the network bars of the corner windows on the felt, clear of the names", async () => {
-		await page.viewport(1568, 886);
-		try {
-			const { box } = renderHands([suit("S", "♠", "AK3", true)], {
-				text: "Network: measuring…",
-				quality: "pending",
-			});
-			const felt = box(".felt");
-			const tiles = [
-				...document.querySelectorAll<HTMLElement>(".felt .video-slot .tile"),
-			];
-			expect(tiles).toHaveLength(3);
-			for (const tile of tiles) {
-				const name = tile.dataset.testid;
-				const bars = tile.querySelector<HTMLElement>(".network-bars");
-				const caption = tile.querySelector<HTMLElement>(".tile-caption");
-				if (!bars || !caption) throw new Error(`missing bars of ${name}`);
-				expect(bars.checkVisibility(), name).toBe(true);
-				const shown = bars.getBoundingClientRect();
-				expect(shown.left, name).toBeGreaterThanOrEqual(felt.left);
-				expect(shown.right, name).toBeLessThanOrEqual(felt.right);
-				const label = caption.getBoundingClientRect();
-				const overlaps =
-					shown.left < label.right &&
-					label.left < shown.right &&
-					shown.top < label.bottom &&
-					label.top < shown.bottom;
-				expect(overlaps, name).toBe(false);
+	it.each([
+		[1568, 886],
+		[1024, 1366],
+	])(
+		"keeps the network bars inside the corner windows at %ix%i",
+		async (width, height) => {
+			await page.viewport(width, height);
+			try {
+				const { box, screen } = renderHands([suit("S", "♠", "AK3", true)], {
+					text: "Network: measuring…",
+					quality: "pending",
+				});
+				screen.style.setProperty(
+					"--room-canvas-scale",
+					String(Math.min(innerWidth / 1920, innerHeight / 1080)),
+				);
+				const felt = box(".felt");
+				const sidebar = document.querySelector(".table-sidebar");
+				if (!sidebar) throw new Error("missing sidebar");
+				const sidebarLeft = sidebar.getBoundingClientRect().left;
+				for (const place of ["left", "top", "right"]) {
+					const slot = `.felt .video-${place}`;
+					const bars = document.querySelector<HTMLElement>(
+						`${slot} .network-bars`,
+					);
+					if (!bars) throw new Error(`missing bars in ${slot}`);
+					expect(bars.checkVisibility(), slot).toBe(true);
+					const shown = bars.getBoundingClientRect();
+					const tile = box(`${slot} .tile`);
+					const caption = box(`${slot} .tile-caption`);
+					const geometry = `${slot}: bars ${JSON.stringify(shown)}, tile ${JSON.stringify(tile)}, felt ${JSON.stringify(felt)}, sidebar left ${sidebarLeft}, viewport ${width}x${height}`;
+					expect
+						.soft(shown.left, geometry)
+						.toBeGreaterThanOrEqual(Math.max(tile.left, felt.left, 0));
+					expect
+						.soft(shown.right, geometry)
+						.toBeLessThanOrEqual(
+							Math.min(tile.right, felt.right, sidebarLeft, width),
+						);
+					expect
+						.soft(shown.top, geometry)
+						.toBeGreaterThanOrEqual(Math.max(tile.top, felt.top, 0));
+					expect
+						.soft(shown.bottom, geometry)
+						.toBeLessThanOrEqual(Math.min(caption.top, felt.bottom, height));
+				}
+			} finally {
+				await page.viewport(414, 896);
 			}
-		} finally {
-			await page.viewport(414, 896);
-		}
-	});
+		},
+	);
 
 	it.each(["S", "M", "L", "XL", "XXL", "XXXL"])(
 		"keeps a full hand with four tens between the corner windows at suit font size %s",

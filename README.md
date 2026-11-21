@@ -35,6 +35,7 @@ Private games support optional audio and video calls.
 The camera preview and player tiles fit the whole video frame without stretching it.
 The call closes after five minutes without another participant, even if other players are at the table.
 Calls are currently disabled in community games.
+Network quality bars appear inside each opponent’s tile, above the name.
 All participants must take a seat; there is no spectator mode.
 
 ## Settings and bots

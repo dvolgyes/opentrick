@@ -211,7 +211,6 @@ interface CallSpot {
 	readonly callPresence: HTMLElement;
 	readonly audioMuted: HTMLElement;
 	readonly audioDeaf: HTMLElement;
-	/** The network quality: five bars beside the tile, lit from the bottom. */
 	readonly networkBars: HTMLElement;
 	/** The voice box: shown in place of the avatar while the seat's voice arrives without video. */
 	readonly voicebox: HTMLElement;
