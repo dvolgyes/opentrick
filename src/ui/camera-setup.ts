@@ -1,4 +1,4 @@
-import type { GetUserMedia } from "../call/media";
+import { cameraConstraints, type GetUserMedia } from "../call/media";
 import type { Translate } from "../i18n";
 import { button, el } from "./dom";
 
@@ -176,17 +176,8 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 		stopPreview();
 		confirm.disabled = true;
 		status.textContent = deps.t("Starting camera preview…");
-		const videoConstraints: MediaTrackConstraints = {
-			width: 640,
-			height: 360,
-			frameRate: 15,
-			...(deviceId ? { deviceId: { exact: deviceId } } : {}),
-		};
 		try {
-			const stream = await deps.getUserMedia({
-				audio: false,
-				video: videoConstraints,
-			});
+			const stream = await deps.getUserMedia(cameraConstraints(deviceId));
 			if (disposed || token !== sequence) {
 				for (const track of stream.getTracks()) track.stop();
 				return;

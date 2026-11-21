@@ -13,27 +13,26 @@ export type GetUserMedia = (
 	constraints: MediaStreamConstraints,
 ) => Promise<MediaStream>;
 
-/** Each request asks for one kind only, so a camera prompt never comes with the microphone, or the reverse. */
-const CONSTRAINTS: Readonly<Record<Medium, MediaStreamConstraints>> = {
-	audio: { audio: true, video: false },
-	video: { audio: false, video: { width: 640, height: 360, frameRate: 15 } },
-};
+export function cameraConstraints(deviceId?: string): MediaStreamConstraints {
+	const supported =
+		globalThis.navigator?.mediaDevices?.getSupportedConstraints?.();
+	const video = {
+		frameRate: 15,
+		...(supported && "resizeMode" in supported && supported.resizeMode === true
+			? { width: 640, height: 360, resizeMode: { exact: "none" } }
+			: {}),
+		...(deviceId === undefined ? {} : { deviceId: { exact: deviceId } }),
+	};
+	return { audio: false, video };
+}
 
 function constraintsFor(
 	medium: Medium,
 	videoDeviceId: string | undefined,
 ): MediaStreamConstraints {
-	if (medium !== "video" || videoDeviceId === undefined)
-		return CONSTRAINTS[medium];
-	return {
-		...CONSTRAINTS.video,
-		video: {
-			width: 640,
-			height: 360,
-			frameRate: 15,
-			deviceId: { exact: videoDeviceId },
-		},
-	};
+	return medium === "video"
+		? cameraConstraints(videoDeviceId)
+		: { audio: true, video: false };
 }
 
 function refusal(error: unknown): CaptureState {

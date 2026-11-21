@@ -366,13 +366,16 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 		"data-play",
 		"playing",
 	);
+	const aspectRatio = (node: Element): number => {
+		const { videoWidth, videoHeight } = node as HTMLVideoElement;
+		return videoWidth / videoHeight;
+	};
+	const local = tab.N.getByTestId("video-self");
+	await expect.poll(() => local.evaluate(aspectRatio)).toBeGreaterThan(0);
+	const sourceRatio = await local.evaluate(aspectRatio);
 	await expect
-		.poll(() =>
-			tab.W.getByTestId("video-N").evaluate(
-				(node) => (node as HTMLVideoElement).videoWidth,
-			),
-		)
-		.toBeGreaterThan(0);
+		.poll(() => tab.W.getByTestId("video-N").evaluate(aspectRatio))
+		.toBeCloseTo(sourceRatio, 2);
 	await record("Audio + video");
 
 	// North's only connection is the one to West: audio goes first on a poor network.

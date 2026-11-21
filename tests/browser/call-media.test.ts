@@ -68,7 +68,7 @@ describe("LocalMedia on Chrome's test devices (call/layout plan §4.5)", () => {
 		expect(changes).toEqual(["audio", "audio", "audio"]);
 	});
 
-	it("asks for the camera only, at 640×360 and 15 fps, and names the medium of each change", async () => {
+	it("asks for the camera only, at 15 fps without cropping, and names the medium of each change", async () => {
 		await commands.clearPermissions();
 		await commands.grantPermissions(["camera"]);
 		const { media, changes } = localMedia();
@@ -77,8 +77,7 @@ describe("LocalMedia on Chrome's test devices (call/layout plan §4.5)", () => {
 		const camera = media.track("video");
 		expect(camera?.kind).toBe("video");
 		expect(camera?.getSettings()).toMatchObject({
-			width: 640,
-			height: 360,
+			resizeMode: "none",
 			frameRate: 15,
 		});
 		expect(media.state("audio")).toBe("off");

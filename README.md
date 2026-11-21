@@ -32,6 +32,7 @@ Select **Confirm** if your bidding settings require it.
 <img src="docs/images/gameplay-mobile.png" width="320" alt="The compact phone table during an auction, showing the bidding history, bid box, and player's hand.">
 
 Private games support optional audio and video calls.
+The camera preview and player tiles fit the whole video frame without stretching it.
 The call closes after five minutes without another participant, even if other players are at the table.
 Calls are currently disabled in community games.
 All participants must take a seat; there is no spectator mode.

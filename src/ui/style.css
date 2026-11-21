@@ -1722,11 +1722,12 @@ main:has(> .room) {
 /* The picture covers the avatar inside the fixed tile box, so the tile never moves when video starts or stops. */
 .tile video {
 	position: absolute;
-	inset: 0;
+	inset: 0 0 auto;
 	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	border-radius: 0.4rem;
+	height: calc(100% - var(--tile-caption-h, 1.05rem));
+	background: var(--video-bg);
+	object-fit: scale-down;
+	border-radius: 0.4rem 0.4rem 0 0;
 }
 
 .tile video[hidden] {
@@ -2743,10 +2744,11 @@ dialog {
 /* The own picture is mirrored, like the camera preview, so a hand moves to the side it moves to. */
 .call-self video {
 	position: absolute;
-	inset: 0;
+	inset: 0 0 auto;
 	width: 100%;
-	height: 100%;
-	object-fit: cover;
+	height: calc(100% - var(--tile-caption-h, 1.05rem));
+	background: var(--video-bg);
+	object-fit: scale-down;
 	transform: scaleX(-1);
 }
 
@@ -2849,7 +2851,7 @@ dialog {
 	aspect-ratio: 16 / 9;
 	border-radius: 0.4rem;
 	background: var(--video-bg);
-	object-fit: cover;
+	object-fit: scale-down;
 	transform: scaleX(-1);
 }
 
