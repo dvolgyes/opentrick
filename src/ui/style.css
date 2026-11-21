@@ -2157,6 +2157,12 @@ dialog {
 	color: var(--muted);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+	.settings-dialog .settings-reduced-motion {
+		display: none;
+	}
+}
+
 .settings-dialog .settings-row {
 	display: flex;
 	flex-wrap: wrap;
@@ -2562,7 +2568,7 @@ dialog {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.trick-collection-overlay .trick-winner::after { animation: none; }
+	.trick-collection-overlay:not([data-override-reduced-motion]) .trick-winner::after { animation: none; }
 }
 
 .scoring-actions {

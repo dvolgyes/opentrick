@@ -170,7 +170,7 @@ export class BridgeRain {
 	readonly #columnSpacing: number;
 	readonly #actionMultiplier: number;
 	readonly #maxPixelRatio: number;
-	readonly #respectReducedMotion: boolean;
+	#respectReducedMotion: boolean;
 	readonly #motionPreference: MediaQueryList;
 	readonly #families = glyphFamilies();
 	readonly #root: HTMLElement;
@@ -262,6 +262,12 @@ export class BridgeRain {
 		this.#mode = mode;
 		if (mode === "idle") this.suspend();
 		else this.play();
+	}
+
+	setRespectReducedMotion(respect: boolean): void {
+		if (this.#destroyed || respect === this.#respectReducedMotion) return;
+		this.#respectReducedMotion = respect;
+		if (this.#motionPreference.matches) this.#environmentChanged();
 	}
 
 	/** Resumes from the frozen positions; an idle scene starts thinking. Reduced motion still holds it. */

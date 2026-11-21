@@ -3235,6 +3235,45 @@ describe("finished trick", () => {
 		section.dispose();
 	});
 
+	it("plays a card flight and sweeps the trick after opting in to motion", async () => {
+		await cdp().send("Emulation.setEmulatedMedia", {
+			features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+		});
+		const play = playView();
+		let overrideReducedMotion = false;
+		const { section } = renderView(
+			{ ...play, trick: undefined, at: play.at - 1 },
+			"desktop",
+			undefined,
+			undefined,
+			{ marks: () => ({ ...DEFAULT_SETTINGS, overrideReducedMotion }) },
+		);
+		try {
+			vi.useFakeTimers();
+			overrideReducedMotion = true;
+			section.render(play);
+			const motion = document.querySelector(".card-flight")?.getAnimations()[0];
+			expect.soft(motion?.playState).toBe("running");
+			vi.advanceTimersByTime(DEFAULT_SETTINGS.cardPlayDurationMs);
+			section.render(finishedView(play.at + 1));
+			const winner = document.querySelector(
+				".trick-collection-overlay .trick-winner",
+			);
+			if (!winner) throw new Error("missing winning card");
+			const sweep = winner.getAnimations()[0]?.effect as KeyframeEffect;
+			expect
+				.soft(sweep.getKeyframes().at(-1)?.transform)
+				.toContain("translate(");
+			expect(getComputedStyle(winner, "::after").animationName).toBe(
+				"trick-winner-pulse",
+			);
+		} finally {
+			section.dispose();
+			vi.useRealTimers();
+			await cdp().send("Emulation.setEmulatedMedia", { features: [] });
+		}
+	});
+
 	it("shows a static winner frame then fades with reduced motion", () => {
 		vi.useFakeTimers();
 		const nativeMatch = window.matchMedia.bind(window);

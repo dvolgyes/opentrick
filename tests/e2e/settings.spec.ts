@@ -852,6 +852,35 @@ test("turning off played-card animation keeps its duration after reload", async 
 	).toHaveValue("2");
 });
 
+test("Gameplay shows the device motion preference and saves a local animation override", async ({
+	page,
+}) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await openTable(page);
+	const label =
+		"Allow game animations when this device requests reduced motion";
+	const notice = "This device requests reduced motion.";
+	let dialog = await openSettings(page);
+	let gameplay = dialog.getByRole("group", { name: "Gameplay", exact: true });
+	await expect(gameplay.getByText(notice, { exact: true })).toBeVisible();
+	await expect(gameplay.getByLabel(label)).not.toBeChecked();
+	await gameplay.getByLabel(label).check();
+	await dialog.getByRole("button", { name: "Save settings" }).click();
+	await expect(dialog).toBeHidden();
+
+	dialog = await openSettings(page);
+	gameplay = dialog.getByRole("group", { name: "Gameplay", exact: true });
+	await expect(gameplay.getByLabel(label)).toBeChecked();
+	await page.reload();
+	dialog = await openSettings(page);
+	gameplay = dialog.getByRole("group", { name: "Gameplay", exact: true });
+	await expect(gameplay.getByLabel(label)).toBeChecked();
+	await expect(gameplay.getByText(notice, { exact: true })).toBeVisible();
+
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await expect(gameplay.getByText(notice, { exact: true })).toBeHidden();
+});
+
 test("on a phone, Settings is above the board and its dialog fits the screen", async ({
 	browser,
 	baseURL,

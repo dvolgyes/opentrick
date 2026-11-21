@@ -237,6 +237,62 @@ describe("turn marks and network quality from the settings", () => {
 			expect(cardPositions(tile)).toBe(frozen);
 		});
 
+		it("moves the existing bot scene only while reduced motion is overridden", async () => {
+			await cdp().send("Emulation.setEmulatedMedia", {
+				features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+			});
+			onTestFinished(async () => {
+				await cdp().send("Emulation.setEmulatedMedia", { features: [] });
+			});
+			const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
+			const view = botView("E");
+			const settings = { ...DEFAULT_SETTINGS };
+			const { root, section } = renderView(
+				view,
+				"desktop",
+				undefined,
+				undefined,
+				{
+					marks: () => settings,
+				},
+			);
+			section.setBotControls(false, ["E"], false);
+			const tile = root.querySelector<HTMLElement>("[data-testid='tile-E']");
+			if (tile === null) throw new Error("no tile of East");
+			await expect.poll(() => rainDrawn(tile)).toBe(true);
+			const scene = tile.querySelector(".bridge-rain");
+			const still = cardPositions(tile);
+			expect(still).not.toBe("");
+			expect(motionPreference.matches).toBe(true);
+			await frames();
+			expect(cardPositions(tile)).toBe(still);
+
+			settings.overrideReducedMotion = true;
+			section.render(view);
+			await expect.poll(() => cardPositions(tile)).not.toBe(still);
+			expect(tile.querySelector(".bridge-rain")).toBe(scene);
+
+			settings.overrideReducedMotion = false;
+			section.render(view);
+			const frozen = cardPositions(tile);
+			await frames();
+			expect(cardPositions(tile)).toBe(frozen);
+			expect(tile.querySelector(".bridge-rain")).toBe(scene);
+			expect(motionPreference.matches).toBe(true);
+
+			await cdp().send("Emulation.setEmulatedMedia", {
+				features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
+			});
+			await expect.poll(() => cardPositions(tile)).not.toBe(frozen);
+			await cdp().send("Emulation.setEmulatedMedia", {
+				features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+			});
+			await expect.poll(() => motionPreference.matches).toBe(true);
+			const reducedAgain = cardPositions(tile);
+			await frames();
+			expect(cardPositions(tile)).toBe(reducedAgain);
+		});
+
 		it("gives each bot its own cards and symbol rain", async () => {
 			// With reduced motion both scenes start filled at the same time, so only the seeds differ.
 			await cdp().send("Emulation.setEmulatedMedia", {

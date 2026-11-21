@@ -10,7 +10,7 @@ export interface BotAnimation {
 	/** The scene could not start, so the owner shows the bot image. */
 	failed(): boolean;
 	/** The first state other than off mounts the scene; the scene keeps its positions between the turns. */
-	show(state: BotAnimationState): void;
+	show(state: BotAnimationState, overrideReducedMotion: boolean): void;
 	destroy(): void;
 }
 
@@ -31,21 +31,30 @@ export function botAnimation(
 	let failed = false;
 	let destroyed = false;
 	let wanted: BotAnimationState = "off";
+	let overrideReducedMotion = false;
 
 	function apply(): void {
 		rain?.setMode(wanted === "moving" ? "thinking" : "idle");
+		rain?.setRespectReducedMotion(!overrideReducedMotion);
 		element.dataset.state = rain === undefined ? "off" : wanted;
 	}
 
 	return {
 		element,
 		failed: () => failed,
-		show(state) {
+		show(state, overrideMotion) {
 			wanted = state;
+			overrideReducedMotion = overrideMotion;
 			if (state !== "off" && rain === undefined && !starting && !failed) {
 				starting = true;
 				// The font loads first, and the turn can change meanwhile: the scene takes the last state.
-				BridgeRain.create(element, { density: 12, seed }).then(
+				BridgeRain.create(element, {
+					density: 12,
+					seed,
+					get respectReducedMotion() {
+						return !overrideReducedMotion;
+					},
+				}).then(
 					(scene) => {
 						if (destroyed) {
 							scene.destroy();

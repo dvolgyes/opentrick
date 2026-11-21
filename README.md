@@ -47,6 +47,8 @@ Select **Cancel** to discard edits before saving.
 If the browser cannot save a change, Settings stays open and shows an error.
 On a phone or tablet, one tap plays a legal card without a card flight.
 Trick collection has a separate animation setting.
+If your device requests reduced motion, the game skips card flights, fades collected tricks, and keeps the bot picture still.
+To use the enabled animations without changing your device settings, select **Settings → Gameplay → Allow game animations when this device requests reduced motion** and save.
 The bot engine shown at a table is shared.
 Only the host can change it from Settings.
 The bidding reference is a guide for players; it does not explain every call made by a learned bot.

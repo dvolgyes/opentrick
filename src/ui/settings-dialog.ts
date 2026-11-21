@@ -209,6 +209,7 @@ export function settingsDialog(
 		playTimeMs: timeInput(t("Card thinking budget (seconds)"), "play-time", 1),
 	};
 	const cardPoints = el("input", { attrs: { type: "checkbox" } });
+	const overrideReducedMotion = el("input", { attrs: { type: "checkbox" } });
 	const cardPlayAnimation = el("input", { attrs: { type: "checkbox" } });
 	const cardPlayDuration = timeInput(
 		t("Played-card animation duration (seconds)"),
@@ -452,6 +453,17 @@ export function settingsDialog(
 			"fieldset",
 			{},
 			el("legend", {}, t("Gameplay")),
+			el(
+				"p",
+				{ className: "settings-hint settings-reduced-motion" },
+				t("This device requests reduced motion."),
+			),
+			el(
+				"label",
+				{},
+				overrideReducedMotion,
+				` ${t("Allow game animations when this device requests reduced motion")}`,
+			),
 			el("label", {}, cardPlayAnimation, ` ${t("Animate played cards")}`),
 			cardPlayDuration.element,
 			cardPlayRotation.element,
@@ -646,6 +658,7 @@ export function settingsDialog(
 			guideButton: biddingHelp.guideButton.checked,
 			botBidHint: biddingHelp.botBidHint.checked,
 			bidConfirmation: biddingHelp.bidConfirmation.checked,
+			overrideReducedMotion: overrideReducedMotion.checked,
 			cardPlayAnimation: cardPlayAnimation.checked,
 			cardPlayDurationMs: Math.round(
 				cardPlayDuration.input.valueAsNumber * 1000,
@@ -709,6 +722,7 @@ export function settingsDialog(
 			language.value = deps.savedLocale ?? "auto";
 			points.set(settings.pointSystem);
 			cardPoints.checked = settings.cardPoints;
+			overrideReducedMotion.checked = settings.overrideReducedMotion;
 			cardPlayAnimation.checked = settings.cardPlayAnimation;
 			cardPlayDuration.input.value = String(settings.cardPlayDurationMs / 1000);
 			cardPlayRotation.input.value = String(settings.cardPlayRotationDegrees);

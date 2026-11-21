@@ -171,6 +171,7 @@ export type TableMarks = Pick<
 	| "networkQuality"
 	| "voicebox"
 	| "botAnimation"
+	| "overrideReducedMotion"
 	| "guidePanel"
 	| "guideButton"
 	| "botBidHint"
@@ -457,6 +458,9 @@ export function tableSection(
 	const sideGuide = guidePanel(t, options.locale ?? "en");
 	const marks = options.marks ?? (() => DEFAULT_SETTINGS);
 	let shownMarks = marks();
+	const reducedMotion = (win: Window): boolean =>
+		!shownMarks.overrideReducedMotion &&
+		(win.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
 	const meters = options.voiceMeters ?? voiceMeters();
 	let voiceFrame: number | undefined;
 	let voiceFrameAt = 0;
@@ -1866,6 +1870,7 @@ export function tableSection(
 				: spot.turn && !botControlPaused
 					? "moving"
 					: "still",
+			shownMarks.overrideReducedMotion,
 		);
 	}
 
@@ -2627,7 +2632,7 @@ export function tableSection(
 			(previous.phase !== "play" &&
 				!(previous.phase === "auction" && view.phase === "play")) ||
 			element.ownerDocument.hidden ||
-			win.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+			reducedMotion(win)
 		)
 			return;
 		const before = previous.trick?.finished
@@ -3012,8 +3017,11 @@ export function tableSection(
 		viewport?.addEventListener("resize", cancelCollection);
 		viewport?.addEventListener("scroll", cancelCollection);
 		doc.addEventListener("visibilitychange", onCollectionVisibility);
-		const reduced =
-			win.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+		const reduced = reducedMotion(win);
+		overlay.toggleAttribute(
+			"data-override-reduced-motion",
+			shownMarks.overrideReducedMotion,
+		);
 		const displayMs =
 			options.trickDisplayMs?.() ?? DEFAULT_SETTINGS.trickDisplayMs;
 		const winnerPauseMs =
@@ -3719,6 +3727,7 @@ export function tableSection(
 
 	function render(view: TableView): void {
 		incomingView = view;
+		shownMarks = marks();
 		const previous = latestView;
 		const playedCards =
 			view.phase === "play"
@@ -3841,7 +3850,6 @@ export function tableSection(
 		guideBlocked = view.waiting !== "";
 		if (guideBlocked && guide.element.open) guide.element.close();
 		shownCardPoints = cardPoints();
-		shownMarks = marks();
 		const hideBidBox =
 			shownMarks.hideBidBoxWhenWaiting && view.bids.length === 0;
 		element.dataset.phase = view.phase;

@@ -91,6 +91,7 @@ export interface Settings extends BotTiming {
 	readonly botBidHint: boolean;
 	/** Require a separate confirmation before sending a call. */
 	readonly bidConfirmation: boolean;
+	readonly overrideReducedMotion: boolean;
 	/** Animate the collection of each completed trick. */
 	readonly trickAnimation: boolean;
 	/** Animate played cards with a locally chosen landing layout. */
@@ -141,6 +142,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	guideButton: false,
 	botBidHint: true,
 	bidConfirmation: true,
+	overrideReducedMotion: false,
 	trickAnimation: true,
 	cardPlayAnimation: true,
 	cardPlayDurationMs: 2000,
@@ -174,6 +176,7 @@ const FLAGS = {
 	guideButton: "guide-button",
 	botBidHint: "bot-bid-hint",
 	bidConfirmation: "bid-confirmation",
+	overrideReducedMotion: "override-reduced-motion",
 	trickAnimation: "trick-animation",
 	cardPlayAnimation: "card-play-animation",
 	soloAutoAdvance: "solo-auto-advance",

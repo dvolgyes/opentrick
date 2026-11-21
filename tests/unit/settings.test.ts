@@ -62,6 +62,21 @@ describe("player settings", () => {
 		expect(readSettings(storage)).toMatchObject(settings);
 	});
 
+	it("requires an explicit opt-in to override reduced motion", () => {
+		const storage = memoryStorage();
+		const key = "opentrick.settings.override-reduced-motion";
+		storage.setItem("opentrick.settings.bidder", DEFAULT_SETTINGS.bidder);
+		expect(readSettings(storage).overrideReducedMotion).toBe(false);
+		storage.setItem(key, "true");
+		expect(readSettings(storage).overrideReducedMotion).toBe(false);
+		writeSettings(storage, {
+			...DEFAULT_SETTINGS,
+			overrideReducedMotion: true,
+		});
+		expect(storage.getItem(key)).toBe("1");
+		expect(readSettings(storage).overrideReducedMotion).toBe(true);
+	});
+
 	it("keeps the animation switch and duration independent", () => {
 		const storage = memoryStorage();
 		for (const [cardPlayAnimation, cardPlayDurationMs] of [
@@ -130,6 +145,7 @@ describe("player settings", () => {
 			guideButton: false,
 			botBidHint: true,
 			bidConfirmation: true,
+			overrideReducedMotion: false,
 			cardPlayAnimation: true,
 			cardPlayDurationMs: 2000,
 			cardPlayRotationDegrees: 10,
@@ -206,6 +222,7 @@ describe("player settings", () => {
 			guideButton: true,
 			botBidHint: false,
 			bidConfirmation: false,
+			overrideReducedMotion: true,
 			cardPlayAnimation: true,
 			cardPlayDurationMs: 3500,
 			cardPlayRotationDegrees: 20,
