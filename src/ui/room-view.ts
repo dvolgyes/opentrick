@@ -248,7 +248,8 @@ export function showRoom(
 	let botHoldsSeat = false;
 	let noOtherHumans = false;
 	const callPresence = new CallPresenceTimeout(() => {
-		if (!noOtherHumans || disposed) return;
+		if (disposed) return;
+		camera?.element.close();
 		call?.leave();
 		memory?.acted();
 		render();
@@ -845,7 +846,6 @@ export function showRoom(
 					render();
 				});
 			},
-			// Only these explicit actions change the stored call status.
 			call: {
 				join: (selection) => {
 					if (noOtherHumans) return;
@@ -1453,22 +1453,24 @@ export function showRoom(
 	}
 
 	function renderCall(): void {
-		callPresence.update(!noOtherHumans, call?.view.requested.inCall === true);
+		const callView = call?.view;
+		const inCall = callView?.requested.inCall === true;
+		callPresence.update(call?.hasOtherParticipant === true, inCall);
 		const display: CallDisplay =
-			noOtherHumans && !call?.view.requested.inCall
+			noOtherHumans && !inCall
 				? {
 						available: false,
 						reason: "No other human players are present.",
 						botsOnly: true,
 					}
-				: call === undefined
+				: callView === undefined
 					? {
 							available: false,
 							reason: support.available ? "" : support.reason,
 						}
 					: {
 							available: true,
-							view: call.view,
+							view: callView,
 							rejoin: memory?.rejoin,
 							cameraAvailable: camera?.available,
 						};
@@ -1722,7 +1724,6 @@ export function showRoom(
 			![...inCallSeats].some((participant) => participant !== seat);
 		noOtherHumans = onlyBots;
 		const inCall = call?.view.requested.inCall === true;
-		callPresence.update(!onlyBots, inCall);
 		const botAlone = botPlays(view.roster, seat);
 		const state =
 			view.table === null

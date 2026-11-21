@@ -1,11 +1,11 @@
-/** Ends an active call after a continuous absence of other human participants. */
+/** Ends an active call after five continuous minutes without another participant. */
 export class CallPresenceTimeout {
 	#timer: ReturnType<typeof setTimeout> | undefined;
 
 	constructor(private readonly endCall: () => void) {}
 
-	update(hasOtherHuman: boolean, inCall: boolean): void {
-		if (hasOtherHuman || !inCall) {
+	update(hasOtherParticipant: boolean, inCall: boolean): void {
+		if (hasOtherParticipant || !inCall) {
 			this.stop();
 			return;
 		}
@@ -13,7 +13,7 @@ export class CallPresenceTimeout {
 		this.#timer = setTimeout(() => {
 			this.#timer = undefined;
 			this.endCall();
-		}, 15_000);
+		}, 300_000);
 	}
 
 	stop(): void {

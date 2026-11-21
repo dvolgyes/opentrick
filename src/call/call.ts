@@ -150,6 +150,10 @@ export class CallController {
 		};
 	}
 
+	get hasOtherParticipant(): boolean {
+		return this.#links.size > 0;
+	}
+
 	onChange(listener: () => void): () => void {
 		this.#listeners.add(listener);
 		return () => this.#listeners.delete(listener);
