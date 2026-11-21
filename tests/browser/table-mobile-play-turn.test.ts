@@ -3105,6 +3105,36 @@ describe("finished trick", () => {
 		},
 	);
 
+	it("keeps the final result when layout changes during collection", () => {
+		vi.useFakeTimers();
+		const { root, section } = renderView(playView(), "desktop");
+		const complete: TableView = {
+			...finishedView(),
+			phase: "complete",
+			scoring: {
+				contract: { level: 2, strain: "C", doubling: "" },
+				compactOutcome: "WON",
+				compactDetail: "Made: 2♣",
+				countdown: 10,
+			},
+		};
+		section.render(complete);
+		expect(root.dataset.phase).toBe("play");
+		expect(document.querySelector(".trick-collection-overlay")).not.toBeNull();
+		const room = root.closest<HTMLElement>(".room");
+		if (!room) throw new Error("missing room");
+		room.dataset.form = "compact";
+		room.dataset.layout = "compact";
+		section.setForm("compact");
+		vi.advanceTimersByTime(1200);
+		expect(root.dataset.phase).toBe("complete");
+		expect(
+			root.querySelector<HTMLElement>('[data-testid="scoring"]')?.hidden,
+		).toBe(false);
+		expect(document.querySelector(".trick-collection-overlay")).toBeNull();
+		section.dispose();
+	});
+
 	it.each(["resize", "scroll"] as const)(
 		"clears the overlay when the board moves after %s",
 		(event) => {
@@ -3119,6 +3149,20 @@ describe("finished trick", () => {
 			expect(document.querySelector(".trick-collection-overlay")).toBeNull();
 		},
 	);
+
+	it("keeps collecting when a panel outside the board scrolls", () => {
+		vi.useFakeTimers();
+		const { section } = renderView(playView(), "desktop");
+		section.render(finishedView());
+		expect(section.collecting()).toBe(true);
+		section.sidebar.dispatchEvent(new Event("scroll"));
+		expect(
+			document.querySelectorAll(".trick-collection-overlay .played"),
+		).toHaveLength(4);
+		vi.advanceTimersByTime(1200);
+		expect(section.collecting()).toBe(false);
+		section.dispose();
+	});
 
 	it.each(FLIGHT_LAYOUTS)("accepts a play during collection (%s)", (layout) => {
 		vi.useFakeTimers();

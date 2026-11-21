@@ -1680,6 +1680,14 @@ main:has(> .room) {
 	}
 }
 
+.bridge-table[data-direct-card-play] .hand .card:enabled {
+	touch-action: manipulation;
+}
+
+.bridge-table[data-direct-card-play] .hand .card:enabled:is(:hover, :focus-visible) .face {
+	transform: none;
+}
+
 /* Video tiles: reserved while video is off. */
 
 .tile {

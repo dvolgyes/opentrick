@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { devices, expect, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
-import { createRoom } from "./room";
+import { createRoom, makeCall } from "./room";
 
 test("host bots wait for a played card's flight before starting another play", async ({
 	page,
@@ -52,7 +52,7 @@ test("host bots wait for a played card's flight before starting another play", a
 		.toBeGreaterThan(at);
 });
 
-test("phone bots wait for the played-card animation before the next play", async ({
+test("a phone shows trick collection without individual card flights", async ({
 	browser,
 	baseURL,
 }) => {
@@ -100,27 +100,18 @@ test("phone bots wait for the played-card animation before the next play", async
 			"data-layout",
 			"compact",
 		);
+		const flights = await page.evaluateHandle(() => {
+			const seen = { count: 0 };
+			new MutationObserver((changes) => {
+				for (const change of changes)
+					for (const node of change.addedNodes)
+						if (node instanceof Element && node.matches(".card-flight"))
+							seen.count++;
+			}).observe(document.body, { childList: true, subtree: true });
+			return seen;
+		});
 		await page.getByTestId("host-autoplay-toggle").click();
 		await page.getByTestId("autoplay-confirm-enable").click();
-		await expect(page.locator(".card-flight")).toHaveCount(1, {
-			timeout: 30_000,
-		});
-		const table = page.getByTestId("table");
-		const at = Number(await table.getAttribute("data-at"));
-		await page.waitForFunction(
-			() => {
-				const flight = document.querySelector<HTMLElement>(".card-flight");
-				return Number(flight?.getAnimations()[0]?.currentTime) >= 1400;
-			},
-			undefined,
-			{ timeout: 5000 },
-		);
-		await expect(table).toHaveAttribute("data-at", String(at));
-		await expect
-			.poll(async () => Number(await table.getAttribute("data-at")), {
-				timeout: 10_000,
-			})
-			.toBeGreaterThan(at);
 		const top = page.locator(".trick-collection-overlay .played.pos-top");
 		const bottom = page.locator(".trick-collection-overlay .played.pos-bottom");
 		await expect(top).toBeVisible({ timeout: 30_000 });
@@ -130,6 +121,54 @@ test("phone bots wait for the played-card animation before the next play", async
 		]);
 		if (!topBox || !bottomBox) throw new Error("missing completed trick cards");
 		expect(topBox.y + topBox.height).toBeLessThanOrEqual(bottomBox.y);
+		expect((await flights.jsonValue()).count).toBe(0);
+	} finally {
+		await context.close();
+	}
+});
+
+test("one tap plays a legal card on a tablet in desktop layout", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const context = await browser.newContext({
+		baseURL,
+		...devices["iPad Pro 11 landscape"],
+	});
+	try {
+		await context.addInitScript(() => {
+			localStorage.setItem("opentrick.settings.bidder", "sl");
+			localStorage.setItem("opentrick.settings.landscape-desktop", "1");
+			localStorage.setItem("opentrick.settings.auction-pause-ms", "0");
+			localStorage.setItem("opentrick.settings.play-time-ms", "1000");
+			localStorage.setItem("opentrick.settings.card-play-duration-ms", "2000");
+		});
+		const page = await context.newPage();
+		await mockBotBidding(page, () => "P", 0);
+		await page.goto("/");
+		await createRoom(page, ["N", "E", "S"]);
+		await expect(page.locator(".room")).toHaveAttribute(
+			"data-layout",
+			"desktop",
+		);
+		await makeCall(page, "1C");
+		for (const seat of ["E", "W"]) {
+			const hand = page.getByTestId(`hand-${seat}`);
+			const card = hand.locator("button.card:enabled").first();
+			await expect(card).toBeVisible();
+			const id = await card.getAttribute("data-card");
+			await card.tap();
+			await expect(hand.locator(`button.card[data-card="${id}"]`)).toHaveCount(
+				0,
+			);
+			await expect(
+				page.locator(
+					`:is(.trick, .trick-collection-overlay) .played[data-card="${id}"]`,
+				),
+			).toBeVisible({ timeout: 1000 });
+			await expect(page.locator(".card-flight")).toHaveCount(0);
+		}
 	} finally {
 		await context.close();
 	}

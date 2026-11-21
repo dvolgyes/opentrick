@@ -9,7 +9,12 @@ import {
 } from "../bridge/hand-points";
 import type { Call } from "../bridge/rules";
 import type { RemoteView } from "../call/call";
-import type { Form, Layout } from "../call/device-class";
+import {
+	type Form,
+	isTouchDevice,
+	type Layout,
+	readSignals,
+} from "../call/device-class";
 import { englishTranslator, type Locale, type Translate } from "../i18n";
 import { SEAT_NAMES, SEATS, type Seat } from "../protocol";
 import cardBackBlue from "./assets/bridge-call-card-back-blue.svg?inline";
@@ -1325,6 +1330,8 @@ export function tableSection(
 		call.invite,
 		guide.element,
 	);
+	const directCardPlay = isTouchDevice(readSignals(window));
+	element.toggleAttribute("data-direct-card-play", directCardPlay);
 	let desktop = false;
 	let phase: TableView["phase"] = "waiting";
 	mobileBidsTitle.addEventListener("click", (event) => {
@@ -2616,7 +2623,6 @@ export function tableSection(
 		if (
 			!previous ||
 			!win ||
-			!(options.cardPlayAnimation?.() ?? DEFAULT_SETTINGS.cardPlayAnimation) ||
 			view.board !== previous.board ||
 			view.at <= presentationAt ||
 			(previous.phase !== "play" &&
@@ -2908,7 +2914,7 @@ export function tableSection(
 		collectionOverlay = undefined;
 		const win = element.ownerDocument.defaultView;
 		win?.removeEventListener("resize", cancelCollection);
-		win?.removeEventListener("scroll", cancelCollection, true);
+		win?.removeEventListener("scroll", onCollectionScroll, true);
 		win?.visualViewport?.removeEventListener("resize", cancelCollection);
 		win?.visualViewport?.removeEventListener("scroll", cancelCollection);
 		element.ownerDocument.removeEventListener(
@@ -2946,6 +2952,13 @@ export function tableSection(
 		deferredFlights.length = 0;
 		finishCollection();
 	}
+
+	function onCollectionScroll(event: Event): void {
+		if (event.target instanceof Element && !event.target.contains(trick))
+			return;
+		cancelCollection();
+	}
+
 	function onCollectionVisibility(): void {
 		if (element.ownerDocument.hidden) cancelCollection();
 	}
@@ -2996,7 +3009,7 @@ export function tableSection(
 		collectionOverlay = overlay;
 		doc.body.append(overlay);
 		win.addEventListener("resize", cancelCollection);
-		win.addEventListener("scroll", cancelCollection, true);
+		win.addEventListener("scroll", onCollectionScroll, true);
 		viewport?.addEventListener("resize", cancelCollection);
 		viewport?.addEventListener("scroll", cancelCollection);
 		doc.addEventListener("visibilitychange", onCollectionVisibility);
@@ -3730,13 +3743,15 @@ export function tableSection(
 		)
 			clearFlights();
 		if (
+			directCardPlay ||
 			!(options.cardPlayAnimation?.() ?? DEFAULT_SETTINGS.cardPlayAnimation)
 		) {
 			if (flights.size > 0 || queuedFlights.length > 0) clearFlights();
 			deferredFlights.length = 0;
 			landingOffsets.clear();
+		} else {
+			prepareFlight(view);
 		}
-		prepareFlight(view);
 		const completed = view.completedTrick;
 		const index = completed?.index ?? 0;
 		const signature = completed
@@ -4264,7 +4279,8 @@ export function tableSection(
 
 	let currentLayout: Layout | undefined;
 	function setForm(layout: Layout): void {
-		if (layout !== currentLayout) {
+		const changed = layout !== currentLayout;
+		if (changed) {
 			clearFlights();
 			deferredFlights.length = 0;
 			landingOffsets.clear();
@@ -4275,7 +4291,8 @@ export function tableSection(
 		sideways = layout === "sideways";
 		placeStatus();
 		showNameShortcuts();
-		if (latestView) render(latestView);
+		if (changed && collectingTrick) cancelCollection();
+		else if (incomingView) render(incomingView);
 	}
 
 	return {
