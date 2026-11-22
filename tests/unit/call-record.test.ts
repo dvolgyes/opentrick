@@ -190,8 +190,8 @@ describe("the record to store", () => {
 
 describe("the restore", () => {
 	it("is nothing outside the call or without a record", () => {
-		expect(callRestore(undefined, "desktop")).toBeUndefined();
-		expect(callRestore(outside(2), "desktop")).toBeUndefined();
+		expect(callRestore(undefined)).toBeUndefined();
+		expect(callRestore(outside(2))).toBeUndefined();
 	});
 
 	it("offers the saved microphone and camera choices", () => {
@@ -204,13 +204,13 @@ describe("the restore", () => {
 			},
 			form: "desktop",
 		};
-		expect(callRestore(both, "desktop")).toEqual({
+		expect(callRestore(both)).toEqual({
 			send: both.prefs.send,
 			receive: both.prefs.receive,
 		});
 	});
 
-	it("keeps the saved video choices for a compact device", () => {
+	it("preserves the independent send and receive choices", () => {
 		const listen: CallRecord = {
 			version: 1,
 			prefs: {
@@ -220,24 +220,30 @@ describe("the restore", () => {
 			},
 			form: "desktop",
 		};
-		expect(callRestore(listen, "compact")).toEqual({
+		expect(callRestore(listen)).toEqual({
 			send: listen.prefs.send,
 			receive: listen.prefs.receive,
 		});
 	});
 
-	it("is nothing when no switch this device supports is on", () => {
-		const watch: CallRecord = {
-			version: 1,
-			prefs: {
-				inCall: true,
-				send: { audio: false, video: false },
-				receive: { audio: false, video: true },
-			},
-			form: "desktop",
-		};
-		expect(callRestore(watch, "compact")).toBeUndefined();
-	});
+	it.each([false, true])(
+		"offers Rejoin with no audio or outgoing video (receive video: %s)",
+		(video) => {
+			const saved: CallRecord = {
+				version: 1,
+				prefs: {
+					inCall: true,
+					send: { audio: false, video: false },
+					receive: { audio: false, video },
+				},
+				form: "desktop",
+			};
+			expect(callRestore(saved)).toEqual({
+				send: saved.prefs.send,
+				receive: saved.prefs.receive,
+			});
+		},
+	);
 });
 
 it("replicates outside on reload while preserving saved choices without capturing", async () => {

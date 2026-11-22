@@ -127,7 +127,7 @@ export class CallMemory {
 			pendingCallRecords(outbox),
 		);
 		if (own === undefined) return;
-		this.#rejoin = callRestore(own, call.view.form);
+		this.#rejoin = callRestore(own);
 		call.restoreSwitches(own.prefs);
 		if (own.prefs.inCall) {
 			this.#dirty = true;

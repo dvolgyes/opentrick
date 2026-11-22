@@ -7,7 +7,7 @@ import {
 } from "../protocol";
 import type { Form } from "./device-class";
 import { parsePrefs } from "./messages";
-import { join, type Prefs, type Switches, samePrefs } from "./policy";
+import { type Prefs, type Switches, samePrefs } from "./policy";
 
 /**
  * A seat's call status in the replicated table (plan §12 R2): in the call or not, the switches, and the form. Every
@@ -188,13 +188,9 @@ export function callRecordFor(
 	return { version, prefs, form };
 }
 
-/** How this device joins again from its own record; undefined when the record is outside the call or absent. */
-export function callRestore(
-	own: CallRecord | undefined,
-	form: Form,
-): Switches | undefined {
-	if (own === undefined || !own.prefs.inCall) return undefined;
-	const prefs = join(own.prefs, form);
-	if (!prefs.inCall) return undefined;
-	return { send: prefs.send, receive: prefs.receive };
+/** Returns the prior participant's choices for review, without joining the call. */
+export function callRestore(own: CallRecord | undefined): Switches | undefined {
+	if (!own?.prefs.inCall) return undefined;
+	const { send, receive } = own.prefs;
+	return { send, receive };
 }

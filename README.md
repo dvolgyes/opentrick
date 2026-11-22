@@ -35,11 +35,13 @@ Private games support optional audio and video calls.
 Select **Join call** to review what you send and receive, then confirm.
 The same dialog opens when another player invites you.
 The browser requests access only for devices you choose to send; listening does not require microphone access.
+If you select the camera, review its preview and select **Send camera** to share it.
 If access is denied, you can join without that device or allow it in this site's browser settings.
 **Tap to hear the call** cannot grant microphone or camera access.
 If the browser blocks incoming sound, select **Tap to hear the call** once for all callers.
 To disconnect, confirm **Leave call**; **Stay in call** leaves the call unchanged.
 Muting your last device does not hang up, and reloading the game does not restart capture without confirmation.
+If you reload with all four switches off, **Rejoin the call** lets you choose which media to enable.
 The camera preview and player tiles fit the whole video frame without stretching it.
 Use **Settings → Network → Outgoing video quality** to save a quality level for this browser.
 **Low** (the default) asks for the lowest available full-frame resolution; **Normal** targets up to 480p, and **High** targets 720p.
