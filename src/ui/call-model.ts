@@ -50,7 +50,7 @@ export interface CallControlsView {
 	readonly joinEnabled: boolean;
 	/** The accessible name of the Join buttons. */
 	readonly joinName: string;
-	/** Rejoin starts the call with these stored switches at once. */
+	/** Initial selection for the Rejoin chooser. */
 	readonly rejoin: Switches | undefined;
 	/** Send audio, receive audio, send video, receive video. */
 	readonly switches: readonly SwitchView[];
@@ -94,10 +94,9 @@ const CAMERA_TEXT: Partial<Record<CaptureState, string>> = {
 };
 
 const REJOIN_TEXT: Record<Form, string> = {
-	desktop:
-		"You were in the call. Rejoin the call starts it again with the same switches.",
+	desktop: "You were in the call. Review your switches before rejoining.",
 	compact:
-		"You were in the call. Tap the call button to join again with the same switches.",
+		"You were in the call. Tap the call button to review your switches and rejoin.",
 };
 const NO_VIDEO_HERE = "Video is not available on this device.";
 
@@ -231,17 +230,7 @@ export function callControlsView(
 		rejoin === undefined ? undefined : t(REJOIN_TEXT[view.form]);
 	return {
 		inCall,
-		// Join needs a switch on, or a stored call to rejoin; with all of them off the user simply stays outside.
-		joinEnabled:
-			inCall ||
-			(view.canJoin &&
-				(rejoin !== undefined ||
-					view.media.send.some(
-						(medium) =>
-							view.requested.send[medium] &&
-							!(medium === "video" && cameraAvailable === false),
-					) ||
-					view.media.receive.some((medium) => view.requested.receive[medium]))),
+		joinEnabled: inCall || view.canJoin,
 		joinName: inCall
 			? t("Leave call")
 			: rejoin === undefined
@@ -281,9 +270,8 @@ export function selfPicture(
 }
 
 /**
- * The invitation of a player to the host's room call. It is due when this page sees the host go into the call,
- * also at the first view after a join or a reload while the host is in one. Join, Don't join or a call of this
- * page settle it until the host's next call.
+ * The invitation is due when this page first sees another player in the call. Join, Don't join or a call of
+ * this page settle it until there are no remote participants and someone starts a call again.
  */
 export interface CallInvite {
 	readonly hostInCall: boolean;

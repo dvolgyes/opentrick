@@ -7,14 +7,7 @@ import {
 } from "../protocol";
 import type { Form } from "./device-class";
 import { parsePrefs } from "./messages";
-import {
-	join,
-	MEDIA,
-	type Medium,
-	type Prefs,
-	type Switches,
-	samePrefs,
-} from "./policy";
+import { join, type Prefs, type Switches, samePrefs } from "./policy";
 
 /**
  * A seat's call status in the replicated table (plan §12 R2): in the call or not, the switches, and the form. Every
@@ -195,23 +188,13 @@ export function callRecordFor(
 	return { version, prefs, form };
 }
 
-export interface CallRestore {
-	/** The switches to join with. */
-	readonly selection: Switches;
-	/** The devices that the join captures: each medium whose Send switch is on. */
-	readonly devices: readonly Medium[];
-}
-
 /** How this device joins again from its own record; undefined when the record is outside the call or absent. */
 export function callRestore(
 	own: CallRecord | undefined,
 	form: Form,
-): CallRestore | undefined {
+): Switches | undefined {
 	if (own === undefined || !own.prefs.inCall) return undefined;
 	const prefs = join(own.prefs, form);
 	if (!prefs.inCall) return undefined;
-	return {
-		selection: { send: prefs.send, receive: prefs.receive },
-		devices: MEDIA.filter((medium) => prefs.send[medium]),
-	};
+	return { send: prefs.send, receive: prefs.receive };
 }

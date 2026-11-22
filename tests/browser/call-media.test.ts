@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { commands } from "vitest/browser";
 import { type GetUserMedia, LocalMedia } from "../../src/call/media";
 import type { Medium } from "../../src/call/policy";
@@ -82,6 +82,60 @@ describe("LocalMedia on Chrome's test devices (call/layout plan §4.5)", () => {
 		});
 		expect(media.state("audio")).toBe("off");
 		expect(changes).toEqual(["video", "video"]);
+	});
+
+	it("falls back if the camera rejects native-mode hints and leaves the microphone alone", async () => {
+		let cameraRequests = 0;
+		const media = new LocalMedia(
+			async (constraints) => {
+				if (constraints.video && ++cameraRequests === 1)
+					throw new DOMException(
+						"Unsupported resize hint",
+						"OverconstrainedError",
+					);
+				return navigator.mediaDevices.getUserMedia(constraints);
+			},
+			() => {},
+		);
+		opened.push(media);
+		media.set("audio", true);
+		await expect.poll(() => media.state("audio")).toBe("on");
+		const microphone = media.track("audio");
+		media.set("video", true);
+		await expect.poll(() => media.state("video")).toBe("on");
+		expect(cameraRequests).toBe(2);
+		expect(media.track("audio")).toBe(microphone);
+		expect(microphone?.readyState).toBe("live");
+	});
+
+	it("stops an acquired camera immediately while its quality hint is pending", async () => {
+		let resolve: (() => void) | undefined;
+		const promise = new Promise<void>((done) => {
+			resolve = done;
+		});
+		let camera: MediaStreamTrack | undefined;
+		const applying = vi.fn(() => promise);
+		const media = new LocalMedia(
+			async (constraints) => {
+				const stream = await navigator.mediaDevices.getUserMedia(constraints);
+				camera = stream.getVideoTracks()[0];
+				if (camera !== undefined)
+					vi.spyOn(camera, "applyConstraints").mockImplementation(applying);
+				return stream;
+			},
+			() => {},
+		);
+		opened.push(media);
+		try {
+			media.set("video", true);
+			await expect.poll(() => applying.mock.calls.length).toBe(1);
+			media.set("video", false);
+			expect(camera?.readyState).toBe("ended");
+			expect(media.track("video")).toBeUndefined();
+			expect(media.state("video")).toBe("off");
+		} finally {
+			resolve?.();
+		}
 	});
 
 	it("keeps the microphone and the camera independent", async () => {

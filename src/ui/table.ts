@@ -103,14 +103,11 @@ export interface TableSection {
 	playPresentationActive(): boolean;
 	dispose(): void;
 	setCountdown(seconds: number | undefined): void;
-	/**
-	 * The call changed: updates only the call controls and the call status of each remote seat. `hostInCall`: this
-	 * guest's page sees the host in the room call.
-	 */
+	/** Update the local controls and the call status of the other seats. */
 	renderCall(
 		display: CallDisplay,
 		presence?: Readonly<Partial<Record<Seat, RemoteCallPresence>>>,
-		hostInCall?: boolean,
+		peerInCall?: boolean,
 	): void;
 	/** `paused`: this page hosts the bots and they are paused or stopped, so their pictures freeze and show Paused. */
 	setBotControls(
@@ -2097,11 +2094,11 @@ export function tableSection(
 	function renderCall(
 		display: CallDisplay,
 		presence: Readonly<Partial<Record<Seat, RemoteCallPresence>>> = {},
-		hostInCall = false,
+		peerInCall = false,
 	): void {
 		callDisplay = display;
 		remoteCallPresence = presence;
-		call.render(display, hostInCall);
+		call.render(display, peerInCall);
 		renderCallStates();
 	}
 

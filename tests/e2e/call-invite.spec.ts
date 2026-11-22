@@ -1,19 +1,17 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import {
 	counts,
+	expectAudioArrives,
 	installCallProbe,
 	joinButton,
 	leaveButton,
 	panel,
+	toggle,
 } from "./call-probe";
-import { Player } from "./player";
+import { buildRelayHubs, Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
-/**
- * The invitation to the host's room call (src/ui/call-panel.ts): West hosts, North (a desktop) is at the table when
- * West joins the call, and South (a phone) comes to the table later. Each guest gets the invitation in the middle
- * of the screen: the call switches of its device, Join call and Don't join.
- */
+/** A non-host can start a real call, and a phone can opt in from its invitation. */
 
 const invite = (page: Page): Locator => page.getByTestId("call-invite");
 
@@ -34,23 +32,27 @@ async function expectCentered(page: Page): Promise<void> {
 const inviteButton = (page: Page, name: string): Locator =>
 	invite(page).getByRole("button", { name, exact: true });
 
-test("a guest gets an invitation when the host starts a room call, or when it comes while the host is in one", async ({
+test("a non-host starts a room call and a compact touch guest joins it", async ({
 	browser,
 	baseURL,
 }) => {
 	test.setTimeout(240_000);
 	if (!baseURL) throw new Error("baseURL is not configured");
 	const desktop = { width: 1920, height: 1080 };
-	const host = await Player.open(browser, baseURL, "invite-W", {
-		permissions: ["microphone"],
-		viewport: desktop,
-	});
+	const rig = { keepCallInvite: true, relayHubs: buildRelayHubs() };
+	const host = await Player.open(
+		browser,
+		baseURL,
+		"invite-W",
+		{ permissions: ["microphone"], viewport: desktop },
+		rig,
+	);
 	const north = await Player.open(
 		browser,
 		baseURL,
 		"invite-N",
 		{ permissions: ["microphone"], viewport: desktop },
-		{ keepCallInvite: true },
+		rig,
 	);
 	const south = await Player.open(
 		browser,
@@ -62,7 +64,7 @@ test("a guest gets an invitation when the host starts a room call, or when it co
 			isMobile: true,
 			hasTouch: true,
 		},
-		{ keepCallInvite: true },
+		rig,
 	);
 	const players = [host, north, south];
 	try {
@@ -77,74 +79,112 @@ test("a guest gets an invitation when the host starts a room call, or when it co
 		await expect(joinButton(n)).toBeEnabled();
 		await expect(invite(n)).toBeHidden();
 
-		// West joins: North is asked at once; West itself is not.
-		await joinButton(w).click();
-		await expect(leaveButton(w)).toBeVisible();
-		await expect(invite(n)).toBeVisible({ timeout: CONNECT_MS });
-		await expect(invite(n)).toHaveRole("dialog");
-		await expect(invite(n)).toContainText("Optional room call");
-		await expect(invite(n)).toContainText("The host started a room call.");
-		await expectCentered(n);
+		await joinButton(n).click();
+		const confirm = n.getByTestId("call-confirm");
+		await expect(confirm.locator(".call-toggle:visible")).toHaveCount(4);
+		await expect(confirm).toBeVisible();
+		await expect(invite(w)).toBeHidden();
+		expect((await counts(n)).captures).toBe(0);
+		await confirm
+			.getByRole("button", { name: "Don't join", exact: true })
+			.click();
+		await expect(panel(n)).toHaveAttribute("data-status", "outside");
+		await expect(invite(w)).toBeHidden();
+		expect((await counts(n)).captures).toBe(0);
+		await joinButton(n).click();
+		await confirm
+			.getByRole("button", { name: "Join call", exact: true })
+			.click();
+		await expect(confirm).toBeHidden();
+		await expect(leaveButton(n)).toBeVisible();
+		await expect(invite(w)).toBeVisible({ timeout: CONNECT_MS });
+		await expect(invite(w)).toHaveRole("dialog");
+		await expectCentered(w);
+		await expect(invite(w)).toContainText("A player started a room call.");
 		for (const [name, on] of [
 			["Send mic audio", "true"],
 			["Hear others: receive audio", "true"],
 			["Send camera video", "false"],
 			["See cameras: receive video", "true"],
 		] as const)
-			await expect(inviteButton(n, name)).toHaveAttribute("aria-pressed", on);
-		await expect(inviteButton(n, "Join call")).toBeEnabled();
+			await expect(inviteButton(w, name)).toHaveAttribute("aria-pressed", on);
+		await expect(inviteButton(w, "Join call")).toBeEnabled();
+		await expect(invite(n)).toBeHidden();
+
+		await inviteButton(w, "Don't join").click();
+		await expect(invite(w)).toBeHidden();
+		await expect(panel(w)).toHaveAttribute("data-status", "outside");
+		expect((await counts(w)).captures).toBe(0);
+		const hostConfirm = w.getByTestId("call-confirm");
+		await joinButton(w).click();
+		await hostConfirm
+			.getByRole("button", { name: "Join call", exact: true })
+			.click();
+		await expect(leaveButton(w)).toBeVisible();
+		await Promise.all([expectAudioArrives(w), expectAudioArrives(n)]);
+
+		await leaveButton(w).click();
+		await expect(hostConfirm).toBeVisible();
+		await hostConfirm.getByRole("button", { name: "Stay in call" }).click();
+		await expect(leaveButton(w)).toBeVisible();
+		await leaveButton(w).click();
+		await hostConfirm
+			.getByRole("button", { name: "Leave call", exact: true })
+			.click();
+		await expect(joinButton(w)).toBeVisible();
 		await expect(invite(w)).toBeHidden();
 
-		// Don't join closes the invitation and starts nothing; the panel can still join later.
-		await inviteButton(n, "Don't join").click();
-		await expect(invite(n)).toBeHidden();
-		await expect(panel(n)).toHaveAttribute("data-status", "outside");
-		expect((await counts(n)).captures).toBe(0);
-		await joinButton(n).click();
-		await expect(leaveButton(n)).toBeVisible();
-		await leaveButton(n).click();
-		await expect(joinButton(n)).toBeVisible();
-		await n.waitForTimeout(2_000);
-		await expect(invite(n)).toBeHidden();
-
-		// South comes while West is in the call: the phone gets the invitation too, with its audio switches and Send
-		// camera, but no See cameras switch: a phone shows no video.
 		const s = await south.page(link);
 		await pick(s, "S");
 		await expect(invite(s)).toBeVisible({ timeout: CONNECT_MS });
 		await expectCentered(s);
-		await expect(invite(s).locator(".call-toggle:visible")).toHaveCount(3);
-		await expect(inviteButton(s, "See cameras: receive video")).toBeHidden();
-		await inviteButton(s, "Send mic audio").click();
-		await expect(inviteButton(s, "Send mic audio")).toHaveAttribute(
-			"aria-pressed",
-			"false",
-		);
-		// With all switches off the invitation stays open, and Join waits for a switch.
-		await inviteButton(s, "Hear others: receive audio").click();
+		await expect(invite(s).locator(".call-toggle:visible")).toHaveCount(4);
+		await expect(inviteButton(s, "See cameras: receive video")).toBeVisible();
+		for (const name of [
+			"Send camera video",
+			"Send mic audio",
+			"Hear others: receive audio",
+			"See cameras: receive video",
+		]) {
+			const button = inviteButton(s, name);
+			if ((await button.getAttribute("aria-pressed")) === "true")
+				await button.tap();
+		}
 		await expect(inviteButton(s, "Join call")).toBeDisabled();
-		await s.waitForTimeout(1_000);
-		await expect(invite(s)).toBeVisible();
-		await inviteButton(s, "Hear others: receive audio").click();
+		for (const name of ["Send mic audio", "Hear others: receive audio"])
+			await inviteButton(s, name).tap();
 		await expect(inviteButton(s, "Join call")).toBeEnabled();
-		// Join call in the invitation joins with the switches that it shows.
-		await inviteButton(s, "Join call").click();
+		await inviteButton(s, "Join call").tap();
 		await expect(invite(s)).toBeHidden();
 		await expect(panel(s)).toHaveAttribute("data-status", /^(?!outside$)/);
-		await expect(
-			s.getByTestId("call-row").getByRole("button", { name: "Leave call" }),
-		).toBeVisible();
-		await expect(
-			s.getByTestId("call-row").getByRole("button", { name: "Send mic audio" }),
-		).toHaveAttribute("aria-pressed", "false");
+		await expect(leaveButton(s)).toBeVisible();
+		await expect(toggle(s, "Send mic audio")).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		await Promise.all([expectAudioArrives(s), expectAudioArrives(n)]);
+		await Promise.all([
+			expect(s.getByTestId("audio-N")).toHaveAttribute("data-play", "playing"),
+			expect(n.getByTestId("audio-S")).toHaveAttribute("data-play", "playing"),
+		]);
 
-		// A new call of West asks North again.
-		await leaveButton(w).click();
-		await expect(joinButton(w)).toBeVisible();
-		await joinButton(w).click();
-		await expect(invite(n)).toBeVisible({ timeout: CONNECT_MS });
-		await inviteButton(n, "Don't join").click();
-		await expect(invite(n)).toBeHidden();
+		await leaveButton(s).tap();
+		const phoneConfirm = s.getByTestId("call-confirm");
+		await expect(phoneConfirm).toBeVisible();
+		expect((await counts(s)).liveTracks).toBe(1);
+		await phoneConfirm
+			.getByRole("button", { name: "Leave call", exact: true })
+			.tap();
+		await expect(panel(s)).toHaveAttribute("data-status", "outside");
+		await expect.poll(async () => (await counts(s)).liveTracks).toBe(0);
+
+		await joinButton(s).tap();
+		await expect(phoneConfirm.locator(".call-toggle:visible")).toHaveCount(4);
+		await phoneConfirm
+			.getByRole("button", { name: "Don't join", exact: true })
+			.tap();
+		await expect(panel(s)).toHaveAttribute("data-status", "outside");
+		await expect(invite(w)).toBeHidden();
 		for (const player of players) expect(player.errors).toEqual([]);
 	} finally {
 		for (const player of players) await player.close();

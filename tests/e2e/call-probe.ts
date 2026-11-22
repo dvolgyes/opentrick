@@ -535,20 +535,43 @@ export function exactCaption(text: string): RegExp {
 const escapeRegExp = (text: string): string =>
 	text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 /**
- * A call control of the page, not of the invitation to the host's call: the invitation can open during a check, after
- * the Player helper had no invitation to close (tests/e2e/player.ts).
+ * A call control of the table, not a button in a call dialog.
  */
 const control = (page: Page, name: string): Locator =>
 	page
 		.getByRole("button", { name, exact: true })
-		.and(page.locator(":not([data-testid=call-invite] *)"));
+		.and(
+			page.locator(
+				":not([data-testid=call-invite] *, [data-testid=call-confirm] *)",
+			),
+		);
 export const toggle = (page: Page, name: string): Locator =>
 	control(page, name);
 export const joinButton = (page: Page): Locator => control(page, "Join call");
-export const leaveButton = (page: Page): Locator =>
-	page.getByRole("button", { name: "Leave call", exact: true });
+export const leaveButton = (page: Page): Locator => control(page, "Leave call");
 export const rejoinButton = (page: Page): Locator =>
-	page.getByRole("button", { name: "Rejoin the call", exact: true });
+	control(page, "Rejoin the call");
+
+export const callConfirmButton = (
+	page: Page,
+	name: "Join call" | "Rejoin the call" | "Leave call",
+): Locator =>
+	page.getByTestId("call-confirm").getByRole("button", { name, exact: true });
+
+export async function joinCall(page: Page): Promise<void> {
+	await joinButton(page).click();
+	await callConfirmButton(page, "Join call").click();
+}
+
+export async function rejoinCall(page: Page): Promise<void> {
+	await rejoinButton(page).click();
+	await callConfirmButton(page, "Rejoin the call").click();
+}
+
+export async function leaveCall(page: Page): Promise<void> {
+	await leaveButton(page).click();
+	await callConfirmButton(page, "Leave call").click();
+}
 
 /** The four call switches by accessible name, with the way and the medium that each one sets. */
 const SWITCHES = [
@@ -596,7 +619,7 @@ export async function confirmCamera(page: Page): Promise<void> {
 /** Sets the switches to the named mode, presses Join and waits until the page is in the call. */
 export async function joinWith(page: Page, mode: string): Promise<void> {
 	await setSwitches(page, mode);
-	await joinButton(page).click();
+	await joinCall(page);
 	if (
 		PRESETS.find((candidate) => candidate.label === mode)?.switches.send.video
 	)

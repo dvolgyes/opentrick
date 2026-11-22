@@ -233,6 +233,134 @@ describe("call media link on the table's Trystero connection", () => {
 		}
 	}
 
+	it.each([
+		[1280, 720],
+		[720, 1280],
+		[1920, 1080],
+		[640, 480],
+	])(
+		"changes outbound resolution without changing tracks (%i × %i)",
+		async (width, height) => {
+			const pair = await connectedPair(random(31), 5);
+			const { north } = await call(pair, true, ["audio", "video"], []);
+			const canvas = document.createElement("canvas");
+			canvas.width = width;
+			canvas.height = height;
+			const paint = canvas.getContext("2d");
+			if (paint === null) throw new Error("No canvas context");
+			const stream = canvas.captureStream(0);
+			streams.push(stream);
+			const [video] = stream.getVideoTracks();
+			if (!(video instanceof CanvasCaptureMediaStreamTrack))
+				throw new Error("No canvas video track");
+			north.link.setTrack("video", video);
+			const connection = pair.a.connection;
+			let frame = 0;
+			const draw = () => {
+				for (let y = 0; y < height; y += 32) {
+					for (let x = 0; x < width; x += 32) {
+						paint.fillStyle = `hsl(${(x * 13 + y * 5 + frame * 7) % 360} 80% 50%)`;
+						paint.fillRect(x, y, 32, 32);
+					}
+				}
+				frame++;
+				video.requestFrame();
+			};
+			const outbound = async () => {
+				for (const stat of (await connection.getStats()).values()) {
+					if (
+						stat.type === "outbound-rtp" &&
+						stat.kind === "video" &&
+						stat.frameWidth > 0 &&
+						stat.frameHeight > 0
+					)
+						return {
+							width: Number(stat.frameWidth),
+							height: Number(stat.frameHeight),
+							limitation: String(stat.qualityLimitationReason),
+							framesEncoded: Number(stat.framesEncoded),
+						};
+				}
+			};
+			const audio = () =>
+				connection.getSenders().find((sender) => sender.track?.kind === "audio")
+					?.track;
+			await expect.poll(audio).toBeTruthy();
+			const microphone = audio();
+			const sourceSize = Math.min(width, height);
+			const high = Math.min(sourceSize, 720);
+			const frames = setInterval(draw, 1_000 / 15);
+			const videoSender = () =>
+				connection.getSenders().find((sender) => sender.track === video);
+			let previousFrames = 0;
+			let previousShort = 0;
+			let previousCap = 0;
+			try {
+				for (const [quality, cap] of [
+					["high", high],
+					["normal", 480],
+					["low", 360],
+					["high", high],
+				] as const) {
+					north.link.setVideoQuality(quality);
+					await expect
+						.poll(() =>
+							videoSender()
+								?.getParameters()
+								.encodings.map(
+									(encoding) => encoding.scaleResolutionDownBy ?? 1,
+								),
+						)
+						.toEqual([sourceSize / cap]);
+					await wait(1_500);
+					await expect
+						.poll(
+							async () => {
+								const sent = await outbound();
+								if (sent === undefined || sent.framesEncoded <= previousFrames)
+									return sent;
+								const short = Math.min(sent.width, sent.height);
+								const long = Math.max(sent.width, sent.height);
+								const expectedLong =
+									(short * Math.max(width, height)) / sourceSize;
+								const matchesCap =
+									short <= cap &&
+									(short >= cap - 2 ||
+										sent.limitation === "bandwidth" ||
+										sent.limitation === "cpu");
+								const ordered =
+									cap === previousCap ||
+									(cap > previousCap
+										? short > previousShort
+										: short < previousShort);
+								if (
+									!matchesCap ||
+									!ordered ||
+									Math.abs(long - expectedLong) > 2 ||
+									sent.width > sent.height !== width > height
+								)
+									return sent;
+								previousFrames = sent.framesEncoded;
+								previousShort = short;
+								previousCap = cap;
+								return "matched";
+							},
+							{ timeout: 8_000 },
+						)
+						.toBe("matched");
+					expect(video.getSettings()).toMatchObject({ width, height });
+					expect(audio()).toBe(microphone);
+					expect(videoSender()?.track).toBe(video);
+					expect(north.link.connected).toBe(true);
+				}
+			} finally {
+				clearInterval(frames);
+			}
+			expectTableIntact(pair);
+		},
+		40_000,
+	);
+
 	it("walks through all 16 combinations on one connection without an ICE restart, with the polite seat as the Trystero initiator", async () => {
 		const pair = await connectedPair(random(11), 15);
 		const { north, east } = await call(pair, false, [], []);

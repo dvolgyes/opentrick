@@ -135,16 +135,16 @@ describe("call controls (handover §6, §7)", () => {
 		);
 	});
 
-	it("outside the call Join waits until one switch is on", () => {
+	it("opens Join even when no switch is on, so the chooser can stage a selection", () => {
 		const view = controls(callView());
 		expect(view.inCall).toBe(false);
-		expect(view.joinEnabled).toBe(false);
+		expect(view.joinEnabled).toBe(true);
 		expect(view.switches.every((s) => s.enabled && !s.pressed)).toBe(true);
 	});
 
 	it("disables camera sending when no camera exists, but keeps camera receiving available", () => {
 		const view = controls(callView(), false);
-		expect(view.joinEnabled).toBe(false);
+		expect(view.joinEnabled).toBe(true);
 		expect(switchStates(view)).toEqual({
 			"send audio": [true, false],
 			"receive audio": [true, false],
@@ -332,7 +332,7 @@ describe("call controls (handover §6, §7)", () => {
 		expect(rejoin.joinEnabled).toBe(true);
 		expect(rejoin.rejoin).toEqual(switches);
 		expect(rejoin.note).toBe(
-			"You were in the call. Rejoin the call starts it again with the same switches.",
+			"You were in the call. Review your switches before rejoining.",
 		);
 		expect(rejoin.alert).toBe(rejoin.note);
 	});
@@ -345,7 +345,7 @@ describe("call controls (handover §6, §7)", () => {
 			rejoin: switches,
 		});
 		expect(phone.alert).toBe(
-			"You were in the call. Tap the call button to join again with the same switches.",
+			"You were in the call. Tap the call button to review your switches and rejoin.",
 		);
 		const noSeat = callControlsView({
 			available: true,

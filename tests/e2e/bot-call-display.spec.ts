@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockBotBidding } from "./bot-mock";
+import { joinCall } from "./call-probe";
 import { Player } from "./player";
 import { createRoom, pick } from "./room";
 
@@ -91,7 +92,7 @@ for (const layout of ["desktop", "compact"] as const) {
 			await expect(join).toBeEnabled();
 			if (layout === "desktop") {
 				await host.grantPermissions(["microphone"]);
-				await join.click();
+				await joinCall(page);
 				await expect(
 					controls.getByRole("button", { name: "Leave call" }),
 				).toBeEnabled();

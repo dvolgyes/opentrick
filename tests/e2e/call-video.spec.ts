@@ -10,8 +10,10 @@ import {
 	expectNoteOffScreen,
 	installCallProbe,
 	joinButton,
+	joinCall,
 	joinWith,
 	leaveButton,
+	leaveCall,
 	peerAudioGrowth,
 	peerBytes,
 	receivedSsrc,
@@ -22,12 +24,17 @@ import {
 	setSwitches,
 	toggle,
 } from "./call-probe";
-import { type ContextOptions, Player, reportNetwork } from "./player";
+import {
+	buildRelayHubs,
+	type ContextOptions,
+	Player,
+	reportNetwork,
+} from "./player";
 import { createRoom, pick, type SeatKey, seatLabel } from "./room";
 
 /**
- * Desktop video and the asymmetric combinations (call/layout plan C6), on one P2P table through the public
- * trackers. West, North and South may use the microphone and the camera (generated test media); East may use
+ * Desktop video and the asymmetric combinations (call/layout plan C6), on one P2P table with local signaling.
+ * West, North and South may use the microphone and the camera (generated test media); East may use
  * only the microphone until test 4. South is a phone: it can send its camera, but it shows no video.
  */
 test.describe.configure({ mode: "serial" });
@@ -259,12 +266,14 @@ async function expectRound(
 
 test.beforeAll(async ({ browser, baseURL }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
+	const rig = { relayHubs: buildRelayHubs() };
 	for (const seat of SEATS) {
 		players[seat] = await Player.open(
 			browser,
 			baseURL,
 			`video-${seat}`,
 			OPTIONS[seat],
+			rig,
 		);
 		await players[seat].addInitScript(installCallProbe);
 	}
@@ -447,7 +456,7 @@ test("2: a tile shows each call state in place, and a camera stream gets the low
 test("3: with the camera blocked, the preview says so, Cancel joins without the camera, the microphone works, the call box stays clear, and nobody sees a picture of East", async () => {
 	// Join with the camera opens the camera preview first (src/ui/camera-setup.ts); it cannot send a blocked camera.
 	await setSwitches(tab.E, MODE_LABELS.both);
-	await joinButton(tab.E).click();
+	await joinCall(tab.E);
 	const preview = tab.E.getByRole("dialog", { name: "Camera preview" });
 	await expect(preview).toContainText("Camera access was denied.");
 	await expect(
@@ -514,7 +523,7 @@ const ROUND_C = { W: "listen", N: "both", E: "camera" } as const;
 
 test("4: video frames arrive only where the sender sends and the receiver receives", async () => {
 	for (const seat of DESKTOPS) {
-		await leaveButton(tab[seat]).click();
+		await leaveCall(tab[seat]);
 		await expect(joinButton(tab[seat])).toBeVisible();
 	}
 	await players.E.grantPermissions(["camera"]);
@@ -719,7 +728,7 @@ test("8: ten See cameras toggles at two desktops at once close no table connecti
 });
 
 test("9: the phone leaves with its icon: its microphone and media end, and the desktops see Not in call", async () => {
-	await leaveButton(tab.S).click();
+	await leaveCall(tab.S);
 	await expect(joinButton(tab.S)).toBeVisible();
 	await expect
 		.poll(async () => {

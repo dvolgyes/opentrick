@@ -93,72 +93,40 @@ describe("local preference changes", () => {
 	it("lets a compact device send video and keeps its Receive video choice for the desktop view", () => {
 		expect(join(presetById("both").switches, "compact")).toEqual(ALL_ON);
 		expect(
-			setSwitch(
-				prefs(true, true, false, false),
-				"compact",
-				"send",
-				"video",
-				true,
-			),
+			setSwitch(prefs(true, true, false, false), "send", "video", true),
 		).toEqual(prefs(true, true, true, false));
 		expect(
-			setSwitch(
-				prefs(true, true, false, false),
-				"compact",
-				"receive",
-				"video",
-				true,
-			),
+			setSwitch(prefs(true, true, false, false), "receive", "video", true),
 		).toEqual(prefs(true, true, false, true));
-		// The last switch that a compact device uses goes off: the call ends, Receive video stays.
 		expect(
-			setSwitch(
-				prefs(false, false, true, true),
-				"compact",
-				"send",
-				"video",
-				false,
-			),
-		).toEqual(prefs(false, false, false, true, false));
+			setSwitch(prefs(false, false, true, true), "send", "video", false),
+		).toEqual(prefs(false, false, false, true));
 	});
 
 	it("keeps the other switches when the microphone goes off", () => {
 		expect(
-			setSwitch(
-				prefs(true, true, false, false),
-				"desktop",
-				"send",
-				"audio",
-				false,
-			),
+			setSwitch(prefs(true, true, false, false), "send", "audio", false),
 		).toEqual(prefs(false, true, false, false));
 	});
 
 	it("keeps outgoing audio when incoming audio goes off", () => {
 		expect(
-			setSwitch(
-				prefs(true, true, false, false),
-				"desktop",
-				"receive",
-				"audio",
-				false,
-			),
+			setSwitch(prefs(true, true, false, false), "receive", "audio", false),
 		).toEqual(prefs(true, false, false, false));
 	});
 
-	it("leaves the call when the last available switch goes off", () => {
+	it("keeps the call open when the last available switch goes off", () => {
 		const result = setSwitch(
 			prefs(false, true, false, false),
-			"desktop",
 			"receive",
 			"audio",
 			false,
 		);
-		expect(result.inCall).toBe(false);
+		expect(result.inCall).toBe(true);
 	});
 
 	it("does not join when a switch goes on outside the call", () => {
-		const result = setSwitch(NOT_IN_CALL, "desktop", "send", "audio", true);
+		const result = setSwitch(NOT_IN_CALL, "send", "audio", true);
 		expect(result.inCall).toBe(false);
 		expect(result.send.audio).toBe(true);
 	});

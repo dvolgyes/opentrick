@@ -1,3 +1,8 @@
+import {
+	DEFAULT_VIDEO_QUALITY,
+	type VideoQuality,
+	videoDownscale,
+} from "./media";
 import type { CallLink, LinkOptions } from "./mesh";
 import { MEDIA, type Medium, mediaPlan, type Party } from "./policy";
 
@@ -25,6 +30,7 @@ export interface PeerLinkOptions extends LinkOptions {
 	readonly connection: () => RTCPeerConnection | undefined;
 	/** The live microphone and camera tracks, or null. */
 	readonly tracks: LocalTracks;
+	readonly videoQuality?: VideoQuality;
 }
 
 /**
@@ -86,6 +92,7 @@ export class PeerLink implements CallLink {
 	#local: Party;
 	#remote: Party;
 	#tracks: LocalTracks;
+	#videoQuality: VideoQuality;
 	#pc: RTCPeerConnection | undefined;
 	/** Removes the listeners of the current connection. */
 	#listeners: AbortController | undefined;
@@ -111,6 +118,7 @@ export class PeerLink implements CallLink {
 		this.#local = options.local;
 		this.#remote = options.remote;
 		this.#tracks = options.tracks;
+		this.#videoQuality = options.videoQuality ?? DEFAULT_VIDEO_QUALITY;
 		this.#bind(this.#connection());
 		this.#state = this.#derive();
 	}
@@ -148,6 +156,11 @@ export class PeerLink implements CallLink {
 	setTrack(medium: Medium, track: MediaStreamTrack | null): void {
 		this.#tracks = { ...this.#tracks, [medium]: track };
 		this.#enqueue((pc) => this.#applyTracks(pc));
+	}
+
+	setVideoQuality(quality: VideoQuality): void {
+		this.#videoQuality = quality;
+		this.#enqueue((pc) => this.#scaleVideo(section(pc, "video")?.sender));
 	}
 
 	renew(): void {
@@ -322,6 +335,7 @@ export class PeerLink implements CallLink {
 				continue;
 			await transceiver.sender.replaceTrack(track);
 			if (this.#closed || this.#pc !== pc) return;
+			if (medium === "video") await this.#scaleVideo(transceiver.sender);
 		}
 	}
 
@@ -330,6 +344,7 @@ export class PeerLink implements CallLink {
 	 * priority, and video senders a low one and keep their frame rate. Runs after each negotiation; a sender without
 	 * encodings sends nothing yet and is tuned after a later one. Chrome keeps the values over renegotiation and
 	 * replaceTrack (probe, Chrome 155).
+	 * The RTP hints are optional; a sender can reject them without blocking media.
 	 */
 	async #tune(pc: RTCPeerConnection): Promise<void> {
 		if (section(pc, "video") === undefined) return;
@@ -354,8 +369,28 @@ export class PeerLink implements CallLink {
 			}
 			if (medium === "video")
 				parameters.degradationPreference = "maintain-framerate";
-			await transceiver.sender.setParameters(parameters);
+			await transceiver.sender.setParameters(parameters).catch(() => undefined);
 			if (this.#closed || this.#pc !== pc) return;
+		}
+		await this.#scaleVideo(section(pc, "video")?.sender);
+	}
+
+	async #scaleVideo(sender: RTCRtpSender | undefined): Promise<void> {
+		if (sender?.track == null) return;
+		try {
+			const scale = videoDownscale(sender.track, this.#videoQuality);
+			const parameters = sender.getParameters();
+			if (
+				parameters.encodings.every(
+					(encoding) => (encoding.scaleResolutionDownBy ?? 1) === scale,
+				)
+			)
+				return;
+			for (const encoding of parameters.encodings)
+				encoding.scaleResolutionDownBy = scale;
+			await sender.setParameters(parameters);
+		} catch {
+			return;
 		}
 	}
 

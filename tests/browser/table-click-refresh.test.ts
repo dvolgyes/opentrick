@@ -574,16 +574,52 @@ describe("controls during room refresh", () => {
 		expect(mirror.getAttribute("aria-pressed")).toBe("false");
 	});
 
-	it("leaves the call during a call refresh", async () => {
-		const { handlers, section } = renderView(playView(), "desktop");
-		section.renderCall(display);
-		await pressThroughUpdate(required(".call-panel .call-join"), () =>
-			section.renderCall(display),
-		);
-		expect(handlers.call.leave).toHaveBeenCalledOnce();
-	});
+	it.each(["desktop", "compact"] as const)(
+		"confirms leaving the %s call across refreshes",
+		async (form) => {
+			await viewport(form);
+			const { handlers, section } = renderView(playView(), form);
+			const current = {
+				...display,
+				view: {
+					...display.view,
+					form,
+					media: {
+						...display.view.media,
+						receive:
+							form === "desktop"
+								? (["audio", "video"] as const)
+								: (["audio"] as const),
+					},
+				},
+			};
+			section.renderCall(current);
+			const opener = required(
+				form === "desktop"
+					? ".call-panel .call-join"
+					: ".mobile-auction-topbar .call-join",
+			);
+			const press = form === "desktop" ? pressThroughUpdate : tapThroughUpdate;
+			await press(opener, () => section.renderCall(current));
+			expect(handlers.call.leave).not.toHaveBeenCalled();
+			const dialog = required("[data-testid='call-confirm']");
+			const stay = required("[data-testid='call-confirm'] .approval-accept");
+			expect(stay.textContent).toBe("Stay in call");
+			expect(document.activeElement).toBe(stay);
+			expect(dialog.querySelectorAll(".call-toggle:disabled")).toHaveLength(4);
+			dialog.dispatchEvent(new Event("cancel", { cancelable: true }));
+			expect(handlers.call.leave).not.toHaveBeenCalled();
+			opener.click();
+			await press(
+				required("[data-testid='call-confirm'] .call-join.approval-reject"),
+				() => section.renderCall(current),
+			);
+			expect(handlers.call.leave).toHaveBeenCalledOnce();
+		},
+	);
 
 	it("toggles audio in the invitation during a call refresh", async () => {
+		await viewport("desktop");
 		const { handlers, section } = renderView(playView(), "desktop");
 		const outside = {
 			...display,
@@ -601,11 +637,17 @@ describe("controls during room refresh", () => {
 			),
 			() => section.renderCall(outside, {}, true),
 		);
-		expect(handlers.call.setSwitch).toHaveBeenCalledWith(
-			"send",
-			"audio",
-			false,
-		);
+		expect(handlers.call.setSwitch).not.toHaveBeenCalled();
+		expect(
+			required(
+				".call-invite .call-toggle[data-way='send'][data-medium='audio']",
+			).getAttribute("aria-pressed"),
+		).toBe("false");
+		required(".call-invite .call-join").click();
+		expect(handlers.call.join).toHaveBeenCalledWith({
+			send: { audio: false, video: false },
+			receive: { audio: true, video: true },
+		});
 	});
 
 	it("joins from the invitation during a call refresh", async () => {
@@ -624,6 +666,7 @@ describe("controls during room refresh", () => {
 			section.renderCall(outside, {}, true),
 		);
 		expect(handlers.call.join).toHaveBeenCalledOnce();
+		expect(document.querySelector(".call-confirm[open]")).toBeNull();
 	});
 
 	it("retries a failed call during a call refresh", async () => {

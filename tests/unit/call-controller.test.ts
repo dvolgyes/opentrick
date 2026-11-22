@@ -367,6 +367,36 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(north.remote("E")?.video).toBeUndefined();
 	});
 
+	it("applies a saved quality only to the outgoing video of an active call", async () => {
+		await connected("both", "both");
+		const microphone = north.grant("audio");
+		const camera = north.preparedCamera;
+		if (camera === undefined) throw new Error("Expected a prepared camera");
+		vi.spyOn(camera, "getSettings").mockReturnValue({
+			width: 1280,
+			height: 720,
+		});
+		await settle(10);
+		const sender = (player: Player) =>
+			player.open
+				?.getTransceivers()
+				.find((t) => t.receiver.track.kind === "video")?.sender;
+		north.call.setVideoQuality("normal");
+		await settle(10);
+		expect(sender(north)?.getParameters()).toMatchObject({
+			encodings: [{ scaleResolutionDownBy: 1.5 }],
+		});
+		expect(sender(east)?.getParameters().encodings[0]).not.toHaveProperty(
+			"scaleResolutionDownBy",
+		);
+		expect(north.call.view.requested.inCall).toBe(true);
+		expect(north.sendingVideo).toBe(asTrack(camera));
+		expect(north.sending).toBe(asTrack(microphone));
+		expect(camera.stops).toBe(0);
+		expect(microphone.stops).toBe(0);
+		expect(north.requests).toHaveLength(1);
+	});
+
 	it("sends the camera to a desktop that receives video, and stops it at once on Send camera off", async () => {
 		await connected("both", "both");
 		const mic = north.grant("audio");
@@ -573,9 +603,18 @@ describe("CallController (call/layout plan §4.5)", () => {
 		expect(east.call.view.status).toBe("subscribed");
 	});
 
-	it("leaves the call when the last switch goes off, and when the seat is lost", async () => {
-		await connected("listen", "audio");
+	it("keeps the call connected when the last medium is muted, but leaves on seat loss", async () => {
+		await connected("audio", "audio");
+		const muted = north.grant();
+		await settle(10);
 		north.call.setSwitch("receive", "audio", false);
+		north.call.setSwitch("send", "audio", false);
+		expect(muted.stops).toBe(1);
+		expect(north.call.view.requested.inCall).toBe(true);
+		await settle();
+		expect(east.remote("N")?.audio).toBeUndefined();
+		expect(east.remote("N")?.status).toBe("connected");
+		north.call.leave();
 		expect(north.call.view.status).toBe("outside");
 		expect(north.call.view.requested.inCall).toBe(false);
 		expect(north.stopped).toBe(true);

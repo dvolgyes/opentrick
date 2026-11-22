@@ -853,6 +853,40 @@ test("turning off played-card animation keeps its duration after reload", async 
 	).toHaveValue("2");
 });
 
+test("outgoing video quality is saved locally during a game and Cancel keeps the saved choice", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await namePlayers(page, "N", ["E", "S", "W"]);
+	await page.getByTestId("create").click();
+	await expect(page.getByTestId("table")).toHaveAttribute(
+		"data-phase",
+		"auction",
+	);
+	const dialog = await openSettings(page);
+	const quality = dialog
+		.getByRole("group", { name: "Network", exact: true })
+		.getByRole("combobox", { name: "Outgoing video quality", exact: true });
+	const save = dialog.getByRole("button", { name: "Save settings" });
+	const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+	await expect(quality.locator("option")).toHaveText(["Low", "Normal", "High"]);
+	await expect(quality).toHaveValue("low");
+	await quality.selectOption("high");
+	await save.click();
+	await expect(dialog).toBeHidden();
+	await openSettings(page);
+	await expect(quality).toHaveValue("high");
+	await quality.selectOption("normal");
+	await cancel.click();
+	await expect(dialog).toBeHidden();
+	await openSettings(page);
+	await expect(quality).toHaveValue("high");
+	await cancel.click();
+	await page.reload();
+	await openSettings(page);
+	await expect(quality).toHaveValue("high");
+});
+
 test("Gameplay shows the live browser reduced motion request and keeps the saved choice", async ({
 	page,
 }) => {

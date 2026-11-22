@@ -1,4 +1,10 @@
-import { cameraConstraints, type GetUserMedia } from "../call/media";
+import {
+	DEFAULT_VIDEO_QUALITY,
+	fitCamera,
+	type GetUserMedia,
+	openCamera,
+	type VideoQuality,
+} from "../call/media";
 import type { Translate } from "../i18n";
 import { button, el } from "./dom";
 
@@ -29,6 +35,7 @@ export interface CameraSetup {
 interface CameraSetupDeps {
 	readonly devices: CameraDevices;
 	readonly getUserMedia: GetUserMedia;
+	readonly videoQuality?: () => VideoQuality;
 	readonly t: Translate;
 }
 
@@ -177,7 +184,11 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 		confirm.disabled = true;
 		status.textContent = deps.t("Starting camera preview…");
 		try {
-			const stream = await deps.getUserMedia(cameraConstraints(deviceId));
+			const stream = await openCamera(
+				deps.getUserMedia,
+				deviceId,
+				() => !disposed && token === sequence,
+			);
 			if (disposed || token !== sequence) {
 				for (const track of stream.getTracks()) track.stop();
 				return;
@@ -191,6 +202,16 @@ export function cameraSetup(deps: CameraSetupDeps): CameraSetup {
 				return;
 			}
 			preview = stream;
+			await fitCamera(track, deps.videoQuality?.() ?? DEFAULT_VIDEO_QUALITY);
+			if (disposed || token !== sequence) return;
+			if (track.readyState !== "live") {
+				stopPreview();
+				status.textContent = deps.t(
+					"The camera preview is no longer available.",
+				);
+				void refreshDevices();
+				return;
+			}
 			video.srcObject = stream;
 			track.addEventListener("ended", () => {
 				if (preview !== stream) return;

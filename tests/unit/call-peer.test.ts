@@ -36,7 +36,7 @@ function switched(
 ): Party {
 	return {
 		...local,
-		prefs: setSwitch(local.prefs, local.form, way, medium, on),
+		prefs: setSwitch(local.prefs, way, medium, on),
 	};
 }
 
@@ -640,6 +640,29 @@ describe("PeerLink video and asymmetric combinations (call/layout plan C6)", () 
 		await settle();
 		expect(pair.rounds()).toEqual(["N", "N"]);
 		expect(settings()).toEqual([1, 1, 1, 1]);
+	});
+
+	it("keeps audio and video attached when a sender rejects a quality hint", async () => {
+		const pair = await connectedPair(BOTH, BOTH);
+		const sender = pair.section("a", "video")?.sender;
+		if (sender === undefined) throw new Error("No video sender");
+		vi.spyOn(pair.camA, "getSettings").mockReturnValue({
+			width: 1280,
+			height: 720,
+		});
+		const rejected = vi
+			.spyOn(sender, "setParameters")
+			.mockRejectedValue(
+				new DOMException("Unsupported quality hint", "NotSupportedError"),
+			);
+		pair.north.setVideoQuality("normal");
+		await settle();
+		expect(rejected).toHaveBeenCalledOnce();
+		expect(pair.north.connected).toBe(true);
+		expect(pair.north.fault).toBeUndefined();
+		expect(pair.sending("a", "audio")).toBe("micA");
+		expect(pair.sending("a", "video")).toBe("camA");
+		expect(pair.rounds()).toEqual(["N"]);
 	});
 
 	it("leaves the senders of an audio-only connection as they are", async () => {

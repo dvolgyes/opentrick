@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { deriveTableId } from "../../src/p2p/keys";
 import { mockBotBidding } from "./bot-mock";
-
+import { joinCall, rejoinCall } from "./call-probe";
 import { NetworkSwitch } from "./network";
 import { buildRelayUrls, Player } from "./player";
 import {
@@ -202,12 +202,8 @@ test("switching the current bidder to a bot starts it immediately", async ({
 		).toBeEnabled({ timeout: CONNECT_MS });
 		await host.grantPermissions(["microphone"]);
 		await north.grantPermissions(["microphone"]);
-		await hostPage
-			.getByRole("button", { name: "Join call", exact: true })
-			.click();
-		await northPage
-			.getByRole("button", { name: "Join call", exact: true })
-			.click();
+		await joinCall(hostPage);
+		await joinCall(northPage);
 		await expect(hostPage.getByTestId("call-note")).toContainText(
 			"Connected to North.",
 		);
@@ -520,11 +516,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		await expect(hostPage.getByTestId("settings-dialog")).toBeHidden();
 		await host.grantPermissions(["microphone"]);
 		await north.grantPermissions(["microphone"]);
-		for (const page of [hostPage, northPage])
-			await page
-				.getByTestId("call-panel")
-				.getByRole("button", { name: "Join call", exact: true })
-				.click();
+		for (const page of [hostPage, northPage]) await joinCall(page);
 		await expect(hostPage.getByTestId("call-note")).toContainText(
 			"Connected to North.",
 			{ timeout: CONNECT_MS },
@@ -560,6 +552,7 @@ test("a player on autoplay stays in the call when the host reloads, and can stil
 		);
 		await hostPage.reload();
 		await expect(botSwitch).toBeVisible({ timeout: CONNECT_MS });
+		await rejoinCall(hostPage);
 		await expect(hostPage.getByTestId("call-note")).toContainText(
 			"Connected to North.",
 			{ timeout: CONNECT_MS },

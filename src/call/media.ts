@@ -13,26 +13,86 @@ export type GetUserMedia = (
 	constraints: MediaStreamConstraints,
 ) => Promise<MediaStream>;
 
-export function cameraConstraints(deviceId?: string): MediaStreamConstraints {
+export const VIDEO_QUALITIES = ["low", "normal", "high"] as const;
+export type VideoQuality = (typeof VIDEO_QUALITIES)[number];
+export const DEFAULT_VIDEO_QUALITY: VideoQuality = "low";
+
+const SHORT_EDGE: Readonly<Record<VideoQuality, number>> = {
+	low: 360,
+	normal: 480,
+	high: 720,
+};
+
+const NATIVE_FRAMES = { exact: "none" } as const;
+
+/** Opens a full-frame source without setting dimensions that could cause software cropping. */
+export async function openCamera(
+	getUserMedia: GetUserMedia,
+	deviceId: string | undefined,
+	isCurrent: () => boolean,
+): Promise<MediaStream> {
 	const supported =
 		globalThis.navigator?.mediaDevices?.getSupportedConstraints?.();
 	const video = {
 		frameRate: 15,
-		...(supported && "resizeMode" in supported && supported.resizeMode === true
-			? { width: 640, height: 360, resizeMode: { exact: "none" } }
-			: {}),
 		...(deviceId === undefined ? {} : { deviceId: { exact: deviceId } }),
 	};
-	return { audio: false, video };
+	if (supported && "resizeMode" in supported && supported.resizeMode === true) {
+		try {
+			const native = { ...video, resizeMode: NATIVE_FRAMES };
+			return await getUserMedia({ audio: false, video: native });
+		} catch (error) {
+			if (
+				!isCurrent() ||
+				!(error instanceof DOMException) ||
+				error.name !== "OverconstrainedError"
+			)
+				throw error;
+		}
+	}
+	return getUserMedia({ audio: false, video });
 }
 
-function constraintsFor(
-	medium: Medium,
-	videoDeviceId: string | undefined,
-): MediaStreamConstraints {
-	return medium === "video"
-		? cameraConstraints(videoDeviceId)
-		: { audio: true, video: false };
+/** Selects a native camera mode, preserving its orientation and full frame. */
+export async function fitCamera(
+	track: MediaStreamTrack,
+	quality: VideoQuality,
+): Promise<void> {
+	const settings = track.getSettings();
+	if (!("resizeMode" in settings) || settings.resizeMode !== "none") return;
+	const { width, height } = settings;
+	if (!width || !height) return;
+	const edge = width < height ? "width" : "height";
+	const target = SHORT_EDGE[quality];
+	const native = { frameRate: 15, resizeMode: NATIVE_FRAMES };
+	const minimum = track.getCapabilities?.()[edge]?.min ?? 1;
+	const smallest = { ...native, [edge]: { ideal: minimum } };
+	const wanted = {
+		...native,
+		[edge]:
+			quality === "normal" ? { ideal: target, max: target } : { ideal: target },
+	};
+	try {
+		await track.applyConstraints(quality === "low" ? smallest : wanted);
+	} catch (error) {
+		if (
+			quality !== "normal" ||
+			track.readyState !== "live" ||
+			!(error instanceof DOMException) ||
+			error.name !== "OverconstrainedError"
+		)
+			return;
+		await track.applyConstraints(smallest).catch(() => undefined);
+	}
+}
+
+/** Sender scaling is relative to the current source, not to the nominal camera preset. */
+export function videoDownscale(
+	track: MediaStreamTrack,
+	quality: VideoQuality,
+): number {
+	const { width = 0, height = 0 } = track.getSettings();
+	return Math.max(1, Math.min(width, height) / SHORT_EDGE[quality]);
 }
 
 function refusal(error: unknown): CaptureState {
@@ -48,6 +108,9 @@ class Capture {
 	readonly #getUserMedia: GetUserMedia;
 	readonly #onChange: () => void;
 	readonly #videoDeviceId: () => string | undefined;
+	readonly #videoQuality: () => VideoQuality;
+	#fit: Promise<void> = Promise.resolve();
+	#pendingTrack: MediaStreamTrack | undefined;
 	#state: CaptureState = "off";
 	#track: MediaStreamTrack | undefined;
 	#prepared: MediaStreamTrack | undefined;
@@ -58,11 +121,13 @@ class Capture {
 		getUserMedia: GetUserMedia,
 		onChange: () => void,
 		videoDeviceId: () => string | undefined,
+		videoQuality: () => VideoQuality,
 	) {
 		this.#medium = medium;
 		this.#getUserMedia = getUserMedia;
 		this.#onChange = onChange;
 		this.#videoDeviceId = videoDeviceId;
+		this.#videoQuality = videoQuality;
 	}
 
 	get state(): CaptureState {
@@ -88,10 +153,16 @@ class Capture {
 		const token = ++this.#request;
 		this.#state = "pending";
 		this.#onChange();
-		this.#getUserMedia(
-			constraintsFor(this.#medium, this.#videoDeviceId()),
-		).then(
-			(stream) => this.#captured(token, stream),
+		const capture =
+			this.#medium === "video"
+				? openCamera(
+						this.#getUserMedia,
+						this.#videoDeviceId(),
+						() => token === this.#request,
+					)
+				: this.#getUserMedia({ audio: true, video: false });
+		void capture.then(
+			(stream) => void this.#captured(token, stream),
 			(error: unknown) => {
 				if (token !== this.#request) return;
 				this.#state = refusal(error);
@@ -102,6 +173,7 @@ class Capture {
 
 	stop(): void {
 		this.#request++;
+		this.#stopPending();
 		const track = this.#track;
 		const prepared = this.#prepared;
 		const changed = this.#state !== "off" || prepared !== undefined;
@@ -117,6 +189,7 @@ class Capture {
 		if (this.#medium !== "video" || track.kind !== "video") return false;
 		if (track.readyState !== "live") return false;
 		this.#request++;
+		this.#stopPending();
 		this.#track?.stop();
 		this.#track = undefined;
 		this.#state = "off";
@@ -129,7 +202,27 @@ class Capture {
 		return this.#prepared !== undefined;
 	}
 
-	#captured(token: number, stream: MediaStream): void {
+	#stopPending(): void {
+		this.#pendingTrack?.stop();
+		this.#pendingTrack = undefined;
+	}
+
+	refitVideo(): Promise<void> {
+		const track = this.#track ?? this.#prepared;
+		const quality = this.#videoQuality();
+		this.#fit = this.#fit.then(async () => {
+			if (
+				track === undefined ||
+				(track !== this.#track && track !== this.#prepared) ||
+				quality !== this.#videoQuality()
+			)
+				return;
+			await fitCamera(track, quality);
+		});
+		return this.#fit;
+	}
+
+	async #captured(token: number, stream: MediaStream): Promise<void> {
 		const [audio, video] = [stream.getAudioTracks(), stream.getVideoTracks()];
 		const [track, ...extra] = this.#medium === "audio" ? audio : video;
 		const others = this.#medium === "audio" ? video : audio;
@@ -143,10 +236,25 @@ class Capture {
 			this.#onChange();
 			return;
 		}
+		if (this.#medium === "video") {
+			this.#pendingTrack = track;
+			let quality: VideoQuality;
+			do {
+				quality = this.#videoQuality();
+				await fitCamera(track, quality);
+				if (token !== this.#request) return;
+			} while (track.readyState === "live" && quality !== this.#videoQuality());
+			this.#pendingTrack = undefined;
+		}
 		this.#capturedTrack(track);
 	}
 
 	#capturedTrack(track: MediaStreamTrack): void {
+		if (track.readyState !== "live") {
+			this.#state = "failed";
+			this.#onChange();
+			return;
+		}
 		// `ended` fires when the device goes away or the permission is revoked, never after our own stop().
 		track.addEventListener("ended", () => {
 			if (this.#track !== track) return;
@@ -163,6 +271,7 @@ class Capture {
 export class LocalMedia {
 	readonly #captures: Readonly<Record<Medium, Capture>>;
 	#videoDeviceId: string | undefined;
+	#videoQuality = DEFAULT_VIDEO_QUALITY;
 
 	/** `onChange` names the medium whose state or track changed. */
 	constructor(getUserMedia: GetUserMedia, onChange: (medium: Medium) => void) {
@@ -172,18 +281,30 @@ export class LocalMedia {
 				getUserMedia,
 				() => onChange("audio"),
 				() => undefined,
+				() => DEFAULT_VIDEO_QUALITY,
 			),
 			video: new Capture(
 				"video",
 				getUserMedia,
 				() => onChange("video"),
 				() => this.#videoDeviceId,
+				() => this.#videoQuality,
 			),
 		};
 	}
 
 	selectVideoDevice(deviceId: string | undefined): void {
 		this.#videoDeviceId = deviceId;
+	}
+
+	get videoQuality(): VideoQuality {
+		return this.#videoQuality;
+	}
+
+	setVideoQuality(quality: VideoQuality): Promise<void> {
+		if (this.#videoQuality === quality) return Promise.resolve();
+		this.#videoQuality = quality;
+		return this.#captures.video.refitVideo();
 	}
 
 	state(medium: Medium): CaptureState {

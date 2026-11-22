@@ -39,6 +39,43 @@ it("requests native camera frames in both preview and direct capture", async () 
 	}
 });
 
+it("uses the selected quality for preview and direct native capture", async () => {
+	const getUserMedia = navigator.mediaDevices.getUserMedia.bind(
+		navigator.mediaDevices,
+	);
+	const media = new LocalMedia(getUserMedia, () => {});
+	media.setVideoQuality("high");
+	const setup = cameraSetup({
+		devices: { enumerate: async () => [], subscribe: () => () => {} },
+		getUserMedia,
+		videoQuality: () => "high",
+		t: englishTranslator,
+	});
+	document.body.append(setup.element);
+	const shortEdge = (track: MediaStreamTrack | undefined) => {
+		const { width = 0, height = 0 } = track?.getSettings() ?? {};
+		return Math.min(width, height);
+	};
+	try {
+		void setup.open();
+		const preview = videoAt(setup.element, "camera-preview");
+		await expect.poll(() => preview.videoWidth).toBeGreaterThan(0);
+		const high = Math.min(preview.videoWidth, preview.videoHeight);
+		setup.dispose();
+		media.set("video", true);
+		await expect.poll(() => media.state("video")).toBe("on");
+		const track = media.track("video");
+		expect(shortEdge(track)).toBe(high);
+		media.setVideoQuality("low");
+		await expect.poll(() => shortEdge(track)).toBeLessThan(high);
+		expect(media.track("video")).toBe(track);
+		expect(track?.getSettings()).toMatchObject({ resizeMode: "none" });
+	} finally {
+		setup.dispose();
+		media.stop();
+	}
+});
+
 function videoAt(root: HTMLElement, id: string): HTMLVideoElement {
 	const video = root.querySelector<HTMLVideoElement>(`[data-testid='${id}']`);
 	if (video === null) throw new Error(`Missing video: ${id}`);

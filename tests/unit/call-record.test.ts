@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { CallController } from "../../src/call/call";
 import {
 	applyCallRecord,
 	type CallRecord,
@@ -12,6 +13,8 @@ import {
 	type StoredCallRecord,
 } from "../../src/call/record";
 import { chatPayload } from "../../src/game/chat";
+import type { JsonObject } from "../../src/protocol";
+import { CallMemory } from "../../src/ui/call-memory";
 import { TABLE } from "./p2p-fixtures";
 
 const ME = "holder-me";
@@ -191,7 +194,7 @@ describe("the restore", () => {
 		expect(callRestore(outside(2), "desktop")).toBeUndefined();
 	});
 
-	it("joins with the stored switches and captures each device whose Send switch is on", () => {
+	it("offers the saved microphone and camera choices", () => {
 		const both: CallRecord = {
 			version: 1,
 			prefs: {
@@ -202,12 +205,12 @@ describe("the restore", () => {
 			form: "desktop",
 		};
 		expect(callRestore(both, "desktop")).toEqual({
-			selection: { send: both.prefs.send, receive: both.prefs.receive },
-			devices: ["audio", "video"],
+			send: both.prefs.send,
+			receive: both.prefs.receive,
 		});
 	});
 
-	it("keeps the video switches on a compact device, and captures the camera that its Send switch asks for", () => {
+	it("keeps the saved video choices for a compact device", () => {
 		const listen: CallRecord = {
 			version: 1,
 			prefs: {
@@ -218,8 +221,8 @@ describe("the restore", () => {
 			form: "desktop",
 		};
 		expect(callRestore(listen, "compact")).toEqual({
-			selection: { send: listen.prefs.send, receive: listen.prefs.receive },
-			devices: ["video"],
+			send: listen.prefs.send,
+			receive: listen.prefs.receive,
 		});
 	});
 
@@ -235,4 +238,68 @@ describe("the restore", () => {
 		};
 		expect(callRestore(watch, "compact")).toBeUndefined();
 	});
+});
+
+it("replicates outside on reload while preserving saved choices without capturing", async () => {
+	let records = { E: stored(1, ME, true) };
+	const send = vi.fn(async (payload: JsonObject) => {
+		const applied = applyCallRecord(records, "E", ME, payload);
+		if (!applied.ok || !applied.records.E)
+			throw new Error("Call record not applied");
+		records = { E: applied.records.E };
+		return true;
+	});
+	const reloaded = () => {
+		const call = new CallController(
+			{
+				openSignaling: () => {
+					throw new Error("Opened signaling before consent");
+				},
+				getUserMedia: () => {
+					throw new Error("Requested capture before consent");
+				},
+				connection: () => undefined,
+				newSession: () => "test-session",
+			},
+			"compact",
+		);
+		call.update({
+			roomId: TABLE,
+			self: { seat: "E", generation: 1 },
+			holders: { E: 1 },
+			online: new Set(["E"]),
+			expected: new Set(),
+		});
+		const deps = {
+			call,
+			tableId: TABLE,
+			seat: "E" as const,
+			holder: ME,
+			send,
+			changed: vi.fn(),
+		};
+		const memory = new CallMemory(deps);
+		memory.update({ records, outbox: [] });
+		expect(call.view.requested.inCall).toBe(false);
+		return { call, memory };
+	};
+	const { send: sending, receive } = records.E.prefs;
+	const expected = { send: sending, receive };
+	const first = reloaded();
+	expect(first.memory.rejoin).toEqual(expected);
+	expect(records.E).toMatchObject({
+		version: 2,
+		prefs: { ...expected, inCall: false },
+	});
+	expect(send).toHaveBeenCalledOnce();
+	await Promise.resolve();
+	first.memory.stop();
+	first.call.dispose();
+
+	const second = reloaded();
+	expect(second.memory.rejoin).toBeUndefined();
+	expect(second.call.view.requested).toEqual({ ...expected, inCall: false });
+	expect(send).toHaveBeenCalledOnce();
+	second.memory.stop();
+	second.call.dispose();
 });

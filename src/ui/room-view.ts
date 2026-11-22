@@ -191,7 +191,9 @@ export function showRoom(
 	let disposed = false;
 
 	// The call is optional and separate from the game: it reads the table, and its actions never send a command.
-	const deviceLayout = layout(readSignals(window), readSettings(deps.browser));
+	const initialSettings = readSettings(deps.browser);
+	const deviceLayout = layout(readSignals(window), initialSettings);
+	let videoQuality = initialSettings.videoQuality;
 	const deviceForm = formOf(deviceLayout);
 	const community =
 		(controller.view().table?.config ?? fallbackConfig)?.community !==
@@ -206,6 +208,7 @@ export function showRoom(
 		? cameraSetup({
 				devices: support.cameras,
 				getUserMedia: support.getUserMedia,
+				videoQuality: () => videoQuality,
 				t: deps.t,
 			})
 		: undefined;
@@ -221,6 +224,7 @@ export function showRoom(
 				deviceForm,
 			)
 		: undefined;
+	call?.setVideoQuality(videoQuality);
 	const memory =
 		support.available && call !== undefined
 			? new CallMemory({
@@ -228,13 +232,12 @@ export function showRoom(
 					tableId,
 					seat,
 					holder: controller.holder,
-					granted: support.granted,
 					send: (payload) => controller.send(payload).then((sent) => sent.ok),
 					changed: () => renderCall(),
 				})
 			: undefined;
 	const unsubscribeCamera = camera?.onChange(() => renderCall());
-	const audio = remoteAudio();
+	const audio = remoteAudio(deps.t);
 	const voices = voiceMeters();
 	const { turnSound: turnAlert } = handlers;
 	let yourTurn = false;
@@ -261,8 +264,6 @@ export function showRoom(
 	let botRestorePending = false;
 	let botsPaused = readBotsPaused();
 	let remoteCallPresence: Partial<Record<Seat, RemoteCallPresence>> = {};
-	/** A guest's page sees the host in the room call: the call controls invite this player. */
-	let hostInCall = false;
 	const botSeatOverrides = new Map<Seat, boolean>();
 	let botSettings = initialBotSettings;
 	let announcedLegacyBidder = false;
@@ -485,6 +486,9 @@ export function showRoom(
 	};
 
 	function applySettings(bidder?: LocalBidder): void {
+		const settings = readSettings(deps.browser);
+		videoQuality = settings.videoQuality;
+		call?.setVideoQuality(videoQuality);
 		if (
 			bidder !== undefined &&
 			controller.view().hosting &&
@@ -496,7 +500,6 @@ export function showRoom(
 		}
 		if (botSettings) {
 			botAssets.preload(botSettings.bidder);
-			const settings = readSettings(deps.browser);
 			botSettings = {
 				...botSettings,
 				playTimeMs: settings.playTimeMs,
@@ -847,6 +850,7 @@ export function showRoom(
 				});
 			},
 			call: {
+				permission: support.available ? support.permission : undefined,
 				join: (selection) => {
 					if (noOtherHumans) return;
 					if (selection.send.video && camera?.available !== false) {
@@ -1295,6 +1299,7 @@ export function showRoom(
 			you,
 			banner,
 			actionNote,
+			audio.hearButton,
 			...storageNotices,
 			table.element,
 		),
@@ -1474,7 +1479,11 @@ export function showRoom(
 							rejoin: memory?.rejoin,
 							cameraAvailable: camera?.available,
 						};
-		table.renderCall(display, remoteCallPresence, hostInCall);
+		table.renderCall(
+			display,
+			remoteCallPresence,
+			SEATS.some((other) => other !== seat && remoteCallPresence[other]),
+		);
 		audio.render(display.available ? display.view.remotes : []);
 	}
 
@@ -1843,6 +1852,10 @@ export function showRoom(
 			transcript.replaceChildren(...model.transcript.map(transcriptItem));
 			pending.replaceChildren(...model.pending.map(pendingItem));
 		}
+		memory?.update({
+			records: state?.media,
+			outbox: view.outbox.map((item) => item.payload),
+		});
 		remoteCallPresence = {};
 		for (const targetSeat of SEATS) {
 			const record = callRecords[targetSeat];
@@ -1852,11 +1865,6 @@ export function showRoom(
 				sendsVideo: record.prefs.send.video,
 			};
 		}
-		hostInCall =
-			!view.hosting &&
-			view.hostSeat !== null &&
-			view.hostSeat !== seat &&
-			remoteCallPresence[view.hostSeat] !== undefined;
 		// The other players see this player's bidding system below the name.
 		const ownSystem = readSettings(deps.browser).pointSystem;
 		if (
@@ -1923,10 +1931,6 @@ export function showRoom(
 						0,
 						Math.ceil((scoringStartedAt + 10_000 - Date.now()) / 1000),
 					);
-		memory?.update({
-			records: state?.media,
-			outbox: view.outbox.map((item) => item.payload),
-		});
 		let tableModel = tableView({
 			config,
 			seat,
@@ -2282,11 +2286,7 @@ export function showRoom(
 			}, 500)
 		: undefined;
 
-	// A gesture lets the browser start remote audio and the voice box that its autoplay rule blocked.
-	const onGesture = (): void => {
-		audio.resume();
-		voices.resume();
-	};
+	const onGesture = (): void => voices.resume();
 	room.addEventListener("pointerdown", onGesture);
 	room.addEventListener("keydown", onGesture);
 	document.addEventListener("visibilitychange", onPageStateChange);

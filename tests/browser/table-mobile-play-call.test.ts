@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import "../../src/ui/style.css";
 import type { Layout } from "../../src/call/device-class";
 import { translator } from "../../src/i18n";
 import type { Seat } from "../../src/protocol";
+import { callControls } from "../../src/ui/call-panel";
 import { DEFAULT_SETTINGS } from "../../src/ui/settings";
 import type { tableSection } from "../../src/ui/table";
 import type { RoundTripView, TableView } from "../../src/ui/table-model";
@@ -16,6 +17,147 @@ import {
 } from "./table-mobile-play-fixtures";
 
 afterEach(() => document.body.replaceChildren());
+
+describe("compact call confirmation", () => {
+	const outside = {
+		available: true as const,
+		view: {
+			status: "outside" as const,
+			canJoin: true,
+			form: "compact" as const,
+			media: {
+				send: ["audio", "video"] as const,
+				receive: ["audio"] as const,
+			},
+			requested: {
+				inCall: false,
+				send: { audio: false, video: false },
+				receive: { audio: false, video: false },
+			},
+			mic: "off" as const,
+			camera: "off" as const,
+			localVideo: undefined,
+			problem: undefined,
+			remotes: [],
+		},
+	};
+
+	it("stages Rejoin switches, keeps unsupported video visible, and discards on cancel", () => {
+		const handlers = {
+			join: vi.fn(),
+			leave: vi.fn(),
+			setSwitch: vi.fn(),
+			retry: vi.fn(),
+		};
+		const controls = callControls(handlers, []);
+		document.body.append(controls.row, controls.invite);
+		controls.render({
+			...outside,
+			rejoin: {
+				send: { audio: true, video: false },
+				receive: { audio: false, video: true },
+			},
+		});
+		const open = () =>
+			controls.row.querySelector<HTMLButtonElement>(".call-join")?.click();
+		const toggle = (way: string, medium: string) =>
+			controls.invite.querySelector<HTMLButtonElement>(
+				`.call-toggle[data-way='${way}'][data-medium='${medium}']`,
+			);
+		open();
+		expect(controls.invite.open).toBe(true);
+		expect(controls.invite.querySelectorAll(".call-toggle")).toHaveLength(4);
+		expect(toggle("receive", "video")?.disabled).toBe(true);
+		expect(toggle("receive", "video")?.checkVisibility()).toBe(true);
+		expect(toggle("receive", "video")?.textContent).toContain(
+			"Video is not available on this device.",
+		);
+		toggle("send", "audio")?.click();
+		expect(
+			controls.invite.querySelector<HTMLButtonElement>(".call-join")?.disabled,
+		).toBe(true);
+		controls.invite
+			.querySelector<HTMLButtonElement>(".approval-reject")
+			?.click();
+		expect(handlers.join).not.toHaveBeenCalled();
+		expect(handlers.setSwitch).not.toHaveBeenCalled();
+		open();
+		expect(toggle("send", "audio")?.getAttribute("aria-pressed")).toBe("true");
+		toggle("receive", "audio")?.click();
+		controls.invite.querySelector<HTMLButtonElement>(".call-join")?.click();
+		expect(handlers.join).toHaveBeenCalledExactlyOnceWith({
+			send: { audio: true, video: false },
+			receive: { audio: true, video: false },
+		});
+	});
+
+	it("reads fresh permission for each chooser and confirms while a query is pending", async () => {
+		let resolveFirst: (state: PermissionState) => void = () => {
+			throw new Error("Missing permission resolver");
+		};
+		const first = new Promise<PermissionState>((resolve) => {
+			resolveFirst = resolve;
+		});
+		let resolveCamera: (state: PermissionState) => void = () => {
+			throw new Error("Missing camera permission resolver");
+		};
+		const pending = new Promise<PermissionState>((resolve) => {
+			resolveCamera = resolve;
+		});
+		const permission = vi
+			.fn()
+			.mockReturnValueOnce(first)
+			.mockResolvedValueOnce("unknown")
+			.mockResolvedValueOnce("granted")
+			.mockReturnValueOnce(pending);
+		const handlers = {
+			join: vi.fn(),
+			leave: vi.fn(),
+			setSwitch: vi.fn(),
+			retry: vi.fn(),
+			permission,
+		};
+		const controls = callControls(handlers, []);
+		document.body.append(controls.row, controls.invite);
+		controls.render(outside, true);
+		expect(controls.invite.dataset.testid).toBe("call-invite");
+		expect(permission.mock.calls).toEqual([["audio"], ["video"]]);
+		await Promise.resolve();
+		expect(controls.invite.textContent).toContain("Camera permission: Unknown");
+		controls.invite
+			.querySelector<HTMLButtonElement>(".approval-reject")
+			?.click();
+		controls.row.querySelector<HTMLButtonElement>(".call-join")?.click();
+		expect(permission.mock.calls).toEqual([
+			["audio"],
+			["video"],
+			["audio"],
+			["video"],
+		]);
+		resolveFirst("denied");
+		await Promise.resolve();
+		expect(controls.invite.textContent).toContain(
+			"Microphone permission: Granted",
+		);
+		expect(controls.invite.textContent).not.toContain(
+			"Microphone permission: Denied",
+		);
+		expect(controls.invite.textContent).toContain("Camera permission: Unknown");
+		controls.invite
+			.querySelector<HTMLButtonElement>(
+				".call-toggle[data-way='receive'][data-medium='audio']",
+			)
+			?.click();
+		controls.invite.querySelector<HTMLButtonElement>(".call-join")?.click();
+		expect(handlers.join).toHaveBeenCalledOnce();
+		expect(controls.invite.open).toBe(false);
+		resolveCamera("denied");
+		await Promise.resolve();
+		expect(controls.invite.textContent).not.toContain(
+			"Camera permission: Denied",
+		);
+	});
+});
 
 describe("video tile", () => {
 	it("shows an empty avatar and the seat and name in a large caption", () => {

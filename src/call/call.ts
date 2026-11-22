@@ -1,7 +1,12 @@
 import { SEATS, type Seat } from "../protocol";
 import type { FailureCode } from "../result";
 import type { Form } from "./device-class";
-import { type CaptureState, type GetUserMedia, LocalMedia } from "./media";
+import {
+	type CaptureState,
+	type GetUserMedia,
+	LocalMedia,
+	type VideoQuality,
+} from "./media";
 import {
 	type CallLink,
 	CallMesh,
@@ -184,10 +189,18 @@ export class CallController {
 		this.#capture(prefs);
 	}
 
-	/** One switch. Outside the call it only chooses what Join starts with; inside, the last switch off leaves the call. */
+	restoreSwitches(selection: Switches): void {
+		if (this.#prefs.inCall) return;
+		const prefs = { ...selection, inCall: false };
+		if (samePrefs(this.#prefs, prefs)) return;
+		this.#prefs = prefs;
+		this.#emit();
+	}
+
+	/** Change one medium without joining or leaving the call. */
 	setSwitch(way: "send" | "receive", medium: Medium, on: boolean): void {
 		if (!this.#prefs.inCall) {
-			this.#prefs = setSwitch(this.#prefs, this.#form, way, medium, on);
+			this.#prefs = setSwitch(this.#prefs, way, medium, on);
 			this.#emit();
 			return;
 		}
@@ -198,11 +211,7 @@ export class CallController {
 			!this.#media.hasPreparedVideo()
 		)
 			return;
-		const prefs = setSwitch(this.#prefs, this.#form, way, medium, on);
-		if (!prefs.inCall) {
-			this.#end(prefs);
-			return;
-		}
+		const prefs = setSwitch(this.#prefs, way, medium, on);
 		this.#prefs = prefs;
 		// Consent applies at once: a device stops before the peers hear of the change.
 		this.#capture(prefs);
@@ -212,6 +221,15 @@ export class CallController {
 	/** Selects a locally chosen camera for the next Send video capture. */
 	setVideoDevice(deviceId: string | undefined): void {
 		this.#media.selectVideoDevice(deviceId);
+	}
+
+	/** Changes only the locally captured and transmitted camera video. */
+	setVideoQuality(quality: VideoQuality): void {
+		if (quality === this.#media.videoQuality) return;
+		void this.#media.setVideoQuality(quality).then(() => {
+			if (quality !== this.#media.videoQuality) return;
+			for (const link of this.#links.values()) link.setVideoQuality(quality);
+		});
 	}
 
 	/**
@@ -309,6 +327,7 @@ export class CallController {
 		const link = new PeerLink({
 			...options,
 			connection,
+			videoQuality: this.#media.videoQuality,
 			tracks: {
 				audio:
 					this.#prefs.inCall && this.#prefs.send.audio

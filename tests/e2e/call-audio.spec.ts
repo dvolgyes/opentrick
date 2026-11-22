@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import {
 	type CallProbe,
+	callConfirmButton,
 	callFrames,
 	caption,
 	counts,
@@ -13,12 +14,14 @@ import {
 	joinButton,
 	joinWith,
 	leaveButton,
+	leaveCall,
 	links,
 	note,
 	panel,
 	peerAudioGrowth,
 	receivedSsrc,
 	rejoinButton,
+	rejoinCall,
 	SEAT_NAMES,
 	SOUND,
 	senderFlow,
@@ -42,7 +45,7 @@ import {
  * trackers. Call messages travel on the game links' data channels, and the media goes over the same connection
  * (ADR 0009). West, North and South may use the microphone (a generated tone); East may not until test 9. South
  * is a phone. A probe in each tab (call-probe.ts) counts the call activity: connections with media sections,
- * microphone requests and call messages. Each seat's call status is stored in the table (plan §12 R2), so a reload joins the call again.
+ * microphone requests and call messages. Each seat's call status is stored in the table (plan §12 R2), so a reload offers rejoin.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -348,7 +351,7 @@ test("4: Listen only needs no microphone, and a refused microphone stays out of 
 });
 
 test("5: Leave stops the microphone and the media, keeps the game links, and the others see Not in call", async () => {
-	await leaveButton(tab.N).click();
+	await leaveCall(tab.N);
 	await expect(joinButton(tab.N)).toBeVisible();
 	await expect(panel(tab.N)).toHaveAttribute("data-status", "outside");
 	// The media sections go inactive; the connections stay, because they are the game links.
@@ -420,9 +423,11 @@ test("7: the keyboard turns a switch off and on outside the call, focus stays on
 	expect((await counts(tab.N)).captures).toBe(captures);
 });
 
-test("8: a reload joins the call again with the stored switches; a page outside the call stays outside", async () => {
-	// Plan §12 R2: West is in the call with Audio only, and the browser lets this site use the microphone.
+test("8: a reload offers explicit rejoin with the stored switches; a page outside the call stays outside", async () => {
 	await reload("W");
+	await expect(rejoinButton(tab.W)).toBeVisible();
+	expect(await counts(tab.W)).toMatchObject({ captures: 0, callSent: 0 });
+	await rejoinCall(tab.W);
 	await expect(leaveButton(tab.W)).toBeVisible();
 	await expect(toggle(tab.W, "Send mic audio")).toHaveAttribute(
 		"aria-pressed",
@@ -457,14 +462,18 @@ test("8: a reload joins the call again with the stored switches; a page outside 
 test("9: four seats join within one second, each hears the other three, and the burst stays in budget", async () => {
 	// West is in the call again after its reload (test 8), and East still listens.
 	for (const seat of ["W", "E"] as const) {
-		await leaveButton(tab[seat]).click();
+		await leaveCall(tab[seat]);
 		await expect(joinButton(tab[seat])).toBeVisible();
 	}
 	await players.E.grantPermissions(["microphone"]);
-	// All four set their switches first, so that the four Join presses fall within one second.
-	for (const seat of SEATS) await setSwitches(tab[seat], "Audio only");
+	for (const seat of SEATS) {
+		await setSwitches(tab[seat], "Audio only");
+		await joinButton(tab[seat]).click();
+	}
 	const start = Date.now();
-	await Promise.all(SEATS.map((seat) => joinButton(tab[seat]).click()));
+	await Promise.all(
+		SEATS.map((seat) => callConfirmButton(tab[seat], "Join call").click()),
+	);
 	expect(Date.now() - start).toBeLessThan(1_000);
 
 	for (const seat of SEATS) {
@@ -616,8 +625,6 @@ test("12: rapid toggles at two seats at once end in each seat's last choice", as
 		W: (await counts(tab.W)).peers,
 		N: (await counts(tab.N)).peers,
 	};
-	// Five Send clicks and four Hear clicks: Send ends off, Hear ends on. Never both off at once, because all
-	// switches off means Leave.
 	const send = "Send mic audio";
 	const hear = "Hear others: receive audio";
 	const clicks = [send, send, hear, hear, send, send, hear, hear, send];
@@ -663,7 +670,7 @@ test("12: rapid toggles at two seats at once end in each seat's last choice", as
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(3);
 });
 
-test("13: a reload joins the call again, and the peers drop the old link at once", async () => {
+test("13: after reload the player explicitly rejoins, and the peers drop the old link at once", async () => {
 	const peers = ["W", "E", "S"] as const;
 	const before = {} as Record<(typeof peers)[number], number[]>;
 	for (const seat of peers) {
@@ -701,7 +708,7 @@ test("13: a reload joins the call again, and the peers drop the old link at once
 		expect(closed?.states).not.toContain("failed");
 	}
 
-	// Plan §12 R2: North was in the call with Audio only, and the microphone is allowed, so it joins again.
+	await rejoinCall(tab.N);
 	await expect(leaveButton(tab.N)).toBeVisible();
 	await expect(toggle(tab.N, "Send mic audio")).toHaveAttribute(
 		"aria-pressed",

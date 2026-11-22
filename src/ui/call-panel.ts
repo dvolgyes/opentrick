@@ -18,18 +18,10 @@ import { type IconName, icon } from "./icons";
 import { play } from "./remote-audio";
 
 /**
- * The local call controls (handover §2, §6, §7): a box at the bottom-left of the desktop table, and one icon row on
- * compact devices. The switches are the choice that Join starts the call with, so Join needs no second step. The
- * stylesheet shows the copy that fits the device class, so each control has one accessible name in both forms. The
- * controls only call the handlers; the call controller owns every rule.
- *
  * Outside the call the desktop box has three rows: the heading, the switches as icons, and Join call. In the call it
  * is a tile of the own camera, as large as the other players' tiles, with the switches as its caption bar, and Leave
  * call and Mirror below it, where the other tiles have Switch to player. Mirror off shows a text in place of the
  * own camera on this page only.
- *
- * When a guest's page sees the host go into the room call, a dialog in the middle of the screen invites the player:
- * the switches of the device, Join call, and Don't join, which only closes it.
  */
 
 export interface CallHandlers {
@@ -38,6 +30,8 @@ export interface CallHandlers {
 	leave(): void;
 	setSwitch(way: Way, medium: Medium, on: boolean): void;
 	retry(seat: Seat): void;
+	/** Read browser permission without requesting capture; unsupported queries resolve to `"unknown"`. */
+	permission?(medium: Medium): Promise<PermissionState | "unknown">;
 }
 
 export interface CallControls {
@@ -47,10 +41,10 @@ export interface CallControls {
 	readonly alert: HTMLElement;
 	/** Compact: the one row of call icons and game actions. */
 	readonly row: HTMLElement;
-	/** Both forms: the invitation to the host's room call. */
+	/** Both forms: the shared dialog for local confirmations and incoming invitations. */
 	readonly invite: HTMLDialogElement;
-	/** `hostInCall`: this guest's page sees the host in the room call. */
-	render(display: CallDisplay, hostInCall?: boolean): void;
+	/** `remoteInCall`: this page sees another player in the room call. */
+	render(display: CallDisplay, remoteInCall?: boolean): void;
 }
 
 interface Toggle {
@@ -95,6 +89,28 @@ interface ToggleNode {
 	readonly node: HTMLButtonElement;
 }
 
+const ACTUAL_LABELS = {
+	off: "Off",
+	pending: "Pending",
+	on: "On",
+	denied: "Blocked",
+	failed: "Unavailable",
+} as const;
+
+const PERMISSION_LABELS = {
+	granted: "Granted",
+	prompt: "Ask when used",
+	denied: "Denied",
+	unknown: "Unknown",
+} as const;
+
+type DialogMode = "join" | "rejoin" | "invite" | "leave";
+
+interface CallChoice {
+	readonly mode: DialogMode;
+	selection: Switches;
+}
+
 /** The icon is the first child; replacing it keeps the focus on the button. */
 function setIcon(node: HTMLElement, name: IconName, off: boolean): void {
 	const key = `${name}:${off}`;
@@ -136,8 +152,12 @@ export function callControls(
 	let mirror = true;
 	let selfTrack: MediaStreamTrack | undefined;
 	let invite = NO_INVITE;
+	let choice: CallChoice | undefined;
 
-	function toggleButton(toggle: Toggle): HTMLButtonElement {
+	function toggleButton(
+		toggle: Toggle,
+		onToggle?: (on: boolean) => void,
+	): HTMLButtonElement {
 		const node = el("button", {
 			className: "call-toggle",
 			attrs: {
@@ -150,18 +170,20 @@ export function callControls(
 		});
 		setIcon(node, toggle.icon, true);
 		node.disabled = true;
-		node.addEventListener("click", () =>
-			handlers.setSwitch(
-				toggle.way,
-				toggle.medium,
-				node.getAttribute("aria-pressed") !== "true",
-			),
-		);
-		toggles.push({ toggle, node });
+		node.addEventListener("click", () => {
+			const on = node.getAttribute("aria-pressed") !== "true";
+			if (onToggle === undefined)
+				handlers.setSwitch(toggle.way, toggle.medium, on);
+			else onToggle(on);
+		});
+		if (onToggle === undefined) toggles.push({ toggle, node });
 		return node;
 	}
 
-	function joinButton(withLabel: boolean): HTMLButtonElement {
+	function joinButton(
+		withLabel: boolean,
+		action: () => void,
+	): HTMLButtonElement {
 		const node = el("button", {
 			className: "call-join",
 			attrs: { type: "button", "aria-label": t("Join call") },
@@ -169,12 +191,16 @@ export function callControls(
 		setIcon(node, "phone", false);
 		if (withLabel) node.append(el("span", {}, t("Join call")));
 		node.disabled = true;
-		node.addEventListener("click", () => {
-			if (last?.inCall) handlers.leave();
-			else if (last?.rejoin !== undefined) handlers.join(last.rejoin);
-			else if (last !== undefined)
-				handlers.join(pressedSwitches(last.switches));
+		node.addEventListener("click", action);
+		return node;
+	}
+
+	function callButton(withLabel: boolean): HTMLButtonElement {
+		const node = joinButton(withLabel, () => {
+			if (!last?.joinEnabled) return;
+			openChoice(last.inCall ? "leave" : last.rejoin ? "rejoin" : "join");
 		});
+		node.setAttribute("aria-haspopup", "dialog");
 		joins.push(node);
 		return node;
 	}
@@ -245,7 +271,7 @@ export function callControls(
 			{ className: "call-switches tile-caption" },
 			...TOGGLES.map((toggle) => toggleButton(toggle)),
 		),
-		el("div", { className: "call-decoration" }, joinButton(true), mirrorButton),
+		el("div", { className: "call-decoration" }, callButton(true), mirrorButton),
 		note,
 	);
 
@@ -261,7 +287,7 @@ export function callControls(
 			className: "icon-group",
 			attrs: { role: "group", "aria-label": t("Room call") },
 		},
-		joinButton(false),
+		callButton(false),
 		// Compact devices show no video, but can send the camera.
 		toggleButton(SEND_AUDIO),
 		toggleButton(RECEIVE_AUDIO),
@@ -285,68 +311,195 @@ export function callControls(
 		),
 	);
 
-	const inviteTitle = el(
-		"h2",
-		{ attrs: { id: "call-invite-title" } },
-		`${t("Optional")} ${t("room call")}`,
+	const dialogTitle = el("h2", { attrs: { id: "call-confirm-title" } });
+	const question = el("p", { className: "approval-question" });
+	const choiceToggles = TOGGLES.map((toggle) => {
+		const node = toggleButton(toggle, (on) => {
+			if (!choice || choice.mode === "leave") return;
+			choice.selection = {
+				...choice.selection,
+				[toggle.way]: { ...choice.selection[toggle.way], [toggle.medium]: on },
+			};
+			renderChoice();
+		});
+		const status = el("span", {
+			className: "call-choice-status",
+			attrs: { id: `call-choice-${toggle.way}-${toggle.medium}` },
+		});
+		node.setAttribute("aria-describedby", status.id);
+		node.append(
+			el("span", { className: "call-choice-label" }, t(toggle.name), status),
+		);
+		return { node, toggle, status };
+	});
+	const permissions = (["audio", "video"] as const).map((medium) => ({
+		medium,
+		node: el("p", { attrs: { "data-medium": medium } }),
+	}));
+	const permissionSummary = el(
+		"div",
+		{ className: "call-permissions", attrs: { "aria-live": "polite" } },
+		...permissions.map(({ node }) => node),
 	);
-	const inviteToggles = TOGGLES.map((toggle) => toggleButton(toggle));
-	const inviteJoin = joinButton(true);
-	inviteJoin.classList.add("approval-accept");
-	inviteJoin.addEventListener("click", dismiss);
-	const inviteDialog = el(
+	const confirmButton = joinButton(true, confirmChoice);
+	const cancelButton = button(t("Don't join"), dismissChoice);
+	cancelButton.autofocus = true;
+	const dialog = el(
 		"dialog",
 		{
-			className: "approval call-invite",
-			attrs: {
-				"aria-labelledby": inviteTitle.id,
-				"data-testid": "call-invite",
-			},
+			className: "approval call-confirm",
+			attrs: { "aria-labelledby": dialogTitle.id },
 		},
-		inviteTitle,
-		el(
-			"p",
-			{ className: "approval-question" },
-			t("The host started a room call."),
-		),
-		el("div", { className: "call-invite-switches" }, ...inviteToggles),
+		dialogTitle,
+		question,
 		el(
 			"div",
-			{ className: "approval-actions" },
-			inviteJoin,
-			button(t("Don't join"), dismiss, { className: "approval-reject" }),
+			{ className: "call-choice-switches" },
+			...choiceToggles.map(({ node }) => node),
 		),
+		permissionSummary,
+		el("div", { className: "approval-actions" }, cancelButton, confirmButton),
 	);
-	// Escape is Don't join.
-	inviteDialog.addEventListener("cancel", (event) => {
+	dialog.addEventListener("cancel", (event) => {
 		event.preventDefault();
-		dismiss();
+		dismissChoice();
 	});
 
-	function dismiss(): void {
-		invite = dismissInvite(invite);
-		renderInvite();
+	function closeChoice(): void {
+		choice = undefined;
+		dialog.close();
+		dialog.removeAttribute("data-testid");
+		dialog.classList.remove("call-invite");
 	}
 
-	/** The invitation shows while it is due and this player can join; a phone sees no See cameras switch. */
-	function renderInvite(): void {
-		const media = display?.available ? display.view.media : undefined;
-		for (const node of inviteToggles) {
-			const way = node.dataset.way === "send" ? "send" : "receive";
-			node.hidden = !media?.[way].some(
-				(medium) => medium === node.dataset.medium,
-			);
+	function dismissChoice(): void {
+		if (choice?.mode === "invite") invite = dismissInvite(invite);
+		closeChoice();
+	}
+
+	function confirmChoice(): void {
+		if (!choice || !last || confirmButton.disabled) return;
+		if (choice.mode === "leave") {
+			closeChoice();
+			handlers.leave();
+			return;
 		}
-		// Not Join's enabled state: with all switches off the invitation stays open, and its Join waits for a switch.
-		const open =
-			invite.due &&
-			display?.available === true &&
-			display.view.canJoin &&
-			last !== undefined &&
-			!last.inCall;
-		if (open && !inviteDialog.open && inviteDialog.isConnected)
-			inviteDialog.showModal();
-		else if (!open && inviteDialog.open) inviteDialog.close();
+		const selection = pressedSwitches(last.switches.map(choiceSwitch));
+		invite = dismissInvite(invite);
+		closeChoice();
+		handlers.join(selection);
+	}
+
+	async function readPermission(
+		current: CallChoice,
+		medium: Medium,
+		node: HTMLElement,
+	): Promise<void> {
+		const label =
+			medium === "audio"
+				? "Microphone permission: {state}"
+				: "Camera permission: {state}";
+		node.textContent = t(label, { state: t("Unknown") });
+		const state = (await handlers.permission?.(medium)) ?? "unknown";
+		if (choice === current && dialog.open && dialog.isConnected)
+			node.textContent = t(label, { state: t(PERMISSION_LABELS[state]) });
+	}
+
+	function openChoice(mode: DialogMode): void {
+		if (choice || !dialog.isConnected || !last?.joinEnabled) return;
+		const leaving = mode === "leave";
+		const invited = mode === "invite";
+		const name = invited ? t("Join call") : last.joinName;
+		const current = {
+			mode,
+			selection: last.rejoin ?? pressedSwitches(last.switches),
+		};
+		choice = current;
+		dialog.dataset.testid = invited ? "call-invite" : "call-confirm";
+		dialog.classList.toggle("call-invite", invited);
+		dialogTitle.textContent = name;
+		question.hidden = !invited;
+		question.textContent = invited ? t("A player started a room call.") : "";
+		confirmButton.classList.toggle("approval-accept", !leaving);
+		confirmButton.classList.toggle("approval-reject", leaving);
+		confirmButton.dataset.inCall = String(leaving);
+		confirmButton.setAttribute("aria-label", name);
+		const label = confirmButton.querySelector("span");
+		if (label) label.textContent = name;
+		cancelButton.textContent = leaving ? t("Stay in call") : t("Don't join");
+		cancelButton.classList.toggle("approval-accept", leaving);
+		cancelButton.classList.toggle("approval-reject", !leaving);
+		permissionSummary.hidden = leaving;
+		renderChoice();
+		dialog.showModal();
+		if (!leaving)
+			for (const { medium, node } of permissions)
+				void readPermission(current, medium, node);
+	}
+
+	function choiceSwitch(state: SwitchView): SwitchView {
+		if (!choice || choice.mode === "leave") return state;
+		const { way, medium } = state;
+		const selected = choice.selection[way][medium];
+		const available =
+			display?.available && display.view.media[way].includes(medium);
+		const cameraMissing =
+			way === "send" &&
+			medium === "video" &&
+			display?.available &&
+			display.cameraAvailable === false;
+		return {
+			...state,
+			enabled: available === true && (!cameraMissing || selected),
+			pressed: available === true && selected,
+		};
+	}
+
+	function renderChoice(): void {
+		if (!choice || !last) return;
+		const leaving = choice.mode === "leave";
+		let hasMedia = false;
+		for (const item of choiceToggles) {
+			const view = last.switches.find(
+				(s) => s.way === item.toggle.way && s.medium === item.toggle.medium,
+			);
+			if (!view) continue;
+			const state = choiceSwitch(view);
+			const missingCamera =
+				state.way === "send" &&
+				state.medium === "video" &&
+				display?.available &&
+				display.cameraAvailable === false;
+			hasMedia ||= state.pressed && !missingCamera;
+			renderToggle(item, leaving ? { ...state, enabled: false } : state);
+			const selected = t(state.pressed ? "On" : "Off");
+			const status = leaving
+				? t("Selected: {state} · Actual: {actual}", {
+						state: selected,
+						actual: t(ACTUAL_LABELS[state.actual]),
+					})
+				: selected;
+			const text =
+				state.disabledReason === undefined
+					? status
+					: `${status} — ${state.disabledReason}`;
+			if (item.status.textContent !== text) item.status.textContent = text;
+		}
+		confirmButton.disabled = !leaving && !hasMedia;
+	}
+
+	function updateDialog(): void {
+		if (!last) return;
+		if (
+			choice &&
+			(!last.joinEnabled ||
+				last.inCall !== (choice.mode === "leave") ||
+				(choice.mode === "invite" && !invite.due))
+		)
+			closeChoice();
+		if (choice) renderChoice();
+		else if (invite.due && last.joinEnabled && !last.inCall)
+			openChoice("invite");
 	}
 
 	function renderJoins(): void {
@@ -450,11 +603,11 @@ export function callControls(
 		}
 	}
 
-	function render(next: CallDisplay, hostInCall = false): void {
+	function render(next: CallDisplay, remoteInCall = false): void {
 		display = next;
 		const view = callControlsView(next, t);
 		last = view;
-		invite = nextInvite(invite, hostInCall, view.inCall);
+		invite = nextInvite(invite, remoteInCall, view.inCall);
 		panel.dataset.status = next.available ? next.view.status : "unavailable";
 		panel.dataset.botsOnly = String(!next.available && next.botsOnly === true);
 		roomCallGroup.dataset.botsOnly = String(
@@ -475,10 +628,10 @@ export function callControls(
 		note.textContent = t(view.note);
 		renderRetries();
 		renderAlert(view.alert === undefined ? undefined : t(view.alert));
-		renderInvite();
+		updateDialog();
 	}
 
-	return { panel, alert, row, invite: inviteDialog, render };
+	return { panel, alert, row, invite: dialog, render };
 }
 
 /**

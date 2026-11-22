@@ -150,22 +150,17 @@ export function leave(prefs: Prefs): Prefs {
 	return { ...prefs, inCall: false };
 }
 
-/**
- * One local switch change. Turning the last switch that works on this device off leaves the call; turning a switch
- * on outside the call does not join it (Join needs its own confirmation).
- */
+/** A switch changes one media direction, never membership. */
 export function setSwitch(
 	prefs: Prefs,
-	form: Form,
 	way: "send" | "receive",
 	medium: Medium,
 	on: boolean,
 ): Prefs {
-	const changed: Switches = {
+	return {
 		...prefs,
 		[way]: { ...prefs[way], [medium]: on },
 	};
-	return { ...changed, inCall: prefs.inCall && anyOn(changed, form) };
 }
 
 /**

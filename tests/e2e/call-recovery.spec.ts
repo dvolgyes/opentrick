@@ -9,11 +9,12 @@ import {
 	leaveButton,
 	note,
 	rejoinButton,
+	rejoinCall,
 	requestsFor,
 	SEAT_NAMES,
 	toggle,
 } from "./call-probe";
-import { Player, reportNetwork } from "./player";
+import { buildRelayHubs, Player, reportNetwork } from "./player";
 import {
 	CONNECT_MS,
 	createRoom,
@@ -134,10 +135,15 @@ async function expectHost(
 
 test.beforeAll(async ({ browser, baseURL }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
+	const rig = { relayHubs: buildRelayHubs() };
 	for (const seat of SEATS) {
-		players[seat] = await Player.open(browser, baseURL, `recovery-${seat}`, {
-			permissions: ["microphone"],
-		});
+		players[seat] = await Player.open(
+			browser,
+			baseURL,
+			`recovery-${seat}`,
+			{ permissions: ["microphone"] },
+			rig,
+		);
 		await players[seat].addInitScript(installCallProbe);
 	}
 });
@@ -175,7 +181,7 @@ test("1: four browsers join the call; North turns its microphone off, and East s
 	await expectHost(SEATS, "W");
 });
 
-test("2: a player whose tab crashes comes back in the call with its switches, and opens no microphone", async () => {
+test("2: after a crash the player explicitly rejoins with its switches and opens no microphone", async () => {
 	test.setTimeout(180_000);
 	await crash("N");
 	const others = ["W", "E", "S"] as const;
@@ -189,6 +195,7 @@ test("2: a player whose tab crashes comes back in the call with its switches, an
 	await expectConnected(others);
 
 	await reopen("N");
+	await rejoinCall(tab.N);
 	await expectConnected(SEATS);
 	await expectStatuses(SEATS);
 	// The stored status sends no audio, so the page never asks for the microphone.
@@ -223,13 +230,14 @@ test("3: the host's tab crashes; the call goes on, another player becomes the ho
 	await reopen("W");
 	// West has the highest priority and takes the host role back after syncing.
 	await expectHost(SEATS, "W");
+	await rejoinCall(tab.W);
 	await expectConnected(SEATS);
 	await expectStatuses(SEATS);
 	await expectAudioArrives(tab.W);
 	expect(await counts(tab.W)).toMatchObject({ captures: 1, liveTracks: 1 });
 });
 
-test("4: a browser that must ask for the microphone again offers Rejoin the call, and opens nothing before the click", async () => {
+test("4: a browser that must ask for the microphone again opens nothing before rejoin confirmation", async () => {
 	// The browser forgets the microphone permission, as after "Allow this time".
 	await tab.S.context().clearPermissions();
 	await tab.S.reload();
@@ -245,17 +253,16 @@ test("4: a browser that must ask for the microphone again offers Rejoin the call
 		callSent: 0,
 	});
 	expect(await requestsFor(tab.S, "audio")).toBe(0);
-	// South's call record still shows it in the call, but its page does not answer before the click.
 	for (const seat of ["W", "N", "E"] as const)
 		await expect(caption(tab[seat], "S")).toHaveText(
-			exactCaption(`${seatLabel("S")} · Joined earlier; no answer yet`),
+			exactCaption(`${seatLabel("S")} · Not in call`),
 			{
 				timeout: GONE_MS,
 			},
 		);
 
 	await tab.S.context().grantPermissions(["microphone"]);
-	await rejoinButton(tab.S).click();
+	await rejoinCall(tab.S);
 	await expectConnected(SEATS);
 	await expectStatuses(SEATS);
 	expect(await counts(tab.S)).toMatchObject({ captures: 1, liveTracks: 1 });

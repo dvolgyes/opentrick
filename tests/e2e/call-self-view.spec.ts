@@ -5,11 +5,13 @@ import {
 	confirmCamera,
 	installCallProbe,
 	joinButton,
+	joinCall,
 	leaveButton,
+	leaveCall,
 	toggle,
 } from "./call-probe";
 
-import { Player } from "./player";
+import { buildRelayHubs, Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
 /**
@@ -81,11 +83,18 @@ test("the desktop call box: three rows outside the call, and in the call a tile 
 }) => {
 	test.setTimeout(180_000);
 	if (!baseURL) throw new Error("baseURL is not configured");
-	const host = await Player.open(browser, baseURL, "self-view", {
-		permissions: ["microphone", "camera"],
-		viewport: { width: 1920, height: 1080 },
-	});
-	const guest = await Player.open(browser, baseURL, "self-view-guest");
+	const rig = { relayHubs: buildRelayHubs() };
+	const host = await Player.open(
+		browser,
+		baseURL,
+		"self-view",
+		{
+			permissions: ["microphone", "camera"],
+			viewport: { width: 1920, height: 1080 },
+		},
+		rig,
+	);
+	const guest = await Player.open(browser, baseURL, "self-view-guest", {}, rig);
 	try {
 		await host.addInitScript(installCallProbe);
 		const page = await host.page("./");
@@ -143,7 +152,7 @@ test("the desktop call box: three rows outside the call, and in the call a tile 
 
 		// In the call with the camera: the own tile matches South's tile, and shows the camera mirrored.
 		await toggle(page, "Send camera video").click();
-		await joinButton(page).click();
+		await joinCall(page);
 		await confirmCamera(page);
 		await expect(leaveButton(page)).toBeVisible();
 		await expect(self).toBeVisible();
@@ -237,13 +246,100 @@ test("the desktop call box: three rows outside the call, and in the call a tile 
 		await expect(page.getByTestId("video-self")).toBeVisible();
 
 		// Leave: the three rows come back.
-		await leaveButton(page).click();
+		await leaveCall(page);
 		await expect(joinButton(page)).toBeVisible();
 		await expect(heading).toBeVisible();
 		await expect(self).toBeHidden();
 		await expect(mirror).toBeHidden();
 		await expect.poll(() => liveCameras(page)).toBe(0);
 		expect(host.errors).toEqual([]);
+	} finally {
+		await guest.close();
+		await host.close();
+	}
+});
+
+test("a hidden camera can be requested explicitly, but a granted empty list means unavailable", async ({
+	browser,
+	baseURL,
+}) => {
+	if (!baseURL) throw new Error("baseURL is not configured");
+	const rig = { relayHubs: buildRelayHubs() };
+	const host = await Player.open(
+		browser,
+		baseURL,
+		"camera-permission",
+		{ permissions: ["microphone", "camera"] },
+		rig,
+	);
+	const guest = await Player.open(browser, baseURL, "camera-guest", {}, rig);
+	try {
+		await host.addInitScript(() => {
+			const devices = navigator.mediaDevices;
+			const enumerate = devices.enumerateDevices.bind(devices);
+			const capture = devices.getUserMedia.bind(devices);
+			const query = navigator.permissions.query.bind(navigator.permissions);
+			let hasGrant = false;
+			let removed = false;
+			let requests = 0;
+			devices.enumerateDevices = async () =>
+				!hasGrant || removed ? [] : enumerate();
+			navigator.permissions.query = (descriptor) =>
+				descriptor.name === "camera"
+					? Promise.resolve({
+							state: hasGrant ? "granted" : "prompt",
+						} as PermissionStatus)
+					: query(descriptor);
+			devices.getUserMedia = async (constraints) => {
+				if (constraints?.video)
+					document.body.dataset.cameraRequests = String(++requests);
+				const stream = await capture(constraints);
+				if (constraints?.video) hasGrant = true;
+				return stream;
+			};
+			window.addEventListener("remove-test-camera", () => {
+				removed = true;
+				devices.dispatchEvent(new Event("devicechange"));
+			});
+		});
+		const page = await host.page("./");
+		await passingBots(page);
+		const link = await createRoom(page, ["E", "S"]);
+		await pick(await guest.page(link), "N");
+		await expect(page.getByTestId("table")).toHaveAttribute(
+			"data-phase",
+			"auction",
+			{ timeout: CONNECT_MS },
+		);
+		const send = toggle(page, "Send camera video");
+		await expect(send).toBeEnabled();
+		await send.click();
+		await expect(page.locator("body")).not.toHaveAttribute(
+			"data-camera-requests",
+			/./,
+		);
+		await joinCall(page);
+		await expect(page.locator("body")).toHaveAttribute(
+			"data-camera-requests",
+			"1",
+		);
+		await confirmCamera(page);
+		await expect.poll(() => showsLiveCamera(page)).toBe(true);
+		await send.click();
+		await expect(send).toHaveAttribute("aria-pressed", "false");
+		await leaveCall(page);
+		await page.evaluate(() =>
+			window.dispatchEvent(new Event("remove-test-camera")),
+		);
+		await expect(send).toBeDisabled();
+		await expect(send).toHaveAttribute(
+			"title",
+			"Send camera video. No camera is available.",
+		);
+		await expect(page.locator("body")).toHaveAttribute(
+			"data-camera-requests",
+			"1",
+		);
 	} finally {
 		await guest.close();
 		await host.close();

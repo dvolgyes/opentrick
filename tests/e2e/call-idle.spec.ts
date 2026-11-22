@@ -4,10 +4,11 @@ import {
 	installCallProbe,
 	joinWith,
 	leaveButton,
+	leaveCall,
 	note,
 	SEAT_NAMES,
 } from "./call-probe";
-import { Player } from "./player";
+import { buildRelayHubs, Player } from "./player";
 import { CONNECT_MS, createRoom, pick } from "./room";
 
 /** Advances only the idle deadline without aging the live peer connection. */
@@ -45,12 +46,10 @@ test("only another call participant prevents a five-minute hangup", async ({
 	baseURL,
 }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
-	const host = await Player.open(browser, baseURL, "host", {
-		permissions: ["microphone"],
-	});
-	const guest = await Player.open(browser, baseURL, "guest", {
-		permissions: ["microphone"],
-	});
+	const rig = { relayHubs: buildRelayHubs() };
+	const opts = { permissions: ["microphone"] };
+	const host = await Player.open(browser, baseURL, "host", opts, rig);
+	const guest = await Player.open(browser, baseURL, "guest", opts, rig);
 	try {
 		await host.addInitScript(installCallProbe);
 		await host.addInitScript(controlIdleTimer);
@@ -79,7 +78,7 @@ test("only another call participant prevents a five-minute hangup", async ({
 		await expect(leaveButton(page)).toBeVisible();
 		expect((await counts(page)).liveTracks).toBe(1);
 
-		await leaveButton(other).click();
+		await leaveCall(other);
 		await expect(note(page)).not.toContainText(`Connected to ${SEAT_NAMES.N}.`);
 		await reachIdleDeadline(page);
 		await expect(leaveButton(page)).toBeHidden();

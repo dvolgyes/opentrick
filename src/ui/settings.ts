@@ -11,6 +11,11 @@ import {
 } from "../bot/timing";
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
 import {
+	DEFAULT_VIDEO_QUALITY,
+	VIDEO_QUALITIES,
+	type VideoQuality,
+} from "../call/media";
+import {
 	DEFAULT_BOT_SETUP,
 	LOCAL_BIDDERS,
 	type LocalBidder,
@@ -54,7 +59,7 @@ export const SHADOW_STRENGTHS = ["0", "1", "2", "3", "4"] as const;
 export type ShadowStrength = (typeof SHADOW_STRENGTHS)[number];
 
 /**
- * Display and bot choices of one player, kept in this browser's local storage and never sent to the table.
+ * Local preferences of one player, kept in this browser's local storage and never sent to the table.
  * The language keeps its own storage name.
  */
 export interface Settings extends BotTiming {
@@ -79,6 +84,7 @@ export interface Settings extends BotTiming {
 	readonly bidTurnText: boolean;
 	readonly playTurnText: boolean;
 	readonly networkQuality: boolean;
+	readonly videoQuality: VideoQuality;
 	/** Green bars on the tile of a player whose voice arrives without video (src/ui/voice-meter.ts). */
 	readonly voicebox: boolean;
 	/** The animation in place of the bot image, which moves during the bot's turn (src/ui/bot-animation.ts). */
@@ -136,6 +142,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	bidTurnText: true,
 	playTurnText: true,
 	networkQuality: true,
+	videoQuality: DEFAULT_VIDEO_QUALITY,
 	voicebox: true,
 	botAnimation: true,
 	guidePanel: true,
@@ -323,6 +330,11 @@ export function readSettings(storage: MaybeStorage): Settings {
 			SHADOW_STRENGTHS,
 			DEFAULT_SETTINGS.shadowStrength,
 		),
+		videoQuality: readChoice(
+			read("video-quality"),
+			VIDEO_QUALITIES,
+			DEFAULT_SETTINGS.videoQuality,
+		),
 		...flags,
 	};
 }
@@ -335,7 +347,7 @@ export function settingsSaved(storage: MaybeStorage): boolean {
 	return storage === undefined || storage.getItem(`${PREFIX}bidder`) !== null;
 }
 
-/** Saves this browser's display and bot preferences. */
+/** Saves this browser's local preferences. */
 export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	if (!storage) throw new Error("local storage is not available");
 	const budget = playTimeMs(settings.playTimeMs);
@@ -395,6 +407,8 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 		throw new Error("unknown card texture strength");
 	if (!SHADOW_STRENGTHS.includes(settings.shadowStrength))
 		throw new Error("unknown shadow strength");
+	if (!VIDEO_QUALITIES.includes(settings.videoQuality))
+		throw new Error("unknown outgoing video quality");
 	const write = (name: string, value: string): void => {
 		const key = PREFIX + name;
 		if (storage.getItem(key) === value) return;
@@ -419,6 +433,7 @@ export function writeSettings(storage: MaybeStorage, settings: Settings): void {
 	write("baize-strength", settings.baizeStrength);
 	write("paper-strength", settings.paperStrength);
 	write("shadow-strength", settings.shadowStrength);
+	write("video-quality", settings.videoQuality);
 	storage.removeItem(`${PREFIX}theme`);
 	for (const [field, name] of Object.entries(FLAGS))
 		write(name, settings[field as keyof typeof FLAGS] ? "1" : "0");

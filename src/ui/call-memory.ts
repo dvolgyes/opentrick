@@ -1,5 +1,5 @@
 import type { CallController } from "../call/call";
-import type { Medium, Switches } from "../call/policy";
+import type { Switches } from "../call/policy";
 import {
 	type CallRecords,
 	callRecordFor,
@@ -10,18 +10,7 @@ import {
 } from "../call/record";
 import type { JsonObject, Seat } from "../protocol";
 
-/**
- * Keeps this person's call status in the table and restores it on the next room screen (plan §12 R2).
- *
- * It stores a record only after an explicit call action of the user (Join, Leave, a switch), never because the
- * page closed, the seat was lost or the device class changed: a reload or a crash then restores the call. One
- * record at a time waits in the outbox; a later change goes when it has left, so call switches never fill the
- * outbox that game commands need.
- *
- * Once per room screen, when the page holds its seat, it restores the newest own record. It joins on its own
- * only when no capture needs a question: every device whose Send switch is on is already granted. Otherwise it
- * offers "Rejoin the call", so a page that opened without its user never asks for, or opens, a device.
- */
+/** Restores the holder's media choices, never capture or call membership. */
 
 export interface CallMemoryDeps {
 	readonly call: CallController;
@@ -29,7 +18,6 @@ export interface CallMemoryDeps {
 	readonly seat: Seat;
 	/** This browser's holder; only a record of this holder is restored. */
 	readonly holder: string;
-	readonly granted: (medium: Medium) => Promise<boolean>;
 	/** Stores an own command for sending; true when the outbox has it. */
 	readonly send: (payload: JsonObject) => Promise<boolean>;
 	/** The rejoin offer changed. */
@@ -53,8 +41,6 @@ export class CallMemory {
 	#storing = false;
 	/** The restore ran, or the user acted first. */
 	#decided = false;
-	/** Counts the user's call actions, so a late permission answer never overrides one. */
-	#actions = 0;
 	#rejoin: Switches | undefined;
 	#stopped = false;
 
@@ -69,7 +55,6 @@ export class CallMemory {
 
 	/** Call after the user joined, left or changed a switch, once the call controller has the new status. */
 	acted(): void {
-		this.#actions += 1;
 		this.#decided = true;
 		this.#dirty = true;
 		if (this.#rejoin !== undefined) {
@@ -141,25 +126,13 @@ export class CallMemory {
 			this.#deps.holder,
 			pendingCallRecords(outbox),
 		);
-		const restore = callRestore(own, call.view.form);
-		if (restore === undefined) return;
-		// Sending video always returns through the local preview and confirmation, even when permission persists.
-		if (restore.selection.send.video) {
-			this.#rejoin = restore.selection;
-			this.#deps.changed();
-			return;
+		if (own === undefined) return;
+		this.#rejoin = callRestore(own, call.view.form);
+		call.restoreSwitches(own.prefs);
+		if (own.prefs.inCall) {
+			this.#dirty = true;
+			this.#store();
 		}
-		const actions = this.#actions;
-		const asked = restore.devices.map((medium) => this.#deps.granted(medium));
-		void Promise.all(asked).then((answers) => {
-			if (this.#stopped || actions !== this.#actions || !call.view.canJoin)
-				return;
-			if (answers.every(Boolean)) {
-				call.join(restore.selection);
-			} else {
-				this.#rejoin = restore.selection;
-				this.#deps.changed();
-			}
-		});
+		if (this.#rejoin !== undefined) this.#deps.changed();
 	}
 }

@@ -16,10 +16,11 @@ import {
 	installCallProbe,
 	joinButton,
 	joinWith,
-	leaveButton,
+	leaveCall,
 	note,
 	panel,
 	peerAudioGrowth,
+	rejoinCall,
 	requestsFor,
 	SEAT_NAMES,
 	SOUND,
@@ -536,7 +537,7 @@ test("4: a valid join from South opens links; after South goes and its seat is r
 });
 
 test("5: when one player leaves, the other three pairs keep their sound", async () => {
-	await leaveButton(tab.S).click();
+	await leaveCall(tab.S);
 	for (const seat of IN_CALL) {
 		await expect.poll(async () => (await counts(tab[seat])).openPeers).toBe(2);
 		await expect(caption(tab[seat], "S")).toHaveText(
@@ -586,8 +587,7 @@ test("6: leaving the room during the call ends the tracks and the media; back in
 	await expectSeat(tab.E, "E", {
 		timeout: CONNECT_MS,
 	});
-	// East joined with audio in test 1 and did not leave the call, so its stored status brings it back.
-	await expect(leaveButton(tab.E)).toBeVisible({ timeout: CONNECT_MS });
+	await rejoinCall(tab.E);
 	await expectConnected(IN_CALL);
 });
 

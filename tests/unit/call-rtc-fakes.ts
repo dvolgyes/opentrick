@@ -15,6 +15,10 @@ export class FakeTrack extends EventTarget {
 		super();
 	}
 
+	getSettings(): MediaTrackSettings {
+		return {};
+	}
+
 	/** Media stopped or started to arrive on a receiver track. */
 	setMuted(muted: boolean): void {
 		this.muted = muted;

@@ -1,4 +1,5 @@
 import { POINT_SYSTEMS, type PointSystem } from "../bridge/hand-points";
+import { VIDEO_QUALITIES, type VideoQuality } from "../call/media";
 import { LOCAL_BIDDERS, type LocalBidder } from "../protocol";
 import type { AppDeps } from "./deps";
 import { button, el } from "./dom";
@@ -73,6 +74,12 @@ const NETWORK_LABELS = {
 	voicebox: "Show the voice box for a player without video",
 } as const satisfies Partial<Record<keyof Settings, string>>;
 
+const VIDEO_QUALITY_LABELS: Readonly<Record<VideoQuality, string>> = {
+	low: "Low",
+	normal: "Normal",
+	high: "High",
+};
+
 const FLAG_LABELS = { ...TURN_LABELS, ...NETWORK_LABELS };
 
 const BIDDING_HELP_LABELS = {
@@ -96,7 +103,7 @@ export interface SettingsDialog {
 	refreshBidding(): void;
 }
 
-/** Local display and bot preferences; a language change reloads the page. */
+/** Local preferences; a language change reloads the page. */
 export function settingsDialog(
 	deps: AppDeps,
 	reload: () => void,
@@ -219,6 +226,17 @@ export function settingsDialog(
 		},
 		el("option", { attrs: { value: "respected" } }, t("respected")),
 		el("option", { attrs: { value: "override" } }, t("override")),
+	);
+	const videoQuality = el(
+		"select",
+		{ attrs: { id: "settings-video-quality" } },
+		...VIDEO_QUALITIES.map((quality) =>
+			el(
+				"option",
+				{ attrs: { value: quality } },
+				t(VIDEO_QUALITY_LABELS[quality]),
+			),
+		),
 	);
 	const cardPlayAnimation = el("input", { attrs: { type: "checkbox" } });
 	const cardPlayDuration = timeInput(
@@ -581,6 +599,16 @@ export function settingsDialog(
 					` ${t(label)}`,
 				),
 			),
+			el(
+				"div",
+				{ className: "settings-row" },
+				el(
+					"label",
+					{ attrs: { for: "settings-video-quality" } },
+					t("Outgoing video quality"),
+				),
+				videoQuality,
+			),
 			el("label", {}, relayChecks, ` ${t("Check the connection more often")}`),
 			el(
 				"p",
@@ -681,6 +709,7 @@ export function settingsDialog(
 			bidTurnText: flags.bidTurnText.checked,
 			playTurnText: flags.playTurnText.checked,
 			networkQuality: flags.networkQuality.checked,
+			videoQuality: videoQuality.value as VideoQuality,
 			voicebox: flags.voicebox.checked,
 			botAnimation: flags.botAnimation.checked,
 			guidePanel: biddingHelp.guidePanel.checked,
@@ -786,6 +815,7 @@ export function settingsDialog(
 			) as (keyof typeof ORIENTATION_LABELS)[])
 				orientation[field].checked = settings[field];
 			relayChecks.checked = settings.relayChecks;
+			videoQuality.value = settings.videoQuality;
 			status.textContent = "";
 			save.disabled = false;
 			if (!element.open) element.showModal();

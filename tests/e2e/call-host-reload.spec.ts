@@ -7,8 +7,9 @@ import {
 	installCallProbe,
 	joinWith,
 	leaveButton,
+	rejoinCall,
 } from "./call-probe";
-import { Player, reportNetwork } from "./player";
+import { buildRelayHubs, Player, reportNetwork } from "./player";
 import {
 	CONNECT_MS,
 	expectSeat,
@@ -71,10 +72,15 @@ function southFrames(
 
 test.beforeAll(async ({ browser, baseURL }) => {
 	if (!baseURL) throw new Error("baseURL is not configured");
+	const rig = { relayHubs: buildRelayHubs() };
 	for (const seat of ["N", "E", "S", "W"] as const) {
-		players[seat] = await Player.open(browser, baseURL, `host-reload-${seat}`, {
-			permissions: seat === "S" ? ["microphone", "camera"] : ["microphone"],
-		});
+		players[seat] = await Player.open(
+			browser,
+			baseURL,
+			`host-reload-${seat}`,
+			{ permissions: seat === "S" ? ["microphone", "camera"] : ["microphone"] },
+			rig,
+		);
 		await players[seat].addInitScript(installCallProbe);
 	}
 });
@@ -149,11 +155,12 @@ test("South's video reaches East without a gap while the host North reloads", as
 		).toBeGreaterThan(during.frames[index - 1] ?? 0);
 	}
 
-	// North hosts again and comes back in the call with its audio; the stream from South is the same track.
 	await expectSeat(tab.N, "N", { timeout: CONNECT_MS });
 	await expect(hostRows(tab.E)).toHaveAttribute("data-seat", "N", {
 		timeout: CONNECT_MS,
 	});
+	expect(await counts(tab.N)).toMatchObject({ captures: 0, callSent: 0 });
+	await rejoinCall(tab.N);
 	await expect(leaveButton(tab.N)).toBeVisible({ timeout: CONNECT_MS });
 	await expect(caption(tab.E, "N")).toHaveText(
 		exactCaption(`${seatLabel("N")} · Audio only`),

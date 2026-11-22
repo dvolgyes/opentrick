@@ -3009,6 +3009,20 @@ button.call-join[data-in-call="true"] {
 	display: none;
 }
 
+.remote-audio-hear {
+	align-self: center;
+	min-height: 2.75rem;
+	max-width: 100%;
+	padding: 0.4rem 0.8rem;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	white-space: normal;
+}
+
+.remote-audio-hear[hidden] {
+	display: none;
+}
+
 .game-slot {
 	display: flex;
 	flex-direction: column;
@@ -3411,42 +3425,63 @@ button.call-join[data-in-call="true"] {
 	color: var(--on-strong);
 }
 
-/* The invitation to the host's room call: a modal dialog in the middle of the screen, in the look of an approval. */
-.call-invite {
+.call-confirm {
+	box-sizing: border-box;
 	width: min(calc(100vw - 2rem), 36rem);
 	padding: 2rem;
 	box-shadow: 0 0.5rem 2rem var(--shadow);
 }
 
-.call-invite::backdrop {
+.call-confirm::backdrop {
 	background: var(--scrim);
 }
 
-.room[data-form="compact"] .call-invite {
+.room[data-form="compact"] .call-confirm {
 	padding: 1.25rem;
 }
 
-/* Join call keeps its phone icon; both answers have the same text size. */
-.call-invite .approval-actions button {
+.call-confirm .approval-actions button {
 	justify-content: center;
 	font-size: 1.1rem;
 }
 
-.call-invite-switches {
-	display: flex;
+.call-choice-switches {
+	display: grid;
+	gap: 0.5rem;
+	margin-top: 1rem;
+}
+
+.call-choice-switches .call-toggle {
+	justify-content: flex-start;
 	gap: 0.75rem;
-	margin-top: 1.25rem;
+	min-height: 3rem;
+	padding: 0.35rem 0.65rem;
+	text-align: start;
 }
 
-.call-invite-switches .call-toggle {
-	flex: 1 1 0;
-	justify-content: center;
-	min-height: 2.75rem;
-}
-
-.call-invite-switches .icon {
+.call-choice-switches .icon {
+	flex: none;
 	width: 1.5rem;
 	height: 1.5rem;
+}
+
+.call-choice-label,
+.call-choice-status {
+	display: block;
+}
+
+.call-choice-status,
+.call-permissions {
+	font-size: 0.875rem;
+	font-weight: normal;
+}
+
+.call-permissions {
+	margin-top: 0.75rem;
+}
+
+.call-permissions p {
+	margin: 0;
 }
 
 .mobile-auction .approval {

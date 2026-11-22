@@ -36,6 +36,22 @@ describe("player settings", () => {
 			playTimeMs: 5000,
 		});
 	});
+	it("defaults outgoing video quality to low and stores each valid choice", () => {
+		const storage = memoryStorage();
+		const key = "opentrick.settings.video-quality";
+		expect(readSettings(undefined).videoQuality).toBe("low");
+		expect(readSettings(storage).videoQuality).toBe("low");
+		for (const videoQuality of ["normal", "high", "low"] as const) {
+			writeSettings(storage, { ...DEFAULT_SETTINGS, videoQuality });
+			expect(storage.getItem(key)).toBe(videoQuality);
+			expect(readSettings(storage).videoQuality).toBe(videoQuality);
+		}
+		for (const invalid of ["", "HIGH", "ultra", "__proto__"]) {
+			storage.setItem(key, invalid);
+			expect(readSettings(storage).videoQuality).toBe("low");
+		}
+	});
+
 	it("defaults the completed trick display to two seconds and the solo next-board button to visible", () => {
 		expect(readSettings(memoryStorage())).toMatchObject({
 			trickDisplayMs: 2000,
@@ -139,6 +155,7 @@ describe("player settings", () => {
 			bidTurnText: true,
 			playTurnText: true,
 			networkQuality: true,
+			videoQuality: "low",
 			voicebox: true,
 			botAnimation: true,
 			guidePanel: true,
@@ -216,6 +233,7 @@ describe("player settings", () => {
 			bidTurnText: false,
 			playTurnText: false,
 			networkQuality: false,
+			videoQuality: "normal",
 			voicebox: false,
 			botAnimation: false,
 			guidePanel: false,

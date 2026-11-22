@@ -32,7 +32,18 @@ Select **Confirm** if your bidding settings require it.
 <img src="docs/images/gameplay-mobile.png" width="320" alt="The compact phone table during an auction, showing the bidding history, bid box, and player's hand.">
 
 Private games support optional audio and video calls.
+Select **Join call** to review what you send and receive, then confirm.
+The same dialog opens when another player invites you.
+The browser requests access only for devices you choose to send; listening does not require microphone access.
+If access is denied, you can join without that device or allow it in this site's browser settings.
+**Tap to hear the call** cannot grant microphone or camera access.
+If the browser blocks incoming sound, select **Tap to hear the call** once for all callers.
+To disconnect, confirm **Leave call**; **Stay in call** leaves the call unchanged.
+Muting your last device does not hang up, and reloading the game does not restart capture without confirmation.
 The camera preview and player tiles fit the whole video frame without stretching it.
+Use **Settings → Network → Outgoing video quality** to save a quality level for this browser.
+**Low** (the default) asks for the lowest available full-frame resolution; **Normal** targets up to 480p, and **High** targets 720p.
+The camera and connection can limit the actual resolution.
 The call closes after five minutes without another participant, even if other players are at the table.
 Calls are currently disabled in community games.
 Network quality bars appear inside each opponent’s tile, above the name.

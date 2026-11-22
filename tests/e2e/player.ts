@@ -14,6 +14,7 @@ import {
 	parseTrackerUrls,
 } from "../../src/p2p/config";
 import { NetworkSwitch } from "./network";
+import { RelayHub } from "./relay-hub";
 
 type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>;
 
@@ -33,10 +34,12 @@ export interface RigOptions {
 	 */
 	readonly blockSiteData?: boolean;
 	/**
-	 * Keeps the invitation to the host's room call open until the test answers it. Without it, Don't join closes
-	 * the invitation before each action and assertion, so a test that does not test it can use the page below it.
+	 * Keeps unsolicited call invitations open until the test answers them. Manual Join, Rejoin and Leave
+	 * confirmations are never dismissed by the player rig.
 	 */
 	readonly keepCallInvite?: boolean;
+	/** Shared in-process signaling for this test's browsers. Kept across restarts. */
+	readonly relayHubs?: readonly RelayHub[];
 }
 
 /**
@@ -72,7 +75,7 @@ async function blockedContext(
 }
 
 /** The trackers, Nostr relays and MQTT brokers of the build, read from the same files and prefixes as the Vite build. */
-export function buildRelayUrls(): readonly string[] {
+function buildRelayConfig() {
 	const env = loadEnv("production", process.cwd(), [
 		"VITE_TRACKER_",
 		"VITE_NOSTR_",
@@ -84,7 +87,22 @@ export function buildRelayUrls(): readonly string[] {
 	if (!nostr.ok) throw new Error(nostr.error);
 	const mqtt = parseMqttBrokerUrls(env.VITE_MQTT_BROKER_URLS);
 	if (!mqtt.ok) throw new Error(mqtt.error);
-	return [...trackers.urls, ...nostr.urls, ...mqtt.urls];
+	return { trackers: trackers.urls, nostr: nostr.urls, mqtt: mqtt.urls };
+}
+
+export function buildRelayUrls(): readonly string[] {
+	const { trackers, nostr, mqtt } = buildRelayConfig();
+	return [...trackers, ...nostr, ...mqtt];
+}
+
+/** Local substitutes for the production build's configured signaling servers. */
+export function buildRelayHubs(): readonly RelayHub[] {
+	const { trackers, nostr, mqtt } = buildRelayConfig();
+	return [
+		new RelayHub("tracker", trackers),
+		new RelayHub("nostr", nostr),
+		new RelayHub("mqtt", mqtt),
+	];
 }
 
 /** How long a failure report waits for one tab; a frozen tab never answers. */
@@ -248,6 +266,8 @@ export class Player {
 		if (this.#grants.length > 0) await context.grantPermissions(this.#grants);
 		if (this.#rig.relaySwitch)
 			this.#network = await NetworkSwitch.install(context, buildRelayUrls());
+		for (const hub of this.#rig.relayHubs ?? [])
+			await hub.install(context, this.name);
 	}
 
 	async #stop(): Promise<StorageState> {

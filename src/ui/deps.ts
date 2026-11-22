@@ -19,11 +19,9 @@ export type CallSupport =
 			readonly getUserMedia: GetUserMedia;
 			readonly cameras: CameraDevices;
 			readonly newSession: () => string;
-			/**
-			 * The browser already allows this page to capture the medium, so a capture starts without a question.
-			 * False when the browser would ask, refuses, or cannot tell.
-			 */
-			readonly granted: (medium: Medium) => Promise<boolean>;
+			readonly permission: (
+				medium: Medium,
+			) => Promise<PermissionState | "unknown">;
 	  }
 	| { readonly available: false; readonly reason: string };
 

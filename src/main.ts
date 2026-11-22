@@ -74,25 +74,23 @@ function callSupport(stunList: string | undefined): CallSupport {
 	return {
 		available: true,
 		getUserMedia: (constraints) =>
-			devices === undefined
+			typeof devices?.getUserMedia !== "function"
 				? Promise.reject(
 						new DOMException("No capture API", "NotSupportedError"),
 					)
 				: devices.getUserMedia(constraints),
 		cameras: {
-			enumerate: () =>
-				devices === undefined
-					? Promise.resolve([])
-					: typeof devices.enumerateDevices !== "function"
-						? Promise.resolve(undefined)
-						: devices.enumerateDevices().then((listed) =>
-								listed
-									.filter((device) => device.kind === "videoinput")
-									.map((device) => ({
-										deviceId: device.deviceId,
-										label: device.label,
-									})),
-							),
+			enumerate: async () => {
+				if (typeof devices?.getUserMedia !== "function") return [];
+				if (typeof devices.enumerateDevices !== "function") return undefined;
+				const cameras = (await devices.enumerateDevices())
+					.filter((device) => device.kind === "videoinput")
+					.map(({ deviceId, label }) => ({ deviceId, label }));
+				if (cameras.length > 0) return cameras;
+				return (await capturePermission("camera")) === "granted"
+					? cameras
+					: undefined;
+			},
 			subscribe: (listener) => {
 				if (devices === undefined) return () => {};
 				devices.addEventListener("devicechange", listener);
@@ -100,7 +98,8 @@ function callSupport(stunList: string | undefined): CallSupport {
 			},
 		},
 		newSession: () => crypto.randomUUID(),
-		granted: (medium) => granted(medium === "audio" ? "microphone" : "camera"),
+		permission: (medium) =>
+			capturePermission(medium === "audio" ? "microphone" : "camera"),
 	};
 }
 
@@ -186,15 +185,14 @@ function configErrorText(message: string): string {
 	return t(message);
 }
 
-/** The browser's stored answer for a capture permission; a browser that cannot tell counts as not granted. */
-function granted(name: "microphone" | "camera"): Promise<boolean> {
-	const permissions = navigator.permissions as Permissions | undefined;
-	if (permissions === undefined) return Promise.resolve(false);
-	return permissions.query({ name }).then(
-		(status) => status.state === "granted",
-		// Some browsers do not know this permission name: the page asks the user instead.
-		() => false,
-	);
+async function capturePermission(
+	name: "microphone" | "camera",
+): Promise<PermissionState | "unknown"> {
+	try {
+		return (await navigator.permissions?.query({ name }))?.state ?? "unknown";
+	} catch {
+		return "unknown";
+	}
 }
 
 /** IndexedDB, or a memory store with the reason when this browser does not allow storing data (plan §4.3). */
